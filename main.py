@@ -25,30 +25,30 @@ def main():
     BASE_URL = "https://ola.wats.com"
     AUTH_TOKEN = "cHlXQVRTOmdtQTVtTHo5N28yYWYwRm85MiY4cDhEUzdBcERRYQ=="
     
-    print("?? pyWATS API Example")
+    print("[START] pyWATS API Example")
     print("=" * 50)
     
     try:
         # Create connection to WATS API
-        print("?? Connecting to WATS API...")
+        print("[CONNECT] Connecting to WATS API...")
         connection = create_connection(
             base_url=BASE_URL,
             token=AUTH_TOKEN
         )
         
         # Test connection
-        print("?? Testing connection...")
+        print("[TEST] Testing connection...")
         if connection.test_connection():
-            print("? Connection successful!")
+            print("[SUCCESS] Connection successful!")
         else:
-            print("? Connection failed!")
+            print("[ERROR] Connection failed!")
             return
         
         # Example 1: Get assets
-        print("\n?? Example 1: Getting assets (top 5)...")
+        print("\n[EXAMPLE 1] Getting assets (top 5)...")
         try:
             assets = asset.get_assets(odata_top=5)
-            print(f"? Retrieved {len(assets)} assets")
+            print(f"[SUCCESS] Retrieved {len(assets)} assets")
             
             if assets:
                 print("   First asset:")
@@ -61,63 +61,63 @@ def main():
                 print("   No assets found")
                 
         except WATSAPIException as e:
-            print(f"? Error getting assets: {e}")
+            print(f"[ERROR] Error getting assets: {e}")
             print(f"   Status Code: {e.status_code}")
             print(f"   Response: {e.response}")
         
         # Example 2: Get asset types
-        print("\n???  Example 2: Getting asset types (top 3)...")
+        print("\n[EXAMPLE 2] Getting asset types (top 3)...")
         try:
             asset_types = asset.get_asset_types(odata_top=3)
-            print(f"? Retrieved {len(asset_types)} asset types")
+            print(f"[SUCCESS] Retrieved {len(asset_types)} asset types")
             
             for i, asset_type in enumerate(asset_types, 1):
                 print(f"   {i}. {asset_type.get('name', 'N/A')} (ID: {asset_type.get('id', 'N/A')})")
                 
         except WATSAPIException as e:
-            print(f"? Error getting asset types: {e}")
+            print(f"[ERROR] Error getting asset types: {e}")
             print(f"   Status Code: {e.status_code}")
             
         # Example 3: Get asset by serial number (if assets exist)
         if 'assets' in locals() and assets:
             first_asset_serial = assets[0].get('serialNumber')
             if first_asset_serial:
-                print(f"\n?? Example 3: Getting asset by serial number '{first_asset_serial}'...")
+                print(f"\n[EXAMPLE 3] Getting asset by serial number '{first_asset_serial}'...")
                 try:
                     specific_asset = asset.get_asset_by_serial_number(first_asset_serial)
-                    print("? Asset retrieved successfully!")
+                    print("[SUCCESS] Asset retrieved successfully!")
                     print(f"   Name: {specific_asset.get('name', 'N/A')}")
                     print(f"   Type: {specific_asset.get('assetTypeName', 'N/A')}")
                     print(f"   Total Count: {specific_asset.get('totalCount', 'N/A')}")
                     print(f"   Running Count: {specific_asset.get('runningCount', 'N/A')}")
                     
                 except WATSAPIException as e:
-                    print(f"? Error getting asset by serial number: {e}")
+                    print(f"[ERROR] Error getting asset by serial number: {e}")
                     print(f"   Status Code: {e.status_code}")
         
         # Example 4: Get asset log (recent entries)
-        print("\n?? Example 4: Getting recent asset log entries...")
+        print("\n[EXAMPLE 4] Getting recent asset log entries...")
         try:
             log_entries = asset.get_asset_log(
                 odata_top=3,
                 odata_orderby="dateTime desc"
             )
-            print(f"? Retrieved {len(log_entries)} log entries")
+            print(f"[SUCCESS] Retrieved {len(log_entries)} log entries")
             
             for i, log_entry in enumerate(log_entries, 1):
                 print(f"   {i}. {log_entry.get('dateTime', 'N/A')} - {log_entry.get('message', 'N/A')}")
                 print(f"      Asset: {log_entry.get('assetSerialNumber', 'N/A')}")
                 
         except WATSAPIException as e:
-            print(f"? Error getting asset log: {e}")
+            print(f"[ERROR] Error getting asset log: {e}")
             print(f"   Status Code: {e.status_code}")
         
         # Close connection
         connection.close()
-        print("\n? Connection closed successfully")
+        print("\n[SUCCESS] Connection closed successfully")
         
     except Exception as e:
-        print(f"?? Unexpected error: {e}")
+        print(f"[FATAL ERROR] Unexpected error: {e}")
         import traceback
         traceback.print_exc()
 
@@ -126,11 +126,11 @@ def demo_error_handling():
     """
     Demonstrate error handling with invalid credentials.
     """
-    print("\n?? Error Handling Demo")
+    print("\n[ERROR DEMO] Error Handling Demo")
     print("=" * 30)
     
     # Try with invalid token
-    print("?? Testing with invalid token...")
+    print("[TEST] Testing with invalid token...")
     try:
         invalid_connection = create_connection(
             base_url="https://ola.wats.com",
@@ -139,20 +139,20 @@ def demo_error_handling():
         
         # This should fail
         assets = asset.get_assets(odata_top=1)
-        print("? This should not print - authentication should have failed!")
+        print("[ERROR] This should not print - authentication should have failed!")
         
     except WATSAPIException as e:
-        print(f"? Caught expected authentication error: {e}")
+        print(f"[SUCCESS] Caught expected authentication error: {e}")
         print(f"   Status Code: {e.status_code}")
     except Exception as e:
-        print(f"? Caught error: {e}")
+        print(f"[SUCCESS] Caught error: {e}")
 
 
 def show_connection_info():
     """
     Show connection configuration information.
     """
-    print("\n?? Connection Configuration")
+    print("\n[CONFIG] Connection Configuration")
     print("=" * 35)
     print("Base URL: https://ola.wats.com")
     print("Authentication: Basic Auth with encoded token")
@@ -166,9 +166,9 @@ if __name__ == "__main__":
     main()
     demo_error_handling()
     
-    print("\n?? Example completed!")
+    print("\n[COMPLETE] Example completed!")
     print("=" * 50)
-    print("?? Tips:")
+    print("[TIPS] Tips:")
     print("   - Replace BASE_URL and AUTH_TOKEN with your actual values")
     print("   - Check the connection.py module for environment variable support")
     print("   - Explore other endpoint modules (production, report, etc.)")
