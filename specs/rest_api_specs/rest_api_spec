@@ -1,0 +1,95 @@
+﻿## pyWATS REST API Code Generation Strategy
+
+### ✅ Objective
+Design and document a scalable, prompt-ready structure for generating the internal REST API layer (`pyWATS.rest_api`) based on a local `.json` Swagger (OpenAPI) specification.
+
+This REST API layer will:
+- Be **generated on-demand** into **actual code files**, not at runtime.
+- Serve as a foundation for higher-level `pyWATS.*` modules.
+- Reflect **logical endpoint categories** in its structure.
+- Be scalable to large API specs (many models, endpoints).
+- Support both **public** and **internal** versions of the REST API (as defined in `openapi_public.json` and `openapi_internal.json`)
+
+### ✅ API Versioning
+- Two Swagger/OpenAPI specs are used:
+  - `openapi_public.json` → contains endpoints exposed to API consumers
+  - `openapi_internal.json` → contains extended internal endpoints
+- Initially, **both will be used** to generate modules.
+- Over time, internal-only endpoints will be deprecated or hidden to reduce exposure.
+- The codebase should allow **easily removing internal API use** later without major refactors.
+
+### ⚠️ Internal API Security Note
+When using internal endpoints, additional requirements may apply:
+- A **referrer header** or authenticated origin may be required by the server.
+- This must be handled in `rest_api.client.py` to ensure requests to internal endpoints are accepted.
+
+### ✅ Code Generation Principles
+- Source: Swagger/OpenAPI **`.json` file** (downloaded locally)
+- Tool: `openapi-python-client` or similar
+- Output should be static Python code checked into the repository
+- No runtime codegen or reflection
+- Generated code may be committed or excluded via `.gitignore` depending on policy
+
+### ✅ Folder Structure (Proposed)
+```plaintext
+pyWATS/rest_api/
+├── __init__.py
+├── client.py                      # REST client session, auth, config
+├── models/                        # Generated Pydantic models (split per category)
+│   ├── __init__.py
+│   ├── reports.py                 # Schemas related to reports
+│   ├── production.py              # Schemas related to production units
+│   └── analytics.py               # Schemas for metrics, KPIs, etc.
+├── endpoints/                     # Category-based API modules
+│   ├── __init__.py
+│   ├── reports.py                 # e.g., get_report(), post_report()
+│   ├── production.py              # e.g., get_unit(), create_unit()
+│   └── analytics.py              # e.g., get_metrics(), get_yield()
+└── exceptions.py                 # HTTP / model errors
+```
+
+### ✅ Usage Philosophy
+The structure should support:
+```python
+from pyWATS.rest_api.reports import get_report
+from pyWATS.rest_api.production import get_unit, create_unit
+```
+
+Or optionally:
+```python
+import pyWATS.rest_api as api
+api.reports.get_report(id)
+api.production.create_unit(payload)
+```
+
+### ✅ Prompt Guidance for Copilot
+When writing prompts or documentation for Copilot, focus on:
+- Logical grouping of endpoints by category ("tags" in OpenAPI)
+- Function naming based on action + noun: `get_report`, `delete_unit`, etc.
+- Consistent parameter naming (`report_id`, `serial_number`)
+- Ensure models are placed with or near the endpoint that uses them
+- Keep each model file focused and small — avoid one giant `models.py`
+
+### ✅ Naming Convention
+- Endpoint groups reflect OpenAPI tags (e.g., "App", "Asset", "Mes")
+- These become folders or modules: `rest_api.app`, `rest_api.asset`, etc.
+- Models follow the same grouping
+- Function names follow REST verb + resource logic
+
+### ✅ Benefits of On-Disk Generation
+- Easier debugging
+- Static analysis & IDE support
+- Easy for Copilot to index
+- Works with version control
+
+### 🔜 Next Actions
+- Use uploaded OpenAPI JSON to:
+  - Parse tags and endpoints
+  - Generate structural stub files
+  - Group endpoints by logical tags like `App`, `Asset`, etc.
+- Scaffold:
+  - `rest_api/app/*.py` for endpoints like `get_uut_report`, `post_dynamic_yield`
+  - `rest_api/models/app/*.py` for schemas used in `App` endpoints
+  - `rest_api/client.py` with base URL and session logic, including referrer support if needed
+
+> Confirmed OpenAPI JSON files are valid. Structural code generation can proceed once explicitly requested.
