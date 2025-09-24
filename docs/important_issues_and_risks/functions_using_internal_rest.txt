@@ -1,0 +1,151 @@
+INTERNAL API FUNCTIONS TO PUBLISH
+=====================================
+
+This document lists all functions in the pyWATS MES and TDM modules that are currently flagged 
+with ?? INTERNAL API warnings. These functions use internal WATS endpoints and should be 
+considered for publication to the public API.
+
+FORMAT: Module.Class.function_name() - Endpoint Used - Description
+
+MES MODULE - PRODUCTION
+=======================
+MES.Production.identify_uut() - /api/internal/Production/IdentifyUUT - Display unit identification dialog
+MES.Production.set_unit_process() - /api/internal/Production/SetUnitProcess - Set unit's process
+MES.Production.set_unit_phase() - /api/internal/Production/SetUnitPhase - Set unit's phase
+MES.Production.get_unit_process() - /api/internal/Production/GetUnitProcess - Get unit's current process
+MES.Production.get_unit_phase() - /api/internal/Production/GetUnitPhase - Get unit's current phase
+MES.Production.get_unit_state_history() - /api/internal/Production/GetUnitStateHistory - Get unit state/phase change history
+MES.Production.get_unit_history() - /api/internal/Production/GetUnitHistory - Get unit history list
+MES.Production.create_unit() - /api/internal/Production/CreateUnit - Create a new unit
+MES.Production.add_child_unit() - /api/internal/Production/AddChildUnit - Add child unit to parent (box build)
+MES.Production.remove_child_unit() - /api/internal/Production/RemoveChildUnit - Remove child unit from parent
+MES.Production.remove_all_child_units() - /api/internal/Production/RemoveAllChildUnits - Remove all child units from parent
+MES.Production.update_unit() - /api/internal/Production/UpdateUnit - Update unit's part number and revision
+MES.Production.update_unit_tag() - /api/internal/Production/UpdateUnitTag - Add or update unit tag value
+MES.Production.get_unit_verification() - /api/internal/Production/GetUnitVerification - Get unit verification response
+
+MES MODULE - PRODUCT
+====================
+MES.Product.identify_product() - /api/internal/Product/IdentifyProduct - Display product identification dialog with filters
+
+MES MODULE - ASSET HANDLER
+===========================
+MES.AssetHandler.create_asset() - /api/internal/Asset/CreateAsset - Create a new asset in the system
+MES.AssetHandler.create_asset_type() - /api/internal/Asset/CreateAssetType - Create a new asset type
+MES.AssetHandler.set_parent() - /api/internal/Asset/SetParent - Set parent-child relationship between assets
+MES.AssetHandler.increment_asset_usage_count() - /api/internal/Asset/IncrementAssetUsageCount - Increment usage count for an asset
+MES.AssetHandler.get_assets_by_tag() - /api/internal/Asset/GetAssetsByTag - Get assets by tag value
+MES.AssetHandler.get_sub_assets() - /api/internal/Asset/GetSubAssets - Get sub-assets of a parent asset
+MES.AssetHandler.calibration() - /api/internal/Asset/Calibration - Record calibration event for asset
+MES.AssetHandler.maintenance() - /api/internal/Asset/Maintenance - Record maintenance event for asset
+MES.AssetHandler.reset_running_count() - /api/internal/Asset/ResetRunningCount - Reset running count for asset
+
+MES MODULE - SOFTWARE
+=====================
+MES.Software.get_revoked_packages() - /api/internal/Software/GetRevokedPackages - Get revoked packages matching tags
+MES.Software.get_packages() - /api/internal/Software/GetPackages - Get packages by default tags
+MES.Software.get_packages_by_tag() - /api/internal/Software/GetPackagesByTag - Get packages by XPath or tag arrays
+MES.Software.get_package_by_name() - /api/internal/Software/GetPackageByName - Get package by name
+MES.Software.get_available_packages() - /api/internal/Software/GetAvailablePackages - Check server for new package versions
+
+MES MODULE - WORKFLOW
+=====================
+MES.Workflow.start_test() - /api/internal/Workflow/StartTest - Start automated test
+MES.Workflow.end_test() - /api/internal/Workflow/EndTest - End automated test
+MES.Workflow.validate() - /api/internal/Workflow/Validate - Validate workflow
+MES.Workflow.initialize() - /api/internal/Workflow/Initialize - Initialize workflow
+MES.Workflow.check_in() - /api/internal/Workflow/CheckIn - Perform check-in operation
+MES.Workflow.check_out() - /api/internal/Workflow/CheckOut - Perform check-out operation
+MES.Workflow.user_input() - /api/internal/Workflow/UserInput - Handle user input in workflow
+MES.Workflow.start_repair() - /api/internal/Workflow/StartRepair - Start repair workflow
+MES.Workflow.end_repair() - /api/internal/Workflow/EndRepair - End repair workflow
+MES.Workflow.scrap() - /api/internal/Workflow/Scrap - Scrap unit under repair
+MES.Workflow.suspend() - /api/internal/Workflow/Suspend - Suspend workflow
+MES.Workflow.resume() - /api/internal/Workflow/Resume - Resume suspended workflow
+MES.Workflow.cancel() - /api/internal/Workflow/Cancel - Cancel active workflow
+MES.Workflow.add_unit() - /api/internal/Workflow/AddUnit - Add unit in box build workflow
+MES.Workflow.remove_unit() - /api/internal/Workflow/RemoveUnit - Remove sub unit from box build workflow
+
+TDM MODULE - STATISTICS
+========================
+TDM.Statistics.get_last_result() - /api/internal/Statistics/GetLastResult - Get last test result for product operation
+TDM.Statistics.get_trend() - /api/internal/Statistics/GetTrend - Get trend data for product operation
+TDM.Statistics.reset_startup_counters() - /api/internal/Statistics/ResetStartupCounters - Reset startup counters
+TDM.Statistics.set_alert_levels() - /api/internal/Statistics/SetAlertLevels - Set alert levels for product
+TDM.Statistics.get_alert_levels() - /api/internal/Statistics/GetAlertLevels - Get alert levels for product
+TDM.Statistics.get_statistics_summary() - /api/internal/Statistics/GetSummary - Get statistics summary for filtered data
+TDM.Statistics.get_performance_metrics() - /api/internal/Statistics/GetPerformanceMetrics - Get performance metrics for specified criteria
+TDM.Statistics.get_trend_analysis() - /api/internal/Statistics/GetTrendAnalysis - Get comprehensive trend analysis
+
+TDM MODULE - ANALYTICS
+=======================
+TDM.Analytics.get_aggregated_measurements() - /api/internal/App/AggregatedMeasurements - Get aggregated measurement data
+TDM.Analytics.get_measurement_list() - /api/internal/App/MeasurementList - Get measurements for a step
+TDM.Analytics.get_step_status_list() - /api/internal/App/StepStatusList - Get statuses for a step
+TDM.Analytics.get_top_failed() - /api/internal/App/TopFailed - Get top failed steps
+TDM.Analytics.calculate_yield() - /api/internal/Analytics/CalculateYield - Calculate yield for specified criteria
+TDM.Analytics.get_measurement_correlation() - /api/internal/Analytics/GetMeasurementCorrelation - Get correlation analysis between measurements
+TDM.Analytics.get_process_capability() - /api/internal/Analytics/GetProcessCapability - Calculate process capability indices (Cp, Cpk)
+TDM.Analytics.get_control_chart_data() - /api/internal/Analytics/GetControlChartData - Get control chart data for statistical process control
+
+TDM MODULE - REPORTS
+====================
+TDM.Reports.create_dynamic_yield_excel_worksheet() - /api/internal/App/CreateDynamicYieldExcelWorksheet - Create a dynamic yield Excel worksheet
+TDM.Reports.create_measurement_report() - /api/internal/Reports/CreateMeasurementReport - Create a measurement analysis report
+TDM.Reports.create_yield_summary_report() - /api/internal/Reports/CreateYieldSummaryReport - Create a yield summary report for multiple part numbers
+TDM.Reports.export_raw_data() - /api/internal/Reports/ExportRawData - Export raw test data based on filter criteria
+
+MES BASE CLASS METHODS
+=======================
+MES.MESBase.get_mes_server_settings() - /api/internal/Mes/GetSettings - Get MES server settings
+MES.MESBase.get_common_user_settings() - /api/internal/mes/GetCommonUserSettings - Get common user settings
+MES.MESBase.get_key_value() - /api/internal/mes/GetKeyValue - Get stored key-value data
+MES.MESBase.update_key_value() - /api/internal/mes/UpdateKeyValue - Update key-value data
+MES.MESBase.delete_key_value() - /api/internal/mes/DeleteKeyValue - Delete key-value data
+MES.MESBase.translate() - /api/internal/mes/Translate - Translate text using WATS translation system
+MES.MESBase.translate_array() - /api/internal/mes/TranslateArray - Translate array of texts using WATS translation system
+MES.MESBase.get_processes() - /api/internal/process/GetProcesses - Get available processes
+
+SUMMARY
+=======
+Total Internal API Functions: 73
+
+Categories:
+- MES Production: 14 functions
+- MES Product: 1 function
+- MES Asset Handler: 9 functions
+- MES Software: 5 functions
+- MES Workflow: 16 functions
+- TDM Statistics: 8 functions
+- TDM Analytics: 8 functions
+- TDM Reports: 4 functions
+- MES Base Class: 8 functions
+
+RECOMMENDATIONS
+===============
+1. Consider publishing these internal endpoints to the public API
+2. Ensure proper authentication and authorization for sensitive operations
+3. Add rate limiting for resource-intensive operations like report generation
+4. Document breaking changes if endpoint signatures need to be modified
+5. Provide migration guides for users currently using internal endpoints
+
+PRIORITY FUNCTIONS FOR PUBLIC API
+==================================
+High Priority (Core MES functionality):
+- Production unit management functions
+- Asset management functions
+- Workflow orchestration functions
+
+Medium Priority (Analytics and reporting):
+- Statistics and trend analysis functions
+- Measurement analytics functions
+- Report generation functions
+
+Low Priority (Utility functions):
+- Translation functions
+- Settings management functions
+- Package management functions
+
+Note: All functions marked with ?? INTERNAL API in the pyWATS implementation should be 
+reviewed for inclusion in the public API to provide full Interface.MES functionality 
+without relying on internal endpoints.
