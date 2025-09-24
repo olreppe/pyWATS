@@ -1,0 +1,76 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Main Script",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/Scripts/python.exe",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": []
+        },
+        {
+            "name": "Python: Debug Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/debug_test.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/Scripts/python.exe",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "args": []
+        },
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/Scripts/python.exe",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": false
+        },
+        {
+            "name": "Python: MES/TDM Example",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/example_mes_tdm.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/Scripts/python.exe",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": false
+        },
+        {
+            "name": "Python: Test MES/TDM",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_mes_tdm.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/Scripts/python.exe",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": false
+        }
+    ],
+    "compounds": [],
+    "defaultLaunch": "Python: Main Script"
+}
