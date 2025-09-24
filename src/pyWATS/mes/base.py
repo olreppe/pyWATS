@@ -40,6 +40,7 @@ class MESBase:
         elif isinstance(connection, WATSClient):
             self._client = connection
         else:
+            # Use default client
             self._client = get_default_client()
             
         self._admin_credentials = None
@@ -67,7 +68,8 @@ class MESBase:
             True if connected, False otherwise
         """
         try:
-            response = self._client.get("/api/internal/mes/isConnected")
+            # Try to make a simple API call to test connection
+            response = self._client.get("/api/App/Version")
             return response.status_code == 200
         except Exception:
             return False
@@ -96,30 +98,59 @@ class MESBase:
         """
         headers = {}
         if use_admin_credentials and self._admin_credentials:
-            # Note: In a real implementation, you'd handle admin auth differently
-            # This is a placeholder for the admin authentication mechanism
             headers['X-Admin-Auth'] = 'true'
         
-        response = self._client.get(query, headers=headers if headers else None)
+        response = self._client.get(query, headers=headers)
         
         if response.status_code != 200:
             handle_response_error(response)
         
-        json_data = response.json()
+        json_response = response.json()
         
         if response_type:
             try:
                 if hasattr(response_type, 'model_validate'):  # Pydantic v2 model
-                    return response_type.model_validate(json_data)  # type: ignore
+                    return response_type.model_validate(json_response)  # type: ignore
                 elif hasattr(response_type, 'parse_obj'):  # Pydantic v1 model (legacy)
-                    return response_type.parse_obj(json_data)  # type: ignore
+                    return response_type.parse_obj(json_response)  # type: ignore
                 else:
-                    return response_type(**json_data)
+                    return response_type(**json_response)
             except Exception:
                 # Fallback to direct instantiation
-                return response_type(**json_data)
+                return response_type(**json_response)
         
-        return json_data
+        return json_response
+    
+    def _convert_to_json_serializable(self, obj: Any) -> Any:
+        """
+        Convert object to JSON serializable format.
+        
+        Args:
+            obj: Object to convert
+            
+        Returns:
+            JSON serializable representation
+        """
+        if obj is None:
+            return None
+            
+        if hasattr(obj, 'model_dump'):  # Pydantic v2 model
+            return obj.model_dump(exclude_none=True, by_alias=True)
+        elif hasattr(obj, 'dict'):  # Pydantic v1 model
+            return obj.dict(exclude_none=True, by_alias=True)
+        elif isinstance(obj, (dict, list, str, int, float, bool)):
+            return obj
+        else:
+            # Try to serialize as dict
+            try:
+                if hasattr(obj, 'model_validate'):  # Pydantic v2 model
+                    return obj.model_dump(exclude_none=True, by_alias=True)  # type: ignore
+                elif hasattr(obj, 'parse_obj'):  # Pydantic v1 model (legacy)
+                    return obj.dict(exclude_none=True, by_alias=True)  # type: ignore
+                else:
+                    return obj.__dict__ if hasattr(obj, '__dict__') else str(obj)
+            except Exception:
+                return str(obj)
     
     def _rest_post_json(
         self,
@@ -151,29 +182,20 @@ class MESBase:
         
         json_data = None
         if obj is not None:
-            if hasattr(obj, 'dict'):  # Pydantic model
-                json_data = obj.dict(exclude_none=True, by_alias=True)
-            elif hasattr(obj, '__dict__'):
-                json_data = obj.__dict__
-            else:
-                json_data = obj
+            json_data = self._convert_to_json_serializable(obj)
         
-        response = self._client.post(
-            query, 
-            json=json_data,
-            headers=headers if headers else None
-        )
+        response = self._client.post(query, json=json_data, headers=headers)
         
-        if response.status_code not in [200, 201]:
+        if response.status_code != 200:
             handle_response_error(response)
         
         json_response = response.json()
         
         if response_type:
             if hasattr(response_type, 'model_validate'):  # Pydantic v2 model
-                return response_type.model_validate(json_response)
+                return response_type.model_validate(json_response)  # type: ignore
             elif hasattr(response_type, 'parse_obj'):  # Pydantic v1 model (legacy)
-                return response_type.parse_obj(json_response)
+                return response_type.parse_obj(json_response)  # type: ignore
             else:
                 return response_type(**json_response)
         
@@ -209,18 +231,9 @@ class MESBase:
         
         json_data = None
         if obj is not None:
-            if hasattr(obj, 'dict'):  # Pydantic model
-                json_data = obj.dict(exclude_none=True, by_alias=True)
-            elif hasattr(obj, '__dict__'):
-                json_data = obj.__dict__
-            else:
-                json_data = obj
+            json_data = self._convert_to_json_serializable(obj)
         
-        response = self._client.put(
-            query,
-            json=json_data,
-            headers=headers if headers else None
-        )
+        response = self._client.put(query, json=json_data, headers=headers)
         
         if response.status_code != 200:
             handle_response_error(response)
@@ -229,9 +242,9 @@ class MESBase:
         
         if response_type:
             if hasattr(response_type, 'model_validate'):  # Pydantic v2 model
-                return response_type.model_validate(json_response)
+                return response_type.model_validate(json_response)  # type: ignore
             elif hasattr(response_type, 'parse_obj'):  # Pydantic v1 model (legacy)
-                return response_type.parse_obj(json_response)
+                return response_type.parse_obj(json_response)  # type: ignore
             else:
                 return response_type(**json_response)
         
@@ -251,12 +264,12 @@ class MESBase:
         
         Args:
             query: API endpoint query
-            obj: Object to serialize and send (optional)
+            obj: Optional object to serialize and send
             use_admin_credentials: Use admin credentials if available
             response_type: Optional type to deserialize response to
             
         Returns:
-            JSON response or deserialized object
+            JSON response, deserialized object, or None
             
         Raises:
             WATSAPIException: On API errors
@@ -267,32 +280,23 @@ class MESBase:
         
         json_data = None
         if obj is not None:
-            if hasattr(obj, 'dict'):  # Pydantic model
-                json_data = obj.dict(exclude_none=True, by_alias=True)
-            elif hasattr(obj, '__dict__'):
-                json_data = obj.__dict__
-            else:
-                json_data = obj
+            json_data = self._convert_to_json_serializable(obj)
         
-        response = self._client.delete(
-            query,
-            json=json_data,
-            headers=headers if headers else None
-        )
-        
-        if response.status_code not in [200, 204]:
-            handle_response_error(response)
+        response = self._client.delete(query, json=json_data, headers=headers)
         
         if response.status_code == 204:
             return None
+        
+        if response.status_code != 200:
+            handle_response_error(response)
         
         json_response = response.json()
         
         if response_type:
             if hasattr(response_type, 'model_validate'):  # Pydantic v2 model
-                return response_type.model_validate(json_response)
+                return response_type.model_validate(json_response)  # type: ignore
             elif hasattr(response_type, 'parse_obj'):  # Pydantic v1 model (legacy)
-                return response_type.parse_obj(json_response)
+                return response_type.parse_obj(json_response)  # type: ignore
             else:
                 return response_type(**json_response)
         
@@ -305,9 +309,9 @@ class MESBase:
         ?? INTERNAL API: This method uses internal WATS endpoints
         
         Returns:
-            Server settings dictionary
+            MES server settings
         """
-        return self._rest_get_json("/api/internal/Mes/GetSettings")
+        return self._rest_get_json("/api/internal/mes/GetMESServerSettings")
     
     def get_common_user_settings(self) -> Dict[str, Any]:
         """
@@ -316,71 +320,58 @@ class MESBase:
         ?? INTERNAL API: This method uses internal WATS endpoints
         
         Returns:
-            User settings dictionary
+            Common user settings
         """
-        return self._rest_get_json("/api/internal/mes/GetCommonUserSettings")
+        return self._rest_get_json("/api/internal/User/GetCommonUserSettings")
     
     def get_key_value(self, key: str) -> Any:
         """
-        Get stored key-value data.
+        Get value by key from key-value store.
         
         ?? INTERNAL API: This method uses internal WATS endpoints
         
         Args:
-            key: The key to retrieve
+            key: Key to retrieve
             
         Returns:
-            Stored value or None if not found
+            Value associated with key
         """
-        params = {"key": key}
-        response = self._client.get("/api/internal/mes/GetKeyValue", params=params)
-        
-        if response.status_code == 404:
-            return None
-        elif response.status_code != 200:
-            handle_response_error(response)
-            
-        return response.json()
+        data = {"key": key}
+        response = self._rest_post_json("/api/internal/KeyValue/GetKeyValue", data)
+        return response.get("value")
     
     def update_key_value(self, key: str, value: Any) -> bool:
         """
-        Update key-value data.
+        Update key-value pair in store.
         
         ?? INTERNAL API: This method uses internal WATS endpoints
         
         Args:
-            key: The key to update
-            value: The value to store
+            key: Key to update
+            value: New value
             
         Returns:
-            True if successful
+            True if successful, False otherwise
         """
         data = {"key": key, "value": value}
-        response = self._rest_post_json("/api/internal/mes/UpdateKeyValue", data)
+        response = self._rest_post_json("/api/internal/KeyValue/UpdateKeyValue", data)
         return response.get("success", False)
     
     def delete_key_value(self, key: str) -> bool:
         """
-        Delete key-value data.
+        Delete key-value pair from store.
         
         ?? INTERNAL API: This method uses internal WATS endpoints
         
         Args:
-            key: The key to delete
+            key: Key to delete
             
         Returns:
-            True if successful
+            True if successful, False otherwise
         """
-        params = {"key": key}
-        response = self._client.delete("/api/internal/mes/DeleteKeyValue", params=params)
-        
-        if response.status_code in [200, 204]:
-            return True
-        elif response.status_code == 404:
-            return False  # Key didn't exist
-        else:
-            handle_response_error(response)
-            return False
+        data = {"key": key}
+        response = self._rest_post_json("/api/internal/KeyValue/DeleteKeyValue", data)
+        return response.get("success", False)
     
     def translate(self, text: str, culture_code: Optional[str] = None) -> str:
         """
@@ -390,21 +381,17 @@ class MESBase:
         
         Args:
             text: Text to translate
-            culture_code: Optional culture code (e.g., 'en-US', 'de-DE')
+            culture_code: Optional culture code (e.g., "en-US", "nb-NO")
             
         Returns:
             Translated text
         """
-        params = {"text": text}
+        data: Dict[str, Any] = {"text": text}
         if culture_code:
-            params["cultureCode"] = culture_code
-            
-        response = self._client.get("/api/internal/mes/Translate", params=params)
+            data["cultureCode"] = culture_code
         
-        if response.status_code != 200:
-            handle_response_error(response)
-            
-        return response.json().get("translatedText", text)
+        response = self._rest_post_json("/api/internal/Translation/Translate", data)
+        return response.get("translatedText", text)
     
     def translate_array(self, texts: list[str], culture_code: Optional[str] = None) -> list[str]:
         """
@@ -414,7 +401,7 @@ class MESBase:
         
         Args:
             texts: List of texts to translate
-            culture_code: Optional culture code
+            culture_code: Optional culture code (e.g., "en-US", "nb-NO")
             
         Returns:
             List of translated texts
@@ -422,8 +409,8 @@ class MESBase:
         data: Dict[str, Any] = {"texts": texts}
         if culture_code:
             data["cultureCode"] = culture_code
-            
-        response = self._rest_post_json("/api/internal/mes/TranslateArray", data)
+        
+        response = self._rest_post_json("/api/internal/Translation/TranslateArray", data)
         return response.get("translatedTexts", texts)
     
     def get_processes(self) -> list[Dict[str, Any]]:

@@ -78,7 +78,11 @@ class Production(MESBase):
                 "/api/internal/Production/GetUnitInfo", 
                 response_type=UnitInfo
             )
-            return response_data
+            if isinstance(response_data, UnitInfo):
+                return response_data
+            elif isinstance(response_data, dict):
+                return UnitInfo.model_validate(response_data)  # type: ignore
+            return None
         except Exception:
             return None
     
@@ -117,14 +121,14 @@ class Production(MESBase):
             WATSAPIException: On API errors
         """
         request = IdentifyUnitRequest(
-            part_number=part_number,
-            serial_number=serial_number,
-            include_test_operation=include_test_operation,
-            select_test_operation=select_test_operation,
-            custom_text=custom_text,
-            always_on_top=always_on_top,
-            use_workflow=use_workflow,
-            workflow_status=workflow_status,
+            partNumber=part_number,
+            serialNumber=serial_number,
+            includeTestOperation=include_test_operation,
+            selectTestOperation=select_test_operation,
+            customText=custom_text,
+            alwaysOnTop=always_on_top,
+            useWorkflow=use_workflow,
+            workflowStatus=workflow_status,
             context=context or {}
         )
         
@@ -133,7 +137,11 @@ class Production(MESBase):
             request,
             response_type=UnitInfo
         )
-        return response_data
+        if isinstance(response_data, UnitInfo):
+            return response_data
+        elif isinstance(response_data, dict):
+            return UnitInfo.model_validate(response_data)  # type: ignore
+        return None
     
     def set_unit_process(
         self, 
@@ -168,7 +176,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def set_unit_phase(
         self, 
@@ -205,7 +217,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def get_unit_process(self, serial_number: str, part_number: str) -> Optional[str]:
         """
@@ -381,7 +397,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def create_unit(
         self,
@@ -419,7 +439,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def add_child_unit(
         self,
@@ -466,7 +490,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def remove_child_unit(
         self,
@@ -507,7 +535,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def remove_all_child_units(
         self,
@@ -542,7 +574,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def update_unit(
         self,
@@ -580,7 +616,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def update_unit_tag(
         self,
@@ -618,7 +658,11 @@ class Production(MESBase):
             data,
             response_type=MESResponse
         )
-        return response.success
+        if isinstance(response, MESResponse):
+            return response.success
+        elif isinstance(response, dict):
+            return response.get("success", False)
+        return False
     
     def get_unit_verification(
         self,
@@ -649,6 +693,10 @@ class Production(MESBase):
                 "/api/internal/Production/GetUnitVerification",
                 response_type=UnitVerificationResponse
             )
-            return response
+            if isinstance(response, UnitVerificationResponse):
+                return response
+            elif isinstance(response, dict):
+                return UnitVerificationResponse.model_validate(response)  # type: ignore
+            return None
         except Exception:
             return None

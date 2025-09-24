@@ -95,7 +95,9 @@ class AssetHandler(MESBase):
         except Exception as e:
             return AssetResponse(
                 success=False,
-                message=f"Failed to create asset: {str(e)}"
+                message=f"Failed to create asset: {str(e)}",
+                assetId=None,
+                errorCode=None
             )
     
     def create_asset_type(
@@ -153,7 +155,9 @@ class AssetHandler(MESBase):
         except Exception as e:
             return AssetResponse(
                 success=False,
-                message=f"Failed to create asset type: {str(e)}"
+                message=f"Failed to create asset type: {str(e)}",
+                assetId=None,
+                errorCode=None
             )
     
     def get_asset(self, serial_number: str) -> Optional[Asset]:
@@ -201,12 +205,16 @@ class AssetHandler(MESBase):
             return AssetResponse(
                 success=True,
                 message="Asset updated successfully",
-                assetId=updated_asset.get("assetId")
+                assetId=updated_asset.get("assetId"),
+                errorCode=None
             )
         except Exception as e:
             return AssetResponse(
                 success=False,
                 message=f"Failed to update asset: {str(e)}"
+            ,
+                assetId=None,
+                errorCode=None
             )
     
     def set_parent(
@@ -245,6 +253,9 @@ class AssetHandler(MESBase):
             return AssetResponse(
                 success=False,
                 message=f"Failed to set parent: {str(e)}"
+            ,
+                assetId=None,
+                errorCode=None
             )
     
     def increment_asset_usage_count(
@@ -286,6 +297,9 @@ class AssetHandler(MESBase):
             return AssetResponse(
                 success=False,
                 message=f"Failed to increment usage count: {str(e)}"
+            ,
+                assetId=None,
+                errorCode=None
             )
     
     def get_assets(self, filter_text: str) -> List[Asset]:
@@ -399,6 +413,9 @@ class AssetHandler(MESBase):
             return AssetResponse(
                 success=False,
                 message=f"Failed to record calibration: {str(e)}"
+            ,
+                assetId=None,
+                errorCode=None
             )
     
     def maintenance(
@@ -440,6 +457,9 @@ class AssetHandler(MESBase):
             return AssetResponse(
                 success=False,
                 message=f"Failed to record maintenance: {str(e)}"
+            ,
+                assetId=None,
+                errorCode=None
             )
     
     def reset_running_count(
@@ -478,6 +498,9 @@ class AssetHandler(MESBase):
             return AssetResponse(
                 success=False,
                 message=f"Failed to reset running count: {str(e)}"
+            ,
+                assetId=None,
+                errorCode=None
             )
     
     def delete_asset(self, serial_number: str) -> AssetResponse:
@@ -500,11 +523,17 @@ class AssetHandler(MESBase):
         try:
             success = delete_asset(serial_number, client=self._client)
             return AssetResponse(
-                success=success,
+                success=bool(success.get("success", False)),
                 message="Asset deleted successfully" if success else "Failed to delete asset"
+            ,
+                assetId=None,
+                errorCode=None
             )
         except Exception as e:
             return AssetResponse(
                 success=False,
                 message=f"Failed to delete asset: {str(e)}"
+            ,
+                assetId=None,
+                errorCode=None
             )
