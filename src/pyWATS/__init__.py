@@ -52,6 +52,7 @@ from . import mes
 
 # Import TDM modules
 from . import tdm
+from .tdm_client import TDMClient
 
 # Import legacy WATS client if available
 try:
@@ -68,5 +69,6 @@ __all__ = [
     "rest_api",
     "mes",
     "tdm",
+    "TDMClient",
     "wats_client",  # May be None if not available
 ]
