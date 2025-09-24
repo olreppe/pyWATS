@@ -5,7 +5,7 @@ Models for product management endpoints.
 """
 
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from uuid import UUID
 
 from .common import PublicWatsFilter
@@ -21,6 +21,8 @@ class Setting(BaseModel):
 class ProductRevision(BaseModel):
     """Product revision model."""
     
+    model_config = ConfigDict(populate_by_name=True)
+    
     product_revision_id: Optional[UUID] = Field(None, alias="productRevisionId")
     product_id: Optional[UUID] = Field(None, alias="productId")
     revision: Optional[str] = None
@@ -31,13 +33,11 @@ class ProductRevision(BaseModel):
     part_number: Optional[str] = Field(None, alias="PartNumber")
     tags: Optional[List[Setting]] = []
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-
 
 class Product(BaseModel):
     """Product model."""
+    
+    model_config = ConfigDict(populate_by_name=True)
     
     product_id: Optional[UUID] = Field(None, alias="productId")
     non_serial: Optional[bool] = Field(None, alias="nonSerial")
@@ -51,13 +51,11 @@ class Product(BaseModel):
     revisions: Optional[List[ProductRevision]] = []
     tags: Optional[List[Setting]] = []
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-
 
 class ProductView(BaseModel):
     """Product view model for queries."""
+    
+    model_config = ConfigDict(populate_by_name=True)
     
     part_number: Optional[str] = Field(None, alias="partNumber")
     name: Optional[str] = None
@@ -65,15 +63,10 @@ class ProductView(BaseModel):
     non_serial: Optional[bool] = Field(None, alias="nonSerial")
     state: Optional[int] = None
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-
 
 class Vendor(BaseModel):
     """Vendor model."""
+    
+    model_config = ConfigDict(populate_by_name=True)
+    
     vendor_name: Optional[str] = Field(None, alias="VendorName")
-
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True

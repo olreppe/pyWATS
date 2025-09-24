@@ -7,7 +7,7 @@ while using Python conventions and Pydantic for data validation.
 
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import IntEnum, Enum
 from uuid import UUID
 
@@ -121,14 +121,13 @@ class Product(BaseModel):
 
 
 class AssetResponse(BaseModel):
-    """Asset operation response model."""
+    """Asset operation response model.""" 
+    model_config = ConfigDict(populate_by_name=True)
+    
     success: bool = True
     message: Optional[str] = None
     asset_id: Optional[str] = Field(None, alias="assetId")
     error_code: Optional[str] = Field(None, alias="errorCode")
-    
-    class Config:
-        allow_population_by_field_name = True
 
 
 class Package(BaseModel):

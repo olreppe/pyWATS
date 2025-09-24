@@ -6,7 +6,7 @@ Models for asset management endpoints.
 
 from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import IntEnum
 from uuid import UUID
 
@@ -44,6 +44,8 @@ class Setting(BaseModel):
 class AssetType(BaseModel):
     """Asset type model."""
     
+    model_config = ConfigDict(populate_by_name=True)
+    
     type_id: Optional[UUID] = Field(None, alias="typeId")
     type_name: str = Field(..., alias="typeName")
     running_count_limit: Optional[int] = Field(None, alias="runningCountLimit")
@@ -55,13 +57,14 @@ class AssetType(BaseModel):
     is_readonly: Optional[bool] = Field(None, alias="isReadonly")
     icon: Optional[str] = None
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-
 
 class AssetLog(BaseModel):
     """Asset log entry model."""
+    
+    model_config = ConfigDict(
+        populate_by_name=True,
+        use_enum_values=True
+    )
     
     log_id: Optional[int] = Field(None, alias="logId")
     asset_id: Optional[str] = Field(None, alias="assetId")
@@ -73,14 +76,14 @@ class AssetLog(BaseModel):
     value: Optional[str] = None
     comment: Optional[str] = None
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-        use_enum_values = True
-
 
 class Asset(BaseModel):
     """Asset model."""
+    
+    model_config = ConfigDict(
+        populate_by_name=True,
+        use_enum_values=True
+    )
     
     asset_id: Optional[str] = Field(None, alias="assetId")
     parent_asset_id: Optional[str] = Field(None, alias="parentAssetId")
@@ -106,11 +109,6 @@ class Asset(BaseModel):
     asset_children: Optional[List['Asset']] = Field([], alias="assetChildren")
     asset_type: Optional[AssetType] = Field(None, alias="assetType")
     asset_log: Optional[List[AssetLog]] = Field([], alias="assetLog")
-
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-        use_enum_values = True
 
 
 class AssetMessage(BaseModel):

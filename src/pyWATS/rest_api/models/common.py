@@ -6,7 +6,7 @@ Common filter and request models used across the API.
 
 from typing import Optional, Union
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import IntEnum
 
 
@@ -27,6 +27,11 @@ class PublicWatsFilter(BaseModel):
     
     This is the primary filter model used across many endpoints.
     """
+    
+    model_config = ConfigDict(
+        populate_by_name=True,
+        use_enum_values=True
+    )
     
     serial_number: Optional[str] = Field(None, alias="serialNumber")
     part_number: Optional[str] = Field(None, alias="partNumber")
@@ -53,14 +58,11 @@ class PublicWatsFilter(BaseModel):
     top_count: Optional[int] = Field(None, alias="topCount")
     dimensions: Optional[str] = None
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-        use_enum_values = True
-
 
 class CommonUserSettings(BaseModel):
     """Common user settings response model."""
+    
+    model_config = ConfigDict(populate_by_name=True)
     
     full_name: Optional[str] = Field(None, alias="fullName")
     culture_code: Optional[str] = Field(None, alias="cultureCode")
@@ -68,7 +70,3 @@ class CommonUserSettings(BaseModel):
     roles: Optional[list[str]] = []
     levels: Optional[list[str]] = []
     product_groups: Optional[list[str]] = Field([], alias="productGroups")
-
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True

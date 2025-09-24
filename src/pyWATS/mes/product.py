@@ -9,7 +9,7 @@ from typing import Optional, List, Union
 from io import BytesIO
 
 from .base import MESBase
-from .models import ProductInfo, Product, IdentifyProductRequest
+from .models import ProductInfo, Product as ProductModel, IdentifyProductRequest
 from ..rest_api.client import WATSClient
 from ..connection import WATSConnection
 
@@ -92,7 +92,7 @@ class Product(MESBase):
                 "/api/internal/Product/GetProductInfo",
                 response_type=ProductInfo
             )
-            return response
+            return response if isinstance(response, ProductInfo) else ProductInfo.model_validate(response) if response else None
         except Exception:
             return None
     
@@ -105,7 +105,7 @@ class Product(MESBase):
         include_serial_number: bool = False,
         custom_text: str = "",
         always_on_top: bool = True
-    ) -> Optional[Product]:
+    ) -> Optional[ProductModel]:
         """
         Display product identification dialog with filters.
         
@@ -128,21 +128,21 @@ class Product(MESBase):
         """
         request = IdentifyProductRequest(
             filter=filter_text,
-            top_count=top_count,
-            free_partnumber=free_partnumber,
-            include_revision=include_revision,
-            include_serial_number=include_serial_number,
-            custom_text=custom_text,
-            always_on_top=always_on_top
+            topCount=top_count,
+            freePartnumber=free_partnumber,
+            includeRevision=include_revision,
+            includeSerialNumber=include_serial_number,
+            customText=custom_text,
+            alwaysOnTop=always_on_top
         )
         
         try:
             response = self._rest_post_json(
                 "/api/internal/Product/IdentifyProduct",
                 request,
-                response_type=Product
+                response_type=ProductModel
             )
-            return response
+            return response if isinstance(response, ProductModel) else ProductModel.model_validate(response) if response else None
         except Exception:
             return None
     
@@ -152,7 +152,7 @@ class Product(MESBase):
         top_count: int,
         include_non_serial: bool,
         include_revision: bool
-    ) -> List[Product]:
+    ) -> List[ProductModel]:
         """
         Get products matching filter criteria.
         
@@ -180,4 +180,4 @@ class Product(MESBase):
         response = self._rest_get_json("/api/internal/Product/GetProduct")
         products_data = response.get("products", [])
         
-        return [Product.parse_obj(item) for item in products_data]
+        return [ProductModel.model_validate(item) for item in products_data]

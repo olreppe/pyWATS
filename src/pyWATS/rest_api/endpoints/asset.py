@@ -84,7 +84,7 @@ def create_asset(
     
     response = client.put(
         "/api/Asset",
-        json=asset.dict(exclude_none=True, by_alias=True)
+        json=asset.model_dump(exclude_none=True, by_alias=True)
     )
     
     if response.status_code != 200:
@@ -403,7 +403,7 @@ def post_asset_message(
     
     response = client.post(
         "/api/Asset/Message",
-        json=message.dict(exclude_none=True, by_alias=True),
+        json=message.model_dump(exclude_none=True, by_alias=True),
         params=params
     )
     
@@ -475,11 +475,11 @@ def set_asset_state(
     """
     client = client or get_default_client()
     
-    params = {"state": state.value}
+    params = {"state": str(state.value)}
     if asset_id:
-        params["id"] = asset_id
+        params["id"] = str(asset_id)
     if serial_number:
-        params["serialNumber"] = serial_number
+        params["serialNumber"] = str(serial_number)
     
     response = client.put("/api/Asset/State", params=params)
     
@@ -638,7 +638,7 @@ def create_asset_type(
     
     response = client.put(
         "/api/Asset/Types",
-        json=asset_type.dict(exclude_none=True, by_alias=True)
+        json=asset_type.model_dump(exclude_none=True, by_alias=True)
     )
     
     if response.status_code != 200:

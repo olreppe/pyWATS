@@ -6,7 +6,7 @@ Models for production management endpoints.
 
 from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from uuid import UUID
 from enum import IntEnum
 
@@ -23,6 +23,11 @@ class SerialNumberIdentifier(IntEnum):
 class SerialNumberType(BaseModel):
     """Serial number type model."""
     
+    model_config = ConfigDict(
+        populate_by_name=True,
+        use_enum_values=True
+    )
+    
     name: Optional[str] = None
     description: Optional[str] = None
     format: Optional[str] = None
@@ -30,14 +35,11 @@ class SerialNumberType(BaseModel):
     identifier: Optional[SerialNumberIdentifier] = None
     identifier_name: Optional[str] = Field(None, alias="identifierName")
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-        use_enum_values = True
-
 
 class Unit(BaseModel):
     """Production unit model."""
+    
+    model_config = ConfigDict(populate_by_name=True)
     
     serial_number: Optional[str] = Field(None, alias="serialNumber")
     part_number: Optional[str] = Field(None, alias="partNumber")
@@ -55,13 +57,11 @@ class Unit(BaseModel):
     product: Optional[Product] = None
     sub_units: Optional[List['Unit']] = Field([], alias="subUnits")
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-
 
 class UnitChange(BaseModel):
     """Unit change model."""
+    
+    model_config = ConfigDict(populate_by_name=True)
     
     id: Optional[int] = None
     unit_serial_number: Optional[str] = Field(None, alias="unitSerialNumber")
@@ -70,24 +70,20 @@ class UnitChange(BaseModel):
     new_revision: Optional[str] = Field(None, alias="newRevision")
     new_unit_phase_id: Optional[int] = Field(None, alias="newUnitPhaseId")
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-
 
 class ProductionBatch(BaseModel):
     """Production batch model."""
     
+    model_config = ConfigDict(populate_by_name=True)
+    
     batch_number: Optional[str] = Field(None, alias="batchNumber")
     batch_size: Optional[int] = Field(None, alias="batchSize")
-
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
 
 
 class UnitVerification(BaseModel):
     """Unit verification details model."""
+    
+    model_config = ConfigDict(populate_by_name=True)
     
     process_code: Optional[int] = Field(None, alias="processCode")
     process_name: Optional[str] = Field(None, alias="processName")
@@ -99,13 +95,11 @@ class UnitVerification(BaseModel):
     non_passed_count: Optional[int] = Field(None, alias="nonPassedCount")
     repair_count: Optional[int] = Field(None, alias="repairCount")
 
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
-
 
 class UnitVerificationGrade(BaseModel):
     """Unit verification grade model."""
+    
+    model_config = ConfigDict(populate_by_name=True)
     
     status: Optional[str] = None
     grade: Optional[str] = None
@@ -123,10 +117,6 @@ class UnitVerificationGrade(BaseModel):
     )
     no_repairs: Optional[bool] = Field(None, alias="noRepairs")
     results: Optional[List[UnitVerification]] = []
-
-    class Config:
-        """Pydantic configuration."""
-        allow_population_by_field_name = True
 
 
 # Forward reference update

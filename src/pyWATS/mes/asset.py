@@ -91,7 +91,7 @@ class AssetHandler(MESBase):
                 data,
                 response_type=AssetResponse
             )
-            return response
+            return response if isinstance(response, AssetResponse) else AssetResponse.model_validate(response)
         except Exception as e:
             return AssetResponse(
                 success=False,
@@ -131,17 +131,17 @@ class AssetHandler(MESBase):
         data = {"name": name}
         
         if calibration_interval is not None:
-            data["calibrationInterval"] = calibration_interval
+            data["calibrationInterval"] = str(calibration_interval)
         if maintenance_interval is not None:
-            data["maintenanceInterval"] = maintenance_interval
+            data["maintenanceInterval"] = str(maintenance_interval)
         if running_count_limit is not None:
-            data["runningCountLimit"] = running_count_limit
+            data["runningCountLimit"] = str(running_count_limit)
         if total_count_limit is not None:
-            data["totalCountLimit"] = total_count_limit
+            data["totalCountLimit"] = str(total_count_limit)
         if warning_threshold is not None:
-            data["warningThreshold"] = warning_threshold
+            data["warningThreshold"] = str(warning_threshold)
         if alarm_threshold is not None:
-            data["alarmThreshold"] = alarm_threshold
+            data["alarmThreshold"] = str(alarm_threshold)
         
         try:
             response = self._rest_post_json(
@@ -149,7 +149,7 @@ class AssetHandler(MESBase):
                 data,
                 response_type=AssetResponse
             )
-            return response
+            return response if isinstance(response, AssetResponse) else AssetResponse.model_validate(response)
         except Exception as e:
             return AssetResponse(
                 success=False,
@@ -174,7 +174,8 @@ class AssetHandler(MESBase):
         from ..rest_api.endpoints.asset import get_asset_by_serial_number
         
         try:
-            return get_asset_by_serial_number(serial_number, client=self._client)
+            asset_data = get_asset_by_serial_number(serial_number, client=self._client)
+            return Asset.model_validate(asset_data) if asset_data else None
         except Exception:
             return None
     
@@ -200,7 +201,7 @@ class AssetHandler(MESBase):
             return AssetResponse(
                 success=True,
                 message="Asset updated successfully",
-                asset_id=updated_asset.asset_id
+                assetId=updated_asset.get("assetId")
             )
         except Exception as e:
             return AssetResponse(
@@ -239,7 +240,7 @@ class AssetHandler(MESBase):
                 data,
                 response_type=AssetResponse
             )
-            return response
+            return response if isinstance(response, AssetResponse) else AssetResponse.model_validate(response)
         except Exception as e:
             return AssetResponse(
                 success=False,
@@ -280,7 +281,7 @@ class AssetHandler(MESBase):
                 data,
                 response_type=AssetResponse
             )
-            return response
+            return response if isinstance(response, AssetResponse) else AssetResponse.model_validate(response)
         except Exception as e:
             return AssetResponse(
                 success=False,
@@ -304,7 +305,8 @@ class AssetHandler(MESBase):
         """
         from ..rest_api.endpoints.asset import get_assets
         
-        return get_assets(odata_filter=filter_text, client=self._client)
+        assets_data = get_assets(odata_filter=filter_text, client=self._client)
+        return [Asset.model_validate(asset) for asset in assets_data]
     
     def get_assets_by_tag(self, tag: str) -> List[Asset]:
         """
@@ -350,12 +352,12 @@ class AssetHandler(MESBase):
         """
         params = {"serialNumber": serial_number}
         if level is not None:
-            params["level"] = level
+            params["level"] = str(level)
         
         response = self._rest_get_json("/api/internal/Asset/GetSubAssets")
         assets_data = response.get("subAssets", [])
         
-        return [Asset.parse_obj(item) for item in assets_data]
+        return [Asset.model_validate(item) for item in assets_data]
     
     def calibration(
         self,
@@ -391,7 +393,8 @@ class AssetHandler(MESBase):
                 data,
                 response_type=AssetResponse
             )
-            return response
+            # When response_type is provided, _rest_post_json returns that type
+            return response if isinstance(response, AssetResponse) else AssetResponse.model_validate(response)
         except Exception as e:
             return AssetResponse(
                 success=False,
@@ -432,7 +435,7 @@ class AssetHandler(MESBase):
                 data,
                 response_type=AssetResponse
             )
-            return response
+            return response if isinstance(response, AssetResponse) else AssetResponse.model_validate(response)
         except Exception as e:
             return AssetResponse(
                 success=False,
@@ -470,7 +473,7 @@ class AssetHandler(MESBase):
                 data,
                 response_type=AssetResponse
             )
-            return response
+            return response if isinstance(response, AssetResponse) else AssetResponse.model_validate(response)
         except Exception as e:
             return AssetResponse(
                 success=False,

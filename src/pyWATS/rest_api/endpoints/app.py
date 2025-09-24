@@ -43,7 +43,7 @@ def get_aggregated_measurements(
     
     response = client.post(
         "/api/App/AggregatedMeasurements",
-        json=filter_data.dict(exclude_none=True, by_alias=True),
+        json=filter_data.model_dump(exclude_none=True, by_alias=True),
         params=params
     )
     
@@ -82,7 +82,7 @@ def get_dynamic_repair(
     
     response = client.post(
         "/api/App/DynamicRepair",
-        json=filter_data.dict(exclude_none=True, by_alias=True),
+        json=filter_data.model_dump(exclude_none=True, by_alias=True),
         params=params
     )
     
@@ -121,7 +121,7 @@ def get_dynamic_yield(
     
     response = client.post(
         "/api/App/DynamicYield",
-        json=filter_data.dict(exclude_none=True, by_alias=True),
+        json=filter_data.model_dump(exclude_none=True, by_alias=True),
         params=params
     )
     
@@ -160,7 +160,7 @@ def get_high_volume(
         # POST request
         response = client.post(
             "/api/App/HighVolume",
-            json=filter_data.dict(exclude_none=True, by_alias=True)
+            json=filter_data.model_dump(exclude_none=True, by_alias=True)
         )
     else:
         # GET request
@@ -201,7 +201,7 @@ def get_high_volume_by_product_group(
     
     response = client.post(
         "/api/App/HighVolumeByProductGroup",
-        json=filter_data.dict(exclude_none=True, by_alias=True)
+        json=filter_data.model_dump(exclude_none=True, by_alias=True)
     )
     
     if response.status_code != 200:
@@ -263,7 +263,7 @@ def get_measurements(
     
     response = client.post(
         "/api/App/Measurements",
-        json=filter_data.dict(exclude_none=True, by_alias=True),
+        json=filter_data.model_dump(exclude_none=True, by_alias=True),
         params=params
     )
     
@@ -318,7 +318,7 @@ def get_oee_analysis(
     
     response = client.post(
         "/api/App/OeeAnalysis",
-        json=filter_data.dict(exclude_none=True, by_alias=True),
+        json=filter_data.model_dump(exclude_none=True, by_alias=True),
         params=params
     )
     
@@ -470,7 +470,7 @@ def get_uut_report(
         # POST request
         response = client.post(
             "/api/App/UutReport",
-            json=filter_data.dict(exclude_none=True, by_alias=True)
+            json=filter_data.model_dump(exclude_none=True, by_alias=True)
         )
     else:
         # GET request

@@ -79,7 +79,7 @@ def create_batches(
     """
     client = client or get_default_client()
     
-    batch_data = [batch.dict(exclude_none=True, by_alias=True) for batch in batches]
+    batch_data = [batch.model_dump(exclude_none=True, by_alias=True) for batch in batches]
     
     response = client.put("/api/Production/Batches", json=batch_data)
     
@@ -546,7 +546,7 @@ def create_units(
     """
     client = client or get_default_client()
     
-    unit_data = [unit.dict(exclude_none=True, by_alias=True) for unit in units]
+    unit_data = [unit.model_dump(exclude_none=True, by_alias=True) for unit in units]
     
     response = client.put("/api/Production/Units", json=unit_data)
     

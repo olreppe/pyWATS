@@ -46,6 +46,7 @@ def main():
         
         # Example 1: Get assets
         print("\n[EXAMPLE 1] Getting assets (top 5)...")
+        assets = []  # Initialize to avoid unbound variable issues
         try:
             assets = asset.get_assets(odata_top=5)
             print(f"[SUCCESS] Retrieved {len(assets)} assets")
@@ -79,7 +80,7 @@ def main():
             print(f"   Status Code: {e.status_code}")
             
         # Example 3: Get asset by serial number (if assets exist)
-        if 'assets' in locals() and assets:
+        if assets:
             first_asset_serial = assets[0].get('serialNumber')
             if first_asset_serial:
                 print(f"\n[EXAMPLE 3] Getting asset by serial number '{first_asset_serial}'...")

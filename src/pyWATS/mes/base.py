@@ -108,9 +108,15 @@ class MESBase:
         json_data = response.json()
         
         if response_type:
-            if hasattr(response_type, 'parse_obj'):  # Pydantic model
-                return response_type.parse_obj(json_data)
-            else:
+            try:
+                if hasattr(response_type, 'model_validate'):  # Pydantic v2 model
+                    return response_type.model_validate(json_data)  # type: ignore
+                elif hasattr(response_type, 'parse_obj'):  # Pydantic v1 model (legacy)
+                    return response_type.parse_obj(json_data)  # type: ignore
+                else:
+                    return response_type(**json_data)
+            except Exception:
+                # Fallback to direct instantiation
                 return response_type(**json_data)
         
         return json_data
@@ -164,7 +170,9 @@ class MESBase:
         json_response = response.json()
         
         if response_type:
-            if hasattr(response_type, 'parse_obj'):  # Pydantic model
+            if hasattr(response_type, 'model_validate'):  # Pydantic v2 model
+                return response_type.model_validate(json_response)
+            elif hasattr(response_type, 'parse_obj'):  # Pydantic v1 model (legacy)
                 return response_type.parse_obj(json_response)
             else:
                 return response_type(**json_response)
@@ -220,7 +228,9 @@ class MESBase:
         json_response = response.json()
         
         if response_type:
-            if hasattr(response_type, 'parse_obj'):  # Pydantic model
+            if hasattr(response_type, 'model_validate'):  # Pydantic v2 model
+                return response_type.model_validate(json_response)
+            elif hasattr(response_type, 'parse_obj'):  # Pydantic v1 model (legacy)
                 return response_type.parse_obj(json_response)
             else:
                 return response_type(**json_response)
@@ -233,7 +243,7 @@ class MESBase:
         obj: Any = None,
         use_admin_credentials: bool = False,
         response_type: Optional[Type[T]] = None
-    ) -> Union[Dict[str, Any], T]:
+    ) -> Union[Dict[str, Any], T, None]:
         """
         Perform DELETE request and return JSON response.
         
@@ -279,7 +289,9 @@ class MESBase:
         json_response = response.json()
         
         if response_type:
-            if hasattr(response_type, 'parse_obj'):  # Pydantic model
+            if hasattr(response_type, 'model_validate'):  # Pydantic v2 model
+                return response_type.model_validate(json_response)
+            elif hasattr(response_type, 'parse_obj'):  # Pydantic v1 model (legacy)
                 return response_type.parse_obj(json_response)
             else:
                 return response_type(**json_response)
@@ -407,7 +419,7 @@ class MESBase:
         Returns:
             List of translated texts
         """
-        data = {"texts": texts}
+        data: Dict[str, Any] = {"texts": texts}
         if culture_code:
             data["cultureCode"] = culture_code
             
@@ -423,4 +435,5 @@ class MESBase:
         Returns:
             List of available processes
         """
-        return self._rest_get_json("/api/internal/process/GetProcesses")
+        response = self._rest_get_json("/api/internal/process/GetProcesses")
+        return response if isinstance(response, list) else response.get("processes", [])

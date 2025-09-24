@@ -8,7 +8,7 @@ Custom exceptions for REST API operations.
 class WATSAPIException(Exception):
     """Base exception for WATS API errors."""
     
-    def __init__(self, message: str, status_code: int = None, response: str = None):
+    def __init__(self, message: str, status_code: int | None = None, response: str | None = None):
         super().__init__(message)
         self.status_code = status_code
         self.response = response
