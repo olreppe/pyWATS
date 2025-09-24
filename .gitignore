@@ -20,7 +20,7 @@ parts/
 sdist/
 var/
 wheels/
-share/python-wheels/
+share-python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -119,9 +119,9 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# Environments - Keep our .venv but ignore others
 .env
-.venv
+# .venv  # COMMENTED OUT - We want to track our .venv directory
 env/
 venv/
 ENV/
