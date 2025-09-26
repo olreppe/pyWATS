@@ -8,33 +8,46 @@ These tests only use the high-level pyWATS.mes.asset API
 (no direct REST API calls).
 """
 
+# Handle pytest import and setup fixtures
 try:
     import pytest
     PYTEST_AVAILABLE = True
-    
-    def skip_test(reason: str):
-        """Skip test with pytest."""
-        pytest.skip(reason)
-    
-    @pytest.fixture
-    def asset_test_runner():
-        """Fixture providing an AssetTestRunner instance."""
-        runner = AssetTestRunner()
-        yield runner
-        runner.cleanup_test_assets()
-        
 except ImportError:
+    pytest = None
     PYTEST_AVAILABLE = False
-    
-    def skip_test(reason: str):
-        """Skip test without pytest."""
+
+
+def skip_test(reason: str):
+    """Skip test with or without pytest."""
+    if PYTEST_AVAILABLE and pytest:
+        pytest.skip(reason)
+    else:
         import logging
         logging.getLogger(__name__).warning(f"Skipping test: {reason}")
         return
-    
+
+
+def create_asset_test_runner():
+    """Create an AssetTestRunner instance."""
+    return AssetTestRunner()
+
+
+# Setup pytest fixture (define unconditionally to avoid static analysis warnings)
+def _create_fixture_function():
+    """Create the pytest fixture function."""
     def asset_test_runner():
-        """Mock fixture for when pytest is not available."""
-        return AssetTestRunner()
+        """Fixture providing an AssetTestRunner instance."""
+        runner = create_asset_test_runner()
+        yield runner
+        runner.cleanup_test_assets()
+    return asset_test_runner
+
+# Apply pytest decorator only if available
+if PYTEST_AVAILABLE and pytest:
+    asset_test_runner = pytest.fixture(_create_fixture_function())
+else:
+    # Define a dummy function for static analysis
+    asset_test_runner = _create_fixture_function()
 
 from datetime import datetime, timedelta
 import logging
