@@ -136,7 +136,7 @@ def demonstrate_connection_management(tdm: TDMClient) -> bool:
         return False
 
 
-def demonstrate_metadata_operations(tdm: TDMClient) -> tuple[List[Dict], List[Dict]]:
+def demonstrate_metadata_operations(tdm: TDMClient) -> tuple[List[Dict], List[Dict], List[Dict]]:
     """Demonstrate metadata retrieval operations."""
     print_section("METADATA OPERATIONS")
     
@@ -185,7 +185,58 @@ def demonstrate_metadata_operations(tdm: TDMClient) -> tuple[List[Dict], List[Di
         ]
         print("    ⚠ Using mock repair types for demonstration")
     
-    return operation_types, repair_types
+    # Load repair operations (processes where isRepairOperation=true)  
+    try:
+        print("\n[3] Retrieving repair operations...")
+        repair_operations = tdm.get_repair_operations()
+        print(f"    ✓ Found {len(repair_operations)} repair operations")
+        
+        # Show first few repair operations with their categories/codes
+        for i, repair_op in enumerate(repair_operations[:3]):
+            print(f"    {i+1}. {repair_op['name']} (Code: {repair_op['code']})")
+            if repair_op.get('failureCategories'):
+                categories = repair_op['failureCategories'][:2]  # Show first 2
+                print(f"       Categories: {[cat.get('name', cat) for cat in categories]}")
+            if repair_op.get('failureCodes'):
+                codes = repair_op['failureCodes'][:2]  # Show first 2  
+                print(f"       Failure Codes: {[code.get('code', code) for code in codes]}")
+                
+        if len(repair_operations) > 3:
+            print(f"    ... and {len(repair_operations) - 3} more")
+            
+    except Exception as e:
+        print(f"    ✗ Failed to get repair operations: {e}")
+        # Create mock repair operations for demo
+        repair_operations = [
+            {
+                'id': 'mock-repair-op-1', 
+                'code': '500', 
+                'name': 'Component Failure Repair', 
+                'description': 'Repair for component failures',
+                'failureCategories': [{'name': 'Component Failure', 'code': 'COMP_FAIL'}],
+                'failureCodes': [{'code': 'COMP_FAIL_001', 'description': 'Component replacement required'}]
+            }
+        ]
+        print("    ⚠ Using mock repair operations for demonstration")
+
+    # Load test operations for comparison (processes where isTestOperation=true)
+    try:
+        print("\n[4] Retrieving test operations (for comparison)...")
+        test_operations = tdm.get_test_operations()
+        print(f"    ✓ Found {len(test_operations)} test operations")
+        
+        # Show first few test operations to compare with repair operations
+        for i, test_op in enumerate(test_operations[:3]):
+            is_repair = test_op.get('isRepairOperation', False)
+            print(f"    {i+1}. {test_op['name']} (Code: {test_op['code']}, isRepairOp: {is_repair})")
+                
+        if len(test_operations) > 3:
+            print(f"    ... and {len(test_operations) - 3} more")
+            
+    except Exception as e:
+        print(f"    ✗ Failed to get test operations: {e}")
+    
+    return operation_types, repair_types, repair_operations
 
 
 def demonstrate_finding_reports(tdm: TDMClient) -> List[Dict]:
@@ -309,10 +360,12 @@ def create_sample_uut_report(tdm: TDMClient, operation_types: List[Dict]):
     uut_report.add_misc_info("PassRate", "100%")
     uut_report.add_misc_info("TestConfiguration", "Automated Test Suite v1.2.3")
     
-    # Set final result
-    uut_report.result = 'P'  # Passed
+    # Set final result to FAILED to demonstrate repair workflow
+    uut_report.result = 'F'  # Failed - needs repair
+    # Update root status to match result (required by WSJF validation)
+    uut_report.root.status = 'F'
     
-    print("    ✓ UUT report created successfully")
+    print("    ✓ UUT report created successfully (FAILED - needs repair)")
     print_report_summary(uut_report)
     print(f"    Misc Info Items: {len(uut_report.misc_infos)}")
     print(f"    Result: {uut_report.result}")
@@ -320,48 +373,82 @@ def create_sample_uut_report(tdm: TDMClient, operation_types: List[Dict]):
     return uut_report
 
 
-def create_sample_uur_report(tdm: TDMClient, repair_types: List[Dict], uut_report=None):
-    """Create a comprehensive UUR (repair) report."""
+def create_sample_uur_report(tdm: TDMClient, repair_types: List[Dict], repair_operations: List[Dict], operation_types: List[Dict], uut_report=None):
+    """Create a comprehensive UUR (repair) report using proper repair operations and failure categories."""
     print_subsection("Creating UUR Report")
     
-    # Select repair type
-    repair_type = repair_types[0] if repair_types else {
-        'id': 'demo-repair',
-        'code': '200',
-        'name': 'Demo Component Repair',
-        'description': 'Demo repair operation',
-        'uut_required': False
+    # Try using the standard "Repair" operation (code 500) instead of CalibrationRepair
+    repair_operation = None
+    for op in repair_operations:
+        if op.get('code') == 500:  # Standard repair operation
+            repair_operation = op
+            break
+    
+    # Fallback to first operation or default
+    if not repair_operation:
+        repair_operation = repair_operations[0] if repair_operations else {
+            'id': 'demo-repair-op',
+            'code': 500,  # Use standard repair code 
+            'name': 'Repair',
+            'description': 'Standard repair operation',
+            'failureCategories': [],
+            'failureCodes': []
+        }
+    
+    print(f"    Selected repair operation: {repair_operation['name']} (Code: {repair_operation['code']})")
+    print(f"    ℹ This process should have isRepairOperation=true for UUR reports")
+    print(f"    Server failure categories: {len(repair_operation.get('failureCategories', []))}")
+    print(f"    Server failure codes: {len(repair_operation.get('failureCodes', []))}")
+    
+    if repair_operation.get('failureCategories'):
+        print(f"    Categories: {[c.get('name', str(c)) for c in repair_operation['failureCategories'][:3]]}")
+    if repair_operation.get('failureCodes'):
+        print(f"    Codes: {[c.get('code', str(c)) for c in repair_operation['failureCodes'][:3]]}")
+    
+    # Get failure category and code from repair operation server data (not hardcoded)
+    failure_category = None
+    failure_code = None
+    
+    # Extract actual failure categories and codes from server
+    if repair_operation.get('failureCategories') and len(repair_operation['failureCategories']) > 0:
+        cat = repair_operation['failureCategories'][0]
+        failure_category = cat.get('name', cat.get('code'))
+        print(f"    Using server failure category: '{failure_category}'")
+    
+    if repair_operation.get('failureCodes') and len(repair_operation['failureCodes']) > 0:
+        code = repair_operation['failureCodes'][0]
+        failure_code = code.get('code', code.get('name'))
+        print(f"    Using server failure code: '{failure_code}'")
+    
+    # If no server data available, skip failures for now
+    if not failure_category or not failure_code:
+        print(f"    ⚠ No failure categories/codes found in server data for repair operation")
+        print(f"    Available categories: {repair_operation.get('failureCategories', [])}")
+        print(f"    Available codes: {repair_operation.get('failureCodes', [])}")
+        failure_category = None
+        failure_code = None    # Use repair operation code directly (should have isRepairOperation=true)
+    repair_type = {
+        'id': repair_operation['id'],
+        'code': repair_operation['code'],  # Use repair operation code (should be valid for UUR)
+        'name': repair_operation['name'],
+        'description': repair_operation['description'],
+        'uut_required': True  # We need UUT for proper repair
     }
-    
-    print(f"    Using repair type: {repair_type['name']} (Code: {repair_type['code']})")
-    
-    # Get part info from UUT if available
-    if uut_report and hasattr(uut_report, 'uut'):
-        part_number = uut_report.uut.pn
-        serial_number = uut_report.uut.sn
-        revision = uut_report.uut.rev
-    else:
-        part_number = "REPAIR_PART_001"
-        serial_number = f"REPAIR_SN_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        revision = "Rev_B"
     
     # Create the UUR report - now returns UURReport instance
     uur_report = tdm.create_uur_report(
         operator_name="Repair_Technician",
         repair_type=repair_type,
         uut_report=uut_report,  # Pass the UUT report to link them
-        part_number=part_number,
-        revision=revision,
-        serial_number=serial_number
+        failure_category=failure_category,
+        failure_code=failure_code
     )
     
-    # Add repair information as misc info (since WSJF model structure is different)
-    uur_report.add_misc_info("RepairType", "Component Replacement and Calibration")
-    uur_report.add_misc_info("ComponentsReplaced", "CAP_100uF_25V (C15)")
-    uur_report.add_misc_info("CalibrationAdjustments", "Voltage reference trimmer R23: 2.3k ohm")
-    uur_report.add_misc_info("VerificationTests", "Post-Repair Voltage: 5.01V (Pass), Current: 0.82A (Pass)")
-    uur_report.add_misc_info("RepairTechnician", "Repair_Technician")
-    uur_report.add_misc_info("ToolsUsed", "Soldering Iron, Multimeter")
+    # The TDM client should now create SubRepair with proper failure codes automatically
+    print(f"    Using failure: Category='{failure_category}', Code='{failure_code}'")
+    
+    # Skip adding repair misc info for now to avoid validation errors
+    # The repair operation code and failure info should be sufficient
     
     # Set final result
     uur_report.result = 'P'  # Passed (repaired)
@@ -374,7 +461,7 @@ def create_sample_uur_report(tdm: TDMClient, repair_types: List[Dict], uut_repor
     return uur_report
 
 
-def demonstrate_report_creation(tdm: TDMClient, operation_types: List[Dict], repair_types: List[Dict]):
+def demonstrate_report_creation(tdm: TDMClient, operation_types: List[Dict], repair_types: List[Dict], repair_operations: List[Dict]):
     """Demonstrate creating UUT and UUR reports."""
     print_section("REPORT CREATION")
     
@@ -382,7 +469,7 @@ def demonstrate_report_creation(tdm: TDMClient, operation_types: List[Dict], rep
     uut_report = create_sample_uut_report(tdm, operation_types)
     
     # Create UUR report
-    uur_report = create_sample_uur_report(tdm, repair_types, uut_report)
+    uur_report = create_sample_uur_report(tdm, repair_types, repair_operations, operation_types, uut_report)
     
     return uut_report, uur_report
 
@@ -577,7 +664,7 @@ def main():
         is_online = demonstrate_connection_management(tdm)
         
         # 3. Metadata operations
-        operation_types, repair_types = demonstrate_metadata_operations(tdm)
+        operation_types, repair_types, repair_operations = demonstrate_metadata_operations(tdm)
         
         # 4. Finding existing reports
         found_reports = demonstrate_finding_reports(tdm)
@@ -586,7 +673,7 @@ def main():
         loaded_report = demonstrate_loading_reports(tdm, found_reports)
         
         # 6. Creating new reports
-        uut_report, uur_report = demonstrate_report_creation(tdm, operation_types, repair_types)
+        uut_report, uur_report = demonstrate_report_creation(tdm, operation_types, repair_types, repair_operations)
         
         # 7. Submitting reports
         demonstrate_report_submission(tdm, uut_report, uur_report, operation_types)

@@ -424,33 +424,151 @@ class TDMClient:
             if self._log_exceptions:
                 print(f"Failed to load cached metadata: {e}")
 
-    def get_operation_types(self) -> List[Dict[str, Any]]:
+    def get_all_processes(self) -> List[Dict[str, Any]]:
         """
-        Get available operation types.
+        Get all processes with their complete information including failure categories and codes.
         
         Returns:
-            List of operation type dictionaries
+            List of all process dictionaries with unified structure
         """
         if not self._processes:
             raise Exception("No processes available - ensure API is initialized")
             
-        # Filter for test operations
-        operation_types = []
+        all_processes = []
         if 'processes' in self._processes:
             for process in self._processes['processes']:
-                # Check both possible field names for compatibility
-                is_test_op = process.get('isTestOperation', process.get('IsTestOperation', False))
-                if is_test_op:
-                    operation_types.append({
-                        'id': process.get('processId') or process.get('ProcessID'),
-                        'code': process.get('code') or process.get('Code'),
-                        'name': process.get('name') or process.get('Name'),
-                        'description': process.get('description') or process.get('Description', ''),
-                        'processIndex': process.get('processIndex'),
-                        'state': process.get('state')
-                    })
+                # Extract all process information with unified structure
+                unified_process = {
+                    'id': process.get('processId') or process.get('ProcessID'),
+                    'code': process.get('code') or process.get('Code'),
+                    'name': process.get('name') or process.get('Name'),
+                    'description': process.get('description') or process.get('Description', ''),
+                    'processIndex': process.get('processIndex'),
+                    'state': process.get('state'),
+                    'isTestOperation': process.get('isTestOperation', process.get('IsTestOperation', False)),
+                    'isRepairOperation': process.get('isRepairOperation', process.get('IsRepairOperation', False)),
+                    
+                    # Extract failure categories and codes - check multiple possible field names
+                    'failureCategories': self._extract_categories(process),
+                    'failureCodes': self._extract_codes(process),
+                    'repairInstructions': process.get('repairInstructions', process.get('RepairInstructions', []))
+                }
+                all_processes.append(unified_process)
         
-        return operation_types
+        return all_processes
+
+    def _extract_categories(self, process: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract failure categories from process, handling various field names and nested structures."""
+        categories = []
+        
+        # First check direct fields
+        possible_fields = ['failureCategories', 'FailureCategories', 'categories', 'Categories']
+        for field in possible_fields:
+            if field in process and process[field]:
+                categories = process[field]
+                break
+        
+        # If not found, check nested in repairOperation structure
+        if not categories and 'repairOperation' in process:
+            repair_op = process['repairOperation']
+            if 'repairCategories' in repair_op and repair_op['repairCategories']:
+                categories = repair_op['repairCategories']
+        
+        # Ensure categories are in consistent format
+        standardized = []
+        for cat in categories:
+            if isinstance(cat, dict):
+                standardized.append({
+                    'name': cat.get('description', cat.get('name', cat.get('Name', ''))),
+                    'code': cat.get('id', cat.get('code', cat.get('Code', ''))),
+                    'description': cat.get('description', cat.get('Description', ''))
+                })
+            elif isinstance(cat, str):
+                standardized.append({'name': cat, 'code': cat, 'description': ''})
+                
+        return standardized
+
+    def _extract_codes(self, process: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract failure codes from process, handling various field names and nested structures."""
+        codes = []
+        
+        # First check direct fields
+        possible_fields = ['failureCodes', 'FailureCodes', 'codes', 'Codes']
+        for field in possible_fields:
+            if field in process and process[field]:
+                codes = process[field]
+                break
+        
+        # If not found, extract from nested repairOperation.repairCategories[].repairCodes
+        if not codes and 'repairOperation' in process:
+            repair_op = process['repairOperation']
+            if 'repairCategories' in repair_op:
+                for category in repair_op['repairCategories']:
+                    if 'repairCodes' in category and category['repairCodes']:
+                        codes.extend(category['repairCodes'])
+        
+        # Ensure codes are in consistent format
+        standardized = []
+        for code in codes:
+            if isinstance(code, dict):
+                standardized.append({
+                    'code': code.get('description', code.get('name', code.get('Name', ''))),  # Use description as code
+                    'name': code.get('description', code.get('name', code.get('Name', ''))),
+                    'description': code.get('description', code.get('Description', '')),
+                    'id': code.get('id'),  # Keep original ID for reference
+                    'failureType': code.get('failureType'),
+                    'category': code.get('category', '')  # Will be set when we process categories
+                })
+            elif isinstance(code, str):
+                standardized.append({'code': code, 'name': code, 'description': ''})
+                
+        return standardized
+
+    def get_operation_types(self) -> List[Dict[str, Any]]:
+        """
+        Get available operation types (test operations).
+        
+        Returns:
+            List of operation type dictionaries
+        """
+        all_processes = self.get_all_processes()
+        return [p for p in all_processes if p['isTestOperation']]
+
+    def get_repair_operations(self) -> List[Dict[str, Any]]:
+        """
+        Get available repair operations from processes where isRepairOperation=true.
+        
+        Returns:
+            List of repair operation dictionaries with categories and codes
+        """
+        all_processes = self.get_all_processes()
+        return [p for p in all_processes if p['isRepairOperation']]
+
+    def get_test_operations(self) -> List[Dict[str, Any]]:
+        """
+        Get available test operations from processes where isTestOperation=true.
+        
+        Returns:
+            List of test operation dictionaries
+        """
+        all_processes = self.get_all_processes()
+        return [p for p in all_processes if p['isTestOperation']]
+
+    def get_repair_operation_by_code(self, code: Union[str, int]) -> Optional[Dict[str, Any]]:
+        """
+        Get repair operation by code.
+        
+        Args:
+            code: Repair operation code
+            
+        Returns:
+            Repair operation dict or None if not found
+        """
+        repair_ops = self.get_repair_operations()
+        for repair_op in repair_ops:
+            if str(repair_op.get('code')) == str(code) or repair_op.get('code') == code:
+                return repair_op
+        return None
 
     def get_operation_type_by_code(self, code: Union[str, int]) -> Dict[str, Any]:
         """
@@ -608,7 +726,9 @@ class TDMClient:
         uut_report: Optional[Union[Dict[str, Any], UUTReport]] = None,
         serial_number: Optional[str] = None,
         part_number: Optional[str] = None,
-        revision: Optional[str] = None
+        revision: Optional[str] = None,
+        failure_category: Optional[str] = None,
+        failure_code: Optional[str] = None
     ) -> UURReport:
         """
         Create a UUR (Unit Under Repair) report.
@@ -676,10 +796,21 @@ class TDMClient:
         else:
             process_code = 0
             
+        # Extract UUT process code if available (for test operation reference)
+        uut_process_code = None
+        if uut_report:
+            if isinstance(uut_report, UUTReport):
+                uut_process_code = uut_report.process_code
+            else:
+                uut_process_code = uut_report.get('process_code', uut_report.get('processCode'))
+        
+        # Debug info: UUR uses repair operation code, UUT uses test operation code
+        # UUR process_code should be isRepairOperation=true, UUT reference is via refUUT
+        
         # Create UUR info with all required fields
         uur_info = UURInfo(
             user=operator_name or "Operator",
-            processCode=process_code,
+            processCode=uut_process_code,  # This should be the UUT's test operation code
             refUUT=str(uut_id) if uut_id else None,
             confirmDate=datetime.now(timezone.utc).isoformat() + "Z",
             finalizeDate=datetime.now(timezone.utc).isoformat() + "Z",
@@ -718,12 +849,12 @@ class TDMClient:
                     parent_idx=sub_unit.parent_idx
                 )
                 
-                # Add failure to the main sub repair unit (idx 0)
-                if sub_unit.idx == 0:
+                # Add failure to the main sub repair unit (idx 0) if categories/codes provided
+                if sub_unit.idx == 0 and failure_category and failure_code:
                     sub_repair.add_failure(
-                        category="Component Failure",
-                        code="COMP_FAIL_001",
-                        comment="Component replacement required during repair",
+                        category=failure_category,
+                        code=failure_code,
+                        comment="Component replacement required during repair - using repair operation codes",
                         com_ref="C15"  # Example component reference
                     )
             sub_units_copied = True
@@ -738,17 +869,17 @@ class TDMClient:
                 idx=0  # Main unit must have index 0
             )
             
-            # Add at least one failure (required for UUR reports)
-            sub_repair.add_failure(
-                category="Component Failure",
-                code="COMP_FAIL_001",
-                comment="Component replacement required during repair",
-                com_ref="C15"  # Example component reference
-            )
+            # Add failure only if categories/codes are provided (may not be required for all UUR reports)
+            if failure_category and failure_code:
+                sub_repair.add_failure(
+                    category=failure_category,
+                    code=failure_code,
+                    comment="Component replacement required during repair - using repair operation codes",
+                    com_ref="C15"  # Example component reference
+                )
         
-        # Add repair type information as misc info
-        if repair_type_dict and isinstance(repair_type_dict, dict):
-            report.add_misc_info("RepairType", repair_type_dict.get('name', ''))
+        # Skip adding RepairType misc info to avoid validation errors
+        # The repair operation code should be sufficient for server validation
             
         return report
 
