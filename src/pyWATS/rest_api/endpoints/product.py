@@ -35,9 +35,15 @@ def create_product(
     """
     client = client or get_default_client()
     
+    # Use model_dump with mode='json' for proper UUID serialization
+    if hasattr(product, 'model_dump'):
+        product_data = product.model_dump(exclude_none=True, by_alias=True, mode='json')
+    else:
+        product_data = product.dict(exclude_none=True, by_alias=True)
+    
     response = client.put(
         "/api/Product",
-        json=product.dict(exclude_none=True, by_alias=True)
+        json=product_data
     )
     
     if response.status_code != 200:
@@ -328,6 +334,40 @@ def create_vendors(
     vendor_data = [vendor.dict(exclude_none=True, by_alias=True) for vendor in vendors]
     
     response = client.put("/api/Product/Vendors", json=vendor_data)
+    
+    if response.status_code != 200:
+        handle_response_error(response)
+    
+    return response.json()
+
+
+def get_bom(
+    part_number: str,
+    revision: str,
+    client: Optional[WATSClient] = None
+) -> Dict[str, Any]:
+    """
+    Get BOM (Bill of Materials) for a product revision.
+    
+    Args:
+        part_number: Product part number
+        revision: Product revision
+        client: Optional WATS client instance
+        
+    Returns:
+        BOM data including xmlData field with BOM content
+        
+    Raises:
+        WATSAPIException: On API errors
+    """
+    client = client or get_default_client()
+    
+    params = {
+        "partNumber": part_number,
+        "revision": revision
+    }
+    
+    response = client.get("/api/Product/BOM", params=params)
     
     if response.status_code != 200:
         handle_response_error(response)

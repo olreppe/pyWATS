@@ -71,11 +71,11 @@ class Product(MESBase):
         """
         Get product information by part number.
         
-        ?? INTERNAL API: This method uses internal WATS endpoints
+        This method uses the standard product REST API endpoints.
         
         Args:
             part_number: Product part number
-            revision: Optional product revision
+            revision: Optional product revision (if provided, gets specific revision info)
             
         Returns:
             ProductInfo object or None if not found
@@ -83,15 +83,42 @@ class Product(MESBase):
         Raises:
             WATSAPIException: On API errors
         """
-        from ..rest_api.endpoints.internal import get_product_info_internal
+        from ..rest_api.endpoints.product import get_product, get_product_revision
         
         try:
-            response = get_product_info_internal(
-                part_number=part_number,
-                revision=revision if revision else None,
-                client=self._client
-            )
-            return ProductInfo.model_validate(response) if response else None
+            if revision:
+                # Get specific product revision
+                product_rev = get_product_revision(
+                    part_number=part_number,
+                    revision=revision,
+                    client=self._client
+                )
+                # Convert ProductRevision to ProductInfo
+                return ProductInfo(
+                    partNumber=product_rev.part_number or part_number,
+                    revision=product_rev.revision,
+                    name=product_rev.name,
+                    description=product_rev.description,
+                    productGroup=None,
+                    createdDate=None,
+                    updatedDate=None
+                )
+            else:
+                # Get product (without specific revision)
+                product = get_product(
+                    part_number=part_number,
+                    client=self._client
+                )
+                # Convert Product to ProductInfo  
+                return ProductInfo(
+                    partNumber=product.part_number or part_number,
+                    revision=None,
+                    name=product.name,
+                    description=product.description,
+                    productGroup=None,
+                    createdDate=None,
+                    updatedDate=None
+                )
         except Exception:
             return None
     
@@ -155,13 +182,13 @@ class Product(MESBase):
         """
         Get products matching filter criteria.
         
-        ?? INTERNAL API: This method uses internal WATS endpoints
+        Uses the standard query_products REST API endpoint with OData filtering.
         
         Args:
             filter_text: Filter string for product search
             top_count: Maximum number of results to return
-            include_non_serial: Include non-serialized products
-            include_revision: Include revision information
+            include_non_serial: Include non-serialized products (not used in current API)
+            include_revision: Include revision information (not used in current API)
             
         Returns:
             List of Product objects matching criteria
@@ -169,22 +196,42 @@ class Product(MESBase):
         Raises:
             WATSAPIException: On API errors
         """
-        from ..rest_api.endpoints.internal import get_products_internal
+        from ..rest_api.endpoints.product import query_products
         
         try:
-            response = get_products_internal(
-                filter_text=filter_text,
-                top_count=top_count,
-                include_non_serial=include_non_serial,
-                include_revision=include_revision,
+            # Convert filter_text to OData filter if needed
+            odata_filter = None
+            if filter_text and filter_text.strip():
+                if filter_text == "*":
+                    odata_filter = None  # No filter, get all
+                else:
+                    # Create OData filter for part number contains
+                    odata_filter = f"contains(PartNumber, '{filter_text}')"
+            
+            # Use query_products which returns ProductView objects
+            product_views = query_products(
+                odata_filter=odata_filter,
+                odata_top=top_count,
                 client=self._client
             )
             
-            # The response should be a list of products directly
-            if isinstance(response, list):
-                return [ProductModel.model_validate(item) for item in response]
-            return []
-        except Exception:
+            # Convert ProductView to ProductModel
+            results = []
+            for pv in product_views:
+                if pv.part_number:  # Only include products with valid part numbers
+                    product_model = ProductModel(
+                        partNumber=pv.part_number,
+                        revision=None,  # ProductView doesn't include revision
+                        name=pv.name,
+                        description=None,
+                        includeRevision=include_revision,
+                        includeSerialNumber=False
+                    )
+                    results.append(product_model)
+            
+            return results
+        except Exception as e:
+            # Return empty list on error
             return []
     
     def update_product(self, part_number: str, updates: Dict[str, Any]) -> bool:
@@ -208,8 +255,11 @@ class Product(MESBase):
             # First get the existing product
             existing_product = get_product(part_number, client=self._client)
             
-            # Update the fields
-            product_dict = existing_product.dict()
+            # Update the fields - use model_dump with mode='json' for proper UUID serialization
+            if hasattr(existing_product, 'model_dump'):
+                product_dict = existing_product.model_dump(mode='json')
+            else:
+                product_dict = existing_product.dict()
             product_dict.update(updates)
             
             # Create updated product object
@@ -224,27 +274,41 @@ class Product(MESBase):
     
     def get_bom(self, part_number: str, revision: str = "") -> Optional[Dict[str, Any]]:
         """
-        Get BOM (Bill of Materials) for a product.
+        Get BOM (Bill of Materials) for a product revision.
         
-        Note: This functionality is not yet available in the REST API.
-        A BOM retrieval endpoint would need to be implemented.
+        Note: BOM is associated with ProductRevision, not Product directly.
+        This method requires both part_number and revision.
         
         Args:
             part_number: Product part number
-            revision: Optional product revision
+            revision: Product revision (required for BOM operations)
             
         Returns:
-            BOM data or None if not available
+            BOM data or None if not available/implemented
         """
-        # TODO: Implement when BOM retrieval REST API endpoint becomes available
-        return None
+        if not revision:
+            # BOM operations require a specific product revision
+            return None
+            
+        try:
+            # Use the REST API endpoint to get BOM data
+            from ..rest_api.endpoints.product import get_bom as rest_get_bom
+            return rest_get_bom(part_number, revision, client=self._client)
+        except Exception as e:
+            # Return None if BOM retrieval fails (product may not have BOM)
+            return None
     
-    def upload_bom(self, bom_data: Union[str, Dict[str, Any]]) -> bool:
+    def upload_bom(self, bom_data: Union[str, Dict[str, Any]], part_number: Optional[str] = None, revision: Optional[str] = None) -> bool:
         """
         Upload BOM (Bill of Materials) using WSBF (WATS Standard BOM Format).
         
+        Note: BOM is associated with ProductRevision, not Product directly.
+        The BOM data should specify the target product and revision.
+        
         Args:
             bom_data: BOM data as XML string or dictionary to convert to XML
+            part_number: Target product part number (optional, can be in bom_data)
+            revision: Target product revision (optional, can be in bom_data)
             
         Returns:
             True if upload was successful, False otherwise
@@ -257,6 +321,12 @@ class Product(MESBase):
         try:
             # Convert dictionary to XML if needed
             if isinstance(bom_data, dict):
+                # Ensure part_number and revision are set
+                if part_number:
+                    bom_data["partNumber"] = part_number
+                if revision:
+                    bom_data["revision"] = revision
+                    
                 bom_xml = self._convert_bom_dict_to_xml(bom_data)
             else:
                 bom_xml = bom_data
@@ -267,6 +337,36 @@ class Product(MESBase):
             return True
         except Exception:
             return False
+
+    def get_product_revisions(self, part_number: str) -> List[Dict[str, Any]]:
+        """
+        Get all revisions for a specific product.
+        
+        Args:
+            part_number: Product part number
+            
+        Returns:
+            List of revision information
+        """
+        from ..rest_api.endpoints.product import get_product
+        
+        try:
+            product = get_product(part_number=part_number, client=self._client)
+            revisions = []
+            
+            for rev in (product.revisions or []):
+                revisions.append({
+                    "revision": rev.revision,
+                    "name": rev.name,
+                    "description": rev.description,
+                    "state": rev.state,
+                    "product_revision_id": str(rev.product_revision_id),
+                    "part_number": rev.part_number
+                })
+            
+            return revisions
+        except Exception:
+            return []
     
     def _convert_bom_dict_to_xml(self, bom_dict: Dict[str, Any]) -> str:
         """

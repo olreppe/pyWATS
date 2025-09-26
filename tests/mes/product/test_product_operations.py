@@ -8,7 +8,7 @@ Tests for MES product functionality including:
 4. Uploading BOM-List
 
 Based on C# MES Interface.MES.Product functionality.
-Uses pyWATS REST API endpoints - no direct HTTP calls.
+Uses high-level pyWATS Product API - no direct REST API or HTTP calls.
 """
 
 from datetime import datetime
@@ -16,7 +16,6 @@ from typing import List, Dict, Optional, Any
 
 from pyWATS import create_api
 from pyWATS.mes import Product
-from pyWATS.rest_api.exceptions import WATSAPIException
 
 
 class ProductTestResult:
@@ -44,7 +43,7 @@ class ProductTestRunner:
         """Setup connection to WATS server using PyWATS API"""
         try:
             if self.api.test_connection():
-                # Test product service connectivity using REST API
+                # Test product service connectivity using Product API
                 try:
                     # Check connection using Product API
                     connected = self.product.is_connected()
@@ -62,7 +61,7 @@ class ProductTestRunner:
 
     @property
     def client(self):
-        """Get the WATS API client for REST operations"""
+        """Get the WATS API client for Product API initialization"""
         if self.api.tdm_client and self.api.tdm_client._connection:
             return self.api.tdm_client._connection._client
         return None
@@ -71,7 +70,7 @@ class ProductTestRunner:
         """
         Test getting product information for a specific part number and revision.
         Based on C# method: GetProductInfo(string partNumber, string revision = "")
-        Uses REST API: internal.get_product_info_internal()
+        Uses high-level Product API
         """
         try:
             response = self.product.get_product_info(
@@ -91,10 +90,8 @@ class ProductTestRunner:
                     f"No product info found for {part_number}" + (f" rev {revision}" if revision else "")
                 )
                 
-        except WATSAPIException as e:
-            return ProductTestResult(False, f"Failed to get product info: {str(e)}")
         except Exception as e:
-            return ProductTestResult(False, f"Unexpected error getting product info: {str(e)}")
+            return ProductTestResult(False, f"Failed to get product info: {str(e)}")
 
     def test_get_products(self, filter_text: str = "", top_count: int = 10, 
                          include_non_serial: bool = True, include_revision: bool = True) -> ProductTestResult:
@@ -150,6 +147,95 @@ class ProductTestRunner:
         except Exception as e:
             return ProductTestResult(False, f"Failed to update product: {str(e)}")
 
+    def test_update_product_workflow(self) -> ProductTestResult:
+        """
+        Test the complete update workflow: get products -> select one -> modify -> update.
+        This uses real server data instead of fictitious test parts.
+        """
+        try:
+            # Step 1: Get available products
+            print("[3.1] Getting available products...")
+            products = self.product.get_product("", 20, True, True)  # Get up to 20 products
+            
+            if not products:
+                return ProductTestResult(False, "No products found to test update workflow")
+            
+            print(f"      Found {len(products)} products")
+            
+            # Step 2: Select the first product that has a valid part number (not just wildcard)
+            target_product = None
+            for product in products:
+                if (product.part_number and 
+                    len(product.part_number.strip()) > 1 and 
+                    product.part_number.strip() not in ["%", "*", "?"] and
+                    not product.part_number.startswith("$")):  # Avoid wildcards and special chars
+                    target_product = product
+                    break
+            
+            if not target_product:
+                return ProductTestResult(False, "No suitable product found for update test")
+                
+            print(f"[3.2] Selected product: {target_product.part_number}")
+            print(f"      Current name: {target_product.name}")
+            print(f"      Current description: {target_product.description}")
+            
+            # Step 3: Get current product info to see what we can update
+            current_info = self.product.get_product_info(target_product.part_number, "")
+            if not current_info:
+                return ProductTestResult(False, f"Could not get current info for {target_product.part_number}")
+            
+            # Step 4: Prepare updates (modify description with timestamp to avoid conflicts)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            original_description = current_info.description or ""
+            test_marker = f"[TEST_UPDATE_{timestamp}]"
+            
+            updates = {
+                "description": f"{original_description} {test_marker}".strip()
+            }
+            
+            # Only update name if it's not too important looking
+            if not current_info.name or "test" in str(current_info.name).lower():
+                updates["name"] = f"Test Updated {timestamp}"
+            
+            print(f"[3.3] Preparing updates: {updates}")
+            
+            # Step 5: Perform the update
+            print(f"[3.4] Updating product {target_product.part_number}...")
+            success = self.product.update_product(target_product.part_number, updates)
+            
+            if success:
+                # Step 6: Verify the update by retrieving the product again
+                print(f"[3.5] Verifying update...")
+                updated_info = self.product.get_product_info(target_product.part_number, "")
+                
+                if updated_info and test_marker in (updated_info.description or ""):
+                    return ProductTestResult(
+                        True,
+                        f"Successfully updated product {target_product.part_number} (verified with timestamp {timestamp})",
+                        {
+                            "part_number": target_product.part_number,
+                            "original_info": {
+                                "name": current_info.name,
+                                "description": current_info.description
+                            },
+                            "updates_applied": updates,
+                            "verification": "Update confirmed by re-reading product info"
+                        }
+                    )
+                else:
+                    return ProductTestResult(
+                        False,
+                        f"Update appeared successful but verification failed for {target_product.part_number}"
+                    )
+            else:
+                return ProductTestResult(
+                    False,
+                    f"Update failed for {target_product.part_number} - check permissions or API implementation"
+                )
+                
+        except Exception as e:
+            return ProductTestResult(False, f"Update workflow failed: {str(e)}")
+
     def test_get_bom(self, part_number: str, revision: str = "") -> ProductTestResult:
         """
         Test getting BOM (Bill of Materials) for a product.
@@ -169,7 +255,7 @@ class ProductTestRunner:
                     False, 
                     f"BOM retrieval not yet implemented for {part_number}" + 
                     (f" rev {revision}" if revision else "") +
-                    " - awaiting REST API endpoint"
+                    " - implementation not available"
                 )
                 
         except Exception as e:
@@ -242,12 +328,42 @@ class ProductTestRunner:
             print("❌ Cannot continue without connection")
             return
 
-        # Test 1: Get Product Info
+        # Step 1: Get Real Products from Server
         print("\n" + "=" * 60)
-        print(" TEST 1: Get Product Info")
+        print(" STEP 1: Loading Real Products from Server")
         print("=" * 60)
         
-        test_part_numbers = ["TEST_PART_001", "PCBA_PART_001"]
+        # Get real products to use for all tests
+        real_products = self.product.get_product("", 10, True, True)  # Get up to 10 products
+        if not real_products:
+            print("❌ CRITICAL: No real products found on server - cannot run tests")
+            return
+            
+        # Filter to get valid products (avoid wildcards)
+        valid_products = []
+        for product in real_products:
+            if (product.part_number and 
+                len(product.part_number.strip()) > 1 and 
+                product.part_number.strip() not in ["%", "*", "?"] and
+                not product.part_number.startswith("$")):
+                valid_products.append(product)
+                
+        if not valid_products:
+            print("❌ CRITICAL: No valid products found (all are wildcards) - cannot run tests")
+            return
+            
+        # Use first few products for testing
+        test_products = valid_products[:3]  # Use up to 3 real products
+        test_part_numbers = [p.part_number for p in test_products]
+        
+        print(f"✅ Found {len(real_products)} total products, {len(valid_products)} valid")
+        print(f"📋 Using products for testing: {test_part_numbers}")
+
+        # Test 1: Get Product Info (Using Real Products)
+        print("\n" + "=" * 60)
+        print(" TEST 1: Get Product Info (Real Products)")
+        print("=" * 60)
+        
         for pn in test_part_numbers:
             result = self.test_get_product_info(pn)
             self.test_results.append(result)
@@ -272,39 +388,45 @@ class ProductTestRunner:
             self.test_results.append(result)
             print(f"[2] Products Filter ('{filter_text}'): {result}")
 
-        # Test 3: Update Product (Simulation)
+        # Test 3: Update Product (Real Workflow)
         print("\n" + "=" * 60)
-        print(" TEST 3: Update Product (Simulation)")
+        print(" TEST 3: Update Product (Real Workflow)")
         print("=" * 60)
         
-        updates = {
-            "description": "Updated via automated test",
-            "category": "Test Category",
-            "lastModified": datetime.now().isoformat()
-        }
-        result = self.test_update_product("TEST_PART_001", updates)
+        result = self.test_update_product_workflow()
         self.test_results.append(result)
         print(f"[3] Product Update: {result}")
 
-        # Test 4: Get BOM
+        # Test 4: Get BOM (Using Real Product Revisions)
         print("\n" + "=" * 60)
-        print(" TEST 4: Get BOM")
+        print(" TEST 4: Get BOM (Real Product Revisions)")
         print("=" * 60)
         
-        for pn in test_part_numbers:
-            result = self.test_get_bom(pn)
+        # Test BOM with specific product revision that we know has BOM data
+        print(f"[4.1] Testing BOM retrieval for known product with BOM...")
+        result = self.test_get_bom("100200", "1")  # Use product 100200 revision 1 that we know has BOM
+        self.test_results.append(result)
+        print(f"[4] Get BOM (100200 rev 1): {result}")
+        
+        # Also test BOM for one of our discovered real products
+        if test_part_numbers:
+            first_part = test_part_numbers[0]
+            print(f"[4.2] Testing BOM retrieval for discovered product...")
+            result = self.test_get_bom(first_part, "1")  # Try revision 1
             self.test_results.append(result)
-            print(f"[4] Get BOM ({pn}): {result}")
+            print(f"[4] Get BOM ({first_part} rev 1): {result}")
 
-        # Test 5: Upload BOM
+        # Test 5: Upload BOM (Using Real Product)
         print("\n" + "=" * 60)
-        print(" TEST 5: Upload BOM")
+        print(" TEST 5: Upload BOM (Real Product)")
         print("=" * 60)
         
-        sample_bom = self.create_sample_bom("TEST_BOM_PART_001")
+        # Use first real product for BOM upload test
+        first_real_part = test_part_numbers[0] if test_part_numbers else "100200"
+        sample_bom = self.create_sample_bom(first_real_part)
         result = self.test_upload_bom(sample_bom)
         self.test_results.append(result)
-        print(f"[5] Upload BOM: {result}")
+        print(f"[5] Upload BOM ({first_real_part}): {result}")
         
         if result.success:
             print("    📋 BOM Data Sample:")
