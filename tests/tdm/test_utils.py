@@ -21,7 +21,7 @@ from .test_config import (
 )
 
 
-class TestResult:
+class TestOperationResult:
     """Test result container with status and details."""
     
     def __init__(self, success: bool, message: str, details: Optional[dict] = None):
@@ -35,12 +35,12 @@ class TestResult:
         return f"{status}: {self.message}"
 
 
-def setup_test_client() -> Tuple[Optional[TDMClient], TestResult]:
+def setup_test_client() -> Tuple[Optional[TDMClient], TestOperationResult]:
     """
     Set up a TDM client for testing.
     
     Returns:
-        Tuple of (TDMClient instance, TestResult)
+        Tuple of (TDMClient instance, TestOperationResult)
     """
     try:
         # Create TDM client
@@ -60,15 +60,15 @@ def setup_test_client() -> Tuple[Optional[TDMClient], TestResult]:
         client.initialize_api(try_connect_to_server=True, download_metadata=True)
         
         if client.status != APIStatusType.Online:
-            return client, TestResult(False, f"Client not online. Status: {client.status}")
+            return client, TestOperationResult(False, f"Client not online. Status: {client.status}")
             
-        return client, TestResult(True, "Test client setup successful")
+        return client, TestOperationResult(True, "Test client setup successful")
         
     except Exception as e:
-        return None, TestResult(False, f"Failed to setup test client: {e}")
+        return None, TestOperationResult(False, f"Failed to setup test client: {e}")
 
 
-def wait_and_retry_load(client: TDMClient, report_id: str, max_retries: int = MAX_LOAD_RETRIES) -> Tuple[Optional[dict], TestResult]:
+def wait_and_retry_load(client: TDMClient, report_id: str, max_retries: int = MAX_LOAD_RETRIES) -> Tuple[Optional[dict], TestOperationResult]:
     """
     Load a report with retry logic.
     
@@ -78,7 +78,7 @@ def wait_and_retry_load(client: TDMClient, report_id: str, max_retries: int = MA
         max_retries: Maximum number of retry attempts
         
     Returns:
-        Tuple of (report_data or None, TestResult)
+        Tuple of (report_data or None, TestOperationResult)
     """
     # Initial wait for processing
     time.sleep(REPORT_PROCESSING_WAIT)
@@ -86,7 +86,7 @@ def wait_and_retry_load(client: TDMClient, report_id: str, max_retries: int = MA
     for attempt in range(1, max_retries + 1):
         try:
             if not client._connection or not client._connection._client:
-                return None, TestResult(False, "No connection available")
+                return None, TestOperationResult(False, "No connection available")
                 
             url = f"/api/Report/Wsjf/{report_id}"
             response = client._connection._client.get(url)
@@ -95,7 +95,7 @@ def wait_and_retry_load(client: TDMClient, report_id: str, max_retries: int = MA
                 if response.text.strip():
                     try:
                         report_data = response.json()
-                        return report_data, TestResult(
+                        return report_data, TestOperationResult(
                             True, 
                             f"Successfully loaded report on attempt {attempt}",
                             {"attempt": attempt, "response_size": len(response.content)}
@@ -104,28 +104,28 @@ def wait_and_retry_load(client: TDMClient, report_id: str, max_retries: int = MA
                         if attempt < max_retries:
                             time.sleep(RETRY_DELAY)
                             continue
-                        return None, TestResult(False, f"JSON parse error: {json_error}")
+                        return None, TestOperationResult(False, f"JSON parse error: {json_error}")
                 else:
                     if attempt < max_retries:
                         time.sleep(RETRY_DELAY)  
                         continue
-                    return None, TestResult(False, "Empty response after all retries")
+                    return None, TestOperationResult(False, "Empty response after all retries")
             else:
                 if attempt < max_retries:
                     time.sleep(RETRY_DELAY)
                     continue
-                return None, TestResult(False, f"HTTP {response.status_code}: {response.text[:100]}")
+                return None, TestOperationResult(False, f"HTTP {response.status_code}: {response.text[:100]}")
                 
         except Exception as e:
             if attempt < max_retries:
                 time.sleep(RETRY_DELAY)
                 continue
-            return None, TestResult(False, f"Request failed after {max_retries} attempts: {e}")
+            return None, TestOperationResult(False, f"Request failed after {max_retries} attempts: {e}")
     
-    return None, TestResult(False, f"Failed to load report after {max_retries} attempts")
+    return None, TestOperationResult(False, f"Failed to load report after {max_retries} attempts")
 
 
-def cleanup_test_client(client: Optional[TDMClient]) -> TestResult:
+def cleanup_test_client(client: Optional[TDMClient]) -> TestOperationResult:
     """
     Clean up test client resources.
     
@@ -133,17 +133,17 @@ def cleanup_test_client(client: Optional[TDMClient]) -> TestResult:
         client: TDM client to cleanup
         
     Returns:
-        TestResult indicating cleanup status
+        TestOperationResult indicating cleanup status
     """
     try:
         if client:
             # Perform cleanup
             client.unregister_client()
             
-        return TestResult(True, "Test client cleanup successful")
+        return TestOperationResult(True, "Test client cleanup successful")
         
     except Exception as e:
-        return TestResult(False, f"Cleanup failed: {e}")
+        return TestOperationResult(False, f"Cleanup failed: {e}")
 
 
 def print_test_header(test_name: str):
@@ -153,7 +153,7 @@ def print_test_header(test_name: str):
     print(f"{'='*60}")
 
 
-def print_test_result(result: TestResult):
+def print_test_result(result: TestOperationResult):
     """Print a formatted test result."""
     print(f"{result}")
     if result.details:
