@@ -5,7 +5,7 @@ Handles product information, part numbers, revisions, and product management.
 This module mirrors the Interface.MES Product functionality.
 """
 
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 from io import BytesIO
 
 from .base import MESBase
@@ -83,16 +83,15 @@ class Product(MESBase):
         Raises:
             WATSAPIException: On API errors
         """
-        params = {"partNumber": part_number}
-        if revision:
-            params["revision"] = revision
+        from ..rest_api.endpoints.internal import get_product_info_internal
         
         try:
-            response = self._rest_get_json(
-                "/api/internal/Product/GetProductInfo",
-                response_type=ProductInfo
+            response = get_product_info_internal(
+                part_number=part_number,
+                revision=revision if revision else None,
+                client=self._client
             )
-            return response if isinstance(response, ProductInfo) else ProductInfo.model_validate(response) if response else None
+            return ProductInfo.model_validate(response) if response else None
         except Exception:
             return None
     
@@ -170,14 +169,147 @@ class Product(MESBase):
         Raises:
             WATSAPIException: On API errors
         """
-        params = {
-            "filter": filter_text,
-            "topCount": top_count,
-            "includeNonSerial": include_non_serial,
-            "includeRevision": include_revision
-        }
+        from ..rest_api.endpoints.internal import get_products_internal
         
-        response = self._rest_get_json("/api/internal/Product/GetProduct")
-        products_data = response.get("products", [])
+        try:
+            response = get_products_internal(
+                filter_text=filter_text,
+                top_count=top_count,
+                include_non_serial=include_non_serial,
+                include_revision=include_revision,
+                client=self._client
+            )
+            
+            # The response should be a list of products directly
+            if isinstance(response, list):
+                return [ProductModel.model_validate(item) for item in response]
+            return []
+        except Exception:
+            return []
+    
+    def update_product(self, part_number: str, updates: Dict[str, Any]) -> bool:
+        """
+        Update product information.
         
-        return [ProductModel.model_validate(item) for item in products_data]
+        Args:
+            part_number: Product part number
+            updates: Dictionary of fields to update
+            
+        Returns:
+            True if update was successful, False otherwise
+            
+        Raises:
+            WATSAPIException: On API errors
+        """
+        from ..rest_api.endpoints.product import get_product, create_product
+        from ..rest_api.models.product import Product as ProductRestModel
+        
+        try:
+            # First get the existing product
+            existing_product = get_product(part_number, client=self._client)
+            
+            # Update the fields
+            product_dict = existing_product.dict()
+            product_dict.update(updates)
+            
+            # Create updated product object
+            updated_product = ProductRestModel(**product_dict)
+            
+            # Use create_product which can update existing products
+            create_product(updated_product, client=self._client)
+            
+            return True
+        except Exception:
+            return False
+    
+    def get_bom(self, part_number: str, revision: str = "") -> Optional[Dict[str, Any]]:
+        """
+        Get BOM (Bill of Materials) for a product.
+        
+        Note: This functionality is not yet available in the REST API.
+        A BOM retrieval endpoint would need to be implemented.
+        
+        Args:
+            part_number: Product part number
+            revision: Optional product revision
+            
+        Returns:
+            BOM data or None if not available
+        """
+        # TODO: Implement when BOM retrieval REST API endpoint becomes available
+        return None
+    
+    def upload_bom(self, bom_data: Union[str, Dict[str, Any]]) -> bool:
+        """
+        Upload BOM (Bill of Materials) using WSBF (WATS Standard BOM Format).
+        
+        Args:
+            bom_data: BOM data as XML string or dictionary to convert to XML
+            
+        Returns:
+            True if upload was successful, False otherwise
+            
+        Raises:
+            WATSAPIException: On API errors
+        """
+        from ..rest_api.endpoints.product import upload_bom as rest_upload_bom
+        
+        try:
+            # Convert dictionary to XML if needed
+            if isinstance(bom_data, dict):
+                bom_xml = self._convert_bom_dict_to_xml(bom_data)
+            else:
+                bom_xml = bom_data
+            
+            # Upload BOM using REST API
+            rest_upload_bom(bom_xml, client=self._client)
+            
+            return True
+        except Exception:
+            return False
+    
+    def _convert_bom_dict_to_xml(self, bom_dict: Dict[str, Any]) -> str:
+        """
+        Convert BOM dictionary to WSBF XML format.
+        
+        This is a basic implementation that would need to be expanded
+        based on the actual WSBF specification.
+        
+        Args:
+            bom_dict: BOM data as dictionary
+            
+        Returns:
+            XML string in WSBF format
+        """
+        # Basic XML conversion - this would need to be properly implemented
+        # according to WATS Standard BOM Format (WSBF) specification
+        part_number = bom_dict.get("partNumber", "")
+        revision = bom_dict.get("revision", "")
+        bom_items = bom_dict.get("bomItems", [])
+        
+        xml_lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<BOM>',
+            f'  <PartNumber>{part_number}</PartNumber>',
+            f'  <Revision>{revision}</Revision>',
+            '  <Items>'
+        ]
+        
+        for item in bom_items:
+            xml_lines.extend([
+                '    <Item>',
+                f'      <ItemNumber>{item.get("itemNumber", "")}</ItemNumber>',
+                f'      <PartNumber>{item.get("partNumber", "")}</PartNumber>',
+                f'      <Revision>{item.get("revision", "")}</Revision>',
+                f'      <Quantity>{item.get("quantity", 0)}</Quantity>',
+                f'      <Description>{item.get("description", "")}</Description>',
+                f'      <Reference>{item.get("reference", "")}</Reference>',
+                '    </Item>'
+            ])
+        
+        xml_lines.extend([
+            '  </Items>',
+            '</BOM>'
+        ])
+        
+        return '\n'.join(xml_lines)

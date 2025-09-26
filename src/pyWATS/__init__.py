@@ -54,6 +54,10 @@ from . import mes
 from . import tdm
 from .tdm_client import TDMClient
 
+# Import high-level API and configuration
+from .api import PyWATSAPI, create_api
+from .config import PyWATSConfig
+
 # Import legacy WATS client if available
 try:
     from . import wats_client
@@ -68,7 +72,10 @@ __all__ = [
     "WATSConnection",
     "rest_api",
     "mes",
-    "tdm",
+    "tdm", 
     "TDMClient",
+    "PyWATSAPI",
+    "create_api",
+    "PyWATSConfig",
     "wats_client",  # May be None if not available
 ]

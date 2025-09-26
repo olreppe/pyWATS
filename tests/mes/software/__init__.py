@@ -1,0 +1,1 @@
+"""Software component tests"""

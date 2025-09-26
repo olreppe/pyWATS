@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 # Test configuration
 TEST_BASE_URL = "https://ola.wats.com"

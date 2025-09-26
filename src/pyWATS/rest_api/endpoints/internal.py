@@ -426,3 +426,101 @@ def get_server_time(client: Optional[WATSClient] = None) -> Dict[str, Any]:
         handle_response_error(response)
     
     return response.json()
+
+
+# Product-specific internal endpoints
+
+def is_product_connected(client: Optional[WATSClient] = None) -> bool:
+    """
+    Check if product service is connected.
+    
+    Args:
+        client: Optional WATS client instance
+        
+    Returns:
+        True if connected, False otherwise
+        
+    Raises:
+        WATSAPIException: On API errors
+    """
+    client = client or get_default_client()
+    
+    response = client.get("/api/internal/Product/isConnected")
+    
+    if response.status_code != 200:
+        handle_response_error(response)
+    
+    return response.json()
+
+
+def get_product_info_internal(
+    part_number: str,
+    revision: Optional[str] = None,
+    client: Optional[WATSClient] = None
+) -> Dict[str, Any]:
+    """
+    Get product information (internal endpoint).
+    
+    Args:
+        part_number: Product part number
+        revision: Optional product revision
+        client: Optional WATS client instance
+        
+    Returns:
+        Product information
+        
+    Raises:
+        WATSAPIException: On API errors
+    """
+    client = client or get_default_client()
+    
+    params = {"partNumber": part_number}
+    if revision:
+        params["revision"] = revision
+    
+    response = client.get("/api/internal/Product/GetProductInfo", params=params)
+    
+    if response.status_code != 200:
+        handle_response_error(response)
+    
+    return response.json()
+
+
+def get_products_internal(
+    filter_text: str,
+    include_non_serial: bool = True,
+    include_revision: bool = True,
+    top_count: int = 10,
+    client: Optional[WATSClient] = None
+) -> List[Dict[str, Any]]:
+    """
+    Get products with filter (internal endpoint).
+    
+    Args:
+        filter_text: Filter string for product search
+        include_non_serial: Include non-serialized products
+        include_revision: Include revision information
+        top_count: Maximum number of results
+        client: Optional WATS client instance
+        
+    Returns:
+        List of products matching criteria
+        
+    Raises:
+        WATSAPIException: On API errors
+    """
+    client = client or get_default_client()
+    
+    params = {
+        "filter": filter_text,
+        "includeNonSerial": include_non_serial,
+        "includeRevision": include_revision,
+        "topCount": top_count
+    }
+    
+    response = client.get("/api/internal/Product/GetProducts", params=params)
+    
+    if response.status_code != 200:
+        handle_response_error(response)
+    
+    return response.json()

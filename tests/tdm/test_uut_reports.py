@@ -12,7 +12,7 @@ from uuid import uuid4
 from typing import Optional
 
 # Add src to path for importing pyWATS
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 from pyWATS.rest_api.models.wsjf_reports import UUTReport, MiscInfo
 from pyWATS.rest_api.endpoints.report import submit_wsjf_report
