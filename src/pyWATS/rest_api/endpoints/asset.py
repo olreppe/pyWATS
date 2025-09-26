@@ -84,7 +84,7 @@ def create_asset(
     
     response = client.put(
         "/api/Asset",
-        json=asset.model_dump(exclude_none=True, by_alias=True)
+        json=asset.model_dump(mode='json', exclude_none=True, by_alias=True)
     )
     
     if response.status_code != 200:
@@ -225,7 +225,11 @@ def calibrate_asset(
     if response.status_code != 200:
         handle_response_error(response)
     
-    return response.json()
+    # Handle empty response body (successful operations may return no content)
+    try:
+        return response.json() if response.text.strip() else {"success": True}
+    except ValueError:
+        return {"success": True}  # Empty or non-JSON response assumed successful
 
 
 def update_asset_count(
@@ -365,7 +369,11 @@ def maintenance_asset(
     if response.status_code != 200:
         handle_response_error(response)
     
-    return response.json()
+    # Handle empty response body (successful operations may return no content)
+    try:
+        return response.json() if response.text.strip() else {"success": True}
+    except ValueError:
+        return {"success": True}  # Empty or non-JSON response assumed successful
 
 
 def post_asset_message(
@@ -449,7 +457,11 @@ def reset_asset_running_count(
     if response.status_code != 200:
         handle_response_error(response)
     
-    return response.json()
+    # Handle empty response body (successful operations may return no content)
+    try:
+        return response.json() if response.text.strip() else {"success": True}
+    except ValueError:
+        return {"success": True}  # Empty or non-JSON response assumed successful
 
 
 def set_asset_state(
