@@ -174,7 +174,7 @@ def add_product_group_filter(
     if revision:
         params["revision"] = revision
     if exclude is not None:
-        params["exclude"] = exclude
+        params["exclude"] = str(exclude)
     
     response = client.post("/api/Product/ProductGroupFilter", params=params)
     
@@ -333,7 +333,7 @@ def create_vendors(
     
     vendor_data = [vendor.dict(exclude_none=True, by_alias=True) for vendor in vendors]
     
-    response = client.put("/api/Product/Vendors", json=vendor_data)
+    response = client.put("/api/Product/Vendors", json={"vendors": vendor_data})
     
     if response.status_code != 200:
         handle_response_error(response)
@@ -425,7 +425,7 @@ def create_products_bulk(
     
     product_data = [product.dict(exclude_none=True, by_alias=True) for product in products]
     
-    response = client.put("/api/Products", json=product_data)
+    response = client.put("/api/Products", json={"products": product_data})
     
     if response.status_code != 200:
         handle_response_error(response)
@@ -454,7 +454,7 @@ def create_product_revisions_bulk(
     
     revision_data = [revision.dict(exclude_none=True, by_alias=True) for revision in product_revisions]
     
-    response = client.put("/api/Products/Revisions", json=revision_data)
+    response = client.put("/api/Products/Revisions", json={"productRevisions": revision_data})
     
     if response.status_code != 200:
         handle_response_error(response)
