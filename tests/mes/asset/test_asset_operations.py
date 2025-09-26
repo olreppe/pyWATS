@@ -11,8 +11,30 @@ These tests only use the high-level pyWATS.mes.asset API
 try:
     import pytest
     PYTEST_AVAILABLE = True
+    
+    def skip_test(reason: str):
+        """Skip test with pytest."""
+        pytest.skip(reason)
+    
+    @pytest.fixture
+    def asset_test_runner():
+        """Fixture providing an AssetTestRunner instance."""
+        runner = AssetTestRunner()
+        yield runner
+        runner.cleanup_test_assets()
+        
 except ImportError:
     PYTEST_AVAILABLE = False
+    
+    def skip_test(reason: str):
+        """Skip test without pytest."""
+        import logging
+        logging.getLogger(__name__).warning(f"Skipping test: {reason}")
+        return
+    
+    def asset_test_runner():
+        """Mock fixture for when pytest is not available."""
+        return AssetTestRunner()
 
 from datetime import datetime, timedelta
 import logging
@@ -101,15 +123,6 @@ class AssetTestRunner:
         self.test_assets.clear()
 
 
-if PYTEST_AVAILABLE:
-    @pytest.fixture
-    def asset_test_runner():
-        """Fixture providing an AssetTestRunner instance."""
-        runner = AssetTestRunner()
-        yield runner
-        runner.cleanup_test_assets()
-
-
 class TestAssetConnection:
     """Test asset connection and basic functionality."""
     
@@ -142,11 +155,8 @@ class TestAssetDiscovery:
         asset_test_runner.discover_real_assets(5)
         
         if not asset_test_runner.discovered_assets:
-            if PYTEST_AVAILABLE:
-                pytest.skip("No assets available for filtering test")
-            else:
-                logger.warning("No assets available for filtering test")
-                return
+            skip_test("No assets available for filtering test")
+            return
         
         # Test with top filter
         assets = asset_test_runner.asset_handler.get_assets(top=3)
@@ -160,7 +170,8 @@ class TestAssetDiscovery:
         asset_test_runner.discover_real_assets(5)
         
         if not asset_test_runner.discovered_assets:
-            pytest.skip("No assets available for single asset test")
+            skip_test("No assets available for single asset test")
+            return
         
         test_asset = asset_test_runner.discovered_assets[0]
         
@@ -183,7 +194,8 @@ class TestAssetUpdates:
         
         updatable_asset = asset_test_runner.find_updatable_asset()
         if not updatable_asset:
-            pytest.skip("No suitable assets found for update test")
+            skip_test("No suitable assets found for update test")
+            return
         
         # Get fresh copy of the asset
         current_asset = asset_test_runner.asset_handler.get_asset(updatable_asset.serial_number)
@@ -226,7 +238,8 @@ class TestAssetMaintenance:
         asset_test_runner.discover_real_assets(5)
         
         if not asset_test_runner.discovered_assets:
-            pytest.skip("No assets available for calibration test")
+            skip_test("No assets available for calibration test")
+            return
         
         test_asset = asset_test_runner.discovered_assets[0]
         
@@ -245,7 +258,8 @@ class TestAssetMaintenance:
         asset_test_runner.discover_real_assets(5)
         
         if not asset_test_runner.discovered_assets:
-            pytest.skip("No assets available for maintenance test")
+            skip_test("No assets available for maintenance test")
+            return
         
         test_asset = asset_test_runner.discovered_assets[0]
         
@@ -268,7 +282,8 @@ class TestAssetCounting:
         asset_test_runner.discover_real_assets(5)
         
         if not asset_test_runner.discovered_assets:
-            pytest.skip("No assets available for count test")
+            skip_test("No assets available for count test")
+            return
         
         test_asset = asset_test_runner.discovered_assets[0]
         
@@ -297,7 +312,8 @@ class TestAssetCounting:
         asset_test_runner.discover_real_assets(5)
         
         if not asset_test_runner.discovered_assets:
-            pytest.skip("No assets available for reset count test")
+            skip_test("No assets available for reset count test")
+            return
         
         test_asset = asset_test_runner.discovered_assets[0]
         
@@ -320,7 +336,8 @@ class TestAssetRelationships:
         asset_test_runner.discover_real_assets(10)
         
         if not asset_test_runner.discovered_assets:
-            pytest.skip("No assets available for sub-asset test")
+            skip_test("No assets available for sub-asset test")
+            return
         
         # Look for assets that might have children
         for asset in asset_test_runner.discovered_assets:
