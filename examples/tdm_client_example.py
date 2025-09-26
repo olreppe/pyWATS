@@ -33,8 +33,8 @@ def main():
         # In real usage, you'd use actual server credentials
         print("Registering client with WATS server...")
         tdm.register_client(
-            base_url="https://your-wats-server.com",
-            token="your_base64_encoded_token"
+            base_url="https://ola.wats.com",
+            token="cHlXQVRTOmdtQTVtTHo5N28yYWYwRm85MiY4cDhEUzdBcERRYQ=="
         )
         
         # Initialize API and connect to server
@@ -62,12 +62,14 @@ def main():
             
             # Create a UUT report (equivalent to C# CreateUUTReport)
             print("\nCreating UUT report...")
+            # Use the first available operation type instead of hardcoded "TEST_OP"
+            operation_type = operation_types[0] if operation_types else {"code": "DEFAULT_OP", "name": "Default Operation"}
             uut_report = tdm.create_uut_report(
                 operator_name="TestOperator",
                 part_number="PART001",
                 revision="Rev1",
                 serial_number="SN12345",
-                operation_type="TEST_OP",  # Use operation type code/name
+                operation_type=operation_type['code'],  # Use actual operation type code
                 sequence_file_name="test_sequence.py",
                 sequence_file_version="1.0.0"
             )

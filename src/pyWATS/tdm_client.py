@@ -367,12 +367,30 @@ class TDMClient:
                 raise Exception("No connection available")
                 
             # Download operation types and processes via REST API
-            # This is a placeholder - actual implementation would depend on available endpoints
-            response = self._connection.client.get("/api/internal/Client/Processes")
+            # Try the public REST API first, then fall back to internal API
+            response = self._connection.client.get("/api/App/Processes", params={
+                "includeTestOperations": True,
+                "includeRepairOperations": True,
+                "includeWipOperations": False,
+                "includeInactiveProcesses": False
+            })
+            
             if response.status_code == 200:
-                self._processes = response.json()
+                processes_data = response.json()
+                # Wrap in the expected format
+                self._processes = {
+                    "processes": processes_data if isinstance(processes_data, list) else [processes_data]
+                }
             else:
-                raise Exception(f"Failed to get processes: {response.status_code}")
+                # Try the internal API as fallback
+                response = self._connection.client.get("/api/internal/process/GetProcesses")
+                if response.status_code == 200:
+                    processes_data = response.json()
+                    self._processes = {
+                        "processes": processes_data if isinstance(processes_data, list) else processes_data.get("processes", [])
+                    }
+                else:
+                    raise Exception(f"Failed to get processes from both endpoints: {response.status_code}")
             
             # Cache the data locally
             self._cache_metadata()
@@ -417,12 +435,16 @@ class TDMClient:
         operation_types = []
         if 'processes' in self._processes:
             for process in self._processes['processes']:
-                if process.get('IsTestOperation', False):
+                # Check both possible field names for compatibility
+                is_test_op = process.get('isTestOperation', process.get('IsTestOperation', False))
+                if is_test_op:
                     operation_types.append({
-                        'id': process.get('ProcessID'),
-                        'code': process.get('Code'),
-                        'name': process.get('Name'),
-                        'description': process.get('Description', '')
+                        'id': process.get('processId') or process.get('ProcessID'),
+                        'code': process.get('code') or process.get('Code'),
+                        'name': process.get('name') or process.get('Name'),
+                        'description': process.get('description') or process.get('Description', ''),
+                        'processIndex': process.get('processIndex'),
+                        'state': process.get('state')
                     })
         
         return operation_types
@@ -485,13 +507,17 @@ class TDMClient:
         repair_types = []
         if 'processes' in self._processes:
             for process in self._processes['processes']:
-                if process.get('IsRepairOperation', False):
+                # Check both possible field names for compatibility
+                is_repair_op = process.get('isRepairOperation', process.get('IsRepairOperation', False))
+                if is_repair_op:
                     repair_types.append({
-                        'id': process.get('ProcessID'),
-                        'code': process.get('Code'),
-                        'name': process.get('Name'),
-                        'description': process.get('Description', ''),
-                        'uut_required': process.get('UUTRequired', False)
+                        'id': process.get('processId') or process.get('ProcessID'),
+                        'code': process.get('code') or process.get('Code'),
+                        'name': process.get('name') or process.get('Name'),
+                        'description': process.get('description') or process.get('Description', ''),
+                        'uut_required': process.get('uutRequired') or process.get('UUTRequired', False),
+                        'processIndex': process.get('processIndex'),
+                        'state': process.get('state')
                     })
         
         return repair_types

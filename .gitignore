@@ -534,3 +534,11 @@ FodyWeavers.xsd
 .env.development
 .env.test
 .env.production
+
+# WATS data directories (test data, should not be committed)
+wats_data/
+temp_wats/
+wats_tdm_data/
+*/wats_data/
+*/temp_wats/
+*/wats_tdm_data/
