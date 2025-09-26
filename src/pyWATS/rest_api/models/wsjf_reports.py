@@ -28,17 +28,23 @@ class Failure(BaseModel):
 
 
 class SubUnit(BaseModel):
-    """A sub unit. The unit with index 0 is the main unit."""
+    """A sub unit. Used in UUT reports where idx is optional."""
     pn: str = Field(..., max_length=100, min_length=1, description="Part number of the sub unit")
     sn: str = Field(..., max_length=100, min_length=1, description="Serial number of the sub unit") 
     rev: Optional[str] = Field(default=None, max_length=100, min_length=0, description="Revision of the sub unit")
     part_type: Optional[str] = Field(default="Unknown", max_length=50, min_length=1, alias="partType", description="Type of sub unit")
-    idx: int = Field(..., description="Index of the sub unit. Main unit must have index 0.")
+    idx: Optional[int] = Field(default=None, description="Index of the sub unit (optional for UUT reports)")
     parent_idx: Optional[int] = Field(default=None, alias="parentIdx", description="Index of the parent sub unit")
 
 
-class SubRepair(SubUnit):
-    """A sub repair unit that extends SubUnit with UUR-specific fields like failures."""
+class SubRepair(BaseModel):
+    """A sub repair unit for UUR reports with required idx and failure tracking."""
+    pn: str = Field(..., max_length=100, min_length=1, description="Part number of the sub unit")
+    sn: str = Field(..., max_length=100, min_length=1, description="Serial number of the sub unit") 
+    rev: Optional[str] = Field(default=None, max_length=100, min_length=0, description="Revision of the sub unit")
+    part_type: Optional[str] = Field(default="Unknown", max_length=50, min_length=1, alias="partType", description="Type of sub unit")
+    idx: int = Field(..., description="Index of the sub unit. Required for UUR reports.")
+    parent_idx: Optional[int] = Field(default=None, alias="parentIdx", description="Index of the parent sub unit")
     position: Optional[int] = Field(default=None, description="Position of the unit")
     replaced_idx: Optional[int] = Field(default=None, alias="replacedIdx", description="Index of the sub unit that replaced this unit")
     failures: Optional[List[Failure]] = Field(default_factory=list, description="List of failures on this sub unit")
