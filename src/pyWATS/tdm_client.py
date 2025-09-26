@@ -15,6 +15,7 @@ from enum import Enum
 
 from .connection import WATSConnection as Connection
 from .tdm import Statistics, Analytics, Reports
+from .rest_api.endpoints.report import submit_wsjf_report
 
 
 class APIStatusType(Enum):
@@ -697,17 +698,118 @@ class TDMClient:
             return False
 
     def _submit_report_online(self, report: Dict[str, Any]) -> bool:
-        """Submit report directly to server."""
+        """Submit report directly to server using REST API."""
         try:
             if not self._connection:
                 raise Exception("No connection available")
                 
-            # Convert report to server format and submit via REST API
-            response = self._connection.client.post("/api/Report", json=report)
-            return response.status_code == 200
+            # Serialize report with proper datetime handling
+            serialized_report = json.loads(json.dumps(report, default=str))
+            
+            # Debug: Log the JSON being sent
+            if self._log_exceptions:
+                print(f"Submitting WSJF report to /api/Report/WSJF:")
+                print(f"Report JSON: {json.dumps(serialized_report, indent=2)}")
+            
+            # Use the REST API function to submit report
+            result = submit_wsjf_report(serialized_report, client=self._connection.client)
+            
+            # Log the result
+            if self._log_exceptions:
+                print(f"Submission result: {result}")
+                
+            # Check if submission was successful
+            if result and hasattr(result, 'report_id'):
+                if self._log_exceptions:
+                    print(f"✅ Report successfully submitted with ID: {result.report_id}")
+                return True
+            else:
+                if self._log_exceptions:
+                    print("❌ Report submission failed - no report ID returned")
+                return False
+                
         except Exception as e:
             self._last_service_exception = e
-            raise
+            
+            # Enhanced error logging with REST API response details
+            error_details = self._extract_api_error_details(e)
+            
+            if self._log_exceptions:
+                print(f"❌ Report submission failed:")
+                print(f"   Error Type: {type(e).__name__}")
+                print(f"   Error Message: {str(e)}")
+                if error_details:
+                    print(f"   HTTP Status: {error_details.get('status_code', 'Unknown')}")
+                    print(f"   Response Body: {error_details.get('response_body', 'No response body')}")
+                    if error_details.get('validation_errors'):
+                        print(f"   Validation Errors:")
+                        for error in error_details['validation_errors']:
+                            print(f"     - {error}")
+            
+            # Don't re-raise in this context, return False to indicate failure
+            return False
+
+    def _extract_api_error_details(self, exception: Exception) -> Dict[str, Any]:
+        """Extract detailed error information from REST API exceptions."""
+        error_details = {}
+        
+        # Check if it's an HTTP error with response details
+        if hasattr(exception, 'response'):
+            response = exception.response
+            error_details['status_code'] = getattr(response, 'status_code', None)
+            
+            # Try to get response body
+            try:
+                if hasattr(response, 'text'):
+                    response_text = response.text
+                elif hasattr(response, 'content'):
+                    response_text = response.content.decode('utf-8') if response.content else ''
+                else:
+                    response_text = str(response)
+                    
+                error_details['response_body'] = response_text
+                
+                # Try to parse as JSON to get structured validation errors
+                try:
+                    response_json = json.loads(response_text)
+                    error_details['response_json'] = response_json
+                    
+                    # Extract common validation error patterns
+                    validation_errors = []
+                    if isinstance(response_json, dict):
+                        # Common patterns for validation errors
+                        if 'errors' in response_json:
+                            if isinstance(response_json['errors'], list):
+                                validation_errors.extend(response_json['errors'])
+                            elif isinstance(response_json['errors'], dict):
+                                for field, msgs in response_json['errors'].items():
+                                    if isinstance(msgs, list):
+                                        for msg in msgs:
+                                            validation_errors.append(f"{field}: {msg}")
+                                    else:
+                                        validation_errors.append(f"{field}: {msgs}")
+                        
+                        if 'message' in response_json:
+                            validation_errors.append(response_json['message'])
+                            
+                        if 'detail' in response_json:
+                            validation_errors.append(response_json['detail'])
+                    
+                    if validation_errors:
+                        error_details['validation_errors'] = validation_errors
+                        
+                except json.JSONDecodeError:
+                    # Response is not JSON, keep as text
+                    pass
+                    
+            except Exception:
+                error_details['response_body'] = 'Failed to read response body'
+        
+        # Check for other common error attributes
+        if hasattr(exception, 'status_code'):
+            error_details['status_code'] = exception.status_code
+            
+        return error_details
 
     def _save_report_offline(self, report: Dict[str, Any]) -> bool:
         """Save report to offline queue."""
