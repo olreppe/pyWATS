@@ -11,6 +11,46 @@ from enum import Enum
 from uuid import uuid4, UUID
 from pydantic import BaseModel, Field, model_validator
 
+
+class Failure(BaseModel):
+    """A failure on a unit."""
+    category: str = Field(..., min_length=1, description="The failure category")
+    code: str = Field(..., min_length=1, description="The failure category code")
+    comment: Optional[str] = Field(default=None, description="A comment about the failure")
+    com_ref: Optional[str] = Field(default=None, max_length=50, min_length=1, alias="comRef", description="Component reference")
+    art_number: Optional[str] = Field(default=None, max_length=100, alias="artNumber", description="Article number of failed component")
+    art_rev: Optional[str] = Field(default=None, max_length=100, alias="artRev", description="Article revision of failed component")
+    art_vendor: Optional[str] = Field(default=None, max_length=100, alias="artVendor", description="Article vendor of failed component")
+    art_description: Optional[str] = Field(default=None, max_length=100, alias="artDescription", description="Article description of failed component")
+    func_block: Optional[str] = Field(default=None, max_length=100, min_length=1, alias="funcBlock", description="Component group")
+    ref_step_id: Optional[int] = Field(default=None, alias="refStepId", description="Reference to UUT step that found failure")
+    ref_step_name: Optional[str] = Field(default=None, alias="refStepName", description="Name of UUT step that found failure")
+
+
+class SubUnit(BaseModel):
+    """A sub unit. The unit with index 0 is the main unit."""
+    pn: str = Field(..., max_length=100, min_length=1, description="Part number of the sub unit")
+    sn: str = Field(..., max_length=100, min_length=1, description="Serial number of the sub unit") 
+    rev: Optional[str] = Field(default=None, max_length=100, min_length=0, description="Revision of the sub unit")
+    part_type: Optional[str] = Field(default="Unknown", max_length=50, min_length=1, alias="partType", description="Type of sub unit")
+    idx: int = Field(..., description="Index of the sub unit. Main unit must have index 0.")
+    parent_idx: Optional[int] = Field(default=None, alias="parentIdx", description="Index of the parent sub unit")
+
+
+class SubRepair(SubUnit):
+    """A sub repair unit that extends SubUnit with UUR-specific fields like failures."""
+    position: Optional[int] = Field(default=None, description="Position of the unit")
+    replaced_idx: Optional[int] = Field(default=None, alias="replacedIdx", description="Index of the sub unit that replaced this unit")
+    failures: Optional[List[Failure]] = Field(default_factory=list, description="List of failures on this sub unit")
+
+    def add_failure(self, category: str, code: str, comment: Optional[str] = None, com_ref: Optional[str] = None) -> Failure:
+        """Add a failure to this sub repair unit."""
+        failure = Failure(category=category, code=code, comment=comment, comRef=com_ref)
+        if self.failures is None:
+            self.failures = []
+        self.failures.append(failure)
+        return failure
+
 from .wsjf_constants import def_MissingString
 
 
@@ -232,6 +272,31 @@ class WSJFReport(BaseModel):
         mi = MiscInfo(description=description, text=str_val)
         self.misc_infos.append(mi)
         return mi
+        
+    # SubUnits
+    sub_units: List[Union[SubUnit, SubRepair]] = Field(
+        default_factory=list,
+        alias="subUnits", 
+        description="Sub units of the report"
+    )
+
+    def add_sub_unit(self, part_type: str, sn: str, pn: str, rev: str, idx: Optional[int] = None, parent_idx: Optional[int] = None) -> SubUnit:
+        """Add a sub unit to the report."""
+        if idx is None:
+            # Auto-assign index based on existing sub units
+            idx = len(self.sub_units)
+        su = SubUnit(partType=part_type, sn=sn, pn=pn, rev=rev, idx=idx, parentIdx=parent_idx)
+        self.sub_units.append(su)
+        return su
+
+    def add_sub_repair(self, part_type: str, sn: str, pn: str, rev: str, idx: Optional[int] = None, parent_idx: Optional[int] = None) -> SubRepair:
+        """Add a sub repair unit to the report (for UUR reports)."""
+        if idx is None:
+            # Auto-assign index based on existing sub units
+            idx = len(self.sub_units)
+        sr = SubRepair(partType=part_type, sn=sn, pn=pn, rev=rev, idx=idx, parentIdx=parent_idx)
+        self.sub_units.append(sr)
+        return sr
 
     # Model validator to inject defaults for missing requirements when deserializing
     @model_validator(mode="before")
@@ -253,14 +318,21 @@ class UUTReport(WSJFReport):
     """
     # Required root sequence call for UUT reports
     root: SequenceCall = Field(default_factory=SequenceCall, description="Root sequence call")
+    
+    # UUT-specific info field with uut alias (overrides base info field)
+    uut_info: Optional[UUTInfo] = Field(default=None, alias="uut", description="UUT-specific information")
 
     def __init__(self, **data):
         # Ensure type is always 'T' for UUT reports
         data['type'] = 'T'
-        # Create default UUT info if not provided
-        if 'info' not in data and 'uut' not in data:
-            data['uut'] = UUTInfo()
         super().__init__(**data)
+        
+    def model_dump(self, **kwargs):
+        """Custom serialization to exclude base info field and use uut_info with uut alias."""
+        data = super().model_dump(**kwargs)
+        # Remove the base info field to avoid conflicts
+        data.pop('info', None)
+        return data
 
 
 class UURReport(WSJFReport):
@@ -272,22 +344,18 @@ class UURReport(WSJFReport):
         default=None,
         description="Reference to the original UUT report being repaired"
     )
+    
+    # UUR-specific info field with uur alias (overrides base info field)
+    uur_info: Optional[UURInfo] = Field(default=None, alias="uur", description="UUR-specific information")
 
     def __init__(self, **data):
         # Ensure type is always 'R' for UUR reports
         data['type'] = 'R'
-        
-        # Get process code from the report level
-        process_code = data.get('process_code', 0)
-        uut_ref = data.get('uut_report_id')
-        
-        # Create default UUR info with required fields if not provided
-        if 'info' not in data and 'uur' not in data:
-            data['uur'] = UURInfo(
-                processCode=process_code,
-                refUUT=str(uut_ref) if uut_ref else None,
-                confirmDate=datetime.now().isoformat() + "Z",
-                finalizeDate=datetime.now().isoformat() + "Z"
-            )
-        
         super().__init__(**data)
+        
+    def model_dump(self, **kwargs):
+        """Custom serialization to exclude base info field and use uur_info with uur alias."""
+        data = super().model_dump(**kwargs)
+        # Remove the base info field to avoid conflicts
+        data.pop('info', None)
+        return data

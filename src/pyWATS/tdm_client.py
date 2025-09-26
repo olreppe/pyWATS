@@ -16,8 +16,8 @@ from enum import Enum
 from .connection import WATSConnection as Connection
 from .tdm import Statistics, Analytics, Reports
 from .rest_api.endpoints.report import submit_wsjf_report
-from .rest_api.models import UUTReport, UURReport, ReportInfo
-from .rest_api.models.wsjf_reports import UURInfo
+from .rest_api.models import ReportInfo
+from .rest_api.models.wsjf_reports import UUTReport, UURReport, UURInfo, SubRepair
 
 
 class APIStatusType(Enum):
@@ -587,9 +587,11 @@ class TDMClient:
             machineName=self.station_name,
             location=self.location,
             purpose=self.purpose,
-            start=datetime.now(timezone.utc),
-            uut=uut_info  # Pass the uut info directly with the alias
+            start=datetime.now(timezone.utc)
         )
+        
+        # Set the UUT info after creation (this ensures proper alias handling)
+        report.uut_info = uut_info
         
         # Add miscellaneous information for sequence details
         if sequence_file_name:
@@ -695,9 +697,54 @@ class TDMClient:
             location=self.location,
             purpose=self.purpose,
             start=datetime.now(timezone.utc),
-            uut_report_id=uut_id,
-            uur=uur_info  # Pass the uur info directly
+            uut_report_id=uut_id
         )
+        
+        # Set the UUR info after creation (this ensures proper alias handling)
+        report.uur_info = uur_info
+        
+        # Copy sub units from UUT report if available and has sub units
+        sub_units_copied = False
+        if uut_report and isinstance(uut_report, UUTReport) and uut_report.sub_units:
+            # Copy sub units from UUT report and convert to SubRepair units
+            for sub_unit in uut_report.sub_units:
+                # Create SubRepair from existing SubUnit
+                sub_repair = report.add_sub_repair(
+                    part_type=sub_unit.part_type or "Main Unit",
+                    sn=sub_unit.sn,
+                    pn=sub_unit.pn,
+                    rev=sub_unit.rev or "",
+                    idx=sub_unit.idx,
+                    parent_idx=sub_unit.parent_idx
+                )
+                
+                # Add failure to the main sub repair unit (idx 0)
+                if sub_unit.idx == 0:
+                    sub_repair.add_failure(
+                        category="Component Failure",
+                        code="COMP_FAIL_001",
+                        comment="Component replacement required during repair",
+                        com_ref="C15"  # Example component reference
+                    )
+            sub_units_copied = True
+        
+        # Create main sub repair unit if no UUT sub units were copied
+        if not sub_units_copied:
+            sub_repair = report.add_sub_repair(
+                part_type="Main Unit",
+                sn=part_sn or "",
+                pn=part_pn or "",
+                rev=part_rev or "",
+                idx=0  # Main unit must have index 0
+            )
+            
+            # Add at least one failure (required for UUR reports)
+            sub_repair.add_failure(
+                category="Component Failure",
+                code="COMP_FAIL_001",
+                comment="Component replacement required during repair",
+                com_ref="C15"  # Example component reference
+            )
         
         # Add repair type information as misc info
         if repair_type_dict and isinstance(repair_type_dict, dict):
@@ -765,9 +812,19 @@ class TDMClient:
             if self._log_exceptions:
                 print(f"Submitting WSJF report to /api/Report/WSJF:")
                 print(f"Report JSON: {json.dumps(report_dict, indent=2, default=str)}")
-            
-            # BREAKPOINT: Inspect the data before HTTP request
-            import pdb; pdb.set_trace()  # Breakpoint to inspect report_dict and report object
+                
+                # Debug: Inspect the original report object and converted dictionary
+                print(f"\n=== DEBUG INFO ===")
+                print(f"Report type: {type(report)}")
+                if isinstance(report, (UUTReport, UURReport)):
+                    print(f"Report model fields: {list(report.__dict__.keys())}")
+                    print(f"Report.info: {getattr(report, 'info', 'NOT FOUND')}")
+                    print(f"Report model dump keys: {list(report_dict.keys())}")
+                    if isinstance(report, UUTReport):
+                        print(f"Looking for 'uut' field in serialized data: {'uut' in report_dict}")
+                    elif isinstance(report, UURReport):
+                        print(f"Looking for 'uur' field in serialized data: {'uur' in report_dict}")
+                print("=================\n")
             
             # Use the REST API function to submit report
             result = submit_wsjf_report(report_dict, client=self._connection.client)
@@ -811,9 +868,9 @@ class TDMClient:
         """Extract detailed error information from REST API exceptions."""
         error_details = {}
         
-        # Check if it's an HTTP error with response details
-        if hasattr(exception, 'response'):
-            response = exception.response
+        # Check if the exception has a 'response' attribute before accessing it
+        response = getattr(exception, 'response', None)
+        if response is not None:
             error_details['status_code'] = getattr(response, 'status_code', None)
             
             # Try to get response body
@@ -864,8 +921,9 @@ class TDMClient:
                 error_details['response_body'] = 'Failed to read response body'
         
         # Check for other common error attributes
-        if hasattr(exception, 'status_code'):
-            error_details['status_code'] = exception.status_code
+        status_code = getattr(exception, 'status_code', None)
+        if status_code is not None:
+            error_details['status_code'] = status_code
             
         return error_details
 

@@ -229,6 +229,25 @@ def submit_wsjf_report(
         handle_response_error(response)
     
     data = response.json()
+    
+    # Handle case where server returns a list instead of dict
+    if isinstance(data, list):
+        if len(data) > 0:
+            # Take the first item if it's a list
+            result_data = data[0]
+            # Map server response fields to our model fields
+            mapped_data = {
+                'success': True,  # If we got a response, assume success
+                'reportId': result_data.get('ID') or result_data.get('uuid'),
+                'message': 'Report submitted successfully',
+                'errors': []
+            }
+            return InsertReportResult(**mapped_data)
+        else:
+            # Return empty result if list is empty
+            return InsertReportResult(success=False, message="Empty response from server", reportId=None)
+    
+    # Handle normal dict response (fallback)
     return InsertReportResult(**data)
 
 

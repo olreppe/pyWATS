@@ -349,6 +349,7 @@ def create_sample_uur_report(tdm: TDMClient, repair_types: List[Dict], uut_repor
     uur_report = tdm.create_uur_report(
         operator_name="Repair_Technician",
         repair_type=repair_type,
+        uut_report=uut_report,  # Pass the UUT report to link them
         part_number=part_number,
         revision=revision,
         serial_number=serial_number
