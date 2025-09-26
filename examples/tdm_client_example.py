@@ -74,7 +74,7 @@ def main():
                 sequence_file_version="1.0.0"
             )
             
-            print(f"Created UUT report with ID: {uut_report['report_id']}")
+            print(f"Created UUT report with ID: {uut_report.id}")
             
             # Submit report (equivalent to C# Submit)
             print("Submitting UUT report...")
@@ -93,7 +93,7 @@ def main():
                     uut_report=uut_report  # Associated with the UUT report
                 )
                 
-                print(f"Created UUR report with ID: {uur_report['report_id']}")
+                print(f"Created UUR report with ID: {uur_report.id}")
                 
                 # Submit repair report
                 success = tdm.submit_report(uur_report, SubmitMethod.Automatic)

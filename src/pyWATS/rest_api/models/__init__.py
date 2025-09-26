@@ -24,6 +24,9 @@ from .production import (
 # Report models
 from .report import ReportHeader, InsertReportResult, UUTResult
 
+# WSJF Report models
+from .wsjf_reports import WSJFReport, UUTReport, UURReport, ReportInfo, MiscInfo, ReportStatus
+
 __all__ = [
     # Common
     "PublicWatsFilter", "CommonUserSettings", "DateGrouping",
@@ -40,4 +43,7 @@ __all__ = [
     
     # Report
     "ReportHeader", "InsertReportResult", "UUTResult",
+    
+    # WSJF Reports
+    "WSJFReport", "UUTReport", "UURReport", "ReportInfo", "MiscInfo", "ReportStatus",
 ]

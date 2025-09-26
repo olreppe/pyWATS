@@ -16,6 +16,8 @@ from enum import Enum
 from .connection import WATSConnection as Connection
 from .tdm import Statistics, Analytics, Reports
 from .rest_api.endpoints.report import submit_wsjf_report
+from .rest_api.models import UUTReport, UURReport, ReportInfo
+from .rest_api.models.wsjf_reports import UURInfo
 
 
 class APIStatusType(Enum):
@@ -532,7 +534,7 @@ class TDMClient:
         operation_type: Union[str, int, Dict[str, Any]],
         sequence_file_name: str,
         sequence_file_version: str
-    ) -> Dict[str, Any]:
+    ) -> UUTReport:
         """
         Create a UUT (Unit Under Test) report.
         
@@ -546,48 +548,66 @@ class TDMClient:
             sequence_file_version: Version of sequence file (test program)
             
         Returns:
-            UUT report dictionary
+            UUTReport instance
         """
-        # Resolve operation type
+        # Resolve operation type and extract process code
         if isinstance(operation_type, (str, int)):
             op_type = self.get_operation_type_by_code(operation_type)
+            process_code = op_type.get('code', 0) if isinstance(op_type, dict) else 0
         elif isinstance(operation_type, dict):
             op_type = operation_type
+            # Extract process code, handling both integer and string codes
+            code_value = op_type.get('code', 0)
+            if isinstance(code_value, str):
+                # Try to convert string to int, fallback to 0
+                try:
+                    process_code = int(code_value)
+                except (ValueError, TypeError):
+                    process_code = 0
+            else:
+                process_code = int(code_value) if code_value is not None else 0
         else:
             raise ValueError("Invalid operation_type parameter")
             
-        # Create report structure
-        report = {
-            'report_id': str(uuid.uuid4()),
-            'report_type': 'UUT',
-            'operator_name': operator_name or "",
-            'part_number': part_number or "",
-            'revision': revision or "",
-            'serial_number': serial_number or "",
-            'operation_type': op_type,
-            'sequence_file_name': sequence_file_name or "",
-            'sequence_file_version': sequence_file_version or "",
-            'station_name': self.station_name,
-            'location': self.location,
-            'purpose': self.purpose,
-            'start_time': datetime.now(timezone.utc),
-            'end_time': None,
-            'result': None,
-            'steps': [],
-            'measurements': []
-        }
+        # Create UUT info  
+        from .rest_api.models.wsjf_reports import UUTInfo
+        uut_info = UUTInfo(
+            user=operator_name or "Operator",
+            execTime=0.0,
+            fixtureId=""
+        )
         
+        # Create UUT report using WSJF model
+        report = UUTReport(
+            pn=part_number or "",
+            sn=serial_number or "",
+            rev=revision or "",
+            process_code=process_code,
+            result="P",  # Default to Passed, will be updated when completed
+            machineName=self.station_name,
+            location=self.location,
+            purpose=self.purpose,
+            start=datetime.now(timezone.utc),
+            uut=uut_info  # Pass the uut info directly with the alias
+        )
+        
+        # Add miscellaneous information for sequence details
+        if sequence_file_name:
+            report.add_misc_info("SequenceFileName", sequence_file_name)
+        if sequence_file_version:
+            report.add_misc_info("SequenceVersion", sequence_file_version)
+            
         return report
 
     def create_uur_report(
         self,
         operator_name: str,
         repair_type: Union[str, Dict[str, Any]],
-        uut_report: Optional[Dict[str, Any]] = None,
+        uut_report: Optional[Union[Dict[str, Any], UUTReport]] = None,
         serial_number: Optional[str] = None,
         part_number: Optional[str] = None,
         revision: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> UURReport:
         """
         Create a UUR (Unit Under Repair) report.
         
@@ -600,7 +620,7 @@ class TDMClient:
             revision: Revision (required if no UUT report)
             
         Returns:
-            UUR report dictionary
+            UURReport instance
         """
         # Resolve repair type
         if isinstance(repair_type, str):
@@ -621,51 +641,80 @@ class TDMClient:
             
         # Get part info from UUT report or parameters
         if uut_report:
-            part_info = {
-                'serial_number': uut_report.get('serial_number', ''),
-                'part_number': uut_report.get('part_number', ''),
-                'revision': uut_report.get('revision', '')
-            }
-            uut_id = uut_report.get('report_id')
+            if isinstance(uut_report, UUTReport):
+                # Extract info from UUTReport instance
+                part_sn = uut_report.sn
+                part_pn = uut_report.pn
+                part_rev = uut_report.rev
+                uut_id = uut_report.id
+            else:
+                # Extract info from dictionary (legacy support)
+                part_sn = uut_report.get('serial_number', '')
+                part_pn = uut_report.get('part_number', '')
+                part_rev = uut_report.get('revision', '')
+                uut_id = uut_report.get('report_id')
         else:
             if not all([serial_number, part_number, revision]):
                 raise ValueError("Serial number, part number, and revision are required when no UUT report is provided")
-            part_info = {
-                'serial_number': serial_number,
-                'part_number': part_number,
-                'revision': revision
-            }
+            part_sn = serial_number
+            part_pn = part_number
+            part_rev = revision
             uut_id = None
             
-        # Create report structure
-        report = {
-            'report_id': str(uuid.uuid4()),
-            'report_type': 'UUR',
-            'operator_name': operator_name or "",
-            'repair_type': repair_type_dict,
-            'uut_report_id': uut_id,
-            'station_name': self.station_name,
-            'location': self.location,
-            'purpose': self.purpose,
-            'start_time': datetime.now(timezone.utc),
-            'end_time': None,
-            'result': None,
-            'repairs': [],
-            'part_info': part_info
-        }
+        # Extract process code from repair type, handling both integer and string codes
+        if isinstance(repair_type_dict, dict):
+            code_value = repair_type_dict.get('code', 0)
+            if isinstance(code_value, str):
+                try:
+                    process_code = int(code_value)
+                except (ValueError, TypeError):
+                    process_code = 0
+            else:
+                process_code = int(code_value) if code_value is not None else 0
+        else:
+            process_code = 0
+            
+        # Create UUR info with all required fields
+        uur_info = UURInfo(
+            user=operator_name or "Operator",
+            processCode=process_code,
+            refUUT=str(uut_id) if uut_id else None,
+            confirmDate=datetime.now(timezone.utc).isoformat() + "Z",
+            finalizeDate=datetime.now(timezone.utc).isoformat() + "Z",
+            execTime=0.0
+        )
         
+        # Create UUR report using WSJF model
+        report = UURReport(
+            pn=part_pn or "",
+            sn=part_sn or "",
+            rev=part_rev or "",
+            process_code=process_code,
+            result="P",  # Default to Passed, will be updated when completed
+            machineName=self.station_name,
+            location=self.location,
+            purpose=self.purpose,
+            start=datetime.now(timezone.utc),
+            uut_report_id=uut_id,
+            uur=uur_info  # Pass the uur info directly
+        )
+        
+        # Add repair type information as misc info
+        if repair_type_dict and isinstance(repair_type_dict, dict):
+            report.add_misc_info("RepairType", repair_type_dict.get('name', ''))
+            
         return report
 
     def submit_report(
         self,
-        report: Dict[str, Any],
+        report: Union[Dict[str, Any], UUTReport, UURReport],
         method: SubmitMethod = SubmitMethod.Automatic
     ) -> bool:
         """
         Submit a report to the server.
         
         Args:
-            report: Report dictionary to submit
+            report: Report to submit (dictionary or WSJF model instance)
             method: Submission method
             
         Returns:
@@ -697,22 +746,31 @@ class TDMClient:
                 raise
             return False
 
-    def _submit_report_online(self, report: Dict[str, Any]) -> bool:
+    def _submit_report_online(self, report: Union[Dict[str, Any], UUTReport, UURReport]) -> bool:
         """Submit report directly to server using REST API."""
         try:
             if not self._connection:
                 raise Exception("No connection available")
                 
-            # Serialize report with proper datetime handling
-            serialized_report = json.loads(json.dumps(report, default=str))
+            # Convert WSJF model to dictionary if needed
+            if isinstance(report, (UUTReport, UURReport)):
+                # Use Pydantic's model_dump with by_alias=True to get proper field names
+                # and mode='json' to handle UUID serialization automatically
+                report_dict = report.model_dump(by_alias=True, exclude_none=True, mode='json')
+            else:
+                # Handle legacy dictionary format
+                report_dict = report
             
             # Debug: Log the JSON being sent
             if self._log_exceptions:
                 print(f"Submitting WSJF report to /api/Report/WSJF:")
-                print(f"Report JSON: {json.dumps(serialized_report, indent=2)}")
+                print(f"Report JSON: {json.dumps(report_dict, indent=2, default=str)}")
+            
+            # BREAKPOINT: Inspect the data before HTTP request
+            import pdb; pdb.set_trace()  # Breakpoint to inspect report_dict and report object
             
             # Use the REST API function to submit report
-            result = submit_wsjf_report(serialized_report, client=self._connection.client)
+            result = submit_wsjf_report(report_dict, client=self._connection.client)
             
             # Log the result
             if self._log_exceptions:
@@ -811,15 +869,23 @@ class TDMClient:
             
         return error_details
 
-    def _save_report_offline(self, report: Dict[str, Any]) -> bool:
+    def _save_report_offline(self, report: Union[Dict[str, Any], UUTReport, UURReport]) -> bool:
         """Save report to offline queue."""
         try:
             reports_dir = os.path.join(self.data_dir, "Reports")
             os.makedirs(reports_dir, exist_ok=True)
             
-            report_file = os.path.join(reports_dir, f"{report['report_id']}.json")
+            # Convert to dictionary if needed
+            if isinstance(report, (UUTReport, UURReport)):
+                report_dict = report.model_dump(by_alias=True, exclude_none=True)
+                report_id = str(report.id)
+            else:
+                report_dict = report
+                report_id = report.get('report_id', report.get('id', 'unknown'))
+            
+            report_file = os.path.join(reports_dir, f"{report_id}.json")
             with open(report_file, 'w') as f:
-                json.dump(report, f, indent=2, default=str)
+                json.dump(report_dict, f, indent=2, default=str)
                 
             return True
             

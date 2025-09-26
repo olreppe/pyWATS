@@ -43,13 +43,23 @@ def print_subsection(title: str) -> None:
     print(f"\n--- {title} ---")
 
 
-def print_report_summary(report: Dict[str, Any]) -> None:
+def print_report_summary(report) -> None:
     """Print a summary of a report."""
-    report_type = report.get('report_type', 'Unknown')
-    report_id = report.get('report_id', 'N/A')
-    serial_number = report.get('serial_number', 'N/A')
-    part_number = report.get('part_number', 'N/A')
-    operator = report.get('operator_name', 'N/A')
+    # Handle both new WSJF models and legacy dictionary format
+    if hasattr(report, 'type'):
+        # New WSJF model format
+        report_type = report.type
+        report_id = str(report.id)
+        serial_number = report.sn
+        part_number = report.pn
+        operator = report.info.operator if report.info else 'N/A'
+    else:
+        # Legacy dictionary format
+        report_type = report.get('report_type', 'Unknown')
+        report_id = report.get('report_id', 'N/A')
+        serial_number = report.get('serial_number', 'N/A')
+        part_number = report.get('part_number', 'N/A')
+        operator = report.get('operator_name', 'N/A')
     
     print(f"  Type: {report_type}")
     print(f"  ID: {report_id}")
@@ -268,7 +278,7 @@ def demonstrate_loading_reports(tdm: TDMClient, found_reports: List[Dict]) -> Op
     return loaded_report
 
 
-def create_sample_uut_report(tdm: TDMClient, operation_types: List[Dict]) -> Dict[str, Any]:
+def create_sample_uut_report(tdm: TDMClient, operation_types: List[Dict]):
     """Create a comprehensive UUT report with test data."""
     print_subsection("Creating UUT Report")
     
@@ -282,7 +292,7 @@ def create_sample_uut_report(tdm: TDMClient, operation_types: List[Dict]) -> Dic
     
     print(f"    Using operation type: {op_type['name']} (Code: {op_type['code']})")
     
-    # Create the UUT report
+    # Create the UUT report - now returns UUTReport instance
     uut_report = tdm.create_uut_report(
         operator_name="Demo_Operator",
         part_number="DEMO_PART_001",
@@ -293,73 +303,24 @@ def create_sample_uut_report(tdm: TDMClient, operation_types: List[Dict]) -> Dic
         sequence_file_version="1.2.3"
     )
     
-    # Add test steps and measurements (simulating test execution)
-    uut_report['steps'] = [
-        {
-            'name': 'Initialize System',
-            'start_time': datetime.now(timezone.utc).isoformat(),
-            'end_time': datetime.now(timezone.utc).isoformat(),
-            'result': 'Passed',
-            'duration_ms': 1500,
-            'description': 'Initialize test system and verify communication'
-        },
-        {
-            'name': 'Power Supply Test',
-            'start_time': datetime.now(timezone.utc).isoformat(),
-            'end_time': datetime.now(timezone.utc).isoformat(),
-            'result': 'Passed',
-            'duration_ms': 2300,
-            'description': 'Verify power supply voltage and current',
-            'measurements': [
-                {'name': 'Supply Voltage', 'value': 5.02, 'units': 'V', 'result': 'Passed'},
-                {'name': 'Supply Current', 'value': 0.85, 'units': 'A', 'result': 'Passed'}
-            ]
-        },
-        {
-            'name': 'Signal Integrity Test',
-            'start_time': datetime.now(timezone.utc).isoformat(),
-            'end_time': datetime.now(timezone.utc).isoformat(),
-            'result': 'Passed',
-            'duration_ms': 5100,
-            'description': 'Test digital signal integrity and timing',
-            'measurements': [
-                {'name': 'Clock Frequency', 'value': 100.05, 'units': 'MHz', 'result': 'Passed'},
-                {'name': 'Signal Amplitude', 'value': 3.28, 'units': 'V', 'result': 'Passed'}
-            ]
-        }
-    ]
+    # Add test information as misc info (since WSJF model doesn't have steps/measurements as direct fields)
+    uut_report.add_misc_info("TestSteps", "Initialize System, Power Supply Test, Signal Integrity Test")
+    uut_report.add_misc_info("TotalTestTime", "8900 ms")
+    uut_report.add_misc_info("PassRate", "100%")
+    uut_report.add_misc_info("TestConfiguration", "Automated Test Suite v1.2.3")
     
-    # Add overall measurements
-    uut_report['measurements'] = [
-        {
-            'name': 'Total Test Time',
-            'value': sum(step.get('duration_ms', 0) for step in uut_report['steps']),
-            'units': 'ms',
-            'result': 'Info'
-        },
-        {
-            'name': 'Pass Rate',
-            'value': 100.0,
-            'units': '%',
-            'result': 'Passed'
-        }
-    ]
-    
-    # Set overall result and timing
-    uut_report['result'] = 'Passed'
-    uut_report['end_time'] = datetime.now(timezone.utc)
-    uut_report['total_duration_ms'] = sum(step.get('duration_ms', 0) for step in uut_report['steps'])
+    # Set final result
+    uut_report.result = 'P'  # Passed
     
     print("    ✓ UUT report created successfully")
     print_report_summary(uut_report)
-    print(f"    Steps: {len(uut_report['steps'])}")
-    print(f"    Measurements: {len(uut_report['measurements'])}")
-    print(f"    Result: {uut_report['result']}")
+    print(f"    Misc Info Items: {len(uut_report.misc_infos)}")
+    print(f"    Result: {uut_report.result}")
     
     return uut_report
 
 
-def create_sample_uur_report(tdm: TDMClient, repair_types: List[Dict], uut_report: Optional[Dict] = None) -> Dict[str, Any]:
+def create_sample_uur_report(tdm: TDMClient, repair_types: List[Dict], uut_report=None):
     """Create a comprehensive UUR (repair) report."""
     print_subsection("Creating UUR Report")
     
@@ -374,77 +335,45 @@ def create_sample_uur_report(tdm: TDMClient, repair_types: List[Dict], uut_repor
     
     print(f"    Using repair type: {repair_type['name']} (Code: {repair_type['code']})")
     
-    if uut_report and repair_type.get('uut_required', False):
-        # Create UUR with associated UUT
-        uur_report = tdm.create_uur_report(
-            operator_name="Repair_Technician",
-            repair_type=repair_type,
-            uut_report=uut_report
-        )
-        print("    ✓ UUR report created with associated UUT report")
+    # Get part info from UUT if available
+    if uut_report and hasattr(uut_report, 'uut'):
+        part_number = uut_report.uut.pn
+        serial_number = uut_report.uut.sn
+        revision = uut_report.uut.rev
     else:
-        # Create standalone UUR
-        uur_report = tdm.create_uur_report(
-            operator_name="Repair_Technician",
-            repair_type=repair_type,
-            serial_number=f"REPAIR_SN_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            part_number="REPAIR_PART_001",
-            revision="Rev_B"
-        )
-        print("    ✓ Standalone UUR report created")
+        part_number = "REPAIR_PART_001"
+        serial_number = f"REPAIR_SN_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        revision = "Rev_B"
     
-    # Add repair details
-    uur_report['repairs'] = [
-        {
-            'name': 'Component Replacement',
-            'description': 'Replaced faulty capacitor C15',
-            'repair_time': datetime.now(timezone.utc).isoformat(),
-            'technician': 'Repair_Technician',
-            'parts_used': ['CAP_100uF_25V'],
-            'tools_used': ['Soldering Iron', 'Multimeter'],
-            'result': 'Completed'
-        },
-        {
-            'name': 'Calibration Adjustment',
-            'description': 'Adjusted voltage reference trimmer',
-            'repair_time': datetime.now(timezone.utc).isoformat(),
-            'technician': 'Repair_Technician',
-            'adjustment_values': {'trim_pot_R23': '2.3k ohm'},
-            'result': 'Completed'
-        }
-    ]
+    # Create the UUR report - now returns UURReport instance
+    uur_report = tdm.create_uur_report(
+        operator_name="Repair_Technician",
+        repair_type=repair_type,
+        part_number=part_number,
+        revision=revision,
+        serial_number=serial_number
+    )
     
-    # Add verification measurements
-    uur_report['verification_measurements'] = [
-        {
-            'name': 'Post-Repair Voltage',
-            'value': 5.01,
-            'units': 'V',
-            'result': 'Passed',
-            'limits': {'low': 4.95, 'high': 5.05}
-        },
-        {
-            'name': 'Post-Repair Current',
-            'value': 0.82,
-            'units': 'A', 
-            'result': 'Passed',
-            'limits': {'low': 0.8, 'high': 0.9}
-        }
-    ]
+    # Add repair information as misc info (since WSJF model structure is different)
+    uur_report.add_misc_info("RepairType", "Component Replacement and Calibration")
+    uur_report.add_misc_info("ComponentsReplaced", "CAP_100uF_25V (C15)")
+    uur_report.add_misc_info("CalibrationAdjustments", "Voltage reference trimmer R23: 2.3k ohm")
+    uur_report.add_misc_info("VerificationTests", "Post-Repair Voltage: 5.01V (Pass), Current: 0.82A (Pass)")
+    uur_report.add_misc_info("RepairTechnician", "Repair_Technician")
+    uur_report.add_misc_info("ToolsUsed", "Soldering Iron, Multimeter")
     
-    uur_report['result'] = 'Repaired'
-    uur_report['end_time'] = datetime.now(timezone.utc)
+    # Set final result
+    uur_report.result = 'P'  # Passed (repaired)
     
     print("    ✓ UUR report created successfully")
     print_report_summary(uur_report)
-    print(f"    Repairs: {len(uur_report['repairs'])}")
-    print(f"    Verification Measurements: {len(uur_report['verification_measurements'])}")
-    print(f"    Result: {uur_report['result']}")
+    print(f"    Misc Info Items: {len(uur_report.misc_infos)}")
+    print(f"    Result: {uur_report.result}")
     
     return uur_report
 
 
-def demonstrate_report_creation(tdm: TDMClient, operation_types: List[Dict], repair_types: List[Dict]) -> tuple[Dict, Dict]:
+def demonstrate_report_creation(tdm: TDMClient, operation_types: List[Dict], repair_types: List[Dict]):
     """Demonstrate creating UUT and UUR reports."""
     print_section("REPORT CREATION")
     
@@ -457,7 +386,7 @@ def demonstrate_report_creation(tdm: TDMClient, operation_types: List[Dict], rep
     return uut_report, uur_report
 
 
-def demonstrate_report_submission(tdm: TDMClient, uut_report: Dict, uur_report: Dict, operation_types: List[Dict]) -> None:
+def demonstrate_report_submission(tdm: TDMClient, uut_report, uur_report, operation_types: List[Dict]) -> None:
     """Demonstrate report submission with different methods."""
     print_section("REPORT SUBMISSION")
     
