@@ -21,7 +21,8 @@ def main():
     print("📋 This will show all test structure even if connection fails")
     print()
     
-    runner = ProductTestRunner(TEST_BASE_URL, TEST_AUTH_TOKEN)
+    # Create runner using PyWATS API (no manual URL/token needed)
+    runner = ProductTestRunner()
     
     # Modified version that continues even if connection fails
     print("=" * 60)

@@ -63,7 +63,7 @@ def generate_test_bom(part_number: str, revision: str = "A", item_count: int = 3
     }
 
 
-def validate_product_response(response: Any, required_fields: List[str] = None) -> tuple[bool, str]:
+def validate_product_response(response: Any, required_fields: Optional[List[str]] = None) -> tuple[bool, str]:
     """
     Validate a product API response structure
     
@@ -213,7 +213,10 @@ def retry_operation(operation_func, max_retries: int = 3, delay: float = 1.0):
                 print(f"    ❌ All {max_retries + 1} attempts failed")
     
     # If we get here, all attempts failed
-    raise last_exception
+    if last_exception:
+        raise last_exception
+    else:
+        raise RuntimeError(f"Operation failed after {max_retries + 1} attempts with no exception captured")
 
 
 def create_test_filters() -> List[str]:
