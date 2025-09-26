@@ -623,6 +623,117 @@ def demonstrate_additional_features(tdm: TDMClient) -> None:
         print(f"    Last Exception: {tdm.last_service_exception}")
 
 
+def test_uut_loading_deserialization(tdm: TDMClient, uut_report) -> None:
+    """Test loading and deserializing a UUT report from the server with retry logic."""
+    print_section("UUT LOADING & DESERIALIZATION TEST")
+    
+    import time
+    
+    try:
+        print(f"[1] Preparing to test report loading for submitted UUT...")
+        uut_id = str(uut_report.id)
+        print(f"    UUT Report ID: {uut_id}")
+        
+        if not tdm._connection or not tdm._connection._client:
+            print("❌ No connection available")
+            return
+            
+        # Wait initial 5 seconds for server processing
+        print(f"\n[2] Waiting 5 seconds for server processing...")
+        time.sleep(5)
+        
+        # Retry logic: up to 3 attempts with increasing delays
+        max_retries = 3
+        retry_delay = 3  # seconds between retries
+        
+        for attempt in range(1, max_retries + 1):
+            print(f"\n[3.{attempt}] Attempt {attempt}/{max_retries} - Loading report from server...")
+            
+            success = _attempt_load_uut_report(tdm, uut_id, attempt)
+            
+            if success:
+                print(f"\n🎉 SUCCESS: UUT report loading and deserialization completed on attempt {attempt}!")
+                return
+            elif attempt < max_retries:
+                print(f"    ⏳ Attempt {attempt} failed - waiting {retry_delay} seconds before retry...")
+                time.sleep(retry_delay)
+                retry_delay += 2  # Increase delay for next retry (3, 5, 7 seconds)
+            else:
+                print(f"\n💥 FAILED: All {max_retries} attempts failed - report may need more processing time")
+                
+    except Exception as e:
+        print(f"❌ Test failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+def _attempt_load_uut_report(tdm: TDMClient, uut_id: str, attempt_num: int) -> bool:
+    """Attempt to load and deserialize a UUT report. Returns True if successful."""
+    try:
+        # Use the public WSJF endpoint (case sensitive: Wsjf not WSJF)
+        url = f"/api/Report/Wsjf/{uut_id}"
+        print(f"    Making request to: {url}")
+        
+        if not tdm._connection or not tdm._connection._client:
+            print(f"    ❌ No connection available")
+            return False
+            
+        response = tdm._connection._client.get(url)
+        
+        if not tdm._connection or not tdm._connection._client:
+            print(f"    ❌ No connection available")
+            return False
+            
+        response = tdm._connection._client.get(url)
+        print(f"    Response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            print(f"    ✅ Got HTTP 200 response!")
+            
+            # Check response content
+            print(f"    Content length: {len(response.content)} bytes")
+            print(f"    Content type: {response.headers.get('content-type', 'Not specified')}")
+            
+            if response.text.strip():
+                print(f"    First 100 chars: {response.text[:100]}...")
+                try:
+                    # Parse the JSON response
+                    report_data = response.json()
+                    print(f"    ✅ Valid JSON response with {len(report_data)} fields!")
+                    
+                    # Attempt deserialization
+                    print(f"    Attempting deserialization...")
+                    from pyWATS.rest_api.models.wsjf_reports import UUTReport
+                    
+                    loaded_uut = UUTReport.model_validate(report_data)
+                    print(f"    ✅ Successfully deserialized into UUTReport!")
+                    
+                    # Verify key fields
+                    print(f"    Loaded Report Details:")
+                    print(f"      ID: {loaded_uut.id}")
+                    print(f"      Type: {loaded_uut.type}")
+                    print(f"      Serial Number: {loaded_uut.sn}")
+                    print(f"      Process Code: {loaded_uut.process_code}")
+                    print(f"      Result: {loaded_uut.result}")
+                    
+                    return True  # SUCCESS!
+                    
+                except Exception as json_or_deserialize_error:
+                    print(f"    ❌ JSON/Deserialization error: {json_or_deserialize_error}")
+                    return False
+            else:
+                print(f"    ❌ Empty response content - report likely still processing")
+                return False
+                
+        else:
+            print(f"    ❌ HTTP {response.status_code} - {response.text[:50] if response.text else 'No content'}...")
+            return False
+            
+    except Exception as e:
+        print(f"    ❌ Request failed: {e}")
+        return False
+
+
 def demonstrate_cleanup(tdm: TDMClient) -> None:
     """Demonstrate proper cleanup."""
     print_section("CLEANUP")
@@ -677,6 +788,10 @@ def main():
         
         # 7. Submitting reports
         demonstrate_report_submission(tdm, uut_report, uur_report, operation_types)
+        
+        # 7.5. Testing UUT report loading and deserialization
+        if is_online and uut_report:
+            test_uut_loading_deserialization(tdm, uut_report)
         
         # 8. Managing pending reports
         demonstrate_pending_reports_management(tdm)

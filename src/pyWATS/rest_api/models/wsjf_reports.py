@@ -145,7 +145,7 @@ class ReportInfo(BaseModel):
 
 class UUTInfo(ReportInfo):
     """UUT-specific information."""
-    fixture_id: str = Field(default="", alias="fixtureId")
+    fixture_id: Optional[str] = Field(default="", alias="fixtureId")
 
 
 class UURInfo(ReportInfo):
