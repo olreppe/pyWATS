@@ -14,7 +14,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 # Test configuration
-TEST_BASE_URL = "https://ola.wats.com"
+TEST_BASE_URL = "https:        from pyWATS.tdm.models import UURReport/ola.wats.com"
 TEST_AUTH_TOKEN = "cHlXQVRTOmdtQTVtTHo5N28yYWYwRm85MiY4cDhEUzdBcERRYQ=="
 KNOWN_FAT_REPORT_ID = "14ca0682-35b9-415d-8c61-de8367c5a9df"
 
@@ -33,7 +33,8 @@ def test_simple_uut_workflow():
     try:
         # Import here to avoid issues
         from pyWATS.tdm_client import TDMClient, APIStatusType, SubmitMethod
-        from pyWATS.rest_api.models.wsjf_reports import UUTReport
+        try:
+        from pyWATS.tdm.models import SubRepair
         
         # Setup client
         print("[1] Setting up test client...")
@@ -143,7 +144,7 @@ def test_simple_uur_workflow():
     try:
         # Import here to avoid issues
         from pyWATS.tdm_client import TDMClient, APIStatusType, SubmitMethod
-        from pyWATS.rest_api.models.wsjf_reports import UURReport
+        from pyWATS.tdm.models import UURReport
         
         # Setup client
         print("[1] Setting up test client...")
@@ -274,7 +275,7 @@ def test_simple_uur_workflow():
         
         # The create_uur_report already creates a main unit with idx=0
         # Let's add additional failure info to the existing main unit
-        from pyWATS.rest_api.models.wsjf_reports import SubRepair
+        from pyWATS.tdm.models import SubRepair
         if uur_report.sub_units:
             # Get the existing main unit (should be at idx=0) 
             main_unit = uur_report.sub_units[0]
@@ -316,7 +317,7 @@ def test_simple_uur_workflow():
         print(f"    ✅ Serial: {uur_report.sn}")
         
         # Count total failures across all sub-repair units
-        from pyWATS.rest_api.models.wsjf_reports import SubRepair
+        from pyWATS.tdm.models import SubRepair
         total_failures = 0
         for unit in uur_report.sub_units:
             if isinstance(unit, SubRepair) and unit.failures:
@@ -368,7 +369,7 @@ def test_simple_uur_workflow():
             if loaded_uur.sub_units:
                 sub_unit = loaded_uur.sub_units[0]
                 # Check if it's a SubRepair (has failures attribute)
-                from pyWATS.rest_api.models.wsjf_reports import SubRepair
+                from pyWATS.tdm.models import SubRepair
                 if isinstance(sub_unit, SubRepair) and sub_unit.failures:
                     print(f"    ✅ Failures loaded: {len(sub_unit.failures)}")
                     for failure in sub_unit.failures:
@@ -397,7 +398,7 @@ def test_load_fat_report():
     
     try:
         from pyWATS.tdm_client import TDMClient, APIStatusType
-        from pyWATS.rest_api.models.wsjf_reports import UUTReport
+        from pyWATS.tdm.models import UUTReport
         
         # Setup client
         print("[1] Setting up test client...")

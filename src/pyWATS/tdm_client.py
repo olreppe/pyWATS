@@ -17,7 +17,7 @@ from .connection import WATSConnection as Connection
 from .tdm import Statistics, Analytics, Reports
 from .rest_api.endpoints.report import submit_wsjf_report
 from .rest_api.models import ReportInfo
-from .rest_api.models.wsjf_reports import UUTReport, UURReport, UURInfo, SubRepair
+from .tdm.models import UUTReport, UURReport, UURInfo, SubRepair
 
 
 class APIStatusType(Enum):
@@ -688,7 +688,7 @@ class TDMClient:
             raise ValueError("Invalid operation_type parameter")
             
         # Create UUT info  
-        from .rest_api.models.wsjf_reports import UUTInfo
+        from .tdm.models import UUTInfo
         uut_info = UUTInfo(
             user=operator_name or "Operator",
             execTime=0.0,

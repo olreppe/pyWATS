@@ -47,8 +47,17 @@ from .connection import create_connection, create_connection_from_env, WATSConne
 # Import REST API components for easy access
 from . import rest_api
 
-# Import MES modules
-from . import mes
+# Lazy import MES modules to avoid circular imports
+def _import_mes():
+    try:
+        from . import mes
+        return mes
+    except ImportError as e:
+        import warnings
+        warnings.warn(f"MES module could not be imported: {e}")
+        return None
+
+mes = None  # Will be loaded lazily
 
 # Import TDM modules
 from . import tdm
@@ -66,12 +75,21 @@ except ImportError:
 
 __version__ = "1.0.0"
 
+# Property to lazily load MES
+def __getattr__(name):
+    if name == "mes":
+        global mes
+        if mes is None:
+            mes = _import_mes()
+        return mes
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 __all__ = [
     "create_connection",
     "create_connection_from_env", 
     "WATSConnection",
     "rest_api",
-    "mes",
+    "mes",  # Lazily loaded
     "tdm", 
     "TDMClient",
     "PyWATSAPI",

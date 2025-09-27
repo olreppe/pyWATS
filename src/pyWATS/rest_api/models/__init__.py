@@ -7,12 +7,12 @@ Imports all model classes for easy access.
 # Common models
 from .common import PublicWatsFilter, CommonUserSettings, DateGrouping
 
-# Asset models
+# Asset models (keep original imports for now to avoid circular imports)
 from .asset import (
     Asset, AssetType, AssetLog, AssetMessage, AssetState, AssetLogType, Setting
 )
 
-# Product models  
+# Product models (keep original imports for now to avoid circular imports) 
 from .product import Product, ProductRevision, ProductView, Vendor
 
 # Production models
@@ -24,7 +24,7 @@ from .production import (
 # Report models
 from .report import ReportHeader, InsertReportResult, UUTResult
 
-# WSJF Report models
+# WSJF Report models (keep original for now to avoid circular imports)
 from .wsjf_reports import WSJFReport, UUTReport, UURReport, ReportInfo, MiscInfo, ReportStatus
 
 __all__ = [

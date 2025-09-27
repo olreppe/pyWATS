@@ -703,7 +703,7 @@ def _attempt_load_uut_report(tdm: TDMClient, uut_id: str, attempt_num: int) -> b
                     
                     # Attempt deserialization
                     print(f"    Attempting deserialization...")
-                    from pyWATS.rest_api.models.wsjf_reports import UUTReport
+                    from pyWATS.tdm.models import UUTReport
                     
                     loaded_uut = UUTReport.model_validate(report_data)
                     print(f"    ✅ Successfully deserialized into UUTReport!")

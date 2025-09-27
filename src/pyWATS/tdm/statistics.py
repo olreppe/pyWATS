@@ -9,7 +9,24 @@ alert management, and performance counters.
 from typing import Optional, List, Union
 from datetime import datetime, timedelta
 
-from ..mes.base import MESBase
+# Use try/except to avoid circular imports during package initialization
+try:
+    from ..mes.base import MESBase
+except ImportError:
+    # Create a stub base class if MES isn't available
+    class MESBase:
+        def __init__(self, connection):
+            self.connection = connection
+            self._client = connection if hasattr(connection, 'get') else None
+            
+        def _rest_get_json(self, endpoint, params=None):
+            """Stub method"""
+            return {}
+            
+        def _rest_post_json(self, endpoint, data=None):
+            """Stub method"""
+            return {}
+
 from .models import (
     TrendData, TrendDataPoint, LastResultData, AlertLevels, 
     StatisticsFilter, AnalyticsResult

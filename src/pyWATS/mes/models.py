@@ -139,7 +139,7 @@ class Package(BaseModel):
     file_path: Optional[str] = Field(None, alias="filePath")
     file_size: Optional[int] = Field(None, alias="fileSize")
     checksum: Optional[str] = None
-    status: Optional[StatusEnum] = StatusEnum.RELEASED
+    status: Optional[StatusEnum] = None
     created_date: Optional[datetime] = Field(None, alias="createdDate")
     updated_date: Optional[datetime] = Field(None, alias="updatedDate")
     tags: Optional[Dict[str, str]] = {}
@@ -195,7 +195,7 @@ class IdentifyUnitRequest(BaseModel):
     custom_text: Optional[str] = Field(None, alias="customText")
     always_on_top: bool = Field(True, alias="alwaysOnTop")
     use_workflow: bool = Field(False, alias="useWorkflow")
-    workflow_status: Optional[StatusEnum] = Field(StatusEnum.RELEASED, alias="workflowStatus")
+    workflow_status: Optional[StatusEnum] = Field(None, alias="workflowStatus")
     context: Optional[Dict[str, Any]] = {}
     
     class Config:

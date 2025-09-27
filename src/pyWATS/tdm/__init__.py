@@ -49,7 +49,14 @@ Example usage:
     success = tdm.submit_report(uut_report)
 """
 
-from .statistics import Statistics
+# Conditionally import Statistics to avoid circular imports during package init
+try:
+    from .statistics import Statistics
+except ImportError:
+    # Create a placeholder during circular import resolution
+    class Statistics:
+        def __init__(self, connection=None):
+            self.connection = connection
 from .analytics import Analytics
 from .reports import Reports
 

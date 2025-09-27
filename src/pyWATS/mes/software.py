@@ -90,7 +90,7 @@ class Software(MESBase):
         install: bool = True,
         display_progress: bool = True,
         wait_for_execution: bool = True,
-        package_status: StatusEnum = StatusEnum.RELEASED
+        package_status: Optional[StatusEnum] = None
     ) -> List[Package]:
         """
         Get packages by default tags.
@@ -115,11 +115,24 @@ class Software(MESBase):
         Raises:
             WATSAPIException: On API errors
         """
+        # Set default package status if not provided
+        if package_status is None:
+            # Try to get StatusEnum.RELEASED, fallback to 1 if enum not available
+            try:
+                from .models import StatusEnum as _StatusEnum
+                package_status = _StatusEnum.RELEASED
+            except (ImportError, AttributeError):
+                package_status_value = 1
+            else:
+                package_status_value = package_status.value
+        else:
+            package_status_value = package_status.value
+            
         params = {
             "install": install,
             "displayProgress": display_progress,
             "waitForExecution": wait_for_execution,
-            "packageStatus": package_status.value
+            "packageStatus": package_status_value
         }
         
         # Add optional filters
@@ -153,7 +166,7 @@ class Software(MESBase):
         install: bool = True,
         display_progress: bool = True,
         wait_for_execution: bool = True,
-        package_status: StatusEnum = StatusEnum.RELEASED
+        package_status: Optional[StatusEnum] = None
     ) -> List[Package]:
         """
         Get packages by XPath or tag arrays.
@@ -181,7 +194,7 @@ class Software(MESBase):
                 "install": install,
                 "displayProgress": display_progress,
                 "waitForExecution": wait_for_execution,
-                "packageStatus": package_status.value
+                "packageStatus": package_status.value if package_status else 1
             }
         else:
             # Tag arrays mode
@@ -194,7 +207,7 @@ class Software(MESBase):
                 "install": install,
                 "displayProgress": display_progress,
                 "waitForExecution": wait_for_execution,
-                "packageStatus": package_status.value
+                "packageStatus": package_status.value if package_status else 1
             }
         
         response = self._rest_post_json("/api/internal/Software/GetPackagesByTag", data)
@@ -213,7 +226,7 @@ class Software(MESBase):
         install: bool = True,
         display_progress: bool = True,
         wait_for_execution: bool = True,
-        package_status: StatusEnum = StatusEnum.RELEASED
+        package_status: Optional[StatusEnum] = None
     ) -> Optional[Package]:
         """
         Get package by name.
@@ -238,7 +251,7 @@ class Software(MESBase):
             "install": install,
             "displayProgress": display_progress,
             "waitForExecution": wait_for_execution,
-            "packageStatus": package_status.value
+            "packageStatus": package_status.value if package_status else 1
         }
         
         try:
