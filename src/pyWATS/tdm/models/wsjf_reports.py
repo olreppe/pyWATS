@@ -1,20 +1,369 @@
 """
-WSJF Report Models
-
-Models for WATS Standard JSON Format (WSJF) reports.
-These models match the server's expected field names and validation.
-
-Moved from rest_api.models.wsjf_reports to consolidate TDM-related models.
+Complete WSJF report models implementing full step hierarchy.
+Based on C# Interface.TDM pattern: UUT creates sequence, sequence creates steps, steps create measurements.
 """
-
-from typing import Optional, List, Any, Literal, Union
+from typing import List, Optional, Dict, Any, Union, Literal
+from pydantic import BaseModel, Field, model_validator
 from datetime import datetime
 from enum import Enum
 from uuid import uuid4, UUID
-from pydantic import BaseModel, Field, model_validator
 
 # Import constants from original location
 from ...rest_api.models.wsjf_constants import def_MissingString
+
+
+class StepStatusType(str, Enum):
+    """Step status enumeration matching C# StepStatusType"""
+    PASSED = "Passed"
+    FAILED = "Failed"
+    ERROR = "Error"
+    TERMINATED = "Terminated"
+    DONE = "Done"
+    SKIPPED = "Skipped"
+    RUNNING = "Running"
+
+
+class CompOperatorType(str, Enum):
+    """Comparison operator types for numeric limits"""
+    EQ = "EQ"  # Equal
+    NE = "NE"  # Not Equal
+    GT = "GT"  # Greater Than
+    GE = "GE"  # Greater or Equal
+    LT = "LT"  # Less Than
+    LE = "LE"  # Less or Equal
+    GELE = "GELE"  # Greater or Equal AND Less or Equal (between)
+    GTLT = "GTLT"  # Greater Than AND Less Than
+    GELT = "GELT"  # Greater or Equal AND Less Than
+    GTLE = "GTLE"  # Greater Than AND Less or Equal
+    LTGT = "LTGT"  # Less Than OR Greater Than (outside)
+    LEGE = "LEGE"  # Less or Equal OR Greater or Equal
+
+
+class StepTypeEnum(str, Enum):
+    """Step type enumeration matching C# StepTypeEnum"""
+    SEQUENCE_CALL = "SequenceCall"
+    ET_NLT = "ET_NLT"  # Single Numeric Limit Test
+    ET_MNLT = "ET_MNLT"  # Multiple Numeric Limit Test
+    ET_PFT = "ET_PFT"  # Single Pass/Fail Test
+    ET_MPFT = "ET_MPFT"  # Multiple Pass/Fail Test
+    ET_SVT = "ET_SVT"  # Single String Value Test
+    ET_MSVT = "ET_MSVT"  # Multiple String Value Test
+    MESSAGE_POPUP = "MessagePopup"
+    CALL_EXE = "CallExe"
+    GENERIC = "Generic"
+
+
+# Base Measurement Classes
+class Measurement(BaseModel):
+    """Base measurement class"""
+    measure_name: Optional[str] = Field(None, description="Name of the measurement")
+    measure_index: int = Field(..., description="Index of measurement within step")
+    measure_order: int = Field(..., description="Global measurement order")
+    status: StepStatusType = Field(StepStatusType.PASSED, description="Measurement status")
+    
+
+class NumericMeasurement(Measurement):
+    """Single numeric measurement with limits"""
+    numeric_value: float = Field(..., description="Measured numeric value")
+    low_limit: Optional[float] = Field(None, description="Lower limit")
+    high_limit: Optional[float] = Field(None, description="Upper limit")
+    comp_operator: CompOperatorType = Field(CompOperatorType.GELE, description="Comparison operator")
+    unit: Optional[str] = Field(None, description="Unit of measurement")
+
+
+class MultiNumericMeasurement(Measurement):
+    """Multiple numeric measurement (named measurement)"""
+    numeric_value: float = Field(..., description="Measured numeric value")
+    low_limit: Optional[float] = Field(None, description="Lower limit")
+    high_limit: Optional[float] = Field(None, description="Upper limit")
+    comp_operator: CompOperatorType = Field(CompOperatorType.GELE, description="Comparison operator")
+    unit: Optional[str] = Field(None, description="Unit of measurement")
+    measure_name: str = Field(..., description="Name of this specific measurement")
+
+
+class BooleanMeasurement(Measurement):
+    """Boolean (Pass/Fail) measurement"""
+    boolean_value: bool = Field(..., description="Boolean measurement value")
+
+
+class StringMeasurement(Measurement):
+    """String value measurement"""
+    string_value: str = Field(..., description="String measurement value")
+
+
+# Base Step Class
+class Step(BaseModel):
+    """Base step class matching C# Step pattern"""
+    step_id: int = Field(..., description="Unique step ID")
+    step_index: int = Field(..., description="Step index within parent")
+    name: str = Field(..., description="Step name")
+    step_type: StepTypeEnum = Field(..., description="Type of step")
+    status: StepStatusType = Field(StepStatusType.PASSED, description="Step status")
+    parent_step_id: Optional[int] = Field(None, description="Parent step ID")
+    total_time: float = Field(0.0, description="Total execution time")
+    start_time: Optional[datetime] = Field(None, description="Step start time")
+
+
+# Step Implementations
+class NumericLimitStep(Step):
+    """Numeric limit step containing numeric measurements"""
+    step_type: StepTypeEnum = Field(StepTypeEnum.ET_NLT, description="Numeric limit step type")
+    measurements: List[Union[NumericMeasurement, MultiNumericMeasurement]] = Field(
+        default_factory=list, description="Numeric measurements"
+    )
+    is_single: bool = Field(True, description="True for single measurement, False for multiple")
+    is_multiple: bool = Field(False, description="True for multiple measurements, False for single")
+    
+    def add_test(self, value: float, comp_operator: CompOperatorType = CompOperatorType.GELE, 
+                 low_limit: Optional[float] = None, high_limit: Optional[float] = None, 
+                 unit: Optional[str] = None) -> NumericMeasurement:
+        """Add a single numeric test"""
+        if self.is_multiple:
+            raise ValueError("Cannot add single test to multiple test step")
+        
+        if len(self.measurements) > 0:
+            raise ValueError("Cannot add multiple single tests to single test step")
+            
+        measurement = NumericMeasurement(
+            measure_index=len(self.measurements),
+            measure_order=0,  # Will be set by parent
+            numeric_value=value,
+            comp_operator=comp_operator,
+            low_limit=low_limit,
+            high_limit=high_limit,
+            unit=unit
+        )
+        self.measurements.append(measurement)
+        self.is_single = True
+        return measurement
+    
+    def add_multiple_test(self, measure_name: str, value: float, 
+                         comp_operator: CompOperatorType = CompOperatorType.GELE,
+                         low_limit: Optional[float] = None, high_limit: Optional[float] = None,
+                         unit: Optional[str] = None) -> MultiNumericMeasurement:
+        """Add a named numeric test to multiple test step"""
+        if self.is_single:
+            raise ValueError("Cannot add multiple test to single test step")
+            
+        if not self.is_multiple:
+            self.step_type = StepTypeEnum.ET_MNLT
+            self.is_multiple = True
+            
+        measurement = MultiNumericMeasurement(
+            measure_name=measure_name,
+            measure_index=len(self.measurements),
+            measure_order=0,  # Will be set by parent
+            numeric_value=value,
+            comp_operator=comp_operator,
+            low_limit=low_limit,
+            high_limit=high_limit,
+            unit=unit
+        )
+        self.measurements.append(measurement)
+        return measurement
+
+
+class PassFailStep(Step):
+    """Pass/Fail step containing boolean measurements"""
+    step_type: StepTypeEnum = Field(StepTypeEnum.ET_PFT, description="Pass/Fail step type")
+    measurements: List[BooleanMeasurement] = Field(
+        default_factory=list, description="Boolean measurements"
+    )
+    is_single: bool = Field(True, description="True for single measurement, False for multiple")
+    is_multiple: bool = Field(False, description="True for multiple measurements, False for single")
+    
+    def add_test(self, value: bool) -> BooleanMeasurement:
+        """Add a single boolean test"""
+        if self.is_multiple:
+            raise ValueError("Cannot add single test to multiple test step")
+            
+        if len(self.measurements) > 0:
+            raise ValueError("Cannot add multiple single tests to single test step")
+            
+        measurement = BooleanMeasurement(
+            measure_index=len(self.measurements),
+            measure_order=0,  # Will be set by parent
+            boolean_value=value
+        )
+        self.measurements.append(measurement)
+        self.is_single = True
+        return measurement
+    
+    def add_multiple_test(self, measure_name: str, value: bool) -> BooleanMeasurement:
+        """Add a named boolean test to multiple test step"""
+        if self.is_single:
+            raise ValueError("Cannot add multiple test to single test step")
+            
+        if not self.is_multiple:
+            self.step_type = StepTypeEnum.ET_MPFT
+            self.is_multiple = True
+            
+        measurement = BooleanMeasurement(
+            measure_name=measure_name,
+            measure_index=len(self.measurements),
+            measure_order=0,  # Will be set by parent
+            boolean_value=value
+        )
+        self.measurements.append(measurement)
+        return measurement
+
+
+class StringValueStep(Step):
+    """String value step containing string measurements"""
+    step_type: StepTypeEnum = Field(StepTypeEnum.ET_SVT, description="String value step type")
+    measurements: List[StringMeasurement] = Field(
+        default_factory=list, description="String measurements"
+    )
+    is_single: bool = Field(True, description="True for single measurement, False for multiple")
+    is_multiple: bool = Field(False, description="True for multiple measurements, False for single")
+    
+    def add_test(self, value: str) -> StringMeasurement:
+        """Add a single string test"""
+        if self.is_multiple:
+            raise ValueError("Cannot add single test to multiple test step")
+            
+        if len(self.measurements) > 0:
+            raise ValueError("Cannot add multiple single tests to single test step")
+            
+        measurement = StringMeasurement(
+            measure_index=len(self.measurements),
+            measure_order=0,  # Will be set by parent
+            string_value=value
+        )
+        self.measurements.append(measurement)
+        self.is_single = True
+        return measurement
+    
+    def add_multiple_test(self, measure_name: str, value: str) -> StringMeasurement:
+        """Add a named string test to multiple test step"""
+        if self.is_single:
+            raise ValueError("Cannot add multiple test to single test step")
+            
+        if not self.is_multiple:
+            self.step_type = StepTypeEnum.ET_MSVT
+            self.is_multiple = True
+            
+        measurement = StringMeasurement(
+            measure_name=measure_name,
+            measure_index=len(self.measurements),
+            measure_order=0,  # Will be set by parent
+            string_value=value
+        )
+        self.measurements.append(measurement)
+        return measurement
+
+
+class SequenceCall(Step):
+    """Sequence call step that can contain other steps"""
+    step_type: StepTypeEnum = Field(StepTypeEnum.SEQUENCE_CALL, description="Sequence call step type")
+    sequence_name: str = Field(..., description="Name of the sequence")
+    sequence_version: Optional[str] = Field(None, description="Version of the sequence")
+    filename: Optional[str] = Field(None, description="Sequence filename")
+    filepath: Optional[str] = Field(None, description="Sequence filepath")
+    steps: List[Union['SequenceCall', NumericLimitStep, PassFailStep, StringValueStep]] = Field(
+        default_factory=list, description="Child steps"
+    )
+    
+    # Internal counters
+    current_step_index: int = Field(0, description="Current step index counter")
+    current_step_order: int = Field(0, description="Current step order counter") 
+    current_measure_order: int = Field(0, description="Current measure order counter")
+    
+    def _get_next_step_index(self) -> int:
+        """Get next step index"""
+        index = self.current_step_index
+        self.current_step_index += 1
+        return index
+    
+    def _get_next_step_order(self) -> int:
+        """Get next step order"""
+        order = self.current_step_order
+        self.current_step_order += 1
+        return order
+        
+    def _get_next_measure_order(self) -> int:
+        """Get next measure order"""
+        order = self.current_measure_order
+        self.current_measure_order += 1
+        return order
+    
+    def add_sequence_call(self, step_name: str, sequence_name: Optional[str] = None, 
+                         sequence_version: Optional[str] = None) -> 'SequenceCall':
+        """Add a nested sequence call"""
+        sequence_call = SequenceCall(
+            step_id=self._get_next_step_order(),
+            step_index=self._get_next_step_index(),
+            name=step_name,
+            step_type=StepTypeEnum.SEQUENCE_CALL,
+            status=StepStatusType.PASSED,
+            parent_step_id=self.step_id,
+            total_time=0.0,
+            start_time=None,
+            sequence_name=sequence_name or self.sequence_name,
+            sequence_version=sequence_version or self.sequence_version,
+            filename=None,
+            filepath=None,
+            current_step_index=0,
+            current_step_order=0,
+            current_measure_order=0
+        )
+        self.steps.append(sequence_call)
+        return sequence_call
+    
+    def add_numeric_limit_step(self, step_name: str) -> NumericLimitStep:
+        """Add a numeric limit step"""
+        step = NumericLimitStep(
+            step_id=self._get_next_step_order(),
+            step_index=self._get_next_step_index(),
+            name=step_name,
+            step_type=StepTypeEnum.ET_NLT,
+            status=StepStatusType.PASSED,
+            parent_step_id=self.step_id,
+            total_time=0.0,
+            start_time=None,
+            is_single=True,
+            is_multiple=False
+        )
+        self.steps.append(step)
+        return step
+    
+    def add_pass_fail_step(self, step_name: str) -> PassFailStep:
+        """Add a pass/fail step"""
+        step = PassFailStep(
+            step_id=self._get_next_step_order(),
+            step_index=self._get_next_step_index(),
+            name=step_name,
+            step_type=StepTypeEnum.ET_PFT,
+            status=StepStatusType.PASSED,
+            parent_step_id=self.step_id,
+            total_time=0.0,
+            start_time=None,
+            is_single=True,
+            is_multiple=False
+        )
+        self.steps.append(step)
+        return step
+    
+    def add_string_value_step(self, step_name: str) -> StringValueStep:
+        """Add a string value step"""
+        step = StringValueStep(
+            step_id=self._get_next_step_order(),
+            step_index=self._get_next_step_index(),
+            name=step_name,
+            step_type=StepTypeEnum.ET_SVT,
+            status=StepStatusType.PASSED,
+            parent_step_id=self.step_id,
+            total_time=0.0,
+            start_time=None,
+            is_single=True,
+            is_multiple=False
+        )
+        self.steps.append(step)
+        return step
+
+
+# Update forward references
+SequenceCall.model_rebuild()
 
 
 class Failure(BaseModel):
@@ -105,8 +454,8 @@ class SequenceCallInfo(BaseModel):
     version: Optional[str] = Field(default="1.0", max_length=30)
 
 
-class SequenceCall(BaseModel):
-    """Minimal sequence call for UUT reports."""
+class LegacySequenceCall(BaseModel):
+    """Legacy minimal sequence call for backward compatibility."""
     step_type: str = Field(default="SequenceCall", alias="stepType")
     name: str = Field(default="MainSequence")
     group: str = Field(default="M", description="Step group")
@@ -323,18 +672,59 @@ class WSJFReport(BaseModel):
 
 class UUTReport(WSJFReport):
     """
-    Unit Under Test (UUT) Report for test results.
+    Complete Unit Under Test (UUT) Report with full step hierarchy.
+    Based on C# Interface.TDM pattern.
     """
-    # Required root sequence call for UUT reports
-    root: SequenceCall = Field(default_factory=SequenceCall, description="Root sequence call")
+    # Root sequence call with complete step hierarchy
+    root_sequence_call: Optional[SequenceCall] = Field(None, description="Root sequence call with full step hierarchy")
+    
+    # Legacy root field for backward compatibility
+    root: Optional[LegacySequenceCall] = Field(default_factory=LegacySequenceCall, description="Legacy root sequence call")
     
     # UUT-specific info field with uut alias (overrides base info field)
     uut_info: Optional[UUTInfo] = Field(default=None, alias="uut", description="UUT-specific information")
+    
+    # Internal counters
+    next_step_order: int = Field(1, description="Next available step order")
+    next_measure_order: int = Field(1, description="Next available measure order")
 
     def __init__(self, **data):
         # Ensure type is always 'T' for UUT reports
         data['type'] = 'T'
         super().__init__(**data)
+    
+    def get_next_step_order(self) -> int:
+        """Get next step order number"""
+        order = self.next_step_order
+        self.next_step_order += 1
+        return order
+        
+    def get_next_measure_order(self) -> int:
+        """Get next measure order number"""
+        order = self.next_measure_order
+        self.next_measure_order += 1
+        return order
+    
+    def create_root_sequence_call(self, sequence_name: str, sequence_version: Optional[str] = None) -> SequenceCall:
+        """Create the root sequence call with complete step hierarchy"""
+        self.root_sequence_call = SequenceCall(
+            step_id=self.get_next_step_order(),
+            step_index=0,
+            name="Root",
+            step_type=StepTypeEnum.SEQUENCE_CALL,
+            status=StepStatusType.PASSED,
+            parent_step_id=None,
+            total_time=0.0,
+            start_time=None,
+            sequence_name=sequence_name,
+            sequence_version=sequence_version,
+            filename=None,
+            filepath=None,
+            current_step_index=0,
+            current_step_order=0,
+            current_measure_order=0
+        )
+        return self.root_sequence_call
         
     def model_dump(self, **kwargs):
         """Custom serialization to exclude base info field and use uut_info with uut alias."""
