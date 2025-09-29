@@ -113,8 +113,10 @@ def main():
                 print("Server ping successful")
             
             # Access sub-modules (equivalent to C# properties)
-            if tdm.analytics:
-                print("Analytics module available")
+            # if tdm.analytics:
+            #     print("Analytics module available")
+            # if tdm._statistics:
+            #     print("Statistics module available")
             if tdm.reports:
                 print("Reports module available")
         

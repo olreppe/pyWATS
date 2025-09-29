@@ -8,6 +8,8 @@ This module mirrors the Interface.MES Product functionality.
 from typing import Optional, List, Union, Dict, Any
 from io import BytesIO
 
+from pyWATS import rest_api
+
 from .base import MESBase
 from .models import ProductInfo, Product as ProductModel, IdentifyProductRequest
 from ..rest_api.client import WATSClient
@@ -152,15 +154,20 @@ class Product(MESBase):
         Raises:
             WATSAPIException: On API errors
         """
-        request = IdentifyProductRequest(
-            filter=filter_text,
-            topCount=top_count,
-            freePartnumber=free_partnumber,
-            includeRevision=include_revision,
-            includeSerialNumber=include_serial_number,
-            customText=custom_text,
-            alwaysOnTop=always_on_top
-        )
+        
+        
+        
+        request = None
+        
+        # IdentifyProductRequest(
+        #     filter=filter_text,
+        #     topCount=top_count,
+        #     freePartnumber=free_partnumber,
+        #     includeRevision=include_revision,
+        #     includeSerialNumber=include_serial_number,
+        #     customText=custom_text,
+        #     alwaysOnTop=always_on_top
+        # )
         
         try:
             response = self._rest_post_json(
@@ -220,10 +227,18 @@ class Product(MESBase):
             for pv in product_views:
                 if pv.part_number:  # Only include products with valid part numbers
                     product_model = ProductModel(
+                        productId=getattr(pv, "product_id", None),
                         partNumber=pv.part_number,
                         revision=None,  # ProductView doesn't include revision
                         name=pv.name,
                         description=None,
+                        nonSerial=getattr(pv, "non_serial", False),
+                        xmlData=getattr(pv, "xml_data", None),
+                        productCategoryId=getattr(pv, "product_category_id", None),
+                        productCategoryName=getattr(pv, "product_category_name", None),
+                        productGroup=getattr(pv, "product_group", None),
+                        createdDate=getattr(pv, "created_date", None),
+                        updatedDate=getattr(pv, "updated_date", None),
                         includeRevision=include_revision,
                         includeSerialNumber=False
                     )

@@ -200,9 +200,10 @@ def get_header_by_misc_info(
     if response.status_code != 200:
         handle_response_error(response)
     
-    data = response.json()
+    
+    headers = response.json()
     results = []
-    for item in data:
+    for item in headers:
         # Ensure item is a dict with string keys
         if isinstance(item, dict):
             # Provide default values if missing

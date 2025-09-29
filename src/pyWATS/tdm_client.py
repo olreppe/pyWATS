@@ -96,7 +96,6 @@ class TDMClient:
         self._last_service_exception: Optional[Exception] = None
         
         # Initialize sub-modules (will be created after connection is established)
-        self._analytics: Optional[Analytics] = None
         self._reports: Optional[Reports] = None
         
         # Cached data
@@ -201,11 +200,7 @@ class TDMClient:
         """Set whether to log exceptions."""
         self._log_exceptions = value
 
-    @property
-    def analytics(self) -> Optional[Analytics]:
-        """Get the analytics module."""
-        return self._analytics
-
+    
     @property
     def reports(self) -> Optional[Reports]:
         """Get the reports module."""

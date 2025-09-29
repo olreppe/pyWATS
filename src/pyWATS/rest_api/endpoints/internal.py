@@ -19,25 +19,9 @@ class Internal:
     def __init__(self, client):
         self.client = client
 
-    def get_available_system_languages(self) -> Dict[str, Any]:
-        """
-        Get a list of available system languages.
-
-        Args:
-            client: Optional WATS client instance
-
-        Returns:
-            Available system languages
-
-        Raises:
-            WATSAPIException: On API errors
-        """
-        response = self.client.get("/api/internal/App/GetAvailableSystemLanguages")
-
-        if response.status_code != 200:
-            handle_response_error(response)
-
-        return response.json()
+def get_available_system_languages(
+    client: Optional[WATSClient] = None
+) -> Dict[str, Any]:
     """
     Get a list of available system languages.
     

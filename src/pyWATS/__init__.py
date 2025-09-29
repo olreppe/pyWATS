@@ -9,10 +9,6 @@ This package provides comprehensive access to WATS functionality including:
 - WATS client library for direct database access (legacy)
 - Data models and utilities
 
-For most use cases, start with the REST API:
-    from pyWATS.connection import create_connection
-    from pyWATS.rest_api import endpoints, models
-
 For MES operations:
     from pyWATS.mes import Production, Product, Asset, Software, Workflow
 
