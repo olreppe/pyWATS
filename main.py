@@ -11,9 +11,11 @@ import os
 # Add src to path so we can import pyWATS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
+from pyWATS import tdm_client
 from pyWATS.connection import create_connection
 from pyWATS.rest_api.endpoints import asset
 from pyWATS.rest_api.exceptions import WATSAPIException
+from pyWATS.tdm.models.wsjf_reports import CompOperatorType
 import json
 
 
@@ -36,6 +38,30 @@ def main():
             token=AUTH_TOKEN
         )
         
+
+        tdm = tdm_client.TDMClient()
+        
+        uut = tdm.create_uut_report(
+            serial_number="SN123456",
+            part_number="PN12345",
+            revision="A",
+            operation_type=10,
+            sequence_file_name="TestSequence.seq",
+            sequence_file_version="1.0.0",
+            operator_name="TestOperator"
+        )
+
+        root = uut.get_root_Sequence_call()
+
+
+        step = root.add_numeric_limit_step("NumStep")
+        meas = step.add_test(3.14, comp_operator=CompOperatorType.GELE, low_limit=3, high_limit=3.15)
+
+        tdm.submit_report(uut)
+
+
+
+
         # Test connection
         print("[TEST] Testing connection...")
         if connection.test_connection():

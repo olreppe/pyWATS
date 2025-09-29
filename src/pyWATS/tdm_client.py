@@ -277,6 +277,8 @@ class TDMClient:
             if self._rethrow_exception:
                 raise
 
+    
+   
     def register_client(
         self,
         base_url: str,

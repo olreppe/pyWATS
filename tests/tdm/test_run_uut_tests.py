@@ -14,7 +14,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 # Test configuration
-TEST_BASE_URL = "https:        from pyWATS.tdm.models import UURReport/ola.wats.com"
+TEST_BASE_URL = "ola.wats.com"
 TEST_AUTH_TOKEN = "cHlXQVRTOmdtQTVtTHo5N28yYWYwRm85MiY4cDhEUzdBcERRYQ=="
 KNOWN_FAT_REPORT_ID = "14ca0682-35b9-415d-8c61-de8367c5a9df"
 
@@ -46,7 +46,6 @@ def test_simple_uut_workflow():
         client.station_name = "Test_Station"
         
         # Connect
-        client.register_client(base_url=TEST_BASE_URL, token=TEST_AUTH_TOKEN)
         client.initialize_api()
         
         if client.status != APIStatusType.Online:
@@ -156,7 +155,6 @@ def test_simple_uur_workflow():
         client.station_name = "Test_Station"
         
         # Connect
-        client.register_client(base_url=TEST_BASE_URL, token=TEST_AUTH_TOKEN)
         client.initialize_api()
         
         if client.status != APIStatusType.Online:
@@ -405,7 +403,6 @@ def test_load_fat_report():
         client.setup_api(data_dir="./test_data", location="Test Lab", purpose="Testing")
         client.station_name = "Test_Station"
         
-        client.register_client(base_url=TEST_BASE_URL, token=TEST_AUTH_TOKEN)
         client.initialize_api()
         
         if client.status != APIStatusType.Online:
