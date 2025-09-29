@@ -117,8 +117,11 @@ class Reports(MESBase):
         
         try:
             # Get report data from server
+            # cAN YOU CHANGE THIS TO USE REST_API.ENDPOINTS.INTERNAL???
+            
             response = self._rest_post_json("/api/internal/Reports/CreateMeasurementReport", data)
             
+
             # Generate output file name if not provided
             if not output_file:
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
