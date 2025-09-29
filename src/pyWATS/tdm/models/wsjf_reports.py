@@ -78,7 +78,7 @@ class MultiNumericMeasurement(Measurement):
     high_limit: Optional[float] = Field(None, description="Upper limit")
     comp_operator: CompOperatorType = Field(CompOperatorType.GELE, description="Comparison operator")
     unit: Optional[str] = Field(None, description="Unit of measurement")
-    measure_name: str = Field(..., description="Name of this specific measurement")
+    #measure_name: str = Field(..., description="Name of this specific measurement")
 
 
 class BooleanMeasurement(Measurement):
@@ -131,6 +131,7 @@ class NumericLimitStep(Step):
         if len(self.measurements) > 0:
             raise ValueError("Cannot add multiple single tests to single test step")
         measurement = NumericMeasurement(
+            measure_name=None,
             measure_index=len(self.measurements),
             measure_order=0,  # Will be set by parent
             numeric_value=value,
@@ -203,8 +204,10 @@ class PassFailStep(Step):
             raise ValueError("Cannot add multiple single tests to single test step")
             
         measurement = BooleanMeasurement(
+            measure_name=None,
             measure_index=len(self.measurements),
             measure_order=0,  # Will be set by parent
+            status=StepStatusType.PASSED,  # Default, can be updated later
             boolean_value=value
         )
         self.measurements.append(measurement)
@@ -224,6 +227,7 @@ class PassFailStep(Step):
             measure_name=measure_name,
             measure_index=len(self.measurements),
             measure_order=0,  # Will be set by parent
+            status=StepStatusType.PASSED,  # Default, can be updated later
             boolean_value=value
         )
         self.measurements.append(measurement)
@@ -248,8 +252,10 @@ class StringValueStep(Step):
             raise ValueError("Cannot add multiple single tests to single test step")
             
         measurement = StringMeasurement(
+            measure_name=None,
             measure_index=len(self.measurements),
             measure_order=0,  # Will be set by parent
+            status=StepStatusType.PASSED,  # Default, can be updated later
             string_value=value
         )
         self.measurements.append(measurement)
@@ -269,6 +275,7 @@ class StringValueStep(Step):
             measure_name=measure_name,
             measure_index=len(self.measurements),
             measure_order=0,  # Will be set by parent
+            status=StepStatusType.PASSED,  # Default, can be updated later
             string_value=value
         )
         self.measurements.append(measurement)

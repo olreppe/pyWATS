@@ -262,17 +262,17 @@ class Analytics(MESBase):
             else:
                 response = self._rest_get_json("/api/internal/Analytics/CalculateYield")
             
-            return YieldData.parse_obj(response)
+            return YieldData.model_validate(response)
         except Exception as e:
             # Return empty yield data on error
             return YieldData(
-                part_number=part_number,
-                process_code=process_code,
-                total_units=0,
-                passed_units=0,
-                failed_units=0,
-                yield_percentage=0.0,
-                date_range=f"Last {days} days" if days else None
+                partNumber=part_number,
+                processCode=process_code,
+                totalUnits=0,
+                passedUnits=0,
+                failedUnits=0,
+                yieldPercentage=0.0,
+                dateRange=f"Last {days} days" if days else None
             )
     
     def get_measurement_correlation(
