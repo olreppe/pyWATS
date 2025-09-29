@@ -14,7 +14,7 @@ from pathlib import Path
 from enum import Enum
 
 from .connection import WATSConnection as Connection
-from .tdm import Statistics, Analytics, Reports
+from .tdm import Analytics, Reports
 from .rest_api.endpoints.report import submit_wsjf_report
 from .rest_api.models import ReportInfo
 from .tdm.models import UUTReport, UURReport, UURInfo, SubRepair
@@ -96,7 +96,6 @@ class TDMClient:
         self._last_service_exception: Optional[Exception] = None
         
         # Initialize sub-modules (will be created after connection is established)
-        self._statistics: Optional[Statistics] = None
         self._analytics: Optional[Analytics] = None
         self._reports: Optional[Reports] = None
         
@@ -203,11 +202,6 @@ class TDMClient:
         self._log_exceptions = value
 
     @property
-    def statistics(self) -> Optional[Statistics]:
-        """Get the statistics module."""
-        return self._statistics
-
-    @property
     def analytics(self) -> Optional[Analytics]:
         """Get the analytics module."""
         return self._analytics
@@ -304,7 +298,6 @@ class TDMClient:
                 self._client_state = ClientStateType.Active
                 
                 # Initialize sub-modules now that we have a connection
-                self._statistics = Statistics(self._connection)
                 self._analytics = Analytics(self._connection)
                 self._reports = Reports(self._connection)
             else:

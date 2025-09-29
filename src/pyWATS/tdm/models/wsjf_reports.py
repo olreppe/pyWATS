@@ -751,6 +751,8 @@ class UUTReport(WSJFReport):
     
     def get_root_Sequence_call(self) -> SequenceCall:
         """Get the root sequence call"""
+        if not self.root or not isinstance(self.root, SequenceCall):
+            raise ValueError("Root is not set or is not a SequenceCall")
         return self.root
 
     def create_root_sequence_call(self, sequence_name: str, sequence_version: Optional[str] = None) -> SequenceCall:
