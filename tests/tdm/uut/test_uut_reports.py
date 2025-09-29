@@ -23,11 +23,11 @@ from pyWATS.tdm.models import (
     StepStatusType, CompOperatorType, StepTypeEnum
 )
 from pyWATS.rest_api.endpoints.report import submit_wsjf_report
-from .test_utils import (
+from test_utils import (
     TestOperationResult, setup_test_client, wait_and_retry_load, 
     cleanup_test_client, print_test_header, print_test_result
 )
-from .test_config import (
+from ..test_config import (
     DEFAULT_TEST_OPERATION_CODE, KNOWN_FAT_REPORT_ID
 )
 
@@ -217,7 +217,7 @@ class UUTTestRunner:
             
             # Create complete step hierarchy for testing
             print("    ✓ Creating root sequence call with step hierarchy...")
-            root = uut_report.create_root_sequence_call("MainSequence", "1.0")
+            root = uut_report.get_root_Sequence_call()
             
             # Add a numeric limit step with measurement
             voltage_step = root.add_numeric_limit_step("Voltage Test")
@@ -371,13 +371,13 @@ class UUTTestRunner:
             print("[1] Creating UUT with complete step hierarchy...")
             uut = self._create_test_uut_with_hierarchy()
             
-            if not uut or not uut.root_sequence_call:
+            if not uut:
                 result = TestOperationResult(False, "Failed to create UUT with step hierarchy")
                 self.results.append(result)
                 print_test_result(result)
                 return
                 
-            root = uut.root_sequence_call
+            root = uut.get_root_Sequence_call()
             print(f"    ✓ Root sequence created: {root.name}")
             print(f"    ✓ Root has {len(root.steps)} child steps")
             
@@ -422,7 +422,7 @@ class UUTTestRunner:
         try:
             print("[1] Testing single numeric measurement...")
             uut = self._create_basic_uut()
-            root = uut.create_root_sequence_call("TestSequence", "1.0")
+            root = uut.get_root_Sequence_call()
             
             # Test single numeric step
             numeric_step = root.add_numeric_limit_step("Voltage Test")
@@ -511,7 +511,7 @@ class UUTTestRunner:
         
         try:
             uut = self._create_basic_uut()
-            root = uut.create_root_sequence_call("TestSequence", "1.0")
+            root = uut.get_root_Sequence_call()
             
             print("[1] Testing single pass/fail measurement...")
             pf_step = root.add_pass_fail_step("Connection Test")
@@ -563,7 +563,7 @@ class UUTTestRunner:
         
         try:
             uut = self._create_basic_uut()
-            root = uut.create_root_sequence_call("TestSequence", "1.0")
+            root = uut.get_root_Sequence_call()
             
             print("[1] Testing single string measurement...")
             str_step = root.add_string_value_step("Serial Check")
@@ -614,7 +614,7 @@ class UUTTestRunner:
         
         try:
             uut = self._create_basic_uut()
-            root = uut.create_root_sequence_call("MainSequence", "1.0")
+            root = uut.get_root_Sequence_call()
             
             print("[1] Creating nested sequence...")
             nested_seq = root.add_sequence_call("SubSequence", "SubSeq", "2.0")
@@ -674,7 +674,7 @@ class UUTTestRunner:
         
         try:
             uut = self._create_basic_uut()
-            root = uut.create_root_sequence_call("TestSequence", "1.0")
+            root = uut.get_root_Sequence_call()
             
             print("[1] Testing all comparison operators...")
             operators_step = root.add_numeric_limit_step("Operator Tests")
@@ -747,7 +747,7 @@ class UUTTestRunner:
         try:
             print("[1] Testing C# pattern: UUT creates sequence...")
             uut = self._create_basic_uut()
-            root = uut.create_root_sequence_call("MainSequence", "1.0")
+            root = uut.get_root_Sequence_call()
             
             print("[2] Testing pattern: Sequence creates steps...")
             voltage_step = root.add_numeric_limit_step("Voltage Test")
@@ -837,7 +837,7 @@ class UUTTestRunner:
             uut = self._create_basic_uut()
             
             # Create root sequence call
-            root = uut.create_root_sequence_call("MainSequence", "1.0")
+            root = uut.get_root_Sequence_call()
             
             # Add numeric limit step
             numeric_step = root.add_numeric_limit_step("Voltage Test")
@@ -907,7 +907,7 @@ class TestWSJFStepHierarchy:
             process_code=1000, station_name="Test", location="Lab", purpose="Test"
         )
         
-        root = uut.create_root_sequence_call("MainSequence", "1.0")
+        root = uut.get_root_Sequence_call()
         
         assert root is not None
         assert root.sequence_name == "MainSequence"
@@ -923,8 +923,8 @@ class TestWSJFStepHierarchy:
         )
         
         # Test single numeric measurement
-        SequenceCall root_seq = uut.get_root_Sequence_call()
-        numeric_step = root_seq.add_numeric_limit_step("Voltage Test")
+        root = uut.get_root_Sequence_call()
+        numeric_step = root.add_numeric_limit_step("Voltage Test")
         measurement = numeric_step.add_test(3.3, CompOperatorType.GELE, 3.0, 3.6, "V")
         
         assert numeric_step.step_type == StepTypeEnum.ET_NLT
@@ -943,7 +943,7 @@ class TestWSJFStepHierarchy:
             pn="TEST_PART", sn="TEST_SN", rev="Rev_1.0",
             process_code=1000, station_name="Test", location="Lab", purpose="Test"
         )
-        root = uut.create_root_sequence_call("MainSequence", "1.0")
+        root = uut.get_root_Sequence_call()
         
         numeric_step = root.add_numeric_limit_step("Multi Voltage Test")
         m1 = numeric_step.add_multiple_test("VCC", 5.0, CompOperatorType.GELE, 4.8, 5.2, "V")
@@ -962,7 +962,7 @@ class TestWSJFStepHierarchy:
             pn="TEST_PART", sn="TEST_SN", rev="Rev_1.0",
             process_code=1000, station_name="Test", location="Lab", purpose="Test"
         )
-        root = uut.create_root_sequence_call("MainSequence", "1.0")
+        root = uut.get_root_Sequence_call()
         
         pf_step = root.add_pass_fail_step("Connection Test")
         measurement = pf_step.add_test(True)
@@ -977,7 +977,7 @@ class TestWSJFStepHierarchy:
             pn="TEST_PART", sn="TEST_SN", rev="Rev_1.0",
             process_code=1000, station_name="Test", location="Lab", purpose="Test"
         )
-        root = uut.create_root_sequence_call("MainSequence", "1.0")
+        root = uut.get_root_Sequence_call()
         
         str_step = root.add_string_value_step("Serial Check")
         measurement = str_step.add_test("TEST_SERIAL_123")
@@ -992,7 +992,7 @@ class TestWSJFStepHierarchy:
             pn="TEST_PART", sn="TEST_SN", rev="Rev_1.0",
             process_code=1000, station_name="Test", location="Lab", purpose="Test"
         )
-        root = uut.create_root_sequence_call("MainSequence", "1.0")
+        root = uut.get_root_Sequence_call()
         
         nested = root.add_sequence_call("SubSequence", "SubSeq", "2.0")
         nested_step = nested.add_numeric_limit_step("Nested Voltage")
@@ -1010,7 +1010,7 @@ class TestWSJFStepHierarchy:
             pn="TEST_PART", sn="TEST_SN", rev="Rev_1.0",
             process_code=1000, station_name="Test", location="Lab", purpose="Test"
         )
-        root = uut.create_root_sequence_call("MainSequence", "1.0")
+        root = uut.get_root_Sequence_call()
         
         # Test cannot add single test to multiple step
         multi_step = root.add_numeric_limit_step("Multi Test")

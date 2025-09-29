@@ -754,27 +754,6 @@ class UUTReport(WSJFReport):
         if not self.root or not isinstance(self.root, SequenceCall):
             raise ValueError("Root is not set or is not a SequenceCall")
         return self.root
-
-    def create_root_sequence_call(self, sequence_name: str, sequence_version: Optional[str] = None) -> SequenceCall:
-        """Create the root sequence call with complete step hierarchy"""
-        self.root_sequence_call = SequenceCall(
-            step_id=self.get_next_step_order(),
-            step_index=0,
-            name="Root",
-            step_type=StepTypeEnum.SEQUENCE_CALL,
-            status=StepStatusType.PASSED,
-            parent_step_id=None,
-            total_time=0.0,
-            start_time=None,
-            sequence_name=sequence_name,
-            sequence_version=sequence_version,
-            filename=None,
-            filepath=None,
-            current_step_index=0,
-            current_step_order=0,
-            current_measure_order=0
-        )
-        return self.root_sequence_call
         
     def model_dump(self, **kwargs):
         """Custom serialization to exclude base info field and use uut_info with uut alias."""
