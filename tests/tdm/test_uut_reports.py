@@ -921,10 +921,10 @@ class TestWSJFStepHierarchy:
             pn="TEST_PART", sn="TEST_SN", rev="Rev_1.0",
             process_code=1000, station_name="Test", location="Lab", purpose="Test"
         )
-        root = uut.create_root_sequence_call("MainSequence", "1.0")
         
         # Test single numeric measurement
-        numeric_step = root.add_numeric_limit_step("Voltage Test")
+        SequenceCall root_seq = uut.get_root_Sequence_call()
+        numeric_step = root_seq.add_numeric_limit_step("Voltage Test")
         measurement = numeric_step.add_test(3.3, CompOperatorType.GELE, 3.0, 3.6, "V")
         
         assert numeric_step.step_type == StepTypeEnum.ET_NLT

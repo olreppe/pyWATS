@@ -33,8 +33,7 @@ def test_simple_uut_workflow():
     try:
         # Import here to avoid issues
         from pyWATS.tdm_client import TDMClient, APIStatusType, SubmitMethod
-        try:
-        from pyWATS.tdm.models import SubRepair
+        from pyWATS.tdm.models import SubRepair, UUTReport
         
         # Setup client
         print("[1] Setting up test client...")

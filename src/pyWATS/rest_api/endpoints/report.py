@@ -41,7 +41,7 @@ def get_attachment(
     if attachment_id:
         params["attachmentId"] = str(attachment_id)
     if step_id is not None:
-        params["stepId"] = step_id
+        params["stepId"] = str(step_id)
     
     response = client.get("/api/Report/Attachment", params=params)
     
@@ -201,7 +201,18 @@ def get_header_by_misc_info(
         handle_response_error(response)
     
     data = response.json()
-    return [UUTResult(**item) for item in data]
+    results = []
+    for item in data:
+        # Ensure item is a dict with string keys
+        if isinstance(item, dict):
+            # Provide default values if missing
+            item = {str(k): v for k, v in item.items()}
+            if "serialNumber" not in item:
+                item["serialNumber"] = ""
+            if "partNumber" not in item:
+                item["partNumber"] = ""
+            results.append(UUTResult(**item))
+    return results
 
 
 def submit_wsjf_report(

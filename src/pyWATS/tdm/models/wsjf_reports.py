@@ -94,8 +94,8 @@ class StringMeasurement(Measurement):
 # Base Step Class
 class Step(BaseModel):
     """Base step class matching C# Step pattern"""
-    step_id: int = Field(..., description="Unique step ID")
-    step_index: int = Field(..., description="Step index within parent")
+    step_id: Optional[int] = Field(..., description="Unique step ID")
+    step_index: Optional[int] = Field(..., description="Step index within parent")
     name: str = Field(..., description="Step name")
     step_type: StepTypeEnum = Field(..., description="Type of step")
     status: StepStatusType = Field(StepStatusType.PASSED, description="Step status")
@@ -705,11 +705,25 @@ class UUTReport(WSJFReport):
     Based on C# Interface.TDM pattern.
     """
     # Root sequence call with complete step hierarchy
-    root_sequence_call: Optional[SequenceCall] = Field(None, description="Root sequence call with full step hierarchy")
-    
-    # Legacy root field for backward compatibility
-    root: Optional[LegacySequenceCall] = Field(default_factory=LegacySequenceCall, description="Legacy root sequence call")
-    
+    # Can you make this field autoinitialize when UUTReport is constructed?
+    root: Optional[SequenceCall] = Field(default_factory=lambda: SequenceCall(
+        step_id=0,
+        step_index=0,
+        name="Root",
+        step_type=StepTypeEnum.SEQUENCE_CALL,
+        status=StepStatusType.PASSED,
+        parent_step_id=None,
+        total_time=0.0,
+        start_time=None,
+        sequence_name="MainSequence",
+        sequence_version=None,
+        filename=None,
+        filepath=None,
+        current_step_index=0,
+        current_step_order=0,
+        current_measure_order=0
+    ), description="Root sequence call with full step hierarchy")
+
     # UUT-specific info field with uut alias (overrides base info field)
     uut_info: Optional[UUTInfo] = Field(default=None, alias="uut", description="UUT-specific information")
     
@@ -720,6 +734,7 @@ class UUTReport(WSJFReport):
     def __init__(self, **data):
         # Ensure type is always 'T' for UUT reports
         data['type'] = 'T'
+
         super().__init__(**data)
     
     def get_next_step_order(self) -> int:
@@ -734,6 +749,10 @@ class UUTReport(WSJFReport):
         self.next_measure_order += 1
         return order
     
+    def get_root_Sequence_call(self) -> SequenceCall:
+        """Get the root sequence call"""
+        return self.root
+
     def create_root_sequence_call(self, sequence_name: str, sequence_version: Optional[str] = None) -> SequenceCall:
         """Create the root sequence call with complete step hierarchy"""
         self.root_sequence_call = SequenceCall(

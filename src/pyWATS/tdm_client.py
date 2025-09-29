@@ -710,13 +710,14 @@ class TDMClient:
         
         # Set the UUT info after creation (this ensures proper alias handling)
         report.uut_info = uut_info
-        
-        # Add miscellaneous information for sequence details
-        if sequence_file_name:
-            report.info. sequence_file_name)
-        if sequence_file_version:
-            report.add_misc_info("SequenceVersion", sequence_file_version)
-            
+
+
+        # Create a SequenceCall instance and add it to the report
+        from .tdm.models import SequenceCall
+        root_sequence = report.get_root_Sequence_call()
+        root_sequence.sequence_name = sequence_file_name
+        root_sequence.sequence_version = sequence_file_version
+
         return report
 
     def create_uur_report(

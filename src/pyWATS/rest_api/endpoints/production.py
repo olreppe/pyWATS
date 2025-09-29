@@ -81,7 +81,7 @@ def create_batches(
     
     batch_data = [batch.model_dump(exclude_none=True, by_alias=True) for batch in batches]
     
-    response = client.put("/api/Production/Batches", json=batch_data)
+    response = client.put("/api/Production/Batches", json={"batches": batch_data})
     
     if response.status_code != 200:
         handle_response_error(response)
