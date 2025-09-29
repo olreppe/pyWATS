@@ -111,8 +111,16 @@ class NumericLimitStep(Step):
     measurements: List[Union[NumericMeasurement, MultiNumericMeasurement]] = Field(
         default_factory=list, description="Numeric measurements"
     )
-    is_single: bool = Field(True, description="True for single measurement, False for multiple")
+    is_single: bool = Field(False, description="True for single measurement, False for multiple")
     is_multiple: bool = Field(False, description="True for multiple measurements, False for single")
+
+    @classmethod
+    def create_single(cls, **kwargs):
+        return cls(is_single=True, is_multiple=False, **kwargs)
+
+    @classmethod
+    def create_multiple(cls, **kwargs):
+        return cls(is_single=False, is_multiple=True, **kwargs)
     
     def add_test(self, value: float, comp_operator: CompOperatorType = CompOperatorType.GELE, 
                  low_limit: Optional[float] = None, high_limit: Optional[float] = None, 
@@ -120,10 +128,8 @@ class NumericLimitStep(Step):
         """Add a single numeric test"""
         if self.is_multiple:
             raise ValueError("Cannot add single test to multiple test step")
-        
         if len(self.measurements) > 0:
             raise ValueError("Cannot add multiple single tests to single test step")
-            
         measurement = NumericMeasurement(
             measure_index=len(self.measurements),
             measure_order=0,  # Will be set by parent
@@ -131,10 +137,13 @@ class NumericLimitStep(Step):
             comp_operator=comp_operator,
             low_limit=low_limit,
             high_limit=high_limit,
-            unit=unit
+            unit=unit,
+            status=StepStatusType.PASSED  # Default, can be updated later
         )
         self.measurements.append(measurement)
         self.is_single = True
+        self.is_multiple = False
+        self.update_status()
         return measurement
     
     def add_multiple_test(self, measure_name: str, value: float, 
@@ -144,11 +153,9 @@ class NumericLimitStep(Step):
         """Add a named numeric test to multiple test step"""
         if self.is_single:
             raise ValueError("Cannot add multiple test to single test step")
-            
         if not self.is_multiple:
-            self.step_type = StepTypeEnum.ET_MNLT
             self.is_multiple = True
-            
+            self.is_single = False
         measurement = MultiNumericMeasurement(
             measure_name=measure_name,
             measure_index=len(self.measurements),
@@ -157,10 +164,25 @@ class NumericLimitStep(Step):
             comp_operator=comp_operator,
             low_limit=low_limit,
             high_limit=high_limit,
-            unit=unit
+            unit=unit,
+            status=StepStatusType.PASSED  # Default, can be updated later
         )
         self.measurements.append(measurement)
+        self.update_status()
         return measurement
+
+    def update_status(self):
+        """Update step status based on measurement results"""
+        if self.is_single and self.measurements:
+            self.status = self.measurements[0].status
+        elif self.is_multiple and self.measurements:
+            # Step is passed only if all measurements are passed
+            if all(m.status == StepStatusType.PASSED for m in self.measurements):
+                self.status = StepStatusType.PASSED
+            elif any(m.status == StepStatusType.FAILED for m in self.measurements):
+                self.status = StepStatusType.FAILED
+            else:
+                self.status = StepStatusType.ERROR
 
 
 class PassFailStep(Step):
