@@ -51,7 +51,8 @@ Example usage:
 
 # Conditionally import Statistics to avoid circular imports during package init
 try:
-    from .statistics import Statistics
+    from .statistics import Statistics as _Statistics
+    Statistics = _Statistics  # Expose as pyWATS.tdm.Statistics
 except ImportError:
     # Create a placeholder during circular import resolution
     class Statistics:

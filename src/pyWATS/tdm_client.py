@@ -713,7 +713,7 @@ class TDMClient:
         
         # Add miscellaneous information for sequence details
         if sequence_file_name:
-            report.add_misc_info("SequenceFileName", sequence_file_name)
+            report.info. sequence_file_name)
         if sequence_file_version:
             report.add_misc_info("SequenceVersion", sequence_file_version)
             

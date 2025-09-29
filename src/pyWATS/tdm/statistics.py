@@ -9,23 +9,7 @@ alert management, and performance counters.
 from typing import Optional, List, Union
 from datetime import datetime, timedelta
 
-# Use try/except to avoid circular imports during package initialization
-try:
-    from ..mes.base import MESBase
-except ImportError:
-    # Create a stub base class if MES isn't available
-    class MESBase:
-        def __init__(self, connection):
-            self.connection = connection
-            self._client = connection if hasattr(connection, 'get') else None
-            
-        def _rest_get_json(self, endpoint, params=None):
-            """Stub method"""
-            return {}
-            
-        def _rest_post_json(self, endpoint, data=None):
-            """Stub method"""
-            return {}
+from ..mes.base import MESBase
 
 from .models import (
     TrendData, TrendDataPoint, LastResultData, AlertLevels, 
@@ -85,8 +69,8 @@ class Statistics(MESBase):
             
             if response.get("result"):
                 return LastResultData(
-                    part_number=part_number,
-                    operation_key=operation_key,
+                    partNumber=part_number,
+                    operationKey=operation_key,
                     result=response.get("result"),
                     timestamp=response.get("timestamp"),
                     value=response.get("value"),
@@ -126,7 +110,7 @@ class Statistics(MESBase):
         }
         
         if days is not None:
-            params["days"] = days
+            params["days"] = str(days)
         
         response = self._rest_get_json("/api/internal/Statistics/GetTrend")
         trend_points_data = response.get("trendPoints", [])
@@ -142,12 +126,12 @@ class Statistics(MESBase):
             ))
         
         return TrendData(
-            part_number=part_number,
-            operation_key=operation_key,
-            data_points=data_points,
-            total_count=response.get("totalCount", 0),
-            start_date=response.get("startDate"),
-            end_date=response.get("endDate")
+            partNumber=part_number,
+            operationKey=operation_key,
+            dataPoints=data_points,
+            totalCount=response.get("totalCount", 0),
+            startDate=response.get("startDate"),
+            endDate=response.get("endDate")
         )
     
     def reset_startup_counters(self) -> bool:
@@ -195,11 +179,11 @@ class Statistics(MESBase):
             WATSAPIException: On API errors
         """
         alert_levels = AlertLevels(
-            part_number=part_number,
-            warning_level=warning_level,
-            critical_level=critical_level,
-            total_count=total_count,
-            last_count=last_count
+            partNumber=part_number,
+            warningLevel=warning_level,
+            criticalLevel=critical_level,
+            totalCount=total_count,
+            lastCount=last_count
         )
         
         try:
