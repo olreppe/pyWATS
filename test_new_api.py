@@ -51,7 +51,6 @@ def test_module_access(api):
     module_tests = [
         ("product", "Product management"),
         ("report", "Report and analytics"),
-        ("unit", "Unit/device management"),
         ("workflow", "Workflow management"),
         ("production", "Production tracking"),
         ("asset", "Asset management"),

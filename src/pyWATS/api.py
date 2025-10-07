@@ -17,10 +17,10 @@ class WATSApi:
     Provides access to all WATS modules through properties:
     - product: Product management and configuration
     - report: Analytics and reporting functionality  
-    - unit: Unit/device management
     - workflow: Workflow and step management
     - production: Production tracking and control
     - asset: Asset management
+    - software: Software package management
     - app: Application and system management
     
     Example:
@@ -64,10 +64,10 @@ class WATSApi:
         # Initialize modules lazily
         self._product_module = None
         self._report_module = None
-        self._unit_module = None
         self._workflow_module = None
         self._production_module = None
         self._asset_module = None
+        self._software_module = None
         self._app_module = None
     
     @property
@@ -97,14 +97,6 @@ class WATSApi:
         return self._report_module
     
     @property
-    def unit(self):
-        """Access unit/device management functionality."""
-        if self._unit_module is None:
-            from .modules.unit import UnitModule
-            self._unit_module = UnitModule(self._http_client)
-        return self._unit_module
-    
-    @property
     def workflow(self):
         """Access workflow and step management functionality."""
         if self._workflow_module is None:
@@ -127,6 +119,14 @@ class WATSApi:
             from .modules.asset import AssetModule
             self._asset_module = AssetModule(self._http_client)
         return self._asset_module
+    
+    @property
+    def software(self):
+        """Access software package management functionality."""
+        if self._software_module is None:
+            from .modules.software import SoftwareModule
+            self._software_module = SoftwareModule(self._http_client)
+        return self._software_module
     
     @property
     def app(self):
