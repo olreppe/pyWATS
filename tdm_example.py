@@ -1,5 +1,15 @@
 """
-Comprehensive TDM Example
+Comprehensive TDM Example - LEGACY
+
+⚠️  WARNING: This file uses the old pyWATS API structure (TDM/MES layers).
+    The new pyWATS 2.0 API uses an object-oriented design.
+    
+    For current examples, see: test_new_api.py
+    
+    New usage:
+        from pyWATS import WATSApi, PyWATSConfig
+        api = WATSApi(config=PyWATSConfig())
+        report = api.report.get_production_statistics()
 
 This example demonstrates the complete TDM workflow including:
 - Finding existing reports

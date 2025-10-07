@@ -1,0 +1,95 @@
+from collections.abc import Mapping
+from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
+
+from ..types import UNSET, Unset
+from typing import Union
+
+
+
+
+
+
+T = TypeVar("T", bound="VirincoWATSWebDashboardModelsTdmSetting")
+
+
+
+@_attrs_define
+class VirincoWATSWebDashboardModelsTdmSetting:
+    """ 
+        Attributes:
+            key (Union[Unset, str]):
+            value (Union[Unset, str]):
+            binary_value (Union[Unset, str]):
+     """
+
+    key: Union[Unset, str] = UNSET
+    value: Union[Unset, str] = UNSET
+    binary_value: Union[Unset, str] = UNSET
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+
+
+
+
+    def to_dict(self) -> dict[str, Any]:
+        key = self.key
+
+        value = self.value
+
+        binary_value = self.binary_value
+
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update({
+        })
+        if key is not UNSET:
+            field_dict["key"] = key
+        if value is not UNSET:
+            field_dict["value"] = value
+        if binary_value is not UNSET:
+            field_dict["binaryValue"] = binary_value
+
+        return field_dict
+
+
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
+        key = d.pop("key", UNSET)
+
+        value = d.pop("value", UNSET)
+
+        binary_value = d.pop("binaryValue", UNSET)
+
+        virinco_wats_web_dashboard_models_tdm_setting = cls(
+            key=key,
+            value=value,
+            binary_value=binary_value,
+        )
+
+
+        virinco_wats_web_dashboard_models_tdm_setting.additional_properties = d
+        return virinco_wats_web_dashboard_models_tdm_setting
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

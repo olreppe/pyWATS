@@ -1,95 +1,77 @@
 """
 pyWATS - Python SDK for WATS (Virinco Test Data Management System)
 
-This package provides comprehensive access to WATS functionality including:
-- REST API client for HTTP-based operations
-- Connection management with authentication
-- MES (Manufacturing Execution System) modules
-- TDM (Test Data Management) modules
-- WATS client library for direct database access (legacy)
-- Data models and utilities
+This package provides comprehensive access to WATS functionality through a modern
+object-oriented API design:
 
-For MES operations:
-    from pyWATS.mes import Production, Product, Asset, Software, Workflow
-
-For TDM operations:
-    from pyWATS.tdm import Statistics, Analytics, Reports
+- WATSApi: Main API class with module properties for organized access
+- Product: Product management and configuration
+- Report: Analytics and reporting functionality  
+- Unit: Unit/device management
+- Workflow: Workflow and step management
+- Production: Production tracking and control
+- Asset: Asset management
+- App: Application and system management
 
 Example usage:
-    # Create connection
-    connection = create_connection(
-        base_url="https://your-wats-server.com",
-        token="your_base64_token"
-    )
+    from pyWATS import WATSApi, PyWATSConfig
     
-    # Use REST API endpoints
-    from pyWATS.rest_api.endpoints.asset import get_assets
-    assets = get_assets(odata_top=10)
+    # Initialize with configuration
+    config = PyWATSConfig()
+    api = WATSApi(config=config)
     
-    # Use MES modules
-    from pyWATS.mes import Production
-    production = Production(connection)
-    unit_info = production.get_unit_info("12345", "PART001")
+    # Or initialize directly
+    api = WATSApi(base_url="https://your-wats-server.com", token="your_token")
     
-    # Use TDM modules
-    from pyWATS.tdm import Statistics
-    statistics = Statistics(connection)
-    trend_data = statistics.get_trend("PART001", "OP001")
+    # Access modules through properties
+    products = api.product.get_all()
+    report = api.report.get_production_statistics()
+    units = api.unit.get_all()
 """
 
-# Import connection management for easy access
-from .connection import create_connection, create_connection_from_env, WATSConnection
+# Import the main API class and configuration
+from .api import WATSApi
+from .config import PyWATSConfig
+from .exceptions import (
+    WATSException, 
+    WATSAPIError, 
+    WATSConnectionError, 
+    WATSAuthenticationError,
+    WATSValidationError,
+    WATSNotFoundError,
+    WATSConfigurationError,
+    WATSTimeoutError
+)
 
-# Import REST API components for easy access
+# Import REST API components for direct access if needed
 from . import rest_api
 
-# Lazy import MES modules to avoid circular imports
-def _import_mes():
-    try:
-        from . import mes
-        return mes
-    except ImportError as e:
-        import warnings
-        warnings.warn(f"MES module could not be imported: {e}")
-        return None
-
-mes = None  # Will be loaded lazily
-
-# Import TDM modules
-from . import tdm
-from .tdm_client import TDMClient
-
-# Import high-level API and configuration
-from .api import PyWATSAPI, create_api
-from .config import PyWATSConfig
-
-# Import legacy WATS client if available
+# Import legacy components if available
 try:
     from . import wats_client
 except ImportError:
     wats_client = None
 
-__version__ = "1.0.0"
-
-# Property to lazily load MES
-def __getattr__(name):
-    if name == "mes":
-        global mes
-        if mes is None:
-            mes = _import_mes()
-        return mes
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+__version__ = "2.0.0"
 
 __all__ = [
-    "create_connection",
-    "create_connection_from_env", 
-    "WATSConnection",
-    "rest_api",
-    "mes",  # Lazily loaded
-    "tdm", 
-    "TDMClient",
-    "PyWATSAPI",
-    "create_api",
+    # Main API
+    "WATSApi",
     "PyWATSConfig",
-    "wats_client",  # May be None if not available
+    
+    # Exceptions
+    "WATSException",
+    "WATSAPIError", 
+    "WATSConnectionError",
+    "WATSAuthenticationError",
+    "WATSValidationError",
+    "WATSNotFoundError", 
+    "WATSConfigurationError",
+    "WATSTimeoutError",
+    
+    # REST API components for advanced usage
+    "rest_api",
+    
+    # Legacy components (may be None)
+    "wats_client",
 ]

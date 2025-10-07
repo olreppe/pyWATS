@@ -1,5 +1,15 @@
 """
-pyWATS Main Example
+pyWATS Main Example - LEGACY
+
+⚠️  WARNING: This file uses the old pyWATS API structure (MES/TDM layers).
+    The new pyWATS 2.0 API uses an object-oriented design.
+    
+    For current examples, see: test_new_api.py
+    
+    New usage:
+        from pyWATS import WATSApi, PyWATSConfig
+        api = WATSApi(config=PyWATSConfig())
+        products = api.product.get_all()
 
 This file demonstrates how to use the pyWATS library to connect to a WATS API
 and perform basic operations on assets.

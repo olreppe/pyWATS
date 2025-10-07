@@ -8,7 +8,8 @@ token for all REST API operations.
 
 import os
 from typing import Optional
-from .rest_api.client import WATSClient, set_default_client
+# TODO: Update to use new REST API structure
+# from .rest_api.client import WATSClient, set_default_client
 
 
 class WATSConnection:
