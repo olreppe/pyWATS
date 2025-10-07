@@ -96,12 +96,10 @@ class MiscUURInfo(BaseModel):
     
     @data_string.setter
     def data_string(self, value: str):
-        """Set the string value with validation if report API is available"""
-        if self._report and hasattr(self._report, 'api'):
-            # Use WATS API validation if available (matches C# pattern)
-            self._value = self._report.api.set_property_validated("Value", value, "DataString")
-        else:
-            self._value = value
+        """Set the string value"""
+        # Note: API validation not available yet
+        # TODO: Add WATS API validation when UURReport.api is implemented
+        self._value = value
     
     @property
     def value(self) -> str:
