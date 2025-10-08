@@ -13,7 +13,7 @@ class WatsHttpClient(BaseClient):
         Initialize the WATS HTTP client.
         
         Args:
-            base_url: The base URL for the WATS API (e.g., "https://live.wats.com")
+            base_url: The base URL for the WATS API (e.g., "https://py.wats.com")
             base64_token: Base64-encoded authentication token
             timeout: Request timeout in seconds (default: 30.0)
             **kwargs: Additional arguments passed to the base client

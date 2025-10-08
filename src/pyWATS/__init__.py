@@ -52,7 +52,6 @@ Example usage:
 # Import the main API class and configuration
 from .api import WATSApi
 from .config import PyWATSConfig
-from .tdm import TDM
 from .exceptions import (
     WATSException, 
     WATSAPIError, 
@@ -83,7 +82,6 @@ __all__ = [
     # Main API
     "WATSApi",
     "PyWATSConfig",
-    "TDM",
     
     # Report Models
     "UUTReport",

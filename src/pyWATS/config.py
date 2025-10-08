@@ -13,9 +13,9 @@ from typing import Optional
 class PyWATSConfig:
     """Configuration class for pyWATS API initialization"""
     
-    # Server Configuration
-    BASE_URL: str = "https://ola.wats.com"
-    AUTH_TOKEN: str = "cHlXQVRTOmdtQTVtTHo5N28yYWYwRm85MiY4cDhEUzdBcERRYQ=="
+    # Server Configuration - Updated for debugging
+    BASE_URL: str = "https://py.wats.com"
+    AUTH_TOKEN: str = "cHlXQVRTX1Rlc3Rpbmc6NWUwYVY3enhJN3E2OUx6ZlE4bDZiMiFPcHB1NmI4"
     
     # TDM Client Configuration
     DATA_DIR: str = "./wats_data"
