@@ -4,16 +4,15 @@ PyWATS Test Runner
 
 This script provides a convenient way to run different categories of tests.
 Usage:
-    python run_tests.py [module] [test_type] [options]
+    python run_tests.py [module] [options]
 
 Examples:
     python run_tests.py                    # Run all tests
-    python run_tests.py unit              # Run all unit tests
-    python run_tests.py models            # Run all model tests
-    python run_tests.py models unit       # Run unit tests for models only
-    python run_tests.py uur               # Run all UUR-related tests
-    python run_tests.py --coverage        # Run with coverage report
-    python run_tests.py --verbose         # Run with verbose output
+    python run_tests.py pywats             # Run top-level pyWATS tests
+    python run_tests.py app                # Run app module tests
+    python run_tests.py report             # Run report module tests
+    python run_tests.py --coverage         # Run with coverage report
+    python run_tests.py --verbose          # Run with verbose output
 """
 
 import sys
@@ -40,7 +39,11 @@ class TestRunner:
     
     def build_pytest_command(self, args):
         """Build pytest command based on arguments"""
-        cmd = ["python", "-m", "pytest"]
+        # Use virtual environment python if available
+        venv_python = self.root_dir / ".venv" / "Scripts" / "python.exe"
+        python_cmd = str(venv_python) if venv_python.exists() else "python"
+        
+        cmd = [python_cmd, "-m", "pytest"]
         
         # Base pytest options
         cmd.extend(["-v", "--tb=short"])
@@ -58,17 +61,13 @@ class TestRunner:
         if args.verbose:
             cmd.append("-vv")
         
-        # Determine test path and markers
-        test_path, markers = self.get_test_selection(args)
+        # Determine test path
+        test_path = self.get_test_selection(args)
         
         if test_path:
             cmd.append(str(test_path))
         else:
             cmd.append(str(self.tests_dir))
-            
-        # Add markers
-        if markers:
-            cmd.extend(["-m", " and ".join(markers)])
             
         # Add any additional pytest args
         if args.pytest_args:
@@ -79,64 +78,48 @@ class TestRunner:
     def get_test_selection(self, args):
         """Determine which tests to run based on arguments"""
         test_path = None
-        markers = []
         
         # Module-specific paths
         module_paths = {
-            "models": self.tests_dir / "unit" / "models",
-            "modules": self.tests_dir / "unit" / "modules", 
-            "core": self.tests_dir / "unit" / "core",
-            "uut": self.tests_dir / "unit" / "models" / "report" / "uut",
-            "uur": self.tests_dir / "unit" / "models" / "report" / "uur",
-            "api": self.tests_dir / "unit" / "core",
-            "integration": self.tests_dir / "integration",
-            "e2e": self.tests_dir / "e2e"
-        }
-        
-        # Test type paths
-        type_paths = {
-            "unit": self.tests_dir / "unit",
-            "integration": self.tests_dir / "integration", 
-            "e2e": self.tests_dir / "e2e"
+            "pywats": self.tests_dir / "test_pywats_toplevel.py",
+            "app": self.tests_dir / "modules" / "test_app.py",
+            "asset": self.tests_dir / "modules" / "test_asset.py",
+            "product": self.tests_dir / "modules" / "test_product.py",
+            "production": self.tests_dir / "modules" / "test_production.py",
+            "report": self.tests_dir / "modules" / "test_report.py",
+            "software": self.tests_dir / "modules" / "test_software.py",
+            "workflow": self.tests_dir / "modules" / "test_workflow.py",
+            "modules": self.tests_dir / "modules"
         }
         
         # Check for module specification
-        if args.module in module_paths:
+        if args.module and args.module in module_paths:
             test_path = module_paths[args.module]
-        elif args.module in type_paths:
-            test_path = type_paths[args.module]
-            
-        # Check for test type specification
-        if args.test_type:
-            if args.test_type in ["unit", "integration", "e2e"]:
-                markers.append(args.test_type)
-            elif args.test_type in ["models", "modules", "api"]:
-                markers.append(args.test_type)
                 
-        return test_path, markers
+        return test_path
     
     def list_available_tests(self):
         """List all available test categories"""
         print("Available test categories:")
-        print("\nTest Types:")
-        print("  unit        - All unit tests")
-        print("  integration - All integration tests") 
-        print("  e2e         - All end-to-end tests")
+        print("\nTop Level:")
+        print("  pywats      - pyWATS API connection tests")
         
-        print("\nModules:")
-        print("  models      - All model tests")
+        print("\nModule Tests:")
+        print("  app         - App module tests")
+        print("  asset       - Asset module tests")
+        print("  product     - Product module tests")
+        print("  production  - Production module tests")
+        print("  report      - Report module tests")
+        print("  software    - Software module tests")
+        print("  workflow    - Workflow module tests")
         print("  modules     - All module tests")
-        print("  core        - Core functionality tests")
-        print("  api         - API layer tests")
-        
-        print("\nSpecific Areas:")
-        print("  uut         - UUT report tests")
-        print("  uur         - UUR report tests")
         
         print("\nExamples:")
-        print("  python run_tests.py unit models    # Unit tests for models")
-        print("  python run_tests.py uur            # All UUR tests")
-        print("  python run_tests.py --coverage     # All tests with coverage")
+        print("  python run_tests.py              # All tests")
+        print("  python run_tests.py pywats       # Top-level tests")
+        print("  python run_tests.py app          # App module tests")
+        print("  python run_tests.py modules      # All module tests")
+        print("  python run_tests.py --coverage   # All tests with coverage")
 
 
 def main():
@@ -149,13 +132,7 @@ def main():
     parser.add_argument(
         "module",
         nargs="?",
-        help="Module to test (models, modules, core, uut, uur, unit, integration, e2e)"
-    )
-    
-    parser.add_argument(
-        "test_type", 
-        nargs="?",
-        help="Type of tests to run (unit, integration, e2e, models, modules, api)"
+        help="Module to test (pywats, app, asset, product, production, report, software, workflow, modules)"
     )
     
     parser.add_argument(
