@@ -166,14 +166,7 @@ class ReportModule(BaseModule):
         # Convert the report to JSON and submit via API
         try:
             # For now, track it locally and generate a placeholder ID
-            self._pending_reports.append(report)
-            
-            # In a real implementation, this would:
-            # 1. Serialize the report to JSON
-            # 2. Send POST request to /api/reports endpoint
-            # 3. Return the actual report ID from the server
-            
-            return str(report.id)
+            return self.create_report(report)
             
         except Exception as e:
             raise WATSException(f"Failed to submit report: {str(e)}")
@@ -382,6 +375,13 @@ class ReportModule(BaseModule):
     def create_report(self, report: Union[UUTReport, UURReport]) -> str:
         """
         Create/submit a new report to WATS.
+        
+        TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        This nees investigation.
+        do we really keep it here? The create_report() does submit()
+        Confusing?
+        In line with C# TDM?
+             
         
         Args:
             report: The UUTReport or UURReport to submit
