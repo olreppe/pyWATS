@@ -7,6 +7,9 @@ This file initializes the pyWATS 2.0 API for exploration.
 import sys
 import os
 
+from pyWATS.models.report.uut.steps.sequence_call import SequenceCall
+from pyWATS.models.report.uut.uut_report import UUTReport
+
 # Add src to path so we can import pyWATS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
@@ -25,28 +28,12 @@ def main():
         token="cHlXQVRTOmdtQTVtTHo5N28yYWYwRm85MiY4cDhEUzdBcERRYQ=="
     )
     
-    print("API initialized successfully!")
-    print(f"API: {api}")
-    print()
-    print("Available modules:")
-    print(f"  - api.product: {type(api.product).__name__}")
-    print(f"  - api.asset: {type(api.asset).__name__}")
-    print(f"  - api.production: {type(api.production).__name__}")
-    print(f"  - api.workflow: {type(api.workflow).__name__}")
-    print(f"  - api.software: {type(api.software).__name__}")
-    print(f"  - api.report: {type(api.report).__name__}")
-    print(f"  - api.app: {type(api.app).__name__}")
-    print()
-    print("API ready for exploration. Use 'api' variable to access modules.")
-    
-    # Make api available for interactive exploration
-    globals()['api'] = api
-    
-    api.product.get_product("ABD", 1, True, True)
-    
-    
-    return api
-
+    uut = api.report.create_uut_report("Ola","12345","1.0","SN123456","10","Seq.seq","1.0","STATION1","Drammen, Norway", "PythonTest")
+      
+    root = uut.get_root_sequence_call()
+    root.add_numeric_step(name="MyNumericStep", value=42.0, unit="units")
+    api.report.submit_report(report=uut)
+    api.report.submit_pending_reports()
 
 if __name__ == "__main__":
     api = main()

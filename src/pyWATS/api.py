@@ -6,7 +6,7 @@ organizing all functionality into logical modules accessible as properties.
 """
 
 from typing import Optional
-from .rest_api.http_client import WatsHttpClient
+from .rest_api._http_client import WatsHttpClient
 from .config import PyWATSConfig
 
 

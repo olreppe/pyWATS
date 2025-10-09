@@ -1,5 +1,4 @@
 """pyWATS REST API module."""
 
-from .http_client import WatsHttpClient
-
-__all__ = ["WatsHttpClient"]
+# This module is now primarily for internal structure.
+# WatsHttpClient is exposed via WATSApi.
