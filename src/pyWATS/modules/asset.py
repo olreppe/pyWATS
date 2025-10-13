@@ -5,13 +5,14 @@ This module provides functionality for managing assets, equipment,
 and asset-related operations in the WATS system.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 from .base import BaseModule
 from ..exceptions import WATSException, WATSNotFoundError
-
+from ..models.asset_model import AssetModel
+from pydantic import Field, PrivateAttr  # Ensure this is imported
 
 class AssetState(Enum):
     """Asset state enumeration."""
@@ -29,30 +30,18 @@ class AssetResponse:
         self.data = data
 
 
-class AssetInfo:
-    """Asset information with comprehensive asset management capabilities."""
-    
-    def __init__(self, id: str, name: str = "", location: str = "", 
-                 state: AssetState = AssetState.AVAILABLE, asset_type: str = "", **kwargs):
-        self.id = id
-        self.name = name
-        self.location = location
-        self.state = state
-        self.asset_type = asset_type
-        self.additional_properties = kwargs.get('additional_properties', {})
-        self.serial_number = kwargs.get('serial_number', id)
-        self.parent_asset_id = kwargs.get('parent_asset_id')
-        self.description = kwargs.get('description', '')
-        self.running_count = kwargs.get('running_count', 0)
-        self.total_count = kwargs.get('total_count', 0)
-        self.calibration_date = kwargs.get('calibration_date')
-        self.maintenance_date = kwargs.get('maintenance_date')
-        self.tags = kwargs.get('tags', [])
-        self.configuration = kwargs.get('configuration', {})
-        
-        # Private module reference for REST operations
-        self._asset_module = kwargs.get('_asset_module')
-    
+class AssetInfo(AssetModel):
+    """Asset information model, extending the generated AssetModel with custom methods."""
+    # Add additional fields not in AssetModel, with proper Pydantic defaults
+    additional_properties: Dict[str, Any] = Field(default_factory=dict)
+    configuration: Dict[str, Any] = Field(default_factory=dict)
+    # Note: serial_number, parent_asset_id, etc., are already in AssetModel (via aliases)
+    # If any are missing, add them here with aliases if needed
+
+    _asset_module: Optional['AssetModule'] = PrivateAttr(default=None)  # Private attribute for module reference
+
+    # No custom __init__ needed; Pydantic handles it
+
     def update_location(self, new_location: str) -> bool:
         """
         Update the asset location.
@@ -83,7 +72,13 @@ class AssetInfo:
         if self._asset_module:
             # This would call a state update endpoint when available
             # For now, just update locally
-            self.state = new_state
+            # Convert to the correct AssetState enum from asset_model
+            from ..models.asset_model import AssetState as ModelAssetState
+            if isinstance(new_state, AssetState):
+                # Map by value
+                self.state = ModelAssetState(new_state.value)
+            else:
+                self.state = new_state
             return True
         return False
     
@@ -97,10 +92,7 @@ class AssetInfo:
         Returns:
             bool: True if tag was added successfully
         """
-        if tag not in self.tags:
-            self.tags.append(tag)
-            # In a full implementation, this would call REST API
-            return True
+        # Tags functionality not implemented yet - placeholder
         return False
     
     def remove_tag(self, tag: str) -> bool:
@@ -113,10 +105,7 @@ class AssetInfo:
         Returns:
             bool: True if tag was removed successfully
         """
-        if tag in self.tags:
-            self.tags.remove(tag)
-            # In a full implementation, this would call REST API
-            return True
+        # Tags functionality not implemented yet - placeholder
         return False
     
     def get_tags(self) -> List[str]:
@@ -126,7 +115,8 @@ class AssetInfo:
         Returns:
             List[str]: List of tags
         """
-        return self.tags.copy()
+        # Tags functionality not implemented yet - placeholder
+        return []
     
     def update_config(self, config: Dict[str, Any]) -> bool:
         """
@@ -250,23 +240,8 @@ class AssetInfo:
         Returns:
             Dict[str, Any]: Asset information as dictionary
         """
-        return {
-            'id': self.id,
-            'name': self.name,
-            'location': self.location,
-            'state': self.state.value if isinstance(self.state, AssetState) else self.state,
-            'asset_type': self.asset_type,
-            'serial_number': self.serial_number,
-            'parent_asset_id': self.parent_asset_id,
-            'description': self.description,
-            'running_count': self.running_count,
-            'total_count': self.total_count,
-            'calibration_date': self.calibration_date.isoformat() if self.calibration_date else None,
-            'maintenance_date': self.maintenance_date.isoformat() if self.maintenance_date else None,
-            'tags': self.tags,
-            'configuration': self.configuration,
-            'additional_properties': self.additional_properties
-        }
+        # Use Pydantic's model_dump for proper serialization
+        return self.model_dump()
 
 
 class Asset:
@@ -296,10 +271,6 @@ class AssetModule(BaseModule):
     """
 
     # Asset Handler Methods
-    def is_connected(self) -> bool:
-        """Check if asset handler is connected."""
-        raise NotImplementedError("AssetHandler.is_connected not implemented")
-
     def create_asset(self, serial_number: str, asset_type: str,
                     parent_asset_serial_number: Optional[str] = None,
                     asset_name: Optional[str] = None,
@@ -343,7 +314,7 @@ class AssetModule(BaseModule):
         """
         raise NotImplementedError("AssetHandler.create_asset_type not implemented")
 
-    def get_asset(self, serial_number: str) -> AssetResponse:
+    def get_asset(self, serial_number: str) -> Optional[AssetInfo]:
         """
         Get an asset by serial number.
         
@@ -351,39 +322,32 @@ class AssetModule(BaseModule):
             serial_number: Serial number of the asset
             
         Returns:
-            AssetResponse object containing asset data
+            AssetInfo or None if not found
             
         Raises:
             WATSException: If the REST API call fails
-            WATSNotFoundError: If the asset is not found
         """
         try:
             from ..rest_api.public.api.asset.asset_get_asset_by_serial_number import sync as asset_get_asset_by_serial_number
             from typing import cast
             from ..rest_api.public.client import Client
             
-            # Cast the http_client to the expected Client type
             client = cast(Client, self.http_client)
-            
-            # Call the REST API to get asset by serial number
             response = asset_get_asset_by_serial_number(
                 serial_number=serial_number,
                 client=client
             )
             
             if response is None:
-                raise WATSNotFoundError(f"Asset with serial number '{serial_number}' not found")
+                return None
             
-            # Convert the response to our AssetResponse format
-            return AssetResponse(
-                success=True,
-                message=f"Asset '{serial_number}' retrieved successfully",
-                data=response.to_dict() if hasattr(response, 'to_dict') else response
-            )
+            # Convert to AssetInfo
+            asset_dict = response.to_dict() if hasattr(response, 'to_dict') else response
+            asset_info = AssetInfo.model_validate(asset_dict)  # Or from API response
+            asset_info._asset_module = self
+            return asset_info
             
         except Exception as e:
-            if isinstance(e, (WATSException, WATSNotFoundError)):
-                raise
             raise WATSException(f"Failed to get asset '{serial_number}': {str(e)}")
 
     def update_asset(self, asset: Asset) -> AssetResponse:
@@ -410,7 +374,7 @@ class AssetModule(BaseModule):
             AssetResponse object
         """
         raise NotImplementedError("AssetHandler.set_parent not implemented")
-
+    
     def increment_asset_usage_count(self, serial_number: str,
                                    usage_count: int = 1,
                                    increment_sub_assets: bool = False) -> AssetResponse:
@@ -427,55 +391,91 @@ class AssetModule(BaseModule):
         """
         raise NotImplementedError("AssetHandler.increment_asset_usage_count not implemented")
 
-    def get_assets(self, filter_str: str) -> AssetResponse:
+    def get_assets(self, filter_str: Optional[str] = None, top: Optional[int] = None, 
+                   skip: Optional[int] = None, orderby: Optional[str] = None) -> List[AssetInfo]:
         """
-        Get assets by filter.
+        Get assets with optional OData query parameters.
         
         Args:
-            filter_str: OData filter string (e.g., "assetId eq '1'" or "runningCount gt 1000")
+            filter_str: Optional OData $filter expression (e.g., "state eq 'Available'")
+            top: Optional $top parameter to limit results
+            skip: Optional $skip parameter for pagination
+            orderby: Optional $orderby parameter for sorting (e.g., "firstSeenDate desc")
             
         Returns:
-            AssetResponse object containing list of assets
+            List[AssetInfo]: List of assets (empty if none found)
             
         Raises:
             WATSException: If the REST API call fails
+            
+        Examples:
+            # Get all assets
+            assets = module.get_assets()
+            
+            # Get assets with filter
+            assets = module.get_assets(filter_str="state eq 'Available'")
+            
+            # Get top 10 assets ordered by date
+            assets = module.get_assets(top=10, orderby="firstSeenDate desc")
         """
         try:
-            from ..rest_api.public.api.asset.asset_get_assets import sync as asset_get_assets
             from typing import cast
             from ..rest_api.public.client import Client
+            from ..rest_api.public.models.virinco_wats_web_dashboard_models_mes_asset_o_data_asset import (
+                VirincoWATSWebDashboardModelsMesAssetODataAsset
+            )
+            from urllib.parse import urlencode
             
-            # Cast the http_client to the expected Client type
             client = cast(Client, self.http_client)
             
-            # Note: The REST API endpoint doesn't support filter parameters directly in the function signature
-            # The filtering would typically be done through OData query parameters in the URL
-            # For now, we'll call the basic endpoint and return all assets
-            # In a real implementation, you might need to modify the REST client to support OData parameters
-            response = asset_get_assets(client=client)
+            # Build OData query parameters
+            params = {}
+            if filter_str:
+                params['$filter'] = filter_str
+            if top is not None:
+                params['$top'] = str(top)
+            if skip is not None:
+                params['$skip'] = str(skip)
+            if orderby:
+                params['$orderby'] = orderby
             
-            if response is None:
-                response = []
+            # Construct URL with query parameters
+            url = "/api/Asset"
+            if params:
+                url += "?" + urlencode(params)
             
-            # Convert the response to our AssetResponse format
-            asset_list = []
-            if isinstance(response, list):
-                for asset in response:
-                    if hasattr(asset, 'to_dict'):
-                        asset_list.append(asset.to_dict())
-                    else:
-                        asset_list.append(asset)
-            
-            return AssetResponse(
-                success=True,
-                message=f"Retrieved {len(asset_list)} assets",
-                data=asset_list
+            # Make the HTTP request directly using the client
+            response = client.get_httpx_client().request(
+                method="get",
+                url=url,
             )
+            
+            # Check response status
+            if response.status_code != 200:
+                raise WATSException(f"API returned status {response.status_code}: {response.text}")
+            
+            # Parse response
+            asset_list = []
+            response_data = response.json()
+            
+            if isinstance(response_data, list):
+                for asset_data in response_data:
+                    # Use the generated model to parse the response
+                    asset_obj = VirincoWATSWebDashboardModelsMesAssetODataAsset.from_dict(asset_data)
+                    asset_dict = asset_obj.to_dict()
+                    
+                    # Convert to AssetInfo
+                    asset_info = AssetInfo.model_validate(asset_dict)
+                    asset_info._asset_module = self
+                    asset_list.append(asset_info)
+            
+            return asset_list
             
         except Exception as e:
             if isinstance(e, WATSException):
                 raise
-            raise WATSException(f"Failed to get assets with filter '{filter_str}': {str(e)}")
+            filter_msg = f" with filter '{filter_str}'" if filter_str else ""
+            raise WATSException(f"Failed to get assets{filter_msg}: {str(e)}")
 
     def get_assets_by_tag(self, tag: str) -> AssetResponse:
         """
@@ -707,16 +707,16 @@ class AssetModule(BaseModule):
     # Legacy methods for backward compatibility
     def get_all(self) -> List[Dict[str, Any]]:
         """Get all assets."""
-        response = self.get_assets("")
-        return response.data if response.data else []
+        assets = self.get_assets("")
+        return [asset.to_dict() for asset in assets]
 
-    def get_by_id(self, asset_id: str) -> Dict[str, Any]:
+    def get_by_id(self, asset_id: str) -> Optional[Dict[str, Any]]:
         """Get a specific asset by ID."""
         self._validate_id(asset_id, "asset")
-        response = self.get_asset(asset_id)
-        return response.data if response.data else {}
+        asset = self.get_asset(asset_id)
+        return asset.to_dict() if asset else None
 
-    def get_tree(self) -> Dict[str, Any]:
+    def get_tree(self) -> List[Dict[str, Any]]:
         """Get the asset tree structure."""
-        response = self.get_assets("")
-        return response.data if response.data else {}
+        assets = self.get_assets("")
+        return [asset.to_dict() for asset in assets]
