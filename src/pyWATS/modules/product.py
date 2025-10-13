@@ -241,7 +241,7 @@ class ProductModule(BaseModule):
             WATSException: If the API call fails
         """
         try:
-            response = get_products_sync(client=cast(Client, self._http_client))
+            response = get_products_sync(client=cast(Client, self.http_client))
             products = response or []
             
             # Apply pagination if specified
@@ -252,7 +252,6 @@ class ProductModule(BaseModule):
             
             return [product.to_dict() for product in products]
         except Exception as e:
-            self._handle_api_error(e, "Get all products")
             raise WATSException(f"Failed to get products: {str(e)}")
     
     def get_count(self) -> int:
@@ -289,16 +288,17 @@ class ProductModule(BaseModule):
         
         try:
             response = get_product_sync(
-                client=cast(Client, self._http_client),
+                client=cast(Client, self.http_client),
                 part_number=product_id
             )
             if response is None:
                 raise WATSNotFoundError(f"Product with ID '{product_id}' not found")
             return response.to_dict()
         except Exception as e:
+            if isinstance(e, (WATSNotFoundError, WATSException)):
+                raise
             if "404" in str(e) or "not found" in str(e).lower():
                 raise WATSNotFoundError(f"Product with ID '{product_id}' not found")
-            self._handle_api_error(e, f"Get product {product_id}")
             raise WATSException(f"Failed to get product {product_id}: {str(e)}")
     
     def get_definition(self, product_id: str) -> Dict[str, Any]:

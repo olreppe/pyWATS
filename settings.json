@@ -4,5 +4,12 @@
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestArgs": [
         "tests"
-    ]
+    ],
+        
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/src"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/src"
+    ]    
 }

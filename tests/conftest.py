@@ -3,7 +3,7 @@ Common test fixtures for pyWATS modules.
 """
 
 import pytest
-from pyWATS.rest_api.http_client import WatsHttpClient
+from pyWATS.rest_api._http_client import WatsHttpClient
 from pyWATS.config import PyWATSConfig
 
 

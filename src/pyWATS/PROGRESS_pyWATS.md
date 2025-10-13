@@ -1,7 +1,7 @@
 # pyWATS - Overall API Implementation Progress
 
 ## 🎯 **Project Overview**
-pyWATS is a Python API wrapper for the Virinco WATS (Wireless Test System), providing object-oriented access to all WATS functionality through a unified interface.
+pyWATS is a Python API wrapper for the Virinco WATS, providing object-oriented access to all WATS functionality through a unified interface.
 
 ## 🏗️ **Architecture Status: ✅ PHASE 1 COMPLETE**
 

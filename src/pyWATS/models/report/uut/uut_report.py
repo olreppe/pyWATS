@@ -21,7 +21,7 @@ class UUTReport(Report):
 
     # UUT Specific
     root: SequenceCall = Field(default_factory=SequenceCall)        # Root Sequence Call
-    info: UUTInfo = Field(..., default_factory=UUTInfo, validation_alias="uut", serialization_alias="uut")     # Info (serializes as alias:uut)
+    info: Optional[UUTInfo] = Field(default=None, validation_alias="uut", serialization_alias="uut")     # Info (serializes as alias:uut)
 
     # -------------------------------------------------------------------
     # Get root sequence call    

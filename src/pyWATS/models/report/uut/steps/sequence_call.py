@@ -80,9 +80,9 @@ class StepList(List[StepType]):
 # Additional info in sequence call steps
 class SequenceCallInfo(WATSBase):
     # Fields
-    path: Optional[str] = Field(default=None, max_length=500, min_length=1)
-    file_name: Optional[str] = Field(default=None, max_length=200, min_length=1, validation_alias="name", serialization_alias="name")
-    version: Optional[str] = Field(default=None, max_length=30, min_length=1)
+    path: str = Field(default="SW FilePath",max_length=500, min_length=1)
+    file_name: str = Field(default="SW FileName", max_length=200, min_length=1, validation_alias="name", serialization_alias="name")
+    version: str = Field(default="SW Version", max_length=30, min_length=1)
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------

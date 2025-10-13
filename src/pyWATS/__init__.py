@@ -101,7 +101,5 @@ __all__ = [
     
     # REST API components for advanced usage
     "rest_api",
-    
-    # Legacy components (may be None)
-    "wats_client",
+
 ]

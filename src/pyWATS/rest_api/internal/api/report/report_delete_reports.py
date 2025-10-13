@@ -34,30 +34,13 @@ def _get_kwargs(
         "url": "/api/internal/Report/DeleteReports",
     }
 
-    if isinstance(body, list[UUID]):
+    if isinstance(body, list):
         _kwargs["json"] = []
         for body_item_data in body:
             body_item = str(body_item_data)
             _kwargs["json"].append(body_item)
-
-
-
 
         headers["Content-Type"] = "application/json"
-    if isinstance(body, list[UUID]):
-        _kwargs["data"] = body.to_dict()
-
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
-    if isinstance(body, list[UUID]):
-        _kwargs["json"] = []
-        for body_item_data in body:
-            body_item = str(body_item_data)
-            _kwargs["json"].append(body_item)
-
-
-
-
-        headers["Content-Type"] = "application/scim+json"
 
     _kwargs["headers"] = headers
     return _kwargs

@@ -5,13 +5,19 @@ This module provides functionality for generating reports, analytics,
 loading and managing test reports from the WATS system.
 """
 
-from typing import List, Optional, Dict, Any, Union, cast
+from typing import List, Optional, Dict, Any, Union, TYPE_CHECKING, cast
 from datetime import datetime
 from uuid import UUID, uuid4
-import os
+import json  # Add this import at the top
+import warnings
+
 from .base import BaseModule
 from ..exceptions import WATSException, WATSNotFoundError
 from ..models.report import UUTReport, UURReport, Report
+
+if TYPE_CHECKING:
+    from ..rest_api._http_client import WatsHttpClient
+    from ..rest_api.public.client import AuthenticatedClient, Client
 
 # Import REST API endpoints
 from ..rest_api.public.api.report import (
@@ -19,13 +25,12 @@ from ..rest_api.public.api.report import (
     report_get_report_as_wsjf,
     report_post_wsjf
 )
+from ..rest_api.internal.api.report import (
+    report_delete_reports
+)
 from ..rest_api.public.models.virinco_wats_web_dashboard_models_o_data_report_header import (
     VirincoWATSWebDashboardModelsODataReportHeader
 )
-from ..rest_api.public.models.report_get_report_as_wsjf_response_200 import (
-    ReportGetReportAsWSJFResponse200
-)
-from ..rest_api.public.client import Client
 
 
 class ReportModule(BaseModule):
@@ -40,12 +45,13 @@ class ReportModule(BaseModule):
     - Retrieving production analytics
     - Accessing performance metrics
     """
-    
-    def __init__(self, client):
+
+    http_client: Union['WatsHttpClient', 'AuthenticatedClient', 'Client']  # Add explicit type hint
+    def __init__(self, client: Union['WatsHttpClient', 'AuthenticatedClient', 'Client']):
         """Initialize the Report module."""
         super().__init__(client)
         self._pending_reports = []
-    
+
     def create_uut_report(
         self, 
         operator: str, 
@@ -89,11 +95,11 @@ class ReportModule(BaseModule):
             pn=part_number,
             sn=serial_number,
             rev=revision,
-            process_code=1,  # Default process code
+            process_code=int(operation_type) or 10,
             station_name=station_name or "Unknown",
             location=location or "Unknown", 
             purpose=purpose or "Development",
-            start=datetime.now(),
+            start=datetime.now().astimezone(),  # Use local timezone-aware datetime
             info=uut_info
         )
         
@@ -140,11 +146,11 @@ class ReportModule(BaseModule):
             pn=part_number,
             sn=serial_number,
             rev=revision,
-            process_code=1,  # Default process code
+            process_code=1,
             station_name=station_name or "Unknown",
             location=location or "Unknown",
             purpose=purpose or "Development", 
-            start=datetime.now(),
+            start=datetime.now().astimezone(),  # Use local timezone-aware datetime
             info=uur_info
         )
         
@@ -152,141 +158,82 @@ class ReportModule(BaseModule):
     
     def submit_report(self, report: Union[UUTReport, UURReport]) -> str:
         """
-        Submit a report to WATS.
-        
+        Submit (persist) a report to WATS.
+
+        This transmits an already constructed report model (created with
+        create_uut_report / create_uur_report) to the server.
+
         Args:
-            report: The report to submit
-            
+            report: Report model instance
+
         Returns:
-            Report ID from WATS
+            Server-assigned report UUID (string)
         """
         if not isinstance(report, (UUTReport, UURReport)):
             raise WATSException("Report must be a UUTReport or UURReport instance")
-            
-        # Convert the report to JSON and submit via API
         try:
-            # For now, track it locally and generate a placeholder ID
-            return self.create_report(report)
-            
+            return self._post_wsjf_report(report)
         except Exception as e:
-            raise WATSException(f"Failed to submit report: {str(e)}")
-    
-    def submit_pending_reports(self) -> List[str]:
-        """
-        Submit all pending reports.
-        
-        Returns:
-            List of report IDs that were submitted
-        """
-        try:
-            report_ids = []
-            for report in self._pending_reports:
-                report_id = str(report.id)
-                report_ids.append(report_id)
-                
-            # Clear pending reports after successful submission
-            self._pending_reports = []
-            return report_ids
-            
-        except Exception as e:
-            raise WATSException(f"Failed to submit pending reports: {str(e)}")
-    
-    def get_operation_types(self) -> List[Dict[str, Any]]:
-        """
-        Get all available operation types.
-        
-        Returns:
-            List of operation types
-        """
-        # This would make a GET request to /api/operation-types
-        return [
-            {"id": 1, "name": "Final Test", "description": "Final product testing"},
-            {"id": 2, "name": "In-Circuit Test", "description": "ICT testing"}
-        ]
-    
-    def get_operation_type(self, id_or_name: Union[str, int]) -> Dict[str, Any]:
-        """
-        Get a specific operation type by ID or name.
-        
-        Args:
-            id_or_name: Operation type ID or name
-            
-        Returns:
-            Operation type details
-            
-        Raises:
-            WATSNotFoundError: If the operation type is not found
-        """
-        if not id_or_name:
-            raise ValueError("Operation type ID or name must be provided")
-            
-        # This would make a GET request to /api/operation-types/{id_or_name}
-        operation_types = self.get_operation_types()
-        
-        for op_type in operation_types:
-            if (isinstance(id_or_name, int) and op_type["id"] == id_or_name) or \
-               (isinstance(id_or_name, str) and op_type["name"] == id_or_name):
-                return op_type
-                
-        raise WATSNotFoundError(f"Operation type '{id_or_name}' not found")
-    
-    def get_repair_types(self) -> List[Dict[str, Any]]:
-        """
-        Get all available repair types.
-        
-        Returns:
-            List of repair types
-        """
-        # This would make a GET request to /api/repair-types
-        return [
-            {"id": 1, "name": "Component Replacement", "description": "Replace failed components"},
-            {"id": 2, "name": "Rework", "description": "Circuit rework"}
-        ]
-    
-    def get_root_fail_codes(self, repair_type: Union[str, int]) -> List[Dict[str, Any]]:
-        """
-        Get root failure codes for a repair type.
-        
-        Args:
-            repair_type: Repair type ID or name
-            
-        Returns:
-            List of failure codes
-        """
-        if not repair_type:
-            raise ValueError("Repair type must be provided")
-            
-        # This would make a GET request to /api/repair-types/{repair_type}/fail-codes
-        return [
-            {"id": 1, "code": "COMP_FAIL", "description": "Component failure"},
-            {"id": 2, "code": "SOLDER_FAIL", "description": "Solder joint failure"}
-        ]
+            raise WATSException(f"Failed to submit report: {e}")
 
-    def get_yield_monitor_statistics(self, 
-                                   start_date: Optional[datetime] = None,
-                                   end_date: Optional[datetime] = None) -> Dict[str, Any]:
+    def _post_wsjf_report(self, report: Union[UUTReport, UURReport]) -> str:
         """
-        Get yield monitoring statistics.
-        
+        Internal helper performing the POST (create/update) against the WSJF endpoint.
+
         Args:
-            start_date: Start date for statistics
-            end_date: End date for statistics
-            
+            report: Report model instance.
+
         Returns:
-            Yield statistics
+            Report UUID string.
+
+        Raises:
+            WATSException on failure.
         """
-        # This would make a GET request to /api/statistics/yield-monitor
-        return {
-            "total_units": 1000,
-            "passed_units": 950,
-            "failed_units": 50,
-            "yield_percentage": 95.0,
-            "period": {
-                "start": start_date.isoformat() if start_date else None,
-                "end": end_date.isoformat() if end_date else None
-            }
-        }
-    
+        try:
+            if not isinstance(report, (UUTReport, UURReport)):
+                raise ValueError("Report must be a UUTReport or UURReport instance")
+
+            wsjf_data = report.model_dump(by_alias=True, mode='json', exclude_none=True)
+
+            from ..rest_api.public.api.report import report_post_wsjf as rp
+            kwargs = rp._get_kwargs(body=wsjf_data)
+            raw_response = self.http_client.get_httpx_client().request(**kwargs)
+
+            if raw_response.status_code != 200:
+                raise WATSException(
+                    f"Failed to submit report - HTTP {raw_response.status_code}: {raw_response.text}"
+                )
+
+            from ..rest_api.public.models.virinco_wats_models_store_insert_report_result import (
+                VirincoWATSModelsStoreInsertReportResult
+            )
+            response_json = raw_response.json()
+
+            if isinstance(response_json, list) and response_json:
+                result_dict = response_json[0]
+            elif isinstance(response_json, dict):
+                result_dict = response_json
+            else:
+                raise WATSException(f"Unexpected response format: {type(response_json)}")
+
+            parsed_result = VirincoWATSModelsStoreInsertReportResult.from_dict(result_dict)
+
+            if getattr(parsed_result, 'id', None):
+                return str(parsed_result.id)
+            if getattr(parsed_result, 'uuid', None):
+                return str(parsed_result.uuid)
+
+            return str(
+                result_dict.get('ID')
+                or result_dict.get('uuid')
+                or result_dict.get('Report_ID')
+            )
+
+        except WATSException:
+            raise
+        except Exception as e:
+            raise WATSException(f"Failed to submit (WSJF) report: {e}")
+        
     def load_report(self, report_id: str) -> Union[UUTReport, UURReport]:
         """
         Load a report by ID from WATS.
@@ -304,14 +251,13 @@ class ReportModule(BaseModule):
         self._validate_id(report_id, "report")
         
         try:
-            # Convert string ID to UUID
             uuid_id = UUID(report_id)
             
-            # Call the REST API to load the report
+            # Use REST API endpoint - no direct Client usage
             response = report_get_report_as_wsjf.sync(
                 id=uuid_id,
-                client=cast(Client, self.http_client),
-                detail_level=5,  # Full detail
+                client=self.http_client,  # WatsHttpClient, not raw Client
+                detail_level=5,
                 include_chartdata=True,
                 include_attachments=True
             )
@@ -319,12 +265,12 @@ class ReportModule(BaseModule):
             if response is None:
                 raise WATSNotFoundError(f"Report {report_id} not found")
             
-            # TODO: Convert the REST API response to our model format
-            # For now, we need to create a conversion method
-            # The response is in WSJF format, need to parse it into UUTReport/UURReport
-            
-            # Placeholder - in real implementation, we'd parse the WSJF response
-            raise WATSException(f"Report loading implementation in progress - received response but conversion to UUTReport/UURReport not yet implemented")
+            # TODO: Convert WSJF response to UUTReport/UURReport
+            # Need to implement parser: wsjf_to_report(response)
+            raise WATSException(
+                "Report loading implementation in progress - "
+                "received response but conversion to UUTReport/UURReport not yet implemented"
+            )
             
         except ValueError as e:
             raise WATSException(f"Invalid report ID format: {report_id}")
@@ -352,17 +298,24 @@ class ReportModule(BaseModule):
             
         Raises:
             WATSException: If the query fails
+            
+        Note:
+            OData query parameters (filter, top, skip, orderby) are not currently
+            exposed by the generated client. This needs to be fixed in the OpenAPI spec
+            or by manually adding query parameters to the generated endpoint.
         """
         try:
-            # Build query parameters - the actual REST API handles these as query parameters in the URL
-            # The report_header_query endpoint handles OData query parameters automatically
+            # TODO: Once the generated client supports OData parameters, pass them here
+            # response = report_header_query.sync(
+            #     client=self.http_client,
+            #     filter=filter,
+            #     top=top,
+            #     skip=skip,
+            #     orderby=orderby
+            # )
             
-            # For now, we cannot pass the query parameters because the generated client 
-            # doesn't expose them as function parameters
-            # We would need to modify the httpx request directly or update the generated client
-            
-            # Call the REST API to get report headers
-            response = report_header_query.sync(client=cast(Client, self.http_client))
+            # Use REST API endpoint - no direct Client usage
+            response = report_header_query.sync(client=self.http_client)
             
             if response is None:
                 return []
@@ -371,53 +324,7 @@ class ReportModule(BaseModule):
             
         except Exception as e:
             raise WATSException(f"Failed to find report headers: {str(e)}")
-    
-    def create_report(self, report: Union[UUTReport, UURReport]) -> str:
-        """
-        Create/submit a new report to WATS.
         
-        TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        This nees investigation.
-        do we really keep it here? The create_report() does submit()
-        Confusing?
-        In line with C# TDM?
-             
-        
-        Args:
-            report: The UUTReport or UURReport to submit
-            
-        Returns:
-            The ID of the created report
-            
-        Raises:
-            WATSException: If the creation fails
-        """
-        try:
-            if not isinstance(report, (UUTReport, UURReport)):
-                raise ValueError("Report must be a UUTReport or UURReport instance")
-            
-            # Convert the report to WSJF format for submission
-            # TODO: Implement conversion from our models to WSJF format
-            # For now, we need the report serialization logic
-            
-            # Call the REST API to submit the report
-            response = report_post_wsjf.sync(client=cast(Client, self.http_client))
-            
-            if response is None:
-                raise WATSException("Failed to submit report - no response received")
-            
-            # Extract the report ID from the response
-            if hasattr(response, 'id'):
-                return str(response.id)
-            else:
-                # TODO: Parse the actual response structure
-                raise WATSException("Report creation implementation in progress - received response but ID extraction not yet implemented")
-                
-        except Exception as e:
-            if isinstance(e, WATSException):
-                raise
-            raise WATSException(f"Failed to create report: {str(e)}")
-    
     def delete_report(self, report_id: str) -> bool:
         """
         Delete a report from WATS.
@@ -435,24 +342,21 @@ class ReportModule(BaseModule):
         self._validate_id(report_id, "report")
         
         try:
-            # Convert string ID to UUID
             uuid_id = UUID(report_id)
             
-            # The delete endpoint is only available in the internal API
-            from ..rest_api.internal.api.report import report_delete_reports
-            from ..rest_api.internal.client import Client as InternalClient
-            
-            # Call the REST API to delete the report
-            # The endpoint accepts a list of UUIDs to delete
+            # Cast to satisfy type checker - WatsHttpClient inherits from AuthenticatedClient
+            from ..rest_api.internal.client import AuthenticatedClient as InternalAuthenticatedClient
+            from typing import cast
+
+            # Use REST API endpoint from internal API
             response = report_delete_reports.sync(
-                client=cast(InternalClient, self.http_client),
-                body=[uuid_id]  # Pass as list of UUIDs
+                client=cast(InternalAuthenticatedClient, self.http_client),
+                body=[uuid_id]
             )
             
             if response is None:
                 raise WATSException("Failed to delete report - no response received")
             
-            # Check if the deletion was successful
             # TODO: Parse the actual response structure to verify success
             return True
             
@@ -480,6 +384,10 @@ class ReportModule(BaseModule):
             
         Raises:
             WATSException: If the export fails
+            
+        Note:
+            This is a local operation and doesn't use REST API endpoints.
+            It serializes the report model to the specified format.
         """
         try:
             if not isinstance(report, (UUTReport, UURReport)):
@@ -492,16 +400,22 @@ class ReportModule(BaseModule):
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 path = f"report_{report.id}_{timestamp}.{format}"
                 
-            # In a real implementation, this would:
-            # 1. Serialize the report in the specified format
-            # 2. Write it to the specified path
-            # 3. Return the actual path
+            # TODO: Implement actual file writing
+            # if format == "json":
+            #     with open(path, 'w') as f:
+            #         f.write(report.model_dump_json(by_alias=True, indent=2))
+            # elif format == "xml":
+            #     # Convert to XML format
+            #     pass
+            # elif format == "csv":
+            #     # Convert to CSV format
+            #     pass
             
             return path
             
         except Exception as e:
             raise WATSException(f"Failed to export report: {str(e)}")
-    
+    # Move to?
     def get_production_statistics(self, 
                                   start_date: Optional[Union[str, datetime]] = None,
                                   end_date: Optional[Union[str, datetime]] = None,
@@ -519,16 +433,25 @@ class ReportModule(BaseModule):
             
         Raises:
             WATSException: If the report generation fails
+            
+        Note:
+            This is a placeholder until the actual REST API endpoint is available.
+            Will use rest_api.public.statistics.* when implemented.
         """
         try:
-            # Build parameters
             params = self._build_filter_params(
                 start_date=self._format_date(start_date),
                 end_date=self._format_date(end_date),
                 product_id=product_id
             )
             
-            # For now, return a placeholder until we have the actual report endpoints
+            # TODO: Use actual REST API endpoint when available
+            # from ..rest_api.public.api.statistics import get_production_statistics
+            # response = get_production_statistics.sync(
+            #     client=self.http_client,
+            #     **params
+            # )
+            
             return {
                 "message": "Report functionality will be implemented with actual API endpoints",
                 "parameters": params,
@@ -537,7 +460,7 @@ class ReportModule(BaseModule):
             
         except Exception as e:
             raise WATSException(f"Failed to generate production statistics: {str(e)}")
-    
+    # Move to ?
     def get_quality_metrics(self,
                            start_date: Optional[Union[str, datetime]] = None,
                            end_date: Optional[Union[str, datetime]] = None) -> Dict[str, Any]:
@@ -553,12 +476,20 @@ class ReportModule(BaseModule):
             
         Raises:
             WATSException: If the metrics retrieval fails
+            
+        Note:
+            This is a placeholder until the actual REST API endpoint is available.
+            Will use rest_api.public.statistics.* when implemented.
         """
         try:
             params = self._build_filter_params(
                 start_date=self._format_date(start_date),
                 end_date=self._format_date(end_date)
             )
+            
+            # TODO: Use actual REST API endpoint when available
+            # from ..rest_api.public.api.statistics import get_quality_metrics
+            # response = get_quality_metrics.sync(client=self.http_client, **params)
             
             return {
                 "message": "Quality metrics functionality will be implemented with actual API endpoints",
@@ -568,33 +499,6 @@ class ReportModule(BaseModule):
             
         except Exception as e:
             raise WATSException(f"Failed to get quality metrics: {str(e)}")
-    
-    def generate_custom_report(self, 
-                              report_config: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate a custom report based on configuration.
-        
-        Args:
-            report_config: Configuration dictionary for the report
-            
-        Returns:
-            Generated report data
-            
-        Raises:
-            WATSException: If the report generation fails
-        """
-        try:
-            if not isinstance(report_config, dict):
-                raise WATSException("Report configuration must be a dictionary")
-            
-            return {
-                "message": "Custom report functionality will be implemented with actual API endpoints",
-                "config": report_config,
-                "type": "custom_report"
-            }
-            
-        except Exception as e:
-            raise WATSException(f"Failed to generate custom report: {str(e)}")
     
     def _format_date(self, date_input: Optional[Union[str, datetime]]) -> Optional[str]:
         """
@@ -616,27 +520,3 @@ class ReportModule(BaseModule):
         else:
             raise WATSException(f"Invalid date format: {type(date_input)}")
     
-    def get_available_reports(self) -> List[Dict[str, Any]]:
-        """
-        Get a list of available report types.
-        
-        Returns:
-            List of available report configurations
-        """
-        return [
-            {
-                "name": "production_statistics",
-                "description": "Production volume and throughput statistics",
-                "parameters": ["start_date", "end_date", "product_id"]
-            },
-            {
-                "name": "quality_metrics", 
-                "description": "Quality metrics and yield information",
-                "parameters": ["start_date", "end_date"]
-            },
-            {
-                "name": "custom_report",
-                "description": "Custom configurable reports",
-                "parameters": ["report_config"]
-            }
-        ]

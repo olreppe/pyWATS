@@ -15,7 +15,7 @@ class PyWATSConfig:
     
     # Server Configuration - Updated for debugging
     BASE_URL: str = "https://py.wats.com"
-    AUTH_TOKEN: str = "cHlXQVRTX1Rlc3Rpbmc6NWUwYVY3enhJN3E2OUx6ZlE4bDZiMiFPcHB1NmI4"
+    AUTH_TOKEN: str = "cHlXQVRTX1Rlc3RpbmdfT2xhOmdHMVZMM0xvc3preDlOUTB3cDk0RjhHOFE5IWI0Vg=="
     
     # TDM Client Configuration
     DATA_DIR: str = "./wats_data"
