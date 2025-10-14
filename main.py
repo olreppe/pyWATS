@@ -21,6 +21,32 @@ def main():
         token="cHlXQVRTX1Rlc3RpbmdfT2xhOmdHMVZMM0xvc3preDlOUTB3cDk0RjhHOFE5IWI0Vg=="
     )
     
+    
+    # Get any operation by name or code
+    op = api.get_operation("SW Debug")
+    op = api.get_operation(10)
+
+    # Get specific operation type
+    test_op = api.get_operation("Final Test", operation_type="test")
+    repair_op = api.get_operation("Component Replacement", operation_type="repair")
+    wip_op = api.get_operation("In Progress", operation_type="wip")
+
+    # Get just the code (useful for API calls)
+    code = api.get_operation_code("Final Test")  # Returns int
+    code = api.get_operation_code("Final Test", operation_type="test", strict=True)  # Raises if not found
+
+    # Validate a code exists
+    validated_code = api.get_operation_code(10)  # Returns 10 if valid, raises if not
+
+    # Get lists
+    all_ops = api.get_all_operations()
+    test_ops = api.get_all_operations(operation_type="test")
+    repair_ops = api.get_all_operations(operation_type="repair")
+
+    # Cache management
+    api.refresh_operations(force=True)
+    cache_age = api.get_operation_cache_age()
+    
     # Create and submit UUT
     uut = api.report.create_uut_report("Ola","12345","1.0","SN123456","10","Seq.seq","1.0","STATION1","Drammen, Norway", "PythonTest")  
     root = uut.get_root_sequence_call()
