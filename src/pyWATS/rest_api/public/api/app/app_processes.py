@@ -51,13 +51,16 @@ def _get_kwargs(
 
 
 
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[AppProcessesResponse200]:
+def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Union[AppProcessesResponse200, list]]:
     if response.status_code == 200:
-        response_200 = AppProcessesResponse200.from_dict(response.json())
-
-
-
-        return response_200
+        try:
+            # Try to parse as the expected model first
+            response_200 = AppProcessesResponse200.from_dict(response.json())
+            return response_200
+        except (ValueError, TypeError) as e:
+            # If that fails, return the raw JSON data
+            print(f"Model parsing failed, returning raw JSON: {e}")
+            return response.json()
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -65,7 +68,7 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[AppProcessesResponse200]:
+def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Union[AppProcessesResponse200, list]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -82,7 +85,7 @@ def sync_detailed(
     include_wip_operations: Union[Unset, bool] = UNSET,
     include_inactive_processes: Union[Unset, bool] = UNSET,
 
-) -> Response[AppProcessesResponse200]:
+) -> Response[Union[AppProcessesResponse200, list]]:
     """ Get processes.
 
      Non-filtered requests retrieves active processes marked as isTestOperation, isRepairOperation or
@@ -112,16 +115,15 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AppProcessesResponse200]
+        Response[Union[AppProcessesResponse200, list]]
      """
 
 
     kwargs = _get_kwargs(
         include_test_operations=include_test_operations,
-include_repair_operations=include_repair_operations,
-include_wip_operations=include_wip_operations,
-include_inactive_processes=include_inactive_processes,
-
+        include_repair_operations=include_repair_operations,
+        include_wip_operations=include_wip_operations,
+        include_inactive_processes=include_inactive_processes,
     )
 
     response = client.get_httpx_client().request(
@@ -138,7 +140,7 @@ def sync(
     include_wip_operations: Union[Unset, bool] = UNSET,
     include_inactive_processes: Union[Unset, bool] = UNSET,
 
-) -> Optional[AppProcessesResponse200]:
+) -> Optional[Union[AppProcessesResponse200, list]]:
     """ Get processes.
 
      Non-filtered requests retrieves active processes marked as isTestOperation, isRepairOperation or
@@ -168,17 +170,16 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AppProcessesResponse200
+        Union[AppProcessesResponse200, list]
      """
 
 
     return sync_detailed(
         client=client,
-include_test_operations=include_test_operations,
-include_repair_operations=include_repair_operations,
-include_wip_operations=include_wip_operations,
-include_inactive_processes=include_inactive_processes,
-
+        include_test_operations=include_test_operations,
+        include_repair_operations=include_repair_operations,
+        include_wip_operations=include_wip_operations,
+        include_inactive_processes=include_inactive_processes,
     ).parsed
 
 async def asyncio_detailed(

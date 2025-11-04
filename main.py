@@ -7,6 +7,7 @@ This file initializes the pyWATS 2.0 API for exploration.
 from pyWATS import WATSApi
 from pyWATS.models.report.uut.steps.sequence_call import SequenceCall
 from pyWATS.models.report.uut.uut_report import UUTReport
+from pyWATS.models.process import ProcessType
 
 
 def main():
@@ -20,28 +21,12 @@ def main():
         base_url="https://py.wats.com",
         token="cHlXQVRTX1Rlc3RpbmdfT2xhOmdHMVZMM0xvc3preDlOUTB3cDk0RjhHOFE5IWI0Vg=="
     )
+
+    # api.refresh_operations(force=True)
     
     
     # Get any operation by name or code
-    op = api.get_operation("SW Debug")
-    op = api.get_operation(10)
-
-    # Get specific operation type
-    test_op = api.get_operation("Final Test", operation_type="test")
-    repair_op = api.get_operation("Component Replacement", operation_type="repair")
-    wip_op = api.get_operation("In Progress", operation_type="wip")
-
-    # Get just the code (useful for API calls)
-    code = api.get_operation_code("Final Test")  # Returns int
-    code = api.get_operation_code("Final Test", operation_type="test", strict=True)  # Raises if not found
-
-    # Validate a code exists
-    validated_code = api.get_operation_code(10)  # Returns 10 if valid, raises if not
-
-    # Get lists
-    all_ops = api.get_all_operations()
-    test_ops = api.get_all_operations(operation_type="test")
-    repair_ops = api.get_all_operations(operation_type="repair")
+    op = api.get_process("SW Debug", ProcessType.TEST)
 
     # Cache management
     api.refresh_operations(force=True)

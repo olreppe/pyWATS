@@ -7,12 +7,12 @@ organizing all functionality into logical modules accessible as properties.
 
 from typing import Optional, TYPE_CHECKING, List, Dict, Any, Union
 from datetime import datetime, timedelta
-from threading import Lock, Thread
-import time
 
 from .rest_api._http_client import WatsHttpClient
 from .config import PyWATSConfig
 from .exceptions import WATSNotFoundError
+from .cache import OperationCache
+from .models import Process, ProcessType
 
 # Import module types for type hints without circular imports
 if TYPE_CHECKING:
@@ -23,46 +23,6 @@ if TYPE_CHECKING:
     from .modules.asset import AssetModule
     from .modules.software import SoftwareModule
     from .modules.app import AppModule
-
-
-class OperationCache:
-    """Cache for operation metadata with automatic refresh."""
-    
-    def __init__(self, refresh_interval_minutes: int = 5):
-        self._operations: List[Dict[str, Any]] = []
-        self._last_refresh: Optional[datetime] = None
-        self._refresh_interval = timedelta(minutes=refresh_interval_minutes)
-        self._lock = Lock()
-        self._auto_refresh_thread: Optional[Thread] = None
-        self._auto_refresh_enabled = False
-    
-    def is_stale(self) -> bool:
-        """Check if cache needs refreshing."""
-        if self._last_refresh is None:
-            return True
-        return datetime.now() - self._last_refresh > self._refresh_interval
-    
-    def update(self, operations: List[Dict[str, Any]]) -> None:
-        """Update cache with new operation data."""
-        with self._lock:
-            self._operations = operations
-            self._last_refresh = datetime.now()
-    
-    def get_all(self) -> List[Dict[str, Any]]:
-        """Get all cached operations."""
-        with self._lock:
-            return self._operations.copy()
-    
-    def find_by_code(self, code: int) -> Optional[Dict[str, Any]]:
-        """Find operation by code."""
-        with self._lock:
-            return next((op for op in self._operations if op.get('code') == code), None)
-    
-    def find_by_name(self, name: str) -> Optional[Dict[str, Any]]:
-        """Find operation by name (case-insensitive)."""
-        with self._lock:
-            name_lower = name.lower()
-            return next((op for op in self._operations if op.get('name', '').lower() == name_lower), None)
 
 
 class WATSApi:
@@ -116,6 +76,7 @@ class WATSApi:
         
         # Initialize operation cache
         self._operation_cache = OperationCache(refresh_interval_minutes=operation_refresh_interval_minutes)
+        self._operation_cache.set_refresh_callback(self._fetch_operations_from_server)
         
         # Auto-refresh setup
         if auto_refresh_operations:
@@ -187,30 +148,48 @@ class WATSApi:
             self._app_module = AppModule(self._http_client)
         return self._app_module
     
-    # Operation Cache Management Methods
+    # Process Cache Properties
     
-    def refresh_operations(self, force: bool = False) -> None:
-        """
-        Refresh operation metadata from server.
-        
-        This fetches all test operations, repair operations, and WIP operations
-        from the WATS server and updates the local cache.
-        
-        Args:
-            force: Force refresh even if cache is not stale
-            
-        Example:
-            >>> api = WATSApi(base_url="https://api.example.com", token="token")
-            >>> api.refresh_operations(force=True)
-        """
-        if not force and not self._operation_cache.is_stale():
-            return
-        
+    @property
+    def processes(self) -> List[Process]:
+        """Get all cached processes."""
+        self._ensure_cache_fresh()
+        return self._operation_cache.get_all_processes()
+    
+    @property
+    def test_operations(self) -> List[Process]:
+        """Get all test operations."""
+        self._ensure_cache_fresh()
+        return self._operation_cache.get_test_operations()
+    
+    @property
+    def repair_operations(self) -> List[Process]:
+        """Get all repair operations."""
+        self._ensure_cache_fresh()
+        return self._operation_cache.get_repair_operations()
+    
+    @property
+    def wip_operations(self) -> List[Process]:
+        """Get all WIP operations."""
+        self._ensure_cache_fresh()
+        return self._operation_cache.get_wip_operations()
+    
+    # Process Cache Management Methods
+    
+    def _ensure_cache_fresh(self, force: bool = False) -> None:
+        """Ensure cache is fresh, refresh if needed."""
+        if force or self._operation_cache.is_stale():
+            self.refresh_operations()
+    
+    def _fetch_operations_from_server(self) -> None:
+        """Fetch operations from server and update cache using REST API."""
         try:
             from .rest_api.public.api.app import app_processes
             
-            # Fetch all operation types
-            response = app_processes.sync(
+            print(f"Refreshing operations from {self._http_client._base_url}...")
+            
+            # Use the dedicated REST API endpoint which now handles parsing gracefully
+            response = app_processes.sync_detailed(
                 client=self._http_client,
                 include_test_operations=True,
                 include_repair_operations=True,
@@ -218,212 +197,186 @@ class WATSApi:
                 include_inactive_processes=False
             )
             
-            # Try to access the correct attribute for the list of operations
-            operation_list = None
-            if response:
-                if hasattr(response, 'items'):
-                    operation_list = getattr(response, 'items')
-                elif hasattr(response, 'data'):
-                    operation_list = getattr(response, 'data')
-                elif hasattr(response, 'result'):
-                    operation_list = getattr(response, 'result')
-                elif isinstance(response, list):
-                    operation_list = response
-
-            if operation_list:
-                operations = []
-                for op in operation_list:
-                    operations.append({
-                        'code': getattr(op, 'code', None),
-                        'process_id': str(getattr(op, 'process_id', None)) if getattr(op, 'process_id', None) is not None else None,
-                        'name': getattr(op, 'name', None),
-                        'description': getattr(op, 'description', None),
-                        'is_test_operation': getattr(op, 'is_test_operation', False),
-                        'is_repair_operation': getattr(op, 'is_repair_operation', False),
-                        'is_wip_operation': getattr(op, 'is_wip_operation', False),
-                        'process_index': getattr(op, 'process_index', None),
-                        'state': getattr(op, 'state', None),
-                    })
-                self._operation_cache.update(operations)
+            if response and response.status_code == 200:
+                # The response.parsed now handles both model parsing and raw JSON fallback
+                json_data = response.parsed
+                
+                print(f"Raw response type: {type(json_data)}")
+                if isinstance(json_data, list):
+                    if len(json_data) > 0:
+                        print(f"Response is a list with {len(json_data)} items")
+                        print(f"First item sample: {json_data[0]}")
+                    else:
+                        print("Response is an empty list")
+                elif isinstance(json_data, dict):
+                    print(f"Response is dict with keys: {list(json_data.keys())}")
+                elif hasattr(json_data, '__dict__'):
+                    print(f"Response is object with attributes: {list(json_data.__dict__.keys())}")
+                
+                # Extract operation list from response
+                operation_list = self._extract_operation_list(json_data)
+                
+                print(f"Extracted {len(operation_list)} operations from response")
+                
+                # Parse operations into Process objects
+                processes = []
+                for i, op_data in enumerate(operation_list):
+                    try:
+                        if i < 3:  # Only log first 3 for brevity
+                            print(f"Processing operation {i}: {op_data}")
+                        process = Process.from_api_response(op_data)
+                        processes.append(process)
+                        if i < 3:
+                            print(f"Successfully created process: {process}")
+                    except Exception as e:
+                        print(f"Error parsing operation {i} ({op_data}): {e}")
+                        continue
+                
+                self._operation_cache.update(processes)
+                
+                # Print summary
+                stats = self._operation_cache.get_cache_stats()
+                print(f"Successfully cached {stats['total_processes']} operations: "
+                      f"{stats['test_operations']} test, {stats['repair_operations']} repair, "
+                      f"{stats['wip_operations']} WIP operations")
+            else:
+                print(f"HTTP request failed with status: {response.status_code if response else 'No response'}")
+                if response and hasattr(response, 'content'):
+                    print(f"Response content: {response.content}")
+            
         except Exception as e:
-            print(f"Warning: Failed to refresh operations: {e}")
+            error_msg = f"Failed to refresh operations: {e}"
+            print(f"ERROR: {error_msg}")
+            print(f"Exception type: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            raise Exception(error_msg) from e
     
-    def get_operation(self, 
-                     identifier: Union[int, str], 
-                     operation_type: Optional[str] = None,
-                     auto_refresh: bool = True,
-                     strict: bool = False) -> Optional[Dict[str, Any]]:
+    def _extract_operation_list(self, response) -> List[Dict[str, Any]]:
+        """Extract operation list from API response."""
+        print(f"Extracting from response type: {type(response)}")
+        
+        # If response is already a list, return it directly
+        if isinstance(response, list):
+            print("Response is already a list")
+            return response
+        
+        # If response is a dict, try to find the operation list
+        if isinstance(response, dict):
+            print(f"Response is dict with keys: {list(response.keys())}")
+            # Try to get the operation list from different possible attributes
+            for attr_name in ['items', 'data', 'result', 'processes', 'operations', 'value']:
+                if attr_name in response:
+                    operation_list = response[attr_name]
+                    if operation_list is not None:
+                        print(f"Found operations in key '{attr_name}': {len(operation_list) if isinstance(operation_list, list) else 'Not a list'}")
+                        return operation_list if isinstance(operation_list, list) else []
+        
+        # Try to get from object attributes if it's not a dict/list
+        if hasattr(response, '__dict__'):
+            print(f"Response has attributes: {list(response.__dict__.keys())}")
+            for attr_name in ['items', 'data', 'result', 'processes', 'operations', 'value']:
+                if hasattr(response, attr_name):
+                    operation_list = getattr(response, attr_name)
+                    if operation_list is not None:
+                        print(f"Found operations in attribute '{attr_name}': {len(operation_list) if isinstance(operation_list, list) else 'Not a list'}")
+                        return operation_list if isinstance(operation_list, list) else []
+        
+        # If no known attribute found, try to use response directly if it's iterable
+        if hasattr(response, '__iter__') and not isinstance(response, str):
+            try:
+                result = list(response)
+                print(f"Converted iterable response to list with {len(result)} items")
+                return result
+            except Exception as e:
+                print(f"Error converting to list: {e}")
+        
+        print("No operation list found, returning empty list")
+        return []
+
+    def refresh_operations(self, force: bool = False) -> None:
         """
-        Get operation by code or name, optionally filtered by type.
+        Refresh operation metadata from server.
         
         Args:
-            identifier: Operation code (int) or name (str)
-            operation_type: Filter by type: 'test', 'repair', 'wip', or None for any
-            auto_refresh: Automatically refresh cache if stale (default: True)
-            strict: Raise WATSNotFoundError if not found (default: False)
-            
-        Returns:
-            Operation dictionary or None if not found
-            
-        Raises:
-            WATSNotFoundError: If operation not found and strict=True
-            
-        Example:
-            >>> api = WATSApi(base_url="https://api.example.com", token="token")
-            >>> # Get any operation
-            >>> op = api.get_operation("Final Test")
-            >>> # Get specifically a test operation
-            >>> test_op = api.get_operation("Final Test", operation_type="test")
-            >>> # Get by code
-            >>> op = api.get_operation(10)
+            force: Force refresh even if cache is not stale
         """
-        if auto_refresh:
-            self.refresh_operations()
-        
-        # Find operation
-        if isinstance(identifier, int):
-            operation = self._operation_cache.find_by_code(identifier)
-        else:
-            operation = self._operation_cache.find_by_name(identifier)
-        
-        # Apply type filter if specified
-        if operation and operation_type:
-            type_key = f'is_{operation_type}_operation'
-            if not operation.get(type_key, False):
-                operation = None
-        
-        if strict and operation is None:
-            raise WATSNotFoundError(
-                f"Operation '{identifier}'" + 
-                (f" of type '{operation_type}'" if operation_type else "") + 
-                " not found"
-            )
-        
-        return operation
-    
-    def get_operation_code(self, 
-                          identifier: Union[int, str],
-                          operation_type: Optional[str] = None,
-                          auto_refresh: bool = True,
-                          strict: bool = True) -> Optional[int]:
-        """
-        Get operation code by name or validate code exists.
-        
-        This is a convenience method for when you need just the code value,
-        useful for API calls that require operation codes.
-        
-        Args:
-            identifier: Operation code (int) or name (str)
-            operation_type: Filter by type: 'test', 'repair', 'wip', or None for any
-            auto_refresh: Automatically refresh cache if stale (default: True)
-            strict: Raise WATSNotFoundError if not found (default: True)
-            
-        Returns:
-            Operation code (int) or None if not found and strict=False
-            
-        Raises:
-            WATSNotFoundError: If operation not found and strict=True
-            
-        Example:
-            >>> api = WATSApi(base_url="https://api.example.com", token="token")
-            >>> # Get code by name
-            >>> code = api.get_operation_code("Final Test")
-            >>> # Validate code exists
-            >>> code = api.get_operation_code(10)
-            >>> # Get test operation code
-            >>> code = api.get_operation_code("Final Test", operation_type="test")
-        """
-        operation = self.get_operation(identifier, operation_type, auto_refresh, strict)
-        return operation.get('code') if operation else None
-    
-    def get_all_operations(self, 
-                          operation_type: Optional[str] = None,
-                          auto_refresh: bool = True) -> List[Dict[str, Any]]:
-        """
-        Get all operations, optionally filtered by type.
-        
-        Args:
-            operation_type: Filter by type: 'test', 'repair', 'wip', or None for all
-            auto_refresh: Automatically refresh cache if stale (default: True)
-            
-        Returns:
-            List of operation dictionaries
-            
-        Example:
-            >>> api = WATSApi(base_url="https://api.example.com", token="token")
-            >>> # Get all operations
-            >>> all_ops = api.get_all_operations()
-            >>> # Get only test operations
-            >>> test_ops = api.get_all_operations(operation_type="test")
-            >>> # Get only repair operations
-            >>> repair_ops = api.get_all_operations(operation_type="repair")
-        """
-        if auto_refresh:
-            self.refresh_operations()
-        
-        operations = self._operation_cache.get_all()
-        
-        if operation_type:
-            type_key = f'is_{operation_type}_operation'
-            operations = [op for op in operations if op.get(type_key, False)]
-        
-        return operations
-    
-    def start_operation_auto_refresh(self) -> None:
-        """
-        Start automatic background refresh of operation cache.
-        
-        The cache will be refreshed in the background at the interval specified
-        during initialization (default: 5 minutes).
-        
-        Example:
-            >>> api = WATSApi(base_url="https://api.example.com", token="token")
-            >>> api.start_operation_auto_refresh()
-        """
-        if self._operation_cache._auto_refresh_enabled:
+        if not force and not self._operation_cache.is_stale():
             return
         
-        self._operation_cache._auto_refresh_enabled = True
+        self._fetch_operations_from_server()
+    
+    def get_process(self, 
+                   identifier: Union[int, str], 
+                   process_type: Optional[ProcessType] = None,
+                   auto_refresh: bool = True,
+                   strict: bool = False) -> Optional[Process]:
+        """
+        Get process by code or name, optionally filtered by type.
         
-        def refresh_loop():
-            while self._operation_cache._auto_refresh_enabled:
-                try:
-                    self.refresh_operations()
-                except Exception as e:
-                    print(f"Auto-refresh error: {e}")
-                
-                time.sleep(self._operation_cache._refresh_interval.total_seconds())
+        Args:
+            identifier: Process code (int) or name (str)
+            process_type: Filter by type
+            auto_refresh: Automatically refresh cache if stale
+            strict: Raise WATSNotFoundError if not found
+            
+        Returns:
+            Process or None if not found
+        """
+        if auto_refresh:
+            self._ensure_cache_fresh()
         
-        self._operation_cache._auto_refresh_thread = Thread(target=refresh_loop, daemon=True)
-        self._operation_cache._auto_refresh_thread.start()
+        # Find process
+        if isinstance(identifier, int):
+            if process_type:
+                process = self._operation_cache.find_by_code_and_type(identifier, process_type)
+            else:
+                process = self._operation_cache.find_by_code(identifier)
+        else:
+            if process_type:
+                process = self._operation_cache.find_by_name_and_type(identifier, process_type)
+            else:
+                process = self._operation_cache.find_by_name(identifier)
+        
+        if strict and process is None:
+            type_str = f" of type '{process_type.value}'" if process_type else ""
+            raise WATSNotFoundError(f"Process '{identifier}'{type_str} not found")
+        
+        return process
+    
+    def get_process_code(self, 
+                        identifier: Union[int, str],
+                        process_type: Optional[ProcessType] = None,
+                        auto_refresh: bool = True,
+                        strict: bool = True) -> Optional[int]:
+        """Get process code by name or validate code exists."""
+        process = self.get_process(identifier, process_type, auto_refresh, strict)
+        return process.code if process else None
+    
+    def get_processes_by_type(self, process_type: ProcessType, auto_refresh: bool = True) -> List[Process]:
+        """Get all processes of a specific type."""
+        if auto_refresh:
+            self._ensure_cache_fresh()
+        return self._operation_cache.get_processes_by_type(process_type)
+    
+    def start_operation_auto_refresh(self) -> None:
+        """Start automatic background refresh of operation cache."""
+        self._operation_cache.start_auto_refresh()
     
     def stop_operation_auto_refresh(self) -> None:
-        """
-        Stop automatic background refresh of operation cache.
-        
-        Example:
-            >>> api = WATSApi(base_url="https://api.example.com", token="token")
-            >>> api.stop_operation_auto_refresh()
-        """
-        self._operation_cache._auto_refresh_enabled = False
-        if self._operation_cache._auto_refresh_thread:
-            self._operation_cache._auto_refresh_thread.join(timeout=5)
+        """Stop automatic background refresh of operation cache."""
+        self._operation_cache.stop_auto_refresh()
+    
+    def get_operation_cache_stats(self) -> Dict[str, Any]:
+        """Get operation cache statistics."""
+        return self._operation_cache.get_cache_stats()
     
     def get_operation_cache_age(self) -> Optional[timedelta]:
-        """
-        Get age of operation cache.
-        
-        Returns:
-            Time since last refresh or None if never refreshed
-            
-        Example:
-            >>> api = WATSApi(base_url="https://api.example.com", token="token")
-            >>> age = api.get_operation_cache_age()
-            >>> if age and age.total_seconds() > 300:
-            ...     print("Cache is older than 5 minutes")
-        """
-        if self._operation_cache._last_refresh:
-            return datetime.now() - self._operation_cache._last_refresh
+        """Get age of operation cache."""
+        stats = self.get_operation_cache_stats()
+        last_refresh = stats.get('last_refresh')
+        if last_refresh:
+            return datetime.now() - last_refresh
         return None
     
     # Legacy/Utility Methods for Other Metadata
