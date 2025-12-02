@@ -31,27 +31,17 @@ def main():
     # Cache management
     api.refresh_operations(force=True)
     cache_age = api.get_operation_cache_age()
-    
-    # Create and submit UUT
-    uut = api.report.create_uut_report("Ola","12345","1.0","SN123456","10","Seq.seq","1.0","STATION1","Drammen, Norway", "PythonTest")  
-    root = uut.get_root_sequence_call()
-    root.add_numeric_step(name="MyNumericStep", value=42.0, unit="units")
-    api.report.submit_report(report=uut)
-    
-    # Load all products
-    products = api.product.get_all()
-    for product in products:
-        print(f"Product: {product['partNumber']} (ID: {product['name']})")
         
     # Asset
+    asset = api.asset.get_asset("FIX0001")
     
     # Get multiple assets
     assets = api.asset.get_assets("assetID eq 'def43023-45d1-40d3-a0a5-6f35dae4ab75'")
     
-
+   
     
-    for asset_info in assets:
-        print(f"Asset: {asset_info.asset_name} (Serial: {asset_info.serial_number})")
+    
+    
     
     
     
