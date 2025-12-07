@@ -34,6 +34,7 @@ def main():
     
     # Create and submit UUT
     uut = api.report.create_uut_report("Ola","12345","1.0","SN123456","10","Seq.seq","1.0","STATION1","Drammen, Norway", "PythonTest")  
+    
     root = uut.get_root_sequence_call()
     root.add_numeric_step(name="MyNumericStep", value=42.0, unit="units")
     api.report.submit_report(report=uut)

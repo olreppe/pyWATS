@@ -148,7 +148,7 @@ class VirincoWATSWebDashboardModelsMesProductPublicProduct:
         d = dict(src_dict)
         _product_id = d.pop("productId", UNSET)
         product_id: Union[Unset, UUID]
-        if isinstance(_product_id,  Unset):
+        if isinstance(_product_id, Unset) or _product_id is None or _product_id == "":
             product_id = UNSET
         else:
             product_id = UUID(_product_id)
@@ -170,7 +170,7 @@ class VirincoWATSWebDashboardModelsMesProductPublicProduct:
 
         _product_category_id = d.pop("productCategoryId", UNSET)
         product_category_id: Union[Unset, UUID]
-        if isinstance(_product_category_id,  Unset):
+        if isinstance(_product_category_id, Unset) or _product_category_id is None or _product_category_id == "":
             product_category_id = UNSET
         else:
             product_category_id = UUID(_product_category_id)
