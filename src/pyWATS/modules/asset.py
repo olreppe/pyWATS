@@ -1,722 +1,497 @@
-"""
-Asset module for WATS API.
+"""Asset Module for pyWATS
 
-This module provides functionality for managing assets, equipment,
-and asset-related operations in the WATS system.
+Provides high-level operations for managing assets (test equipment, fixtures, etc.).
 """
-
-from typing import List, Optional, Dict, Any, TYPE_CHECKING
+from typing import Any, Dict, List, Optional
+from uuid import UUID
 from datetime import datetime
-from decimal import Decimal
-from enum import Enum
-from .base import BaseModule
-from ..exceptions import WATSException, WATSNotFoundError
-from ..models.asset_model import AssetModel
-from pydantic import Field, PrivateAttr  # Ensure this is imported
 
-class AssetState(Enum):
-    """Asset state enumeration."""
-    AVAILABLE = "Available"
-    IN_USE = "InUse"
-    MAINTENANCE = "Maintenance"
-    UNAVAILABLE = "Unavailable"
+from ..models import Asset, AssetType, AssetLog, AssetState
+from ..rest_api import AssetApi
 
 
-class AssetResponse:
-    """Response object for asset operations."""
-    def __init__(self, success: bool = True, message: str = "", data: Any = None):
-        self.success = success
-        self.message = message
-        self.data = data
-
-
-class AssetInfo(AssetModel):
-    """Asset information model, extending the generated AssetModel with custom methods."""
-    # Add additional fields not in AssetModel, with proper Pydantic defaults
-    additional_properties: Dict[str, Any] = Field(default_factory=dict)
-    configuration: Dict[str, Any] = Field(default_factory=dict)
-    # Note: serial_number, parent_asset_id, etc., are already in AssetModel (via aliases)
-    # If any are missing, add them here with aliases if needed
-
-    _asset_module: Optional['AssetModule'] = PrivateAttr(default=None)  # Private attribute for module reference
-
-    # No custom __init__ needed; Pydantic handles it
-
-    def update_location(self, new_location: str) -> bool:
-        """
-        Update the asset location.
-        
-        Args:
-            new_location: New location for the asset
-            
-        Returns:
-            bool: True if update was successful
-        """
-        if self._asset_module:
-            # This would call an update endpoint when available
-            # For now, just update locally
-            self.location = new_location
-            return True
-        return False
-    
-    def set_state(self, new_state: AssetState) -> bool:
-        """
-        Set the asset state.
-        
-        Args:
-            new_state: New state for the asset
-            
-        Returns:
-            bool: True if state change was successful
-        """
-        if self._asset_module:
-            # This would call a state update endpoint when available
-            # For now, just update locally
-            # Convert to the correct AssetState enum from asset_model
-            from ..models.asset_model import AssetState as ModelAssetState
-            if isinstance(new_state, AssetState):
-                # Map by value
-                self.state = ModelAssetState(new_state.value)
-            else:
-                self.state = new_state
-            return True
-        return False
-    
-    def add_tag(self, tag: str) -> bool:
-        """
-        Add a tag to the asset.
-        
-        Args:
-            tag: Tag to add
-            
-        Returns:
-            bool: True if tag was added successfully
-        """
-        # Tags functionality not implemented yet - placeholder
-        return False
-    
-    def remove_tag(self, tag: str) -> bool:
-        """
-        Remove a tag from the asset.
-        
-        Args:
-            tag: Tag to remove
-            
-        Returns:
-            bool: True if tag was removed successfully
-        """
-        # Tags functionality not implemented yet - placeholder
-        return False
-    
-    def get_tags(self) -> List[str]:
-        """
-        Get all tags for the asset.
-        
-        Returns:
-            List[str]: List of tags
-        """
-        # Tags functionality not implemented yet - placeholder
-        return []
-    
-    def update_config(self, config: Dict[str, Any]) -> bool:
-        """
-        Update the asset configuration.
-        
-        Args:
-            config: Configuration dictionary to update
-            
-        Returns:
-            bool: True if configuration was updated successfully
-        """
-        if self._asset_module:
-            # This would call a config update endpoint when available
-            # For now, just update locally
-            self.configuration.update(config)
-            return True
-        return False
-    
-    def track_usage(self, usage_data: Dict[str, Any]) -> bool:
-        """
-        Track asset usage.
-        
-        Args:
-            usage_data: Usage tracking data
-            
-        Returns:
-            bool: True if usage was tracked successfully
-        """
-        if self._asset_module:
-            # This would call a usage tracking endpoint when available
-            # For now, just increment running count
-            increment = usage_data.get('increment', 1)
-            self.running_count += increment
-            return True
-        return False
-    
-    def is_available(self) -> bool:
-        """
-        Check if the asset is available.
-        
-        Returns:
-            bool: True if asset is available
-        """
-        return self.state == AssetState.AVAILABLE
-    
-    def get_configuration(self) -> Dict[str, Any]:
-        """
-        Get the asset configuration.
-        
-        Returns:
-            Dict[str, Any]: Asset configuration
-        """
-        return self.configuration.copy()
-    
-    def perform_calibration(self, date_time: Optional[datetime] = None, comment: Optional[str] = None) -> bool:
-        """
-        Perform calibration on the asset.
-        
-        Args:
-            date_time: Calibration date and time
-            comment: Optional comment
-            
-        Returns:
-            bool: True if calibration was successful
-        """
-        if self._asset_module:
-            try:
-                response = self._asset_module.calibration(self.serial_number, date_time, comment)
-                if response.success:
-                    self.calibration_date = date_time or datetime.now()
-                    return True
-            except Exception:
-                pass
-        return False
-    
-    def perform_maintenance(self, date_time: Optional[datetime] = None, comment: Optional[str] = None) -> bool:
-        """
-        Perform maintenance on the asset.
-        
-        Args:
-            date_time: Maintenance date and time
-            comment: Optional comment
-            
-        Returns:
-            bool: True if maintenance was successful
-        """
-        if self._asset_module:
-            try:
-                response = self._asset_module.maintenance(self.serial_number, date_time, comment)
-                if response.success:
-                    self.maintenance_date = date_time or datetime.now()
-                    return True
-            except Exception:
-                pass
-        return False
-    
-    def reset_running_count(self, comment: Optional[str] = None) -> bool:
-        """
-        Reset the running count of the asset.
-        
-        Args:
-            comment: Optional comment
-            
-        Returns:
-            bool: True if reset was successful
-        """
-        if self._asset_module:
-            try:
-                response = self._asset_module.reset_running_count(self.serial_number, comment)
-                if response.success:
-                    self.running_count = 0
-                    return True
-            except Exception:
-                pass
-        return False
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert AssetInfo to dictionary.
-        
-        Returns:
-            Dict[str, Any]: Asset information as dictionary
-        """
-        # Use Pydantic's model_dump for proper serialization
-        return self.model_dump()
-
-
-class Asset:
-    """Asset data model."""
-    def __init__(self, serial_number: str, asset_type: str, **kwargs):
-        self.serial_number = serial_number
-        self.asset_type = asset_type
-        self.parent_asset_serial_number = kwargs.get('parent_asset_serial_number')
-        self.asset_name = kwargs.get('asset_name')
-        self.asset_description = kwargs.get('asset_description')
-    
-    def to_string(self) -> str:
-        """Convert asset to string representation."""
-        raise NotImplementedError("Asset.to_string not implemented")
-
-
-class AssetModule(BaseModule):
+class AssetModule:
     """
     Asset management module.
     
-    Provides methods for:
-    - Creating and managing assets
-    - Asset type management
-    - Asset hierarchy operations
-    - Calibration and maintenance
-    - Usage tracking
+    Provides operations for:
+    - Getting assets and asset types
+    - Creating and updating assets
+    - Recording calibration and maintenance
+    - Managing asset counters and state
+    
+    Usage:
+        api = pyWATS("https://your-wats.com", "your-token")
+        
+        # Get all assets
+        assets = api.asset.get_assets()
+        
+        # Get asset by serial number
+        asset = api.asset.get_asset_by_serial("FIXTURE-001")
+        
+        # Record calibration
+        api.asset.record_calibration(asset_id, "John Doe", "Annual calibration")
     """
-
-    # Asset Handler Methods
-    def create_asset(self, serial_number: str, asset_type: str,
-                    parent_asset_serial_number: Optional[str] = None,
-                    asset_name: Optional[str] = None,
-                    asset_description: Optional[str] = None) -> AssetResponse:
+    
+    def __init__(self, api: AssetApi):
         """
-        Create a new asset.
+        Initialize AssetModule with REST API client.
         
         Args:
-            serial_number: Serial number of the asset
-            asset_type: Type of the asset
-            parent_asset_serial_number: Optional parent asset serial number
-            asset_name: Optional asset name
-            asset_description: Optional asset description
-            
-        Returns:
-            AssetResponse object
+            api: AssetApi instance for making HTTP requests
         """
-        raise NotImplementedError("AssetHandler.create_asset not implemented")
-
-    def create_asset_type(self, name: str,
-                         calibration_interval: Optional[Decimal] = None,
-                         maintenance_interval: Optional[Decimal] = None,
-                         running_count_limit: Optional[int] = None,
-                         total_count_limit: Optional[int] = None,
-                         warning_threshold: Optional[Decimal] = None,
-                         alarm_threshold: Optional[Decimal] = None) -> AssetResponse:
+        self._api = api
+    
+    # -------------------------------------------------------------------------
+    # Get Operations
+    # -------------------------------------------------------------------------
+    
+    def get_assets(
+        self,
+        filter_str: Optional[str] = None,
+        top: Optional[int] = None
+    ) -> List[Asset]:
         """
-        Create a new asset type.
+        Get all assets in the system.
+        
+        GET /api/Asset
         
         Args:
-            name: Name of the asset type
-            calibration_interval: Optional calibration interval
-            maintenance_interval: Optional maintenance interval
-            running_count_limit: Optional running count limit
-            total_count_limit: Optional total count limit
-            warning_threshold: Optional warning threshold
-            alarm_threshold: Optional alarm threshold
+            filter_str: Optional OData filter string
+            top: Optional max number of results
             
         Returns:
-            AssetResponse object
+            List of Asset objects
         """
-        raise NotImplementedError("AssetHandler.create_asset_type not implemented")
-
-    def get_asset(self, serial_number: str) -> Optional[AssetInfo]:
+        # REST API now returns List[Asset] directly
+        return self._api.get_assets(filter_str=filter_str, top=top)
+    
+    def get_asset(self, asset_id: str) -> Optional[Asset]:
+        """
+        Get an asset by ID or serial number.
+        
+        GET /api/Asset/{assetId} or GET /api/Asset/{serialNumber}
+        
+        Args:
+            asset_id: The asset ID (GUID) or serial number
+            
+        Returns:
+            Asset object if found, None otherwise
+        """
+        # REST API now returns Optional[Asset] directly
+        return self._api.get_asset_by_id(asset_id)
+    
+    def get_asset_by_serial(self, serial_number: str) -> Optional[Asset]:
         """
         Get an asset by serial number.
         
-        Args:
-            serial_number: Serial number of the asset
-            
-        Returns:
-            AssetInfo or None if not found
-            
-        Raises:
-            WATSException: If the REST API call fails
-        """
-        try:
-            from ..rest_api.public.api.asset.asset_get_asset_by_serial_number import sync as asset_get_asset_by_serial_number
-            from typing import cast
-            from ..rest_api.public.client import Client
-            
-            client = cast(Client, self.http_client)
-            response = asset_get_asset_by_serial_number(
-                serial_number=serial_number,
-                client=client
-            )
-            
-            if response is None:
-                return None
-            
-            # Convert to AssetInfo
-            asset_dict = response.to_dict() if hasattr(response, 'to_dict') else response
-            asset_info = AssetInfo.model_validate(asset_dict)  # Or from API response
-            asset_info._asset_module = self
-            return asset_info
-            
-        except Exception as e:
-            raise WATSException(f"Failed to get asset '{serial_number}': {str(e)}")
-
-    def update_asset(self, asset: Asset) -> AssetResponse:
-        """
-        Update an existing asset.
+        GET /api/Asset/{serialNumber}
         
         Args:
-            asset: Asset object to update
+            serial_number: The asset serial number
             
         Returns:
-            AssetResponse object
+            Asset object if found, None otherwise
         """
-        raise NotImplementedError("AssetHandler.update_asset not implemented")
-
-    def set_parent(self, serial_number: str, parent_serial_number: str) -> AssetResponse:
-        """
-        Set the parent of an asset.
-        
-        Args:
-            serial_number: Serial number of the asset
-            parent_serial_number: Serial number of the parent asset
-            
-        Returns:
-            AssetResponse object
-        """
-        raise NotImplementedError("AssetHandler.set_parent not implemented")
+        # REST API now returns Optional[Asset] directly
+        return self._api.get_asset_by_serial_number(serial_number)
     
-    def increment_asset_usage_count(self, serial_number: str,
-                                   usage_count: int = 1,
-                                   increment_sub_assets: bool = False) -> AssetResponse:
+    def get_asset_types(
+        self,
+        filter_str: Optional[str] = None,
+        top: Optional[int] = None
+    ) -> List[AssetType]:
         """
-        Increment the usage count of an asset.
+        Get all asset types.
+        
+        GET /api/Asset/Types
         
         Args:
-            serial_number: Serial number of the asset
-            usage_count: Usage count to increment by (default: 1)
-            increment_sub_assets: Whether to increment sub-assets (default: False)
+            filter_str: Optional OData filter string
+            top: Optional max number of results
             
         Returns:
-            AssetResponse object
+            List of AssetType objects
         """
-        raise NotImplementedError("AssetHandler.increment_asset_usage_count not implemented")
-
-    def get_assets(self, filter_str: Optional[str] = None, top: Optional[int] = None, 
-                   skip: Optional[int] = None, orderby: Optional[str] = None) -> List[AssetInfo]:
+        # REST API now returns List[AssetType] directly
+        return self._api.get_asset_types(filter_str=filter_str, top=top)
+    
+    def get_asset_log(
+        self,
+        filter_str: Optional[str] = None,
+        top: Optional[int] = None
+    ) -> List[AssetLog]:
         """
-        Get assets with optional OData query parameters.
+        Get asset log entries.
+        
+        GET /api/Asset/Log
         
         Args:
-            filter_str: Optional OData $filter expression (e.g., "state eq 'Available'")
-            top: Optional $top parameter to limit results
-            skip: Optional $skip parameter for pagination
-            orderby: Optional $orderby parameter for sorting (e.g., "firstSeenDate desc")
+            filter_str: Optional OData filter string (e.g., "assetId eq 'xxx'")
+            top: Optional max number of results
             
         Returns:
-            List[AssetInfo]: List of assets (empty if none found)
-            
-        Raises:
-            WATSException: If the REST API call fails
-            
-        Examples:
-            # Get all assets
-            assets = module.get_assets()
-            
-            # Get assets with filter
-            assets = module.get_assets(filter_str="state eq 'Available'")
-            
-            # Get top 10 assets ordered by date
-            assets = module.get_assets(top=10, orderby="firstSeenDate desc")
+            List of AssetLog entries
         """
-        try:
-            from typing import cast
-            from ..rest_api.public.client import Client
-            from ..rest_api.public.models.virinco_wats_web_dashboard_models_mes_asset_o_data_asset import (
-                VirincoWATSWebDashboardModelsMesAssetODataAsset
-            )
-            from urllib.parse import urlencode
-            
-            client = cast(Client, self.http_client)
-            
-            # Build OData query parameters
-            params = {}
-            if filter_str:
-                params['$filter'] = filter_str
-            if top is not None:
-                params['$top'] = str(top)
-            if skip is not None:
-                params['$skip'] = str(skip)
-            if orderby:
-                params['$orderby'] = orderby
-            
-            # Construct URL with query parameters
-            url = "/api/Asset"
-            if params:
-                url += "?" + urlencode(params)
-            
-            # Make the HTTP request directly using the client
-            response = client.get_httpx_client().request(
-                method="get",
-                url=url,
-            )
-            
-            # Check response status
-            if response.status_code != 200:
-                raise WATSException(f"API returned status {response.status_code}: {response.text}")
-            
-            # Parse response
-            asset_list = []
-            response_data = response.json()
-            
-            if isinstance(response_data, list):
-                for asset_data in response_data:
-                    # Use the generated model to parse the response
-                    asset_obj = VirincoWATSWebDashboardModelsMesAssetODataAsset.from_dict(asset_data)
-                    asset_dict = asset_obj.to_dict()
-                    
-                    # Convert to AssetInfo
-                    asset_info = AssetInfo.model_validate(asset_dict)
-                    asset_info._asset_module = self
-                    asset_list.append(asset_info)
-            
-            return asset_list
-            
-        except Exception as e:
-            if isinstance(e, WATSException):
-                raise
-            filter_msg = f" with filter '{filter_str}'" if filter_str else ""
-            raise WATSException(f"Failed to get assets{filter_msg}: {str(e)}")
-
-    def get_assets_by_tag(self, tag: str) -> AssetResponse:
+        # REST API now returns List[AssetLog] directly
+        return self._api.get_asset_log(filter_str=filter_str, top=top)
+    
+    def get_asset_status(self, asset_id: str) -> Optional[Dict[str, Any]]:
         """
-        Get assets by tag.
+        Get current status of an asset.
+        
+        GET /api/Asset/Status
         
         Args:
-            tag: Tag to filter by
+            asset_id: The asset ID
             
         Returns:
-            AssetResponse object
+            Status information dictionary, or None
         """
-        raise NotImplementedError("AssetHandler.get_assets_by_tag not implemented")
-
-    def get_sub_assets(self, serial_number: str, level: Optional[int] = None) -> AssetResponse:
+        # REST API now returns Optional[Dict] directly
+        return self._api.get_asset_status(asset_id)
+    
+    def get_sub_assets(self, asset_id: str) -> List[Asset]:
         """
-        Get sub-assets of an asset.
+        Get child/sub assets of a parent asset.
+        
+        GET /api/Asset/SubAssets
         
         Args:
-            serial_number: Serial number of the parent asset
-            level: Optional level depth
+            asset_id: The parent asset ID
             
         Returns:
-            AssetResponse object
+            List of child Asset objects
         """
-        raise NotImplementedError("AssetHandler.get_sub_assets not implemented")
-
-    def calibration(self, serial_number: str,
-                   date_time: Optional[datetime] = None,
-                   comment: Optional[str] = None) -> AssetResponse:
+        # REST API now returns List[Asset] directly
+        return self._api.get_sub_assets(asset_id)
+    
+    # -------------------------------------------------------------------------
+    # Create/Update Operations
+    # -------------------------------------------------------------------------
+    
+    def create_or_update_asset(
+        self,
+        serial_number: str,
+        type_id: UUID,
+        asset_name: Optional[str] = None,
+        part_number: Optional[str] = None,
+        revision: Optional[str] = None,
+        description: Optional[str] = None,
+        location: Optional[str] = None,
+        parent_serial_number: Optional[str] = None,
+        asset_id: Optional[str] = None
+    ) -> Optional[Asset]:
         """
-        Perform calibration on an asset.
+        Create a new asset or update an existing one.
+        
+        PUT /api/Asset
+        
+        Note: Properties 'runningCount', 'totalCount', 'lastCalibrationDate',
+        'lastMaintenanceDate' must be updated using their respective methods.
+        The 'assetId' can be left empty for new assets.
+        The 'typeId' must be specified.
         
         Args:
-            serial_number: Serial number of the asset
-            date_time: Optional calibration date and time (defaults to current time)
+            serial_number: Asset serial number (required)
+            type_id: Asset type ID (required)
+            asset_name: Asset name
+            part_number: Part number
+            revision: Revision
+            description: Description
+            location: Location
+            parent_serial_number: Parent asset serial number
+            asset_id: Asset ID (for updates, optional for creates)
+            
+        Returns:
+            Created/Updated Asset object, or None on failure
+        """
+        asset = Asset(
+            serialNumber=serial_number,
+            typeId=type_id,
+            assetName=asset_name,
+            partNumber=part_number,
+            revision=revision,
+            description=description,
+            location=location,
+            parentSerialNumber=parent_serial_number,
+            assetId=asset_id
+        )
+        # REST API accepts Asset and returns Optional[Asset]
+        return self._api.create_or_update_asset(asset)
+    
+    def create_or_update_asset_type(
+        self,
+        type_name: str,
+        type_id: Optional[str] = None,
+        running_count_limit: Optional[int] = None,
+        total_count_limit: Optional[int] = None,
+        maintenance_interval: Optional[float] = None,
+        calibration_interval: Optional[float] = None,
+        warning_threshold: Optional[float] = None,
+        alarm_threshold: Optional[float] = None
+    ) -> Optional[AssetType]:
+        """
+        Create or update an asset type.
+        
+        PUT /api/Asset/Types
+        
+        Args:
+            type_name: Name of the asset type (required)
+            type_id: Type ID (for updates)
+            running_count_limit: Max count until next calibration
+            total_count_limit: Total count limit
+            maintenance_interval: Maintenance interval in days
+            calibration_interval: Calibration interval in days
+            warning_threshold: Warning threshold percentage
+            alarm_threshold: Alarm threshold percentage
+            
+        Returns:
+            Created/Updated AssetType object, or None on failure
+        """
+        asset_type = AssetType(
+            typeName=type_name,
+            typeId=UUID(type_id) if type_id else None,
+            runningCountLimit=running_count_limit,
+            totalCountLimit=total_count_limit,
+            maintenanceInterval=maintenance_interval,
+            calibrationInterval=calibration_interval,
+            warningThreshold=warning_threshold,
+            alarmThreshold=alarm_threshold
+        )
+        # REST API accepts AssetType and returns Optional[AssetType]
+        return self._api.create_or_update_asset_type(asset_type)
+    
+    # -------------------------------------------------------------------------
+    # State and Count Operations
+    # -------------------------------------------------------------------------
+    
+    def set_state(
+        self,
+        asset_id: str,
+        state: AssetState,
+        comment: Optional[str] = None
+    ) -> bool:
+        """
+        Set the state of an asset.
+        
+        PUT /api/Asset/State
+        
+        Args:
+            asset_id: Asset ID
+            state: New asset state
             comment: Optional comment
             
         Returns:
-            AssetResponse object indicating success or failure
-            
-        Raises:
-            WATSException: If the REST API call fails
-            WATSNotFoundError: If the asset is not found
+            True if successful
         """
-        try:
-            from ..rest_api.public.api.asset.asset_post_calibration import sync as asset_post_calibration
-            from typing import cast
-            from ..rest_api.public.client import Client
-            from ..rest_api.public.types import UNSET
-            
-            # Cast the http_client to the expected Client type
-            client = cast(Client, self.http_client)
-            
-            # Use current time if date_time is not provided
-            if date_time is None:
-                date_time = datetime.now()
-            
-            # Call the REST API to perform calibration
-            response = asset_post_calibration(
-                client=client,
-                serial_number=serial_number,
-                id=UNSET,  # We're using serial_number instead of id
-                date_time=date_time,
-                comment=comment if comment is not None else UNSET
-            )
-            
-            if response is None:
-                raise WATSNotFoundError(f"Asset with serial number '{serial_number}' not found or calibration failed")
-            
-            # Convert the response to our AssetResponse format
-            return AssetResponse(
-                success=True,
-                message=f"Calibration performed on asset '{serial_number}' successfully",
-                data=response.to_dict() if hasattr(response, 'to_dict') else response
-            )
-            
-        except Exception as e:
-            if isinstance(e, (WATSException, WATSNotFoundError)):
-                raise
-            raise WATSException(f"Failed to perform calibration on asset '{serial_number}': {str(e)}")
-
-    def maintenance(self, serial_number: str,
-                   date_time: Optional[datetime] = None,
-                   comment: Optional[str] = None) -> AssetResponse:
+        # REST API now returns bool directly
+        return self._api.set_asset_state(asset_id, state.value, comment)
+    
+    def update_count(
+        self,
+        asset_id: str,
+        total_count: Optional[int] = None,
+        increment_by: Optional[int] = None
+    ) -> bool:
         """
-        Perform maintenance on an asset.
+        Increment the running and total count on an asset.
+        
+        PUT /api/Asset/Count
         
         Args:
-            serial_number: Serial number of the asset
-            date_time: Optional maintenance date and time (defaults to current time)
-            comment: Optional comment
+            asset_id: Asset ID
+            total_count: Set total count to this value
+            increment_by: Increment count by this value
             
         Returns:
-            AssetResponse object indicating success or failure
-            
-        Raises:
-            WATSException: If the REST API call fails
-            WATSNotFoundError: If the asset is not found
+            True if successful
         """
-        try:
-            from ..rest_api.public.api.asset.asset_post_maintenance import sync as asset_post_maintenance
-            from typing import cast
-            from ..rest_api.public.client import Client
-            from ..rest_api.public.types import UNSET
-            
-            # Cast the http_client to the expected Client type
-            client = cast(Client, self.http_client)
-            
-            # Use current time if date_time is not provided
-            if date_time is None:
-                date_time = datetime.now()
-            
-            # Call the REST API to perform maintenance
-            response = asset_post_maintenance(
-                client=client,
-                serial_number=serial_number,
-                id=UNSET,  # We're using serial_number instead of id
-                date_time=date_time,
-                comment=comment if comment is not None else UNSET
-            )
-            
-            if response is None:
-                raise WATSNotFoundError(f"Asset with serial number '{serial_number}' not found or maintenance failed")
-            
-            # Convert the response to our AssetResponse format
-            return AssetResponse(
-                success=True,
-                message=f"Maintenance performed on asset '{serial_number}' successfully",
-                data=response.to_dict() if hasattr(response, 'to_dict') else response
-            )
-            
-        except Exception as e:
-            if isinstance(e, (WATSException, WATSNotFoundError)):
-                raise
-            raise WATSException(f"Failed to perform maintenance on asset '{serial_number}': {str(e)}")
-
-    def reset_running_count(self, serial_number: str, comment: Optional[str] = None) -> AssetResponse:
+        # REST API now returns bool directly
+        return self._api.update_asset_count(asset_id, total_count, increment_by)
+    
+    def reset_running_count(self, asset_id: str) -> bool:
         """
-        Reset the running count of an asset.
+        Reset asset running count to zero.
+        
+        POST /api/Asset/ResetRunningCount
         
         Args:
-            serial_number: Serial number of the asset
-            comment: Optional comment
+            asset_id: Asset ID
             
         Returns:
-            AssetResponse object indicating success or failure
-            
-        Raises:
-            WATSException: If the REST API call fails
-            WATSNotFoundError: If the asset is not found
+            True if successful
         """
-        try:
-            from ..rest_api.public.api.asset.asset_reset_running_count import sync as asset_reset_running_count
-            from typing import cast
-            from ..rest_api.public.client import Client
-            from ..rest_api.public.types import UNSET
+        # REST API now returns bool directly
+        return self._api.reset_running_count(asset_id)
+    
+    # -------------------------------------------------------------------------
+    # Calibration & Maintenance
+    # -------------------------------------------------------------------------
+    
+    def record_calibration(
+        self,
+        asset_id: str,
+        user: str,
+        comment: Optional[str] = None,
+        calibration_date: Optional[datetime] = None
+    ) -> bool:
+        """
+        Record a calibration event for an asset.
+        
+        POST /api/Asset/Calibration
+        
+        Args:
+            asset_id: Asset ID
+            user: User performing the calibration
+            comment: Calibration notes
+            calibration_date: Date of calibration (default: now)
             
-            # Cast the http_client to the expected Client type
-            client = cast(Client, self.http_client)
+        Returns:
+            True if successful
+        """
+        data: Dict[str, Any] = {
+            "assetId": asset_id,
+            "user": user
+        }
+        if comment:
+            data["comment"] = comment
+        if calibration_date:
+            data["date"] = calibration_date.isoformat()
             
-            # Call the REST API to reset running count
-            response = asset_reset_running_count(
-                client=client,
-                serial_number=serial_number,
-                id=UNSET,  # We're using serial_number instead of id
-                comment=comment if comment is not None else UNSET
-            )
+        # REST API now returns bool directly
+        return self._api.post_calibration(data)
+    
+    def record_maintenance(
+        self,
+        asset_id: str,
+        user: str,
+        comment: Optional[str] = None,
+        maintenance_date: Optional[datetime] = None
+    ) -> bool:
+        """
+        Record a maintenance event for an asset.
+        
+        POST /api/Asset/Maintenance
+        
+        Args:
+            asset_id: Asset ID
+            user: User performing the maintenance
+            comment: Maintenance notes
+            maintenance_date: Date of maintenance (default: now)
             
-            if response is None:
-                raise WATSNotFoundError(f"Asset with serial number '{serial_number}' not found or running count reset failed")
+        Returns:
+            True if successful
+        """
+        data: Dict[str, Any] = {
+            "assetId": asset_id,
+            "user": user
+        }
+        if comment:
+            data["comment"] = comment
+        if maintenance_date:
+            data["date"] = maintenance_date.isoformat()
             
-            # Convert the response to our AssetResponse format
-            return AssetResponse(
-                success=True,
-                message=f"Running count reset for asset '{serial_number}' successfully",
-                data=response.to_dict() if hasattr(response, 'to_dict') else response
-            )
+        # REST API now returns bool directly
+        return self._api.post_maintenance(data)
+    
+    def post_message(
+        self,
+        asset_id: str,
+        message: str,
+        user: Optional[str] = None
+    ) -> bool:
+        """
+        Post a message/comment to the asset log.
+        
+        POST /api/Asset/Message
+        
+        Args:
+            asset_id: Asset ID
+            message: Message text
+            user: Optional user name
             
-        except Exception as e:
-            if isinstance(e, (WATSException, WATSNotFoundError)):
-                raise
-            raise WATSException(f"Failed to reset running count for asset '{serial_number}': {str(e)}")
-
-    def delete_asset(self, serial_number: str) -> AssetResponse:
+        Returns:
+            True if successful
+        """
+        data: Dict[str, Any] = {
+            "assetId": asset_id,
+            "message": message
+        }
+        if user:
+            data["user"] = user
+            
+        # REST API now returns bool directly
+        return self._api.post_message(data)
+    
+    # -------------------------------------------------------------------------
+    # Delete Operations
+    # -------------------------------------------------------------------------
+    
+    def delete_asset(self, asset_id: str) -> bool:
         """
         Delete an asset.
         
+        DELETE /api/Asset
+        
+        Note: Log records for the asset will also be deleted.
+        Any assets with this asset as parent will not be deleted,
+        but will change parent.
+        
         Args:
-            serial_number: Serial number of the asset to delete
+            asset_id: Asset ID
             
         Returns:
-            AssetResponse object indicating success or failure
+            True if deletion was successful
+        """
+        # REST API now returns bool directly
+        return self._api.delete_asset(asset_id)
+    
+    # -------------------------------------------------------------------------
+    # Helper Methods
+    # -------------------------------------------------------------------------
+    
+    def exists(self, serial_number: str) -> bool:
+        """
+        Check if an asset exists.
+        
+        Args:
+            serial_number: Asset serial number
             
-        Raises:
-            WATSException: If the REST API call fails
-            WATSNotFoundError: If the asset is not found
+        Returns:
+            True if asset exists, False otherwise
         """
         try:
-            from ..rest_api.public.api.asset.asset_delete_asset import sync as asset_delete_asset
-            from typing import cast
-            from ..rest_api.public.client import Client
-            from ..rest_api.public.types import UNSET
+            return self.get_asset_by_serial(serial_number) is not None
+        except Exception:
+            return False
+    
+    def needs_calibration(self, serial_number: str) -> bool:
+        """
+        Check if an asset needs calibration.
+        
+        Args:
+            serial_number: Asset serial number
             
-            # Cast the http_client to the expected Client type
-            client = cast(Client, self.http_client)
+        Returns:
+            True if asset needs calibration
+        """
+        asset = self.get_asset_by_serial(serial_number)
+        if asset:
+            return asset.state in (AssetState.NEEDS_CALIBRATION, AssetState.ALERT)
+        return False
+    
+    def needs_maintenance(self, serial_number: str) -> bool:
+        """
+        Check if an asset needs maintenance.
+        
+        Args:
+            serial_number: Asset serial number
             
-            # Call the REST API to delete asset by serial number
-            response = asset_delete_asset(
-                client=client,
-                serial_number=serial_number,
-                id=UNSET  # We're using serial_number instead of id
-            )
-            
-            if response is None:
-                raise WATSNotFoundError(f"Asset with serial number '{serial_number}' not found or could not be deleted")
-            
-            # Convert the response to our AssetResponse format
-            return AssetResponse(
-                success=True,
-                message=f"Asset '{serial_number}' deleted successfully",
-                data=response.to_dict() if hasattr(response, 'to_dict') else response
-            )
-            
-        except Exception as e:
-            if isinstance(e, (WATSException, WATSNotFoundError)):
-                raise
-            raise WATSException(f"Failed to delete asset '{serial_number}': {str(e)}")
-
-    # Legacy methods for backward compatibility
-    def get_all(self) -> List[Dict[str, Any]]:
-        """Get all assets."""
-        assets = self.get_assets("")
-        return [asset.to_dict() for asset in assets]
-
-    def get_by_id(self, asset_id: str) -> Optional[Dict[str, Any]]:
-        """Get a specific asset by ID."""
-        self._validate_id(asset_id, "asset")
-        asset = self.get_asset(asset_id)
-        return asset.to_dict() if asset else None
-
-    def get_tree(self) -> List[Dict[str, Any]]:
-        """Get the asset tree structure."""
-        assets = self.get_assets("")
-        return [asset.to_dict() for asset in assets]
+        Returns:
+            True if asset needs maintenance
+        """
+        asset = self.get_asset_by_serial(serial_number)
+        if asset:
+            return asset.state in (AssetState.NEEDS_MAINTENANCE, AssetState.WARNING)
+        return False

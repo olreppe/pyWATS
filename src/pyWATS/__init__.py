@@ -1,105 +1,123 @@
 """
-pyWATS - Python SDK for WATS (Virinco Test Data Management System)
+pyWATS - Python API for WATS (Web-based Automatic Test System)
 
-This package provides comprehensive access to WATS functionality through a modern
-object-oriented API design:
+A clean, object-oriented Python library for interacting with the WATS server.
 
-- WATSApi: Main API class with module properties for organized access
-- TDM: Test Data Management for creating and managing test reports
-- Product: Product management and configuration
-- Report: Analytics and reporting functionality  
-- Unit: Unit/device management
-- Workflow: Workflow and step management
-- Production: Production tracking and control
-- Asset: Asset management
-- App: Application and system management
-
-Report Models:
-- UUTReport: Unit Under Test reports
-- UURReport: Unit Under Repair reports  
-- Report: Base report class
-
-Example usage:
-    from pyWATS import WATSApi, PyWATSConfig, TDM
+Usage:
+    from pywats import pyWATS
     
-    # Initialize with configuration
-    config = PyWATSConfig()
-    api = WATSApi(config=config)
+    api = pyWATS(base_url="https://your-wats-server.com", token="your-token")
     
-    # Use TDM for test data management
-    tdm = TDM(api.client)
-    tdm.setup_api("./data", "Station1", "Development")
+    # Access modules
+    products = api.product.get_products()
+    product = api.product.get_product("PART-001")
     
-    # Create a UUT report
-    report = tdm.create_uut_report(
-        operator="John Doe",
-        part_number="PCB-123",
-        revision="A",
-        serial_number="SN12345", 
-        operation_type="Final Test",
-        sequence_file="test.seq",
-        version="1.0"
-    )
+    # Use query models
+    from pywats.models import WATSFilter
+    filter = WATSFilter(part_number="PART-001")
+    headers = api.report.query_uut_headers(filter)
     
-    # Submit the report
-    report_id = tdm.submit(report)
-    
-    # Access modules through properties
-    products = api.product.get_all()
-    report_stats = api.report.get_production_statistics()
+    # Use report models (WSJF format)
+    from pywats.models import UUTReport, UURReport
+    report = UUTReport(pn="PART-001", sn="SN-12345", rev="A", ...)
 """
 
-# Import the main API class and configuration
-from .api import WATSApi
-from .config import PyWATSConfig
+from .pywats import pyWATS
 from .exceptions import (
-    WATSException, 
-    WATSAPIError, 
-    WATSConnectionError, 
-    WATSAuthenticationError,
-    WATSValidationError,
-    WATSNotFoundError,
-    WATSConfigurationError,
-    WATSTimeoutError
+    PyWATSError,
+    AuthenticationError,
+    NotFoundError,
+    ValidationError,
+    ServerError,
+    ConnectionError
 )
 
-# Import report models for direct access
-from .models.report import UUTReport, UURReport, Report
-from . import report_utils
+# Import commonly used models for convenience
+from .models import (
+    # Product models
+    Product,
+    ProductRevision,
+    ProductView,
+    ProductState,
+    # Asset models (from asset module)
+    Asset,
+    AssetType,
+    AssetLog,
+    AssetState,
+    # Production models
+    Unit,
+    UnitChange,
+    ProductionBatch,
+    SerialNumberType,
+    UnitVerification,
+    UnitVerificationGrade,
+    # RootCause (Ticketing) models
+    Ticket,
+    TicketStatus,
+    TicketPriority,
+    TicketView,
+    TicketUpdate,
+    TicketUpdateType,
+    TicketAttachment,
+    # Query/filter models
+    ReportHeader,
+    WATSFilter,
+    YieldData,
+    ProcessInfo,
+    LevelInfo,
+    ProductGroup,
+    DateGrouping,
+    # Common models
+    Setting,
+)
 
-# Import REST API components for direct access if needed
-from . import rest_api
-
-# Import legacy components if available
-try:
-    from . import wats_client
-except ImportError:
-    wats_client = None
+# UUT/UUR Report models (import separately to avoid name conflicts)
+# from pywats.models import UUTReport, UURReport, Step, etc.
 
 __version__ = "2.0.0"
-
 __all__ = [
-    # Main API
-    "WATSApi",
-    "PyWATSConfig",
-    
-    # Report Models
-    "UUTReport",
-    "UURReport", 
-    "Report",
-    "report_utils",
-    
+    # Main class
+    "pyWATS",
     # Exceptions
-    "WATSException",
-    "WATSAPIError", 
-    "WATSConnectionError",
-    "WATSAuthenticationError",
-    "WATSValidationError",
-    "WATSNotFoundError", 
-    "WATSConfigurationError",
-    "WATSTimeoutError",
-    
-    # REST API components for advanced usage
-    "rest_api",
-
+    "PyWATSError",
+    "AuthenticationError",
+    "NotFoundError",
+    "ValidationError",
+    "ServerError",
+    "ConnectionError",
+    # Product models
+    "Product",
+    "ProductRevision",
+    "ProductView",
+    "ProductState",
+    # Asset models
+    "Asset",
+    "AssetType",
+    "AssetLog",
+    "AssetState",
+    # Production models
+    "Unit",
+    "UnitChange",
+    "ProductionBatch",
+    "SerialNumberType",
+    "UnitVerification",
+    "UnitVerificationGrade",
+    # RootCause (Ticketing) models
+    "Ticket",
+    "TicketStatus",
+    "TicketPriority",
+    "TicketView",
+    "TicketUpdate",
+    "TicketUpdateType",
+    "TicketAttachment",
+    # Query/filter models
+    "ReportHeader",
+    "WATSFilter",
+    "YieldData",
+    "ProcessInfo",
+    "LevelInfo",
+    "ProductGroup",
+    "DateGrouping",
+    # Common models
+    "Setting",
 ]

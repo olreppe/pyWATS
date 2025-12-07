@@ -1,58 +1,70 @@
-"""
-Custom exceptions for the WATS API.
+"""Custom exceptions for pyWATS.
 
-This module provides a hierarchy of exceptions specific to WATS operations,
-allowing for better error handling and debugging.
+This module defines all exception types used throughout the pyWATS library.
 """
-
 from typing import Optional, Dict, Any
 
 
-class WATSException(Exception):
-    """Base exception class for all WATS-related errors."""
+class PyWATSError(Exception):
+    """Base exception for all pyWATS errors."""
     
-    def __init__(self, message: str, error_code: Optional[str] = None, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(message)
         self.message = message
-        self.error_code = error_code
         self.details = details or {}
     
-    def __str__(self) -> str:
-        if self.error_code:
-            return f"[{self.error_code}] {self.message}"
+    def __str__(self):
+        if self.details:
+            return f"{self.message} - Details: {self.details}"
         return self.message
 
 
-class WATSAPIError(WATSException):
-    """Exception raised for API-related errors."""
+class AuthenticationError(PyWATSError):
+    """Raised when authentication fails."""
     pass
 
 
-class WATSConnectionError(WATSException):
-    """Exception raised for connection-related errors."""
+class NotFoundError(PyWATSError):
+    """Raised when a requested resource is not found."""
+    
+    def __init__(self, resource_type: str, identifier: str, message: Optional[str] = None):
+        self.resource_type = resource_type
+        self.identifier = identifier
+        msg = message or f"{resource_type} '{identifier}' not found"
+        super().__init__(msg, {"resource_type": resource_type, "identifier": identifier})
+
+
+class ValidationError(PyWATSError):
+    """Raised when data validation fails."""
+    
+    def __init__(self, message: str, field: Optional[str] = None, value: Optional[Any] = None):
+        self.field = field
+        self.value = value
+        details: Dict[str, Any] = {}
+        if field:
+            details["field"] = field
+        if value is not None:
+            details["value"] = str(value)
+        super().__init__(message, details)
+
+
+class ServerError(PyWATSError):
+    """Raised when the server returns an error."""
+    
+    def __init__(self, status_code: int, message: str, response_body: Optional[str] = None):
+        self.status_code = status_code
+        self.response_body = response_body
+        super().__init__(
+            f"Server error ({status_code}): {message}",
+            {"status_code": status_code, "response_body": response_body}
+        )
+
+
+class ConnectionError(PyWATSError):
+    """Raised when connection to the server fails."""
     pass
 
 
-class WATSAuthenticationError(WATSException):
-    """Exception raised for authentication-related errors."""
-    pass
-
-
-class WATSValidationError(WATSException):
-    """Exception raised for data validation errors."""
-    pass
-
-
-class WATSNotFoundError(WATSException):
-    """Exception raised when a requested resource is not found."""
-    pass
-
-
-class WATSConfigurationError(WATSException):
-    """Exception raised for configuration-related errors."""
-    pass
-
-
-class WATSTimeoutError(WATSException):
-    """Exception raised for timeout-related errors."""
+class TimeoutError(PyWATSError):
+    """Raised when a request times out."""
     pass

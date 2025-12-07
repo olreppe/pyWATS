@@ -1,522 +1,449 @@
-"""
-Report module for WATS API.
+"""Report Module for pyWATS
 
-This module provides functionality for generating reports, analytics,
-loading and managing test reports from the WATS system.
+Provides high-level operations for querying and working with test reports.
 """
-
-from typing import List, Optional, Dict, Any, Union, TYPE_CHECKING, cast
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+from uuid import UUID
 from datetime import datetime
-from uuid import UUID, uuid4
-import json  # Add this import at the top
-import warnings
 
-from .base import BaseModule
-from ..exceptions import WATSException, WATSNotFoundError
-from ..models.report import UUTReport, UURReport, Report
+from ..models.report_query import (
+    ReportHeader, WATSFilter, Attachment,
+    YieldData, ProcessInfo, LevelInfo, ProductGroup
+)
+from ..rest_api import ReportApi
 
+# Import UUT/UUR models for type hints and working with reports
 if TYPE_CHECKING:
-    from ..rest_api._http_client import WatsHttpClient
-    from ..rest_api.public.client import AuthenticatedClient, Client
-
-# Import REST API endpoints
-from ..rest_api.public.api.report import (
-    report_header_query,
-    report_get_report_as_wsjf,
-    report_post_wsjf
-)
-from ..rest_api.internal.api.report import (
-    report_delete_reports
-)
-from ..rest_api.public.models.virinco_wats_web_dashboard_models_o_data_report_header import (
-    VirincoWATSWebDashboardModelsODataReportHeader
-)
+    from ..models.report import UUTReport, UURReport
 
 
-class ReportModule(BaseModule):
+class ReportModule:
     """
-    Report and analytics module.
+    Report management module.
     
-    Provides methods for:
-    - Creating and managing test reports
-    - Loading and managing test reports
-    - Submitting reports to WATS
-    - Generating statistical reports
-    - Retrieving production analytics
-    - Accessing performance metrics
+    Provides operations for:
+    - Querying report headers (UUT and UUR)
+    - Getting full report data (WSJF/WSXF formats)
+    - Creating and submitting new reports (UUTReport/UURReport)
+    - Managing attachments
+    
+    Usage:
+        api = pyWATS("https://your-wats.com", "your-token")
+        
+        # Query UUT reports
+        filter = WATSFilter(part_number="PART-001", top_count=100)
+        headers = api.report.query_uut_headers(filter)
+        
+        # Get a full report as WSJF
+        report_data = api.report.get_wsjf("report-uuid")
+        
+        # Submit a new report
+        api.report.submit_wsjf(report_data)
     """
-
-    http_client: Union['WatsHttpClient', 'AuthenticatedClient', 'Client']  # Add explicit type hint
-    def __init__(self, client: Union['WatsHttpClient', 'AuthenticatedClient', 'Client']):
-        """Initialize the Report module."""
-        super().__init__(client)
-        self._pending_reports = []
-
-    def create_uut_report(
-        self, 
-        operator: str, 
-        part_number: str, 
-        revision: str, 
-        serial_number: str,
-        operation_type: str, 
-        sequence_file: str, 
-        version: str,
-        station_name: Optional[str] = None,
-        location: Optional[str] = None,
-        purpose: Optional[str] = None
-    ) -> UUTReport:
+    
+    def __init__(self, api: ReportApi):
         """
-        Create a new UUT (Unit Under Test) report.
+        Initialize ReportModule with REST API client.
         
         Args:
-            operator: Name of the test operator
-            part_number: Part number of the unit being tested
-            revision: Revision of the unit
-            serial_number: Serial number of the unit
-            operation_type: Type of operation being performed
-            sequence_file: Test sequence file name
-            version: Version of the test sequence
-            station_name: Optional station name (defaults from app config)
-            location: Optional location (defaults from app config)
-            purpose: Optional purpose (defaults from app config)
+            api: ReportApi instance for making HTTP requests
+        """
+        self._api = api
+    
+    # -------------------------------------------------------------------------
+    # Query Operations
+    # -------------------------------------------------------------------------
+    
+    def query_uut_headers(self, filter: Optional[WATSFilter] = None) -> List[ReportHeader]:
+        """
+        Query UUT (Unit Under Test) report headers.
+        
+        GET /api/Report/Query/Header?reportType=uut
+        
+        Args:
+            filter: Optional WATSFilter for filtering results
             
         Returns:
-            A new UUTReport object
+            List of ReportHeader objects
         """
-        from ..models.report.uut.uut_info import UUTInfo
+        # REST API now returns List[ReportHeader] directly
+        return self._api.query_headers("uut", filter)
+    
+    def query_uur_headers(self, filter: Optional[WATSFilter] = None) -> List[ReportHeader]:
+        """
+        Query UUR (Unit Under Repair) report headers.
         
-        uut_info = UUTInfo(
-            operator=operator
+        GET /api/Report/Query/Header?reportType=uur
+        
+        Args:
+            filter: Optional WATSFilter for filtering results
+            
+        Returns:
+            List of ReportHeader objects
+        """
+        # REST API now returns List[ReportHeader] directly
+        return self._api.query_headers("uur", filter)
+    
+    def query_headers(
+        self,
+        report_type: str = "uut",
+        filter: Optional[WATSFilter] = None
+    ) -> List[ReportHeader]:
+        """
+        Query report headers by type.
+        
+        GET /api/Report/Query/Header
+        
+        Args:
+            report_type: Report type ("uut" or "uur")
+            filter: Optional WATSFilter for filtering results
+            
+        Returns:
+            List of ReportHeader objects
+        """
+        # REST API now returns List[ReportHeader] directly
+        return self._api.query_headers(report_type, filter)
+    
+    def query_headers_by_misc_info(
+        self,
+        description: str,
+        string_value: str,
+        top: Optional[int] = None
+    ) -> List[ReportHeader]:
+        """
+        Get report headers by searching for misc information.
+        
+        GET /api/Report/Query/HeaderByMiscInfo
+        
+        Args:
+            description: Misc info description
+            string_value: Misc info string value
+            top: Optional max number of results
+            
+        Returns:
+            List of ReportHeader objects
+        """
+        # REST API now returns List[ReportHeader] directly
+        return self._api.query_headers_by_misc_info(description, string_value, top)
+    
+    # -------------------------------------------------------------------------
+    # Get Report Data
+    # -------------------------------------------------------------------------
+    
+    def get_wsjf(self, report_id: Union[str, UUID]) -> Optional[Union["UUTReport", "UURReport"]]:
+        """
+        Get report in WATS Standard JSON Format (WSJF).
+        
+        GET /api/Report/Wsjf/{id}
+        
+        Args:
+            report_id: Report UUID
+            
+        Returns:
+            Report data as UUTReport or UURReport, or None
+        """
+        # REST API now returns Optional[Union[UUTReport, UURReport]] directly
+        return self._api.get_wsjf(str(report_id))
+    
+    def get_wsxf(self, report_id: Union[str, UUID]) -> Optional[bytes]:
+        """
+        Get report in WATS Standard XML Format (WSXF).
+        
+        GET /api/Report/Wsxf/{id}
+        
+        Args:
+            report_id: Report UUID
+            
+        Returns:
+            Report data in WSXF format as bytes, or None
+        """
+        # REST API now returns Optional[bytes] directly
+        return self._api.get_wsxf(str(report_id))
+    
+    # -------------------------------------------------------------------------
+    # Submit Reports
+    # -------------------------------------------------------------------------
+    
+    def submit_wsjf(self, report_data: Dict[str, Any]) -> Optional[str]:
+        """
+        Submit a report in WATS Standard JSON Format.
+        
+        POST /api/Report/WSJF
+        
+        Args:
+            report_data: Report data in WSJF format
+            
+        Returns:
+            Report ID if successful, None otherwise
+        """
+        # REST API now returns Optional[str] directly
+        return self._api.post_wsjf(report_data)
+    
+    def submit_wsxf(self, report_xml: str) -> Optional[str]:
+        """
+        Submit a report in WATS Standard XML Format.
+        
+        POST /api/Report/WSXF
+        
+        Args:
+            report_xml: Report data in WSXF format (XML string)
+            
+        Returns:
+            Report ID if successful, None otherwise
+        """
+        # REST API now returns Optional[str] directly
+        return self._api.post_wsxf(report_xml)
+    
+    # -------------------------------------------------------------------------
+    # Attachment Operations
+    # -------------------------------------------------------------------------
+    
+    def get_attachment(
+        self,
+        attachment_id: Optional[str] = None,
+        step_id: Optional[str] = None
+    ) -> Optional[bytes]:
+        """
+        Get an attachment from a report.
+        
+        GET /api/Report/Attachment
+        
+        Args:
+            attachment_id: The attachment ID
+            step_id: The step ID
+            
+        Returns:
+            Attachment content as bytes, or None
+        """
+        # REST API now returns Optional[bytes] directly
+        return self._api.get_attachment(attachment_id, step_id)
+    
+    def get_attachments_as_zip(self, report_id: Union[str, UUID]) -> Optional[bytes]:
+        """
+        Get all attachments for a report as a zip archive.
+        
+        GET /api/Report/Attachments/{id}
+        
+        Args:
+            report_id: Report UUID
+            
+        Returns:
+            Zip archive content as bytes, or None
+        """
+        # REST API now returns Optional[bytes] directly
+        return self._api.get_attachments_as_zip(str(report_id))
+    
+    def get_certificate(self, report_id: Union[str, UUID]) -> Optional[bytes]:
+        """
+        Get certificate for a report.
+        
+        GET /api/Report/Certificate/{id}
+        
+        Args:
+            report_id: Report UUID
+            
+        Returns:
+            Certificate content as bytes (usually PDF), or None
+        """
+        # REST API now returns Optional[bytes] directly
+        return self._api.get_certificate(str(report_id))
+    
+    # -------------------------------------------------------------------------
+    # Helper Methods
+    # -------------------------------------------------------------------------
+    
+    def get_reports_by_serial(
+        self,
+        serial_number: str,
+        report_type: str = "uut",
+        top_count: int = 100
+    ) -> List[ReportHeader]:
+        """
+        Get reports for a specific serial number.
+        
+        Args:
+            serial_number: Unit serial number
+            report_type: Report type ("uut" or "uur")
+            top_count: Maximum number of results
+            
+        Returns:
+            List of ReportHeader objects
+        """
+        filter = WATSFilter(serialNumber=serial_number, topCount=top_count)
+        return self.query_headers(report_type, filter)
+    
+    def get_reports_by_part(
+        self,
+        part_number: str,
+        revision: Optional[str] = None,
+        report_type: str = "uut",
+        top_count: int = 100
+    ) -> List[ReportHeader]:
+        """
+        Get reports for a specific product.
+        
+        Args:
+            part_number: Product part number
+            revision: Optional product revision
+            report_type: Report type ("uut" or "uur")
+            top_count: Maximum number of results
+            
+        Returns:
+            List of ReportHeader objects
+        """
+        filter = WATSFilter(
+            partNumber=part_number,
+            revision=revision,
+            topCount=top_count
         )
+        return self.query_headers(report_type, filter)
+    
+    def get_reports_by_date_range(
+        self,
+        date_from: datetime,
+        date_to: datetime,
+        report_type: str = "uut",
+        top_count: int = 1000
+    ) -> List[ReportHeader]:
+        """
+        Get reports within a date range.
         
-        report = UUTReport(
-            id=uuid4(),
-            type="T",
+        Args:
+            date_from: Start date
+            date_to: End date
+            report_type: Report type ("uut" or "uur")
+            top_count: Maximum number of results
+            
+        Returns:
+            List of ReportHeader objects
+        """
+        filter = WATSFilter(
+            dateFrom=date_from,
+            dateTo=date_to,
+            topCount=top_count
+        )
+        return self.query_headers(report_type, filter)
+    
+    # -------------------------------------------------------------------------
+    # UUT/UUR Report Operations
+    # -------------------------------------------------------------------------
+    
+    def get_uut_report(self, report_id: Union[str, UUID]) -> "UUTReport":
+        """
+        Get a UUT report as a UUTReport object.
+        
+        Args:
+            report_id: Report UUID
+            
+        Returns:
+            UUTReport object
+        """
+        from ..models.report import UUTReport
+        data = self.get_wsjf(report_id)
+        return UUTReport.model_validate(data)
+    
+    def get_uur_report(self, report_id: Union[str, UUID]) -> "UURReport":
+        """
+        Get a UUR report as a UURReport object.
+        
+        Args:
+            report_id: Report UUID
+            
+        Returns:
+            UURReport object
+        """
+        from ..models.report import UURReport
+        data = self.get_wsjf(report_id)
+        return UURReport.model_validate(data)
+    
+    def create_uut_report(
+        self,
+        part_number: str,
+        serial_number: str,
+        revision: str,
+        process_code: int,
+        station_name: str,
+        location: str,
+        purpose: str,
+        **kwargs
+    ) -> "UUTReport":
+        """
+        Create a new UUT report.
+        
+        Args:
+            part_number: Product part number
+            serial_number: Unit serial number
+            revision: Product revision
+            process_code: Test process code
+            station_name: Test station name
+            location: Test location
+            purpose: Test purpose
+            **kwargs: Additional UUTReport fields
+            
+        Returns:
+            New UUTReport object (not yet submitted)
+        """
+        from ..models.report import UUTReport
+        return UUTReport(
             pn=part_number,
             sn=serial_number,
             rev=revision,
-            process_code=int(operation_type) or 10,
-            station_name=station_name or "Unknown",
-            location=location or "Unknown", 
-            purpose=purpose or "Development",
-            start=datetime.now().astimezone(),  # Use local timezone-aware datetime
-            info=uut_info
+            process_code=process_code,
+            station_name=station_name,
+            location=location,
+            purpose=purpose,
+            **kwargs
         )
-        
-        return report
     
     def create_uur_report(
         self,
-        operator: str,
-        repair_type: str,
-        operation_type: str,
-        serial_number: str,
         part_number: str,
+        serial_number: str,
         revision: str,
-        station_name: Optional[str] = None,
-        location: Optional[str] = None,
-        purpose: Optional[str] = None
-    ) -> UURReport:
+        process_code: int,
+        station_name: str,
+        location: str,
+        purpose: str,
+        **kwargs
+    ) -> "UURReport":
         """
-        Create a new UUR (Unit Under Repair) report.
+        Create a new UUR report.
         
         Args:
-            operator: Name of the repair operator
-            repair_type: Type of repair being performed
-            operation_type: Type of operation
-            serial_number: Serial number of the unit
-            part_number: Part number of the unit
-            revision: Revision of the unit
-            station_name: Optional station name (defaults from app config)
-            location: Optional location (defaults from app config)  
-            purpose: Optional purpose (defaults from app config)
+            part_number: Product part number
+            serial_number: Unit serial number
+            revision: Product revision
+            process_code: Repair process code
+            station_name: Repair station name
+            location: Repair location
+            purpose: Repair purpose
+            **kwargs: Additional UURReport fields
             
         Returns:
-            A new UURReport object
+            New UURReport object (not yet submitted)
         """
-        from ..models.report.uur.uur_info import UURInfo
-        
-        uur_info = UURInfo(
-            operator=operator
-        )
-        
-        report = UURReport(
-            id=uuid4(),
-            type="R",
+        from ..models.report import UURReport
+        return UURReport(
             pn=part_number,
             sn=serial_number,
             rev=revision,
-            process_code=1,
-            station_name=station_name or "Unknown",
-            location=location or "Unknown",
-            purpose=purpose or "Development", 
-            start=datetime.now().astimezone(),  # Use local timezone-aware datetime
-            info=uur_info
+            process_code=process_code,
+            station_name=station_name,
+            location=location,
+            purpose=purpose,
+            **kwargs
         )
-        
-        return report
     
-    def submit_report(self, report: Union[UUTReport, UURReport]) -> str:
+    def submit(self, report: Union["UUTReport", "UURReport"]) -> Optional[str]:
         """
-        Submit (persist) a report to WATS.
-
-        This transmits an already constructed report model (created with
-        create_uut_report / create_uur_report) to the server.
-
-        Args:
-            report: Report model instance
-
-        Returns:
-            Server-assigned report UUID (string)
-        """
-        if not isinstance(report, (UUTReport, UURReport)):
-            raise WATSException("Report must be a UUTReport or UURReport instance")
-        try:
-            return self._post_wsjf_report(report)
-        except Exception as e:
-            raise WATSException(f"Failed to submit report: {e}")
-
-    def _post_wsjf_report(self, report: Union[UUTReport, UURReport]) -> str:
-        """
-        Internal helper performing the POST (create/update) against the WSJF endpoint.
-
-        Args:
-            report: Report model instance.
-
-        Returns:
-            Report UUID string.
-
-        Raises:
-            WATSException on failure.
-        """
-        try:
-            if not isinstance(report, (UUTReport, UURReport)):
-                raise ValueError("Report must be a UUTReport or UURReport instance")
-
-            wsjf_data = report.model_dump(by_alias=True, mode='json', exclude_none=True)
-
-            from ..rest_api.public.api.report import report_post_wsjf as rp
-            kwargs = rp._get_kwargs(body=wsjf_data)
-            raw_response = self.http_client.get_httpx_client().request(**kwargs)
-
-            if raw_response.status_code != 200:
-                raise WATSException(
-                    f"Failed to submit report - HTTP {raw_response.status_code}: {raw_response.text}"
-                )
-
-            from ..rest_api.public.models.virinco_wats_models_store_insert_report_result import (
-                VirincoWATSModelsStoreInsertReportResult
-            )
-            response_json = raw_response.json()
-
-            if isinstance(response_json, list) and response_json:
-                result_dict = response_json[0]
-            elif isinstance(response_json, dict):
-                result_dict = response_json
-            else:
-                raise WATSException(f"Unexpected response format: {type(response_json)}")
-
-            parsed_result = VirincoWATSModelsStoreInsertReportResult.from_dict(result_dict)
-
-            if getattr(parsed_result, 'id', None):
-                return str(parsed_result.id)
-            if getattr(parsed_result, 'uuid', None):
-                return str(parsed_result.uuid)
-
-            return str(
-                result_dict.get('ID')
-                or result_dict.get('uuid')
-                or result_dict.get('Report_ID')
-            )
-
-        except WATSException:
-            raise
-        except Exception as e:
-            raise WATSException(f"Failed to submit (WSJF) report: {e}")
-        
-    def load_report(self, report_id: str) -> Union[UUTReport, UURReport]:
-        """
-        Load a report by ID from WATS.
+        Submit a UUT or UUR report to WATS.
         
         Args:
-            report_id: The ID of the report to load
+            report: UUTReport or UURReport object to submit
             
         Returns:
-            The loaded UUTReport or UURReport
-            
-        Raises:
-            WATSNotFoundError: If the report is not found
-            WATSException: If the load operation fails
+            Report ID if successful, None otherwise
         """
-        self._validate_id(report_id, "report")
-        
-        try:
-            uuid_id = UUID(report_id)
-            
-            # Use REST API endpoint - no direct Client usage
-            response = report_get_report_as_wsjf.sync(
-                id=uuid_id,
-                client=self.http_client,  # WatsHttpClient, not raw Client
-                detail_level=5,
-                include_chartdata=True,
-                include_attachments=True
-            )
-            
-            if response is None:
-                raise WATSNotFoundError(f"Report {report_id} not found")
-            
-            # TODO: Convert WSJF response to UUTReport/UURReport
-            # Need to implement parser: wsjf_to_report(response)
-            raise WATSException(
-                "Report loading implementation in progress - "
-                "received response but conversion to UUTReport/UURReport not yet implemented"
-            )
-            
-        except ValueError as e:
-            raise WATSException(f"Invalid report ID format: {report_id}")
-        except Exception as e:
-            if isinstance(e, (WATSNotFoundError, WATSException)):
-                raise
-            raise WATSException(f"Failed to load report {report_id}: {str(e)}")
-    
-    def find_report_headers(self,
-                           filter: Optional[str] = None,
-                           top: Optional[int] = None,
-                           skip: Optional[int] = None,
-                           orderby: Optional[str] = None) -> List[VirincoWATSWebDashboardModelsODataReportHeader]:
-        """
-        Find report headers matching the filter criteria.
-        
-        Args:
-            filter: OData filter expression
-            top: Maximum number of reports to return  
-            skip: Number of reports to skip
-            orderby: Field to order results by
-            
-        Returns:
-            List of report header model objects
-            
-        Raises:
-            WATSException: If the query fails
-            
-        Note:
-            OData query parameters (filter, top, skip, orderby) are not currently
-            exposed by the generated client. This needs to be fixed in the OpenAPI spec
-            or by manually adding query parameters to the generated endpoint.
-        """
-        try:
-            # TODO: Once the generated client supports OData parameters, pass them here
-            # response = report_header_query.sync(
-            #     client=self.http_client,
-            #     filter=filter,
-            #     top=top,
-            #     skip=skip,
-            #     orderby=orderby
-            # )
-            
-            # Use REST API endpoint - no direct Client usage
-            response = report_header_query.sync(client=self.http_client)
-            
-            if response is None:
-                return []
-            
-            return response
-            
-        except Exception as e:
-            raise WATSException(f"Failed to find report headers: {str(e)}")
-        
-    def delete_report(self, report_id: str) -> bool:
-        """
-        Delete a report from WATS.
-        
-        Args:
-            report_id: The ID of the report to delete
-            
-        Returns:
-            True if deletion was successful
-            
-        Raises:
-            WATSNotFoundError: If the report is not found
-            WATSException: If the deletion fails
-        """
-        self._validate_id(report_id, "report")
-        
-        try:
-            uuid_id = UUID(report_id)
-            
-            # Cast to satisfy type checker - WatsHttpClient inherits from AuthenticatedClient
-            from ..rest_api.internal.client import AuthenticatedClient as InternalAuthenticatedClient
-            from typing import cast
-
-            # Use REST API endpoint from internal API
-            response = report_delete_reports.sync(
-                client=cast(InternalAuthenticatedClient, self.http_client),
-                body=[uuid_id]
-            )
-            
-            if response is None:
-                raise WATSException("Failed to delete report - no response received")
-            
-            # TODO: Parse the actual response structure to verify success
-            return True
-            
-        except ValueError as e:
-            raise WATSException(f"Invalid report ID format: {report_id}")
-        except Exception as e:
-            if isinstance(e, (WATSNotFoundError, WATSException)):
-                raise
-            raise WATSException(f"Failed to delete report {report_id}: {str(e)}")
-    
-    def export_report(self, 
-                     report: Union[UUTReport, UURReport], 
-                     format: str = "json", 
-                     path: Optional[str] = None) -> str:
-        """
-        Export a report to a file.
-        
-        Args:
-            report: The report to export
-            format: Export format (json, xml, csv)
-            path: Path where the report should be saved
-            
-        Returns:
-            Path to the exported file
-            
-        Raises:
-            WATSException: If the export fails
-            
-        Note:
-            This is a local operation and doesn't use REST API endpoints.
-            It serializes the report model to the specified format.
-        """
-        try:
-            if not isinstance(report, (UUTReport, UURReport)):
-                raise ValueError("Report must be a UUTReport or UURReport instance")
-                
-            if format not in ["json", "xml", "csv"]:
-                raise ValueError("Format must be one of: json, xml, csv")
-                
-            if not path:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                path = f"report_{report.id}_{timestamp}.{format}"
-                
-            # TODO: Implement actual file writing
-            # if format == "json":
-            #     with open(path, 'w') as f:
-            #         f.write(report.model_dump_json(by_alias=True, indent=2))
-            # elif format == "xml":
-            #     # Convert to XML format
-            #     pass
-            # elif format == "csv":
-            #     # Convert to CSV format
-            #     pass
-            
-            return path
-            
-        except Exception as e:
-            raise WATSException(f"Failed to export report: {str(e)}")
-    # Move to?
-    def get_production_statistics(self, 
-                                  start_date: Optional[Union[str, datetime]] = None,
-                                  end_date: Optional[Union[str, datetime]] = None,
-                                  product_id: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Get production statistics for a specified time period.
-        
-        Args:
-            start_date: Start date for the report (ISO format string or datetime)
-            end_date: End date for the report (ISO format string or datetime)
-            product_id: Optional product ID to filter by
-            
-        Returns:
-            Production statistics data
-            
-        Raises:
-            WATSException: If the report generation fails
-            
-        Note:
-            This is a placeholder until the actual REST API endpoint is available.
-            Will use rest_api.public.statistics.* when implemented.
-        """
-        try:
-            params = self._build_filter_params(
-                start_date=self._format_date(start_date),
-                end_date=self._format_date(end_date),
-                product_id=product_id
-            )
-            
-            # TODO: Use actual REST API endpoint when available
-            # from ..rest_api.public.api.statistics import get_production_statistics
-            # response = get_production_statistics.sync(
-            #     client=self.http_client,
-            #     **params
-            # )
-            
-            return {
-                "message": "Report functionality will be implemented with actual API endpoints",
-                "parameters": params,
-                "type": "production_statistics"
-            }
-            
-        except Exception as e:
-            raise WATSException(f"Failed to generate production statistics: {str(e)}")
-    # Move to ?
-    def get_quality_metrics(self,
-                           start_date: Optional[Union[str, datetime]] = None,
-                           end_date: Optional[Union[str, datetime]] = None) -> Dict[str, Any]:
-        """
-        Get quality metrics and yield information.
-        
-        Args:
-            start_date: Start date for the metrics
-            end_date: End date for the metrics
-            
-        Returns:
-            Quality metrics data
-            
-        Raises:
-            WATSException: If the metrics retrieval fails
-            
-        Note:
-            This is a placeholder until the actual REST API endpoint is available.
-            Will use rest_api.public.statistics.* when implemented.
-        """
-        try:
-            params = self._build_filter_params(
-                start_date=self._format_date(start_date),
-                end_date=self._format_date(end_date)
-            )
-            
-            # TODO: Use actual REST API endpoint when available
-            # from ..rest_api.public.api.statistics import get_quality_metrics
-            # response = get_quality_metrics.sync(client=self.http_client, **params)
-            
-            return {
-                "message": "Quality metrics functionality will be implemented with actual API endpoints",
-                "parameters": params,
-                "type": "quality_metrics"
-            }
-            
-        except Exception as e:
-            raise WATSException(f"Failed to get quality metrics: {str(e)}")
-    
-    def _format_date(self, date_input: Optional[Union[str, datetime]]) -> Optional[str]:
-        """
-        Format date input to ISO string format.
-        
-        Args:
-            date_input: Date as string or datetime object
-            
-        Returns:
-            ISO formatted date string or None
-        """
-        if date_input is None:
-            return None
-        
-        if isinstance(date_input, datetime):
-            return date_input.isoformat()
-        elif isinstance(date_input, str):
-            return date_input
-        else:
-            raise WATSException(f"Invalid date format: {type(date_input)}")
-    
+        # Convert Pydantic model to dict using model_dump with by_alias=True
+        report_data = report.model_dump(by_alias=True, exclude_none=True)
+        return self.submit_wsjf(report_data)

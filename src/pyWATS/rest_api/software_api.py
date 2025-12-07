@@ -1,76 +1,57 @@
-"""Software Distribution Module for pyWATS
-
-Provides operations for software distribution and versioning.
-
-Public API Endpoints (from Swagger):
-- GET /api/Software/Packages - List all packages
-- GET /api/Software/Package/{id} - Get package by ID
-- GET /api/Software/PackageByName - Get package by name
-- GET /api/Software/PackagesByTag - Get packages by tag
-- POST /api/Software/Package - Create new draft package
-- PUT /api/Software/Package/{id} - Update package
-- DELETE /api/Software/Package/{id} - Delete package by ID
-- DELETE /api/Software/PackageByName - Delete package by name
-- POST /api/Software/PackageStatus/{id} - Update package status
-- GET /api/Software/PackageFiles/{id} - Get file list
-- POST /api/Software/Package/UploadZip/{id} - Upload zip file
-- POST /api/Software/Package/FileAttribute/{id} - Update file attribute
-- GET /api/Software/VirtualFolders - Get virtual folders
 """
-from typing import List, Optional, Dict, Any
+Software Distribution API Endpoints
 
-from ..rest_api import SoftwareApi
+Provides all REST API calls for software package management.
+All methods return typed responses instead of raw Response objects.
+Based on the public endpoints at /api/Software/...
+"""
+
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..http_client import HttpClient
 
 
-class SoftwareModule:
+class SoftwareApi:
     """
-    Software distribution module.
+    Software Distribution API endpoints.
     
-    Provides operations for:
-    - Managing software packages
-    - Software versioning
-    - Package file management
-    - Virtual folder access
+    Endpoints for creating, uploading, and managing software packages.
+    All methods return typed responses.
     
-    Usage:
-        api = pyWATS("https://your-wats.com", "your-token")
-        
-        # List all packages
-        packages = api.software.get_packages()
-        
-        # Get package by name
-        package = api.software.get_package_by_name("MyPackage", status="Released")
-        
-        # Create new package
-        new_pkg = api.software.create_package({
-            "name": "MyPackage",
-            "description": "My software package"
-        })
+    Public endpoints available:
+    - GET/POST /api/Software/Package
+    - GET/PUT/DELETE /api/Software/Package/{id}
+    - GET /api/Software/Packages
+    - GET/DELETE /api/Software/PackageByName
+    - GET /api/Software/PackagesByTag
+    - GET /api/Software/PackageFiles/{id}
+    - POST /api/Software/Package/FileAttribute/{id}
+    - POST /api/Software/Package/UploadZip/{id}
+    - POST /api/Software/PackageStatus/{id}
+    - GET /api/Software/VirtualFolders
     """
     
-    def __init__(self, api: SoftwareApi):
-        """
-        Initialize SoftwareModule with REST API client.
-        
-        Args:
-            api: SoftwareApi instance for making HTTP requests
-        """
-        self._api = api
+    def __init__(self, http: 'HttpClient'):
+        self._http = http
     
     # =========================================================================
-    # Query Packages
+    # Software Packages - List and Query
     # =========================================================================
     
     def get_packages(self) -> List[Dict[str, Any]]:
         """
-        Get all available software packages.
+        Get all software packages.
         
         GET /api/Software/Packages
         
         Returns:
-            List of software package dictionaries
+            List of package dictionaries
         """
-        return self._api.get_packages() or []
+        response = self._http.get("/api/Software/Packages")
+        if response.is_success and response.data:
+            return response.data if isinstance(response.data, list) else []
+        return []
     
     def get_package(self, package_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -79,19 +60,22 @@ class SoftwareModule:
         GET /api/Software/Package/{id}
         
         Args:
-            package_id: Package UUID
+            package_id: The package UUID
             
         Returns:
-            Package data if found, None otherwise
+            Package data dictionary or None if not found
         """
-        return self._api.get_package(package_id)
+        response = self._http.get(f"/api/Software/Package/{package_id}")
+        if response.is_success and response.data:
+            return response.data
+        return None
     
     def get_package_by_name(
         self,
         name: str,
         status: Optional[str] = None,
         version: Optional[int] = None
-    ) -> Optional[dict]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Get a software package by name.
         
@@ -103,16 +87,24 @@ class SoftwareModule:
             version: Optional specific version number
             
         Returns:
-            Package data if found, None otherwise
+            Package data dictionary or None if not found
         """
-        return self._api.get_package_by_name(name, status, version)
+        params: Dict[str, Any] = {"name": name}
+        if status:
+            params["status"] = status
+        if version is not None:
+            params["version"] = version
+        response = self._http.get("/api/Software/PackageByName", params=params)
+        if response.is_success and response.data:
+            return response.data
+        return None
     
     def get_packages_by_tag(
         self,
         tag: str,
         value: str,
         status: Optional[str] = None
-    ) -> List[dict]:
+    ) -> List[Dict[str, Any]]:
         """
         Get packages filtered by tag.
         
@@ -124,15 +116,21 @@ class SoftwareModule:
             status: Optional status filter
             
         Returns:
-            List of matching packages
+            List of matching package dictionaries
         """
-        return self._api.get_packages_by_tag(tag, value, status) or []
+        params: Dict[str, Any] = {"tag": tag, "value": value}
+        if status:
+            params["status"] = status
+        response = self._http.get("/api/Software/PackagesByTag", params=params)
+        if response.is_success and response.data:
+            return response.data if isinstance(response.data, list) else []
+        return []
     
     # =========================================================================
-    # Create, Update, Delete Packages
+    # Software Packages - Create, Update, Delete
     # =========================================================================
     
-    def create_package(self, package_data: Dict[str, Any]) -> dict:
+    def create_package(self, package_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Create a new package in Draft status.
         
@@ -141,20 +139,17 @@ class SoftwareModule:
         If name exists, version will be previous version + 1.
         
         Args:
-            package_data: Package metadata dictionary containing:
-                - name: Package name (required)
-                - description: Package description
-                - installOnRoot: Whether to install on root
-                - rootDirectory: Root directory path
-                - priority: Installation priority
-                - tags: List of {key, value} tag objects
+            package_data: Package metadata dictionary
             
         Returns:
-            Created package data
+            Created package dictionary or None if failed
         """
-        return self._api.create_package(package_data) or {}
+        response = self._http.post("/api/Software/Package", data=package_data)
+        if response.is_success and response.data:
+            return response.data
+        return None
     
-    def update_package(self, package_id: str, package_data: Dict[str, Any]) -> Dict[str, Any]:
+    def update_package(self, package_id: str, package_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Update a software package.
         
@@ -166,13 +161,16 @@ class SoftwareModule:
         - Tags format: <PackageInfo><tagName>TagValue</tagName></PackageInfo>
         
         Args:
-            package_id: Package UUID
+            package_id: The package UUID
             package_data: Updated package data
             
         Returns:
-            Updated package data
+            Updated package dictionary or None if failed
         """
-        return self._api.update_package(package_id, package_data) or {}
+        response = self._http.put(f"/api/Software/Package/{package_id}", data=package_data)
+        if response.is_success and response.data:
+            return response.data
+        return None
     
     def delete_package(self, package_id: str) -> bool:
         """
@@ -183,12 +181,13 @@ class SoftwareModule:
         Note: Status must be Draft or Revoked before deletion.
         
         Args:
-            package_id: Package UUID to delete
+            package_id: The package UUID to delete
             
         Returns:
-            True if deleted successfully
+            True if successful
         """
-        return self._api.delete_package(package_id)
+        response = self._http.delete(f"/api/Software/Package/{package_id}")
+        return response.is_success
     
     def delete_package_by_name(
         self,
@@ -207,15 +206,19 @@ class SoftwareModule:
             version: Optional version number
             
         Returns:
-            True if deleted successfully
+            True if successful
         """
-        return self._api.delete_package_by_name(name, version)
+        params: Dict[str, Any] = {"name": name}
+        if version is not None:
+            params["version"] = version
+        response = self._http.delete("/api/Software/PackageByName", params=params)
+        return response.is_success
     
     # =========================================================================
     # Package Status
     # =========================================================================
     
-    def update_status(self, package_id: str, status: str) -> bool:
+    def update_package_status(self, package_id: str, status: str) -> bool:
         """
         Update the status of a software package.
         
@@ -227,13 +230,17 @@ class SoftwareModule:
         - Released -> Revoked
         
         Args:
-            package_id: Package UUID
+            package_id: The package UUID
             status: New status (Draft, Pending, Released, Revoked)
             
         Returns:
-            True if status updated successfully
+            True if successful
         """
-        return self._api.update_package_status(package_id, status)
+        response = self._http.post(
+            f"/api/Software/PackageStatus/{package_id}",
+            params={"status": status}
+        )
+        return response.is_success
     
     # =========================================================================
     # Package Files
@@ -248,14 +255,17 @@ class SoftwareModule:
         Note: Returns file metadata, not actual file contents.
         
         Args:
-            package_id: Package UUID
+            package_id: The package UUID
             
         Returns:
             List of file metadata dictionaries
         """
-        return self._api.get_package_files(package_id) or []
+        response = self._http.get(f"/api/Software/PackageFiles/{package_id}")
+        if response.is_success and response.data:
+            return response.data if isinstance(response.data, list) else []
+        return []
     
-    def upload_zip(
+    def upload_package_zip(
         self,
         package_id: str,
         zip_content: bytes,
@@ -273,14 +283,22 @@ class SoftwareModule:
         - All files must be in a folder: zipFile/myFolder/myFile.txt
         
         Args:
-            package_id: Package UUID
+            package_id: The package UUID
             zip_content: Zip file content as bytes
             clean_install: If True, delete existing files first
             
         Returns:
-            True if upload successful
+            True if successful
         """
-        return self._api.upload_package_zip(package_id, zip_content, clean_install)
+        params = {"cleanInstall": "true"} if clean_install else {}
+        headers = {"Content-Type": "application/zip"}
+        response = self._http.post(
+            f"/api/Software/Package/UploadZip/{package_id}",
+            data=zip_content,
+            params=params,
+            headers=headers
+        )
+        return response.is_success
     
     def update_file_attribute(
         self,
@@ -295,13 +313,17 @@ class SoftwareModule:
         Get file ID by calling get_package_files() first.
         
         Args:
-            file_id: The file ID (from get_package_files)
+            file_id: The file ID
             attribute_data: Attribute data to update
             
         Returns:
-            True if update successful
+            True if successful
         """
-        return self._api.update_file_attribute(file_id, attribute_data)
+        response = self._http.post(
+            f"/api/Software/Package/FileAttribute/{file_id}",
+            data=attribute_data
+        )
+        return response.is_success
     
     # =========================================================================
     # Virtual Folders
@@ -316,4 +338,7 @@ class SoftwareModule:
         Returns:
             List of virtual folder dictionaries
         """
-        return self._api.get_virtual_folders() or []
+        response = self._http.get("/api/Software/VirtualFolders")
+        if response.is_success and response.data:
+            return response.data if isinstance(response.data, list) else []
+        return []
