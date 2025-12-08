@@ -444,6 +444,7 @@ class ReportModule:
         Returns:
             Report ID if successful, None otherwise
         """
-        # Convert Pydantic model to dict using model_dump with by_alias=True
-        report_data = report.model_dump(by_alias=True, exclude_none=True)
+        # Convert Pydantic model to dict using model_dump with mode="json" to ensure
+        # all types (UUID, datetime, etc.) are properly serialized to JSON-compatible types
+        report_data = report.model_dump(mode="json", by_alias=True, exclude_none=True)
         return self.submit_wsjf(report_data)

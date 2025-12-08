@@ -98,7 +98,8 @@ QLineEdit {
     background-color: #3c3c3c;
     border: 1px solid #555555;
     border-radius: 4px;
-    padding: 8px 12px;
+    padding: 6px 12px;
+    min-height: 20px;
     color: #ffffff;
     selection-background-color: #f0a30a;
 }
@@ -117,7 +118,8 @@ QPushButton {
     background-color: #3c3c3c;
     border: 1px solid #555555;
     border-radius: 4px;
-    padding: 8px 16px;
+    padding: 6px 16px;
+    min-height: 24px;
     color: #ffffff;
     min-width: 80px;
 }

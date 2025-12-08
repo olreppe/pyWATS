@@ -67,6 +67,26 @@ class ClientConfig:
     # Server connection
     service_address: str = ""
     api_token: str = ""
+    username: str = ""
+    
+    # Station identification (from WATS server)
+    station_name: str = ""
+    location: str = ""
+    purpose: str = ""
+    station_description: str = ""
+    auto_detect_location: bool = False
+    include_station_in_reports: bool = True
+    
+    # Serial Number Handler settings
+    sn_mode: str = "Manual Entry"  # "Manual Entry", "Auto-increment", "Barcode Scanner", "External Source"
+    sn_prefix: str = ""
+    sn_start: int = 1
+    sn_padding: int = 6
+    sn_com_port: str = "Auto-detect"
+    sn_terminator: str = "Enter (CR)"
+    sn_validate_format: bool = False
+    sn_pattern: str = ""
+    sn_check_duplicates: bool = True
     
     # Proxy settings (simplified fields for GUI binding)
     proxy_mode: str = "system"  # "none", "system", "manual"
@@ -101,6 +121,16 @@ class ClientConfig:
     
     # Location services
     location_services_enabled: bool = False
+    
+    # Software Distribution settings
+    software_auto_update: bool = False
+    
+    # Connection state - persist connected state
+    auto_connect: bool = True  # Always try to connect on startup
+    was_connected: bool = False  # Remember last connection state
+    
+    # Service settings
+    service_auto_start: bool = True  # Start service on system startup
     
     # Logging
     log_level: str = "INFO"
@@ -154,6 +184,24 @@ class ClientConfig:
             "instance_name": self.instance_name,
             "service_address": self.service_address,
             "api_token": self.api_token,
+            # Station identification
+            "station_name": self.station_name,
+            "location": self.location,
+            "purpose": self.purpose,
+            "station_description": self.station_description,
+            "auto_detect_location": self.auto_detect_location,
+            "include_station_in_reports": self.include_station_in_reports,
+            # Serial Number Handler
+            "sn_mode": self.sn_mode,
+            "sn_prefix": self.sn_prefix,
+            "sn_start": self.sn_start,
+            "sn_padding": self.sn_padding,
+            "sn_com_port": self.sn_com_port,
+            "sn_terminator": self.sn_terminator,
+            "sn_validate_format": self.sn_validate_format,
+            "sn_pattern": self.sn_pattern,
+            "sn_check_duplicates": self.sn_check_duplicates,
+            # Proxy settings
             "proxy_mode": self.proxy_mode,
             "proxy_host": self.proxy_host,
             "proxy_port": self.proxy_port,
@@ -174,6 +222,10 @@ class ClientConfig:
             "yield_monitor_enabled": self.yield_monitor_enabled,
             "yield_threshold": self.yield_threshold,
             "location_services_enabled": self.location_services_enabled,
+            "software_auto_update": self.software_auto_update,
+            "auto_connect": self.auto_connect,
+            "was_connected": self.was_connected,
+            "service_auto_start": self.service_auto_start,
             "log_level": self.log_level,
             "log_file": self.log_file,
             "start_minimized": self.start_minimized,

@@ -6,7 +6,7 @@ and content pages matching the WATS Client design.
 """
 
 import asyncio
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING, cast
 from pathlib import Path
 
 from PySide6.QtWidgets import (
@@ -19,8 +19,8 @@ from PySide6.QtGui import QAction, QCloseEvent
 
 from .styles import DARK_STYLESHEET
 from .pages import (
-    BasePage, GeneralPage, ConnectionPage, ProxySettingsPage, 
-    ConvertersPage, AboutPage
+    BasePage, SetupPage, GeneralPage, ConnectionPage, ProxySettingsPage, 
+    ConvertersPage, LocationPage, SNHandlerPage, SoftwarePage, AboutPage
 )
 from ..core.config import ClientConfig
 from ..core.client import WATSClient
@@ -47,6 +47,7 @@ class MainWindow(QMainWindow):
         self.config = config
         self.client: Optional[WATSClient] = None
         self._tray_icon: Optional[QSystemTrayIcon] = None
+        self._is_connected = False
         
         # Setup UI
         self._setup_window()
@@ -62,6 +63,34 @@ class MainWindow(QMainWindow):
         self._status_timer = QTimer()
         self._status_timer.timeout.connect(self._update_status)
         self._status_timer.start(5000)  # Update every 5 seconds
+        
+        # Auto-connect on startup if previously connected or auto_connect is enabled
+        QTimer.singleShot(500, self._auto_connect_on_startup)
+    
+    def _auto_connect_on_startup(self) -> None:
+        """Auto-connect on startup if configured"""
+        # Check if we should auto-connect
+        if self.config.auto_connect and self.config.was_connected:
+            # Only auto-connect if we have valid credentials
+            if self.config.service_address and self.config.api_token:
+                asyncio.create_task(self._do_auto_connect())
+    
+    async def _do_auto_connect(self) -> None:
+        """Perform auto-connection"""
+        try:
+            self.connection_status_changed.emit("Connecting")
+            success = await self.connect()
+            if success:
+                self._is_connected = True
+                self.connection_status_changed.emit("Online")
+                # Update setup page state
+                if "Setup" in self._pages:
+                    setup_page = cast(SetupPage, self._pages["Setup"])
+                    setup_page.set_connected(True)
+            else:
+                self.connection_status_changed.emit("Offline")
+        except Exception as e:
+            self.connection_status_changed.emit(f"Error: {str(e)[:20]}")
     
     def _setup_window(self) -> None:
         """Configure window properties"""
@@ -149,14 +178,15 @@ class MainWindow(QMainWindow):
         self._nav_list = QListWidget()
         self._nav_list.setObjectName("navList")
         
-        # Add navigation items - only the pages we have implemented
+        # Add navigation items matching reference design (from screenshots)
         nav_items = [
-            ("General", "⚙️"),
+            ("Setup", "⚙️"),
             ("Connection", "🔗"),
-            ("Proxy Settings", "🌐"),
+            ("Location", "📍"),
             ("Converters", "🔄"),
-            ("", ""),  # Separator
-            ("About", "ℹ️"),
+            ("SN Handler", "🔢"),
+            ("Proxy Settings", "🌐"),
+            ("Software", "💻"),
         ]
         
         for name, icon in nav_items:
@@ -199,13 +229,15 @@ class MainWindow(QMainWindow):
         # Stacked widget for pages
         self._page_stack = QStackedWidget()
         
-        # Create pages - only the ones we have implemented
+        # Create pages matching reference design (from screenshots)
         self._pages: Dict[str, BasePage] = {
-            "General": GeneralPage(self.config),
+            "Setup": SetupPage(self.config, self),
             "Connection": ConnectionPage(self.config, self),
-            "Proxy Settings": ProxySettingsPage(self.config),
+            "Location": LocationPage(self.config, self),
             "Converters": ConvertersPage(self.config, self),
-            "About": AboutPage(self.config),
+            "SN Handler": SNHandlerPage(self.config, self),
+            "Proxy Settings": ProxySettingsPage(self.config),
+            "Software": SoftwarePage(self.config, self),
         }
         
         for page in self._pages.values():
@@ -234,6 +266,19 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self._cancel_btn)
         
         content_layout.addWidget(button_frame)
+        
+        # Footer with WATS.com link and version
+        footer_frame = QFrame()
+        footer_layout = QHBoxLayout(footer_frame)
+        footer_layout.setContentsMargins(0, 10, 0, 0)
+        
+        from .. import __version__
+        wats_link = QLabel(f'<a href="https://wats.com" style="color: #f0a30a;">WATS.com</a> | {__version__}')
+        wats_link.setOpenExternalLinks(True)
+        footer_layout.addWidget(wats_link)
+        footer_layout.addStretch()
+        
+        content_layout.addWidget(footer_frame)
         
         layout.addWidget(content_frame, 1)
         
@@ -267,6 +312,43 @@ class MainWindow(QMainWindow):
         for page in self._pages.values():
             if hasattr(page, 'config_changed'):
                 page.config_changed.connect(self._on_config_changed)
+        
+        # Connect setup page connection signal
+        if "Setup" in self._pages:
+            setup_page = cast(SetupPage, self._pages["Setup"])
+            setup_page.connection_changed.connect(self._on_connection_request)
+    
+    @Slot(bool)
+    def _on_connection_request(self, should_connect: bool) -> None:
+        """Handle connection request from setup page"""
+        if should_connect:
+            asyncio.create_task(self._perform_connect())
+        else:
+            asyncio.create_task(self._perform_disconnect())
+    
+    async def _perform_connect(self) -> None:
+        """Perform connection"""
+        self.connection_status_changed.emit("Connecting")
+        try:
+            success = await self.connect()
+            if success:
+                self.connection_status_changed.emit("Online")
+            else:
+                self.connection_status_changed.emit("Connection failed")
+                # Revert setup page state
+                if "Setup" in self._pages:
+                    setup_page = cast(SetupPage, self._pages["Setup"])
+                    setup_page.set_connected(False)
+        except Exception as e:
+            self.connection_status_changed.emit(f"Error: {str(e)[:20]}")
+            if "Setup" in self._pages:
+                setup_page = cast(SetupPage, self._pages["Setup"])
+                setup_page.set_connected(False)
+    
+    async def _perform_disconnect(self) -> None:
+        """Perform disconnection"""
+        await self.disconnect()
+        self.connection_status_changed.emit("Disconnected")
     
     def _init_client(self) -> None:
         """Initialize the WATS client"""
@@ -384,11 +466,21 @@ class MainWindow(QMainWindow):
     async def connect(self) -> bool:
         """Connect to WATS server"""
         if self.client:
-            return await self.client.start()
+            success = await self.client.start()
+            if success:
+                self._is_connected = True
+                # Persist connection state
+                self.config.was_connected = True
+                self._save_config()
+            return success
         return False
     
     async def disconnect(self) -> None:
         """Disconnect from WATS server"""
+        self._is_connected = False
+        # Persist disconnected state
+        self.config.was_connected = False
+        self._save_config()
         if self.client:
             await self.client.stop()
     
@@ -396,3 +488,31 @@ class MainWindow(QMainWindow):
         """Refresh converters"""
         if self.client:
             await self.client.refresh_converters()
+
+    async def test_send_uut(self) -> bool:
+        """
+        Create and submit a test UUT report.
+        
+        Uses the test_uut module to create a comprehensive test report
+        demonstrating all pyWATS features.
+        """
+        if not self.client:
+            return False
+        
+        try:
+            from pywats.tools import create_test_uut_report
+            
+            # Create test report using configured location and station
+            report = create_test_uut_report(
+                station_name=self.config.station_name or "pyWATS-Client",
+                location=self.config.location or "TestLocation",
+            )
+            
+            # Convert to dictionary for submission (Pydantic model_dump with by_alias for serialization)
+            report_data = report.model_dump(mode="json", by_alias=True, exclude_none=True)
+            
+            # Submit via client
+            return await self.client.submit_report(report_data)
+        except Exception as e:
+            print(f"Error creating/submitting test UUT: {e}")
+            return False
