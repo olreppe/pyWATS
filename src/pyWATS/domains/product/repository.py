@@ -5,7 +5,7 @@ All API interactions for products, revisions, groups, and vendors.
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...core import WATSClient
+    from ...core import HttpClient
 
 from .models import Product, ProductRevision, ProductGroup
 
@@ -17,12 +17,12 @@ class ProductRepository:
     Handles all WATS API interactions for products.
     """
 
-    def __init__(self, client: "WATSClient"):
+    def __init__(self, client: "HttpClient"):
         """
         Initialize with HTTP client.
 
         Args:
-            client: WATSClient for making HTTP requests
+            client: HttpClient for making HTTP requests
         """
         self._http = client
 

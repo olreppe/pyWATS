@@ -1,12 +1,13 @@
 """Report repository - data access layer.
 
-All API interactions for test reports.
+All API interactions for test reports (UUT/UUR).
 """
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...core import WATSClient
+    from ...core import HttpClient
 
+from .models import WATSFilter, ReportHeader
 from ...models.report import UUTReport, UURReport
 
 
@@ -17,14 +18,86 @@ class ReportRepository:
     Handles all WATS API interactions for test reports.
     """
 
-    def __init__(self, client: "WATSClient"):
+    def __init__(self, client: "HttpClient"):
         """
         Initialize with HTTP client.
 
         Args:
-            client: WATSClient for making HTTP requests
+            client: HttpClient for making HTTP requests
         """
         self._http = client
+
+    # =========================================================================
+    # Query Operations
+    # =========================================================================
+
+    def query_headers(
+        self,
+        report_type: str = "uut",
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None
+    ) -> List[ReportHeader]:
+        """
+        Query report headers matching the filter.
+
+        GET /api/Report/Query/Header
+
+        Args:
+            report_type: Report type ("uut" or "uur")
+            filter_data: WATSFilter object or dict
+
+        Returns:
+            List of ReportHeader objects
+        """
+        params: Dict[str, Any] = {"reportType": report_type}
+        if filter_data:
+            if isinstance(filter_data, WATSFilter):
+                params.update(
+                    filter_data.model_dump(by_alias=True, exclude_none=True)
+                )
+            else:
+                params.update(filter_data)
+        response = self._http.get("/api/Report/Query/Header", params=params)
+        if response.is_success and response.data:
+            return [
+                ReportHeader.model_validate(item)
+                for item in response.data
+            ]
+        return []
+
+    def query_headers_by_misc_info(
+        self,
+        description: str,
+        string_value: str,
+        top: Optional[int] = None
+    ) -> List[ReportHeader]:
+        """
+        Get report headers by misc info search.
+
+        GET /api/Report/Query/HeaderByMiscInfo
+
+        Args:
+            description: Misc info description
+            string_value: Misc info string value
+            top: Number of records to return
+
+        Returns:
+            List of ReportHeader objects
+        """
+        params: Dict[str, Any] = {
+            "description": description,
+            "stringValue": string_value
+        }
+        if top:
+            params["$top"] = top
+        response = self._http.get(
+            "/api/Report/Query/HeaderByMiscInfo", params=params
+        )
+        if response.is_success and response.data:
+            return [
+                ReportHeader.model_validate(item)
+                for item in response.data
+            ]
+        return []
 
     # =========================================================================
     # Report WSJF (JSON Format)
@@ -45,7 +118,9 @@ class ReportRepository:
             Report ID if successful, None otherwise
         """
         if isinstance(report, (UUTReport, UURReport)):
-            data = report.model_dump(by_alias=True, exclude_none=True)
+            data = report.model_dump(
+                mode="json", by_alias=True, exclude_none=True
+            )
         else:
             data = report
         response = self._http.post("/api/Report/WSJF", data=data)
@@ -76,40 +151,6 @@ class ReportRepository:
             return UUTReport.model_validate(response.data)
         return None
 
-    def get_uut_report(self, report_id: str) -> Optional[UUTReport]:
-        """
-        Get a UUT report by ID.
-
-        GET /api/Report/Wsjf/{id}
-
-        Args:
-            report_id: The report ID (GUID)
-
-        Returns:
-            UUTReport or None
-        """
-        report = self.get_wsjf(report_id)
-        if isinstance(report, UUTReport):
-            return report
-        return None
-
-    def get_uur_report(self, report_id: str) -> Optional[UURReport]:
-        """
-        Get a UUR report by ID.
-
-        GET /api/Report/Wsjf/{id}
-
-        Args:
-            report_id: The report ID (GUID)
-
-        Returns:
-            UURReport or None
-        """
-        report = self.get_wsjf(report_id)
-        if isinstance(report, UURReport):
-            return report
-        return None
-
     # =========================================================================
     # Report WSXF (XML Format)
     # =========================================================================
@@ -138,7 +179,7 @@ class ReportRepository:
             return str(response.data)
         return None
 
-    def get_wsxf(self, report_id: str) -> Optional[str]:
+    def get_wsxf(self, report_id: str) -> Optional[bytes]:
         """
         Get a report in WSXF (XML) format.
 
@@ -148,10 +189,78 @@ class ReportRepository:
             report_id: The report ID (GUID)
 
         Returns:
-            XML string or None
+            XML as bytes or None
         """
         response = self._http.get(f"/api/Report/Wsxf/{report_id}")
         if response.is_success:
-            # Raw response for XML
-            return response.raw.decode("utf-8") if response.raw else None
+            return response.raw
+        return None
+
+    # =========================================================================
+    # Attachments
+    # =========================================================================
+
+    def get_attachment(
+        self,
+        attachment_id: Optional[str] = None,
+        step_id: Optional[str] = None
+    ) -> Optional[bytes]:
+        """
+        Get attachment content.
+
+        GET /api/Report/Attachment
+
+        Args:
+            attachment_id: Attachment ID
+            step_id: Step ID
+
+        Returns:
+            Attachment content as bytes or None
+        """
+        params: Dict[str, Any] = {}
+        if attachment_id:
+            params["attachmentId"] = attachment_id
+        if step_id:
+            params["stepId"] = step_id
+        response = self._http.get("/api/Report/Attachment", params=params)
+        if response.is_success:
+            return response.raw
+        return None
+
+    def get_attachments_as_zip(self, report_id: str) -> Optional[bytes]:
+        """
+        Get all attachments for a report as zip.
+
+        GET /api/Report/Attachments/{id}
+
+        Args:
+            report_id: Report ID
+
+        Returns:
+            Zip file content as bytes or None
+        """
+        response = self._http.get(f"/api/Report/Attachments/{report_id}")
+        if response.is_success:
+            return response.raw
+        return None
+
+    # =========================================================================
+    # Certificate
+    # =========================================================================
+
+    def get_certificate(self, report_id: str) -> Optional[bytes]:
+        """
+        Get certificate for a report.
+
+        GET /api/Report/Certificate/{id}
+
+        Args:
+            report_id: Report ID
+
+        Returns:
+            Certificate content as bytes or None
+        """
+        response = self._http.get(f"/api/Report/Certificate/{report_id}")
+        if response.is_success:
+            return response.raw
         return None

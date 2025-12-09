@@ -6,17 +6,21 @@ Each domain contains:
 - service.py: Business logic
 - repository.py: Data access (API calls)
 """
+from . import app
 from . import asset
 from . import product
-from . import query
 from . import production
 from . import report
+from . import rootcause
+from . import software
 
 __all__ = [
+    "app",
     "asset",
     "product",
-    "query",
     "production",
     "report",
+    "rootcause",
+    "software",
 ]
 

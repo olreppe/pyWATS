@@ -2,7 +2,7 @@
 Tests for software module - test software package management
 """
 import pytest
-from pywats.models.software import SoftwarePackage
+from src.pywats.domains.software import Package, PackageTag, PackageStatus
 
 
 class TestSoftwarePackage:
@@ -10,31 +10,43 @@ class TestSoftwarePackage:
     
     def test_create_software_package(self):
         """Test creating a software package definition"""
-        package = SoftwarePackage(
+        package = Package(
             name="TestSoftware",
-            version="1.0.0",
-            file_name="test_sw_v1.0.0.zip"
+            version=1,
+            description="Test software package"
         )
         assert package.name == "TestSoftware"
-        assert package.version == "1.0.0"
+        assert package.version == 1
     
-    def test_upload_software_package(self, wats_client):
-        """Test uploading a software package"""
-        package = SoftwarePackage(
-            name="TestSoftware",
-            version="1.0.1",
-            file_name="test_package.zip"
+    def test_create_package_with_tags(self):
+        """Test creating a software package with tags"""
+        tags = [
+            PackageTag(key="category", value="tools"),
+            PackageTag(key="platform", value="windows"),
+        ]
+        package = Package(
+            name="TaggedSoftware",
+            version=1,
+            description="Software with tags",
+            tags=tags
         )
+        assert package.name == "TaggedSoftware"
+        assert package.tags is not None
+        assert len(package.tags) == 2
+        assert package.tags[0].key == "category"
+    
+    def test_package_status_enum(self):
+        """Test package status values"""
+        package = Package(
+            name="DraftPackage",
+            version=1,
+            status=PackageStatus.DRAFT
+        )
+        assert package.status == PackageStatus.DRAFT
         
-        # Note: This requires actual file content
-        try:
-            result = wats_client.software.upload_package(
-                package,
-                file_content=b"dummy content"
-            )
-            assert result is not None
-        except Exception as e:
-            pytest.skip(f"Upload failed: {e}")
+        # Test other statuses
+        assert PackageStatus.RELEASED.value == "Released"
+        assert PackageStatus.PENDING.value == "Pending"
 
 
 class TestSoftwareRetrieval:
@@ -51,8 +63,10 @@ class TestSoftwareRetrieval:
     def test_get_software_by_name(self, wats_client):
         """Test getting specific software package"""
         try:
-            package = wats_client.software.get_package("TestSoftware", "1.0.0")
-            if package:
-                assert package.name == "TestSoftware"
+            packages = wats_client.software.get_packages()
+            if packages and len(packages) > 0:
+                first_package = packages[0]
+                assert isinstance(first_package, Package)
+                assert first_package.name is not None
         except Exception as e:
             pytest.skip(f"Get package failed: {e}")

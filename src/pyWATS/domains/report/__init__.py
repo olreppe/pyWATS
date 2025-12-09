@@ -8,22 +8,15 @@ from ...models.report import (
     UUTReport,
     UURReport,
     Report,
-    SequenceCall,
-    StepList,
     MiscInfo,
+    Step,
+    StepStatus,
 )
-from ...models.report.common_types import (
-    ResultStatus,
-    StepType,
-    NumericLimitComparator,
-    StringLimitComparator,
-)
-from ...models.report.constants import (
-    LIMIT_COMPARATOR_MAP,
-    STRING_LIMIT_COMPARATOR_MAP,
-    RESULT_STATUS_MAP,
-    STEP_TYPE_MAP,
-)
+from ...models.report.uut.steps.sequence_call import SequenceCall, StepList
+
+# Import query-related models
+from .enums import DateGrouping
+from .models import WATSFilter, ReportHeader, Attachment
 
 # Import service and repository
 from .service import ReportService
@@ -36,17 +29,15 @@ __all__ = [
     "Report",
     "SequenceCall",
     "StepList",
+    "Step",
+    "StepStatus",
     "MiscInfo",
+    # Query Models
+    "WATSFilter",
+    "ReportHeader",
+    "Attachment",
     # Enums
-    "ResultStatus",
-    "StepType",
-    "NumericLimitComparator",
-    "StringLimitComparator",
-    # Constants
-    "LIMIT_COMPARATOR_MAP",
-    "STRING_LIMIT_COMPARATOR_MAP",
-    "RESULT_STATUS_MAP",
-    "STEP_TYPE_MAP",
+    "DateGrouping",
     # Service & Repository
     "ReportService",
     "ReportRepository",

@@ -1,293 +1,299 @@
 """Report service - business logic layer.
 
-High-level operations for test report management.
+All business operations for test reports (UUT/UUR).
 """
-from typing import Optional, Union, List
-from datetime import datetime
+from typing import Optional, List, Dict, Any, Union
+from datetime import datetime, timedelta
 
-from ...models.report import UUTReport, UURReport, SequenceCall, StepList
-from ...models.report.common_types import ResultStatus
 from .repository import ReportRepository
+from .models import WATSFilter, ReportHeader
+from .enums import DateGrouping
+from ...core import HttpClient
+from ...models.report import UUTReport, UURReport
 
 
 class ReportService:
     """
-    Report business logic.
+    Report business logic layer.
 
-    Provides high-level operations for creating, submitting,
-    and analyzing test reports.
+    Provides high-level operations for working with WATS test reports.
     """
 
-    def __init__(self, repository: ReportRepository):
+    def __init__(self, client: HttpClient):
         """
-        Initialize with repository.
+        Initialize with HttpClient.
 
         Args:
-            repository: ReportRepository for data access
+            client: HttpClient instance
         """
-        self._repo = repository
+        self._repository = ReportRepository(client)
 
     # =========================================================================
-    # Report Submission
+    # Query Methods
     # =========================================================================
 
-    def submit_uut_report(self, report: UUTReport) -> Optional[str]:
+    def query_uut_headers(
+        self,
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None
+    ) -> List[ReportHeader]:
         """
-        Submit a UUT test report.
+        Query UUT report headers.
 
         Args:
-            report: UUTReport object
+            filter_data: WATSFilter or filter dict
 
         Returns:
-            Report ID if successful
+            List of ReportHeader objects
         """
-        return self._repo.post_wsjf(report)
+        return self._repository.query_headers("uut", filter_data)
 
-    def submit_uur_report(self, report: UURReport) -> Optional[str]:
+    def query_uur_headers(
+        self,
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None
+    ) -> List[ReportHeader]:
         """
-        Submit a UUR repair report.
+        Query UUR report headers.
 
         Args:
-            report: UURReport object
+            filter_data: WATSFilter or filter dict
 
         Returns:
-            Report ID if successful
+            List of ReportHeader objects
         """
-        return self._repo.post_wsjf(report)
+        return self._repository.query_headers("uur", filter_data)
 
-    def submit_xml_report(self, xml_content: str) -> Optional[str]:
+    def query_headers_by_misc_info(
+        self,
+        description: str,
+        string_value: str,
+        top: Optional[int] = None
+    ) -> List[ReportHeader]:
         """
-        Submit an XML (WSXF) format report.
+        Query report headers by misc info.
 
         Args:
-            xml_content: Report as XML string
+            description: Misc info description
+            string_value: Misc info string value
+            top: Number of records to return
 
         Returns:
-            Report ID if successful
+            List of ReportHeader objects
         """
-        return self._repo.post_wsxf(xml_content)
+        return self._repository.query_headers_by_misc_info(
+            description, string_value, top
+        )
 
     # =========================================================================
-    # Report Retrieval
+    # Query Helpers
+    # =========================================================================
+
+    def get_headers_by_serial(
+        self,
+        serial_number: str,
+        report_type: str = "uut",
+        top: Optional[int] = None
+    ) -> List[ReportHeader]:
+        """
+        Get report headers by serial number.
+
+        Args:
+            serial_number: Serial number to search
+            report_type: "uut" or "uur"
+            top: Number of records to return
+
+        Returns:
+            List of ReportHeader
+        """
+        filter_data = WATSFilter(serial_number=serial_number, top=top)
+        return self._repository.query_headers(report_type, filter_data)
+
+    def get_headers_by_part_number(
+        self,
+        part_number: str,
+        report_type: str = "uut",
+        top: Optional[int] = None
+    ) -> List[ReportHeader]:
+        """
+        Get report headers by part number.
+
+        Args:
+            part_number: Part number to search
+            report_type: "uut" or "uur"
+            top: Number of records to return
+
+        Returns:
+            List of ReportHeader
+        """
+        filter_data = WATSFilter(part_number=part_number, top=top)
+        return self._repository.query_headers(report_type, filter_data)
+
+    def get_headers_by_date_range(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        report_type: str = "uut"
+    ) -> List[ReportHeader]:
+        """
+        Get report headers by date range.
+
+        Args:
+            start_date: Start date
+            end_date: End date
+            report_type: "uut" or "uur"
+
+        Returns:
+            List of ReportHeader
+        """
+        filter_data = WATSFilter(start=start_date, end=end_date)
+        return self._repository.query_headers(report_type, filter_data)
+
+    def get_recent_headers(
+        self,
+        days: int = 7,
+        report_type: str = "uut",
+        top: Optional[int] = None
+    ) -> List[ReportHeader]:
+        """
+        Get headers from the last N days.
+
+        Args:
+            days: Number of days back
+            report_type: "uut" or "uur"
+            top: Number of records to return
+
+        Returns:
+            List of ReportHeader
+        """
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        filter_data = WATSFilter(start=start_date, end=end_date, top=top)
+        return self._repository.query_headers(report_type, filter_data)
+
+    def get_todays_headers(
+        self,
+        report_type: str = "uut",
+        top: Optional[int] = None
+    ) -> List[ReportHeader]:
+        """
+        Get today's report headers.
+
+        Args:
+            report_type: "uut" or "uur"
+            top: Number of records to return
+
+        Returns:
+            List of ReportHeader
+        """
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow = today + timedelta(days=1)
+        filter_data = WATSFilter(start=today, end=tomorrow, top=top)
+        return self._repository.query_headers(report_type, filter_data)
+
+    # =========================================================================
+    # WSJF (JSON Format) Operations
     # =========================================================================
 
     def get_report(
         self, report_id: str
     ) -> Optional[Union[UUTReport, UURReport]]:
         """
-        Get a report by ID.
+        Get a report in WSJF format.
 
         Args:
             report_id: Report ID (GUID)
 
         Returns:
-            UUTReport or UURReport
+            UUTReport or UURReport, or None
         """
-        return self._repo.get_wsjf(report_id)
+        return self._repository.get_wsjf(report_id)
 
-    def get_uut_report(self, report_id: str) -> Optional[UUTReport]:
+    def submit_report(
+        self, report: Union[UUTReport, UURReport, Dict[str, Any]]
+    ) -> Optional[str]:
         """
-        Get a UUT report by ID.
+        Submit a new report.
+
+        Args:
+            report: Report to submit (UUTReport, UURReport or dict)
+
+        Returns:
+            Report ID if successful, None otherwise
+        """
+        return self._repository.post_wsjf(report)
+
+    # =========================================================================
+    # WSXF (XML Format) Operations
+    # =========================================================================
+
+    def get_report_xml(self, report_id: str) -> Optional[bytes]:
+        """
+        Get a report as XML (WSXF format).
 
         Args:
             report_id: Report ID (GUID)
 
         Returns:
-            UUTReport or None
+            XML content as bytes or None
         """
-        return self._repo.get_uut_report(report_id)
+        return self._repository.get_wsxf(report_id)
 
-    def get_uur_report(self, report_id: str) -> Optional[UURReport]:
+    def submit_report_xml(self, xml_content: str) -> Optional[str]:
         """
-        Get a UUR report by ID.
+        Submit a report in XML format.
 
         Args:
-            report_id: Report ID (GUID)
+            xml_content: Report as XML string
 
         Returns:
-            UURReport or None
+            Report ID if successful, None otherwise
         """
-        return self._repo.get_uur_report(report_id)
-
-    def get_report_as_xml(self, report_id: str) -> Optional[str]:
-        """
-        Get a report in XML format.
-
-        Args:
-            report_id: Report ID (GUID)
-
-        Returns:
-            XML string or None
-        """
-        return self._repo.get_wsxf(report_id)
+        return self._repository.post_wsxf(xml_content)
 
     # =========================================================================
-    # Report Factory Methods
+    # Attachments
     # =========================================================================
 
-    @staticmethod
-    def create_uut_report(
-        pn: str,
-        sn: str,
-        rev: str = "1",
-        process_code: int = 0,
-        station_name: str = "TestStation",
-        location: str = "TestLab",
-        purpose: str = "Production",
-        status: ResultStatus = ResultStatus.PASSED,
-        start_time: Optional[datetime] = None,
-        **kwargs
-    ) -> UUTReport:
+    def get_attachment(
+        self,
+        attachment_id: Optional[str] = None,
+        step_id: Optional[str] = None
+    ) -> Optional[bytes]:
         """
-        Create a new UUT test report.
+        Get attachment content.
 
         Args:
-            pn: Part number
-            sn: Serial number
-            rev: Revision (default "1")
-            process_code: Process code (default 0)
-            station_name: Station name
-            location: Location
-            purpose: Purpose
-            status: Result status (default PASSED)
-            start_time: Start time (default: now)
-            **kwargs: Additional root parameters
+            attachment_id: Attachment ID
+            step_id: Step ID
 
         Returns:
-            UUTReport object
+            Attachment content as bytes or None
         """
-        return UUTReport.create_basic(
-            pn=pn,
-            sn=sn,
-            rev=rev,
-            process_code=process_code,
-            station_name=station_name,
-            location=location,
-            purpose=purpose,
-            status=status,
-            start=start_time or datetime.now(),
-            **kwargs
-        )
+        return self._repository.get_attachment(attachment_id, step_id)
 
-    @staticmethod
-    def create_uur_report(
-        pn: str,
-        sn: str,
-        rev: str = "1",
-        process_code: int = 0,
-        station_name: str = "RepairStation",
-        location: str = "RepairLab",
-        purpose: str = "Repair",
-        status: ResultStatus = ResultStatus.PASSED,
-        user: str = "Technician",
-        start_time: Optional[datetime] = None,
-        **kwargs
-    ) -> UURReport:
+    def get_all_attachments(self, report_id: str) -> Optional[bytes]:
         """
-        Create a new UUR repair report.
+        Get all attachments for a report as zip file.
 
         Args:
-            pn: Part number
-            sn: Serial number
-            rev: Revision (default "1")
-            process_code: Process code (default 0)
-            station_name: Station name
-            location: Location
-            purpose: Purpose
-            status: Result status (default PASSED)
-            user: User who performed repair
-            start_time: Start time (default: now)
-            **kwargs: Additional root parameters
+            report_id: Report ID
 
         Returns:
-            UURReport object
+            Zip file content as bytes or None
         """
-        return UURReport.create_basic(
-            pn=pn,
-            sn=sn,
-            rev=rev,
-            process_code=process_code,
-            station_name=station_name,
-            location=location,
-            purpose=purpose,
-            status=status,
-            user=user,
-            start=start_time or datetime.now(),
-            **kwargs
-        )
+        return self._repository.get_attachments_as_zip(report_id)
 
     # =========================================================================
-    # Report Analysis
+    # Certificate
     # =========================================================================
 
-    @staticmethod
-    def is_passing(report: Union[UUTReport, UURReport]) -> bool:
+    def get_certificate(self, report_id: str) -> Optional[bytes]:
         """
-        Check if a report has passing status.
+        Get certificate for a report.
 
         Args:
-            report: Report to check
+            report_id: Report ID
 
         Returns:
-            True if report is passing
+            Certificate content as bytes or None
         """
-        root = report.root
-        if root and root.status:
-            return root.status == ResultStatus.PASSED
-        return False
-
-    @staticmethod
-    def count_steps(report: UUTReport) -> int:
-        """
-        Count total steps in a report.
-
-        Args:
-            report: UUT report
-
-        Returns:
-            Total number of steps
-        """
-        root = report.root
-        if root and root.steps:
-            return len(root.steps)
-        return 0
-
-    @staticmethod
-    def count_failing_steps(report: UUTReport) -> int:
-        """
-        Count failing steps in a report.
-
-        Args:
-            report: UUT report
-
-        Returns:
-            Number of failing steps
-        """
-        count = 0
-        root = report.root
-        if root and root.steps:
-            for step in root.steps:
-                if step.status == ResultStatus.FAILED:
-                    count += 1
-        return count
-
-    @staticmethod
-    def get_step_by_name(
-        report: UUTReport, name: str
-    ) -> Optional[SequenceCall]:
-        """
-        Find a step by name.
-
-        Args:
-            report: UUT report
-            name: Step name to find
-
-        Returns:
-            SequenceCall if found
-        """
-        root = report.root
-        if root and root.steps:
-            for step in root.steps:
-                if step.name == name:
-                    return step
-        return None
+        return self._repository.get_certificate(report_id)

@@ -1,4 +1,4 @@
-"""Query domain enums."""
+"""Report domain enums."""
 from enum import IntEnum
 
 

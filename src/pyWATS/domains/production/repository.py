@@ -5,7 +5,7 @@ All API interactions for production units, serial numbers, and batches.
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...core import WATSClient
+    from ...core import HttpClient
 
 from .models import (
     Unit, UnitChange, ProductionBatch, SerialNumberType,
@@ -20,12 +20,12 @@ class ProductionRepository:
     Handles all WATS API interactions for production management.
     """
 
-    def __init__(self, client: "WATSClient"):
+    def __init__(self, client: "HttpClient"):
         """
         Initialize with HTTP client.
 
         Args:
-            client: WATSClient for making HTTP requests
+            client: HttpClient for making HTTP requests
         """
         self._http = client
 
