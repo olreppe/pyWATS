@@ -287,4 +287,8 @@ This is the power of Git's branching model combined with automated agents!
 
 ---
 
-For detailed instructions, see [WORKFLOW_PARALLEL_BRANCHES.md](WORKFLOW_PARALLEL_BRANCHES.md)
+**Related Documentation:**
+- 📖 [Complete Workflow Guide](WORKFLOW_PARALLEL_BRANCHES.md) - Detailed instructions
+- 🚀 [Quick Reference](QUICK_REFERENCE_PARALLEL_WORK.md) - TL;DR version
+- ❓ [FAQ](FAQ_PARALLEL_WORKFLOWS.md) - Common questions answered
+- 🎬 [Example Script](examples/parallel_branch_workflow.sh) - Interactive demo

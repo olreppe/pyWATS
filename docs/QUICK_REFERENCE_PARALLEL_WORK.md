@@ -129,4 +129,8 @@ This is exactly what Git branching was designed for!
 
 ---
 
-For detailed workflows, see [WORKFLOW_PARALLEL_BRANCHES.md](WORKFLOW_PARALLEL_BRANCHES.md)
+**Learn More:**
+- 📖 [Complete Workflow Guide](WORKFLOW_PARALLEL_BRANCHES.md) - Detailed instructions and best practices
+- 📊 [Visual Diagrams](WORKFLOW_DIAGRAM.md) - See the workflow in pictures
+- ❓ [FAQ](FAQ_PARALLEL_WORKFLOWS.md) - 25+ common questions answered
+- 🎬 [Example Script](examples/parallel_branch_workflow.sh) - Run: `bash docs/examples/parallel_branch_workflow.sh`
