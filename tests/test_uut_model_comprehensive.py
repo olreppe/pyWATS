@@ -2,6 +2,7 @@
 Comprehensive UUT Model Test
 Tests all variants of all step types with extensive examples
 """
+from typing import Any
 from datetime import datetime
 from src.pyWATS.domains.report.report_models.uut.uut_report import UUTReport
 from src.pyWATS.domains.report.report_models.uut.steps.sequence_call import SequenceCall
@@ -13,7 +14,7 @@ from src.pyWATS.domains.report.report_models.chart import ChartType
 class TestUUTModelComprehensive:
     """Comprehensive test of all UUT step types and variants"""
     
-    def test_extensive_uut_model(self):
+    def test_extensive_uut_model(self, wats_client: Any):
         """
         Create an extensive UUT test with virtually all variants of all step types.
         Part number: UUTMODELTEST
@@ -361,9 +362,32 @@ class TestUUTModelComprehensive:
         deserialized_count = count_steps(root2)
         print(f"Deserialized step count: {deserialized_count}")
         
+        # ==================== SERVER SUBMISSION ====================
+        print("\n=== Submitting Report to Server ===")
+        
+        try:
+            result = wats_client.report.submit_report(report)
+            
+            print(f"✓ Report submitted successfully!")
+            print(f"  Report ID: {result}")
+            print(f"  Part Number: {report.pn}")
+            print(f"  Serial Number: {report.sn}")
+            print(f"  Station: {report.station_name}")
+            print(f"  Result: {report.result}")
+            print(f"  Step Count: {step_count}")
+            
+            assert result is not None, "Report submission returned None"
+            assert isinstance(result, str), f"Expected string result, got {type(result)}"
+            assert len(result) > 0, "Report ID is empty"
+            
+        except Exception as e:
+            print(f"✗ Error submitting report: {e}")
+            raise
+        
         print("\n=== TEST COMPLETE ===")
         print(f"✓ Created {step_count} steps")
         print(f"✓ All step types tested")
         print(f"✓ Serialization/deserialization successful")
+        print(f"✓ Report submitted to server")
         print(f"✓ Part number: {report.pn}")
         print(f"✓ Serial number: {report.sn}")
