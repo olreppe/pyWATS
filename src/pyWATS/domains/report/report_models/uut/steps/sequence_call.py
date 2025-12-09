@@ -63,8 +63,15 @@ class StepList(List[StepType]):
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type, handler):
         """Correctly handle serialization and validation for Pydantic with StepType (Union)."""
+        # Extract the item type from the generic (it includes the discriminator annotation)
+        import typing
+        if hasattr(source_type, '__args__') and source_type.__args__:
+            item_type = source_type.__args__[0]  # Get Annotated[StepType, Field(discriminator='step_type')]
+        else:
+            item_type = StepType
+        
         return core_schema.list_schema(
-            items_schema=handler.generate_schema(StepType),  # Handle Union[Step, NumericStep, ...]
+            items_schema=handler.generate_schema(item_type),  # Use the annotated type with discriminator
             serialization=core_schema.plain_serializer_function_ser_schema(list),
         )
 
@@ -100,31 +107,15 @@ class SequenceCall(Step):
     # Child steps - Only applies to SequenceCall
     steps: Optional[StepList[Annotated[StepType, Field(discriminator='step_type')]]] = Field(default_factory=StepList)
     
-    # StepList model validator - before. Converts incoming list to StepList when deserializing
-    @model_validator(mode="before")
-    @classmethod
-    def convert_steps(cls, data):
-        """
-        Convert list to StepList before Pydantic validation.
-        Also sets parent on all steps inside StepList during deserialization.
-        """
-        if isinstance(data, dict) and "steps" in data:
-            steps = data["steps"]
-            if isinstance(steps, list):  
-                step_list = StepList(steps)
-                step_list.set_parent(data) 
-                data["steps"] = step_list
-            else:
-                step_list = StepList()
-                data["steps"] = step_list
-        return data
-    # -------------------------------------------------------------------
-    # Model validator (after)
+    # Model validator (after) - Convert to StepList and set parent references
     @model_validator(mode="after")
     def assign_parent(self):
-        """Ensure all steps have the correct parent after model creation."""
-        if not isinstance(self.steps, StepList):  # Fix list conversion issue
-            self.steps = StepList(self.steps)  # Convert list to StepList if needed
+        """
+        Convert steps list to StepList and ensure all steps have the correct parent after model creation.
+        This runs AFTER Pydantic has validated individual steps using the discriminator.
+        """
+        if not isinstance(self.steps, StepList):  # Convert regular list to StepList
+            self.steps = StepList(self.steps)  # Convert list to StepList
         try:
             self.steps.set_parent(self)
         except Exception as e:

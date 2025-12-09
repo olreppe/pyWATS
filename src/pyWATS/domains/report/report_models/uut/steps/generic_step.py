@@ -62,10 +62,26 @@ class FlowType(Enum):
     Statement = "Statement"
     Label = "Label"
 
+# Create a Literal type from all FlowType enum values for discriminator compatibility
+FlowTypeLiteral = Literal[
+    "NI_FTPFiles", "NI_Flow_If", "NI_Flow_ElseIf", "NI_Flow_Else", "NI_Flow_End",
+    "NI_Flow_For", "NI_Flow_ForEach", "NI_Flow_Break", "NI_Flow_Continue",
+    "NI_Flow_DoWhile", "NI_Flow_While", "NI_Flow_Select", "NI_Flow_Case",
+    "NI_Flow_StreamLoop", "NI_Flow_SweepLoop", "NI_Lock", "NI_Rendezvous",
+    "NI_Queue", "NI_Notification", "NI_Wait", "NI_Batch_Sync", "NI_AutoSchedule",
+    "NI_UseResource", "NI_ThreadPriority", "NI_Semaphore", "NI_BatchSpec",
+    "NI_BatchSync", "NI_OpenDatabase", "NI_OpenSQLStatement", "NI_CloseSQLStatement",
+    "NI_CloseDatabase", "NI_DataOperation", "NI_CPUAffinity", "NI_IviDmm",
+    "NI_IviScope", "NI_IviFgen", "NI_IviDCPower", "NI_IviSwitch", "NI_IviTools",
+    "NI_LV_DeployLibrary", "NI_LV_CheckSystemStatus", "NI_LV_RunVIAsynchronously",
+    "NI_PropertyLoader", "NI_VariableAndPropertyLoader", "NI_NewCsvFileInputRecordStream",
+    "NI_NewCsvFileOutputRecordStream", "NI_WriteRecord", "Goto", "Statement", "Label"
+]
+
 # Class: GenericStep
 # A step type that displays flow icon.
 class GenericStep(Step):
-    step_type: FlowType|str = Field(..., validation_alias="stepType",serialization_alias="stepType")
+    step_type: FlowTypeLiteral = Field(..., validation_alias="stepType",serialization_alias="stepType")
 
     def validate_step(self, trigger_children=False, errors=None) -> bool:
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
