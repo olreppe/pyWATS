@@ -104,11 +104,14 @@ pyWATS/
 - [API Specifications](docs/api_specs/)
 
 ### Development Workflow
-- [Quick Reference: Parallel Work](docs/QUICK_REFERENCE_PARALLEL_WORK.md) - TL;DR for working with automated agents in separate branches
+
+**Quick Answer:** Can agents work in background branches while you work locally? **YES!** See:
+- [Cheatsheet](docs/PARALLEL_WORK_CHEATSHEET.txt) - One-page reference (view: `cat docs/PARALLEL_WORK_CHEATSHEET.txt`)
+- [Quick Reference: Parallel Work](docs/QUICK_REFERENCE_PARALLEL_WORK.md) - TL;DR guide
 - [Working with Parallel Branches](docs/WORKFLOW_PARALLEL_BRANCHES.md) - Complete guide for background task workflows
 - [Workflow Diagrams](docs/WORKFLOW_DIAGRAM.md) - Visual representations of parallel branch workflows
 - [FAQ: Parallel Workflows](docs/FAQ_PARALLEL_WORKFLOWS.md) - Common questions and answers
-- [Example Script](docs/examples/parallel_branch_workflow.sh) - Interactive demonstration
+- [Example Script](docs/examples/parallel_branch_workflow.sh) - Interactive demonstration (run: `bash docs/examples/parallel_branch_workflow.sh`)
 
 ## License
 
