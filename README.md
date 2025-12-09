@@ -74,6 +74,18 @@ headers = api.report.query_uut_headers(filter)
 python -m pywats_client
 ```
 
+## Development Workflow
+
+### Working with GitHub Copilot
+
+GitHub Copilot can work on tasks in separate branches while you continue your local development:
+
+- Assign refactoring, documentation, or other tasks to agents
+- Agents work asynchronously in their own branches
+- Review and merge agent work when ready
+
+See [GitHub Copilot Workflow Guide](docs/GITHUB_COPILOT_WORKFLOW.md) for details on parallel development with agents.
+
 ## Project Structure
 
 ```
@@ -101,6 +113,7 @@ pyWATS/
 - [Basic Usage Example](docs/examples/basic_usage.py)
 - [REST API Instructions](docs/REST_API_INSTRUCTION.md)
 - [API Specifications](docs/api_specs/)
+- [GitHub Copilot Workflow](docs/GITHUB_COPILOT_WORKFLOW.md) - Working with agents on parallel branches
 
 ## License
 
