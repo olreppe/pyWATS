@@ -1,8 +1,24 @@
 # GitHub Copilot Background Task Execution
 
-## Overview
+## Quick Answer
 
 **Yes, GitHub Copilot can work on tasks in a separate branch while you work on your local branch!**
+
+## TL;DR
+
+```bash
+# You work locally
+git checkout -b my-feature
+
+# Meanwhile, ask Copilot to work remotely
+@github-copilot refactor the auth module in a new branch
+
+# Copilot creates: copilot/refactor-auth-module
+# You keep working on: my-feature
+# Both branches progress independently
+```
+
+## Overview
 
 This document explains how to leverage GitHub Copilot agents to handle tasks asynchronously on remote branches while you continue your development work locally without interruption.
 
