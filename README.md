@@ -98,9 +98,14 @@ pyWATS/
 
 ## Documentation
 
+### API & Usage
 - [Basic Usage Example](docs/examples/basic_usage.py)
 - [REST API Instructions](docs/REST_API_INSTRUCTION.md)
 - [API Specifications](docs/api_specs/)
+
+### Development Workflow
+- [Working with Parallel Branches](docs/WORKFLOW_PARALLEL_BRANCHES.md) - Complete guide for background task workflows
+- [Quick Reference: Parallel Work](docs/QUICK_REFERENCE_PARALLEL_WORK.md) - TL;DR for working with automated agents in separate branches
 
 ## License
 
