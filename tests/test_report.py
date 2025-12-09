@@ -479,9 +479,10 @@ class TestRepairScenario:
         
         # Add a failure to the main unit (required by API)
         # This represents the failure that was repaired
+        # Use valid category and fail code from server's RepairOperationConfig
         repair_report.add_failure_to_main_unit(
-            category="Component Failure",
-            code="CAP-FAIL",
+            category="Component",
+            code="Defect Component",
             comment="Capacitor C12 exceeded current specification",
             component_ref="C12"
         )
@@ -570,7 +571,7 @@ class TestRepairScenario:
         print(f"   - Status: F")
         print(f"2. Repair UUR:  {repair_report.id}")
         print(f"   - Server ID: {repair_result}")
-        print(f"   - Linked to: {repair_report.uur_info.refUUT}")
+        print(f"   - Linked to: {repair_report.uur_info.ref_uut}")
         print(f"3. Retest UUT:  {retest_uut.id}")
         print(f"   - Server ID: {retest_result}")
         print(f"   - Status: P")
@@ -578,7 +579,7 @@ class TestRepairScenario:
         
         # Assertions
         assert failed_uut.result == "F", "Initial UUT should be failed"
-        assert repair_report.uur_info.refUUT == failed_uut.id, "UUR should reference failed UUT"
+        assert repair_report.uur_info.ref_uut == failed_uut.id, "UUR should reference failed UUT"
         assert retest_uut.result == "P", "Retest UUT should be passed"
         assert retest_uut.sn == failed_uut.sn, "Retest should have same serial number"
         
