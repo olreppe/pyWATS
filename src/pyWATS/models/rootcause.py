@@ -61,7 +61,11 @@ class TicketAttachment(PyWATSModel):
         attachment_id: Unique identifier for the attachment
         filename: Name of the attached file
     """
-    attachment_id: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("attachmentId", "attachment_id"), serialization_alias="attachmentId")
+    attachment_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("attachmentId", "attachment_id"),
+        serialization_alias="attachmentId"
+    )
     filename: Optional[str] = Field(default=None)
 
 
@@ -74,14 +78,31 @@ class TicketUpdate(PyWATSModel):
         update_utc: Timestamp of the update (UTC)
         update_user: User who made the update
         content: Content/comment of the update
-        update_type: Type of update (content, progress, properties, notification)
+        update_type: Type of update (content, progress, properties,
+                     notification)
         attachments: List of attachments added in this update
     """
-    update_id: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("updateId", "update_id"), serialization_alias="updateId")
-    update_utc: Optional[datetime] = Field(default=None, validation_alias=AliasChoices("updateUtc", "update_utc"), serialization_alias="updateUtc")
-    update_user: Optional[str] = Field(default=None, validation_alias=AliasChoices("updateUser", "update_user"), serialization_alias="updateUser")
+    update_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("updateId", "update_id"),
+        serialization_alias="updateId"
+    )
+    update_utc: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("updateUtc", "update_utc"),
+        serialization_alias="updateUtc"
+    )
+    update_user: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("updateUser", "update_user"),
+        serialization_alias="updateUser"
+    )
     content: Optional[str] = Field(default=None)
-    update_type: Optional[TicketUpdateType] = Field(default=None, validation_alias=AliasChoices("updateType", "update_type"), serialization_alias="updateType")
+    update_type: Optional[TicketUpdateType] = Field(
+        default=None,
+        validation_alias=AliasChoices("updateType", "update_type"),
+        serialization_alias="updateType"
+    )
     attachments: Optional[List[TicketAttachment]] = Field(default=None)
 
 
@@ -110,17 +131,37 @@ class Ticket(PyWATSModel):
         history: List of historical updates
         update: Current/pending update
     """
-    ticket_id: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("ticketId", "ticket_id"), serialization_alias="ticketId")
-    ticket_number: Optional[int] = Field(default=None, validation_alias=AliasChoices("ticketNumber", "ticket_number"), serialization_alias="ticketNumber")
+    ticket_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("ticketId", "ticket_id"),
+        serialization_alias="ticketId"
+    )
+    ticket_number: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("ticketNumber", "ticket_number"),
+        serialization_alias="ticketNumber"
+    )
     progress: Optional[str] = Field(default=None)
     owner: Optional[str] = Field(default=None)
     assignee: Optional[str] = Field(default=None)
     subject: Optional[str] = Field(default=None)
     status: Optional[TicketStatus] = Field(default=None)
     priority: Optional[TicketPriority] = Field(default=None)
-    report_uuid: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("reportUuid", "report_uuid"), serialization_alias="reportUuid")
-    created_utc: Optional[datetime] = Field(default=None, validation_alias=AliasChoices("createdUtc", "created_utc"), serialization_alias="createdUtc")
-    updated_utc: Optional[datetime] = Field(default=None, validation_alias=AliasChoices("updatedUtc", "updated_utc"), serialization_alias="updatedUtc")
+    report_uuid: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("reportUuid", "report_uuid"),
+        serialization_alias="reportUuid"
+    )
+    created_utc: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("createdUtc", "created_utc"),
+        serialization_alias="createdUtc"
+    )
+    updated_utc: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("updatedUtc", "updated_utc"),
+        serialization_alias="updatedUtc"
+    )
     team: Optional[str] = Field(default=None)
     origin: Optional[str] = Field(default=None)
     tags: Optional[List[Setting]] = Field(default=None)

@@ -3,7 +3,7 @@ Asset models for pyWATS
 
 Uses Pydantic 2 for validation and serialization.
 """
-from typing import Optional, List, Any
+from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 from enum import IntEnum
@@ -52,12 +52,24 @@ class AssetType(PyWATSModel):
     """
     type_name: str = Field(..., alias="typeName")
     type_id: Optional[UUID] = Field(default=None, alias="typeId")
-    running_count_limit: Optional[int] = Field(default=None, alias="runningCountLimit")
-    total_count_limit: Optional[int] = Field(default=None, alias="totalCountLimit")
-    maintenance_interval: Optional[float] = Field(default=None, alias="maintenanceInterval")
-    calibration_interval: Optional[float] = Field(default=None, alias="calibrationInterval")
-    warning_threshold: Optional[float] = Field(default=None, alias="warningThreshold")
-    alarm_threshold: Optional[float] = Field(default=None, alias="alarmThreshold")
+    running_count_limit: Optional[int] = Field(
+        default=None, alias="runningCountLimit"
+    )
+    total_count_limit: Optional[int] = Field(
+        default=None, alias="totalCountLimit"
+    )
+    maintenance_interval: Optional[float] = Field(
+        default=None, alias="maintenanceInterval"
+    )
+    calibration_interval: Optional[float] = Field(
+        default=None, alias="calibrationInterval"
+    )
+    warning_threshold: Optional[float] = Field(
+        default=None, alias="warningThreshold"
+    )
+    alarm_threshold: Optional[float] = Field(
+        default=None, alias="alarmThreshold"
+    )
     is_readonly: bool = Field(default=False, alias="isReadonly")
     icon: Optional[str] = Field(default=None, alias="icon")
 
@@ -118,7 +130,9 @@ class Asset(PyWATSModel):
     type_id: Optional[UUID] = Field(default=None, alias="typeId")
     asset_id: Optional[str] = Field(default=None, alias="assetId")
     parent_asset_id: Optional[str] = Field(default=None, alias="parentAssetId")
-    parent_serial_number: Optional[str] = Field(default=None, alias="parentSerialNumber")
+    parent_serial_number: Optional[str] = Field(
+        default=None, alias="parentSerialNumber"
+    )
     asset_name: Optional[str] = Field(default=None, alias="assetName")
     part_number: Optional[str] = Field(default=None, alias="partNumber")
     revision: Optional[str] = Field(default=None, alias="revision")
@@ -126,15 +140,29 @@ class Asset(PyWATSModel):
     state: AssetState = Field(default=AssetState.OK, alias="state")
     description: Optional[str] = Field(default=None, alias="description")
     location: Optional[str] = Field(default=None, alias="location")
-    first_seen_date: Optional[datetime] = Field(default=None, alias="firstSeenDate")
-    last_seen_date: Optional[datetime] = Field(default=None, alias="lastSeenDate")
-    last_maintenance_date: Optional[datetime] = Field(default=None, alias="lastMaintenanceDate")
-    next_maintenance_date: Optional[datetime] = Field(default=None, alias="nextMaintenanceDate")
-    last_calibration_date: Optional[datetime] = Field(default=None, alias="lastCalibrationDate")
-    next_calibration_date: Optional[datetime] = Field(default=None, alias="nextCalibrationDate")
+    first_seen_date: Optional[datetime] = Field(
+        default=None, alias="firstSeenDate"
+    )
+    last_seen_date: Optional[datetime] = Field(
+        default=None, alias="lastSeenDate"
+    )
+    last_maintenance_date: Optional[datetime] = Field(
+        default=None, alias="lastMaintenanceDate"
+    )
+    next_maintenance_date: Optional[datetime] = Field(
+        default=None, alias="nextMaintenanceDate"
+    )
+    last_calibration_date: Optional[datetime] = Field(
+        default=None, alias="lastCalibrationDate"
+    )
+    next_calibration_date: Optional[datetime] = Field(
+        default=None, alias="nextCalibrationDate"
+    )
     total_count: Optional[int] = Field(default=None, alias="totalCount")
     running_count: Optional[int] = Field(default=None, alias="runningCount")
     tags: List[Setting] = Field(default_factory=list, alias="tags")
-    asset_children: List["Asset"] = Field(default_factory=list, alias="assetChildren")
+    asset_children: List["Asset"] = Field(
+        default_factory=list, alias="assetChildren"
+    )
     asset_type: Optional[AssetType] = Field(default=None, alias="assetType")
     asset_log: List[AssetLog] = Field(default_factory=list, alias="assetLog")

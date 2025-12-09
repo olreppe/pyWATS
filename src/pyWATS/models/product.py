@@ -38,10 +38,28 @@ class ProductRevision(PyWATSModel):
     name: Optional[str] = Field(default=None)
     description: Optional[str] = Field(default=None)
     state: ProductState = Field(default=ProductState.ACTIVE)
-    product_revision_id: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("productRevisionId", "product_revision_id"), serialization_alias="productRevisionId")
-    product_id: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("productId", "product_id"), serialization_alias="productId")
-    xml_data: Optional[str] = Field(default=None, validation_alias=AliasChoices("xmlData", "xml_data"), serialization_alias="xmlData")
-    part_number: Optional[str] = Field(default=None, validation_alias=AliasChoices("partNumber", "part_number"), serialization_alias="partNumber")
+    product_revision_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "productRevisionId", "product_revision_id"
+        ),
+        serialization_alias="productRevisionId"
+    )
+    product_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("productId", "product_id"),
+        serialization_alias="productId"
+    )
+    xml_data: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("xmlData", "xml_data"),
+        serialization_alias="xmlData"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber"
+    )
     tags: List[Setting] = Field(default_factory=list)
 
 
@@ -62,15 +80,43 @@ class Product(PyWATSModel):
         revisions: List of product revisions
         tags: JSON formatted xmlData (read-only)
     """
-    part_number: str = Field(..., validation_alias=AliasChoices("partNumber", "part_number"), serialization_alias="partNumber")
+    part_number: str = Field(
+        ...,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber"
+    )
     name: Optional[str] = Field(default=None)
     description: Optional[str] = Field(default=None)
-    non_serial: bool = Field(default=False, validation_alias=AliasChoices("nonSerial", "non_serial"), serialization_alias="nonSerial")
+    non_serial: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("nonSerial", "non_serial"),
+        serialization_alias="nonSerial"
+    )
     state: ProductState = Field(default=ProductState.ACTIVE)
-    product_id: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("productId", "product_id"), serialization_alias="productId")
-    xml_data: Optional[str] = Field(default=None, validation_alias=AliasChoices("xmlData", "xml_data"), serialization_alias="xmlData")
-    product_category_id: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("productCategoryId", "product_category_id"), serialization_alias="productCategoryId")
-    product_category_name: Optional[str] = Field(default=None, validation_alias=AliasChoices("productCategoryName", "product_category_name"), serialization_alias="productCategoryName")
+    product_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("productId", "product_id"),
+        serialization_alias="productId"
+    )
+    xml_data: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("xmlData", "xml_data"),
+        serialization_alias="xmlData"
+    )
+    product_category_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "productCategoryId", "product_category_id"
+        ),
+        serialization_alias="productCategoryId"
+    )
+    product_category_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "productCategoryName", "product_category_name"
+        ),
+        serialization_alias="productCategoryName"
+    )
     revisions: List[ProductRevision] = Field(default_factory=list)
     tags: List[Setting] = Field(default_factory=list)
 
@@ -93,8 +139,16 @@ class ProductView(PyWATSModel):
         non_serial: Flag indicating if product can have units
         state: Active(1) or Inactive(0)
     """
-    part_number: str = Field(..., validation_alias=AliasChoices("partNumber", "part_number"), serialization_alias="partNumber")
+    part_number: str = Field(
+        ...,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber"
+    )
     name: Optional[str] = Field(default=None)
     category: Optional[str] = Field(default=None)
-    non_serial: bool = Field(default=False, validation_alias=AliasChoices("nonSerial", "non_serial"), serialization_alias="nonSerial")
+    non_serial: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("nonSerial", "non_serial"),
+        serialization_alias="nonSerial"
+    )
     state: ProductState = Field(default=ProductState.ACTIVE)

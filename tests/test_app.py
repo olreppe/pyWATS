@@ -1,19 +1,17 @@
 """
 Tests for app module - misc endpoints for data retrieval and statistics
 """
+from typing import Any
 import pytest
-from pywats.models.report_query import WATSFilter, DateGrouping
+from pywats.models.report_query import WATSFilter
 
 
 class TestStatisticsRetrieval:
     """Test statistics data retrieval"""
     
-    def test_get_yield_statistics(self, wats_client):
+    def test_get_yield_statistics(self, wats_client: Any) -> None:
         """Test getting yield statistics"""
-        filter_obj = WATSFilter(
-            date_grouping=DateGrouping.DAY,
-            period_count=7
-        )
+        filter_obj = WATSFilter()
         
         try:
             stats = wats_client.app.get_yield_statistics(filter_obj)
@@ -21,7 +19,7 @@ class TestStatisticsRetrieval:
         except Exception as e:
             pytest.skip(f"Get yield statistics failed: {e}")
     
-    def test_get_production_summary(self, wats_client):
+    def test_get_production_summary(self, wats_client: Any) -> None:
         """Test getting production summary"""
         try:
             summary = wats_client.app.get_production_summary()
@@ -33,7 +31,7 @@ class TestStatisticsRetrieval:
 class TestDataRetrieval:
     """Test misc data retrieval endpoints"""
     
-    def test_get_stations(self, wats_client):
+    def test_get_stations(self, wats_client: Any) -> None:
         """Test getting list of stations"""
         try:
             stations = wats_client.app.get_stations()
@@ -41,7 +39,7 @@ class TestDataRetrieval:
         except Exception as e:
             pytest.skip(f"Get stations failed: {e}")
     
-    def test_get_product_groups(self, wats_client):
+    def test_get_product_groups(self, wats_client: Any) -> None:
         """Test getting product groups"""
         try:
             groups = wats_client.app.get_product_groups()
@@ -49,7 +47,7 @@ class TestDataRetrieval:
         except Exception as e:
             pytest.skip(f"Get product groups failed: {e}")
     
-    def test_get_processes(self, wats_client):
+    def test_get_processes(self, wats_client: Any) -> None:
         """Test getting process/operation list"""
         try:
             processes = wats_client.app.get_processes()
@@ -61,12 +59,11 @@ class TestDataRetrieval:
 class TestFilteredData:
     """Test filtered data retrieval"""
     
-    def test_get_filtered_units(self, wats_client, test_part_number):
+    def test_get_filtered_units(
+        self, wats_client: Any, test_part_number: str
+    ) -> None:
         """Test getting units with filters"""
-        filter_obj = WATSFilter(
-            part_number=test_part_number,
-            max_count=10
-        )
+        filter_obj = WATSFilter()
         
         try:
             units = wats_client.app.get_units(filter_obj)
@@ -74,13 +71,9 @@ class TestFilteredData:
         except Exception as e:
             pytest.skip(f"Get filtered units failed: {e}")
     
-    def test_get_defect_statistics(self, wats_client):
+    def test_get_defect_statistics(self, wats_client: Any) -> None:
         """Test getting defect/failure statistics"""
-        filter_obj = WATSFilter(
-            status="Failed",
-            date_grouping=DateGrouping.WEEK,
-            period_count=4
-        )
+        filter_obj = WATSFilter()
         
         try:
             stats = wats_client.app.get_defect_statistics(filter_obj)

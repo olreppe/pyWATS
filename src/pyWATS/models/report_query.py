@@ -3,7 +3,7 @@ Report query models for pyWATS
 
 Uses Pydantic 2 for validation and serialization.
 """
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 from enum import IntEnum
 from uuid import UUID
@@ -61,7 +61,9 @@ class WATSFilter(PyWATSModel):
     test_operation: Optional[str] = Field(default=None, alias="testOperation")
     status: Optional[str] = Field(default=None, alias="status")
     yield_value: Optional[int] = Field(default=None, alias="yield")
-    misc_description: Optional[str] = Field(default=None, alias="miscDescription")
+    misc_description: Optional[str] = Field(
+        default=None, alias="miscDescription"
+    )
     misc_value: Optional[str] = Field(default=None, alias="miscValue")
     product_group: Optional[str] = Field(default=None, alias="productGroup")
     level: Optional[str] = Field(default=None, alias="level")
@@ -70,9 +72,13 @@ class WATSFilter(PyWATSModel):
     socket: Optional[str] = Field(default=None, alias="socket")
     date_from: Optional[datetime] = Field(default=None, alias="dateFrom")
     date_to: Optional[datetime] = Field(default=None, alias="dateTo")
-    date_grouping: Optional[DateGrouping] = Field(default=None, alias="dateGrouping")
+    date_grouping: Optional[DateGrouping] = Field(
+        default=None, alias="dateGrouping"
+    )
     period_count: Optional[int] = Field(default=None, alias="periodCount")
-    include_current_period: Optional[bool] = Field(default=None, alias="includeCurrentPeriod")
+    include_current_period: Optional[bool] = Field(
+        default=None, alias="includeCurrentPeriod"
+    )
     max_count: Optional[int] = Field(default=None, alias="maxCount")
     min_count: Optional[int] = Field(default=None, alias="minCount")
     top_count: Optional[int] = Field(default=None, alias="topCount")
@@ -206,5 +212,9 @@ class ProductGroup(PyWATSModel):
         product_group_id: Product group ID
         product_group_name: Product group name
     """
-    product_group_id: Optional[int] = Field(default=None, alias="productGroupId")
-    product_group_name: Optional[str] = Field(default=None, alias="productGroupName")
+    product_group_id: Optional[int] = Field(
+        default=None, alias="productGroupId"
+    )
+    product_group_name: Optional[str] = Field(
+        default=None, alias="productGroupName"
+    )

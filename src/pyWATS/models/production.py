@@ -35,8 +35,12 @@ class SerialNumberType(PyWATSModel):
     description: Optional[str] = Field(default=None, alias="description")
     format: Optional[str] = Field(default=None, alias="format")
     reg_ex: Optional[str] = Field(default=None, alias="regEx")
-    identifier: SerialNumberIdentifier = Field(default=SerialNumberIdentifier.SERIAL_NUMBER, alias="identifier")
-    identifier_name: Optional[str] = Field(default=None, alias="identifierName")
+    identifier: SerialNumberIdentifier = Field(
+        default=SerialNumberIdentifier.SERIAL_NUMBER, alias="identifier"
+    )
+    identifier_name: Optional[str] = Field(
+        default=None, alias="identifierName"
+    )
 
 
 class ProductionBatch(PyWATSModel):
@@ -64,11 +68,19 @@ class UnitChange(PyWATSModel):
         new_unit_phase_id: New unit phase ID
     """
     id: Optional[int] = Field(default=None, alias="id")
-    unit_serial_number: Optional[str] = Field(default=None, alias="unitSerialNumber")
-    new_parent_serial_number: Optional[str] = Field(default=None, alias="newParentSerialNumber")
-    new_part_number: Optional[str] = Field(default=None, alias="newPartNumber")
+    unit_serial_number: Optional[str] = Field(
+        default=None, alias="unitSerialNumber"
+    )
+    new_parent_serial_number: Optional[str] = Field(
+        default=None, alias="newParentSerialNumber"
+    )
+    new_part_number: Optional[str] = Field(
+        default=None, alias="newPartNumber"
+    )
     new_revision: Optional[str] = Field(default=None, alias="newRevision")
-    new_unit_phase_id: Optional[int] = Field(default=None, alias="newUnitPhaseId")
+    new_unit_phase_id: Optional[int] = Field(
+        default=None, alias="newUnitPhaseId"
+    )
 
 
 class Unit(PyWATSModel):
@@ -92,19 +104,29 @@ class Unit(PyWATSModel):
         product: Associated product
         sub_units: Child units
     """
-    serial_number: Optional[str] = Field(default=None, alias="serialNumber")
+    serial_number: Optional[str] = Field(
+        default=None, alias="serialNumber"
+    )
     part_number: Optional[str] = Field(default=None, alias="partNumber")
     revision: Optional[str] = Field(default=None, alias="revision")
-    parent_serial_number: Optional[str] = Field(default=None, alias="parentSerialNumber")
+    parent_serial_number: Optional[str] = Field(
+        default=None, alias="parentSerialNumber"
+    )
     batch_number: Optional[str] = Field(default=None, alias="batchNumber")
-    serial_date: Optional[datetime] = Field(default=None, alias="serialDate")
-    current_location: Optional[str] = Field(default=None, alias="currentLocation")
+    serial_date: Optional[datetime] = Field(
+        default=None, alias="serialDate"
+    )
+    current_location: Optional[str] = Field(
+        default=None, alias="currentLocation"
+    )
     xml_data: Optional[str] = Field(default=None, alias="xmlData")
     unit_phase_id: Optional[int] = Field(default=None, alias="unitPhaseId")
     unit_phase: Optional[str] = Field(default=None, alias="unitPhase")
     process_code: Optional[str] = Field(default=None, alias="processCode")
     tags: List[Setting] = Field(default_factory=list, alias="tags")
-    product_revision: Optional[ProductRevision] = Field(default=None, alias="productRevision")
+    product_revision: Optional[ProductRevision] = Field(
+        default=None, alias="productRevision"
+    )
     product: Optional[Product] = Field(default=None, alias="product")
     sub_units: List["Unit"] = Field(default_factory=list, alias="subUnits")
 
@@ -131,7 +153,9 @@ class UnitVerification(PyWATSModel):
     start_utc: Optional[datetime] = Field(default=None, alias="startUtc")
     station_name: Optional[str] = Field(default=None, alias="stationName")
     total_count: Optional[int] = Field(default=None, alias="totalCount")
-    non_passed_count: Optional[int] = Field(default=None, alias="nonPassedCount")
+    non_passed_count: Optional[int] = Field(
+        default=None, alias="nonPassedCount"
+    )
     repair_count: Optional[int] = Field(default=None, alias="repairCount")
 
 
@@ -142,18 +166,32 @@ class UnitVerificationGrade(PyWATSModel):
     Attributes:
         status: Unit status
         grade: Unit grade
-        all_processes_executed_in_correct_order: Unit tested in correct process order
-        all_processes_passed_first_run: Unit passed each process first time
-        all_processes_passed_any_run: Unit passed at some point in each process
-        all_processes_passed_last_run: Unit eventually passed each process
+        all_processes_executed_in_correct_order: Unit tested in
+            correct process order
+        all_processes_passed_first_run: Unit passed each process first
+            time
+        all_processes_passed_any_run: Unit passed at some point in
+            each process
+        all_processes_passed_last_run: Unit eventually passed each
+            process
         no_repairs: Unit never needed repair
         results: Unit results per process
     """
     status: Optional[str] = Field(default=None, alias="status")
     grade: Optional[str] = Field(default=None, alias="grade")
-    all_processes_executed_in_correct_order: bool = Field(default=False, alias="allProcessesExecutedInCorrectOrder")
-    all_processes_passed_first_run: bool = Field(default=False, alias="allProcessesPassedFirstRun")
-    all_processes_passed_any_run: bool = Field(default=False, alias="allProcessesPassedAnyRun")
-    all_processes_passed_last_run: bool = Field(default=False, alias="allProcessesPassedLastRun")
+    all_processes_executed_in_correct_order: bool = Field(
+        default=False, alias="allProcessesExecutedInCorrectOrder"
+    )
+    all_processes_passed_first_run: bool = Field(
+        default=False, alias="allProcessesPassedFirstRun"
+    )
+    all_processes_passed_any_run: bool = Field(
+        default=False, alias="allProcessesPassedAnyRun"
+    )
+    all_processes_passed_last_run: bool = Field(
+        default=False, alias="allProcessesPassedLastRun"
+    )
     no_repairs: bool = Field(default=False, alias="noRepairs")
-    results: List[UnitVerification] = Field(default_factory=list, alias="results")
+    results: List[UnitVerification] = Field(
+        default_factory=list, alias="results"
+    )

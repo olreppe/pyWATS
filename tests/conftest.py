@@ -1,48 +1,47 @@
 """
 Pytest configuration and fixtures for pyWATS tests
 """
+from typing import Generator, Dict
 import pytest
-from pywats.client import WATSClient
+from pywats import pyWATS
 
 
 @pytest.fixture(scope="session")
-def wats_config():
+def wats_config() -> Dict[str, str]:
     """WATS configuration - update these with your test environment"""
     return {
-        "base_url": "http://localhost:8080",  # Update with your WATS server
-        "username": "test_user",  # Update with test credentials
-        "password": "test_password",
-        "client_id": "pyWATS_tests"
+        "base_url": "https://py.wats.com",
+        "token": (
+            "cHlXQVRTX1Rlc3RUb2tlbjo3NDRRNE9GWERtaGMmSjVWSUFpaTkzMGcwN0JncDU="
+        )
     }
 
 
 @pytest.fixture(scope="session")
-def wats_client(wats_config):
+def wats_client(wats_config: Dict[str, str]) -> Generator[pyWATS, None, None]:
     """Create a WATS client for the test session"""
-    client = WATSClient(
+    client = pyWATS(
         base_url=wats_config["base_url"],
-        username=wats_config["username"],
-        password=wats_config["password"],
-        client_id=wats_config["client_id"]
+        token=wats_config["token"]
     )
     yield client
     # Cleanup if needed
 
 
 @pytest.fixture
-def test_serial_number():
+def test_serial_number() -> str:
     """Generate a unique test serial number"""
     from datetime import datetime
     return f"TEST-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
 
 
 @pytest.fixture
-def test_part_number():
+def test_part_number() -> str:
     """Test part number"""
     return "TEST-PN-001"
 
 
 @pytest.fixture
-def test_revision():
+def test_revision() -> str:
     """Test revision"""
     return "A"
