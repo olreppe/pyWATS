@@ -221,6 +221,20 @@ class ReportService:
         """
         return self._repository.post_wsjf(report)
 
+    def submit(
+        self, report: Union[UUTReport, UURReport, Dict[str, Any]]
+    ) -> Optional[str]:
+        """
+        Submit a new report (alias for submit_report).
+
+        Args:
+            report: Report to submit (UUTReport, UURReport or dict)
+
+        Returns:
+            Report ID if successful, None otherwise
+        """
+        return self.submit_report(report)
+
     # =========================================================================
     # WSXF (XML Format) Operations
     # =========================================================================

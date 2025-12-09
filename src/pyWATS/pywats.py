@@ -4,17 +4,14 @@ The main entry point for the pyWATS library.
 """
 from typing import Optional
 
-from .http_client import HttpClient
-from .rest_api import WATSEndpoints
-from .modules import (
-    ProductModule,
-    AssetModule,
-    ProductionModule,
-    ReportModule,
-    SoftwareModule,
-    AppModule,
-    RootCauseModule
-)
+from .core.client import HttpClient
+from .domains.product import ProductService, ProductRepository
+from .domains.asset import AssetService, AssetRepository
+from .domains.production import ProductionService, ProductionRepository
+from .domains.report import ReportService, ReportRepository
+from .domains.software import SoftwareService, SoftwareRepository
+from .domains.app import AppService, AppRepository
+from .domains.rootcause import RootCauseService, RootCauseRepository
 
 
 class pyWATS:
@@ -81,48 +78,47 @@ class pyWATS:
             timeout=self._timeout
         )
         
-        # Initialize REST API endpoints
-        self._endpoints = WATSEndpoints(self._http_client)
-        
-        # Module instances (lazy initialization)
-        self._product: Optional[ProductModule] = None
-        self._asset: Optional[AssetModule] = None
-        self._production: Optional[ProductionModule] = None
-        self._report: Optional[ReportModule] = None
-        self._software: Optional[SoftwareModule] = None
-        self._app: Optional[AppModule] = None
-        self._rootcause: Optional[RootCauseModule] = None
+        # Service instances (lazy initialization)
+        self._product: Optional[ProductService] = None
+        self._asset: Optional[AssetService] = None
+        self._production: Optional[ProductionService] = None
+        self._report: Optional[ReportService] = None
+        self._software: Optional[SoftwareService] = None
+        self._app: Optional[AppService] = None
+        self._rootcause: Optional[RootCauseService] = None
     
     # -------------------------------------------------------------------------
     # Module Properties
     # -------------------------------------------------------------------------
     
     @property
-    def product(self) -> ProductModule:
+    def product(self) -> ProductService:
         """
         Access product management operations.
         
         Returns:
-            ProductModule instance
+            ProductService instance
         """
         if self._product is None:
-            self._product = ProductModule(self._endpoints.product)
+            repo = ProductRepository(self._http_client)
+            self._product = ProductService(repo)
         return self._product
     
     @property
-    def asset(self) -> AssetModule:
+    def asset(self) -> AssetService:
         """
         Access asset management operations.
         
         Returns:
-            AssetModule instance
+            AssetService instance
         """
         if self._asset is None:
-            self._asset = AssetModule(self._endpoints.asset)
+            repo = AssetRepository(self._http_client)
+            self._asset = AssetService(repo)
         return self._asset
     
     @property
-    def production(self) -> ProductionModule:
+    def production(self) -> ProductionService:
         """
         Access production/unit management operations.
         
@@ -131,50 +127,51 @@ class pyWATS:
         - verification: Unit verification operations
         
         Returns:
-            ProductionModule instance
+            ProductionService instance
         """
         if self._production is None:
-            self._production = ProductionModule(self._endpoints.production)
+            repo = ProductionRepository(self._http_client)
+            self._production = ProductionService(repo)
         return self._production
     
     @property
-    def report(self) -> ReportModule:
+    def report(self) -> ReportService:
         """
         Access report operations.
         
         Returns:
-            ReportModule instance
+            ReportService instance
         """
         if self._report is None:
-            self._report = ReportModule(self._endpoints.report)
+            self._report = ReportService(self._http_client)
         return self._report
     
     @property
-    def software(self) -> SoftwareModule:
+    def software(self) -> SoftwareService:
         """
         Access software distribution operations.
         
         Returns:
-            SoftwareModule instance
+            SoftwareService instance
         """
         if self._software is None:
-            self._software = SoftwareModule(self._endpoints.software)
+            self._software = SoftwareService(self._http_client)
         return self._software
     
     @property
-    def app(self) -> AppModule:
+    def app(self) -> AppService:
         """
         Access statistics and KPI operations.
         
         Returns:
-            AppModule instance
+            AppService instance
         """
         if self._app is None:
-            self._app = AppModule(self._endpoints.app)
+            self._app = AppService(self._http_client)
         return self._app
     
     @property
-    def rootcause(self) -> RootCauseModule:
+    def rootcause(self) -> RootCauseService:
         """
         Access RootCause ticketing operations.
         
@@ -182,10 +179,10 @@ class pyWATS:
         collaboration on issue tracking and resolution.
         
         Returns:
-            RootCauseModule instance
+            RootCauseService instance
         """
         if self._rootcause is None:
-            self._rootcause = RootCauseModule(self._endpoints.rootcause)
+            self._rootcause = RootCauseService(self._http_client)
         return self._rootcause
     
     # -------------------------------------------------------------------------
