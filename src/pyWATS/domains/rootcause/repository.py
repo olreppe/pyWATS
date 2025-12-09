@@ -93,7 +93,7 @@ class RootCauseRepository:
         """
         response = self._http.post(
             "/api/RootCause/Ticket",
-            json=ticket.model_dump(by_alias=True, exclude_none=True),
+            data=ticket.model_dump(mode="json", by_alias=True, exclude_none=True),
         )
         if response.is_success and response.data:
             return Ticket.model_validate(response.data)
@@ -113,7 +113,7 @@ class RootCauseRepository:
         """
         response = self._http.put(
             "/api/RootCause/Ticket",
-            json=ticket.model_dump(by_alias=True, exclude_none=True),
+            data=ticket.model_dump(mode="json", by_alias=True, exclude_none=True),
         )
         if response.is_success and response.data:
             return Ticket.model_validate(response.data)
@@ -136,7 +136,7 @@ class RootCauseRepository:
             Ticket object or None
         """
         ids = [str(tid) for tid in ticket_ids]
-        response = self._http.post("/api/RootCause/ArchiveTickets", json=ids)
+        response = self._http.post("/api/RootCause/ArchiveTickets", data=ids)
         if response.is_success and response.data:
             return Ticket.model_validate(response.data)
         return None

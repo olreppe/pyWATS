@@ -1,15 +1,19 @@
 """
-Tests for root cause module - ticket integration with external systems
+Tests for root cause module - ticket management for issue collaboration
+
+These tests make actual API calls to the WATS server.
 """
+from typing import Any
+from datetime import datetime, timezone
 import pytest
-from src.pywats.domains.rootcause import Ticket, TicketStatus, TicketPriority
+from pywats.domains.rootcause import Ticket, TicketStatus, TicketPriority
 
 
-class TestRootCauseTicket:
-    """Test root cause ticket operations"""
+class TestTicketModel:
+    """Test Ticket model creation (no server)"""
 
-    def test_create_ticket(self):
-        """Test creating a root cause ticket"""
+    def test_create_ticket_model(self) -> None:
+        """Test creating a ticket model object"""
         ticket = Ticket(
             subject="Test failure",
             priority=TicketPriority.MEDIUM,
@@ -17,38 +21,99 @@ class TestRootCauseTicket:
         assert ticket.subject == "Test failure"
         assert ticket.priority == TicketPriority.MEDIUM
 
-    def test_submit_ticket(self, wats_client):
-        """Test submitting a root cause ticket"""
+    def test_create_ticket_with_progress(self) -> None:
+        """Test creating a ticket with progress notes"""
         ticket = Ticket(
-            subject="Test failure description",
+            subject="Component failure",
+            progress="Initial investigation started",
             priority=TicketPriority.HIGH,
         )
-
-        try:
-            result = wats_client.root_cause.create_ticket(ticket)
-            assert result is not None
-        except Exception as e:
-            pytest.skip(f"Ticket creation failed: {e}")
-
-    def test_get_ticket(self, wats_client):
-        """Test retrieving a ticket"""
-        try:
-            # Note: This needs a valid ticket_id from the system
-            tickets = wats_client.root_cause.get_open_tickets()
-            if tickets:
-                ticket = wats_client.root_cause.get_ticket(tickets[0].ticket_id)
-                assert ticket is not None
-        except Exception as e:
-            pytest.skip(f"Get ticket failed: {e}")
+        assert ticket.subject == "Component failure"
+        assert ticket.progress == "Initial investigation started"
 
 
-class TestTicketLinking:
-    """Test linking tickets to reports/units"""
+class TestTicketRetrieval:
+    """Test retrieving tickets from server"""
 
-    def test_link_ticket_to_report(self, wats_client):
-        """Test linking a ticket to a report"""
-        pytest.skip("Link ticket to report requires valid report UUID")
+    def test_get_all_tickets(self, wats_client: Any) -> None:
+        """Test getting all tickets"""
+        print("\n=== GET ALL TICKETS ===")
+        
+        tickets = wats_client.rootcause.get_tickets()
+        
+        print(f"Retrieved {len(tickets)} tickets")
+        for t in tickets[:5]:
+            print(f"  - {t.ticket_id}: {t.subject}")
+        print("=======================\n")
+        
+        assert isinstance(tickets, list)
 
-    def test_get_tickets_for_unit(self, wats_client, test_serial_number):
-        """Test getting tickets associated with a unit"""
-        pytest.skip("Get unit tickets not implemented in current API")
+    def test_get_open_tickets(self, wats_client: Any) -> None:
+        """Test getting open tickets"""
+        print("\n=== GET OPEN TICKETS ===")
+        
+        tickets = wats_client.rootcause.get_open_tickets()
+        
+        print(f"Retrieved {len(tickets)} open tickets")
+        print("========================\n")
+        
+        assert isinstance(tickets, list)
+
+    def test_get_active_tickets(self, wats_client: Any) -> None:
+        """Test getting active tickets"""
+        print("\n=== GET ACTIVE TICKETS ===")
+        
+        tickets = wats_client.rootcause.get_active_tickets()
+        
+        print(f"Retrieved {len(tickets)} active tickets")
+        print("==========================\n")
+        
+        assert isinstance(tickets, list)
+
+
+class TestTicketCreation:
+    """Test creating tickets on server"""
+
+    def test_create_ticket(self, wats_client: Any) -> None:
+        """Test creating a new ticket"""
+        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+        
+        print("\n=== CREATE TICKET ===")
+        
+        subject = f"PyTest Ticket {timestamp}"
+        
+        print(f"Creating ticket: {subject}")
+        
+        result = wats_client.rootcause.create_ticket(
+            subject=subject,
+            priority=TicketPriority.LOW,
+            initial_comment="Created by pytest automated tests"
+        )
+        
+        print(f"Create result: {result}")
+        print("=====================\n")
+        
+        assert result is not None
+
+
+class TestTicketOperations:
+    """Test ticket operations"""
+
+    def test_get_ticket_by_id(self, wats_client: Any) -> None:
+        """Test getting a specific ticket"""
+        print("\n=== GET TICKET BY ID ===")
+        
+        # First get list of tickets
+        tickets = wats_client.rootcause.get_tickets()
+        if not tickets:
+            pytest.skip("No tickets available")
+        
+        ticket_id = tickets[0].ticket_id
+        print(f"Looking up ticket: {ticket_id}")
+        
+        ticket = wats_client.rootcause.get_ticket(ticket_id)
+        
+        print(f"Found: {ticket}")
+        print("========================\n")
+        
+        assert ticket is not None

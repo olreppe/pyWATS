@@ -13,7 +13,7 @@ Usage:
     product = api.product.get_product("PART-001")
     
     # Use query models
-    from pywats.models import WATSFilter
+    from pywats.domains.report import WATSFilter
     filter = WATSFilter(part_number="PART-001")
     headers = api.report.query_uut_headers(filter)
     
@@ -32,44 +32,24 @@ from .exceptions import (
     ConnectionError
 )
 
-# Import commonly used models for convenience
-from .models import (
-    # Product models
-    Product,
-    ProductRevision,
-    ProductView,
-    ProductState,
-    # Asset models (from asset module)
-    Asset,
-    AssetType,
-    AssetLog,
-    AssetState,
-    # Production models
-    Unit,
-    UnitChange,
-    ProductionBatch,
-    SerialNumberType,
-    UnitVerification,
-    UnitVerificationGrade,
-    # RootCause (Ticketing) models
-    Ticket,
-    TicketStatus,
-    TicketPriority,
-    TicketView,
-    TicketUpdate,
-    TicketUpdateType,
-    TicketAttachment,
-    # Query/filter models
-    ReportHeader,
-    WATSFilter,
-    YieldData,
-    ProcessInfo,
-    LevelInfo,
-    ProductGroup,
-    DateGrouping,
-    # Common models
-    Setting,
+# Import commonly used models from domains for convenience
+from .domains.product import Product, ProductRevision, ProductGroup, ProductView
+from .domains.product.enums import ProductState
+from .domains.asset import Asset, AssetType, AssetLog
+from .domains.asset.enums import AssetState, AssetLogType
+from .domains.production import (
+    Unit, UnitChange, ProductionBatch, SerialNumberType,
+    UnitVerification, UnitVerificationGrade
 )
+from .domains.rootcause import (
+    Ticket, TicketStatus, TicketPriority, TicketView,
+    TicketUpdate, TicketUpdateType, TicketAttachment
+)
+from .domains.report import WATSFilter, ReportHeader, Attachment
+from .domains.app import YieldData, ProcessInfo, LevelInfo
+
+# Common models from shared
+from .shared import Setting, PyWATSModel
 
 # UUT/UUR Report models (import separately to avoid name conflicts)
 # from pywats.models import UUTReport, UURReport, Step, etc.
@@ -90,11 +70,13 @@ __all__ = [
     "ProductRevision",
     "ProductView",
     "ProductState",
+    "ProductGroup",
     # Asset models
     "Asset",
     "AssetType",
     "AssetLog",
     "AssetState",
+    "AssetLogType",
     # Production models
     "Unit",
     "UnitChange",
@@ -113,11 +95,11 @@ __all__ = [
     # Query/filter models
     "ReportHeader",
     "WATSFilter",
+    "Attachment",
     "YieldData",
     "ProcessInfo",
     "LevelInfo",
-    "ProductGroup",
-    "DateGrouping",
     # Common models
     "Setting",
+    "PyWATSModel",
 ]

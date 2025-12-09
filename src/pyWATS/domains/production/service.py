@@ -2,7 +2,7 @@
 
 High-level operations for production unit management.
 """
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Sequence
 
 from .models import (
     Unit, UnitChange, ProductionBatch, SerialNumberType,
@@ -47,7 +47,7 @@ class ProductionService:
         """
         return self._repo.get_unit(serial_number, part_number)
 
-    def create_units(self, units: List[Unit]) -> List[Unit]:
+    def create_units(self, units: Sequence[Unit]) -> List[Unit]:
         """
         Create multiple production units.
 
@@ -317,7 +317,9 @@ class ProductionService:
         self,
         type_name: str,
         count: int = 1,
-        reference: Optional[str] = None
+        reference_sn: Optional[str] = None,
+        reference_pn: Optional[str] = None,
+        station_name: Optional[str] = None
     ) -> List[str]:
         """
         Allocate serial numbers from pool.
@@ -325,12 +327,16 @@ class ProductionService:
         Args:
             type_name: Serial number type name
             count: Number to allocate
-            reference: Optional reference string
+            reference_sn: Optional reference serial number
+            reference_pn: Optional reference part number
+            station_name: Optional station name
 
         Returns:
             List of allocated serial numbers
         """
-        return self._repo.take_serial_numbers(type_name, count, reference)
+        return self._repo.take_serial_numbers(
+            type_name, count, reference_sn, reference_pn, station_name
+        )
 
     def find_serial_numbers_in_range(
         self,
@@ -415,7 +421,7 @@ class ProductionService:
     # =========================================================================
 
     def save_batches(
-        self, batches: List[ProductionBatch]
+        self, batches: Sequence[ProductionBatch]
     ) -> List[ProductionBatch]:
         """
         Create or update production batches.

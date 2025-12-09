@@ -2,7 +2,7 @@
 
 All API interactions for production units, serial numbers, and batches.
 """
-from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from ...core import HttpClient
@@ -373,7 +373,7 @@ class ProductionRepository:
             "/api/Production/CheckChildUnits", params=params
         )
         if response.is_success and response.data:
-            return response.data
+            return cast(Dict[str, Any], response.data)
         return None
 
     # =========================================================================
@@ -401,8 +401,9 @@ class ProductionRepository:
         self,
         type_name: str,
         count: int = 1,
-        reference: Optional[str] = None,
-        format: str = "json"
+        reference_sn: Optional[str] = None,
+        reference_pn: Optional[str] = None,
+        station_name: Optional[str] = None
     ) -> List[str]:
         """
         Take free serial numbers.
@@ -411,29 +412,40 @@ class ProductionRepository:
 
         Args:
             type_name: Serial number type name
-            count: Number of serial numbers to take
-            reference: Optional reference string
-            format: Output format (json, xml, csv)
+            count: Number of serial numbers to take (quantity)
+            reference_sn: Optional reference serial number
+            reference_pn: Optional reference part number
+            station_name: Optional station name
 
         Returns:
             List of allocated serial numbers
         """
+        import re
+        
         params: Dict[str, Any] = {
-            "typeName": type_name,
-            "count": count
+            "serialNumberType": type_name,
+            "quantity": count
         }
-        if reference:
-            params["reference"] = reference
-        if format != "json":
-            params["format"] = format
+        if reference_sn:
+            params["refSN"] = reference_sn
+        if reference_pn:
+            params["refPN"] = reference_pn
+        if station_name:
+            params["stationName"] = station_name
         response = self._http.post(
             "/api/Production/SerialNumbers/Take", params=params
         )
         if response.is_success and response.data:
-            return (
-                response.data if isinstance(response.data, list)
-                else [response.data]
-            )
+            data = response.data
+            # Handle XML response - extract serial numbers from <SN id="..."/> tags
+            if isinstance(data, str) and "<SerialNumbers" in data:
+                # Parse XML to extract serial number IDs
+                sn_ids = re.findall(r'<SN id="([^"]+)"', data)
+                return sn_ids
+            elif isinstance(data, list):
+                return data
+            else:
+                return [data] if data else []
         return []
 
     def get_serial_numbers_by_range(

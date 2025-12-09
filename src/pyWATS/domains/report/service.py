@@ -4,12 +4,15 @@ All business operations for test reports (UUT/UUR).
 """
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime, timedelta
+from uuid import uuid4
 
 from .repository import ReportRepository
 from .models import WATSFilter, ReportHeader
 from .enums import DateGrouping
 from ...core import HttpClient
-from ...models.report import UUTReport, UURReport
+from .report_models import UUTReport, UURReport
+from .report_models.uut.uut_info import UUTInfo
+from .report_models.uur.uur_info import UURInfo
 
 
 class ReportService:
@@ -27,6 +30,106 @@ class ReportService:
             client: HttpClient instance
         """
         self._repository = ReportRepository(client)
+
+    # =========================================================================
+    # Report Factory Methods
+    # =========================================================================
+
+    def create_uut_report(
+        self,
+        operator: str,
+        part_number: str,
+        revision: str,
+        serial_number: str,
+        operation_type: int,
+        station_name: Optional[str] = None,
+        location: Optional[str] = None,
+        purpose: Optional[str] = None
+    ) -> UUTReport:
+        """
+        Create a new UUT (Unit Under Test) report.
+
+        Args:
+            operator: Name of the test operator
+            part_number: Part number of the unit being tested
+            revision: Revision of the unit
+            serial_number: Serial number of the unit
+            operation_type: Process code/operation type
+            station_name: Optional station name
+            location: Optional location
+            purpose: Optional purpose
+
+        Returns:
+            A new UUTReport object ready for adding steps and submission
+        """
+        uut_info = UUTInfo(
+            operator=operator
+        )
+
+        report = UUTReport(
+            id=uuid4(),
+            type="T",
+            pn=part_number,
+            sn=serial_number,
+            rev=revision,
+            process_code=operation_type,
+            station_name=station_name or "Unknown",
+            location=location or "Unknown",
+            purpose=purpose or "Development",
+            start=datetime.now().astimezone(),
+            info=uut_info
+        )
+
+        return report
+
+    def create_uur_report(
+        self,
+        operator: str,
+        part_number: str,
+        revision: str,
+        serial_number: str,
+        operation_type: int = 1,
+        station_name: Optional[str] = None,
+        location: Optional[str] = None,
+        purpose: Optional[str] = None,
+        repair_type: Optional[str] = None
+    ) -> UURReport:
+        """
+        Create a new UUR (Unit Under Repair) report.
+
+        Args:
+            operator: Name of the repair operator
+            part_number: Part number of the unit
+            revision: Revision of the unit
+            serial_number: Serial number of the unit
+            operation_type: Process code (default 1)
+            station_name: Optional station name
+            location: Optional location
+            purpose: Optional purpose
+            repair_type: Type of repair being performed
+
+        Returns:
+            A new UURReport object ready for adding repair info and submission
+        """
+        uur_info = UURInfo(
+            operator=operator
+        )
+
+        report = UURReport(
+            id=uuid4(),
+            type="R",
+            pn=part_number,
+            sn=serial_number,
+            rev=revision,
+            process_code=operation_type,
+            station_name=station_name or "Unknown",
+            location=location or "Unknown",
+            purpose=purpose or "Development",
+            start=datetime.now().astimezone(),
+            info=uur_info
+        )
+
+        return report
 
     # =========================================================================
     # Query Methods

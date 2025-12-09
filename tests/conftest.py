@@ -10,9 +10,9 @@ from pywats import pyWATS
 def wats_config() -> Dict[str, str]:
     """WATS configuration - update these with your test environment"""
     return {
-        "base_url": "https://py.wats.com",
+        "base_url": "https://python.wats.com",
         "token": (
-            "cHlXQVRTX1Rlc3RUb2tlbjo3NDRRNE9GWERtaGMmSjVWSUFpaTkzMGcwN0JncDU="
+            "cHlXQVRTX0FQSV9BVVRPVEVTVDo2cGhUUjg0ZTVIMHA1R3JUWGtQZlY0UTNvbmk2MiM="
         )
     }
 

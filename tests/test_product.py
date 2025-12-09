@@ -1,144 +1,180 @@
 """
 Tests for product module - product definitions and revisions
-Note: Endpoints may not work as expected - revisions need separate loading
+
+These tests make actual API calls to the WATS server.
 """
-from typing import Any
+from typing import Any, Dict
+from datetime import datetime, timezone
 import pytest
-from pywats.models.product import Product, ProductRevision
+from pywats.domains.product import Product, ProductRevision
 
 
-class TestProductDefinition:
-    """Test product definition operations"""
-    
-    def test_create_product(self, test_part_number: str) -> None:
-        """Test creating a product definition"""
+class TestProductRetrieval:
+    """Test retrieving products from server"""
+
+    def test_get_all_products(self, wats_client: Any) -> None:
+        """Test getting all products"""
+        print("\n=== GET ALL PRODUCTS ===")
+        
+        products = wats_client.product.get_products()
+        
+        print(f"Retrieved {len(products)} products")
+        for p in products[:5]:
+            print(f"  - {p.part_number}: {p.name}")
+        print("========================\n")
+        
+        assert isinstance(products, list)
+
+    def test_get_products_full(self, wats_client: Any) -> None:
+        """Test getting all products with full details"""
+        print("\n=== GET PRODUCTS FULL ===")
+        
+        products = wats_client.product.get_products_full()
+        
+        print(f"Retrieved {len(products)} products with full details")
+        if products:
+            p = products[0]
+            print(f"First product: {p.part_number}")
+            print(f"  Name: {p.name}")
+            print(f"  State: {p.state}")
+        print("=========================\n")
+        
+        assert isinstance(products, list)
+
+    def test_get_product_by_part_number(self, wats_client: Any) -> None:
+        """Test getting a specific product"""
+        print("\n=== GET PRODUCT BY PN ===")
+        
+        # First get list of products to find an existing one
+        products = wats_client.product.get_products()
+        if not products:
+            pytest.skip("No products available to retrieve")
+        
+        part_number = products[0].part_number
+        print(f"Looking up: {part_number}")
+        
+        product = wats_client.product.get_product(part_number)
+        
+        print(f"Found: {product}")
+        print("=========================\n")
+        
+        assert product is not None
+        assert product.part_number == part_number
+
+
+class TestProductCreation:
+    """Test creating products on server"""
+
+    def test_create_product(self, wats_client: Any) -> None:
+        """Test creating a new product"""
+        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+        part_number = f"PYTEST-{timestamp}"
+        
+        print("\n=== CREATE PRODUCT ===")
+        print(f"Creating product: {part_number}")
+        
+        result = wats_client.product.create_product(
+            part_number=part_number,
+            name=f"PyTest Product {timestamp}",
+            description="Created by pytest"
+        )
+        
+        print(f"Create result: {result}")
+        print("======================\n")
+        
+        assert result is not None
+        assert result.part_number == part_number
+
+
+class TestProductRevisions:
+    """Test product revision operations"""
+
+    def test_get_revisions(self, wats_client: Any) -> None:
+        """Test getting revisions for a product"""
+        print("\n=== GET REVISIONS ===")
+        
+        # First get a product
+        products = wats_client.product.get_products()
+        if not products:
+            pytest.skip("No products available")
+        
+        part_number = products[0].part_number
+        print(f"Getting revisions for: {part_number}")
+        
+        revisions = wats_client.product.get_revisions(part_number)
+        
+        print(f"Found {len(revisions)} revisions")
+        for r in revisions[:5]:
+            print(f"  - {r.revision}: {r.description}")
+        print("=====================\n")
+        
+        assert isinstance(revisions, list)
+
+    def test_create_revision(self, wats_client: Any) -> None:
+        """Test creating a new revision"""
+        timestamp = datetime.now(timezone.utc).strftime('%H%M%S')
+        
+        print("\n=== CREATE REVISION ===")
+        
+        # First get a product
+        products = wats_client.product.get_products()
+        if not products:
+            pytest.skip("No products available")
+        
+        part_number = products[0].part_number
+        revision_name = f"R{timestamp}"
+        
+        print(f"Creating revision {revision_name} for {part_number}")
+        
+        result = wats_client.product.create_revision(
+            part_number=part_number,
+            revision=revision_name,
+            description=f"Test revision created {timestamp}"
+        )
+        
+        print(f"Create result: {result}")
+        print("=======================\n")
+        
+        assert result is not None
+
+
+class TestProductGroups:
+    """Test product group operations"""
+
+    def test_get_groups(self, wats_client: Any) -> None:
+        """Test getting product groups"""
+        print("\n=== GET PRODUCT GROUPS ===")
+        
+        groups = wats_client.product.get_groups()
+        
+        print(f"Retrieved {len(groups)} groups")
+        for g in groups[:5]:
+            print(f"  - {g.name}")
+        print("==========================\n")
+        
+        assert isinstance(groups, list)
+
+
+class TestProductModel:
+    """Test Product model creation (no server)"""
+
+    def test_create_product_model(self, test_part_number: str) -> None:
+        """Test creating a product model object"""
         product = Product(
             part_number=test_part_number,
             name="Test Product"
         )
         assert product.part_number == test_part_number
-    
-    def test_register_product(
-        self, wats_client: Any, test_part_number: str
-    ) -> None:
-        """Test registering a new product"""
-        product = Product(
-            part_number=test_part_number,
-            name="Test Product",
-            description="Test product description"
-        )
-        
-        try:
-            result = wats_client.product.create_product(product)
-            assert result is not None
-        except Exception as e:
-            pytest.skip(f"Product creation failed: {e}")
-    
-    def test_get_product(
-        self, wats_client: Any, test_part_number: str
-    ) -> None:
-        """Test retrieving a product"""
-        try:
-            product = wats_client.product.get_product(test_part_number)
-            if product:
-                assert product.part_number == test_part_number
-        except Exception as e:
-            pytest.skip(f"Get product failed: {e}")
-    
-    def test_update_product(
-        self, wats_client: Any, test_part_number: str
-    ) -> None:
-        """Test updating product information"""
-        try:
-            result = wats_client.product.update_product(
-                test_part_number,
-                description="Updated description"
-            )
-            assert result is not None
-        except Exception as e:
-            pytest.skip(f"Update product failed: {e}")
+        assert product.name == "Test Product"
 
-
-class TestProductRevision:
-    """Test product revision operations - requires separate loading"""
-    
-    def test_create_revision(
+    def test_create_revision_model(
         self, test_part_number: str, test_revision: str
     ) -> None:
-        """Test creating a revision definition"""
+        """Test creating a revision model object"""
         revision = ProductRevision(
             part_number=test_part_number,
             revision=test_revision,
             description="Test revision"
         )
         assert revision.revision == test_revision
-    
-    def test_add_revision_to_product(
-        self, wats_client: Any, test_part_number: str
-    ) -> None:
-        """Test adding a revision to a product"""
-        revision = ProductRevision(
-            part_number=test_part_number,
-            revision="B",
-            description="Revision B"
-        )
-        
-        try:
-            result = wats_client.product.create_revision(revision)
-            assert result is not None
-        except Exception as e:
-            pytest.skip(f"Revision creation failed: {e}")
-    
-    def test_load_revision_separately(
-        self, wats_client: Any, test_part_number: str
-    ) -> None:
-        """Test loading revision as separate object (API requirement)"""
-        try:
-            # Note: Revisions must be loaded separately to manipulate
-            revision = wats_client.product.get_revision(test_part_number, "A")
-            if revision:
-                assert revision.revision == "A"
-        except Exception as e:
-            pytest.skip(f"Load revision failed: {e}")
-    
-    def test_update_revision(
-        self, wats_client: Any, test_part_number: str
-    ) -> None:
-        """Test updating a revision"""
-        try:
-            result = wats_client.product.update_revision(
-                test_part_number,
-                "A",
-                description="Updated revision description"
-            )
-            assert result is not None
-        except Exception as e:
-            pytest.skip(f"Update revision failed: {e}")
-
-
-class TestProductMisc:
-    """Test misc info manipulation - requires separate functions"""
-    
-    def test_add_misc_info(
-        self, wats_client: Any, test_part_number: str
-    ) -> None:
-        """Test adding misc info (separate function required)"""
-        try:
-            result = wats_client.product.add_misc_info(
-                test_part_number,
-                description="TestInfo",
-                value="TestValue"
-            )
-            assert result is not None
-        except Exception as e:
-            pytest.skip(f"Add misc info failed: {e}")
-    
-    def test_get_misc_info(
-        self, wats_client: Any, test_part_number: str
-    ) -> None:
-        """Test getting misc info"""
-        try:
-            misc_info = wats_client.product.get_misc_info(test_part_number)
-            assert isinstance(misc_info, list)
-        except Exception as e:
-            pytest.skip(f"Get misc info failed: {e}")
+        assert revision.part_number == test_part_number

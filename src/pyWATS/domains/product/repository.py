@@ -2,7 +2,7 @@
 
 All API interactions for products, revisions, groups, and vendors.
 """
-from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from ...core import HttpClient
@@ -153,7 +153,7 @@ class ProductRepository:
             Created/updated ProductRevision object
         """
         if isinstance(revision, ProductRevision):
-            data = revision.model_dump(by_alias=True, exclude_none=True)
+            data = revision.model_dump(mode="json", by_alias=True, exclude_none=True)
         else:
             data = revision
         response = self._http.put("/api/Product/Revision", data=data)
@@ -281,7 +281,7 @@ class ProductRepository:
         """
         response = self._http.get("/api/Product/Vendors")
         if response.is_success and response.data:
-            return response.data
+            return cast(List[Dict[str, Any]], response.data)
         return []
 
     def save_vendor(
@@ -300,7 +300,7 @@ class ProductRepository:
         """
         response = self._http.put("/api/Product/Vendors", data=vendor_data)
         if response.is_success and response.data:
-            return response.data
+            return cast(Dict[str, Any], response.data)
         return None
 
     def delete_vendor(self, vendor_id: str) -> bool:

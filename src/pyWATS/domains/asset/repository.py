@@ -2,7 +2,7 @@
 
 Handles all API calls for asset management.
 """
-from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from ...core.client import HttpClient
@@ -90,7 +90,7 @@ class AssetRepository:
         PUT /api/Asset
         """
         if isinstance(asset, Asset):
-            data = asset.model_dump(by_alias=True, exclude_none=True)
+            data = asset.model_dump(mode="json", by_alias=True, exclude_none=True)
         else:
             data = asset
         response = self._http.put("/api/Asset", data=data)
@@ -125,7 +125,7 @@ class AssetRepository:
             params={"assetId": asset_id}
         )
         if response.is_success and response.data:
-            return response.data
+            return cast(Dict[str, Any], response.data)
         return None
 
     def set_state(

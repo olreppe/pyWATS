@@ -1,26 +1,13 @@
-# pyWATS Models
-# Models organized by module - All use Pydantic 2
+"""pyWATS Models
 
-from .common import PyWATSModel, Setting, ChangeType
-from .product import Product, ProductRevision, ProductView, ProductState
-from .asset import Asset, AssetType, AssetLog, AssetState, AssetLogType
-from .production import (
-    Unit, UnitChange, ProductionBatch, SerialNumberType,
-    UnitVerification, UnitVerificationGrade, SerialNumberIdentifier
-)
-from .rootcause import (
-    Ticket, TicketStatus, TicketPriority, TicketView,
-    TicketUpdate, TicketUpdateType, TicketAttachment
-)
-
-# Query/filter models (for REST API queries)
-from .report_query import (
-    ReportHeader, WATSFilter, Attachment as QueryAttachment, YieldData,
-    ProcessInfo, LevelInfo, ProductGroup, DateGrouping
-)
+Report models for UUT/UUR format.
+These are re-exported from the domains.report.report_models module.
+Domain-specific models are in their respective domains.
+"""
 
 # UUT/UUR Report models (WSJF format - full report structure)
-from .report import (
+# Re-export from domains for backwards compatibility
+from ..domains.report.report_models import (
     # Base classes
     WATSBase, Report, ReportStatus,
     ReportInfo, MiscInfo, AdditionalData, BinaryData,
@@ -33,44 +20,6 @@ from .report import (
 )
 
 __all__ = [
-    # Base model
-    "PyWATSModel",
-    # Product models
-    "Product",
-    "ProductRevision",
-    "ProductView",
-    "ProductState",
-    # Asset models (from asset module)
-    "Asset",
-    "AssetType",
-    "AssetLog",
-    "AssetState",
-    "AssetLogType",
-    # Production models
-    "Unit",
-    "UnitChange",
-    "ProductionBatch",
-    "SerialNumberType",
-    "SerialNumberIdentifier",
-    "UnitVerification",
-    "UnitVerificationGrade",
-    # RootCause (Ticketing) models
-    "Ticket",
-    "TicketStatus",
-    "TicketPriority",
-    "TicketView",
-    "TicketUpdate",
-    "TicketUpdateType",
-    "TicketAttachment",
-    # Query/filter models
-    "ReportHeader",
-    "WATSFilter",
-    "QueryAttachment",
-    "YieldData",
-    "ProcessInfo",
-    "LevelInfo",
-    "ProductGroup",
-    "DateGrouping",
     # UUT/UUR Report models (WSJF format)
     "WATSBase",
     "Report",
@@ -94,7 +43,5 @@ __all__ = [
     "UURReport",
     "UURInfo",
     "SubRepair",
-    # Common models
-    "Setting",
-    "ChangeType",
 ]
+

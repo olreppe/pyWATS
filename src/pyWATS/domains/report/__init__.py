@@ -1,18 +1,29 @@
 """Report domain.
 
 Provides services and repository for test reports (UUT/UUR).
-The models are re-exported from the existing models package.
 """
-# Re-export existing report models - these are complex and well-established
-from ...models.report import (
+# Report models (UUT/UUR report structure)
+from .report_models import (
     UUTReport,
     UURReport,
     Report,
     MiscInfo,
     Step,
     StepStatus,
+    WATSBase,
+    ReportInfo,
+    AdditionalData,
+    BinaryData,
+    Asset as ReportAsset,
+    AssetStats,
+    Chart,
+    ChartSeries,
+    ChartType,
+    SubUnit,
+    Attachment as ReportAttachment,
+    DeserializationContext,
 )
-from ...models.report.uut.steps.sequence_call import SequenceCall, StepList
+from .report_models.uut.steps.sequence_call import SequenceCall, StepList
 
 # Import query-related models
 from .enums import DateGrouping
@@ -23,7 +34,7 @@ from .service import ReportService
 from .repository import ReportRepository
 
 __all__ = [
-    # Models
+    # Report Models (UUT/UUR)
     "UUTReport",
     "UURReport",
     "Report",
@@ -32,6 +43,18 @@ __all__ = [
     "Step",
     "StepStatus",
     "MiscInfo",
+    "WATSBase",
+    "ReportInfo",
+    "AdditionalData",
+    "BinaryData",
+    "ReportAsset",
+    "AssetStats",
+    "Chart",
+    "ChartSeries",
+    "ChartType",
+    "SubUnit",
+    "ReportAttachment",
+    "DeserializationContext",
     # Query Models
     "WATSFilter",
     "ReportHeader",

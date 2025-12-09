@@ -1,13 +1,14 @@
-"""
-Report Base Classes
+"""Report Base Classes
 -
 -
 -
 -
 """
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Optional, Self
+from typing import Any, Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, ModelWrapValidatorHandler, ValidationInfo, model_validator
 
@@ -70,6 +71,8 @@ class Report(WATSBase):
     def add_misc_info(self, description: str, value: Any) -> MiscInfo:
         str_val = str(value)
         mi = MiscInfo(description=description, string_value=str_val)
+        if self.misc_infos is None:
+            self.misc_infos = []
         self.misc_infos.append(mi)
         return mi
 
@@ -77,7 +80,9 @@ class Report(WATSBase):
     # SubUnits
     sub_units: Optional[list[SubUnit]] = Field(default_factory=list, validation_alias="subUnits",serialization_alias="subUnits")
     def add_sub_unit(self, part_type:str, sn:str, pn:str, rev:str) -> SubUnit:
-        su = SubUnit(partType=part_type, sn=sn, pn=pn, rev=rev)
+        su = SubUnit(part_type=part_type, sn=sn, pn=pn, rev=rev)
+        if self.sub_units is None:
+            self.sub_units = []
         self.sub_units.append(su)
         return su
 
@@ -86,7 +91,9 @@ class Report(WATSBase):
     assets: Optional[list[Asset]] = Field(default_factory=list)
     asset_stats: Optional[list[AssetStats]] = Field(default=None, exclude=True, validation_alias="assetStats", serialization_alias="assetStats")
     def add_asset(self, sn:str, usage_count:int) -> Asset:
-        asset = Asset(assetSN=sn, usage_count=usage_count)
+        asset = Asset(sn=sn, usage_count=usage_count)
+        if self.assets is None:
+            self.assets = []
         self.assets.append(asset)
         return asset
 

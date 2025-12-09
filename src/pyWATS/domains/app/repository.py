@@ -2,7 +2,7 @@
 
 All API interactions for statistics, KPIs, and dashboard data.
 """
-from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from ...core import HttpClient
@@ -42,7 +42,7 @@ class AppRepository:
         """
         response = self._http.get("/api/App/Version")
         if response.is_success and response.data:
-            return response.data
+            return cast(Dict[str, Any], response.data)
         return None
 
     def get_processes(self) -> List[ProcessInfo]:
@@ -400,7 +400,7 @@ class AppRepository:
             data = filter_data
         response = self._http.post("/api/App/TestStepAnalysis", data=data)
         if response.is_success and response.data:
-            return response.data
+            return cast(Dict[str, Any], response.data)
         return {}
 
     # =========================================================================
@@ -487,7 +487,7 @@ class AppRepository:
             data = filter_data
         response = self._http.post("/api/App/OeeAnalysis", data=data)
         if response.is_success and response.data:
-            return response.data
+            return cast(Dict[str, Any], response.data)
         return {}
 
     # =========================================================================

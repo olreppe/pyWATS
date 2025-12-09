@@ -2,14 +2,27 @@
 Tests for report module - UUT/UUR report operations
 """
 import pytest
-from typing import Any
+from typing import Any, Dict
 from datetime import datetime
-from pywats.models.report import Attachment
-from pywats.models.report.uut.uut_report import UUTReport
-from pywats.models.report.uut.steps.comp_operator import CompOp
-from pywats.models.report.uut.steps.sequence_call import SequenceCall
-from pywats.models.report_query import WATSFilter
+from pywats.domains.report import UUTReport, WATSFilter
+from pywats.domains.report.report_models import Attachment
+from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
 from pywats.tools.test_uut import create_test_uut_report
+
+
+class TestServerConfiguration:
+    """Verify test configuration is correct"""
+
+    def test_verify_server_url_and_token(self, wats_config: Dict[str, str]) -> None:
+        """Verify which server URL and token is being used"""
+        print(f"\n=== TEST CONFIGURATION ===")
+        print(f"Server URL: {wats_config['base_url']}")
+        print(f"Token (first 20 chars): {wats_config['token'][:20]}...")
+        print(f"==========================\n")
+        
+        assert wats_config['base_url'] == "https://python.wats.com"
+        assert len(wats_config['token']) > 0
 
 
 class TestReportCreation:
@@ -201,14 +214,21 @@ class TestReportCreation:
             serial_number=test_serial_number
         )
 
-        try:
-            result = wats_client.report.submit_uut(report)
-            assert result is not None
-            # Result should be a report ID (string)
-            assert isinstance(result, str)
-            assert len(result) > 0
-        except Exception as e:
-            pytest.skip(f"Server not available or configured: {e}")
+        print(f"\n=== SUBMITTING UUT REPORT ===")
+        print(f"Part Number: {report.pn}")
+        print(f"Serial Number: {report.sn}")
+        print(f"Station: {report.station_name}")
+        print(f"Result: {report.result}")
+        
+        result = wats_client.report.submit_report(report)
+        
+        print(f"\nSubmit Result: {result}")
+        print(f"==============================\n")
+        
+        assert result is not None, "Report submission returned None - check server logs"
+        # Result should be a report ID (string)
+        assert isinstance(result, str), f"Expected string result, got {type(result)}"
+        assert len(result) > 0, "Report ID is empty"
 
 
 class TestAttachments:
@@ -230,11 +250,17 @@ class TestReportSubmission:
     def test_send_uut_report_from_test_tool(self, wats_client: Any) -> None:
         """Test sending a UUT report created by test_uut tool"""
         report = create_test_uut_report()
-        try:
-            result = wats_client.report.submit_uut(report)
-            assert result is not None
-        except Exception as e:
-            pytest.skip(f"Server not available or configured: {e}")
+        
+        print(f"\n=== SUBMITTING TEST TOOL REPORT ===")
+        print(f"Part Number: {report.pn}")
+        print(f"Serial Number: {report.sn}")
+        
+        result = wats_client.report.submit_report(report)
+        
+        print(f"Submit Result: {result}")
+        print(f"====================================\n")
+        
+        assert result is not None, "Report submission returned None"
 
 
 class TestUURReport:
@@ -242,7 +268,7 @@ class TestUURReport:
 
     def test_create_uur_report(self) -> None:
         """Test creating a UUR report"""
-        from pywats.models.report import UURReport
+        from pywats.domains.report import UURReport
         from datetime import datetime
         
         report = UURReport(
@@ -262,7 +288,7 @@ class TestUURReport:
 
     def test_send_uur_report(self, wats_client: Any) -> None:
         """Test sending a UUR report"""
-        from pywats.models.report import UURReport
+        from pywats.domains.report import UURReport
         from datetime import datetime
         
         report = UURReport(
@@ -276,45 +302,59 @@ class TestUURReport:
             location="TestLab",
             purpose="Repair"
         )
-        # Test that report can be submitted without errors
-        # Result may be None if server rejects invalid test data
-        try:
-            wats_client.report.submit(report)
-        except Exception as e:
-            pytest.skip(f"UUR submission failed: {e}")
+        # Test that report can be submitted
+        print(f"\n=== SUBMITTING UUR REPORT ===")
+        print(f"Serial: {report.sn}, Part: {report.pn}")
+        
+        result = wats_client.report.submit_report(report)
+        
+        print(f"Submit result: {result}")
+        print("==============================\n")
 
 
 class TestReportQuery:
     """Test querying and loading reports"""
 
-    def test_find_report_headers(
-        self,
-        wats_client: Any,
-        test_part_number: str
-    ) -> None:
-        """Test finding report headers with filter"""
-        filter_obj = WATSFilter()
+    def test_query_uut_headers(self, wats_client: Any) -> None:
+        """Test querying UUT report headers"""
+        print("\n=== QUERY UUT HEADERS ===")
+        
+        headers = wats_client.report.query_uut_headers()
+        
+        print(f"Found {len(headers)} UUT report headers")
+        for h in headers[:3]:
+            print(f"  - {h.serial_number}: {h.status}")
+        print("=========================\n")
+        
+        assert isinstance(headers, list)
 
-        try:
-            headers = wats_client.report.get_report_headers(filter_obj)
-            assert isinstance(headers, list)
-        except Exception as e:
-            pytest.skip(f"Query failed: {e}")
+    def test_query_uur_headers(self, wats_client: Any) -> None:
+        """Test querying UUR report headers"""
+        print("\n=== QUERY UUR HEADERS ===")
+        
+        headers = wats_client.report.query_uur_headers()
+        
+        print(f"Found {len(headers)} UUR report headers")
+        print("=========================\n")
+        
+        assert isinstance(headers, list)
 
     def test_load_report_by_uuid(self, wats_client: Any) -> None:
-        """Test loading a report by UUID"""
-        filter_obj = WATSFilter()
-
-        try:
-            headers = wats_client.report.get_report_headers(filter_obj)
-            if headers and len(headers) > 0:
-                report_uuid = headers[0].uuid
-                report = wats_client.report.get_report(report_uuid)
-                assert report is not None
-            else:
-                pytest.skip("No reports available for testing")
-        except Exception as e:
-            pytest.skip(f"Load report failed: {e}")
+        """Test loading a full report by UUID"""
+        print("\n=== LOAD REPORT BY UUID ===")
+        
+        # First get headers to find a report ID
+        headers = wats_client.report.query_uut_headers()
+        if not headers:
+            pytest.skip("No reports available for testing")
+        
+        report_id = str(headers[0].uuid)
+        print(f"Loading report: {report_id}")
+        
+        report = wats_client.report.get_report(report_id)
+        
+        print(f"Loaded report: {report}")
+        print("===========================\n")
 
 
 class TestReportFiltering:
@@ -322,21 +362,34 @@ class TestReportFiltering:
 
     def test_filter_by_date_range(self, wats_client: Any) -> None:
         """Test filtering reports by date range"""
-        filter_obj = WATSFilter()
+        from datetime import datetime, timedelta
+        
+        print("\n=== FILTER BY DATE RANGE ===")
+        
+        # Get reports from last 7 days
+        headers = wats_client.report.get_recent_headers(days=7)
+        
+        print(f"Found {len(headers)} reports in last 7 days")
+        print("=============================\n")
+        
+        assert isinstance(headers, list)
 
-        try:
-            headers = wats_client.report.get_report_headers(filter_obj)
-            assert isinstance(headers, list)
-        except Exception as e:
-            pytest.skip(f"Date filter failed: {e}")
-
-    def test_filter_by_status(self, wats_client: Any) -> None:
-        """Test filtering by status"""
-        filter_obj = WATSFilter()
-
-        try:
-            headers = wats_client.report.get_report_headers(filter_obj)
-            if headers:
-                assert isinstance(headers, list)
-        except Exception as e:
-            pytest.skip(f"Status filter failed: {e}")
+    def test_filter_by_serial_number(self, wats_client: Any) -> None:
+        """Test filtering by serial number"""
+        print("\n=== FILTER BY SERIAL ===")
+        
+        # First get any headers to find a serial number
+        all_headers = wats_client.report.query_uut_headers()
+        if not all_headers:
+            pytest.skip("No reports available")
+        
+        serial = all_headers[0].serial_number
+        print(f"Searching for serial: {serial}")
+        
+        headers = wats_client.report.get_headers_by_serial(serial)
+        
+        print(f"Found {len(headers)} reports for {serial}")
+        print("=========================\n")
+        
+        assert isinstance(headers, list)
+        assert len(headers) > 0

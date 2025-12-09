@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from ...core import HttpClient
 
 from .models import WATSFilter, ReportHeader
-from ...models.report import UUTReport, UURReport
+from .report_models import UUTReport, UURReport
 
 
 class ReportRepository:
@@ -125,9 +125,18 @@ class ReportRepository:
             data = report
         response = self._http.post("/api/Report/WSJF", data=data)
         if response.is_success and response.data:
-            if isinstance(response.data, dict):
-                return response.data.get("id")
-            return str(response.data)
+            # Response can be a list with a single result or a dict
+            result_data = response.data
+            if isinstance(result_data, list) and len(result_data) > 0:
+                result_data = result_data[0]
+            if isinstance(result_data, dict):
+                # Try different key names the API might return
+                return (
+                    result_data.get("ID") or
+                    result_data.get("id") or
+                    result_data.get("uuid")
+                )
+            return str(result_data)
         return None
 
     def get_wsjf(
