@@ -489,6 +489,58 @@ class MainWindow(QMainWindow):
         if self.client:
             await self.client.refresh_converters()
 
+    async def send_test_uut(self) -> dict:
+        """
+        Send a test UUT report to verify full connectivity.
+        
+        Creates a comprehensive test report with various test types
+        and submits it to the WATS server.
+        
+        Returns:
+            dict with keys:
+                - success: bool indicating if submission was successful
+                - report_id: UUID of submitted report (if successful)
+                - serial_number: Serial number of test report
+                - part_number: Part number of test report
+                - error: Error message (if failed)
+        """
+        from pywats.tools.test_uut import create_test_uut_report
+        
+        try:
+            # Create test report with station name from config
+            report = create_test_uut_report(
+                station_name=self.config.station_name or "pyWATS-Client",
+                location=self.config.location or "TestLocation",
+                operator_name=self.config.operator or "pyWATS-User"
+            )
+            
+            result = {
+                "success": False,
+                "serial_number": report.sn,
+                "part_number": report.pn,
+                "report_id": str(report.id)
+            }
+            
+            if self.client:
+                # Submit the report
+                submit_result = await self.client.submit_report(report)
+                if submit_result:
+                    result["success"] = True
+                else:
+                    result["error"] = "Report submission returned false"
+            else:
+                result["error"] = "Client not initialized"
+            
+            return result
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "serial_number": "N/A",
+                "part_number": "N/A"
+            }
+
     async def test_send_uut(self) -> bool:
         """
         Create and submit a test UUT report.

@@ -3,11 +3,12 @@
 All API interactions for products, revisions, groups, and vendors.
 """
 from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING, cast
+import xml.etree.ElementTree as ET
 
 if TYPE_CHECKING:
     from ...core import HttpClient
 
-from .models import Product, ProductRevision, ProductGroup
+from .models import Product, ProductRevision, ProductGroup, BomItem
 
 
 class ProductRepository:
@@ -79,7 +80,8 @@ class ProductRepository:
             Created/updated Product object
         """
         if isinstance(product, Product):
-            data = product.model_dump(by_alias=True, exclude_none=True)
+            # mode='json' ensures UUIDs are serialized as strings
+            data = product.model_dump(by_alias=True, exclude_none=True, mode='json')
         else:
             data = product
         response = self._http.put("/api/Product", data=data)
@@ -102,7 +104,7 @@ class ProductRepository:
             List of created/updated Product objects
         """
         data = [
-            p.model_dump(by_alias=True, exclude_none=True)
+            p.model_dump(by_alias=True, exclude_none=True, mode='json')
             if isinstance(p, Product) else p
             for p in products
         ]
@@ -121,7 +123,11 @@ class ProductRepository:
         """
         Get a specific product revision.
 
-        GET /api/Product/{partNumber}/{revision}
+        GET /api/Product?partNumber={partNumber}&revision={revision}
+
+        Note: Using query parameters instead of path parameters because
+        revisions containing dots (e.g., "1.0") are misinterpreted as
+        file extensions in the path-based URL.
 
         Args:
             part_number: The product part number
@@ -130,7 +136,11 @@ class ProductRepository:
         Returns:
             ProductRevision object or None if not found
         """
-        response = self._http.get(f"/api/Product/{part_number}/{revision}")
+        # Use query parameters to handle revisions with dots (e.g., "1.0")
+        response = self._http.get(
+            "/api/Product", 
+            params={"partNumber": part_number, "revision": revision}
+        )
         if response.is_success and response.data:
             return ProductRevision.model_validate(response.data)
         return None
@@ -176,7 +186,7 @@ class ProductRepository:
             List of created/updated ProductRevision objects
         """
         data = [
-            r.model_dump(by_alias=True, exclude_none=True)
+            r.model_dump(by_alias=True, exclude_none=True, mode='json')
             if isinstance(r, ProductRevision) else r
             for r in revisions
         ]
@@ -189,20 +199,101 @@ class ProductRepository:
     # Bill of Materials
     # =========================================================================
 
-    def update_bom(self, bom_data: Dict[str, Any]) -> bool:
+    def update_bom(
+        self,
+        part_number: str,
+        revision: str,
+        bom_items: List[BomItem],
+        description: Optional[str] = None
+    ) -> bool:
         """
-        Update product BOM (Bill of Materials).
+        Update product BOM (Bill of Materials) using WSBF XML format.
 
         PUT /api/Product/BOM
+        
+        The public API uses WSBF (WATS Standard BOM Format) XML.
+        Example:
+            <BOM xmlns="http://wats.virinco.com/schemas/WATS/wsbf" 
+                 Partnumber="100100" Revision="1.0" Desc="Product Description">
+                <Component Number="100200" Rev="1.0" Qty="2" Desc="Description" Ref="R1;R2"/>
+            </BOM>
 
         Args:
-            bom_data: BOM data dictionary
+            part_number: Product part number
+            revision: Product revision
+            bom_items: List of BomItem objects
+            description: Optional product description
 
         Returns:
             True if successful
         """
-        response = self._http.put("/api/Product/BOM", data=bom_data)
+        xml_content = self._generate_wsbf_xml(part_number, revision, bom_items, description)
+        
+        # Send as XML with proper content type
+        response = self._http.put(
+            "/api/Product/BOM",
+            data=xml_content,
+            headers={"Content-Type": "application/xml"}
+        )
         return response.is_success
+    
+    def _generate_wsbf_xml(
+        self,
+        part_number: str,
+        revision: str,
+        bom_items: List[BomItem],
+        description: Optional[str] = None
+    ) -> str:
+        """
+        Generate WSBF (WATS Standard BOM Format) XML.
+        
+        Args:
+            part_number: Product part number
+            revision: Product revision
+            bom_items: List of BomItem objects
+            description: Optional product description
+            
+        Returns:
+            WSBF XML string
+        """
+        # Create root BOM element with namespace
+        nsmap = {"xmlns": "http://wats.virinco.com/schemas/WATS/wsbf"}
+        root = ET.Element("BOM", attrib={
+            "xmlns": "http://wats.virinco.com/schemas/WATS/wsbf",
+            "Partnumber": part_number,
+            "Revision": revision
+        })
+        
+        if description:
+            root.set("Desc", description)
+        
+        # Add Component elements for each BOM item
+        for item in bom_items:
+            comp_attrib: Dict[str, str] = {}
+            
+            # Required: Number (part number)
+            if item.part_number:
+                comp_attrib["Number"] = item.part_number
+            
+            # Optional attributes
+            if item.component_ref:
+                comp_attrib["Ref"] = item.component_ref
+            
+            if item.quantity:
+                comp_attrib["Qty"] = str(item.quantity)
+            
+            if item.description:
+                comp_attrib["Desc"] = item.description
+            
+            # Add revision if we can get it (from vendor_pn as fallback)
+            # The WSBF format uses "Rev" for component revision
+            if item.manufacturer_pn:
+                comp_attrib["Rev"] = item.manufacturer_pn
+            
+            ET.SubElement(root, "Component", attrib=comp_attrib)
+        
+        # Generate XML string
+        return ET.tostring(root, encoding="unicode")
 
     # =========================================================================
     # Product Groups

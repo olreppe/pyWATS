@@ -5,7 +5,12 @@ The main entry point for the pyWATS library.
 from typing import Optional
 
 from .core.client import HttpClient
-from .domains.product import ProductService, ProductRepository
+from .domains.product import (
+    ProductService, 
+    ProductRepository,
+    ProductServiceInternal,
+    ProductRepositoryInternal,
+)
 from .domains.asset import AssetService, AssetRepository
 from .domains.production import ProductionService, ProductionRepository
 from .domains.report import ReportService, ReportRepository
@@ -92,6 +97,7 @@ class pyWATS:
         
         # Service instances (lazy initialization)
         self._product: Optional[ProductService] = None
+        self._product_internal: Optional[ProductServiceInternal] = None
         self._asset: Optional[AssetService] = None
         self._production: Optional[ProductionService] = None
         self._report: Optional[ReportService] = None
@@ -117,6 +123,37 @@ class pyWATS:
             repo = ProductRepository(self._http_client)
             self._product = ProductService(repo)
         return self._product
+    
+    @property
+    def product_internal(self) -> ProductServiceInternal:
+        """
+        Access internal product operations.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        This service uses internal WATS API endpoints that are not publicly
+        documented. Methods may change or be removed without notice.
+        
+        Use this for:
+        - Box build template management (subunit definitions)
+        - BOM operations
+        - Product categories
+        
+        Example:
+            # Get a box build template
+            with api.product_internal.get_box_build("MAIN-BOARD", "A") as bb:
+                bb.add_subunit("PCBA-001", "A", quantity=2)
+                bb.add_subunit("PSU-100", "B")
+            # Changes saved automatically
+        
+        Returns:
+            ProductServiceInternal instance
+        """
+        if self._product_internal is None:
+            repo = ProductRepository(self._http_client)
+            repo_internal = ProductRepositoryInternal(self._http_client, self._base_url)
+            self._product_internal = ProductServiceInternal(repo, repo_internal)
+        return self._product_internal
     
     @property
     def asset(self) -> AssetService:

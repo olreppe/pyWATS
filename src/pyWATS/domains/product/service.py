@@ -2,7 +2,10 @@
 
 High-level operations for product management.
 """
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import BomItem
 
 from .models import Product, ProductRevision, ProductGroup, ProductView
 from .enums import ProductState
@@ -252,17 +255,28 @@ class ProductService:
     # Bill of Materials
     # =========================================================================
 
-    def update_bom(self, bom_data: Dict[str, Any]) -> bool:
+    def update_bom(
+        self,
+        part_number: str,
+        revision: str,
+        bom_items: List["BomItem"],
+        description: Optional[str] = None
+    ) -> bool:
         """
         Update product BOM (Bill of Materials).
+        
+        Uses the public API which accepts WSBF (WATS Standard BOM Format) XML.
 
         Args:
-            bom_data: BOM data dictionary
+            part_number: Product part number
+            revision: Product revision
+            bom_items: List of BomItem objects
+            description: Optional product description
 
         Returns:
             True if successful
         """
-        return self._repo.update_bom(bom_data)
+        return self._repo.update_bom(part_number, revision, bom_items, description)
 
     # =========================================================================
     # Product Groups
@@ -299,6 +313,170 @@ class ProductService:
             List of ProductGroup objects
         """
         return self._repo.get_groups_for_product(part_number, revision)
+
+    # =========================================================================
+    # Tags
+    # =========================================================================
+
+    def get_product_tags(self, part_number: str) -> List[Dict[str, str]]:
+        """
+        Get tags for a product.
+
+        Args:
+            part_number: Product part number
+
+        Returns:
+            List of tag dictionaries with 'key' and 'value'
+        """
+        product = self.get_product(part_number)
+        if product and product.tags:
+            return [{"key": t.key, "value": t.value} for t in product.tags]
+        return []
+
+    def set_product_tags(
+        self, 
+        part_number: str, 
+        tags: List[Dict[str, str]]
+    ) -> Optional[Product]:
+        """
+        Set tags for a product (replaces existing tags).
+
+        Args:
+            part_number: Product part number
+            tags: List of tag dictionaries with 'key' and 'value'
+
+        Returns:
+            Updated Product or None if not found
+        """
+        product = self.get_product(part_number)
+        if not product:
+            return None
+        
+        # Convert tags to Setting objects format for XML
+        from ...shared import Setting, ChangeType
+        product.tags = [
+            Setting(key=t["key"], value=t["value"], change=ChangeType.ADD)
+            for t in tags
+        ]
+        return self.update_product(product)
+
+    def add_product_tag(
+        self, 
+        part_number: str, 
+        key: str, 
+        value: str
+    ) -> Optional[Product]:
+        """
+        Add a tag to a product.
+
+        Args:
+            part_number: Product part number
+            key: Tag key
+            value: Tag value
+
+        Returns:
+            Updated Product or None if not found
+        """
+        product = self.get_product(part_number)
+        if not product:
+            return None
+        
+        from ...shared import Setting, ChangeType
+        
+        # Check if tag already exists
+        for tag in product.tags:
+            if tag.key == key:
+                tag.value = value
+                tag.change = ChangeType.UPDATE
+                return self.update_product(product)
+        
+        # Add new tag
+        product.tags.append(Setting(key=key, value=value, change=ChangeType.ADD))
+        return self.update_product(product)
+
+    def get_revision_tags(
+        self, 
+        part_number: str, 
+        revision: str
+    ) -> List[Dict[str, str]]:
+        """
+        Get tags for a product revision.
+
+        Args:
+            part_number: Product part number
+            revision: Revision identifier
+
+        Returns:
+            List of tag dictionaries with 'key' and 'value'
+        """
+        rev = self.get_revision(part_number, revision)
+        if rev and rev.tags:
+            return [{"key": t.key, "value": t.value} for t in rev.tags]
+        return []
+
+    def set_revision_tags(
+        self, 
+        part_number: str, 
+        revision: str,
+        tags: List[Dict[str, str]]
+    ) -> Optional[ProductRevision]:
+        """
+        Set tags for a product revision (replaces existing tags).
+
+        Args:
+            part_number: Product part number
+            revision: Revision identifier
+            tags: List of tag dictionaries with 'key' and 'value'
+
+        Returns:
+            Updated ProductRevision or None if not found
+        """
+        rev = self.get_revision(part_number, revision)
+        if not rev:
+            return None
+        
+        from ...shared import Setting, ChangeType
+        rev.tags = [
+            Setting(key=t["key"], value=t["value"], change=ChangeType.ADD)
+            for t in tags
+        ]
+        return self.update_revision(rev)
+
+    def add_revision_tag(
+        self, 
+        part_number: str, 
+        revision: str,
+        key: str, 
+        value: str
+    ) -> Optional[ProductRevision]:
+        """
+        Add a tag to a product revision.
+
+        Args:
+            part_number: Product part number
+            revision: Revision identifier
+            key: Tag key
+            value: Tag value
+
+        Returns:
+            Updated ProductRevision or None if not found
+        """
+        rev = self.get_revision(part_number, revision)
+        if not rev:
+            return None
+        
+        from ...shared import Setting, ChangeType
+        
+        # Check if tag already exists
+        for tag in rev.tags:
+            if tag.key == key:
+                tag.value = value
+                tag.change = ChangeType.UPDATE
+                return self.update_revision(rev)
+        
+        # Add new tag
+        rev.tags.append(Setting(key=key, value=value, change=ChangeType.ADD))
+        return self.update_revision(rev)
 
     # =========================================================================
     # Vendors

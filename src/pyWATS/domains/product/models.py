@@ -51,6 +51,176 @@ class ProductRevision(PyWATSModel):
     tags: List[Setting] = Field(default_factory=list)
 
 
+class ProductRevisionRelation(PyWATSModel):
+    """
+    Represents a parent-child relationship between product revisions.
+    
+    Used for box build templates where a parent product contains subunits.
+    For example, a main board (parent) may contain multiple PCBAs (children).
+
+    Attributes:
+        relation_id: Unique identifier for this relation
+        parent_product_revision_id: Parent product revision ID
+        child_product_revision_id: Child product revision ID
+        quantity: Number of child units required (default 1)
+        item_number: Optional item/position number
+        child_part_number: Child product part number (read-only)
+        child_revision: Child product revision (read-only)
+    """
+    relation_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("relationId", "relation_id", "RelationId"),
+        serialization_alias="relationId"
+    )
+    parent_product_revision_id: UUID = Field(
+        ...,
+        validation_alias=AliasChoices(
+            "parentProductRevisionId", "parent_product_revision_id", "ParentProductRevisionId"
+        ),
+        serialization_alias="parentProductRevisionId"
+    )
+    child_product_revision_id: UUID = Field(
+        ...,
+        validation_alias=AliasChoices(
+            "childProductRevisionId", "child_product_revision_id", "ChildProductRevisionId"
+        ),
+        serialization_alias="childProductRevisionId"
+    )
+    quantity: int = Field(
+        default=1,
+        validation_alias=AliasChoices("quantity", "Quantity"),
+        serialization_alias="quantity"
+    )
+    item_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("itemNumber", "item_number", "ItemNumber"),
+        serialization_alias="itemNumber"
+    )
+    # Read-only fields populated by API
+    child_part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("childPartNumber", "child_part_number", "ChildPartNumber"),
+        serialization_alias="childPartNumber"
+    )
+    child_revision: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("childRevision", "child_revision", "ChildRevision"),
+        serialization_alias="childRevision"
+    )
+    revision_mask: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("revisionMask", "revision_mask", "RevisionMask"),
+        serialization_alias="revisionMask",
+        description="Comma-separated revision patterns with optional % wildcard (e.g., '1.0,2.%,3.1')"
+    )
+    
+    def matches_revision(self, revision: str) -> bool:
+        """
+        Check if a revision matches this relation's revision mask.
+        
+        The revision mask can contain:
+        - Exact matches: '1.0' matches only '1.0'
+        - Wildcards: '1.%' matches '1.0', '1.1', '1.2a', etc.
+        - Multiple values: '1.0,2.0,3.%' matches any of those
+        
+        Args:
+            revision: The revision string to check
+            
+        Returns:
+            True if revision matches the mask, False otherwise
+        """
+        if not self.revision_mask:
+            # No mask - use exact child_revision match
+            return self.child_revision == revision
+        
+        # Split by comma and check each pattern
+        patterns = [p.strip() for p in self.revision_mask.split(",")]
+        for pattern in patterns:
+            if pattern.endswith("%"):
+                # Wildcard match - check prefix
+                prefix = pattern[:-1]
+                if revision.startswith(prefix):
+                    return True
+            else:
+                # Exact match
+                if revision == pattern:
+                    return True
+        
+        return False
+
+
+class BomItem(PyWATSModel):
+    """
+    Represents a Bill of Materials (BOM) item.
+    
+    BOM items define the components that make up a product revision.
+
+    Attributes:
+        bom_item_id: Unique identifier for this BOM item
+        product_revision_id: Product revision this BOM item belongs to
+        component_ref: Component reference designator (e.g., "R1", "C12")
+        part_number: Component part number
+        description: Component description
+        quantity: Number of components
+        manufacturer: Component manufacturer
+        manufacturer_pn: Manufacturer part number
+        vendor: Vendor/supplier name
+        vendor_pn: Vendor part number
+    """
+    bom_item_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("bomItemId", "bom_item_id", "BomItemId"),
+        serialization_alias="bomItemId"
+    )
+    product_revision_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "productRevisionId", "product_revision_id", "ProductRevisionId"
+        ),
+        serialization_alias="productRevisionId"
+    )
+    component_ref: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("componentRef", "component_ref", "ComponentRef", "compRef"),
+        serialization_alias="componentRef"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number", "PartNumber"),
+        serialization_alias="partNumber"
+    )
+    description: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("description", "Description"),
+        serialization_alias="description"
+    )
+    quantity: int = Field(
+        default=1,
+        validation_alias=AliasChoices("quantity", "Quantity"),
+        serialization_alias="quantity"
+    )
+    manufacturer: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("manufacturer", "Manufacturer"),
+        serialization_alias="manufacturer"
+    )
+    manufacturer_pn: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("manufacturerPn", "manufacturer_pn", "ManufacturerPn"),
+        serialization_alias="manufacturerPn"
+    )
+    vendor: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("vendor", "Vendor"),
+        serialization_alias="vendor"
+    )
+    vendor_pn: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("vendorPn", "vendor_pn", "VendorPn"),
+        serialization_alias="vendorPn"
+    )
+
+
 class Product(PyWATSModel):
     """
     Represents a product in WATS.
@@ -142,6 +312,7 @@ class ProductGroup(PyWATSModel):
     Attributes:
         product_group_id: Product group ID
         product_group_name: Product group name
+        name: Alias for product_group_name (convenience)
     """
     product_group_id: Optional[int] = Field(
         default=None,
@@ -156,4 +327,35 @@ class ProductGroup(PyWATSModel):
             "productGroupName", "product_group_name"
         ),
         serialization_alias="productGroupName"
+    )
+    
+    @property
+    def name(self) -> Optional[str]:
+        """Convenience alias for product_group_name."""
+        return self.product_group_name
+
+
+class ProductCategory(PyWATSModel):
+    """
+    Represents a product category.
+
+    Attributes:
+        category_id: Category ID
+        name: Category name
+        description: Category description
+    """
+    category_id: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("categoryId", "category_id", "CategoryId"),
+        serialization_alias="categoryId"
+    )
+    name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("name", "Name"),
+        serialization_alias="name"
+    )
+    description: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("description", "Description"),
+        serialization_alias="description"
     )

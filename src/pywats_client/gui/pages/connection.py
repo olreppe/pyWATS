@@ -4,110 +4,19 @@ Connection Page
 Matches the WATS Client Connection page layout.
 """
 
+import asyncio
 from typing import Optional, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QGroupBox, QFrame, QMessageBox
 )
-from PySide6.QtCore import Qt, Slot, QThread, Signal, QObject
+from PySide6.QtCore import Qt, Slot
 
 from .base import BasePage
 from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
-
-
-class TestUUTWorker(QObject):
-    """Worker for running test UUT in background thread"""
-    finished = Signal(bool, str)  # success, message
-    
-    def __init__(self, main_window: 'MainWindow'):
-        super().__init__()
-        self._main_window = main_window
-    
-    @Slot()
-    def run(self) -> None:
-        """Run the test UUT submission synchronously"""
-        try:
-            # Import here to avoid circular imports
-            from pywats import pyWATS
-            from pywats.tools import create_test_uut_report
-            
-            # Check we have connection config
-            config = self._main_window.config
-            if not config.service_address:
-                self.finished.emit(False, "No service address configured.\nGo to Connection settings and enter your WATS server URL.")
-                return
-            if not config.api_token:
-                self.finished.emit(False, "No API token configured.\nGo to Connection settings and enter your API token.")
-                return
-            
-            # Create test report
-            report = create_test_uut_report(
-                station_name=config.station_name or "pyWATS-Client",
-                location=config.location or "TestLocation",
-            )
-            
-            # Create pyWATS API instance and submit
-            api = pyWATS(
-                base_url=config.service_address,
-                token=config.api_token
-            )
-            
-            # Submit the report
-            report_id = api.report.submit(report)
-            
-            if report_id:
-                self.finished.emit(True, f"Test report submitted successfully!\n\nSerial: {report.sn}\nReport ID: {report_id}")
-            else:
-                self.finished.emit(False, f"Failed to submit report.\nSerial: {report.sn}\n\nCheck your connection settings and API token.")
-                
-        except Exception as e:
-            error_msg = f"{type(e).__name__}: {str(e)}"
-            self.finished.emit(False, error_msg)
-
-
-class TestConnectionWorker(QObject):
-    """Worker for running connection test in background thread"""
-    finished = Signal(bool, str)  # success, message
-    
-    def __init__(self, main_window: 'MainWindow'):
-        super().__init__()
-        self._main_window = main_window
-    
-    @Slot()
-    def run(self) -> None:
-        """Run connection test synchronously"""
-        try:
-            from pywats import pyWATS
-            from pywats.models import WATSFilter
-            
-            config = self._main_window.config
-            if not config.service_address:
-                self.finished.emit(False, "No service address configured")
-                return
-            if not config.api_token:
-                self.finished.emit(False, "No API token configured")
-                return
-            
-            # Try to connect and get something simple
-            api = pyWATS(
-                base_url=config.service_address,
-                token=config.api_token
-            )
-            
-            # Try to query a single report header as a connectivity test
-            test_filter = WATSFilter(top_count=1)
-            headers = api.report.query_uut_headers(test_filter)
-            
-            if headers is not None:
-                self.finished.emit(True, "Connected successfully!")
-            else:
-                self.finished.emit(False, "Connected but query returned None")
-                
-        except Exception as e:
-            self.finished.emit(False, f"Connection failed: {str(e)}")
 
 
 class ConnectionPage(BasePage):
@@ -290,77 +199,100 @@ class ConnectionPage(BasePage):
     
     def _on_disconnect(self) -> None:
         """Handle disconnect button click"""
-        # Simple disconnect - just update status
-        self.update_status("Offline")
-        self._client_status_label.setText("Disconnected")
+        if self._main_window:
+            asyncio.create_task(self._main_window.disconnect())
     
     def _on_test_connection(self) -> None:
         """Handle test connection button click"""
-        if not self._main_window:
-            return
-            
         self._test_btn.setEnabled(False)
         self._test_btn.setText("Testing...")
         
-        # Create worker and thread
-        self._test_thread = QThread()
-        self._test_worker = TestConnectionWorker(self._main_window)
-        self._test_worker.moveToThread(self._test_thread)
-        
-        # Connect signals
-        self._test_thread.started.connect(self._test_worker.run)
-        self._test_worker.finished.connect(self._on_test_connection_finished)
-        self._test_worker.finished.connect(self._test_thread.quit)
-        self._test_worker.finished.connect(self._test_worker.deleteLater)
-        self._test_thread.finished.connect(self._test_thread.deleteLater)
-        
-        # Start thread
-        self._test_thread.start()
+        # Run test in background
+        asyncio.create_task(self._run_test())
     
-    @Slot(bool, str)
-    def _on_test_connection_finished(self, success: bool, message: str) -> None:
-        """Handle test connection completion"""
-        self._test_btn.setEnabled(True)
-        self._test_btn.setText("Run test")
-        
-        if success:
-            self._client_status_label.setText("Online")
-            self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
-        else:
-            self._client_status_label.setText(f"Failed: {message[:30]}")
+    async def _run_test(self) -> None:
+        """Run connection test"""
+        try:
+            if self._main_window:
+                result = await self._main_window.test_connection()
+                if result:
+                    self._client_status_label.setText("Online")
+                    self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
+                else:
+                    self._client_status_label.setText("Connection failed")
+                    self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
+        except Exception as e:
+            self._client_status_label.setText(f"Error: {str(e)[:30]}")
             self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
+        finally:
+            self._test_btn.setEnabled(True)
+            self._test_btn.setText("Run test")
 
     def _on_test_send_uut(self) -> None:
         """Handle test send UUT button click"""
-        if not self._main_window:
-            QMessageBox.warning(self, "Error", "Main window not available")
-            return
-            
         self._test_uut_btn.setEnabled(False)
-        self._test_uut_btn.setText("Creating...")
+        self._test_uut_btn.setText("Sending...")
         
-        # Create worker and thread
-        self._uut_thread = QThread()
-        self._uut_worker = TestUUTWorker(self._main_window)
-        self._uut_worker.moveToThread(self._uut_thread)
-        
-        # Connect signals
-        self._uut_thread.started.connect(self._uut_worker.run)
-        self._uut_worker.finished.connect(self._on_test_uut_finished)
-        self._uut_worker.finished.connect(self._uut_thread.quit)
-        self._uut_worker.finished.connect(self._uut_worker.deleteLater)
-        self._uut_thread.finished.connect(self._uut_thread.deleteLater)
-        
-        # Start thread
-        self._uut_thread.start()
+        # Run test in background
+        asyncio.create_task(self._run_send_uut_test())
+    
+    async def _run_send_uut_test(self) -> None:
+        """Run test UUT send operation"""
+        try:
+            if self._main_window:
+                result = await self._main_window.send_test_uut()
+                if result.get("success"):
+                    report_id = result.get("report_id", "Unknown")
+                    QMessageBox.information(
+                        self,
+                        "Test Report Sent",
+                        f"Test UUT report submitted successfully!\n\n"
+                        f"Report ID: {report_id}\n"
+                        f"Serial: {result.get('serial_number', 'Unknown')}\n"
+                        f"Part Number: {result.get('part_number', 'Unknown')}"
+                    )
+                    self._client_status_label.setText("Online - Test OK")
+                    self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
+                else:
+                    error = result.get("error", "Unknown error")
+                    QMessageBox.warning(
+                        self,
+                        "Test Report Failed",
+                        f"Failed to submit test UUT report.\n\nError: {error}"
+                    )
+                    self._client_status_label.setText("Send failed")
+                    self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Error sending test report:\n{str(e)}"
+            )
+            self._client_status_label.setText(f"Error: {str(e)[:20]}")
+            self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
+        finally:
+            self._test_uut_btn.setEnabled(True)
+            self._test_uut_btn.setText("Send test report")
 
-    @Slot(bool, str)
-    def _on_test_uut_finished(self, success: bool, message: str) -> None:
-        """Handle test UUT completion"""
-        self._test_uut_btn.setEnabled(True)
-        self._test_uut_btn.setText("Send test report")
-        
-        if success:
-            QMessageBox.information(self, "Success", message)
-        else:
-            QMessageBox.critical(self, "Error", f"Error sending test UUT:\n\n{message}")
+    def _on_test_send_uut(self) -> None:
+        """Handle test send UUT button click"""
+        self._test_uut_btn.setEnabled(False)
+        self._test_uut_btn.setText("Sending...")
+
+        # Run test in background
+        asyncio.create_task(self._run_send_uut_test())
+
+    async def _run_send_uut_test(self) -> None:
+        """Run send UUT test"""
+        try:
+            if self._main_window:
+                result = await self._main_window.test_send_uut()
+                if result:
+                    QMessageBox.information(self, "Success", "Test UUT report sent successfully!")
+                else:
+                    QMessageBox.warning(self, "Failed", "Failed to send test UUT report.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error sending test UUT: {str(e)}")
+        finally:
+            self._test_uut_btn.setEnabled(True)
+            self._test_uut_btn.setText("Send test report")
