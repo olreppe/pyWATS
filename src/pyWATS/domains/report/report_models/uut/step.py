@@ -154,7 +154,9 @@ class Step(WATSBase, ABC):
 
         
 
-StepType = Union['SequenceCall','MultiNumericStep','NumericStep','BooleanStep','MultiBooleanStep', 'MultiStringStep', 'StringStep', 'ChartStep', 'CallExeStep','MessagePopUpStep', 'ActionStep', 'GenericStep']
+# Note: ActionStep is essentially the same as GenericStep (which now includes "Action" in its literals)
+# ActionStep is kept for backward compatibility but not in the discriminated union
+StepType = Union['SequenceCall','MultiNumericStep','NumericStep','BooleanStep','MultiBooleanStep', 'MultiStringStep', 'StringStep', 'ChartStep', 'CallExeStep','MessagePopUpStep', 'GenericStep']
 from .steps import NumericStep,MultiNumericStep,SequenceCall,BooleanStep,MultiBooleanStep,MultiStringStep,StringStep,ChartStep,CallExeStep,MessagePopUpStep,GenericStep,ActionStep  # noqa: E402
 
 Step.model_rebuild()

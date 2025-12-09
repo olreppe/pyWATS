@@ -63,6 +63,8 @@ class FlowType(Enum):
     Label = "Label"
 
 # Create a Literal type from all FlowType enum values for discriminator compatibility
+# Note: "Action" is included as it's essentially the same as other flow/generic steps
+# but needs to serialize with the actual literal for correct icon display on the server
 FlowTypeLiteral = Literal[
     "NI_FTPFiles", "NI_Flow_If", "NI_Flow_ElseIf", "NI_Flow_Else", "NI_Flow_End",
     "NI_Flow_For", "NI_Flow_ForEach", "NI_Flow_Break", "NI_Flow_Continue",
@@ -75,7 +77,8 @@ FlowTypeLiteral = Literal[
     "NI_IviScope", "NI_IviFgen", "NI_IviDCPower", "NI_IviSwitch", "NI_IviTools",
     "NI_LV_DeployLibrary", "NI_LV_CheckSystemStatus", "NI_LV_RunVIAsynchronously",
     "NI_PropertyLoader", "NI_VariableAndPropertyLoader", "NI_NewCsvFileInputRecordStream",
-    "NI_NewCsvFileOutputRecordStream", "NI_WriteRecord", "Goto", "Statement", "Label"
+    "NI_NewCsvFileOutputRecordStream", "NI_WriteRecord", "Goto", "Statement", "Label",
+    "Action"  # Action is essentially the same as GenericStep but uses different icon
 ]
 
 # Class: GenericStep
