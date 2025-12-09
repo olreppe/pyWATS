@@ -59,11 +59,15 @@ class pyWATS:
         be sent as: "Basic <token>"
     """
     
+    # Default process cache refresh interval (5 minutes)
+    DEFAULT_PROCESS_REFRESH_INTERVAL = 300
+    
     def __init__(
         self,
         base_url: str,
         token: str,
-        timeout: int = 30
+        timeout: int = 30,
+        process_refresh_interval: int = DEFAULT_PROCESS_REFRESH_INTERVAL
     ):
         """
         Initialize the pyWATS API.
@@ -72,10 +76,12 @@ class pyWATS:
             base_url: Base URL of the WATS server (e.g., "https://your-wats.com")
             token: API token (Base64-encoded credentials)
             timeout: Request timeout in seconds (default: 30)
+            process_refresh_interval: Process cache refresh interval in seconds (default: 300)
         """
         self._base_url = base_url.rstrip("/")
         self._token = token
         self._timeout = timeout
+        self._process_refresh_interval = process_refresh_interval
         
         # Initialize HTTP client
         self._http_client = HttpClient(
@@ -196,18 +202,32 @@ class pyWATS:
     @property
     def process(self) -> ProcessService:
         """
-        Access process/operation management.
+        Access process/operation management (cached).
         
         Processes define the types of operations:
         - Test operations (e.g., End of line test, PCBA test)
         - Repair operations (e.g., Repair, RMA repair)
+        - WIP operations (e.g., Assembly)
+        
+        The process list is cached in memory and refreshes at the configured
+        interval (default: 5 minutes). Use api.process.refresh() to force refresh.
+        
+        Example:
+            # Get by code
+            test_op = api.process.get_test_operation(100)
+            
+            # Get by name
+            repair_op = api.process.get_repair_operation("Repair")
+            
+            # Force refresh
+            api.process.refresh()
         
         Returns:
             ProcessService instance
         """
         if self._process is None:
             repo = ProcessRepository(self._http_client)
-            self._process = ProcessService(repo)
+            self._process = ProcessService(repo, self._process_refresh_interval)
         return self._process
     
     @property
