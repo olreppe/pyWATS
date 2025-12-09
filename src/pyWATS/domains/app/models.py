@@ -54,14 +54,35 @@ class ProcessInfo(PyWATSModel):
     Represents process/test operation information.
 
     Attributes:
-        process_code: Process code
-        process_name: Process name
+        code: Process code (e.g., 100, 500)
+        name: Process name (e.g., "End of line test", "Repair")
+        description: Process description
+        is_test_operation: True if this is a test operation
+        is_repair_operation: True if this is a repair operation
+        is_wip_operation: True if this is a WIP operation
         process_index: Process order index
+        state: Process state
     """
 
-    process_code: Optional[int] = Field(default=None, alias="processCode")
-    process_name: Optional[str] = Field(default=None, alias="processName")
+    code: Optional[int] = Field(default=None, alias="code")
+    name: Optional[str] = Field(default=None, alias="name")
+    description: Optional[str] = Field(default=None, alias="description")
+    is_test_operation: bool = Field(default=False, alias="isTestOperation")
+    is_repair_operation: bool = Field(default=False, alias="isRepairOperation")
+    is_wip_operation: bool = Field(default=False, alias="isWipOperation")
     process_index: Optional[int] = Field(default=None, alias="processIndex")
+    state: Optional[int] = Field(default=None, alias="state")
+    
+    # Backward compatibility aliases
+    @property
+    def process_code(self) -> Optional[int]:
+        """Alias for code (backward compatibility)"""
+        return self.code
+    
+    @property
+    def process_name(self) -> Optional[str]:
+        """Alias for name (backward compatibility)"""
+        return self.name
 
 
 class LevelInfo(PyWATSModel):

@@ -12,6 +12,12 @@ from .domains.report import ReportService, ReportRepository
 from .domains.software import SoftwareService, SoftwareRepository
 from .domains.app import AppService, AppRepository
 from .domains.rootcause import RootCauseService, RootCauseRepository
+from .domains.process import (
+    ProcessService, 
+    ProcessRepository,
+    ProcessServiceInternal,
+    ProcessRepositoryInternal,
+)
 
 
 class pyWATS:
@@ -86,6 +92,8 @@ class pyWATS:
         self._software: Optional[SoftwareService] = None
         self._app: Optional[AppService] = None
         self._rootcause: Optional[RootCauseService] = None
+        self._process: Optional[ProcessService] = None
+        self._process_internal: Optional[ProcessServiceInternal] = None
     
     # -------------------------------------------------------------------------
     # Module Properties
@@ -184,6 +192,46 @@ class pyWATS:
         if self._rootcause is None:
             self._rootcause = RootCauseService(self._http_client)
         return self._rootcause
+    
+    @property
+    def process(self) -> ProcessService:
+        """
+        Access process/operation management.
+        
+        Processes define the types of operations:
+        - Test operations (e.g., End of line test, PCBA test)
+        - Repair operations (e.g., Repair, RMA repair)
+        
+        Returns:
+            ProcessService instance
+        """
+        if self._process is None:
+            repo = ProcessRepository(self._http_client)
+            self._process = ProcessService(repo)
+        return self._process
+    
+    @property
+    def process_internal(self) -> ProcessServiceInternal:
+        """
+        Access internal process operations.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        This service uses internal WATS API endpoints that are not publicly
+        documented. Methods may change or be removed without notice.
+        
+        Use this for:
+        - Getting detailed process information with ProcessID
+        - Getting repair categories and fail codes
+        - Extended validation of process codes
+        
+        Returns:
+            ProcessServiceInternal instance
+        """
+        if self._process_internal is None:
+            repo = ProcessRepositoryInternal(self._http_client, self._base_url)
+            self._process_internal = ProcessServiceInternal(repo)
+        return self._process_internal
     
     # -------------------------------------------------------------------------
     # Configuration

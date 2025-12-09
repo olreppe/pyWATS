@@ -311,6 +311,282 @@ class TestUURReport:
         print(f"Submit result: {result}")
         print("==============================\n")
 
+    def test_create_uur_from_uut_object(self, wats_client: Any) -> None:
+        """Test creating UUR from a UUTReport object"""
+        from datetime import datetime
+        
+        # Create a failed UUT report
+        uut = wats_client.report.create_uut_report(
+            operator="TestOperator",
+            part_number="PN-REPAIR-TEST",
+            revision="B",
+            serial_number=f"SN-{datetime.now().strftime('%H%M%S')}",
+            operation_type=100,
+            station_name="TestStation",
+            location="TestLab"
+        )
+        
+        # Create UUR from the UUT object
+        uur = wats_client.report.create_uur_report(
+            uut,
+            operator="RepairTech",
+            comment="Repair initiated from failed UUT"
+        )
+        
+        print(f"\n=== CREATE UUR FROM UUT OBJECT ===")
+        print(f"UUT ID: {uut.id}")
+        print(f"UUR references UUT: {uur.uur_info.refUUT}")
+        print(f"UUR part_number: {uur.pn}")
+        print(f"UUR serial: {uur.sn}")
+        print("==================================\n")
+        
+        assert uur is not None
+        assert uur.pn == uut.pn
+        assert uur.sn == uut.sn
+        assert uur.uur_info.refUUT == uut.id
+
+    def test_create_uur_from_part_and_process(self, wats_client: Any) -> None:
+        """Test creating UUR from part number and process code"""
+        from datetime import datetime
+        
+        # Create UUR using part_number and process_code pattern
+        uur = wats_client.report.create_uur_report(
+            "PN-DIRECT-CREATE",
+            100,
+            serial_number=f"SN-{datetime.now().strftime('%H%M%S')}",
+            operator="DirectRepairTech"
+        )
+        
+        print(f"\n=== CREATE UUR FROM PART/PROCESS ===")
+        print(f"UUR part_number: {uur.pn}")
+        print(f"UUR process_code: {uur.process_code}")
+        print("====================================\n")
+        
+        assert uur is not None
+        assert uur.pn == "PN-DIRECT-CREATE"
+        assert uur.process_code == 100
+
+
+class TestRepairScenario:
+    """
+    Test complete repair workflow scenario:
+    1. Failed UUT in a test operation
+    2. Repair report linking to the failure
+    3. Retest that passes
+    """
+
+    def test_complete_repair_workflow(self, wats_client: Any) -> None:
+        """
+        Complete repair scenario:
+        - Submit a FAILED UUT report
+        - Create a UUR (repair) report linked to the failed UUT
+        - Submit the UUR with repair information
+        - Submit a PASSING UUT report (retest)
+        """
+        from datetime import datetime
+        from pywats.domains.report.report_models.uut.step import StepStatus
+        
+        # Use consistent serial number for the workflow
+        test_serial = f"REPAIR-WORKFLOW-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        part_number = "PN-REPAIR-SCENARIO"
+        process_code = 100
+        
+        print(f"\n{'='*60}")
+        print(f"COMPLETE REPAIR WORKFLOW SCENARIO")
+        print(f"Serial Number: {test_serial}")
+        print(f"Part Number: {part_number}")
+        print(f"{'='*60}\n")
+        
+        # ============================================================
+        # STEP 1: Create and submit a FAILED UUT report
+        # ============================================================
+        print("STEP 1: Creating FAILED UUT report...")
+        
+        failed_uut = wats_client.report.create_uut_report(
+            operator="TestOperator",
+            part_number=part_number,
+            revision="A",
+            serial_number=test_serial,
+            operation_type=process_code,
+            station_name="TestStation-01",
+            location="Production Line A"
+        )
+        
+        # Add a sequence with test steps including a failing one
+        main_seq = failed_uut.root.add_sequence_call("Functional Test Sequence")
+        
+        # Add passing setup step
+        setup_step = main_seq.add_numeric_step(
+            name="Power Supply Voltage",
+            value=12.05,
+            unit="V",
+            low_limit=11.5,
+            high_limit=12.5,
+            comp_op="GELE",
+            status="P"
+        )
+        
+        # Add FAILING step - this is the failure we'll repair
+        failing_step = main_seq.add_numeric_step(
+            name="Current Draw Test",
+            value=2.5,  # Value exceeds limit
+            unit="A",
+            low_limit=0.5,
+            high_limit=2.0,
+            comp_op="GELE",
+            status="F"  # FAILED
+        )
+        failing_step.error_message = "Current draw exceeds maximum specification"
+        failing_step.caused_uut_failure = True
+        
+        # Add another passing step (but UUT already failed)
+        post_step = main_seq.add_boolean_step(
+            name="Communication Check",
+            status="P"
+        )
+        
+        # Set overall UUT status to FAILED
+        # IMPORTANT: Root sequence status must match report result!
+        failed_uut.result = "F"
+        failed_uut.root.status = "F"
+        main_seq.status = "F"
+        
+        print(f"  - UUT ID: {failed_uut.id}")
+        print(f"  - Status: FAILED")
+        print(f"  - Failing step: '{failing_step.name}' (value={failing_step.measurement.value})")
+        
+        # Submit the failed UUT
+        failed_result = wats_client.report.submit_report(failed_uut)
+        print(f"  - Submit result: {failed_result}")
+        
+        assert failed_result is not None, "Failed UUT submission returned None - check server connection"
+        print(f"  - Successfully submitted failed UUT: {failed_result}")
+        
+        # ============================================================
+        # STEP 2: Create repair report (UUR) linked to failed UUT
+        # ============================================================
+        print("\nSTEP 2: Creating UUR (repair) report linked to failed UUT...")
+        
+        # Create UUR from the failed UUT object
+        repair_report = wats_client.report.create_uur_report(
+            failed_uut,
+            operator="RepairTechnician",
+            comment="Investigating high current draw issue"
+        )
+        
+        # Set repair information
+        repair_report.comment = "Replaced faulty capacitor C12 causing excessive current draw"
+        
+        # Add a failure to the main unit (required by API)
+        # This represents the failure that was repaired
+        repair_report.add_failure_to_main_unit(
+            category="Component Failure",
+            code="CAP-FAIL",
+            comment="Capacitor C12 exceeded current specification",
+            component_ref="C12"
+        )
+        
+        print(f"  - UUR ID: {repair_report.id}")
+        print(f"  - References UUT: {repair_report.uur_info.ref_uut}")  # Use snake_case
+        print(f"  - Operator: {repair_report.operator}")
+        print(f"  - Comment: {repair_report.comment}")
+        
+        # Submit the repair report
+        repair_result = wats_client.report.submit_report(repair_report)
+        print(f"  - Submit result: {repair_result}")
+        
+        assert repair_result is not None, "UUR submission returned None - check server connection"
+        print(f"  - Successfully submitted UUR: {repair_result}")
+        
+        # ============================================================
+        # STEP 3: Create PASSING retest UUT report
+        # ============================================================
+        print("\nSTEP 3: Creating PASSING retest UUT report...")
+        
+        retest_uut = wats_client.report.create_uut_report(
+            operator="TestOperator",
+            part_number=part_number,
+            revision="A",
+            serial_number=test_serial,  # Same serial number
+            operation_type=process_code,
+            station_name="TestStation-01",
+            location="Production Line A"
+        )
+        
+        # Add the same test sequence - all passing now
+        retest_seq = retest_uut.root.add_sequence_call("Functional Test Sequence")
+        
+        # Add passing setup step
+        retest_seq.add_numeric_step(
+            name="Power Supply Voltage",
+            value=12.02,
+            unit="V",
+            low_limit=11.5,
+            high_limit=12.5,
+            comp_op="GELE",
+            status="P"
+        )
+        
+        # Previously failing step now PASSES after repair
+        fixed_step = retest_seq.add_numeric_step(
+            name="Current Draw Test",
+            value=1.2,  # Now within limits after capacitor replacement
+            unit="A",
+            low_limit=0.5,
+            high_limit=2.0,
+            comp_op="GELE",
+            status="P"  # PASSED
+        )
+        
+        # Communication check still passing
+        retest_seq.add_boolean_step(
+            name="Communication Check",
+            status="P"
+        )
+        
+        # Set overall UUT status to PASSED
+        retest_uut.result = "P"
+        
+        print(f"  - UUT ID: {retest_uut.id}")
+        print(f"  - Status: PASSED")
+        print(f"  - Fixed step: '{fixed_step.name}' (value={fixed_step.measurement.value})")
+        
+        # Submit the passing retest
+        retest_result = wats_client.report.submit_report(retest_uut)
+        print(f"  - Submit result: {retest_result}")
+        
+        assert retest_result is not None, "Retest UUT submission returned None - check server connection"
+        print(f"  - Successfully submitted retest UUT: {retest_result}")
+        
+        # ============================================================
+        # Summary
+        # ============================================================
+        print(f"\n{'='*60}")
+        print("REPAIR WORKFLOW COMPLETE")
+        print(f"{'='*60}")
+        print(f"Serial Number: {test_serial}")
+        print(f"1. Failed UUT:  {failed_uut.id}")
+        print(f"   - Server ID: {failed_result}")
+        print(f"   - Status: F")
+        print(f"2. Repair UUR:  {repair_report.id}")
+        print(f"   - Server ID: {repair_result}")
+        print(f"   - Linked to: {repair_report.uur_info.refUUT}")
+        print(f"3. Retest UUT:  {retest_uut.id}")
+        print(f"   - Server ID: {retest_result}")
+        print(f"   - Status: P")
+        print(f"{'='*60}\n")
+        
+        # Assertions
+        assert failed_uut.result == "F", "Initial UUT should be failed"
+        assert repair_report.uur_info.refUUT == failed_uut.id, "UUR should reference failed UUT"
+        assert retest_uut.result == "P", "Retest UUT should be passed"
+        assert retest_uut.sn == failed_uut.sn, "Retest should have same serial number"
+        
+        # Verify all submissions were successful
+        assert failed_result is not None, "Failed UUT was not submitted"
+        assert repair_result is not None, "UUR was not submitted"
+        assert retest_result is not None, "Retest UUT was not submitted"
+
 
 class TestReportQuery:
     """Test querying and loading reports"""

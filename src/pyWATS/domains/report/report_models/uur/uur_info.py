@@ -36,18 +36,18 @@ class UURInfo(ReportInfo):
     test_operation_guid: Optional[UUID] = Field(default=None, validation_alias="testOperationGuid", serialization_alias="testOperationGuid")
     """The test operation GUID"""
     
-    # Legacy fields (keeping for backward compatibility)
-    processCode: Optional[int] = Field(default=None, validation_alias="processCode", serialization_alias="processCode")
-    """Legacy field - maps to test_operation_code"""
+    # Legacy fields (API requires processCode in uur object)
+    process_code: Optional[int] = Field(default=None, validation_alias="processCode", serialization_alias="processCode")
+    """Process code - required by API in uur object"""
     
-    processCodeFormat: Optional[str] = Field(default=None, validation_alias="processCodeFormat", serialization_alias="processCodeFormat")
-    """Legacy field - process code format"""
+    process_code_format: Optional[str] = Field(default=None, validation_alias="processCodeFormat", serialization_alias="processCodeFormat")
+    """Process code format"""
     
-    processName: Optional[str] = Field(default=None, validation_alias="processName", serialization_alias="processName")
-    """Legacy field - maps to test_operation_name"""
+    process_name: Optional[str] = Field(default=None, validation_alias="processName", serialization_alias="processName")
+    """Process name"""
     
     # UUR-specific properties
-    refUUT: Optional[UUID] = Field(default=None, validation_alias="refUUT", serialization_alias="refUUT")
+    ref_uut: Optional[UUID] = Field(default=None, validation_alias="refUUT", serialization_alias="refUUT")
     """Referenced UUT GUID - the GUID of the UUT report being repaired"""
     
     comment: Optional[str] = Field(default=None)
@@ -57,14 +57,14 @@ class UURInfo(ReportInfo):
     """Name of the operator that performed the repair"""
     
     # Timing information
-    confirmDate: Optional[datetime] = Field(default=None, validation_alias="confirmDate", serialization_alias="confirmDate")
-    """UUR was confirmed date time (UTC) - not currently displayed in UUR report"""
+    confirm_date: Optional[datetime] = Field(default=None, validation_alias="confirmDate", serialization_alias="confirmDate")
+    """UUR was confirmed date time (UTC)"""
     
-    finalizeDate: Optional[datetime] = Field(default=None, validation_alias="finalizeDate", serialization_alias="finalizeDate")
+    finalize_date: Optional[datetime] = Field(default=None, validation_alias="finalizeDate", serialization_alias="finalizeDate")
     """UUR was finalized date time (UTC)"""
     
-    executionTime: Optional[float] = Field(default=None, validation_alias="executionTime", serialization_alias="executionTime")
-    """Time spent on UUR report (seconds)"""
+    exec_time: Optional[float] = Field(default=0.0, validation_alias="execTime", serialization_alias="execTime")
+    """Time spent on UUR report (seconds) - REQUIRED by API"""
     
     # Status flags
     active: bool = Field(default=True)
@@ -81,26 +81,26 @@ class UURInfo(ReportInfo):
         """Initialize UURInfo with dual process code mapping"""
         super().__init__(**data)
         
-        # Map legacy fields to new dual process architecture
-        if self.processCode is not None and self.test_operation_code is None:
-            self.test_operation_code = self.processCode
+        # Map process_code to test_operation_code if needed
+        if self.process_code is not None and self.test_operation_code is None:
+            self.test_operation_code = self.process_code
         
-        if self.processName and not self.test_operation_name:
-            self.test_operation_name = self.processName
+        if self.process_name and not self.test_operation_name:
+            self.test_operation_name = self.process_name
     
     @property
     def referenced_uut_guid(self) -> Optional[UUID]:
-        """Alias for refUUT (matches C# UUTGuid property)"""
-        return self.refUUT
+        """Alias for ref_uut"""
+        return self.ref_uut
     
     @referenced_uut_guid.setter
     def referenced_uut_guid(self, value: Optional[UUID]):
         """Set referenced UUT GUID"""
-        self.refUUT = value
+        self.ref_uut = value
     
     @property
     def user_login_name(self) -> Optional[str]:
-        """Alias for uur_operator (matches C# property name)"""
+        """Alias for uur_operator"""
         return self.uur_operator
     
     @user_login_name.setter
@@ -109,34 +109,14 @@ class UURInfo(ReportInfo):
         self.uur_operator = value
     
     @property
-    def confirm_date(self) -> Optional[datetime]:
-        """Alias for confirmDate (matches C# property name)"""
-        return self.confirmDate
-    
-    @confirm_date.setter
-    def confirm_date(self, value: Optional[datetime]):
-        """Set confirm date"""
-        self.confirmDate = value
-    
-    @property
-    def finalize_date(self) -> Optional[datetime]:
-        """Alias for finalizeDate (matches C# property name)"""
-        return self.finalizeDate
-    
-    @finalize_date.setter
-    def finalize_date(self, value: Optional[datetime]):
-        """Set finalize date"""
-        self.finalizeDate = value
-    
-    @property
     def execution_time(self) -> float:
-        """Time spent on UUR report (seconds)"""
-        return self.executionTime if self.executionTime is not None else 0.0
+        """Alias for exec_time"""
+        return self.exec_time if self.exec_time is not None else 0.0
     
     @execution_time.setter
     def execution_time(self, value: float):
         """Set execution time"""
-        self.executionTime = value
+        self.exec_time = value
     
     def get_repair_process_info(self) -> dict:
         """
@@ -186,9 +166,9 @@ class UURInfo(ReportInfo):
         self.test_operation_name = test_name
         self.test_operation_guid = test_guid
         
-        # Update legacy fields for compatibility
-        self.processCode = test_code
-        self.processName = test_name
+        # Update process_code for API compatibility
+        self.process_code = test_code
+        self.process_name = test_name
     
     def validate_dual_process_codes(self) -> tuple[bool, str]:
         """
@@ -233,22 +213,22 @@ class UURInfo(ReportInfo):
             'active': self.active,
             'active_specified': True,
             'comment': self.comment,
-            'referenced_uut': str(self.refUUT) if self.refUUT else None
+            'referenced_uut': str(self.ref_uut) if self.ref_uut else None
         }
         
         if self.test_operation_guid:
             result['process']['guid'] = str(self.test_operation_guid)
         
-        if self.confirmDate:
-            result['confirm_date'] = self.confirmDate.isoformat()
+        if self.confirm_date:
+            result['confirm_date'] = self.confirm_date.isoformat()
             result['confirm_date_specified'] = True
         
-        if self.finalizeDate:
-            result['finalize_date'] = self.finalizeDate.isoformat()
+        if self.finalize_date:
+            result['finalize_date'] = self.finalize_date.isoformat()
             result['finalize_date_specified'] = True
         
-        if self.executionTime is not None:
-            result['execution_time'] = self.executionTime
+        if self.exec_time is not None:
+            result['execution_time'] = self.exec_time
             result['execution_time_specified'] = True
         
         return result
@@ -267,18 +247,18 @@ class UURInfo(ReportInfo):
             'test_operation_guid': str(self.test_operation_guid) if self.test_operation_guid else None,
             
             # UUR-specific properties
-            'referenced_uut_guid': str(self.refUUT) if self.refUUT else None,
+            'referenced_uut_guid': str(self.ref_uut) if self.ref_uut else None,
             'comment': self.comment,
             'operator': self.uur_operator,
-            'confirm_date': self.confirmDate.isoformat() if self.confirmDate else None,
-            'finalize_date': self.finalizeDate.isoformat() if self.finalizeDate else None,
-            'execution_time': self.executionTime,
+            'confirm_date': self.confirm_date.isoformat() if self.confirm_date else None,
+            'finalize_date': self.finalize_date.isoformat() if self.finalize_date else None,
+            'execution_time': self.exec_time,
             'active': self.active,
             
             # Legacy compatibility
-            'process_code': self.processCode,
-            'process_name': self.processName,
-            'process_code_format': self.processCodeFormat
+            'process_code': self.process_code,
+            'process_name': self.process_name,
+            'process_code_format': self.process_code_format
         }
         
         return {**base_dict, **uur_dict}

@@ -5,13 +5,14 @@ Based on C# UURReport specification - full API compatibility with all methods:
 AddFailure, AddUURPartInfo, fail code navigation, attachments, validation.
 """
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING, Union
 from datetime import datetime
 from uuid import UUID, uuid4
 from pydantic import Field
 
 from .uur_info import UURInfo
 from ..report import Report
+from ..sub_unit import SubUnit
 
 # Import all the new UUR models
 from .fail_code import FailCode, FailCodes
@@ -19,6 +20,7 @@ from .misc_uur_info import MiscUURInfo, MiscUURInfoCollection
 from .uur_attachment import UURAttachment
 from .uur_part_info import UURPartInfo
 from .failure import Failure
+from .uur_sub_unit import UURSubUnit, UURFailure
 
 if TYPE_CHECKING:
     pass
@@ -33,6 +35,9 @@ class UURReport(Report):
     
     # Overloads
     type: str = Field(default="R", pattern='^[R]$')
+    
+    # Override sub_units to use UURSubUnit (with idx, parentIdx, failures)
+    sub_units: Optional[List[UURSubUnit]] = Field(default_factory=list, validation_alias="subUnits", serialization_alias="subUnits")
     
     # UUR Specific  
     uur_info: UURInfo = Field(default_factory=UURInfo, validation_alias="uur", serialization_alias="uur")
@@ -52,19 +57,116 @@ class UURReport(Report):
         
         # Initialize main unit (index 0) if not exists
         self._ensure_main_unit()
+        # Also ensure sub_units has main unit for serialization
+        self._ensure_main_sub_unit()
     
     def _ensure_main_unit(self):
-        """Ensure main unit (index 0) exists"""
+        """Ensure main unit (index 0) exists in internal part_infos"""
         if not self._part_infos:
             main_unit = UURPartInfo(
                 uur_report=self,
                 part_index=0,
-                part_number=getattr(self, 'part_number', ''),
-                serial_number=getattr(self, 'serial_number', ''),
-                part_revision_number=getattr(self, 'part_revision_number', ''),
+                part_number=getattr(self, 'pn', ''),
+                serial_number=getattr(self, 'sn', ''),
+                part_revision_number=getattr(self, 'rev', ''),
                 parent_idx=0
             )
             self._part_infos.append(main_unit)
+    
+    def _ensure_main_sub_unit(self):
+        """Ensure main unit (idx=0) exists in sub_units for serialization"""
+        if self.sub_units is None:
+            self.sub_units = []
+        
+        # Check if main unit (idx=0) already exists
+        has_main = any(su.idx == 0 for su in self.sub_units)
+        if not has_main:
+            # Create main unit with report's pn/sn/rev
+            main_sub = UURSubUnit.create_main_unit(
+                pn=self.pn,
+                sn=self.sn,
+                rev=self.rev or ""
+            )
+            # Insert at beginning
+            self.sub_units.insert(0, main_sub)
+    
+    def get_main_sub_unit(self) -> UURSubUnit:
+        """Get the main sub unit (idx=0)"""
+        self._ensure_main_sub_unit()
+        for su in self.sub_units:
+            if su.idx == 0:
+                return su
+        # Should never happen after _ensure_main_sub_unit
+        raise ValueError("Main sub unit not found")
+    
+    def add_uur_sub_unit(
+        self,
+        pn: str,
+        sn: str,
+        rev: str = "",
+        part_type: str = "SubUnit"
+    ) -> UURSubUnit:
+        """
+        Add a sub unit to the UUR for serialization.
+        
+        Args:
+            pn: Part number
+            sn: Serial number
+            rev: Revision
+            part_type: Type of sub unit
+            
+        Returns:
+            The created UURSubUnit
+        """
+        if self.sub_units is None:
+            self.sub_units = []
+        
+        # Get next index
+        max_idx = max((su.idx for su in self.sub_units), default=-1)
+        new_idx = max_idx + 1
+        
+        sub_unit = UURSubUnit(
+            pn=pn,
+            sn=sn,
+            rev=rev,
+            part_type=part_type,
+            idx=new_idx,
+            parent_idx=0  # Default to main unit as parent
+        )
+        self.sub_units.append(sub_unit)
+        return sub_unit
+    
+    def add_failure_to_main_unit(
+        self,
+        category: str,
+        code: str,
+        comment: Optional[str] = None,
+        component_ref: Optional[str] = None,
+        ref_step_id: Optional[int] = None
+    ) -> UURFailure:
+        """
+        Add a failure to the main unit (idx=0).
+        
+        This is the most common case - logging a failure on the main unit.
+        
+        Args:
+            category: Failure category (e.g., "Component Failure")
+            code: Failure code
+            comment: Optional comment
+            component_ref: Component reference (e.g., "C12")
+            ref_step_id: Optional step ID from UUT
+            
+        Returns:
+            The created UURFailure
+        """
+        main_unit = self.get_main_sub_unit()
+        return main_unit.add_failure(
+            category=category,
+            code=code,
+            comment=comment,
+            component_ref=component_ref,
+            ref_step_id=ref_step_id
+        )
     
     # === Core Properties (C# API compatibility) ===
     

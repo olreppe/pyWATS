@@ -14,6 +14,7 @@ from .failure import Failure
 from .fail_code import FailCode, FailCodes, FailureTypeEnum
 from .misc_uur_info import MiscUURInfo, MiscUURInfoCollection
 from .uur_attachment import UURAttachment
+from .uur_sub_unit import UURSubUnit, UURFailure
 
 # Legacy import (for backward compatibility)
 from .sub_repair import SubRepair
@@ -32,6 +33,8 @@ __all__ = [
     'MiscUURInfo',
     'MiscUURInfoCollection', 
     'UURAttachment',
+    'UURSubUnit',
+    'UURFailure',
     
     # Legacy
     'SubRepair'

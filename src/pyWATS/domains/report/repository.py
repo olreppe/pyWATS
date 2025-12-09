@@ -116,6 +116,9 @@ class ReportRepository:
 
         Returns:
             Report ID if successful, None otherwise
+            
+        Raises:
+            ValueError: If the API returns an error with details
         """
         if isinstance(report, (UUTReport, UURReport)):
             data = report.model_dump(
@@ -124,7 +127,29 @@ class ReportRepository:
         else:
             data = report
         response = self._http.post("/api/Report/WSJF", data=data)
-        if response.is_success and response.data:
+        
+        # Check for error responses
+        if not response.is_success:
+            # Try to get error details from response
+            error_msg = "Report submission failed"
+            if response.data:
+                if isinstance(response.data, dict):
+                    # Check for various error message formats
+                    error_msg = (
+                        response.data.get("message") or
+                        response.data.get("Message") or
+                        response.data.get("error") or
+                        response.data.get("Error") or
+                        str(response.data)
+                    )
+                elif isinstance(response.data, str):
+                    error_msg = response.data
+                elif isinstance(response.data, list):
+                    # Sometimes errors come as a list
+                    error_msg = "; ".join(str(e) for e in response.data)
+            raise ValueError(f"Report submission failed ({response.status_code}): {error_msg}")
+        
+        if response.data:
             # Response can be a list with a single result or a dict
             result_data = response.data
             if isinstance(result_data, list) and len(result_data) > 0:
