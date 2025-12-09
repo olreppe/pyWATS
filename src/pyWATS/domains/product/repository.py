@@ -2,7 +2,7 @@
 
 All API interactions for products, revisions, groups, and vendors.
 """
-from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ...core import HttpClient
@@ -88,7 +88,7 @@ class ProductRepository:
         return None
 
     def save_bulk(
-        self, products: List[Union[Product, Dict[str, Any]]]
+        self, products: Sequence[Union[Product, Dict[str, Any]]]
     ) -> List[Product]:
         """
         Bulk create or update products.
@@ -162,7 +162,7 @@ class ProductRepository:
         return None
 
     def save_revisions_bulk(
-        self, revisions: List[Union[ProductRevision, Dict[str, Any]]]
+        self, revisions: Sequence[Union[ProductRevision, Dict[str, Any]]]
     ) -> List[ProductRevision]:
         """
         Bulk create or update product revisions.

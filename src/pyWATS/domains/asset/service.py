@@ -2,7 +2,7 @@
 
 Provides high-level operations for asset management.
 """
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import datetime
 from uuid import UUID
 
@@ -80,7 +80,7 @@ class AssetService:
         asset_name: Optional[str] = None,
         description: Optional[str] = None,
         location: Optional[str] = None,
-        **kwargs
+        **kwargs: Any
     ) -> Optional[Asset]:
         """
         Create a new asset.
@@ -357,7 +357,7 @@ class AssetService:
         type_name: str,
         calibration_interval: Optional[float] = None,
         maintenance_interval: Optional[float] = None,
-        **kwargs
+        **kwargs: Any
     ) -> Optional[AssetType]:
         """
         Create a new asset type.

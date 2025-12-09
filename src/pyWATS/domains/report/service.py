@@ -104,7 +104,7 @@ class ReportService:
         Returns:
             List of ReportHeader
         """
-        filter_data = WATSFilter(serial_number=serial_number, top=top)
+        filter_data = WATSFilter(serial_number=serial_number, top_count=top)
         return self._repository.query_headers(report_type, filter_data)
 
     def get_headers_by_part_number(
@@ -124,7 +124,7 @@ class ReportService:
         Returns:
             List of ReportHeader
         """
-        filter_data = WATSFilter(part_number=part_number, top=top)
+        filter_data = WATSFilter(part_number=part_number, top_count=top)
         return self._repository.query_headers(report_type, filter_data)
 
     def get_headers_by_date_range(
@@ -144,7 +144,7 @@ class ReportService:
         Returns:
             List of ReportHeader
         """
-        filter_data = WATSFilter(start=start_date, end=end_date)
+        filter_data = WATSFilter(date_from=start_date, date_to=end_date)
         return self._repository.query_headers(report_type, filter_data)
 
     def get_recent_headers(
@@ -166,7 +166,7 @@ class ReportService:
         """
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
-        filter_data = WATSFilter(start=start_date, end=end_date, top=top)
+        filter_data = WATSFilter(date_from=start_date, date_to=end_date, top_count=top)
         return self._repository.query_headers(report_type, filter_data)
 
     def get_todays_headers(
@@ -186,7 +186,7 @@ class ReportService:
         """
         today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow = today + timedelta(days=1)
-        filter_data = WATSFilter(start=today, end=tomorrow, top=top)
+        filter_data = WATSFilter(date_from=today, date_to=tomorrow, top_count=top)
         return self._repository.query_headers(report_type, filter_data)
 
     # =========================================================================

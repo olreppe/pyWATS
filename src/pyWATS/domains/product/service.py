@@ -76,7 +76,7 @@ class ProductService:
         description: Optional[str] = None,
         non_serial: bool = False,
         state: ProductState = ProductState.ACTIVE,
-        **kwargs
+        **kwargs: Any
     ) -> Optional[Product]:
         """
         Create a new product.
@@ -188,7 +188,7 @@ class ProductService:
         name: Optional[str] = None,
         description: Optional[str] = None,
         state: ProductState = ProductState.ACTIVE,
-        **kwargs
+        **kwargs: Any
     ) -> Optional[ProductRevision]:
         """
         Create a new product revision.

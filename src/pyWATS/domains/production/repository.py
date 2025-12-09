@@ -2,7 +2,7 @@
 
 All API interactions for production units, serial numbers, and batches.
 """
-from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ...core import HttpClient
@@ -56,7 +56,7 @@ class ProductionRepository:
         return None
 
     def save_units(
-        self, units: List[Union[Unit, Dict[str, Any]]]
+        self, units: Sequence[Union[Unit, Dict[str, Any]]]
     ) -> List[Unit]:
         """
         Add or update units by serial number.
@@ -563,7 +563,7 @@ class ProductionRepository:
     # =========================================================================
 
     def save_batches(
-        self, batches: List[Union[ProductionBatch, Dict[str, Any]]]
+        self, batches: Sequence[Union[ProductionBatch, Dict[str, Any]]]
     ) -> List[ProductionBatch]:
         """
         Add or update batches.
