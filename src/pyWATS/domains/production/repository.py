@@ -76,7 +76,18 @@ class ProductionRepository:
         ]
         response = self._http.put("/api/Production/Units", data=data)
         if response.is_success and response.data:
-            return [Unit.model_validate(item) for item in response.data]
+            # Check if response is a list (success) or dict (batch result)
+            if isinstance(response.data, list):
+                return [Unit.model_validate(item) for item in response.data]
+            elif isinstance(response.data, dict):
+                # Batch operation result - check if successful
+                if response.data.get('errorCount', 0) == 0:
+                    # Success - return the units we sent (can't get them back from API)
+                    return [u if isinstance(u, Unit) else Unit.model_validate(u) for u in units]
+                else:
+                    # Has errors
+                    from ...core.exceptions import PyWATSError
+                    raise PyWATSError(f"Failed to save units: {response.data}")
         return []
 
     # =========================================================================

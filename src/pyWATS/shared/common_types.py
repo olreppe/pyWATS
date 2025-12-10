@@ -27,5 +27,5 @@ class Setting(PyWATSModel):
     Used in Products, ProductRevisions, Assets, and Units.
     """
     key: str = Field(..., alias="key")
-    value: str = Field(..., alias="value")
+    value: Optional[str] = Field(default=None, alias="value")  # Allow None values
     change: Optional[ChangeType] = Field(default=None, alias="change")
