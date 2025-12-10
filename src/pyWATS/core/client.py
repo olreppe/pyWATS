@@ -138,7 +138,12 @@ class HttpClient:
     def __enter__(self) -> "HttpClient":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any]
+    ) -> None:
         self.close()
 
     def _handle_response(self, response: httpx.Response) -> Response:
@@ -235,7 +240,7 @@ class HttpClient:
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> Response:
         """Make a GET request."""
         return self._make_request("GET", endpoint, params=params, **kwargs)
@@ -245,7 +250,7 @@ class HttpClient:
         endpoint: str,
         data: Any = None,
         params: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> Response:
         """Make a POST request."""
         return self._make_request(
@@ -257,7 +262,7 @@ class HttpClient:
         endpoint: str,
         data: Any = None,
         params: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> Response:
         """Make a PUT request."""
         return self._make_request(
@@ -268,7 +273,7 @@ class HttpClient:
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> Response:
         """Make a DELETE request."""
         return self._make_request("DELETE", endpoint, params=params, **kwargs)
@@ -278,7 +283,7 @@ class HttpClient:
         endpoint: str,
         data: Any = None,
         params: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> Response:
         """Make a PATCH request."""
         return self._make_request(

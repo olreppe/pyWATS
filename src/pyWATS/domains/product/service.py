@@ -330,7 +330,7 @@ class ProductService:
         """
         product = self.get_product(part_number)
         if product and product.tags:
-            return [{"key": t.key, "value": t.value} for t in product.tags]
+            return [{"key": t.key, "value": t.value or ""} for t in product.tags]
         return []
 
     def set_product_tags(
@@ -411,7 +411,7 @@ class ProductService:
         """
         rev = self.get_revision(part_number, revision)
         if rev and rev.tags:
-            return [{"key": t.key, "value": t.value} for t in rev.tags]
+            return [{"key": t.key, "value": t.value or ""} for t in rev.tags]
         return []
 
     def set_revision_tags(

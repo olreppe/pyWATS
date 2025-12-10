@@ -2,7 +2,7 @@
 
 All API interactions for software distribution packages.
 """
-from typing import Optional, List, Union, TYPE_CHECKING
+from typing import Optional, List, Union, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ class SoftwareRepository:
         Returns:
             Package object or None if not found
         """
-        params = {"name": name}
+        params: Dict[str, Any] = {"name": name}
         if status:
             params["status"] = status.value
         if version is not None:
@@ -215,7 +215,7 @@ class SoftwareRepository:
         Returns:
             True if successful
         """
-        params = {"name": name}
+        params: Dict[str, Any] = {"name": name}
         if version is not None:
             params["version"] = version
         response = self._http.delete(
