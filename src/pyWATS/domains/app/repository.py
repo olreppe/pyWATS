@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from ...core import HttpClient
+    from ...core.exceptions import ErrorHandler
 
 from .models import YieldData, ProcessInfo, LevelInfo, ProductGroup
 from ..report.models import WATSFilter, ReportHeader
@@ -18,14 +19,20 @@ class AppRepository:
     Handles all WATS API interactions for statistics and KPIs.
     """
 
-    def __init__(self, client: "HttpClient"):
+    def __init__(
+        self, 
+        client: "HttpClient",
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize with HTTP client.
 
         Args:
             client: HttpClient for making HTTP requests
+            error_handler: ErrorHandler for response handling (optional for backward compat)
         """
         self._http = client
+        self._error_handler = error_handler
 
     # =========================================================================
     # System Info
@@ -41,6 +48,14 @@ class AppRepository:
             Version info dictionary or None
         """
         response = self._http.get("/api/App/Version")
+        
+        if self._error_handler:
+            data = self._error_handler.handle_response(
+                response, operation="get_version", allow_empty=True
+            )
+            return cast(Dict[str, Any], data) if data else None
+        
+        # Backward compatibility: original behavior
         if response.is_success and response.data:
             return cast(Dict[str, Any], response.data)
         return None
@@ -55,6 +70,16 @@ class AppRepository:
             List of ProcessInfo objects
         """
         response = self._http.get("/api/App/Processes")
+        
+        if self._error_handler:
+            data = self._error_handler.handle_response(
+                response, operation="get_processes", allow_empty=True
+            )
+            if data:
+                return [ProcessInfo.model_validate(item) for item in data]
+            return []
+        
+        # Backward compatibility
         if response.is_success and response.data:
             return [ProcessInfo.model_validate(item) for item in response.data]
         return []
@@ -69,6 +94,16 @@ class AppRepository:
             List of LevelInfo objects
         """
         response = self._http.get("/api/App/Levels")
+        
+        if self._error_handler:
+            data = self._error_handler.handle_response(
+                response, operation="get_levels", allow_empty=True
+            )
+            if data:
+                return [LevelInfo.model_validate(item) for item in data]
+            return []
+        
+        # Backward compatibility
         if response.is_success and response.data:
             return [LevelInfo.model_validate(item) for item in response.data]
         return []
@@ -83,6 +118,16 @@ class AppRepository:
             List of ProductGroup objects
         """
         response = self._http.get("/api/App/ProductGroups")
+        
+        if self._error_handler:
+            data = self._error_handler.handle_response(
+                response, operation="get_product_groups", allow_empty=True
+            )
+            if data:
+                return [ProductGroup.model_validate(item) for item in data]
+            return []
+        
+        # Backward compatibility
         if response.is_success and response.data:
             return [
                 ProductGroup.model_validate(item) for item in response.data

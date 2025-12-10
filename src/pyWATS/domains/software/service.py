@@ -18,14 +18,18 @@ class SoftwareService:
     Provides high-level operations for managing software packages.
     """
 
-    def __init__(self, client: HttpClient):
+    def __init__(self, repository_or_client: Union[SoftwareRepository, HttpClient]):
         """
-        Initialize with HttpClient.
+        Initialize with SoftwareRepository or HttpClient.
 
         Args:
-            client: HttpClient instance
+            repository_or_client: SoftwareRepository instance or HttpClient (for backward compatibility)
         """
-        self._repository = SoftwareRepository(client)
+        if isinstance(repository_or_client, SoftwareRepository):
+            self._repository = repository_or_client
+        else:
+            # Backward compatibility: create repository from HttpClient
+            self._repository = SoftwareRepository(repository_or_client)
 
     # =========================================================================
     # Query Packages

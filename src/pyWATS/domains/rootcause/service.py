@@ -18,14 +18,18 @@ class RootCauseService:
     Provides high-level operations for issue tracking and resolution.
     """
 
-    def __init__(self, client: HttpClient):
+    def __init__(self, repository_or_client: Union[RootCauseRepository, HttpClient]):
         """
-        Initialize with HttpClient.
+        Initialize with RootCauseRepository or HttpClient.
 
         Args:
-            client: HttpClient instance
+            repository_or_client: RootCauseRepository instance or HttpClient (for backward compatibility)
         """
-        self._repository = RootCauseRepository(client)
+        if isinstance(repository_or_client, RootCauseRepository):
+            self._repository = repository_or_client
+        else:
+            # Backward compatibility: create repository from HttpClient
+            self._repository = RootCauseRepository(repository_or_client)
 
     # =========================================================================
     # Ticket Operations

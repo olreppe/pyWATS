@@ -5,6 +5,7 @@ The main entry point for the pyWATS library.
 from typing import Optional
 
 from .core.client import HttpClient
+from .core.exceptions import ErrorMode, ErrorHandler
 from .domains.product import (
     ProductService, 
     ProductRepository,
@@ -72,7 +73,8 @@ class pyWATS:
         base_url: str,
         token: str,
         timeout: int = 30,
-        process_refresh_interval: int = DEFAULT_PROCESS_REFRESH_INTERVAL
+        process_refresh_interval: int = DEFAULT_PROCESS_REFRESH_INTERVAL,
+        error_mode: ErrorMode = ErrorMode.STRICT
     ):
         """
         Initialize the pyWATS API.
@@ -82,11 +84,16 @@ class pyWATS:
             token: API token (Base64-encoded credentials)
             timeout: Request timeout in seconds (default: 30)
             process_refresh_interval: Process cache refresh interval in seconds (default: 300)
+            error_mode: Error handling mode (STRICT or LENIENT). Default is STRICT.
+                - STRICT: Raises exceptions for 404/empty responses
+                - LENIENT: Returns None for 404/empty responses
         """
         self._base_url = base_url.rstrip("/")
         self._token = token
         self._timeout = timeout
         self._process_refresh_interval = process_refresh_interval
+        self._error_mode = error_mode
+        self._error_handler = ErrorHandler(error_mode)
         
         # Initialize HTTP client
         self._http_client = HttpClient(
@@ -120,7 +127,7 @@ class pyWATS:
             ProductService instance
         """
         if self._product is None:
-            repo = ProductRepository(self._http_client)
+            repo = ProductRepository(self._http_client, self._error_handler)
             self._product = ProductService(repo)
         return self._product
     
@@ -164,7 +171,7 @@ class pyWATS:
             AssetService instance
         """
         if self._asset is None:
-            repo = AssetRepository(self._http_client)
+            repo = AssetRepository(self._http_client, self._error_handler)
             self._asset = AssetService(repo)
         return self._asset
     
@@ -181,7 +188,7 @@ class pyWATS:
             ProductionService instance
         """
         if self._production is None:
-            repo = ProductionRepository(self._http_client)
+            repo = ProductionRepository(self._http_client, self._error_handler)
             self._production = ProductionService(repo)
         return self._production
     
@@ -194,7 +201,8 @@ class pyWATS:
             ReportService instance
         """
         if self._report is None:
-            self._report = ReportService(self._http_client)
+            repo = ReportRepository(self._http_client, self._error_handler)
+            self._report = ReportService(repo)
         return self._report
     
     @property
@@ -206,7 +214,8 @@ class pyWATS:
             SoftwareService instance
         """
         if self._software is None:
-            self._software = SoftwareService(self._http_client)
+            repo = SoftwareRepository(self._http_client, self._error_handler)
+            self._software = SoftwareService(repo)
         return self._software
     
     @property
@@ -218,7 +227,8 @@ class pyWATS:
             AppService instance
         """
         if self._app is None:
-            self._app = AppService(self._http_client)
+            repo = AppRepository(self._http_client, self._error_handler)
+            self._app = AppService(repo)
         return self._app
     
     @property
@@ -233,7 +243,8 @@ class pyWATS:
             RootCauseService instance
         """
         if self._rootcause is None:
-            self._rootcause = RootCauseService(self._http_client)
+            repo = RootCauseRepository(self._http_client, self._error_handler)
+            self._rootcause = RootCauseService(repo)
         return self._rootcause
     
     @property
@@ -263,7 +274,7 @@ class pyWATS:
             ProcessService instance
         """
         if self._process is None:
-            repo = ProcessRepository(self._http_client)
+            repo = ProcessRepository(self._http_client, self._error_handler)
             self._process = ProcessService(repo, self._process_refresh_interval)
         return self._process
     
@@ -309,6 +320,11 @@ class pyWATS:
         """Set the request timeout."""
         self._timeout = value
         self._http_client.timeout = value
+    
+    @property
+    def error_mode(self) -> ErrorMode:
+        """Get the configured error handling mode."""
+        return self._error_mode
     
     # -------------------------------------------------------------------------
     # Utility Methods

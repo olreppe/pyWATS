@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 
 if TYPE_CHECKING:
     from ...core import HttpClient
+    from ...core.exceptions import ErrorHandler
 
 from .models import Product, ProductRevision, ProductGroup, BomItem
 
@@ -18,14 +19,22 @@ class ProductRepository:
     Handles all WATS API interactions for products.
     """
 
-    def __init__(self, client: "HttpClient"):
+    def __init__(
+        self, 
+        client: "HttpClient",
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize with HTTP client.
 
         Args:
             client: HttpClient for making HTTP requests
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = client
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
 
     # =========================================================================
     # Product CRUD
@@ -58,9 +67,13 @@ class ProductRepository:
             Product object or None if not found
         """
         response = self._http.get(f"/api/Product/{part_number}")
-        if response.is_success and response.data:
-            return Product.model_validate(response.data)
-        return None
+        data = self._error_handler.handle_response(
+            response, 
+            operation=f"get_by_part_number('{part_number}')"
+        )
+        if data is None:
+            return None
+        return Product.model_validate(data)
 
     def save(
         self, product: Union[Product, Dict[str, Any]]

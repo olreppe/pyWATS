@@ -17,14 +17,18 @@ class AppService:
     Provides high-level operations for statistics, KPIs, and analytics.
     """
 
-    def __init__(self, client: HttpClient):
+    def __init__(self, repository_or_client: Union[AppRepository, HttpClient]):
         """
-        Initialize with HttpClient.
+        Initialize with AppRepository or HttpClient.
 
         Args:
-            client: HttpClient instance
+            repository_or_client: AppRepository instance or HttpClient (for backward compatibility)
         """
-        self._repository = AppRepository(client)
+        if isinstance(repository_or_client, AppRepository):
+            self._repository = repository_or_client
+        else:
+            # Backward compatibility: create repository from HttpClient
+            self._repository = AppRepository(repository_or_client)
 
     # =========================================================================
     # System Info

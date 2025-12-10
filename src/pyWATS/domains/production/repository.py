@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING, ca
 
 if TYPE_CHECKING:
     from ...core import HttpClient
+    from ...core.exceptions import ErrorHandler
 
 from .models import (
     Unit, UnitChange, ProductionBatch, SerialNumberType,
@@ -20,14 +21,22 @@ class ProductionRepository:
     Handles all WATS API interactions for production management.
     """
 
-    def __init__(self, client: "HttpClient"):
+    def __init__(
+        self, 
+        client: "HttpClient",
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize with HTTP client.
 
         Args:
             client: HttpClient for making HTTP requests
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = client
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
 
     # =========================================================================
     # Unit CRUD

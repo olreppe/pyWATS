@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ...core import HttpClient
+    from ...core.exceptions import ErrorHandler
 
 from .models import WATSFilter, ReportHeader
 from .report_models import UUTReport, UURReport
@@ -18,14 +19,22 @@ class ReportRepository:
     Handles all WATS API interactions for test reports.
     """
 
-    def __init__(self, client: "HttpClient"):
+    def __init__(
+        self, 
+        client: "HttpClient",
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize with HTTP client.
 
         Args:
             client: HttpClient for making HTTP requests
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = client
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
 
     # =========================================================================
     # Query Operations

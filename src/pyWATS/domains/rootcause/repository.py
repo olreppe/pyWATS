@@ -7,6 +7,7 @@ from uuid import UUID
 
 if TYPE_CHECKING:
     from ...core import HttpClient
+    from ...core.exceptions import ErrorHandler
 
 from .models import Ticket, TicketAttachment
 from .enums import TicketStatus, TicketView
@@ -19,14 +20,22 @@ class RootCauseRepository:
     Handles all WATS API interactions for the ticketing system.
     """
 
-    def __init__(self, client: "HttpClient"):
+    def __init__(
+        self, 
+        client: "HttpClient",
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize with HTTP client.
 
         Args:
             client: HttpClient for making HTTP requests
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = client
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
 
     # =========================================================================
     # Ticket Operations

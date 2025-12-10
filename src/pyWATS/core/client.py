@@ -3,6 +3,10 @@ HTTP Client for WATS API.
 
 This module provides a clean HTTP client with Basic authentication
 for communicating with the WATS server.
+
+Note: The HttpClient does NOT raise exceptions for HTTP error status codes.
+It always returns a Response object. Error handling is delegated to the
+ErrorHandler class in the repository layer.
 """
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
@@ -10,9 +14,6 @@ import httpx
 import json
 
 from .exceptions import (
-    AuthenticationError,
-    NotFoundError,
-    ServerError,
     ConnectionError,
     TimeoutError,
     PyWATSError
@@ -29,11 +30,47 @@ class Response:
 
     @property
     def is_success(self) -> bool:
+        """True if status code is 2xx."""
         return 200 <= self.status_code < 300
 
     @property
     def is_error(self) -> bool:
+        """True if status code is 4xx or 5xx."""
         return self.status_code >= 400
+    
+    @property
+    def is_not_found(self) -> bool:
+        """True if status code is 404."""
+        return self.status_code == 404
+    
+    @property
+    def is_server_error(self) -> bool:
+        """True if status code is 5xx."""
+        return 500 <= self.status_code < 600
+    
+    @property
+    def is_client_error(self) -> bool:
+        """True if status code is 4xx."""
+        return 400 <= self.status_code < 500
+    
+    @property
+    def error_message(self) -> Optional[str]:
+        """Extract error message from response data if available."""
+        if self.is_success:
+            return None
+        
+        if isinstance(self.data, dict):
+            return (
+                self.data.get("message") or 
+                self.data.get("Message") or
+                self.data.get("error") or 
+                self.data.get("detail") or
+                self.data.get("title")
+            )
+        elif isinstance(self.data, str):
+            return self.data
+        
+        return f"HTTP {self.status_code}"
 
 
 class HttpClient:
@@ -113,11 +150,10 @@ class HttpClient:
 
         Returns:
             Response object with parsed data
-
-        Raises:
-            AuthenticationError: If authentication fails (401/403)
-            NotFoundError: If resource not found (404)
-            ServerError: If server returns an error (5xx)
+            
+        Note:
+            This method does NOT raise exceptions for HTTP error status codes.
+            Error handling is delegated to the ErrorHandler in the repository layer.
         """
         # Try to parse JSON response
         data = None
@@ -127,38 +163,13 @@ class HttpClient:
         except (json.JSONDecodeError, ValueError):
             data = response.text if response.text else None
 
-        # Create response object
-        result = Response(
+        # Create and return response object (no exceptions raised here)
+        return Response(
             status_code=response.status_code,
             data=data,
             headers=dict(response.headers),
             raw=response.content
         )
-
-        # Handle error status codes
-        if response.status_code == 401:
-            raise AuthenticationError(
-                "Authentication failed - invalid or expired token"
-            )
-
-        if response.status_code == 403:
-            raise AuthenticationError(
-                "Access forbidden - insufficient permissions"
-            )
-
-        if response.status_code == 404:
-            msg = "Resource not found"
-            if isinstance(data, dict):
-                msg = data.get("message", msg)
-            raise NotFoundError("Resource", "unknown", msg)
-
-        if response.status_code >= 500:
-            msg = "Server error"
-            if isinstance(data, dict):
-                msg = data.get("message", msg)
-            raise ServerError(response.status_code, msg, response.text)
-
-        return result
 
     def _make_request(
         self,
@@ -216,8 +227,6 @@ class HttpClient:
             raise ConnectionError(f"Failed to connect to {self.base_url}: {e}")
         except httpx.TimeoutException as e:
             raise TimeoutError(f"Request timed out: {e}")
-        except (AuthenticationError, NotFoundError, ServerError):
-            raise
         except Exception as e:
             raise PyWATSError(f"HTTP request failed: {e}")
 

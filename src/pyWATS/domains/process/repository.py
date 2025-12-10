@@ -2,7 +2,10 @@
 
 Uses the public WATS API endpoints for process operations.
 """
-from typing import List
+from typing import List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...core.exceptions import ErrorHandler
 
 from ...core import HttpClient
 from .models import ProcessInfo
@@ -16,14 +19,22 @@ class ProcessRepository:
     - GET /api/App/Processes (public endpoint)
     """
     
-    def __init__(self, http_client: HttpClient):
+    def __init__(
+        self, 
+        http_client: HttpClient,
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize repository with HTTP client.
         
         Args:
             http_client: The HTTP client for API calls
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = http_client
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
     
     def get_processes(self) -> List[ProcessInfo]:
         """

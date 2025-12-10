@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from ...core.client import HttpClient
+    from ...core.exceptions import ErrorHandler
 
 from .models import Asset, AssetType, AssetLog
 from .enums import AssetState
@@ -18,14 +19,22 @@ class AssetRepository:
     Handles all HTTP API calls for asset CRUD operations.
     """
 
-    def __init__(self, http: "HttpClient"):
+    def __init__(
+        self, 
+        http: "HttpClient",
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize with HTTP client.
 
         Args:
             http: HttpClient instance for making requests
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = http
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
 
     # =========================================================================
     # Asset CRUD
