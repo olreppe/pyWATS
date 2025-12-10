@@ -50,8 +50,13 @@ class Step(WATSBase, ABC):
     # Parent Step - For internal use only - does not seriallize
     parent: Optional['Step'] = Field(default=None, exclude=True)
 
-    # Required - using str to allow subclasses to define specific Literal values for discriminator
-    step_type: str = Field(default="NONE", validation_alias="stepType", serialization_alias="stepType")
+    # Required
+    step_type: Literal[
+        "NONE", "ET_PFT", "PassFailTest", "ET_MPFT", "ET_SVT", "ET_MSVT", 
+        "ET_NLT", "NumericLimitStep", "ET_MNLT", "Action", "WATS_XYGMNLT", 
+        "SequenceCall", "WATS_SeqCall", "MessagePopup", "CallExecutable"
+    ] = Field(default="NONE", validation_alias="stepType", serialization_alias="stepType")
+    #step_type: str = Field(default="NO_VALID_STEP",validation_alias="stepType")
     
     name: str = Field(default="StepName", max_length=100, min_length=1)
     group: str = Field(default="M", max_length=1, min_length=1, pattern='^[SMC]$')
@@ -154,9 +159,7 @@ class Step(WATSBase, ABC):
 
         
 
-# Note: ActionStep is essentially the same as GenericStep (which now includes "Action" in its literals)
-# ActionStep is kept for backward compatibility but not in the discriminated union
-StepType = Union['SequenceCall','MultiNumericStep','NumericStep','BooleanStep','MultiBooleanStep', 'MultiStringStep', 'StringStep', 'ChartStep', 'CallExeStep','MessagePopUpStep', 'GenericStep']
+StepType = Union['SequenceCall','MultiNumericStep','NumericStep','BooleanStep','MultiBooleanStep', 'MultiStringStep', 'StringStep', 'ChartStep', 'CallExeStep','MessagePopUpStep','GenericStep', 'ActionStep']
 from .steps import NumericStep,MultiNumericStep,SequenceCall,BooleanStep,MultiBooleanStep,MultiStringStep,StringStep,ChartStep,CallExeStep,MessagePopUpStep,GenericStep,ActionStep  # noqa: E402
 
 Step.model_rebuild()

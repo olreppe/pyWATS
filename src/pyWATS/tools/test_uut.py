@@ -14,14 +14,14 @@ from typing import Optional
 import random
 import math
 
-from ..models.report.uut.uut_report import UUTReport
-from ..models.report.uut.uut_info import UUTInfo
-from ..models.report.uut.steps.sequence_call import SequenceCall, SequenceCallInfo
-from ..models.report.uut.steps.comp_operator import CompOp
-from ..models.report.uut.steps.generic_step import FlowType
-from ..models.report.chart import Chart, ChartSeries, ChartType
-from ..models.report.misc_info import MiscInfo
-from ..models.report.sub_unit import SubUnit
+from ..domains.report.report_models.uut.uut_report import UUTReport
+from ..domains.report.report_models.uut.uut_info import UUTInfo
+from ..domains.report.report_models.uut.steps.sequence_call import SequenceCall, SequenceCallInfo
+from ..domains.report.report_models.uut.steps.comp_operator import CompOp
+from ..domains.report.report_models.uut.steps.generic_step import FlowType
+from ..domains.report.report_models.chart import Chart, ChartSeries, ChartType
+from ..domains.report.report_models.misc_info import MiscInfo
+from ..domains.report.report_models.sub_unit import SubUnit
 
 
 def create_test_uut_report(
