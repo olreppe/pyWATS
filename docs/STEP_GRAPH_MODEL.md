@@ -254,8 +254,32 @@ root.add_generic_step(step_type, name, status, ...)
 
 ## Migration Notes
 
-If upgrading from an older version:
+### Recent Changes (December 2025)
+**Architecture improvements to step-type literals and discriminated unions:**
+
+1. **Removed StepType Literal type alias collision**
+   - Previously, `StepType` was used for both a Literal type alias AND a Union type
+   - Now only the Union type `StepType = Union[SequenceCall, NumericStep, ...]` exists
+   - This eliminates confusion and improves code clarity
+
+2. **Base Step.step_type is now `str`**
+   - Changed from hard-coded Literal to plain `str` type
+   - Allows proper inheritance - subclasses override with specific Literal values
+   - Enables Pydantic's discriminated union feature to work correctly
+
+3. **GenericStep accepts any string**
+   - GenericStep.step_type remains `str` to act as catch-all
+   - Handles all FlowType enum values (50+ types) without listing each one
+   - Placed last in the Union so it acts as fallback for unknown types
+
+4. **Discriminator re-enabled**
+   - `Field(discriminator='step_type')` annotation now works correctly
+   - Provides fast, type-safe deserialization
+   - Pydantic directly selects the right step class based on step_type value
+
+### If Upgrading from Older Versions
 - MultiBooleanStep no longer inherits from BooleanStep (avoids field conflicts)
-- Base Step.step_type changed from Literal to str (enables discriminator)
-- StepList's __get_pydantic_core_schema__ preserves discriminator (fixes deserialization)
-- Remove any "before" validators that convert steps to StepList (interferes with discriminator)
+- Base Step.step_type changed from Literal to str (enables proper inheritance)
+- Each concrete step class must override step_type with specific Literal values
+- GenericStep uses str type to accept all FlowType values dynamically
+- StepList's __get_pydantic_core_schema__ preserves discriminator functionality

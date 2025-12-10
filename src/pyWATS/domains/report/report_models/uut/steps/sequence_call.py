@@ -98,9 +98,9 @@ class SequenceCall(Step):
     sequence: SequenceCallInfo = Field(default_factory=SequenceCallInfo, validation_alias="seqCall", serialization_alias="seqCall")
 
     # Child steps - Only applies to SequenceCall
-    # Note: We don't use Field(discriminator='step_type') because GenericStep acts as a catch-all
-    # Pydantic will try each union member in order until one validates successfully
-    steps: Optional[StepList[StepType]] = Field(default_factory=StepList)
+    # Using Field(discriminator='step_type') for fast, type-safe deserialization
+    # GenericStep with str type acts as catch-all for unknown step_type values
+    steps: Optional[StepList[Annotated[StepType, Field(discriminator='step_type')]]] = Field(default_factory=StepList)
     
     # StepList model validator - before. Converts incoming list to StepList when deserializing
     @model_validator(mode="before")

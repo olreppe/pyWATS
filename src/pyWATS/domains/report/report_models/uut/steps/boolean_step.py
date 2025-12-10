@@ -39,7 +39,7 @@ class BooleanStep(Step):
             return False
         return True
 
-class MultiBooleanStep(BooleanStep):
+class MultiBooleanStep(Step):
     step_type: Literal["ET_MPFT"] = Field(default="ET_MPFT", validation_alias="stepType", serialization_alias="stepType")
     measurements: list[MultiBooleanMeasurement] = Field(default_factory=list, validation_alias="booleanMeas",serialization_alias="booleanMeas")
 
