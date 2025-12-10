@@ -207,11 +207,12 @@ class TestUUTModelComprehensive:
         print("\n=== Testing Action Steps ===")
         action_seq = root.add_sequence_call(name="ActionTests", file_name="action.seq")
         
-        # Add various action steps
+        # Add various action steps using GenericStep with non-Action types
+        # Note: "Action" has its own ActionStep class, so we use other generic types here
         for i in range(10):
             action_seq.add_generic_step(
-                step_type="Action",
-                name=f"ActionStep_{i}",
+                step_type="Statement",  # Changed from "Action" since ActionStep exists
+                name=f"StatementStep_{i}",
                 status="P"
             )
             step_count += 1

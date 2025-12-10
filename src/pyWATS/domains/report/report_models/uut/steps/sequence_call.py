@@ -99,8 +99,7 @@ class SequenceCall(Step):
 
     # Child steps - Only applies to SequenceCall
     # Using Field(discriminator='step_type') for fast, type-safe deserialization
-    # Note: discriminator uses Python field name 'step_type', not JSON alias 'stepType'
-    # GenericStep with str type acts as catch-all for unknown step_type values
+    # GenericStep now uses explicit Literal so discriminator works correctly
     steps: Optional[StepList[Annotated[StepType, Field(discriminator='step_type')]]] = Field(default_factory=StepList)
     
     # Model validator (after) - Converts list to StepList and sets parent references
