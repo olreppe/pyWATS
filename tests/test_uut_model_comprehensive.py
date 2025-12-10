@@ -3,11 +3,11 @@ Comprehensive UUT Model Test
 Tests all variants of all step types with extensive examples
 """
 from datetime import datetime
-from pywats.domains.report.report_models.uut.uut_report import UUTReport
-from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
-from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
-from pywats.domains.report.report_models.uut.steps.generic_step import FlowType
-from pywats.domains.report.report_models.chart import ChartType
+from pyWATS.domains.report.report_models.uut.uut_report import UUTReport
+from pyWATS.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+from pyWATS.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pyWATS.domains.report.report_models.uut.steps.generic_step import FlowType
+from pyWATS.domains.report.report_models.chart import ChartType
 
 
 class TestUUTModelComprehensive:
@@ -238,7 +238,7 @@ class TestUUTModelComprehensive:
         chart_seq = root.add_sequence_call(name="ChartTests", file_name="chart.seq")
         
         # Create chart steps with different chart types
-        from pywats.domains.report.report_models.chart import ChartSeries
+        from pyWATS.domains.report.report_models.chart import ChartSeries
         
         for i, chart_type in enumerate([ChartType.LINE, ChartType.LINE_LOG_X]):
             # Create series data (x_data and y_data are semicolon-separated strings)
