@@ -141,11 +141,13 @@ class Step(WATSBase, ABC):
 
 # Union of all Step types
 # IMPORTANT ORDER: 
-# 1. Multi* steps MUST come before their single-measurement counterparts
-#    (MultiBooleanStep before BooleanStep, etc.) to prevent validators from corrupting data
+# 1. Subclasses MUST come before their parent classes in the inheritance chain
+#    - ChartStep before MultiNumericStep (ChartStep inherits from MultiNumericStep)
+#    - MultiBooleanStep before BooleanStep
+#    - Multi* steps before their single-measurement counterparts
 # 2. GenericStep MUST be last because it matches many step_type values
 # 3. SequenceCall first for common case optimization
-StepType = Union['SequenceCall','MultiNumericStep','NumericStep','MultiBooleanStep','BooleanStep', 'MultiStringStep', 'StringStep', 'ChartStep', 'CallExeStep','MessagePopUpStep', 'ActionStep', 'GenericStep']
+StepType = Union['SequenceCall','ChartStep','MultiNumericStep','NumericStep','MultiBooleanStep','BooleanStep', 'MultiStringStep', 'StringStep', 'CallExeStep','MessagePopUpStep', 'ActionStep', 'GenericStep']
 from .steps import NumericStep,MultiNumericStep,SequenceCall,BooleanStep,MultiBooleanStep,MultiStringStep,StringStep,ChartStep,CallExeStep,MessagePopUpStep,GenericStep,ActionStep  # noqa: E402
 
 Step.model_rebuild()
