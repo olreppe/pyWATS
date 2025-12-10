@@ -50,12 +50,13 @@ class TestProductionScenario:
         # Lot number that changes occasionally (use counter mod 5)
         self.lot_number = f"LOT-{(_test_counter // 5):03d}"
         
-        # Test operation codes (these need to exist on your WATS server)
-        self.op_ict = 10  # ICT
-        self.op_pcba_test = 20  # PCBA-TEST
-        self.op_insulation = 30  # Insulation
-        self.op_burn_in = 40  # Burn-In
-        self.op_final_function = 50  # Final Function Test
+        # Test operation codes (from server: api.process.get_test_operations())
+        # 30: ICT test, 50: PCBA test, 70: Insulation test, 90: Burn In test, 60: Functional test
+        self.op_ict = 30  # ICT test
+        self.op_pcba_test = 50  # PCBA test
+        self.op_insulation = 70  # Insulation test
+        self.op_burn_in = 90  # Burn In test
+        self.op_final_function = 60  # Functional test (Final Function)
         
         print(f"\n=== PRODUCTION SCENARIO TEST ===")
         print(f"PCBA Serial: {self.pcba_serial}")
@@ -390,10 +391,10 @@ class TestProductionScenario:
                 comment="Component R15 failed - replaced"
             )
             
-            # Add failure (repair details are in comment)
+            # Add failure using valid fail codes from server
             repair.add_failure_to_main_unit(
                 category="Component",
-                code="Defective",
+                code="Defect Component",
                 comment="Component R15 failed",
                 component_ref="R15"
             )
@@ -533,11 +534,12 @@ class TestProductionScenario:
                 location="TestLab",
                 comment="Insulation failure repaired"
             )
-            # Add failure (repair details are in comment)
+            # Add failure using valid fail codes from server
             repair.add_failure_to_main_unit(
-                category="Insulation",
-                code="Low Resistance",
-                comment="Insulation resistance too low - Cleaned connectors and resealed"
+                category="Component",
+                code="Defect Component",
+                comment="Insulation resistance too low - Cleaned connectors and resealed",
+                component_ref="CON1"
             )
             self.api.report.submit_report(repair)
             print(f"  [OK] Repair completed")
@@ -630,11 +632,12 @@ class TestProductionScenario:
                 location="TestLab",
                 comment="Thermal failure repaired"
             )
-            # Add failure (repair details are in comment)
+            # Add failure using valid fail codes from server
             repair.add_failure_to_main_unit(
-                category="Thermal",
-                code="Burn-In Failure",
-                comment="Thermal failure during burn-in - Reworked thermal interface"
+                category="Component",
+                code="Burned Component",
+                comment="Thermal failure during burn-in - Reworked thermal interface",
+                component_ref="U1"
             )
             self.api.report.submit_report(repair)
             print(f"  [OK] Repair completed")
@@ -753,11 +756,12 @@ class TestProductionScenario:
                 location="TestLab",
                 comment="Communication failure repaired"
             )
-            # Add failure (repair details are in comment)
+            # Add failure using valid fail codes from server
             repair.add_failure_to_main_unit(
-                category="Communication",
-                code="Communication Error",
-                comment="Communication failure - Recalibrated communication interface"
+                category="Component",
+                code="Defect Component",
+                comment="Communication failure - Recalibrated communication interface",
+                component_ref="IC2"
             )
             self.api.report.submit_report(repair)
             print(f"  [OK] Repair completed")
