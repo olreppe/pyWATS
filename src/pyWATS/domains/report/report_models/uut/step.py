@@ -140,9 +140,12 @@ class Step(WATSBase, ABC):
         
 
 # Union of all Step types
-# IMPORTANT: GenericStep MUST be last because it has step_type: str which matches everything
-# Pydantic tries union members in order, so specific types must come before catch-all types
-StepType = Union['SequenceCall','MultiNumericStep','NumericStep','BooleanStep','MultiBooleanStep', 'MultiStringStep', 'StringStep', 'ChartStep', 'CallExeStep','MessagePopUpStep', 'ActionStep', 'GenericStep']
+# IMPORTANT ORDER: 
+# 1. Multi* steps MUST come before their single-measurement counterparts
+#    (MultiBooleanStep before BooleanStep, etc.) to prevent validators from corrupting data
+# 2. GenericStep MUST be last because it matches many step_type values
+# 3. SequenceCall first for common case optimization
+StepType = Union['SequenceCall','MultiNumericStep','NumericStep','MultiBooleanStep','BooleanStep', 'MultiStringStep', 'StringStep', 'ChartStep', 'CallExeStep','MessagePopUpStep', 'ActionStep', 'GenericStep']
 from .steps import NumericStep,MultiNumericStep,SequenceCall,BooleanStep,MultiBooleanStep,MultiStringStep,StringStep,ChartStep,CallExeStep,MessagePopUpStep,GenericStep,ActionStep  # noqa: E402
 
 Step.model_rebuild()
