@@ -28,35 +28,15 @@ class StepStatus(Enum):
     Terminated = 'T'
     Done = 'D'
 
-# Define all possible step types  
-StepType = Literal[
-    "NONE",                    # Base/default
-    "ET_PFT", "PassFailTest",  # Boolean steps
-    "ET_MPFT",                 # Multi-boolean steps  
-    "ET_SVT",                  # String steps
-    "ET_MSVT",                 # Multi-string steps
-    "ET_NLT", "NumericLimitStep",  # Numeric steps
-    "ET_MNLT",                 # Multi-numeric steps
-    "Action",                  # Action steps
-    "WATS_XYGMNLT",           # Chart steps
-    "SequenceCall", "WATS_SeqCall",  # Sequence calls
-    "MessagePopup",            # Message popup steps
-    "CallExecutable"           # Call executable steps
-]
-    
 # -----------------------------------------------------------------------
 # Step: Abstract base step for all steps
 class Step(WATSBase, ABC):  
     # Parent Step - For internal use only - does not seriallize
     parent: Optional['Step'] = Field(default=None, exclude=True)
 
-    # Required
-    step_type: Literal[
-        "NONE", "ET_PFT", "PassFailTest", "ET_MPFT", "ET_SVT", "ET_MSVT", 
-        "ET_NLT", "NumericLimitStep", "ET_MNLT", "Action", "WATS_XYGMNLT", 
-        "SequenceCall", "WATS_SeqCall", "MessagePopup", "CallExecutable"
-    ] = Field(default="NONE", validation_alias="stepType", serialization_alias="stepType")
-    #step_type: str = Field(default="NO_VALID_STEP",validation_alias="stepType")
+    # Required - Base step_type is str to allow subclasses to override with specific Literals
+    # This enables Pydantic's discriminated union to work properly
+    step_type: str = Field(default="NONE", validation_alias="stepType", serialization_alias="stepType")
     
     name: str = Field(default="StepName", max_length=100, min_length=1)
     group: str = Field(default="M", max_length=1, min_length=1, pattern='^[SMC]$')
