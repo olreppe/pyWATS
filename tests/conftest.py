@@ -31,8 +31,8 @@ def wats_client(wats_config: Dict[str, str]) -> Generator[pyWATS, None, None]:
 @pytest.fixture
 def test_serial_number() -> str:
     """Generate a unique test serial number"""
-    from datetime import datetime
-    return f"TEST-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+    from datetime import datetime, timezone
+    return f"TEST-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
 
 
 @pytest.fixture
