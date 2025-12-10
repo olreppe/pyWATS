@@ -64,10 +64,12 @@ class FlowType(Enum):
 
 # Class: GenericStep
 # A step type that displays flow icon and acts as a catch-all for flow control steps
-# Accepts any string to support all FlowType enum values without listing them individually
+# Accepts ANY string value to support all FlowType enum values (50+ types) and other
+# generic step types without listing them individually in the discriminator
 class GenericStep(Step):
-    # Keep as str to act as fallback in discriminated union
-    # All FlowType enum values will deserialize to this class
+    # Type is str (not Literal) to act as fallback in discriminated union
+    # Accepts all FlowType enum values and any other string step_type
+    # This class will be selected when step_type doesn't match any specific Literal
     step_type: str = Field(..., validation_alias="stepType", serialization_alias="stepType")
 
     def validate_step(self, trigger_children=False, errors=None) -> bool:

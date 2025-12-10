@@ -231,9 +231,14 @@ class TestStepDiscriminator:
 
 
 if __name__ == "__main__":
+    """Run tests manually for quick verification"""
     test = TestStepDiscriminator()
-    test.test_step_type_literals_in_serialization()
-    test.test_step_type_discrimination_on_deserialization()
-    test.test_parent_references_after_deserialization()
-    test.test_step_path_generation()
-    print("\n✅ All discriminator tests passed!")
+    try:
+        test.test_step_type_literals_in_serialization()
+        test.test_step_type_discrimination_on_deserialization()
+        test.test_parent_references_after_deserialization()
+        test.test_step_path_generation()
+        print("\n✅ All discriminator tests passed!")
+    except Exception as e:
+        print(f"\n❌ Test failed: {e}")
+        raise

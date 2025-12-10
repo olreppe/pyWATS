@@ -2,12 +2,17 @@
 Comprehensive UUT Model Test
 Tests all variants of all step types with extensive examples
 """
+"""
+Comprehensive UUT Model Test
+Tests all variants of all step types with extensive examples
+"""
 from datetime import datetime
-from pyWATS.domains.report.report_models.uut.uut_report import UUTReport
-from pyWATS.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+
+from pyWATS.domains.report.report_models.chart import ChartType
 from pyWATS.domains.report.report_models.uut.steps.comp_operator import CompOp
 from pyWATS.domains.report.report_models.uut.steps.generic_step import FlowType
-from pyWATS.domains.report.report_models.chart import ChartType
+from pyWATS.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+from pyWATS.domains.report.report_models.uut.uut_report import UUTReport
 
 
 class TestUUTModelComprehensive:
