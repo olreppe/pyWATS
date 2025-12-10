@@ -287,29 +287,58 @@ class TestUURReport:
         assert report.pn == "PN-12345"
 
     def test_send_uur_report(self, wats_client: Any) -> None:
-        """Test sending a UUR report"""
-        from pywats.domains.report import UURReport
+        """Test sending a UUR report
+        
+        NOTE: This test requires failure categories and codes configured in WATS.
+        Skips if not configured.
+        """
+        import pytest
         from datetime import datetime
         
-        report = UURReport(
-            sn="REPAIR-001",
-            pn="PN-12345",
-            rev="A",
-            process_code=100,
-            uur={"user": "test_operator"},
-            start=datetime.now().astimezone(),
+        # Create a failed UUT first (UUR must reference a UUT)
+        uut = wats_client.report.create_uut_report(
+            operator="test_operator",
+            part_number="PN-12345",
+            revision="A",
+            serial_number="REPAIR-001",
+            operation_type=100,
             station_name="RepairStation",
-            location="TestLab",
-            purpose="Repair"
+            location="TestLab"
         )
-        # Test that report can be submitted
+        # Submit the UUT first
+        uut_id = wats_client.report.submit_report(uut)
+        
+        # Now create UUR from the failed UUT
+        report = wats_client.report.create_uur_report(
+            uut,
+            operator="test_operator",
+            station_name="RepairStation",
+            location="TestLab"
+        )
+        
+        # Add a failure (required for UUR submission)
+        if report.sub_units and len(report.sub_units) > 0:
+            report.sub_units[0].add_failure(
+                category="Component",  # Must be configured in WATS
+                code="Defective",
+                comment="Component failed during test",
+                component_ref="C12"
+            )
+        
+        # Test that UUR report can be submitted
         print(f"\n=== SUBMITTING UUR REPORT ===")
         print(f"Serial: {report.sn}, Part: {report.pn}")
+        print(f"References UUT: {uut_id}")
         
-        result = wats_client.report.submit_report(report)
-        
-        print(f"Submit result: {result}")
-        print("==============================\n")
+        try:
+            result = wats_client.report.submit_report(report)
+            print(f"Submit result: {result}")
+            print("==============================\n")
+            assert result is not None
+        except ValueError as e:
+            if "Category must be a valid value" in str(e) or "Code must be a valid value" in str(e):
+                pytest.skip(f"Failure categories/codes not configured in WATS: {e}")
+            raise
 
     def test_create_uur_from_uut_object(self, wats_client: Any) -> None:
         """Test creating UUR from a UUTReport object"""
@@ -335,7 +364,7 @@ class TestUURReport:
         
         print(f"\n=== CREATE UUR FROM UUT OBJECT ===")
         print(f"UUT ID: {uut.id}")
-        print(f"UUR references UUT: {uur.uur_info.refUUT}")
+        print(f"UUR references UUT: {uur.uur_info.ref_uut}")
         print(f"UUR part_number: {uur.pn}")
         print(f"UUR serial: {uur.sn}")
         print("==================================\n")
@@ -343,7 +372,7 @@ class TestUURReport:
         assert uur is not None
         assert uur.pn == uut.pn
         assert uur.sn == uut.sn
-        assert uur.uur_info.refUUT == uut.id
+        assert uur.uur_info.ref_uut == uut.id
 
     def test_create_uur_from_part_and_process(self, wats_client: Any) -> None:
         """Test creating UUR from part number and process code"""
@@ -359,12 +388,15 @@ class TestUURReport:
         
         print(f"\n=== CREATE UUR FROM PART/PROCESS ===")
         print(f"UUR part_number: {uur.pn}")
-        print(f"UUR process_code: {uur.process_code}")
+        print(f"UUR repair_process_code: {uur.process_code}")
+        print(f"UUR test_operation_code: {uur.uur_info.test_operation_code}")
         print("====================================\n")
         
         assert uur is not None
         assert uur.pn == "PN-DIRECT-CREATE"
-        assert uur.process_code == 100
+        # UUR has dual process codes:
+        assert uur.process_code == 500  # repair_process_code (default)
+        assert uur.uur_info.test_operation_code == 100  # original test that failed
 
 
 class TestRepairScenario:
