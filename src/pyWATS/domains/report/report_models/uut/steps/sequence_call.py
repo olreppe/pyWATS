@@ -102,35 +102,17 @@ class SequenceCall(Step):
     # GenericStep with str type acts as catch-all for unknown step_type values
     steps: Optional[StepList[Annotated[StepType, Field(discriminator='step_type')]]] = Field(default_factory=StepList)
     
-    # StepList model validator - before. Converts incoming list to StepList when deserializing
-    @model_validator(mode="before")
-    @classmethod
-    def convert_steps(cls, data):
-        """
-        Convert list to StepList before Pydantic validation.
-        Also sets parent on all steps inside StepList during deserialization.
-        """
-        if isinstance(data, dict) and "steps" in data:
-            steps = data["steps"]
-            if isinstance(steps, list):  
-                step_list = StepList(steps)
-                step_list.set_parent(data) 
-                data["steps"] = step_list
-            else:
-                step_list = StepList()
-                data["steps"] = step_list
-        return data
-    # -------------------------------------------------------------------
-    # Model validator (after)
+    # Model validator (after) - Converts list to StepList and sets parent references
     @model_validator(mode="after")
     def assign_parent(self):
-        """Ensure all steps have the correct parent after model creation."""
-        if not isinstance(self.steps, StepList):  # Fix list conversion issue
-            self.steps = StepList(self.steps)  # Convert list to StepList if needed
-        try:
-            self.steps.set_parent(self)
-        except Exception as e:
-            print(f"Error setting parent: {e}")
+        """
+        Ensure all steps have the correct parent after model creation.
+        Converts regular list to StepList if needed and establishes parent references.
+        """
+        if not isinstance(self.steps, StepList):  # Convert list to StepList if needed
+            self.steps = StepList(self.steps)
+        # Set parent reference for all child steps
+        self.steps.set_parent(self)
         return self  
 
     # validate_step - all step types
