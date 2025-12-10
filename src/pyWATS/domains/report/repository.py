@@ -124,6 +124,21 @@ class ReportRepository:
             data = report.model_dump(
                 mode="json", by_alias=True, exclude_none=True
             )
+            
+            # Special handling for UUR reports: API requires certain fields to be present even if null
+            if isinstance(report, UURReport) and 'uurInfo' in data:
+                uur_info = data['uurInfo']
+                # Ensure these required fields are always present (can be null)
+                if 'processCode' not in uur_info:
+                    uur_info['processCode'] = report.uur_info.process_code
+                if 'refUUT' not in uur_info:
+                    uur_info['refUUT'] = report.uur_info.ref_uut
+                if 'confirmDate' not in uur_info:
+                    uur_info['confirmDate'] = report.uur_info.confirm_date
+                if 'finalizeDate' not in uur_info:
+                    uur_info['finalizeDate'] = report.uur_info.finalize_date
+                if 'execTime' not in uur_info:
+                    uur_info['execTime'] = report.uur_info.exec_time
         else:
             data = report
         response = self._http.post("/api/Report/WSJF", data=data)

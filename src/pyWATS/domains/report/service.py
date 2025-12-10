@@ -248,27 +248,27 @@ class ReportService:
             pn = part_number
             sn = serial_number
             rev = revision
-            # Resolve test operation code from various sources
+            # Resolve test operation code from various sources (use 'is not None' to allow 0)
             test_op_code = (
-                test_operation_code or 
-                test_operation_code_pos or 
-                process_code or 
+                test_operation_code if test_operation_code is not None else
+                test_operation_code_pos if test_operation_code_pos is not None else
+                process_code if process_code is not None else
                 operation_type
             )
-            if not test_op_code:
+            if test_op_code is None:
                 raise ValueError("test_operation_code is required when creating UUR from UUID")
 
         # Pattern 3: part_number string with test_operation_code
         elif isinstance(uut_or_guid_or_pn, str):
             pn = uut_or_guid_or_pn
-            # Resolve test operation code
+            # Resolve test operation code (use 'is not None' to allow 0)
             test_op_code = (
-                test_operation_code_pos or
-                test_operation_code or 
-                process_code or 
+                test_operation_code_pos if test_operation_code_pos is not None else
+                test_operation_code if test_operation_code is not None else
+                process_code if process_code is not None else
                 operation_type
             )
-            if not test_op_code:
+            if test_op_code is None:
                 raise ValueError("test_operation_code is required when creating UUR from part_number")
             if not serial_number:
                 raise ValueError("serial_number is required when creating UUR from part_number")
@@ -293,9 +293,10 @@ class ReportService:
 
         # Create UURInfo with dual process code architecture
         # Note: API requires processCode, confirmDate, finalizeDate, execTime in uur object
+        # refUUT can be null (for standalone repairs without a failed UUT reference)
         uur_info = UURInfo(
             operator=operator or "Unknown",  # Required field from ReportInfo
-            ref_uut=ref_uut_guid,
+            ref_uut=ref_uut_guid,  # Can be None for standalone repairs
             comment=comment,
             # Set the test operation code (what failed)
             test_operation_code=test_op_code,

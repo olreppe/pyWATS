@@ -37,7 +37,13 @@ class UURInfo(ReportInfo):
     """The test operation GUID"""
     
     # Legacy fields (API requires processCode in uur object)
-    process_code: Optional[int] = Field(default=None, validation_alias="processCode", serialization_alias="processCode")
+    # Note: exclude=False ensures these fields are ALWAYS serialized (even if None)
+    process_code: Optional[int] = Field(
+        default=None, 
+        validation_alias="processCode", 
+        serialization_alias="processCode",
+        exclude=False  # Always include in serialization
+    )
     """Process code - required by API in uur object"""
     
     process_code_format: Optional[str] = Field(default=None, validation_alias="processCodeFormat", serialization_alias="processCodeFormat")
@@ -47,7 +53,12 @@ class UURInfo(ReportInfo):
     """Process name"""
     
     # UUR-specific properties
-    ref_uut: Optional[UUID] = Field(default=None, validation_alias="refUUT", serialization_alias="refUUT")
+    ref_uut: Optional[UUID] = Field(
+        default=None, 
+        validation_alias="refUUT", 
+        serialization_alias="refUUT",
+        exclude=False  # Always include in serialization
+    )
     """Referenced UUT GUID - the GUID of the UUT report being repaired"""
     
     comment: Optional[str] = Field(default=None)
@@ -57,13 +68,28 @@ class UURInfo(ReportInfo):
     """Name of the operator that performed the repair"""
     
     # Timing information
-    confirm_date: Optional[datetime] = Field(default=None, validation_alias="confirmDate", serialization_alias="confirmDate")
+    confirm_date: Optional[datetime] = Field(
+        default=None, 
+        validation_alias="confirmDate", 
+        serialization_alias="confirmDate",
+        exclude=False  # Always include in serialization
+    )
     """UUR was confirmed date time (UTC)"""
     
-    finalize_date: Optional[datetime] = Field(default=None, validation_alias="finalizeDate", serialization_alias="finalizeDate")
+    finalize_date: Optional[datetime] = Field(
+        default=None, 
+        validation_alias="finalizeDate", 
+        serialization_alias="finalizeDate",
+        exclude=False  # Always include in serialization
+    )
     """UUR was finalized date time (UTC)"""
     
-    exec_time: Optional[float] = Field(default=0.0, validation_alias="execTime", serialization_alias="execTime")
+    exec_time: Optional[float] = Field(
+        default=0.0, 
+        validation_alias="execTime", 
+        serialization_alias="execTime",
+        exclude=False  # Always include in serialization
+    )
     """Time spent on UUR report (seconds) - REQUIRED by API"""
     
     # Status flags
@@ -108,6 +134,7 @@ class UURInfo(ReportInfo):
         """Set operator login name"""
         self.uur_operator = value
     
+
     @property
     def execution_time(self) -> float:
         """Alias for exec_time"""
