@@ -342,9 +342,12 @@ class TestProductionScenario:
         report_id = self.api.report.submit_report(report)
         
         if report_id:
-            print(f"  [OK] ICT test PASSED (ID: {report_id})")
+            # Verify the report was actually accepted by retrieving it
+            retrieved = self.api.report.get_report(report_id)
+            assert retrieved is not None, f"Report {report_id} was not accepted by server!"
+            print(f"  [OK] ICT test PASSED and verified on server (ID: {report_id})")
         else:
-            print(f"  [!] ICT test report failed to submit")
+            assert False, "ICT test report failed to submit"
 
     def _run_pcba_test(self) -> None:
         """Step 5: Run PCBA test with potential failure and repair"""
@@ -380,6 +383,9 @@ class TestProductionScenario:
             root = report.get_root_sequence_call()
             root.add_boolean_step(name="PCBA-TEST", status="F")
             failed_id = self.api.report.submit_report(report)
+            assert failed_id is not None, "Failed PCBA report submission failed!"
+            # Verify on server
+            assert self.api.report.get_report(failed_id) is not None, f"Failed report {failed_id} not found on server!"
             
             # Create repair report
             print(f"\n  -> Creating repair report...")
@@ -400,8 +406,10 @@ class TestProductionScenario:
             )
             
             repair_id = self.api.report.submit_report(repair)
-            if repair_id:
-                print(f"  [OK] Repair completed (ID: {repair_id})")
+            assert repair_id is not None, "Repair report submission failed!"
+            # Verify on server
+            assert self.api.report.get_report(repair_id) is not None, f"Repair report {repair_id} not found on server!"
+            print(f"  [OK] Repair completed and verified on server (ID: {repair_id})")
             
             # Retest and pass
             print(f"\n  -> Retesting after repair...")
@@ -417,9 +425,10 @@ class TestProductionScenario:
             root = retest.get_root_sequence_call()
             root.add_boolean_step(name="PCBA-TEST", status="P")
             retest_id = self.api.report.submit_report(retest)
-            
-            if retest_id:
-                print(f"  [OK] PCBA-TEST PASSED (after repair, ID: {retest_id})")
+            assert retest_id is not None, "Retest report submission failed!"
+            # Verify on server
+            assert self.api.report.get_report(retest_id) is not None, f"Retest report {retest_id} not found on server!"
+            print(f"  [OK] PCBA-TEST PASSED after repair and verified on server (ID: {retest_id})")
         else:
             print(f"  [OK] PCBA-TEST PASSED (first attempt)")
             
@@ -434,7 +443,11 @@ class TestProductionScenario:
             )
             root = report.get_root_sequence_call()
             root.add_boolean_step(name="PCBA-TEST", status="P")
-            self.api.report.submit_report(report)
+            report_id = self.api.report.submit_report(report)
+            assert report_id is not None, "PCBA pass report submission failed!"
+            # Verify on server
+            assert self.api.report.get_report(report_id) is not None, f"PCBA report {report_id} not found on server!"
+            print(f"  [OK] PCBA-TEST PASSED and verified on server (ID: {report_id})")
 
     def _finalize_pcba_and_build_module(self) -> None:
         """Step 6: Finalize PCBA and build into module"""
