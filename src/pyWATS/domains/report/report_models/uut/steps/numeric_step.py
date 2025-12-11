@@ -1,5 +1,5 @@
 import json
-from typing import Annotated
+from typing import List, Optional as TypingOptional
 
 from pydantic import AllowInfNan
 from ...common_types import Field, model_validator, field_serializer, Optional, Literal
@@ -39,7 +39,7 @@ class MultiNumericMeasurement(LimitMeasurement):
 # Numeric Step
 class NumericStep(Step):
     step_type: Literal["ET_NLT", "NumericLimitStep"] = Field(default="ET_NLT", validation_alias="stepType",  serialization_alias="stepType")  # noqa: F821
-    measurement: NumericMeasurement = Field(default=None, validation_alias="numericMeas", serialization_alias="numericMeas")
+    measurement: Optional[NumericMeasurement] = Field(default=None, validation_alias="numericMeas", serialization_alias="numericMeas")
 
     #Critical fix: Pre-process raw JSON data
     @model_validator(mode='before')
@@ -90,7 +90,7 @@ class NumericStep(Step):
 # Numeric Step
 class MultiNumericStep(Step):
     step_type: Literal["ET_MNLT"] = Field(default="ET_MNLT", validation_alias="stepType", serialization_alias="stepType")  # noqa: F821
-    measurements: list[MultiNumericMeasurement] = Field(default_factory=list, validation_alias="numericMeas", serialization_alias="numericMeas")
+    measurements: List[MultiNumericMeasurement] = Field(default_factory=list, validation_alias="numericMeas", serialization_alias="numericMeas")
 
     # validate_step:
     def validate_step(self, trigger_children=False, errors=None) -> bool:
@@ -126,7 +126,7 @@ class MultiNumericStep(Step):
                 return False
         return True
 
-    def add_measurement(self,*, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float=None, low_limit:float=None):
+    def add_measurement(self,*, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: TypingOptional[float] = None, low_limit: TypingOptional[float] = None) -> MultiNumericMeasurement:
         name = self.check_for_duplicates(name) 
         nm = MultiNumericMeasurement(name=name, value=value, unit=unit, status=status, comp_op=comp_op, high_limit=high_limit, low_limit=low_limit, parent_step=self)
         self.measurements.append(nm)

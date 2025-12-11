@@ -89,7 +89,7 @@ class GenericStep(Step):
     # This ensures Pydantic can correctly discriminate GenericStep from other types
     step_type: GenericStepLiteral = Field(..., validation_alias="stepType", serialization_alias="stepType")
 
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
+    def validate_step(self, trigger_children: bool = False, errors: Optional[List[str]] = None) -> bool:
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
         return True
