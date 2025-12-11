@@ -76,7 +76,7 @@ class TestTicketCreation:
 
     def test_create_ticket(self, wats_client: Any) -> None:
         """Test creating a new ticket"""
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%Y%m%d%H%M%S')
         
         print("\n=== CREATE TICKET ===")
         

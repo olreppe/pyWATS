@@ -69,7 +69,7 @@ class TestProductCreation:
 
     def test_create_product(self, wats_client: Any) -> None:
         """Test creating a new product"""
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%Y%m%d%H%M%S')
         part_number = f"PYTEST-{timestamp}"
         
         print("\n=== CREATE PRODUCT ===")
@@ -114,7 +114,7 @@ class TestProductRevisions:
 
     def test_create_revision(self, wats_client: Any) -> None:
         """Test creating a new revision"""
-        timestamp = datetime.now(timezone.utc).strftime('%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%H%M%S')
         
         print("\n=== CREATE REVISION ===")
         
@@ -220,7 +220,7 @@ class TestProductTags:
         """Test setting tags on a product"""
         print("\n=== SET PRODUCT TAGS ===")
         
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%Y%m%d%H%M%S')
         new_tags = [
             {"key": "pytest_test", "value": f"test-{timestamp}"},
             {"key": "environment", "value": "pytest"},
@@ -244,7 +244,7 @@ class TestProductTags:
         """Test adding a single tag to a product"""
         print("\n=== ADD PRODUCT TAG ===")
         
-        timestamp = datetime.now(timezone.utc).strftime('%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%H%M%S')
         key = f"added_tag_{timestamp}"
         value = f"value_{timestamp}"
         
@@ -292,7 +292,7 @@ class TestProductTags:
         revision = product.revisions[0].revision
         print(f"Using revision: {revision}")
         
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%Y%m%d%H%M%S')
         new_tags = [
             {"key": "rev_test", "value": f"rev-{timestamp}"},
             {"key": "rev_env", "value": "pytest"}
@@ -345,7 +345,7 @@ class TestBomOperations:
         """Test uploading BOM items using the public API (WSBF XML format)"""
         print("\n=== UPLOAD BOM (PUBLIC API) ===")
         
-        timestamp = datetime.now(timezone.utc).strftime('%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%H%M%S')
         
         # Create test BOM items
         bom_items = [
@@ -574,7 +574,7 @@ class TestBoxBuildTemplate:
         """Test using box build template with context manager"""
         print("\n=== BOX BUILD CONTEXT MANAGER ===")
         
-        timestamp = datetime.now(timezone.utc).strftime('%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%H%M%S')
         
         # Use context manager for auto-save
         with wats_client.product_internal.get_box_build(parent_product_pn, "1.0") as bb:

@@ -86,7 +86,7 @@ class TestAssetCreation:
 
     def test_create_and_retrieve_asset(self, wats_client: Any) -> None:
         """Test creating a new asset and retrieving it"""
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.now().astimezone().strftime('%Y%m%d%H%M%S')
         
         print("\n=== CREATE ASSET ===")
         
