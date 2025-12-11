@@ -208,7 +208,7 @@ class TestReportCreation:
         test_serial_number: str,
         test_part_number: str
     ) -> None:
-        """Test sending a UUT report to server"""
+        """Test sending a UUT report to server and verifying it was accepted"""
         report = create_test_uut_report(
             part_number=test_part_number,
             serial_number=test_serial_number
@@ -229,6 +229,21 @@ class TestReportCreation:
         # Result should be a report ID (string)
         assert isinstance(result, str), f"Expected string result, got {type(result)}"
         assert len(result) > 0, "Report ID is empty"
+        
+        # CRITICAL: Verify the report was actually accepted by retrieving it from server
+        print(f"\n=== VERIFYING REPORT ON SERVER ===")
+        print(f"Attempting to retrieve report ID: {result}")
+        
+        retrieved_report = wats_client.report.get_report(result)
+        
+        print(f"Report retrieved successfully: {retrieved_report is not None}")
+        assert retrieved_report is not None, f"Failed to retrieve submitted report {result} from server - report was NOT accepted!"
+        
+        # Verify the retrieved report has the expected data
+        assert retrieved_report.pn == test_part_number, f"Part number mismatch: {retrieved_report.pn} != {test_part_number}"
+        assert retrieved_report.sn == test_serial_number, f"Serial number mismatch: {retrieved_report.sn} != {test_serial_number}"
+        print(f"Report verification PASSED - report was fully accepted by server")
+        print(f"==============================\n")
 
 
 class TestAttachments:
@@ -248,7 +263,7 @@ class TestReportSubmission:
     """Test sending reports to server"""
 
     def test_send_uut_report_from_test_tool(self, wats_client: Any) -> None:
-        """Test sending a UUT report created by test_uut tool"""
+        """Test sending a UUT report created by test_uut tool and verifying it was accepted"""
         report = create_test_uut_report()
         
         print(f"\n=== SUBMITTING TEST TOOL REPORT ===")
@@ -261,6 +276,12 @@ class TestReportSubmission:
         print(f"====================================\n")
         
         assert result is not None, "Report submission returned None"
+        
+        # CRITICAL: Verify the report was actually accepted by retrieving it
+        print(f"\n=== VERIFYING REPORT WAS ACCEPTED ===")
+        retrieved_report = wats_client.report.get_report(result)
+        assert retrieved_report is not None, f"Failed to retrieve submitted report {result} - report was NOT accepted!"
+        print(f"Report verification PASSED\n")
 
 
 class TestUURReport:
@@ -333,7 +354,14 @@ class TestUURReport:
         try:
             result = wats_client.report.submit_report(report)
             print(f"Submit result: {result}")
+            
+            # CRITICAL: Verify the UUR was actually accepted by retrieving it
+            print(f"=== VERIFYING UUR WAS ACCEPTED ===")
+            retrieved_report = wats_client.report.get_report(result)
+            assert retrieved_report is not None, f"Failed to retrieve submitted UUR {result} - report was NOT accepted!"
+            print("UUR verification PASSED")
             print("==============================\n")
+            
             assert result is not None
         except ValueError as e:
             if "Category must be a valid value" in str(e) or "Code must be a valid value" in str(e):
