@@ -64,7 +64,13 @@ class Report(WATSBase):
     # Do not use the UTC-time
     start_utc: Optional[datetime] = Field(default=None, examples=['2019-09-12T12:26:16.977Z'], validation_alias="startUTC", serialization_alias="startUTC", exclude=True)
    
-
+    @model_validator(mode='after')
+    def ensure_timezone_aware(self) -> 'Report':
+        """Ensure start datetime is timezone-aware to prevent UTC misinterpretation."""
+        if self.start and self.start.tzinfo is None:
+            # If naive datetime is provided, assume it's local time and add timezone
+            self.start = self.start.astimezone()
+        return self
 
     # Miscelaneous information
     misc_infos: Optional[list[MiscInfo]] = Field(default_factory=list, validation_alias="miscInfos",serialization_alias="miscInfos")

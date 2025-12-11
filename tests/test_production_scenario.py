@@ -20,15 +20,11 @@ from pywats.shared import Setting
 from pywats.core.exceptions import NotFoundError
 
 
-# Test counter for running serial numbers
-_test_counter = 0
-
-
 def get_next_serial(prefix: str) -> str:
-    """Generate incrementing serial numbers for test runs."""
-    global _test_counter
-    _test_counter += 1
-    return f"{prefix}-{_test_counter:04d}"
+    """Generate unique serial numbers with timestamp and random component."""
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    random_part = random.randint(1000, 9999)
+    return f"{prefix}-{timestamp}-{random_part}"
 
 
 class TestProductionScenario:
@@ -47,8 +43,8 @@ class TestProductionScenario:
         self.pcba_serial = get_next_serial("PCBA")
         self.module_serial = get_next_serial("MODULE")
         
-        # Lot number that changes occasionally (use counter mod 5)
-        self.lot_number = f"LOT-{(_test_counter // 5):03d}"
+        # Lot number with random component
+        self.lot_number = f"LOT-{random.randint(100, 999)}"
         
         # Test operation codes (from server: api.process.get_test_operations())
         # 30: ICT test, 50: PCBA test, 70: Insulation test, 90: Burn In test, 60: Functional test

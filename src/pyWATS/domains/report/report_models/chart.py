@@ -23,11 +23,11 @@ class ChartSeries(WATSBase):
                            min_length=1, 
                            validation_alias="dataType",
                            serialization_alias="dataType", 
-                           error_messages={'required': 'data_type is rquired'})
+                           json_schema_extra={'error_messages': {'required': 'data_type is rquired'}})
     """
     The data type of series.
     """
-    name: str = Field(..., max_length=100, min_length=1, error_messages={'name': 'data_type is rquired'})
+    name: str = Field(..., max_length=100, min_length=1, json_schema_extra={'error_messages': {'name': 'data_type is rquired'}})
     """
     The name of the series.
     """
@@ -42,7 +42,7 @@ class ChartSeries(WATSBase):
                         min_length=1, 
                         validation_alias="ydata",
                         serialization_alias="ydata", 
-                        error_messages={'required': 'y_data is rquired'})
+                        json_schema_extra={'error_messages': {'required': 'y_data is rquired'}})
     """
     A semicolon (;) separated list of values on the y-axis.
     """
