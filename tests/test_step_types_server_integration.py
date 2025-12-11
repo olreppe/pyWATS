@@ -7,9 +7,9 @@ import pytest
 from datetime import datetime
 from typing import Any
 
-from pyWATS.domains.report.report_models.uut.uut_report import UUTReport
-from pyWATS.domains.report.report_models.uut.steps.comp_operator import CompOp
-from pyWATS.domains.report.report_models.chart import ChartType, ChartSeries
+from pywats.domains.report.report_models.uut.uut_report import UUTReport
+from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.domains.report.report_models.chart import ChartType, ChartSeries
 
 
 @pytest.mark.integration
@@ -227,12 +227,12 @@ class TestStepTypesServerIntegration:
         root2 = report2.get_root_sequence_call()
         
         # Import step classes for type checking
-        from pyWATS.domains.report.report_models.uut.steps.numeric_step import NumericStep, MultiNumericStep
-        from pyWATS.domains.report.report_models.uut.steps.boolean_step import BooleanStep, MultiBooleanStep
-        from pyWATS.domains.report.report_models.uut.steps.string_step import StringStep, MultiStringStep
-        from pyWATS.domains.report.report_models.uut.steps.sequence_call import SequenceCall
-        from pyWATS.domains.report.report_models.uut.steps.generic_step import GenericStep
-        from pyWATS.domains.report.report_models.uut.steps.chart_step import ChartStep
+        from pywats.domains.report.report_models.uut.steps.numeric_step import NumericStep, MultiNumericStep
+        from pywats.domains.report.report_models.uut.steps.boolean_step import BooleanStep, MultiBooleanStep
+        from pywats.domains.report.report_models.uut.steps.string_step import StringStep, MultiStringStep
+        from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+        from pywats.domains.report.report_models.uut.steps.generic_step import GenericStep
+        from pywats.domains.report.report_models.uut.steps.chart_step import ChartStep
         
         # Verify correct types were created by discriminator
         assert isinstance(root2.steps[0], NumericStep), "Should be NumericStep"

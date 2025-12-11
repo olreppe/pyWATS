@@ -3,7 +3,7 @@ Pytest configuration and fixtures for pyWATS tests
 """
 from typing import Generator, Dict
 import pytest
-from pyWATS import pyWATS
+from pywats import pyWATS
 
 
 @pytest.fixture(scope="session")
