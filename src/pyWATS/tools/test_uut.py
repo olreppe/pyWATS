@@ -404,28 +404,28 @@ def create_test_uut_report(
     )
     
     action_seq.add_generic_step(
-        step_type=FlowType.Action,
+        step_type="Statement",
         name="Initialize Hardware",
         status="P",
         tot_time=0.5
     )
     
     action_seq.add_generic_step(
-        step_type=FlowType.Action,
+        step_type="Statement",
         name="Load Firmware",
         status="P",
         tot_time=1.2
     )
     
     action_seq.add_generic_step(
-        step_type=FlowType.Action,
+        step_type="Statement",
         name="Configure DUT",
         status="P",
         tot_time=0.3
     )
     
     action_seq.add_generic_step(
-        step_type=FlowType.Action,
+        step_type="Statement",
         name="Cleanup",
         status="P",
         tot_time=0.2
