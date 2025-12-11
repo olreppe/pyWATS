@@ -23,7 +23,7 @@ from .pages import (
     ConvertersPage, LocationPage, SNHandlerPage, SoftwarePage, AboutPage
 )
 from ..core.config import ClientConfig
-from ..core.client import WATSClient
+from ..app import pyWATSApplication, ApplicationStatus
 
 
 class MainWindow(QMainWindow):
@@ -35,17 +35,23 @@ class MainWindow(QMainWindow):
     - Stacked widget for page content
     - System tray integration
     - Status bar with connection info
+    - Integration with pyWATSApplication service layer
     """
     
     # Signals for async updates
     connection_status_changed = Signal(str)
-    client_status_changed = Signal(str)
+    application_status_changed = Signal(str)
     
-    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None):
+    def __init__(
+        self, 
+        config: ClientConfig, 
+        app: Optional[pyWATSApplication] = None, 
+        parent: Optional[QWidget] = None
+    ):
         super().__init__(parent)
         
         self.config = config
-        self.client: Optional[WATSClient] = None
+        self.app = app if app else pyWATSApplication(config)  # pyWATSApplication instance
         self._tray_icon: Optional[QSystemTrayIcon] = None
         self._is_connected = False
         
@@ -56,41 +62,49 @@ class MainWindow(QMainWindow):
         self._apply_styles()
         self._connect_signals()
         
-        # Initialize client
-        self._init_client()
+        # Connect application status callbacks
+        self.app.on_status_changed(self._on_app_status_changed)
         
         # Update timer for status refresh
         self._status_timer = QTimer()
         self._status_timer.timeout.connect(self._update_status)
         self._status_timer.start(5000)  # Update every 5 seconds
         
-        # Auto-connect on startup if previously connected or auto_connect is enabled
-        QTimer.singleShot(500, self._auto_connect_on_startup)
+        # Auto-start application if previously connected or auto_connect is enabled
+        QTimer.singleShot(500, self._auto_start_on_startup)
     
-    def _auto_connect_on_startup(self) -> None:
-        """Auto-connect on startup if configured"""
-        # Check if we should auto-connect
+    def _auto_start_on_startup(self) -> None:
+        """Auto-start application on startup if configured"""
+        # Check if we should auto-start
         if self.config.auto_connect and self.config.was_connected:
-            # Only auto-connect if we have valid credentials
+            # Only auto-start if we have valid credentials
             if self.config.service_address and self.config.api_token:
-                asyncio.create_task(self._do_auto_connect())
+                asyncio.create_task(self._do_auto_start())
     
-    async def _do_auto_connect(self) -> None:
-        """Perform auto-connection"""
+    async def _do_auto_start(self) -> None:
+        """Perform auto-start of application services"""
         try:
-            self.connection_status_changed.emit("Connecting")
-            success = await self.connect()
-            if success:
-                self._is_connected = True
+            self.application_status_changed.emit("Starting")
+            await self.app.start()
+            self._is_connected = True
+            
+            # Update UI based on connection status
+            if self.app.is_online():
                 self.connection_status_changed.emit("Online")
-                # Update setup page state
-                if "Setup" in self._pages:
-                    setup_page = cast(SetupPage, self._pages["Setup"])
-                    setup_page.set_connected(True)
             else:
-                self.connection_status_changed.emit("Offline")
+                self.connection_status_changed.emit("Offline (Queuing)")
+            
+            # Update setup page state
+            if "Setup" in self._pages:
+                setup_page = cast(SetupPage, self._pages["Setup"])
+                setup_page.set_connected(True)
         except Exception as e:
             self.connection_status_changed.emit(f"Error: {str(e)[:20]}")
+            self.application_status_changed.emit("Error")
+    
+    def _on_app_status_changed(self, status: ApplicationStatus) -> None:
+        """Handle application status changes"""
+        self.application_status_changed.emit(status.value)
     
     def _setup_window(self) -> None:
         """Configure window properties"""
@@ -306,7 +320,7 @@ class MainWindow(QMainWindow):
     def _connect_signals(self) -> None:
         """Connect signals and slots"""
         self.connection_status_changed.connect(self._on_connection_status_ui)
-        self.client_status_changed.connect(self._on_client_status_ui)
+        self.application_status_changed.connect(self._on_application_status_ui)
         
         # Connect page change signals
         for page in self._pages.values():
@@ -322,37 +336,39 @@ class MainWindow(QMainWindow):
     def _on_connection_request(self, should_connect: bool) -> None:
         """Handle connection request from setup page"""
         if should_connect:
-            asyncio.create_task(self._perform_connect())
+            asyncio.create_task(self._perform_start())
         else:
-            asyncio.create_task(self._perform_disconnect())
+            asyncio.create_task(self._perform_stop())
     
-    async def _perform_connect(self) -> None:
-        """Perform connection"""
-        self.connection_status_changed.emit("Connecting")
+    async def _perform_start(self) -> None:
+        """Start application services"""
+        self.application_status_changed.emit("Starting")
         try:
-            success = await self.connect()
-            if success:
+            await self.app.start()
+            self._is_connected = True
+            
+            # Update connection status based on actual connection
+            if self.app.is_online():
                 self.connection_status_changed.emit("Online")
             else:
-                self.connection_status_changed.emit("Connection failed")
-                # Revert setup page state
-                if "Setup" in self._pages:
-                    setup_page = cast(SetupPage, self._pages["Setup"])
-                    setup_page.set_connected(False)
+                self.connection_status_changed.emit("Offline (Queuing)")
+            
+            self.application_status_changed.emit("Running")
         except Exception as e:
             self.connection_status_changed.emit(f"Error: {str(e)[:20]}")
+            self.application_status_changed.emit("Error")
+            # Revert setup page state
             if "Setup" in self._pages:
                 setup_page = cast(SetupPage, self._pages["Setup"])
                 setup_page.set_connected(False)
     
-    async def _perform_disconnect(self) -> None:
-        """Perform disconnection"""
-        await self.disconnect()
+    async def _perform_stop(self) -> None:
+        """Stop application services"""
+        self.application_status_changed.emit("Stopping")
+        await self.app.stop()
+        self._is_connected = False
         self.connection_status_changed.emit("Disconnected")
-    
-    def _init_client(self) -> None:
-        """Initialize the WATS client"""
-        self.client = WATSClient(self.config)
+        self.application_status_changed.emit("Stopped")
     
     # Navigation handling
     
@@ -410,15 +426,27 @@ class MainWindow(QMainWindow):
                 connection_page.update_status(status)
     
     @Slot(str)
-    def _on_client_status_ui(self, status: str) -> None:
-        """Update UI for client status change"""
-        pass  # Can be used for additional status indicators
+    def _on_application_status_ui(self, status: str) -> None:
+        """Update UI for application status change"""
+        # Update window title with status
+        title = f"WATS Client - {self.config.instance_name}"
+        if status not in ["Stopped", "Running"]:
+            title += f" [{status}]"
+        self.setWindowTitle(title)
     
     def _update_status(self) -> None:
         """Periodic status update"""
-        if self.client:
-            # Get current connection status from client
-            pass
+        # Update connection status
+        if self.app.is_online():
+            self.connection_status_changed.emit("Online")
+        elif self.app.status == ApplicationStatus.RUNNING:
+            self.connection_status_changed.emit("Offline (Queuing)")
+        
+        # Update queue status
+        queue_status = self.app.get_queue_status()
+        if queue_status.get("pending_reports", 0) > 0:
+            pending = queue_status["pending_reports"]
+            self._status_label.setToolTip(f"{pending} reports queued")
     
     # Window events
     
@@ -445,9 +473,8 @@ class MainWindow(QMainWindow):
     
     def _quit_application(self) -> None:
         """Quit the application"""
-        # Stop client
-        if self.client:
-            asyncio.create_task(self.client.stop())
+        # Stop application services
+        asyncio.create_task(self.app.stop())
         
         # Hide tray icon
         if self._tray_icon:
@@ -459,35 +486,40 @@ class MainWindow(QMainWindow):
     
     async def test_connection(self) -> bool:
         """Test connection to WATS server"""
-        if self.client:
-            return await self.client.test_connection()
+        if self.app.wats_client:
+            # Test connection by refreshing process cache
+            try:
+                self.app.wats_client.process.refresh()
+                return True
+            except Exception:
+                return False
         return False
     
-    async def connect(self) -> bool:
-        """Connect to WATS server"""
-        if self.client:
-            success = await self.client.start()
-            if success:
-                self._is_connected = True
-                # Persist connection state
-                self.config.was_connected = True
-                self._save_config()
-            return success
-        return False
+    async def start_services(self) -> bool:
+        """Start application services"""
+        try:
+            await self.app.start()
+            self._is_connected = True
+            # Persist connection state
+            self.config.was_connected = True
+            self._save_config()
+            return True
+        except Exception:
+            return False
     
-    async def disconnect(self) -> None:
-        """Disconnect from WATS server"""
+    async def stop_services(self) -> None:
+        """Stop application services"""
         self._is_connected = False
         # Persist disconnected state
         self.config.was_connected = False
         self._save_config()
-        if self.client:
-            await self.client.stop()
+        await self.app.stop()
     
     async def refresh_converters(self) -> None:
-        """Refresh converters"""
-        if self.client:
-            await self.client.refresh_converters()
+        """Refresh converters from converter manager"""
+        if self.app.converter_manager:
+            # Converter manager handles converter discovery
+            pass
 
     async def send_test_uut(self) -> dict:
         """
@@ -511,7 +543,7 @@ class MainWindow(QMainWindow):
             report = create_test_uut_report(
                 station_name=self.config.station_name or "pyWATS-Client",
                 location=self.config.location or "TestLocation",
-                operator_name=self.config.operator or "pyWATS-User"
+                operator_name=getattr(self.config, 'operator', 'pyWATS-User')
             )
             
             result = {
@@ -521,9 +553,12 @@ class MainWindow(QMainWindow):
                 "report_id": str(report.id)
             }
             
-            if self.client:
-                # Submit the report
-                submit_result = await self.client.submit_report(report)
+            if self.app.wats_client:
+                # Convert to dictionary for submission
+                report_data = report.model_dump(mode="json", by_alias=True, exclude_none=True)
+                
+                # Submit the report via API client
+                submit_result = await self.app.wats_client.report.create(report_data)
                 if submit_result:
                     result["success"] = True
                 else:
@@ -548,7 +583,7 @@ class MainWindow(QMainWindow):
         Uses the test_uut module to create a comprehensive test report
         demonstrating all pyWATS features.
         """
-        if not self.client:
+        if not self.app.wats_client:
             return False
         
         try:
@@ -563,8 +598,9 @@ class MainWindow(QMainWindow):
             # Convert to dictionary for submission (Pydantic model_dump with by_alias for serialization)
             report_data = report.model_dump(mode="json", by_alias=True, exclude_none=True)
             
-            # Submit via client
-            return await self.client.submit_report(report_data)
+            # Submit via API client
+            result = await self.app.wats_client.report.create(report_data)
+            return bool(result)
         except Exception as e:
             print(f"Error creating/submitting test UUT: {e}")
             return False

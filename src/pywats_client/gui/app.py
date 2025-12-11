@@ -14,6 +14,7 @@ from PySide6.QtCore import QCoreApplication
 
 from .main_window import MainWindow
 from ..core.config import ClientConfig, get_default_config_path
+from ..app import pyWATSApplication
 
 
 def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] = None, instance_id: Optional[str] = None) -> int:
@@ -33,11 +34,11 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     QCoreApplication.setApplicationName("WATS Client")
     QCoreApplication.setApplicationVersion("1.0.0")
     
-    # Create application
-    app = QApplication(sys.argv)
+    # Create Qt application
+    qt_app = QApplication(sys.argv)
     
     # Apply dark theme
-    app.setStyle("Fusion")
+    qt_app.setStyle("Fusion")
     
     # Load or create configuration
     if config:
@@ -47,12 +48,15 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     else:
         config = ClientConfig.load_or_create(get_default_config_path(instance_id))
     
-    # Create and show main window
-    window = MainWindow(config)
+    # Create pyWATS application (service layer)
+    pywats_app = pyWATSApplication(config)
+    
+    # Create and show main window (UI layer)
+    window = MainWindow(config, pywats_app, None)  # config, app, parent
     window.show()
     
     # Run event loop
-    return app.exec()
+    return qt_app.exec()
 
 
 def run_headless(config_path: Optional[Path] = None) -> int:
