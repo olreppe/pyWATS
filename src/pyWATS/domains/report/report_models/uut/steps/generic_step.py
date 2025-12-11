@@ -1,7 +1,7 @@
 # NI_Step
 
 # Type/lib
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 from pydantic import Field
 from enum import Enum
 

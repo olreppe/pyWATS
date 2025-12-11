@@ -1,4 +1,4 @@
-from typing import Optional, Union, Literal, TYPE_CHECKING
+from typing import Optional, Union, Literal, List, TYPE_CHECKING
 from uuid import UUID
 from pydantic import Field, field_serializer, model_serializer, model_validator
 
@@ -52,14 +52,14 @@ class StringStep(Step):
 
 class MultiStringStep(Step):
     step_type: Literal["ET_MSVT"] = Field(default="ET_MSVT", validation_alias="stepType", serialization_alias="stepType")
-    measurements: list[MultiStringMeasurement] = Field(default_factory=list, validation_alias="stringMeas", serialization_alias="stringMeas")
+    measurements: List[MultiStringMeasurement] = Field(default_factory=list, validation_alias="stringMeas", serialization_alias="stringMeas")
 
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
+    def validate_step(self, trigger_children: bool = False, errors: Optional[list] = None) -> bool:
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
         return True
     
-    def add_measurement(self,*,name: Optional[str] = None, value: Union[str, float], status: str, comp_op: CompOp, limit: Optional[str] = None):
+    def add_measurement(self, *, name: Optional[str] = None, value: Union[str, float], status: str, comp_op: CompOp, limit: Optional[str] = None) -> MultiStringMeasurement:
         name = self.check_for_duplicates(name)
         sm = MultiStringMeasurement(name=name, value=str(value), status=status, comp_op=comp_op, limit=limit, parent_step=self)
         # Import single/multi logic before adding the test to list[numericMeasurements]
@@ -70,7 +70,7 @@ class MultiStringStep(Step):
         # Add to list
         self.measurements.append(sm)
 
-    def check_for_duplicates(self, name):
+    def check_for_duplicates(self, name: Optional[str]) -> Optional[str]:
         """
         Check for duplicate measurement names
         """

@@ -93,7 +93,7 @@ class MultiNumericStep(Step):
     measurements: List[MultiNumericMeasurement] = Field(default_factory=list, validation_alias="numericMeas", serialization_alias="numericMeas")
 
     # validate_step:
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
+    def validate_step(self, trigger_children: bool = False, errors: Optional[list] = None) -> bool:
         if errors is None:
             errors = []
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
@@ -126,12 +126,13 @@ class MultiNumericStep(Step):
                 return False
         return True
 
-    def add_measurement(self,*, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: TypingOptional[float] = None, low_limit: TypingOptional[float] = None) -> MultiNumericMeasurement:
+    def add_measurement(self, *, name: str, value: float, unit: str = "", status: str = "P", comp_op: CompOp = CompOp.LOG, high_limit: Optional[float] = None, low_limit: Optional[float] = None) -> MultiNumericMeasurement:
         name = self.check_for_duplicates(name) 
         nm = MultiNumericMeasurement(name=name, value=value, unit=unit, status=status, comp_op=comp_op, high_limit=high_limit, low_limit=low_limit, parent_step=self)
         self.measurements.append(nm)
+        return nm
 
-    def check_for_duplicates(self, name):
+    def check_for_duplicates(self, name: str) -> str:
         """
         Check for duplicate measurement names
         """

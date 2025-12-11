@@ -90,7 +90,7 @@ class Chart(WATSBase):
         x_data = None
         if(x_values is not None):
             x_data = ";".join(map(str, x_values))       
-        serie = ChartSeries(name=name, xdata=x_data, x_label=x_label, ydata=y_data, y_label=y_label)
+        serie = ChartSeries(name=name, x_data=x_data, y_data=y_data)
         self.series.append(serie)
         return serie
 
