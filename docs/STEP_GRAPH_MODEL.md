@@ -7,11 +7,13 @@ The UUTReport step graph model is a hierarchical structure for representing test
 ## Core Components
 
 ### 1. UUTReport
+
 - The main report class for Unit Under Test (UUT) reports
 - Has a `root` field containing a `SequenceCall` object
 - Access via `report.get_root_sequence_call()`
 
 ### 2. SequenceCall
+
 - A special Step type that can contain child steps
 - Implements both `Step` interface and acts as a container
 - Can be nested recursively to create multi-level test hierarchies
@@ -19,6 +21,7 @@ The UUTReport step graph model is a hierarchical structure for representing test
 - Identified by `step_type: "SequenceCall"` or `"WATS_SeqCall"`
 
 ### 3. StepList
+
 - Custom list class that extends Python's `list`
 - Can hold any type of Step (NumericStep, BooleanStep, SequenceCall, etc.)
 - Maintains parent references for all contained steps
@@ -26,6 +29,7 @@ The UUTReport step graph model is a hierarchical structure for representing test
 - Automatically sets parent reference when steps are added
 
 ### 4. Step (Abstract Base Class)
+
 - Base class for all step types
 - All steps have a `step_type` field (string literal) that identifies their type
 - Common fields:
@@ -37,6 +41,7 @@ The UUTReport step graph model is a hierarchical structure for representing test
 ## Step Types
 
 ### Identified by String Literals
+
 
 Each step type is identified by its `step_type` field value:
 
@@ -58,10 +63,12 @@ Each step type is identified by its `step_type` field value:
 ## Single vs Multi Measurement Types
 
 ### Single Measurement Steps
+
 - **Numeric, Boolean, and String steps have single-measurement variants**
 - Single steps have ONE measurement with NO name required
 - The measurement is stored in a `measurement` field (singular)
 - Example:
+
   ```python
   numeric_step = root.add_numeric_step(
       name="VoltageTest",
@@ -73,10 +80,12 @@ Each step type is identified by its `step_type` field value:
   ```
 
 ### Multi Measurement Steps
+
 - **Numeric, Boolean, and String steps have multi-measurement variants**
 - Multi steps have ONE OR MORE measurements, ALL with REQUIRED names
 - The measurements are stored in a `measurements` field (plural, list)
 - Example:
+
   ```python
   multi_numeric = root.add_multi_numeric_step(name="PowerTests", status="P")
   multi_numeric.add_measurement(name="Voltage", value=3.3, unit="V")
@@ -96,7 +105,7 @@ Each step type is identified by its `step_type` field value:
 ## Nested Structure Example
 
 ```python
-from pyWATS.domains.report.report_models.uut.uut_report import UUTReport
+from pywats.domains.report.report_models.uut.uut_report import UUTReport
 from datetime import datetime
 
 # Create report
@@ -134,7 +143,8 @@ calibration.add_numeric_step(name="CalTest", value=1.0, unit="V", status="P")
 ```
 
 **Resulting hierarchy:**
-```
+
+```text
 Root (SequenceCall)
 ├── Test1 (NumericStep)
 ├── Test2 (BooleanStep)
@@ -161,6 +171,7 @@ root2 = report2.get_root_sequence_call()
 ### Discriminator
 
 The step graph uses Pydantic v2's discriminated union feature for efficient deserialization:
+
 - The `step_type` field acts as the discriminator
 - Pydantic automatically selects the correct Step subclass based on `step_type` value
 - This makes deserialization fast and type-safe
@@ -175,6 +186,7 @@ print(step.parent.name)  # Prints "PowerTests"
 ```
 
 **Important Notes:**
+
 - Parent references are automatically set by StepList
 - Parent field is excluded from JSON serialization (`exclude=True`)
 - Parent references are re-established during deserialization
@@ -183,6 +195,7 @@ print(step.parent.name)  # Prints "PowerTests"
 ## Helper Methods
 
 ### SequenceCall.print_hierarchy()
+
 Recursively prints the step hierarchy with indentation:
 
 ```python
@@ -190,7 +203,8 @@ root.print_hierarchy()
 ```
 
 Output:
-```
+
+```text
 - SequenceCall: MainSequence Callback (Parent: None)
     - NumericStep: Test1 (Parent: MainSequence Callback)
     - SequenceCall: PowerTests (Parent: MainSequence Callback)
@@ -198,6 +212,7 @@ Output:
 ```
 
 ### Adding Steps
+
 
 SequenceCall provides helper methods for adding different step types:
 
@@ -228,17 +243,20 @@ root.add_generic_step(step_type, name, status, ...)
 ## Technical Implementation Notes
 
 ### Pydantic v2 Discriminator
+
 - Base `Step.step_type` field is defined as `str` to allow subclasses to override with specific Literal values
 - Each concrete step class defines `step_type` as a Literal with specific values
 - StepList's `__get_pydantic_core_schema__` method preserves discriminator annotations
 - This enables fast, type-safe deserialization without trying all union members
 
 ### Field Aliases
+
 - Python field names use snake_case (e.g., `step_type`, `error_code`)
 - JSON uses camelCase (e.g., `stepType`, `errorCode`)
 - Controlled via `validation_alias` and `serialization_alias` parameters
 
 ### Model Validators
+
 - SequenceCall uses an `@model_validator(mode="after")` to convert lists to StepList
 - This runs AFTER Pydantic validates individual steps using the discriminator
 - Parent references are set after deserialization completes
@@ -255,6 +273,7 @@ root.add_generic_step(step_type, name, status, ...)
 ## Migration Notes
 
 ### Recent Changes (December 2025)
+
 **Architecture improvements to step-type literals and discriminated unions:**
 
 1. **Removed StepType Literal type alias collision**
@@ -278,8 +297,9 @@ root.add_generic_step(step_type, name, status, ...)
    - Pydantic directly selects the right step class based on step_type value
 
 ### If Upgrading from Older Versions
+
 - MultiBooleanStep no longer inherits from BooleanStep (avoids field conflicts)
 - Base Step.step_type changed from Literal to str (enables proper inheritance)
 - Each concrete step class must override step_type with specific Literal values
 - GenericStep uses str type to accept all FlowType values dynamically
-- StepList's __get_pydantic_core_schema__ preserves discriminator functionality
+- StepList's `__get_pydantic_core_schema__` preserves discriminator functionality

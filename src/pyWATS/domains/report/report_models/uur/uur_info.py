@@ -5,7 +5,7 @@ Based on C# UURReport specification - handles dual process code architecture
 (repair process vs test operation) and all missing properties.
 """
 
-from typing import Optional, Any
+from typing import Optional
 from datetime import datetime
 from uuid import UUID
 from pydantic import Field
@@ -260,7 +260,7 @@ class UURInfo(ReportInfo):
         
         return result
     
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict:
         """Enhanced dictionary representation with dual process codes"""
         # Build dictionary manually instead of calling super()
         base_dict = {}

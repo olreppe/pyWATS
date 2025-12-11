@@ -65,14 +65,19 @@ Created a comprehensive production scenario test (`tests/test_production_scenari
 ## Code Fixes Made
 
 ### 1. Setting Model Enhancement
+
 **File:** `src/pywats/shared/common_types.py`
+
 ```python
 value: Optional[str] = Field(default=None, alias="value")  # Now allows None
 ```
+
 **Reason:** API returns tags with null values that were failing validation
 
 ### 2. Production Repository Enhancement
+
 **File:** `src/pywats/domains/production/repository.py`
+
 ```python
 # Now handles batch operation responses
 if isinstance(response.data, dict):
@@ -80,10 +85,13 @@ if isinstance(response.data, dict):
         # Success - API returns {'okCount': 1, 'errorCount': 0, 'errors': []}
         return units
 ```
+
 **Reason:** PUT /api/Production/Units returns success dict, not unit list
 
 ### 3. Report API Usage
+
 **Correctly uses:**
+
 - `create_uut_report()` with `operation_type` parameter
 - `get_root_sequence_call()` for adding test steps
 - `create_uur_report(from_uut_report)` for repairs
@@ -92,11 +100,13 @@ if isinstance(response.data, dict):
 ## Current Issues
 
 ### 1. Test Operation Codes
+
 **Status:** BLOCKED  
 **Issue:** Test operation codes (10, 20, 30, 40, 50) don't exist on server  
 **Error:** `NotFoundError` when calling `set_unit_process()`
 
 **Solutions:**
+
 - **Option A:** Configure these codes on WATS server
 - **Option B:** Query available operation types and use those
 - **Option C:** Skip process code setting (test continues without it)
@@ -104,6 +114,7 @@ if isinstance(response.data, dict):
 **Current:** Test catches `NotFoundError` and continues without setting process
 
 ### 2. Assembly Timing
+
 **Status:** NEEDS REVIEW  
 **Issue:** Test builds PCBA into Module before finalizing PCBA  
 **Question:** Should PCBA be finalized first, or is current order correct?
@@ -111,6 +122,7 @@ if isinstance(response.data, dict):
 ## Test Features
 
 ✅ **Implemented:**
+
 - Incrementing serial numbers per test run
 - LotNumber tags that change periodically
 - Random failure simulation with configurable probabilities
@@ -120,6 +132,7 @@ if isinstance(response.data, dict):
 - Error handling for missing server configuration
 
 ❌ **Not Implemented:**
+
 - Multiple test runs with --count parameter (counter resets)
 - Process code auto-discovery from server
 - Configurable operation codes via pytest fixtures
@@ -128,10 +141,12 @@ if isinstance(response.data, dict):
 ## Next Steps
 
 ### Immediate (Required for Test to Run)
+
 1. **Configure test operation codes on server** OR
 2. **Modify test to query and use available operation codes**
 
 ### Enhancements (Optional)
+
 1. Make operation codes configurable via pytest parameters
 2. Add fixture to query available operations from server
 3. Improve counter persistence across pytest runs
@@ -141,7 +156,7 @@ if isinstance(response.data, dict):
 
 ## Files Changed
 
-```
+```text
 src/pywats/domains/production/repository.py  - Enhanced batch response handling
 src/pywats/shared/common_types.py           - Allow None in Setting.value
 tests/test_production_scenario.py           - New comprehensive test (871 lines)
