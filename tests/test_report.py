@@ -287,25 +287,53 @@ class TestReportSubmission:
 class TestUURReport:
     """Test UUR (Unit Under Repair) report operations"""
 
-    def test_create_uur_report(self) -> None:
-        """Test creating a UUR report"""
+    def test_create_uur_report(self, wats_client: Any) -> None:
+        """Test creating and submitting a basic UUR report with structure"""
         from pywats.domains.report import UURReport
         from datetime import datetime
         
-        report = UURReport(
-            sn="REPAIR-001",
-            pn="PN-12345",
-            rev="A",
-            process_code=100,
-            uur={"user": "test_operator"},
-            start=datetime.now().astimezone(),
+        # First create and submit a failed UUT (UUR must reference a UUT)
+        uut = wats_client.report.create_uut_report(
+            operator="TestOperator",
+            part_number="PN-12345",
+            revision="A",
+            serial_number="REPAIR-001",
+            operation_type=100,
             station_name="RepairStation",
-            location="TestLab",
-            purpose="Repair"
+            location="TestLab"
         )
+        
+        # Add a failed test step to the UUT
+        root = uut.get_root_sequence_call()
+        root.add_boolean_step(name="Initial Test", status="F")
+        
+        # Submit the failed UUT
+        uut_id = wats_client.report.submit_report(uut)
+        assert uut_id is not None, "Failed to submit UUT report"
+        
+        # Create UUR from the failed UUT
+        report = wats_client.report.create_uur_report(
+            uut,
+            operator="RepairOperator",
+            station_name="RepairStation",
+            location="TestLab"
+        )
+        
+        # Add failure information to the UUR
+        if report.sub_units and len(report.sub_units) > 0:
+            report.sub_units[0].add_failure(
+                category="Component",
+                code="Defect Component",
+                comment="Component R1 failed - replaced",
+                component_ref="R1"
+            )
+        
+        # Verify UUR report structure
         assert report is not None
         assert report.sn == "REPAIR-001"
         assert report.pn == "PN-12345"
+        assert report.rev == "A"
+        assert report.uur_info is not None
 
     def test_send_uur_report(self, wats_client: Any) -> None:
         """Test sending a UUR report
