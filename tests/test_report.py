@@ -214,11 +214,17 @@ class TestReportCreation:
             serial_number=test_serial_number
         )
 
+        # Verify UUT report has at least one step (CRITICAL: all reports must have at least one step)
+        root = report.get_root_sequence_call()
+        assert root is not None, "UUT report missing root sequence"
+        assert root.steps is not None and len(root.steps) > 0, "UUT report must have at least one test step"
+
         print(f"\n=== SUBMITTING UUT REPORT ===")
         print(f"Part Number: {report.pn}")
         print(f"Serial Number: {report.sn}")
         print(f"Station: {report.station_name}")
         print(f"Result: {report.result}")
+        print(f"Steps: {len(root.steps)}")
         
         result = wats_client.report.submit_report(report)
         
@@ -266,9 +272,15 @@ class TestReportSubmission:
         """Test sending a UUT report created by test_uut tool and verifying it was accepted"""
         report = create_test_uut_report()
         
+        # Verify UUT report has at least one step (CRITICAL: all reports must have at least one step)
+        root = report.get_root_sequence_call()
+        assert root is not None, "UUT report missing root sequence"
+        assert root.steps is not None and len(root.steps) > 0, "UUT report must have at least one test step"
+        
         print(f"\n=== SUBMITTING TEST TOOL REPORT ===")
         print(f"Part Number: {report.pn}")
         print(f"Serial Number: {report.sn}")
+        print(f"Steps: {len(root.steps)}")
         
         result = wats_client.report.submit_report(report)
         
