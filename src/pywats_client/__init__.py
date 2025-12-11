@@ -35,13 +35,23 @@ from .services.connection import ConnectionService, ConnectionStatus
 from .services.process_sync import ProcessSyncService
 from .services.report_queue import ReportQueueService
 from .services.converter_manager import ConverterManager
+from .services.converter_processor import ConverterProcessor, ConversionRecord
+
+# Converters
+from .converters.base import (
+    ConverterBase,
+    ConverterResult,
+    ConverterArguments,
+    ConversionStatus,
+    PostProcessAction,
+    FileInfo,
+    CSVConverter,
+)
 
 __all__ = [
     # Core
     "ClientConfig",
     "WATSClient",
-    "ConverterBase",
-    "ConverterResult",
     
     # Application
     "pyWATSApplication",
@@ -70,4 +80,15 @@ __all__ = [
     "ProcessSyncService",
     "ReportQueueService",
     "ConverterManager",
+    "ConverterProcessor",
+    "ConversionRecord",
+    
+    # Converters
+    "ConverterBase",
+    "ConverterResult",
+    "ConverterArguments",
+    "ConversionStatus",
+    "PostProcessAction",
+    "FileInfo",
+    "CSVConverter",
 ]
