@@ -3,6 +3,8 @@
 All API interactions for test reports (UUT/UUR).
 """
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+import logging
+import logging
 
 if TYPE_CHECKING:
     from ...core import HttpClient

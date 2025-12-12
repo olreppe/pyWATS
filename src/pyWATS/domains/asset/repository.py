@@ -3,6 +3,7 @@
 Handles all API calls for asset management.
 """
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
+import logging
 
 if TYPE_CHECKING:
     from ...core.client import HttpClient
@@ -10,6 +11,8 @@ if TYPE_CHECKING:
 
 from .models import Asset, AssetType, AssetLog
 from .enums import AssetState
+
+logger = logging.getLogger(__name__)
 
 
 class AssetRepository:
@@ -51,6 +54,7 @@ class AssetRepository:
 
         GET /api/Asset
         """
+        logger.debug(f"Fetching assets (filter={filter_str}, top={top})")
         params: Dict[str, Any] = {}
         if filter_str:
             params["$filter"] = filter_str
@@ -66,7 +70,10 @@ class AssetRepository:
             params=params if params else None
         )
         if response.is_success and response.data:
-            return [Asset.model_validate(item) for item in response.data]
+            assets = [Asset.model_validate(item) for item in response.data]
+            logger.info(f"Retrieved {len(assets)} assets")
+            return assets
+        logger.warning("No assets found or empty response")
         return []
 
     def get_by_id(self, asset_id: str) -> Optional[Asset]:
@@ -75,9 +82,13 @@ class AssetRepository:
 
         GET /api/Asset/{assetId}
         """
+        logger.debug(f"Fetching asset: {asset_id}")
         response = self._http_client.get(f"/api/Asset/{asset_id}")
         if response.is_success and response.data:
-            return Asset.model_validate(response.data)
+            asset = Asset.model_validate(response.data)
+            logger.info(f"Retrieved asset: {asset_id}")
+            return asset
+        logger.info(f"Asset not found: {asset_id}")
         return None
 
     def get_by_serial_number(self, serial_number: str) -> Optional[Asset]:

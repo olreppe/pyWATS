@@ -22,9 +22,12 @@ Exception Hierarchy:
 """
 from enum import Enum
 from typing import Optional, Dict, Any, Type, TYPE_CHECKING
+import logging
 
 if TYPE_CHECKING:
     from .client import Response
+
+logger = logging.getLogger(__name__)
 
 
 class ErrorMode(Enum):
@@ -231,6 +234,7 @@ class ErrorHandler:
     
     def __init__(self, mode: ErrorMode = ErrorMode.STRICT):
         self.mode = mode
+        logger.debug(f"ErrorHandler initialized with mode: {mode.value}")
     
     def handle_response(
         self,
@@ -262,12 +266,15 @@ class ErrorHandler:
         """
         # Handle HTTP errors
         if not response.is_success:
+            logger.debug(f"Handling error response: {response.status_code} for {operation}")
             return self._handle_error_response(response, operation)
         
         # Handle empty responses
         if self._is_empty(response.data):
+            logger.debug(f"Empty response for {operation} (allow_empty={allow_empty})")
             return self._handle_empty_response(operation, allow_empty)
         
+        logger.debug(f"Successful response for {operation}")
         return response.data
     
     def _is_empty(self, data: Any) -> bool:
@@ -303,6 +310,7 @@ class ErrorHandler:
         
         # Handle 404 specially in LENIENT mode
         if status_code == 404 and self.mode == ErrorMode.LENIENT:
+            logger.info(f"404 for {operation}, returning None (LENIENT mode)")
             return None
         
         # Get appropriate exception class
@@ -316,6 +324,11 @@ class ErrorHandler:
         
         # Build error message
         message = details.get("message") or details.get("error") or f"HTTP {status_code}"
+        
+        logger.error(
+            f"{exception_class.__name__} in {operation}: {message}",
+            extra={"status_code": status_code, "details": details}
+        )
         
         raise exception_class(
             message=message,
@@ -342,14 +355,17 @@ class ErrorHandler:
             EmptyResponseError (STRICT mode, when not allowed)
         """
         if allow_empty:
+            logger.debug(f"Empty response allowed for {operation}")
             return None
         
         if self.mode == ErrorMode.STRICT:
+            logger.warning(f"Empty response for {operation}, raising EmptyResponseError (STRICT mode)")
             raise EmptyResponseError(
                 message="Received empty response when data was expected",
                 operation=operation
             )
         
+        logger.info(f"Empty response for {operation}, returning None (LENIENT mode)")
         return None  # LENIENT mode
     
     def _extract_error_details(self, response: "Response") -> Dict[str, Any]:

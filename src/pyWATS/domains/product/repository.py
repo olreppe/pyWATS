@@ -4,12 +4,15 @@ All API interactions for products, revisions, groups, and vendors.
 """
 from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING, cast
 import xml.etree.ElementTree as ET
+import logging
 
 if TYPE_CHECKING:
     from ...core import HttpClient
     from ...core.exceptions import ErrorHandler
 
 from .models import Product, ProductRevision, ProductGroup, BomItem
+
+logger = logging.getLogger(__name__)
 
 
 class ProductRepository:
@@ -49,9 +52,13 @@ class ProductRepository:
         Returns:
             List of Product objects
         """
+        logger.debug("Fetching all products")
         response = self._http_client.get("/api/Product/Query")
         if response.is_success and response.data:
-            return [Product.model_validate(item) for item in response.data]
+            products = [Product.model_validate(item) for item in response.data]
+            logger.info(f"Retrieved {len(products)} products")
+            return products
+        logger.warning("No products found or empty response")
         return []
 
     def get_by_part_number(self, part_number: str) -> Optional[Product]:
@@ -66,14 +73,18 @@ class ProductRepository:
         Returns:
             Product object or None if not found
         """
+        logger.debug(f"Fetching product: {part_number}")
         response = self._http_client.get(f"/api/Product/{part_number}")
         data = self._error_handler.handle_response(
             response, 
             operation=f"get_by_part_number('{part_number}')"
         )
         if data is None:
+            logger.info(f"Product not found: {part_number}")
             return None
-        return Product.model_validate(data)
+        product = Product.model_validate(data)
+        logger.info(f"Retrieved product: {part_number} ({product.name})")
+        return product
 
     def save(
         self, product: Union[Product, Dict[str, Any]]

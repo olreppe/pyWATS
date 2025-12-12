@@ -3,12 +3,15 @@
 Uses the public WATS API endpoints for process operations.
 """
 from typing import List, Optional, TYPE_CHECKING
+import logging
 
 if TYPE_CHECKING:
     from ...core.exceptions import ErrorHandler
 
 from ...core import HttpClient
 from .models import ProcessInfo
+
+logger = logging.getLogger(__name__)
 
 
 class ProcessRepository:
