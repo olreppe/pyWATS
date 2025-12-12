@@ -43,6 +43,11 @@ WATS_BASE_URL=https://your-server.wats.com
 WATS_AUTH_TOKEN=your_base64_encoded_token
 ```
 
+**Having environment issues?** See [ENVIRONMENT_SETUP_GUIDE.md](ENVIRONMENT_SETUP_GUIDE.md) or run:
+```powershell
+.\scripts\fix_environment.ps1
+```
+
 ## Quick Start
 
 ```python
