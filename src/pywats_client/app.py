@@ -116,6 +116,14 @@ class pyWATSApplication:
         # Setup logging
         self._setup_logging()
         logger.info(f"pyWATS Application initialized (v1.0.0)")
+        
+        # Initialize WATS client if we have credentials from login
+        if config.service_address and config.api_token:
+            self._wats_client = pyWATS(
+                base_url=config.service_address,
+                token=config.api_token
+            )
+            logger.info("WATS client initialized from credentials")
     
     def _setup_logging(self) -> None:
         """Configure logging based on config"""
