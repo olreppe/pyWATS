@@ -5,7 +5,7 @@ Based on C# UURReport specification - full API compatibility with all methods:
 AddFailure, AddUURPartInfo, fail code navigation, attachments, validation.
 """
 
-from typing import List, Optional, TYPE_CHECKING, Union
+from typing import List, Optional, TYPE_CHECKING, Union, Any
 from datetime import datetime
 from uuid import UUID, uuid4
 from pydantic import Field
@@ -23,7 +23,7 @@ from .failure import Failure
 from .uur_sub_unit import UURSubUnit, UURFailure
 
 if TYPE_CHECKING:
-    pass
+    from ....pywats import pyWATS
 
 
 class UURReport(Report):
@@ -54,6 +54,7 @@ class UURReport(Report):
         self._attachments: List[UURAttachment] = []
         self._fail_codes: Optional[FailCodes] = None
         self._failure_index = 0
+        self._api: Optional['pyWATS'] = None  # Reference to pyWATS client
         
         # Initialize main unit (index 0) if not exists
         self._ensure_main_unit()
@@ -250,6 +251,22 @@ class UURReport(Report):
     def finalized(self, value: datetime):
         """Set finalized date"""
         self.uur_info.finalizeDate = value
+    
+    @property
+    def api(self) -> Optional['pyWATS']:
+        """Get reference to pyWATS API client for validation and fail code lookup."""
+        return self._api
+    
+    @api.setter
+    def api(self, value: 'pyWATS'):
+        """Set reference to pyWATS API client."""
+        self._api = value
+        # Load fail codes when API is set
+        if value and self.process_code:
+            try:
+                self._load_fail_codes()
+            except Exception:
+                pass  # Fail silently if fail codes can't be loaded
     
     @property
     def execution_time(self) -> float:
@@ -551,6 +568,54 @@ class UURReport(Report):
             return False, "; ".join(errors)
         
         return True, ""
+    
+    def _load_fail_codes(self):
+        """Load fail codes from API (internal method)."""
+        if not self._api:
+            return
+        
+        try:
+            # Use internal API to get fail codes for this repair process
+            if hasattr(self._api, 'process_internal'):
+                fail_code_list = self._api.process_internal.get_fail_codes(self.process_code)
+                # Store as dictionary keyed by GUID for quick lookup
+                self._fail_codes = {fc['guid']: fc for fc in fail_code_list}
+        except Exception:
+            pass  # Fail silently
+    
+    def get_fail_code(self, guid: Union[str, UUID]) -> Optional[FailCode]:
+        """Get a fail code by GUID.
+        
+        Args:
+            guid: The fail code GUID (string or UUID)
+            
+        Returns:
+            FailCode object if found, None otherwise
+        """
+        # Ensure fail codes are loaded
+        if not self._fail_codes and self._api:
+            self._load_fail_codes()
+        
+        if not self._fail_codes:
+            return None
+        
+        # Convert to string for comparison
+        guid_str = str(guid)
+        
+        # Look up fail code
+        fc_data = self._fail_codes.get(guid_str)
+        if not fc_data:
+            return None
+        
+        # Create FailCode object
+        return FailCode(
+            guid=UUID(fc_data['guid']),
+            description=fc_data.get('description', ''),
+            category=fc_data.get('category', ''),
+            category_guid=UUID(fc_data.get('category_guid', '00000000-0000-0000-0000-000000000000')),
+            failure_type=fc_data.get('failure_type'),
+            selectable=fc_data.get('selectable', True)
+        )
     
     def get_summary(self) -> dict:
         """Get summary information about this UUR report"""

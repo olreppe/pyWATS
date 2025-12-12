@@ -96,9 +96,12 @@ class MiscUURInfo(BaseModel):
     
     @data_string.setter
     def data_string(self, value: str):
-        """Set the string value"""
-        # Note: API validation not available yet
-        # TODO: Add WATS API validation when UURReport.api is implemented
+        """Set the string value with validation."""
+        # Validate value against regex/literals
+        is_valid, error = self.validate_value_string(value)
+        if not is_valid:
+            raise ValueError(error)
+        
         self._value = value
     
     @property
@@ -116,6 +119,35 @@ class MiscUURInfo(BaseModel):
         """True if this field cannot be empty"""
         return self._is_required
     
+    def validate_value_string(self, value: str) -> tuple[bool, str]:
+        """Validate a value string against regex/literals.
+        
+        Args:
+            value: The value to validate
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not value:
+            if self._is_required:
+                return False, f"Field '{self._description}' cannot be blank"
+            return True, ""
+        
+        # Try regex first
+        if self._compiled_regex:
+            if self._compiled_regex.match(value):
+                return True, ""
+            return False, f"Field '{self._description}' does not match required pattern"
+        
+        # Try literal list
+        if self._allowed_literals:
+            if value in self._allowed_literals:
+                return True, ""
+            return False, f"Field '{self._description}' must be one of: {', '.join(self._allowed_literals)}"
+        
+        # No validation rules - accept anything
+        return True, ""
+    
     def validate_value(self) -> tuple[bool, str]:
         """
         Validate current value against regex/literals.
@@ -123,25 +155,7 @@ class MiscUURInfo(BaseModel):
         Returns:
             Tuple of (is_valid, error_message)
         """
-        if not self._value:
-            if self._is_required:
-                return False, f"Field '{self._description}' cannot be blank"
-            return True, ""
-        
-        # Try regex first
-        if self._compiled_regex:
-            if self._compiled_regex.match(self._value):
-                return True, ""
-            return False, f"Field '{self._description}' does not match required pattern"
-        
-        # Try literal list
-        if self._allowed_literals:
-            if self._value in self._allowed_literals:
-                return True, ""
-            return False, f"Field '{self._description}' must be one of: {', '.join(self._allowed_literals)}"
-        
-        # No validation rules - accept anything
-        return True, ""
+        return self.validate_value_string(self._value)
     
     def to_dict(self) -> dict:
         """Convert to dictionary representation"""

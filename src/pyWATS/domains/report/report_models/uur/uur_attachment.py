@@ -77,9 +77,10 @@ class UURAttachment(BaseModel):
         file_info = Path(self._file_path)
         file_size = file_info.stat().st_size
         
-        # Check file size limit
-        # Note: API reference not available yet, skip size check for now
-        # TODO: Add size check when UURReport.api is implemented
+        # Check file size limit (if API is available)
+        is_valid, error = self._validate_size(file_size)
+        if not is_valid:
+            raise ValueError(error)
         
         # Load file content
         try:
@@ -174,6 +175,42 @@ class UURAttachment(BaseModel):
         """Unique identifier for this binary data"""
         return self._binary_data_guid
     
+    def _validate_size(self, size: int) -> tuple[bool, str]:
+        """Validate attachment size against API limits.
+        
+        Args:
+            size: Size in bytes
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        # Get max size from API if available
+        max_size = self._get_max_attachment_size()
+        
+        if max_size > 0 and size > max_size:
+            return False, f"Attachment size ({size} bytes) exceeds maximum allowed ({max_size} bytes)"
+        
+        return True, ""
+    
+    def _get_max_attachment_size(self) -> int:
+        """Get maximum attachment size from API.
+        
+        Returns:
+            Maximum size in bytes, or 0 if no limit
+        """
+        if not self._uur_report or not hasattr(self._uur_report, 'api'):
+            # Default to 10 MB if no API available
+            return 10 * 1024 * 1024
+        
+        api = getattr(self._uur_report, 'api', None)
+        if not api:
+            # Default to 10 MB if no API available
+            return 10 * 1024 * 1024
+        
+        # Default to 10 MB - this matches typical WATS API limits
+        # Could be made configurable through API settings in the future
+        return 10 * 1024 * 1024
+    
     def validate_size(self, max_size: Optional[int] = None) -> tuple[bool, str]:
         """
         Validate attachment size against limit.
@@ -187,15 +224,7 @@ class UURAttachment(BaseModel):
         if not self._content:
             return False, f"Attachment has no content"
         
-        if max_size is None:
-            # Note: API reference not available yet, use default limit
-            # TODO: Use actual API limit when UURReport.api is implemented
-            max_size = 10 * 1024 * 1024  # 10MB default limit
-        
-        if max_size and len(self._content) > max_size:
-            return False, f"Attachment {self.file_name} exceeds maximum size of {max_size} bytes"
-        
-        return True, ""
+        return self._validate_size(len(self._content))
     
     def to_binary_type_dict(self) -> Dict[str, Any]:
         """

@@ -107,9 +107,12 @@ class Failure(WATSBase):
     
     @component_reference.setter
     def component_reference(self, value: str):
-        """Set component reference"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
+        """Set component reference with validation."""
+        # Validate component reference format if API is available
+        is_valid, error = self._validate_component_reference(value)
+        if not is_valid:
+            raise ValueError(error)
+        
         self._component_reference = value
         
         # Also update legacy field for compatibility
@@ -117,10 +120,12 @@ class Failure(WATSBase):
     
     @property
     def fail_code(self) -> Optional['FailCode']:
-        """A valid fail code"""
-        # Note: UURReport.get_fail_code not available yet
-        # TODO: Implement when UURReport.get_fail_code is available
-        return None
+        """A valid fail code."""
+        if not self._uur_report:
+            return None
+        
+        # Use UURReport's get_fail_code method
+        return self._uur_report.get_fail_code(self._fail_code_guid)
     
     @fail_code.setter
     def fail_code(self, value: 'FailCode'):
@@ -151,6 +156,53 @@ class Failure(WATSBase):
     def part_index(self, value: int):
         """Set part index"""
         self._part_idx = value
+    
+    def _validate_component_reference(self, value: str) -> tuple[bool, str]:
+        """Validate component reference format.
+        
+        Args:
+            value: Component reference to validate
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not value:
+            return True, ""  # Empty is allowed
+        
+        # Basic validation - component refs are typically alphanumeric
+        # Examples: R12, C45, U3, IC1
+        if len(value) > 50:
+            return False, "Component reference too long (max 50 characters)"
+        
+        # Check for valid characters (letters, numbers, dash, underscore)
+        import re
+        if not re.match(r'^[A-Za-z0-9_-]+$', value):
+            return False, "Component reference contains invalid characters (use only letters, numbers, dash, underscore)"
+        
+        return True, ""
+    
+    def validate_failure(self) -> tuple[bool, str]:
+        """Validate this failure.
+        
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        # Validate component reference
+        is_valid, error = self._validate_component_reference(self._component_reference)
+        if not is_valid:
+            return False, f"Component reference: {error}"
+        
+        # Validate fail code GUID
+        if not self._fail_code_guid:
+            return False, "Fail code GUID is required"
+        
+        # Validate category and code are set
+        if not self.category:
+            return False, "Failure category is required"
+        if not self.code:
+            return False, "Failure code is required"
+        
+        return True, ""
     
     @property
     def compref_article_number(self) -> str:
