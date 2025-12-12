@@ -93,6 +93,16 @@ See [LOGGING_STRATEGY.md](LOGGING_STRATEGY.md) for comprehensive logging documen
 python -m pywats_client
 ```
 
+### GUI Configuration
+
+The GUI supports modular tab configuration and logging control:
+
+- **Tab Visibility**: Show/hide tabs (Software, SN Handler, etc.) based on your needs
+- **Logging Integration**: Automatic pyWATS library logging when debug mode is enabled
+- **Multiple Instances**: Run multiple client instances with separate configurations
+
+See [GUI Configuration Guide](src/pywats_client/GUI_CONFIGURATION.md) for detailed setup instructions.
+
 ## Project Structure
 
 ```
@@ -135,6 +145,7 @@ pyWATS/
 - [REST API Instructions](docs/REST_API_INSTRUCTION.md)
 - [Quick Reference](QUICK_REFERENCE.md) - API quick reference
 - [Logging Strategy](LOGGING_STRATEGY.md) - Comprehensive logging guide ⭐
+- [GUI Configuration](src/pywats_client/GUI_CONFIGURATION.md) - Client GUI setup and tab customization ⭐
 
 ## Testing
 

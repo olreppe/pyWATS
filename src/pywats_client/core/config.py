@@ -125,6 +125,13 @@ class ClientConfig:
     # Software Distribution settings
     software_auto_update: bool = False
     
+    # GUI tab visibility settings - control which tabs are shown
+    show_software_tab: bool = True
+    show_sn_handler_tab: bool = True
+    show_converters_tab: bool = True
+    show_location_tab: bool = True
+    show_proxy_tab: bool = True
+    
     # Connection state - persist connected state
     auto_connect: bool = True  # Always try to connect on startup
     was_connected: bool = False  # Remember last connection state
@@ -223,6 +230,12 @@ class ClientConfig:
             "yield_threshold": self.yield_threshold,
             "location_services_enabled": self.location_services_enabled,
             "software_auto_update": self.software_auto_update,
+            # GUI tab visibility
+            "show_software_tab": self.show_software_tab,
+            "show_sn_handler_tab": self.show_sn_handler_tab,
+            "show_converters_tab": self.show_converters_tab,
+            "show_location_tab": self.show_location_tab,
+            "show_proxy_tab": self.show_proxy_tab,
             "auto_connect": self.auto_connect,
             "was_connected": self.was_connected,
             "service_auto_start": self.service_auto_start,

@@ -197,15 +197,24 @@ class MainWindow(QMainWindow):
         self._nav_list.setObjectName("navList")
         
         # Add navigation items matching reference design (from screenshots)
+        # Dynamically build based on config visibility settings
         nav_items = [
             ("Setup", "⚙️"),
+            ("General", "⚙️"),
             ("Connection", "🔗"),
-            ("Location", "📍"),
-            ("Converters", "🔄"),
-            ("SN Handler", "🔢"),
-            ("Proxy Settings", "🌐"),
-            ("Software", "💻"),
         ]
+        
+        # Add optional tabs based on configuration
+        if self.config.show_location_tab:
+            nav_items.append(("Location", "📍"))
+        if self.config.show_converters_tab:
+            nav_items.append(("Converters", "🔄"))
+        if self.config.show_sn_handler_tab:
+            nav_items.append(("SN Handler", "🔢"))
+        if self.config.show_proxy_tab:
+            nav_items.append(("Proxy Settings", "🌐"))
+        if self.config.show_software_tab:
+            nav_items.append(("Software", "💻"))
         
         for name, icon in nav_items:
             if not name:  # Separator
@@ -248,14 +257,23 @@ class MainWindow(QMainWindow):
         self._page_stack = QStackedWidget()
         
         # Create pages matching reference design (from screenshots)
+        # Build page dict dynamically based on config visibility settings
         self._pages: Dict[str, BasePage] = {
             "Setup": SetupPage(self.config, self),
-            "Location": LocationPage(self.config, self),
-            "Converters": ConvertersPage(self.config, self),
-            "SN Handler": SNHandlerPage(self.config, self),
-            "Proxy Settings": ProxySettingsPage(self.config),
-            "Software": SoftwarePage(self.config, self),
+            "General": GeneralPage(self.config, self),
         }
+        
+        # Add optional pages based on configuration
+        if self.config.show_location_tab:
+            self._pages["Location"] = LocationPage(self.config, self)
+        if self.config.show_converters_tab:
+            self._pages["Converters"] = ConvertersPage(self.config, self)
+        if self.config.show_sn_handler_tab:
+            self._pages["SN Handler"] = SNHandlerPage(self.config, self)
+        if self.config.show_proxy_tab:
+            self._pages["Proxy Settings"] = ProxySettingsPage(self.config)
+        if self.config.show_software_tab:
+            self._pages["Software"] = SoftwarePage(self.config, self)
         
         for page in self._pages.values():
             self._page_stack.addWidget(page)
