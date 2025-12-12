@@ -223,12 +223,16 @@ class SNHandlerPage(BasePage):
         try:
             self._status_label.setText("Loading serial number types...")
             
-            # TODO: Implement when client has production module access
-            # types = await self._main_window.client.get_serial_number_types()
-            # self._sn_types = types
-            
-            # Placeholder - would be populated from server
-            self._sn_types = []
+            if self._main_window and self._main_window.app.wats_client:
+                client = self._main_window.app.wats_client
+                # Get serial number types from production API
+                types = client.production.get_serial_number_types()
+                if types:
+                    self._sn_types = types
+                else:
+                    self._sn_types = []
+            else:
+                self._sn_types = []
             
             self._populate_types_table()
             self._populate_type_combo()
