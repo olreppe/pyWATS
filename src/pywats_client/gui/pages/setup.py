@@ -99,7 +99,7 @@ class SetupPage(BasePage):
         
         self._layout.addSpacing(10)
         
-        # Account / Server
+        # Account / Server (read-only, from login)
         server_layout = QHBoxLayout()
         server_label = QLabel("Account / Server")
         server_label.setFixedWidth(120)
@@ -107,15 +107,16 @@ class SetupPage(BasePage):
         
         self._server_edit = QLineEdit()
         self._server_edit.setPlaceholderText("https://your-account.wats.com/")
-        self._server_edit.textChanged.connect(self._emit_changed)
+        self._server_edit.setReadOnly(True)
+        self._server_edit.setStyleSheet("background-color: #3c3c3c;")
         server_layout.addWidget(self._server_edit, 1)
         
         self._layout.addLayout(server_layout)
-        self._server_edit.setToolTip("e.g. virinco.wats.com")
+        self._server_edit.setToolTip("Server URL from login (read-only)")
         
         self._layout.addSpacing(10)
         
-        # Token
+        # Token (read-only, from login)
         token_layout = QHBoxLayout()
         token_label = QLabel("Token")
         token_label.setFixedWidth(120)
@@ -124,23 +125,24 @@ class SetupPage(BasePage):
         self._token_edit = QLineEdit()
         self._token_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self._token_edit.setPlaceholderText("API access token")
-        self._token_edit.setToolTip("Base64 encoded API token")
-        self._token_edit.textChanged.connect(self._emit_changed)
+        self._token_edit.setReadOnly(True)
+        self._token_edit.setStyleSheet("background-color: #3c3c3c;")
+        self._token_edit.setToolTip("API token from login (read-only)")
         token_layout.addWidget(self._token_edit, 1)
         
         self._layout.addLayout(token_layout)
         
         self._layout.addSpacing(15)
         
-        # Connect / New customer buttons
+        # Disconnect / New customer buttons
         button_layout = QHBoxLayout()
         button_layout.addSpacing(125)  # Align with fields
         
-        self._connect_btn = QPushButton("Connect")
-        self._connect_btn.setObjectName("primaryButton")
-        self._connect_btn.setFixedWidth(100)
-        self._connect_btn.clicked.connect(self._on_connect_clicked)
-        button_layout.addWidget(self._connect_btn)
+        self._disconnect_btn = QPushButton("Disconnect")
+        self._disconnect_btn.setObjectName("primaryButton")
+        self._disconnect_btn.setFixedWidth(100)
+        self._disconnect_btn.clicked.connect(self._on_disconnect_clicked)
+        button_layout.addWidget(self._disconnect_btn)
         
         button_layout.addSpacing(20)
         
@@ -234,11 +236,9 @@ class SetupPage(BasePage):
             self._advanced_toggle.setText("▶ Advanced options")
     
     def _set_fields_enabled(self, enabled: bool) -> None:
-        """Enable or disable input fields"""
+        """Enable or disable input fields (server and token always read-only)"""
         self._location_edit.setEnabled(enabled)
         self._purpose_edit.setEnabled(enabled)
-        self._server_edit.setEnabled(enabled)
-        self._token_edit.setEnabled(enabled)
         self._sync_edit.setEnabled(enabled)
         self._auto_start_cb.setEnabled(enabled)
         self._new_customer_btn.setEnabled(enabled)
@@ -246,37 +246,31 @@ class SetupPage(BasePage):
     def set_connected(self, connected: bool) -> None:
         """Update UI for connected/disconnected state"""
         self._is_connected = connected
-        if connected:
-            self._connect_btn.setText("Disconnect")
-            self._set_fields_enabled(False)
-        else:
-            self._connect_btn.setText("Connect")
-            self._set_fields_enabled(True)
+        self._set_fields_enabled(connected)
     
     @Slot()
-    def _on_connect_clicked(self) -> None:
-        """Handle connect/disconnect button click"""
-        if self._is_connected:
-            # Show confirmation dialog for disconnect
-            reply = QMessageBox.question(
-                self,
-                "Disconnect",
-                "Do you really want to disconnect the client and exit the application?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
-            )
+    def _on_disconnect_clicked(self) -> None:
+        """Handle disconnect button click"""
+        # Show confirmation dialog for disconnect
+        reply = QMessageBox.question(
+            self,
+            "Disconnect",
+            "Do you really want to disconnect the client and exit the application?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # Clear credentials from config
+            self.config.service_address = ""
+            self.config.api_token = ""
+            self.config.auto_connect = False
+            self.config.was_connected = False
             
-            if reply == QMessageBox.StandardButton.Yes:
-                # Clear credentials from config
-                self.config.service_address = ""
-                self.config.api_token = ""
-                self.config.auto_connect = False
-                self.config.was_connected = False
-                
-                # Clear encrypted connection if exists
-                if hasattr(self.config, 'connection'):
-                    from ...core.connection_config import ConnectionConfig
-                    self.config.connection = ConnectionConfig()
+            # Clear encrypted connection if exists
+            if hasattr(self.config, 'connection'):
+                from ...core.connection_config import ConnectionConfig
+                self.config.connection = ConnectionConfig()
                 
                 self.config.save()
                 

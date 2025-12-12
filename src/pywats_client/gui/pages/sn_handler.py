@@ -188,8 +188,8 @@ class SNHandlerPage(BasePage):
     
     def _on_refresh_types(self) -> None:
         """Refresh serial number types from server"""
-        if self._main_window and self._main_window.client:
-            asyncio.create_task(self._load_sn_types())
+        if self._main_window and self._main_window.app.wats_client:
+            self._load_sn_types()
         else:
             QMessageBox.warning(
                 self, "Not Connected",
@@ -218,7 +218,7 @@ class SNHandlerPage(BasePage):
         clipboard.setText(self._results_text.toPlainText())
         self._status_label.setText("Copied to clipboard")
     
-    async def _load_sn_types(self) -> None:
+    def _load_sn_types(self) -> None:
         """Load serial number types from WATS server"""
         try:
             self._status_label.setText("Loading serial number types...")
@@ -233,6 +233,8 @@ class SNHandlerPage(BasePage):
                     self._sn_types = []
             else:
                 self._sn_types = []
+                self._status_label.setText("Not connected to WATS server")
+                return
             
             self._populate_types_table()
             self._populate_type_combo()

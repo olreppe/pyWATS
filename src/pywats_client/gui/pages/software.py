@@ -169,7 +169,7 @@ class SoftwarePage(BasePage):
     def _on_refresh_folders(self) -> None:
         """Refresh virtual folders from server"""
         if self._main_window and self._main_window.app.wats_client:
-            asyncio.create_task(self._load_virtual_folders())
+            self._load_virtual_folders()
         else:
             QMessageBox.warning(
                 self, "Not Connected",
@@ -179,7 +179,7 @@ class SoftwarePage(BasePage):
     def _on_refresh_packages(self) -> None:
         """Refresh packages from server"""
         if self._main_window and self._main_window.app.wats_client:
-            asyncio.create_task(self._load_packages())
+            self._load_packages()
         else:
             QMessageBox.warning(
                 self, "Not Connected",
@@ -202,17 +202,17 @@ class SoftwarePage(BasePage):
                 "This will download the package files to the local machine."
             )
     
-    async def _load_virtual_folders(self) -> None:
+    def _load_virtual_folders(self) -> None:
         """Load virtual folders from WATS server"""
         try:
             self._status_label.setText("Loading virtual folders...")
             # TODO: Implement when client has software module access
-            # folders = await self._main_window.client.get_virtual_folders()
+            # folders = self._main_window.app.wats_client.software.get_virtual_folders()
             self._status_label.setText("Virtual folders loaded")
         except Exception as e:
             self._status_label.setText(f"Error loading folders: {str(e)}")
     
-    async def _load_packages(self) -> None:
+    def _load_packages(self) -> None:
         """Load packages from WATS server"""
         try:
             self._status_label.setText("Loading packages...")
