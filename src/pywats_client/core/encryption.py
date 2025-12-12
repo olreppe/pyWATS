@@ -10,7 +10,7 @@ import base64
 from typing import Optional
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import logging
 
 logger = logging.getLogger(__name__)
@@ -94,8 +94,8 @@ def derive_encryption_key(salt: Optional[bytes] = None) -> bytes:
     if salt is None:
         salt = b'pywats-client-encryption-v1'
     
-    # Derive key using PBKDF2
-    kdf = PBKDF2(
+    # Derive key using PBKDF2HMAC
+    kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,

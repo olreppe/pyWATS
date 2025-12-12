@@ -1,10 +1,11 @@
-
-
-from pywats.pywats import pyWATS
+"""
+Main entry point for pyWATS Client Application
+"""
 
 def main():
-    api = pyWATS("https://python.wats.com", "cHlXQVRTX0FQSV9BVVRPVEVTVDo2cGhUUjg0ZTVIMHA1R3JUWGtQZlY0UTNvbmk2MiM=")
-    
-    uut = api.report.
-    
-    
+    """Launch the pyWATS client application"""
+    from pywats_client.__main__ import main as client_main
+    client_main()
+
+if __name__ == "__main__":
+    main()
