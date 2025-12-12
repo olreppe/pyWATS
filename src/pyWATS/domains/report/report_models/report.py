@@ -60,16 +60,64 @@ class Report(WATSBase):
     location: str = Field(..., max_length=100, min_length=1)
     purpose: str = Field(..., max_length=100, min_length=1)
 
-    start: datetime = Field(default_factory=lambda: datetime.now().astimezone(), examples=["2019-09-12T12:26:16.977+01:00"])
-    # Do not use the UTC-time
-    start_utc: Optional[datetime] = Field(default=None, examples=['2019-09-12T12:26:16.977Z'], validation_alias="startUTC", serialization_alias="startUTC", exclude=True)
+    start: Optional[datetime] = Field(
+        default=None,
+        examples=["2019-12-12T12:26:16.977+01:00"],
+        description="Local start time with timezone offset. Server uses this as the authoritative time."
+    )
+    
+    start_utc: Optional[datetime] = Field(
+        default=None, 
+        examples=['2019-09-12T12:26:16.977Z'], 
+        validation_alias="startUTC", 
+        serialization_alias="startUTC",
+        exclude=True,  # Exclude from serialization (sending to server)
+        description="UTC equivalent of start time. Automatically computed and kept in sync. Not sent to server."
+    )
    
     @model_validator(mode='after')
-    def ensure_timezone_aware(self) -> 'Report':
-        """Ensure start datetime is timezone-aware to prevent UTC misinterpretation."""
-        if self.start and self.start.tzinfo is None:
-            # If naive datetime is provided, assume it's local time and add timezone
-            self.start = self.start.astimezone()
+    def sync_start_times(self) -> 'Report':
+        """
+        Synchronize start and start_utc times.
+        
+        Rules:
+        1. If only start is set: Ensure it's timezone-aware and compute start_utc
+        2. If only start_utc is set: Compute start as local time
+        3. If both are set: Keep them as-is (user takes responsibility)
+        4. If neither is set: Use current time as default
+        
+        The server uses only the 'start' field (local time with offset).
+        The start_utc is automatically computed for convenience and returned by the API.
+        """
+        # Case 1: Both times are set - keep as-is
+        if self.start and self.start_utc:
+            # Just ensure they're timezone-aware
+            if self.start.tzinfo is None:
+                self.start = self.start.astimezone()
+            if self.start_utc.tzinfo is None:
+                self.start_utc = self.start_utc.replace(tzinfo=timezone.utc)
+        
+        # Case 2: Only start is set (most common)
+        elif self.start:
+            # Ensure start is timezone-aware
+            if self.start.tzinfo is None:
+                self.start = self.start.astimezone()
+            # Compute start_utc
+            self.start_utc = self.start.astimezone(timezone.utc)
+        
+        # Case 3: Only start_utc is set (less common)
+        elif self.start_utc:
+            # Ensure start_utc is timezone-aware (assume UTC if naive)
+            if self.start_utc.tzinfo is None:
+                self.start_utc = self.start_utc.replace(tzinfo=timezone.utc)
+            # Compute start as local time
+            self.start = self.start_utc.astimezone()
+        
+        # Case 4: Neither is set - use current time
+        else:
+            self.start = datetime.now().astimezone()
+            self.start_utc = self.start.astimezone(timezone.utc)
+        
         return self
 
     # Miscelaneous information
