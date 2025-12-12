@@ -248,13 +248,14 @@ class SoftwarePage(BasePage):
         for pkg in self._packages:
             # Status filter
             if status_filter != "All":
-                if pkg.get("status", "").lower() != status_filter.lower():
+                pkg_status = str(pkg.status.value) if pkg.status else ""
+                if pkg_status.lower() != status_filter.lower():
                     continue
             
             # Search filter
             if search_text:
-                name = pkg.get("name", "").lower()
-                desc = pkg.get("description", "").lower()
+                name = (pkg.name or "").lower()
+                desc = (pkg.description or "").lower()
                 if search_text not in name and search_text not in desc:
                     continue
             
@@ -263,11 +264,12 @@ class SoftwarePage(BasePage):
         # Populate table
         self._packages_table.setRowCount(len(filtered))
         for row, pkg in enumerate(filtered):
-            self._packages_table.setItem(row, 0, QTableWidgetItem(pkg.get("name", "")))
-            self._packages_table.setItem(row, 1, QTableWidgetItem(str(pkg.get("version", ""))))
-            self._packages_table.setItem(row, 2, QTableWidgetItem(pkg.get("status", "")))
-            self._packages_table.setItem(row, 3, QTableWidgetItem(pkg.get("description", "")))
-            self._packages_table.setItem(row, 4, QTableWidgetItem(pkg.get("modifiedUtc", "")[:10] if pkg.get("modifiedUtc") else ""))
+            self._packages_table.setItem(row, 0, QTableWidgetItem(pkg.name or ""))
+            self._packages_table.setItem(row, 1, QTableWidgetItem(str(pkg.version) if pkg.version else ""))
+            self._packages_table.setItem(row, 2, QTableWidgetItem(str(pkg.status.value) if pkg.status else ""))
+            self._packages_table.setItem(row, 3, QTableWidgetItem(pkg.description or ""))
+            modified = str(pkg.modified_utc)[:10] if pkg.modified_utc else ""
+            self._packages_table.setItem(row, 4, QTableWidgetItem(modified))
     
     def save_config(self) -> None:
         """Save configuration"""

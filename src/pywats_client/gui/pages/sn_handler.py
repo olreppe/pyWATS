@@ -277,16 +277,16 @@ class SNHandlerPage(BasePage):
         """Populate serial number types table"""
         self._types_table.setRowCount(len(self._sn_types))
         for row, sn_type in enumerate(self._sn_types):
-            self._types_table.setItem(row, 0, QTableWidgetItem(sn_type.get("name", "")))
-            self._types_table.setItem(row, 1, QTableWidgetItem(sn_type.get("prefix", "")))
-            self._types_table.setItem(row, 2, QTableWidgetItem(sn_type.get("suffix", "")))
-            self._types_table.setItem(row, 3, QTableWidgetItem(sn_type.get("description", "")))
+            self._types_table.setItem(row, 0, QTableWidgetItem(sn_type.name or ""))
+            self._types_table.setItem(row, 1, QTableWidgetItem(getattr(sn_type, 'prefix', '') or ""))
+            self._types_table.setItem(row, 2, QTableWidgetItem(getattr(sn_type, 'suffix', '') or ""))
+            self._types_table.setItem(row, 3, QTableWidgetItem(sn_type.description or ""))
     
     def _populate_type_combo(self) -> None:
         """Populate type combo box"""
         self._type_combo.clear()
         for sn_type in self._sn_types:
-            self._type_combo.addItem(sn_type.get("name", ""))
+            self._type_combo.addItem(sn_type.name or "")
         self._take_btn.setEnabled(len(self._sn_types) > 0)
     
     def save_config(self) -> None:
