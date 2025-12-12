@@ -256,13 +256,19 @@ class MainWindow(QMainWindow):
         
         for page in self._pages.values():
             self._page_stack.addWidget(page)
+            # Connect config change signal to enable Apply button
+            if hasattr(page, 'config_changed'):
+                page.config_changed.connect(self._on_config_changed)
         
-        content_layout.addWidget(self._page_stack)
+        content_layout.addWidget(self._page_stack, 1)
+        
+        # Add stretch to push buttons to bottom
+        content_layout.addStretch()
         
         # Apply/Cancel buttons at bottom
         button_frame = QFrame()
         button_layout = QHBoxLayout(button_frame)
-        button_layout.setContentsMargins(0, 10, 0, 0)
+        button_layout.setContentsMargins(0, 5, 0, 5)
         button_layout.addStretch()
         
         self._apply_btn = QPushButton("Apply")
@@ -280,19 +286,6 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self._cancel_btn)
         
         content_layout.addWidget(button_frame)
-        
-        # Footer with WATS.com link and version
-        footer_frame = QFrame()
-        footer_layout = QHBoxLayout(footer_frame)
-        footer_layout.setContentsMargins(0, 10, 0, 0)
-        
-        from .. import __version__
-        wats_link = QLabel(f'<a href="https://wats.com" style="color: #f0a30a;">WATS.com</a> | {__version__}')
-        wats_link.setOpenExternalLinks(True)
-        footer_layout.addWidget(wats_link)
-        footer_layout.addStretch()
-        
-        content_layout.addWidget(footer_frame)
         
         layout.addWidget(content_frame, 1)
         
@@ -387,7 +380,7 @@ class MainWindow(QMainWindow):
     # Button handlers
     
     def _on_apply(self) -> None:
-        """Handle Apply button click"""
+        """Handle Apply button click - save changes and disable button"""
         self._save_config()
         self._apply_btn.setEnabled(False)
     
