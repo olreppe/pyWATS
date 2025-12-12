@@ -212,8 +212,6 @@ class Failure(WATSBase):
     @compref_article_number.setter
     def compref_article_number(self, value: str):
         """Set component article number"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._article_number = value
         
         # Also update legacy field for compatibility
@@ -227,8 +225,6 @@ class Failure(WATSBase):
     @compref_article_revision.setter
     def compref_article_revision(self, value: str):
         """Set component article revision"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._article_revision = value
         
         # Also update legacy field for compatibility
@@ -242,8 +238,6 @@ class Failure(WATSBase):
     @compref_article_description.setter
     def compref_article_description(self, value: str):
         """Set component article description"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._article_description = value
         
         # Also update legacy field for compatibility
@@ -257,8 +251,6 @@ class Failure(WATSBase):
     @compref_article_vendor.setter
     def compref_article_vendor(self, value: str):
         """Set component vendor"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._article_vendor = value
         
         # Also update legacy field for compatibility
@@ -272,8 +264,6 @@ class Failure(WATSBase):
     @compref_function_block.setter
     def compref_function_block(self, value: str):
         """Set component functional block"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._function_block = value
         
         # Also update legacy field for compatibility

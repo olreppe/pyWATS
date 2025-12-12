@@ -4,7 +4,6 @@ All API interactions for software distribution packages.
 """
 from typing import Optional, List, Union, Dict, Any, TYPE_CHECKING
 import logging
-import logging
 from uuid import UUID
 
 if TYPE_CHECKING:

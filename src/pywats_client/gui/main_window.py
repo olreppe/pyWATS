@@ -20,7 +20,7 @@ from PySide6.QtGui import QAction, QCloseEvent
 from .styles import DARK_STYLESHEET
 from .pages import (
     BasePage, SetupPage, GeneralPage, ConnectionPage, ProxySettingsPage, 
-    ConvertersPage, LocationPage, SNHandlerPage, SoftwarePage, AboutPage
+    ConvertersPage, LocationPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage
 )
 from ..core.config import ClientConfig
 from ..app import pyWATSApplication, ApplicationStatus
@@ -202,6 +202,7 @@ class MainWindow(QMainWindow):
             ("Setup", "⚙️"),
             ("General", "⚙️"),
             ("Connection", "🔗"),
+            ("Log", "📋"),
         ]
         
         # Add optional tabs based on configuration
@@ -261,6 +262,7 @@ class MainWindow(QMainWindow):
         self._pages: Dict[str, BasePage] = {
             "Setup": SetupPage(self.config, self),
             "General": GeneralPage(self.config, self),
+            "Log": LogPage(self.config, self),
         }
         
         # Add optional pages based on configuration

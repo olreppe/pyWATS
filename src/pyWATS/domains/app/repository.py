@@ -4,7 +4,6 @@ All API interactions for statistics, KPIs, and dashboard data.
 """
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
 import logging
-import logging
 
 if TYPE_CHECKING:
     from ...core import HttpClient

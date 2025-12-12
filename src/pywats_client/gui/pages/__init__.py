@@ -14,6 +14,7 @@ from .location import LocationPage
 from .sn_handler import SNHandlerPage
 from .software import SoftwarePage
 from .about import AboutPage
+from .log import LogPage
 
 __all__ = [
     "BasePage",
@@ -26,4 +27,5 @@ __all__ = [
     "SNHandlerPage",
     "SoftwarePage",
     "AboutPage",
+    "LogPage",
 ]

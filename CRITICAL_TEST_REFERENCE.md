@@ -223,3 +223,12 @@ This test should be:
 ## Contact
 
 For questions about this test or report module changes, contact the pyWATS maintainers.
+
+## Environment Variables
+
+For the test to run, the following environment variables must be set:
+
+- `WATS_BASE_URL`: The base URL of the WATS server. Example: `https://your-actual-server.com`
+- `WATS_AUTH_TOKEN`: The authentication token for the WATS server. Example: `your_actual_token_here`
+
+These can be set in your shell or included in a `.env` file in the project root.

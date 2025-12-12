@@ -59,8 +59,6 @@ class UURPartInfo(BaseModel):
     @part_type.setter
     def part_type(self, value: str):
         """Set part type"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._part_type = value
     
     @property
@@ -71,8 +69,6 @@ class UURPartInfo(BaseModel):
     @part_number.setter
     def part_number(self, value: str):
         """Set part number"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._part_number = value
     
     @property
@@ -83,8 +79,6 @@ class UURPartInfo(BaseModel):
     @serial_number.setter
     def serial_number(self, value: str):
         """Set serial number"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._serial_number = value
     
     @property
@@ -95,8 +89,6 @@ class UURPartInfo(BaseModel):
     @part_revision_number.setter
     def part_revision_number(self, value: str):
         """Set part revision number"""
-        # Note: API validation not available yet
-        # TODO: Add validation when UURReport.api is implemented
         self._part_revision_number = value
     
     @property
@@ -143,9 +135,15 @@ class UURPartInfo(BaseModel):
         Returns:
             Created Failure object
         """
-        # Note: This method will be implemented when UURReport is complete
-        # TODO: Implement when UURReport._add_failure_internal is available
-        raise NotImplementedError("add_failure will be implemented with enhanced UURReport")
+        failure = self._uur_report._add_failure_internal(
+            fail_code=fail_code,
+            component_reference=component_reference,
+            part_index=self._part_index
+        )
+        failure.comment = comment
+        failure.failed_step_order_number = step_order_number
+        self._failures.append(failure)
+        return failure
     
     def get_failures_by_component(self, component_reference: str) -> List['Failure']:
         """
@@ -157,9 +155,7 @@ class UURPartInfo(BaseModel):
         Returns:
             List of failures for the component
         """
-        # Note: This method depends on enhanced Failure model
-        # TODO: Implement when Failure.component_reference is available
-        return []
+        return [f for f in self._failures if f.component_reference == component_reference]
     
     def get_failures_by_fail_code(self, fail_code_id: UUID) -> List['Failure']:
         """
@@ -171,9 +167,10 @@ class UURPartInfo(BaseModel):
         Returns:
             List of failures with the specified fail code
         """
-        # Note: This method depends on enhanced Failure model
-        # TODO: Implement when Failure.fail_code is available
-        return []
+        return [
+            f for f in self._failures 
+            if f.fail_code and f.fail_code.id == fail_code_id
+        ]
     
     def remove_failure(self, failure: 'Failure') -> bool:
         """
@@ -215,8 +212,11 @@ class UURPartInfo(BaseModel):
         if self._replaced_idx is not None and self._replaced_idx < 0:
             errors.append("Replaced index cannot be negative")
         
-        # Validate failures (when enhanced Failure model is available)
-        # TODO: Implement when enhanced Failure model with validate method is available
+        # Validate all failures
+        for i, failure in enumerate(self._failures):
+            is_valid, error = failure.validate_failure()
+            if not is_valid:
+                errors.append(f"Failure {i}: {error}")
         
         if errors:
             return False, "; ".join(errors)
