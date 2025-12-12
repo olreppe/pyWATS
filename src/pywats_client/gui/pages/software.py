@@ -262,7 +262,11 @@ class SoftwarePage(BasePage):
         for pkg in self._packages:
             # Status filter
             if status_filter != "All":
-                pkg_status = str(pkg.status.value) if pkg.status else ""
+                # Status might be enum or string
+                if hasattr(pkg.status, 'value'):
+                    pkg_status = str(pkg.status.value)
+                else:
+                    pkg_status = str(pkg.status) if pkg.status else ""
                 if pkg_status.lower() != status_filter.lower():
                     continue
             
@@ -280,7 +284,12 @@ class SoftwarePage(BasePage):
         for row, pkg in enumerate(filtered):
             self._packages_table.setItem(row, 0, QTableWidgetItem(pkg.name or ""))
             self._packages_table.setItem(row, 1, QTableWidgetItem(str(pkg.version) if pkg.version else ""))
-            self._packages_table.setItem(row, 2, QTableWidgetItem(str(pkg.status.value) if pkg.status else ""))
+            # Status might be enum or string
+            if hasattr(pkg.status, 'value'):
+                status_str = str(pkg.status.value)
+            else:
+                status_str = str(pkg.status) if pkg.status else ""
+            self._packages_table.setItem(row, 2, QTableWidgetItem(status_str))
             self._packages_table.setItem(row, 3, QTableWidgetItem(pkg.description or ""))
             modified = str(pkg.modified_utc)[:10] if pkg.modified_utc else ""
             self._packages_table.setItem(row, 4, QTableWidgetItem(modified))
