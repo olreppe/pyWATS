@@ -235,7 +235,7 @@ class ConvertersPage(BasePage):
         """Refresh converter list"""
         self._refresh_converter_list()
         if self._main_window:
-            asyncio.create_task(self._main_window.refresh_converters())
+            self._main_window.refresh_converters()
     
     def _on_create_new(self) -> None:
         """Create a new converter template"""

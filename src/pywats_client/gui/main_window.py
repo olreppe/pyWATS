@@ -79,13 +79,13 @@ class MainWindow(QMainWindow):
         if self.config.auto_connect and self.config.was_connected:
             # Only auto-start if we have valid credentials
             if self.config.service_address and self.config.api_token:
-                asyncio.create_task(self._do_auto_start())
+                self._do_auto_start()
     
-    async def _do_auto_start(self) -> None:
+    def _do_auto_start(self) -> None:
         """Perform auto-start of application services"""
         try:
             self.application_status_changed.emit("Starting")
-            await self.app.start()
+            self.app.start()
             self._is_connected = True
             
             # Update UI based on connection status
@@ -513,7 +513,7 @@ class MainWindow(QMainWindow):
         self._save_config()
         await self.app.stop()
     
-    async def refresh_converters(self) -> None:
+    def refresh_converters(self) -> None:
         """Refresh converters from converter manager"""
         if self.app.converter_manager:
             # Converter manager handles converter discovery
