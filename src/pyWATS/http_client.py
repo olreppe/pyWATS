@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any, Union, List
 from dataclasses import dataclass
 import httpx
 import json
+import logging
 
 from .exceptions import (
     AuthenticationError,
@@ -18,6 +19,8 @@ from .exceptions import (
     TimeoutError,
     PyWATSError
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -69,6 +72,9 @@ class HttpClient:
         self.token = token
         self.timeout = timeout
         self.verify_ssl = verify_ssl
+        
+        logger.info(f"Initializing HttpClient: {self.base_url}")
+        logger.debug(f"Timeout: {timeout}s, SSL verify: {verify_ssl}")
         
         # Default headers
         self._headers = {
@@ -178,6 +184,12 @@ class HttpClient:
         if not endpoint.startswith("/"):
             endpoint = f"/{endpoint}"
         
+        logger.debug(f"{method} {self.base_url}{endpoint}")
+        if params:
+            logger.debug(f"Query params: {params}")
+        if data:
+            logger.debug(f"Request data: {type(data).__name__} ({len(str(data))} chars)")
+        
         # Merge headers
         request_headers = self._headers.copy()
         if headers:
@@ -202,14 +214,18 @@ class HttpClient:
         
         try:
             response = self.client.request(**kwargs)
+            logger.debug(f"Response: {response.status_code} ({len(response.content)} bytes)")
             return self._handle_response(response)
         except httpx.ConnectError as e:
+            logger.error(f"Connection failed to {self.base_url}{endpoint}: {e}")
             raise ConnectionError(f"Failed to connect to {self.base_url}: {e}")
         except httpx.TimeoutException as e:
+            logger.error(f"Timeout on {method} {endpoint}: {e}")
             raise TimeoutError(f"Request timed out: {e}")
         except (AuthenticationError, NotFoundError, ServerError):
             raise
         except Exception as e:
+            logger.error(f"HTTP request failed: {e}", exc_info=True)
             raise PyWATSError(f"HTTP request failed: {e}")
     
     # Convenience methods

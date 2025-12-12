@@ -31,6 +31,7 @@ from .exceptions import (
     ServerError,
     ConnectionError
 )
+from .core.logging import enable_debug_logging
 
 # Import commonly used models from domains for convenience
 from .domains.product import Product, ProductRevision, ProductGroup, ProductView
@@ -58,6 +59,8 @@ __version__ = "2.0.0"
 __all__ = [
     # Main class
     "pyWATS",
+    # Logging utilities
+    "enable_debug_logging",
     # Exceptions
     "PyWATSError",
     "AuthenticationError",
