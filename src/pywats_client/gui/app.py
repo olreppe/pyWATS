@@ -46,6 +46,12 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     # Create Qt application
     qt_app = QApplication(sys.argv)
     
+    # Set Windows taskbar icon (AppUserModelID)
+    if sys.platform == 'win32':
+        import ctypes
+        myappid = 'WATS.Client.1.0.0'  # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    
     # Set application icon
     icon_path = Path(__file__).parent / "resources" / "favicon.ico"
     if icon_path.exists():

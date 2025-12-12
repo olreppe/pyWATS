@@ -111,6 +111,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"WATS Client - {self.config.instance_name}")
         self.setMinimumSize(800, 600)
         self.resize(900, 650)
+        
+        # Set window icon for taskbar
+        from PySide6.QtGui import QIcon
+        icon_path = Path(__file__).parent / "resources" / "favicon2.ico"
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
     
     def _setup_tray_icon(self) -> None:
         """Setup system tray icon"""
