@@ -29,14 +29,14 @@ class MultiBooleanMeasurement(BooleanMeasurement):
 # LimitMeasurement 
 class LimitMeasurement(BooleanMeasurement):
     value: Union[str,float] = Field(...)
-    value_format: Optional[str] = Field(default=None, validation_alias="valueFormat", serialization_alias="valueFormat")
+    value_format: str | None = Field(default=None, validation_alias="valueFormat", serialization_alias="valueFormat")
 
     comp_op: Optional[CompOp] = Field(default=CompOp.LOG, validation_alias="compOp", serialization_alias="compOp")
     
-    high_limit: Optional[Union[float, str]] = Field(default=None, validation_alias="highLimit", serialization_alias="highLimit")
-    high_limit_format: Optional[str] = Field(default=None, validation_alias="highLimitFormat", serialization_alias="highLimitFormat")
-    low_limit: Optional[Union[float, str]] = Field(default=None, validation_alias="lowLimit", serialization_alias="lowLimit")
-    low_limit_format: Optional[str] = Field(default=None, validation_alias="lowLimitFormat", serialization_alias="lowLimitFormat")
+    high_limit: float | str | None = Field(default=None, validation_alias="highLimit", serialization_alias="highLimit")
+    high_limit_format: str | None = Field(default=None, validation_alias="highLimitFormat", serialization_alias="highLimitFormat")
+    low_limit: float | str | None = Field(default=None, validation_alias="lowLimit", serialization_alias="lowLimit")
+    low_limit_format: str | None = Field(default=None, validation_alias="lowLimitFormat", serialization_alias="lowLimitFormat")
         
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization

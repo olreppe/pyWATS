@@ -1,7 +1,7 @@
 # NI_Step
 
 # Type/lib
-from typing import Literal, Optional, List
+from typing import Literal, Optional
 from pydantic import Field
 from enum import Enum
 
@@ -64,7 +64,9 @@ class FlowType(Enum):
 
 # Define all possible GenericStep step_type values as a Literal
 # This is required for Pydantic's discriminated union to work correctly
-# NOTE: "Action" is NOT included because ActionStep has its own dedicated class
+# NOTE: "Action" is included because it's just a GenericStep with a specific literal value
+# used to select the correct icon. Only specialized steps like NumericStep, StringStep,
+# BooleanStep, SequenceCall, and ChartStep have their own dedicated classes.
 GenericStepLiteral = Literal[
     "NI_FTPFiles", "NI_Flow_If", "NI_Flow_ElseIf", "NI_Flow_Else", "NI_Flow_End",
     "NI_Flow_For", "NI_Flow_ForEach", "NI_Flow_Break", "NI_Flow_Continue",
@@ -78,7 +80,7 @@ GenericStepLiteral = Literal[
     "NI_IviSwitch", "NI_IviTools", "NI_LV_DeployLibrary", "NI_LV_CheckSystemStatus",
     "NI_LV_RunVIAsynchronously", "NI_PropertyLoader", "NI_VariableAndPropertyLoader",
     "NI_NewCsvFileInputRecordStream", "NI_NewCsvFileOutputRecordStream",
-    "NI_WriteRecord", "Goto", "Statement", "Label"
+    "NI_WriteRecord", "Goto", "Action", "Statement", "Label"
 ]
 
 # Class: GenericStep
@@ -89,7 +91,7 @@ class GenericStep(Step):
     # This ensures Pydantic can correctly discriminate GenericStep from other types
     step_type: GenericStepLiteral = Field(..., validation_alias="stepType", serialization_alias="stepType")
 
-    def validate_step(self, trigger_children: bool = False, errors: Optional[List[str]] = None) -> bool:
+    def validate_step(self, trigger_children=False, errors=None) -> bool:
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
         return True

@@ -1,5 +1,4 @@
 from ...common_types import *
-from typing import List, Optional, Any
 
 from .comp_operator import CompOp
 
@@ -35,17 +34,17 @@ class BooleanStep(Step):
             return []
         return [measurement.model_dump(by_alias=True, exclude_none=True)]  # Use aliases during serialization
     
-    def validate_step(self, trigger_children: bool = False, errors: Optional[List[str]] = None) -> bool:
+    def validate_step(self, trigger_children=False, errors=None) -> bool:
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
         return True
 
 class MultiBooleanStep(Step):
     step_type: Literal["ET_MPFT"] = Field(default="ET_MPFT", validation_alias="stepType", serialization_alias="stepType")
-    measurements: List[MultiBooleanMeasurement] = Field(default_factory=list, validation_alias="booleanMeas",serialization_alias="booleanMeas")
+    measurements: list[MultiBooleanMeasurement] = Field(default_factory=list, validation_alias="booleanMeas",serialization_alias="booleanMeas")
 
     # validate_step
-    def validate_step(self, trigger_children: bool = False, errors: Optional[List[str]] = None) -> bool:
+    def validate_step(self, trigger_children=False, errors=None) -> bool:
         if errors is None:
             errors = []
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
@@ -68,7 +67,7 @@ class MultiBooleanStep(Step):
         self.measurements.append(nm)
         return nm
     
-    def check_for_duplicates(self, name: str) -> str:
+    def check_for_duplicates(self, name):
         """
         Check for duplicate measurement names
         """

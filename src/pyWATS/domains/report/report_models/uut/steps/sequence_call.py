@@ -23,11 +23,11 @@ from .comp_operator import CompOp
 class StepList(List[StepType]):
     """Custom list that behaves like a list but has a parent reference."""
 
-    def __init__(self, items: Optional[List[Any]] = None, parent: Optional["SequenceCall"] = None) -> None:  # Use string reference
+    def __init__(self, items=None, parent: Optional["SequenceCall"] = None):  # Use string reference
         super().__init__(items or [])
         self.parent = parent
 
-    def set_parent(self, parent: "SequenceCall") -> None:  # Use string reference to avoid NameError
+    def set_parent(self, parent: "SequenceCall"):  # Use string reference to avoid NameError
         """
         Set the correct parent reference for all elements.
         #If an item is a SequenceCall, propagate the hierarchy recursively.
@@ -41,27 +41,27 @@ class StepList(List[StepType]):
             #if isinstance(item, SequenceCall):  # Ensure the parent is set recursively
             #    item.steps.set_parent(item)  # Child SequenceCall gets its own steps as children
 
-    def append(self, item: Any) -> None:
+    def append(self, item):
         """Ensure parent is set when appending."""
         if hasattr(item, "parent"):
             item.parent = self.parent
         super().append(item)
 
-    def extend(self, iterable: List[Any]) -> None:
+    def extend(self, iterable):
         """Ensure parent is set when extending."""
         for item in iterable:
             if hasattr(item, "parent"):
                 item.parent = self.parent
         super().extend(iterable)
 
-    def insert(self, index: int, item: Any) -> None:
+    def insert(self, index, item):
         """Ensure parent is set when inserting."""
         if hasattr(item, "parent"):
             item.parent = self.parent
         super().insert(index, item)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> Any:
+    def __get_pydantic_core_schema__(cls, source_type, handler):
         """Correctly handle serialization and validation for Pydantic with StepType (Union)."""
         return core_schema.list_schema(
             items_schema=handler.generate_schema(StepType),  # Handle Union[Step, NumericStep, ...]
@@ -69,7 +69,7 @@ class StepList(List[StepType]):
         )
 
     @classmethod
-    def _validate_list(cls, value: Any) -> "StepList":
+    def _validate_list(cls, value):
         """Ensure the list is properly validated and converted."""
         if not isinstance(value, list):
             raise ValueError("Expected a list")
@@ -101,11 +101,11 @@ class SequenceCall(Step):
     # NOTE: Discriminator is NOT used because Pydantic's discriminated union has issues
     # with complex inheritance and field structures. Instead, we rely on union type resolution
     # which tries each type in order. GenericStep is last in the Union to act as fallback.
-    steps: StepList = Field(default_factory=StepList)
+    steps: Optional[StepList[StepType]] = Field(default_factory=StepList)
     
     # Model validator (after) - Converts list to StepList and sets parent references
     @model_validator(mode="after")
-    def assign_parent(self) -> "SequenceCall":
+    def assign_parent(self):
         """
         Ensure all steps have the correct parent after model creation.
         Converts regular list to StepList if needed and establishes parent references.
@@ -117,7 +117,7 @@ class SequenceCall(Step):
         return self  
 
     # validate_step - all step types
-    def validate_step(self, trigger_children: bool = False, errors: Optional[List[str]] = None) -> bool:
+    def validate_step(self, trigger_children=False, errors=None) -> bool:
         if errors is None:
             errors = []
         
@@ -136,7 +136,7 @@ class SequenceCall(Step):
  
     # --------------------------------------------
     # AddSequenceCall() - Create a new sub-sequence below the current sequence call object 
-    def add_sequence_call(self, name: str, file_name: str = "SequenceFilename.seq", version: str = "1.0.0.0", path: str = "NaN") -> "SequenceCall":
+    def add_sequence_call(self, name: str, file_name = "SequenceFilename.seq", version: str = "1.0.0.0", path: str = "NaN"):
         new_seq = SequenceCall()
         new_seq.name = name
         new_seq.sequence.file_name = file_name
@@ -152,8 +152,8 @@ class SequenceCall(Step):
                          value: float,
                          unit: str = "NA",
                          comp_op: CompOp = CompOp.LOG,
-                         low_limit: Optional[float] = None,
-                         high_limit: Optional[float] = None,
+                         low_limit: float = None,
+                         high_limit: float = None,
                          status: str = "P", 
                          id: Optional[Union[int, str]] = None, 
                          group: str = "M", 
@@ -161,12 +161,12 @@ class SequenceCall(Step):
                          error_message: Optional[str] = None, 
                          reportText: Optional[str] = None, 
                          start: Optional[str] = None, 
-                         tot_time: Optional[Union[float, str]] = None) -> NumericStep:
+                         tot_time: Optional[Union[float, str]] = None):
         if status == "S":
-            value = float('nan')
+            value = "NaN"
             comp_op = CompOp.LOG
             unit = ""
-        ns = NumericStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=reportText, start=start, tot_time=tot_time, parent=self)
+        ns = NumericStep(name=name, value=value, unit=unit, status=status, id=id, group=group, errorCode=error_code, error_message=error_message, reportText=reportText, start=start, totTime=tot_time, parent=self)
         nm = NumericMeasurement(value=value, unit=unit, status=status, comp_op=comp_op, low_limit=low_limit, high_limit=high_limit)
         ns.measurement = nm
         self.steps.append(ns)
@@ -183,8 +183,8 @@ class SequenceCall(Step):
                          error_message: Optional[str] = None, 
                          reportText: Optional[str] = None, 
                          start: Optional[str] = None, 
-                         tot_time: Optional[Union[float, str]] = None) -> MultiNumericStep:
-        ns = MultiNumericStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=reportText, start=start, tot_time=tot_time, parent=self)
+                         tot_time: Optional[Union[float, str]] = None):
+        ns = MultiNumericStep(name=name, status=status, id=id, group=group, errorCode=error_code, error_message=error_message, reportText=reportText, start=start, totTime=tot_time, parent=self)
         self.steps.append(ns)
         return ns   
     # --------------------------------------------
@@ -194,7 +194,7 @@ class SequenceCall(Step):
                         value: str,
                         unit: str = "Na",
                         comp_op: CompOp = CompOp.LOG,
-                        limit: Optional[str] = None,
+                        limit: str = None,
                         status: str = "P", 
                         id: Optional[Union[int, str]] = None, 
                         group: str = "M", 
@@ -209,12 +209,12 @@ class SequenceCall(Step):
             value = "Null"
             comp_op = CompOp.LOG
                
-        ss = StringStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)
-        ss.measurement= StringMeasurement(value=value, status=status, comp_op=comp_op, limit=limit)
+        ss = StringStep(name=name, value=value, unit=unit, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)
+        ss.measurement= StringMeasurement(value=value, unit=unit, status=status, comp_op=comp_op, limit=limit)
         self.steps.append(ss)
         return ss
         # --------------------------------------------
-        # Add a multi string step
+        # Add a single string step
     def add_multi_string_step(self, *,
                             name: str,
                             status: str = "P", 
@@ -244,12 +244,12 @@ class SequenceCall(Step):
                          tot_time: Optional[Union[float, str]] = None) -> BooleanStep:
         """
         """
-        bs = BooleanStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)
+        bs = BooleanStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
         bs.measurement = BooleanMeasurement(status=status)        
         self.steps.append(bs)
         return bs
         # --------------------------------------------
-    # Add a multi boolean step    
+    # Add a single boolean step    
     def add_multi_boolean_step(self, *,
                          name: str,
                          status: str = "P",
@@ -262,7 +262,7 @@ class SequenceCall(Step):
                          tot_time: Optional[Union[float, str]] = None) -> MultiBooleanStep:
         """
         """
-        bs = MultiBooleanStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)        
+        bs = MultiBooleanStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)        
         self.steps.append(bs)
         return bs
     # --------------------------------------------
@@ -276,7 +276,7 @@ class SequenceCall(Step):
                       x_unit: Optional[str],
                       y_label: str,
                       y_unit: Optional[str],
-                      series: Optional[List[ChartSeries]] = None,
+                      series: List[ChartSeries] = None,
                       id: Optional[Union[int, str]] = None, 
                       group: str = "M", 
                       error_code: Optional[Union[int, str]] = None, 
@@ -284,7 +284,7 @@ class SequenceCall(Step):
                       report_text: Optional[str] = None, 
                       start: Optional[str] = None, 
                       tot_time: Optional[Union[float, str]] = None) -> ChartStep:
-        cs = ChartStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)
+        cs = ChartStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
         cs.chart = Chart(chart_type=chart_type, label=label, x_label=x_label, y_label=y_label, x_unit=x_unit,y_unit=y_unit, series=series)
         self.steps.append(cs)
         return cs
@@ -301,7 +301,9 @@ class SequenceCall(Step):
                       report_text: Optional[str] = None, 
                       start: Optional[str] = None, 
                       tot_time: Optional[Union[float, str]] = None) -> GenericStep:
-        fs = GenericStep(name=name, step_type=step_type, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)
+        # Convert FlowType enum to string value for Pydantic validation
+        step_type_str = step_type.value if isinstance(step_type, FlowType) else step_type
+        fs = GenericStep(name=name, step_type=step_type_str, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
         self.steps.append(fs)
         return fs
 
@@ -310,7 +312,7 @@ class SequenceCall(Step):
 
 
     # PRINT CHILD STEP HIERARCHY - For debugging
-    def print_hierarchy(self, indent: int = 0) -> None:
+    def print_hierarchy(self, indent: int = 0):
         """Recursively print the hierarchy of SequenceCall and its steps with indentation, including parent names and class names."""
         prefix = " " * (indent * 4)  # Create indentation (4 spaces per level)
         parent_name = getattr(self.parent, "name", "None")  # Get parent name or "None"
@@ -321,7 +323,7 @@ class SequenceCall(Step):
             step_parent_name = getattr(step.parent, "name", "None")  # Get parent name for each step
             
             if isinstance(step, SequenceCall):  # If step is another SequenceCall, recurse
-                step.print_hierarchy(indent + 1)
+                self.print_hierarchy(step, indent + 1)
             else:
                 # Print the step with its class name
                 print(f"{prefix}    - {step.__class__.__name__}: {getattr(step, 'name', 'Unnamed')} (Parent: {step_parent_name}, Class: {step.step_type})")
