@@ -21,17 +21,17 @@ class AppRepository:
 
     def __init__(
         self, 
-        client: "HttpClient",
+        http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
         """
         Initialize with HTTP client.
 
         Args:
-            client: HttpClient for making HTTP requests
+            http_client: HttpClient for making HTTP requests
             error_handler: ErrorHandler for response handling (optional for backward compat)
         """
-        self._http = client
+        self._http_client = http_client
         self._error_handler = error_handler
 
     # =========================================================================
@@ -47,7 +47,7 @@ class AppRepository:
         Returns:
             Version info dictionary or None
         """
-        response = self._http.get("/api/App/Version")
+        response = self._http_client.get("/api/App/Version")
         
         if self._error_handler:
             data = self._error_handler.handle_response(
@@ -69,7 +69,7 @@ class AppRepository:
         Returns:
             List of ProcessInfo objects
         """
-        response = self._http.get("/api/App/Processes")
+        response = self._http_client.get("/api/App/Processes")
         
         if self._error_handler:
             data = self._error_handler.handle_response(
@@ -93,7 +93,7 @@ class AppRepository:
         Returns:
             List of LevelInfo objects
         """
-        response = self._http.get("/api/App/Levels")
+        response = self._http_client.get("/api/App/Levels")
         
         if self._error_handler:
             data = self._error_handler.handle_response(
@@ -117,7 +117,7 @@ class AppRepository:
         Returns:
             List of ProductGroup objects
         """
-        response = self._http.get("/api/App/ProductGroups")
+        response = self._http_client.get("/api/App/ProductGroups")
         
         if self._error_handler:
             data = self._error_handler.handle_response(
@@ -156,7 +156,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post("/api/App/DynamicYield", data=data)
+        response = self._http_client.post("/api/App/DynamicYield", data=data)
         if response.is_success and response.data:
             return [YieldData.model_validate(item) for item in response.data]
         return []
@@ -185,14 +185,14 @@ class AppRepository:
                 data = filter_data.model_dump(by_alias=True, exclude_none=True)
             else:
                 data = filter_data
-            response = self._http.post("/api/App/VolumeYield", data=data)
+            response = self._http_client.post("/api/App/VolumeYield", data=data)
         else:
             params: Dict[str, Any] = {}
             if product_group:
                 params["productGroup"] = product_group
             if level:
                 params["level"] = level
-            response = self._http.get(
+            response = self._http_client.get(
                 "/api/App/VolumeYield", params=params if params else None
             )
         if response.is_success and response.data:
@@ -223,14 +223,14 @@ class AppRepository:
                 data = filter_data.model_dump(by_alias=True, exclude_none=True)
             else:
                 data = filter_data
-            response = self._http.post("/api/App/HighVolume", data=data)
+            response = self._http_client.post("/api/App/HighVolume", data=data)
         else:
             params: Dict[str, Any] = {}
             if product_group:
                 params["productGroup"] = product_group
             if level:
                 params["level"] = level
-            response = self._http.get(
+            response = self._http_client.get(
                 "/api/App/HighVolume", params=params if params else None
             )
         if response.is_success and response.data:
@@ -255,7 +255,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/App/HighVolumeByProductGroup", data=data
         )
         if response.is_success and response.data:
@@ -286,14 +286,14 @@ class AppRepository:
                 data = filter_data.model_dump(by_alias=True, exclude_none=True)
             else:
                 data = filter_data
-            response = self._http.post("/api/App/WorstYield", data=data)
+            response = self._http_client.post("/api/App/WorstYield", data=data)
         else:
             params: Dict[str, Any] = {}
             if product_group:
                 params["productGroup"] = product_group
             if level:
                 params["level"] = level
-            response = self._http.get(
+            response = self._http_client.get(
                 "/api/App/WorstYield", params=params if params else None
             )
         if response.is_success and response.data:
@@ -318,7 +318,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/App/WorstYieldByProductGroup", data=data
         )
         if response.is_success and response.data:
@@ -347,7 +347,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post("/api/App/DynamicRepair", data=data)
+        response = self._http_client.post("/api/App/DynamicRepair", data=data)
         if response.is_success and response.data:
             return (
                 response.data
@@ -375,7 +375,7 @@ class AppRepository:
             "partNumber": part_number,
             "revision": revision,
         }
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/App/RelatedRepairHistory", params=params
         )
         if response.is_success and response.data:
@@ -412,9 +412,9 @@ class AppRepository:
                 data = filter_data.model_dump(by_alias=True, exclude_none=True)
             else:
                 data = filter_data
-            response = self._http.post("/api/App/TopFailed", data=data)
+            response = self._http_client.post("/api/App/TopFailed", data=data)
         else:
-            response = self._http.get(
+            response = self._http_client.get(
                 "/api/App/TopFailed", params=kwargs if kwargs else None
             )
         if response.is_success and response.data:
@@ -443,7 +443,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post("/api/App/TestStepAnalysis", data=data)
+        response = self._http_client.post("/api/App/TestStepAnalysis", data=data)
         if response.is_success and response.data:
             return cast(Dict[str, Any], response.data)
         return {}
@@ -470,7 +470,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post("/api/App/Measurements", data=data)
+        response = self._http_client.post("/api/App/Measurements", data=data)
         if response.is_success and response.data:
             return (
                 response.data
@@ -497,7 +497,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/App/AggregatedMeasurements", data=data
         )
         if response.is_success and response.data:
@@ -530,7 +530,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post("/api/App/OeeAnalysis", data=data)
+        response = self._http_client.post("/api/App/OeeAnalysis", data=data)
         if response.is_success and response.data:
             return cast(Dict[str, Any], response.data)
         return {}
@@ -557,7 +557,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post("/api/App/SerialNumberHistory", data=data)
+        response = self._http_client.post("/api/App/SerialNumberHistory", data=data)
         if response.is_success and response.data:
             return [
                 ReportHeader.model_validate(item) for item in response.data
@@ -586,9 +586,9 @@ class AppRepository:
                 data = filter_data.model_dump(by_alias=True, exclude_none=True)
             else:
                 data = filter_data
-            response = self._http.post("/api/App/UutReport", data=data)
+            response = self._http_client.post("/api/App/UutReport", data=data)
         else:
-            response = self._http.get(
+            response = self._http_client.get(
                 "/api/App/UutReport", params=kwargs if kwargs else None
             )
         if response.is_success and response.data:
@@ -615,7 +615,7 @@ class AppRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http.post("/api/App/UurReport", data=data)
+        response = self._http_client.post("/api/App/UurReport", data=data)
         if response.is_success and response.data:
             return [
                 ReportHeader.model_validate(item) for item in response.data

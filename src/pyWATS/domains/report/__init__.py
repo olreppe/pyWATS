@@ -1,6 +1,9 @@
 """Report domain.
 
 Provides services and repository for test reports (UUT/UUR).
+
+For creating test reports, see the TestUUT factory class:
+    from pywats.tools.test_uut import TestUUT
 """
 # Report models (UUT/UUR report structure)
 from .report_models import (

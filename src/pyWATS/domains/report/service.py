@@ -2,14 +2,13 @@
 
 All business operations for test reports (UUT/UUR).
 """
-from typing import Optional, List, Dict, Any, Union, overload
+from typing import Optional, List, Dict, Any, overload
 from datetime import datetime, timedelta
 from uuid import uuid4, UUID
 
 from .repository import ReportRepository
 from .models import WATSFilter, ReportHeader
 from .enums import DateGrouping
-from ...core import HttpClient
 from .report_models import UUTReport, UURReport
 from .report_models.uut.uut_info import UUTInfo
 from .report_models.uur.uur_info import UURInfo
@@ -22,18 +21,14 @@ class ReportService:
     Provides high-level operations for working with WATS test reports.
     """
 
-    def __init__(self, repository_or_client: Union[ReportRepository, HttpClient]):
+    def __init__(self, repository: ReportRepository):
         """
-        Initialize with ReportRepository or HttpClient.
+        Initialize with ReportRepository.
 
         Args:
-            repository_or_client: ReportRepository instance or HttpClient (for backward compatibility)
+            repository: ReportRepository instance for data access
         """
-        if isinstance(repository_or_client, ReportRepository):
-            self._repository = repository_or_client
-        else:
-            # Backward compatibility: create repository from HttpClient
-            self._repository = ReportRepository(repository_or_client)
+        self._repository = repository
 
     # =========================================================================
     # Report Factory Methods
@@ -65,6 +60,11 @@ class ReportService:
 
         Returns:
             A new UUTReport object ready for adding steps and submission
+        
+        See Also:
+            For a fluent interface with comprehensive factory methods:
+                from pywats.tools.test_uut import TestUUT
+                report = TestUUT(pn, sn, rev, operator, process_code).get_root()
         """
         uut_info = UUTInfo(
             operator=operator

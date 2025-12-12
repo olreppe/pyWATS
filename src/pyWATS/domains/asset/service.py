@@ -26,7 +26,7 @@ class AssetService:
         Args:
             repository: AssetRepository for data access
         """
-        self._repo = repository
+        self._repository = repository
 
     # =========================================================================
     # Asset Operations
@@ -47,7 +47,7 @@ class AssetService:
         Returns:
             List of Asset objects
         """
-        return self._repo.get_all(filter_str=filter_str, top=top)
+        return self._repository.get_all(filter_str=filter_str, top=top)
 
     def get_asset(self, identifier: str) -> Optional[Asset]:
         """
@@ -59,7 +59,7 @@ class AssetService:
         Returns:
             Asset if found, None otherwise
         """
-        return self._repo.get_by_id(identifier)
+        return self._repository.get_by_id(identifier)
 
     def get_asset_by_serial(self, serial_number: str) -> Optional[Asset]:
         """
@@ -71,7 +71,7 @@ class AssetService:
         Returns:
             Asset if found, None otherwise
         """
-        return self._repo.get_by_serial_number(serial_number)
+        return self._repository.get_by_serial_number(serial_number)
 
     def create_asset(
         self,
@@ -104,7 +104,7 @@ class AssetService:
             location=location,
             **kwargs
         )
-        return self._repo.save(asset)
+        return self._repository.save(asset)
 
     def update_asset(self, asset: Asset) -> Optional[Asset]:
         """
@@ -116,7 +116,7 @@ class AssetService:
         Returns:
             Updated Asset object
         """
-        return self._repo.save(asset)
+        return self._repository.save(asset)
 
     def delete_asset(self, asset_id: str) -> bool:
         """
@@ -128,7 +128,7 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repo.delete(asset_id)
+        return self._repository.delete(asset_id)
 
     # =========================================================================
     # State Management
@@ -144,7 +144,7 @@ class AssetService:
         Returns:
             Current AssetState or None if not found
         """
-        asset = self._repo.get_by_id(asset_id)
+        asset = self._repository.get_by_id(asset_id)
         return asset.state if asset else None
 
     def set_asset_state(
@@ -164,7 +164,7 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repo.set_state(asset_id, state, comment)
+        return self._repository.set_state(asset_id, state, comment)
 
     def needs_calibration(self, asset: Asset) -> bool:
         """
@@ -197,7 +197,7 @@ class AssetService:
         Returns:
             List of assets needing maintenance
         """
-        assets = self._repo.get_all()
+        assets = self._repository.get_all()
         return [a for a in assets if a.state == AssetState.NEEDS_MAINTENANCE]
 
     def get_assets_needing_calibration(self) -> List[Asset]:
@@ -207,7 +207,7 @@ class AssetService:
         Returns:
             List of assets needing calibration
         """
-        assets = self._repo.get_all()
+        assets = self._repository.get_all()
         return [a for a in assets if a.state == AssetState.NEEDS_CALIBRATION]
 
     # =========================================================================
@@ -225,7 +225,7 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repo.update_count(asset_id, increment_by=amount)
+        return self._repository.update_count(asset_id, increment_by=amount)
 
     def reset_running_count(self, asset_id: str) -> bool:
         """
@@ -237,7 +237,7 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repo.reset_running_count(asset_id)
+        return self._repository.reset_running_count(asset_id)
 
     # =========================================================================
     # Calibration & Maintenance
@@ -269,7 +269,7 @@ class AssetService:
         }
         if comment:
             data["comment"] = comment
-        return self._repo.post_calibration(data)
+        return self._repository.post_calibration(data)
 
     def record_maintenance(
         self,
@@ -297,7 +297,7 @@ class AssetService:
         }
         if comment:
             data["comment"] = comment
-        return self._repo.post_maintenance(data)
+        return self._repository.post_maintenance(data)
 
     # =========================================================================
     # Log Operations
@@ -318,7 +318,7 @@ class AssetService:
         Returns:
             List of AssetLog entries
         """
-        return self._repo.get_log(filter_str=filter_str, top=top)
+        return self._repository.get_log(filter_str=filter_str, top=top)
 
     def add_log_message(
         self,
@@ -337,7 +337,7 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repo.post_message(asset_id, message, user)
+        return self._repository.post_message(asset_id, message, user)
 
     # =========================================================================
     # Asset Types
@@ -350,7 +350,7 @@ class AssetService:
         Returns:
             List of AssetType objects
         """
-        return self._repo.get_types()
+        return self._repository.get_types()
 
     def create_asset_type(
         self,
@@ -377,7 +377,7 @@ class AssetService:
             maintenance_interval=maintenance_interval,
             **kwargs
         )
-        return self._repo.save_type(asset_type)
+        return self._repository.save_type(asset_type)
 
     # =========================================================================
     # Sub-Assets
@@ -393,4 +393,4 @@ class AssetService:
         Returns:
             List of child Asset objects
         """
-        return self._repo.get_sub_assets(parent_id)
+        return self._repository.get_sub_assets(parent_id)

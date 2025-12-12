@@ -21,17 +21,17 @@ class ProductRepository:
 
     def __init__(
         self, 
-        client: "HttpClient",
+        http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
         """
         Initialize with HTTP client.
 
         Args:
-            client: HttpClient for making HTTP requests
+            http_client: HttpClient for making HTTP requests
             error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
-        self._http = client
+        self._http_client = http_client
         # Import here to avoid circular imports
         from ...core.exceptions import ErrorHandler, ErrorMode
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
@@ -49,7 +49,7 @@ class ProductRepository:
         Returns:
             List of Product objects
         """
-        response = self._http.get("/api/Product/Query")
+        response = self._http_client.get("/api/Product/Query")
         if response.is_success and response.data:
             return [Product.model_validate(item) for item in response.data]
         return []
@@ -66,7 +66,7 @@ class ProductRepository:
         Returns:
             Product object or None if not found
         """
-        response = self._http.get(f"/api/Product/{part_number}")
+        response = self._http_client.get(f"/api/Product/{part_number}")
         data = self._error_handler.handle_response(
             response, 
             operation=f"get_by_part_number('{part_number}')"
@@ -97,7 +97,7 @@ class ProductRepository:
             data = product.model_dump(by_alias=True, exclude_none=True, mode='json')
         else:
             data = product
-        response = self._http.put("/api/Product", data=data)
+        response = self._http_client.put("/api/Product", data=data)
         if response.is_success and response.data:
             return Product.model_validate(response.data)
         return None
@@ -121,7 +121,7 @@ class ProductRepository:
             if isinstance(p, Product) else p
             for p in products
         ]
-        response = self._http.put("/api/Product/Products", data=data)
+        response = self._http_client.put("/api/Product/Products", data=data)
         if response.is_success and response.data:
             return [Product.model_validate(item) for item in response.data]
         return []
@@ -150,7 +150,7 @@ class ProductRepository:
             ProductRevision object or None if not found
         """
         # Use query parameters to handle revisions with dots (e.g., "1.0")
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Product", 
             params={"partNumber": part_number, "revision": revision}
         )
@@ -179,7 +179,7 @@ class ProductRepository:
             data = revision.model_dump(mode="json", by_alias=True, exclude_none=True)
         else:
             data = revision
-        response = self._http.put("/api/Product/Revision", data=data)
+        response = self._http_client.put("/api/Product/Revision", data=data)
         if response.is_success and response.data:
             return ProductRevision.model_validate(response.data)
         return None
@@ -203,7 +203,7 @@ class ProductRepository:
             if isinstance(r, ProductRevision) else r
             for r in revisions
         ]
-        response = self._http.put("/api/Product/Revisions", data=data)
+        response = self._http_client.put("/api/Product/Revisions", data=data)
         if response.is_success and response.data:
             return [ProductRevision.model_validate(item) for item in response.data]
         return []
@@ -243,7 +243,7 @@ class ProductRepository:
         xml_content = self._generate_wsbf_xml(part_number, revision, bom_items, description)
         
         # Send as XML with proper content type
-        response = self._http.put(
+        response = self._http_client.put(
             "/api/Product/BOM",
             data=xml_content,
             headers={"Content-Type": "application/xml"}
@@ -343,7 +343,7 @@ class ProductRepository:
         if skip:
             params["$skip"] = skip
 
-        response = self._http.post("/api/Product/GroupFilter", params=params)
+        response = self._http_client.post("/api/Product/GroupFilter", params=params)
         if response.is_success and response.data:
             return [ProductGroup.model_validate(item) for item in response.data]
         return []
@@ -363,7 +363,7 @@ class ProductRepository:
         Returns:
             List of ProductGroup objects
         """
-        response = self._http.get(
+        response = self._http_client.get(
             f"/api/Product/Groups/{part_number}/{revision}"
         )
         if response.is_success and response.data:
@@ -383,7 +383,7 @@ class ProductRepository:
         Returns:
             List of vendor dictionaries
         """
-        response = self._http.get("/api/Product/Vendors")
+        response = self._http_client.get("/api/Product/Vendors")
         if response.is_success and response.data:
             return cast(List[Dict[str, Any]], response.data)
         return []
@@ -402,7 +402,7 @@ class ProductRepository:
         Returns:
             Created/updated vendor data
         """
-        response = self._http.put("/api/Product/Vendors", data=vendor_data)
+        response = self._http_client.put("/api/Product/Vendors", data=vendor_data)
         if response.is_success and response.data:
             return cast(Dict[str, Any], response.data)
         return None
@@ -419,5 +419,5 @@ class ProductRepository:
         Returns:
             True if successful
         """
-        response = self._http.delete(f"/api/Product/Vendors/{vendor_id}")
+        response = self._http_client.delete(f"/api/Product/Vendors/{vendor_id}")
         return response.is_success

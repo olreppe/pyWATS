@@ -27,7 +27,7 @@ class ProductService:
         Args:
             repository: ProductRepository for data access
         """
-        self._repo = repository
+        self._repository = repository
 
     # =========================================================================
     # Product Operations
@@ -40,7 +40,7 @@ class ProductService:
         Returns:
             List of ProductView objects
         """
-        products = self._repo.get_all()
+        products = self._repository.get_all()
         return [
             ProductView(
                 part_number=p.part_number,
@@ -58,7 +58,7 @@ class ProductService:
         Returns:
             List of Product objects
         """
-        return self._repo.get_all()
+        return self._repository.get_all()
 
     def get_product(self, part_number: str) -> Optional[Product]:
         """
@@ -70,7 +70,7 @@ class ProductService:
         Returns:
             Product if found, None otherwise
         """
-        return self._repo.get_by_part_number(part_number)
+        return self._repository.get_by_part_number(part_number)
 
     def create_product(
         self,
@@ -103,7 +103,7 @@ class ProductService:
             state=state,
             **kwargs
         )
-        return self._repo.save(product)
+        return self._repository.save(product)
 
     def update_product(self, product: Product) -> Optional[Product]:
         """
@@ -115,7 +115,7 @@ class ProductService:
         Returns:
             Updated Product object
         """
-        return self._repo.save(product)
+        return self._repository.save(product)
 
     def bulk_save_products(
         self, products: List[Product]
@@ -129,7 +129,7 @@ class ProductService:
         Returns:
             List of saved Product objects
         """
-        return self._repo.save_bulk(products)
+        return self._repository.save_bulk(products)
 
     def is_active(self, product: Product) -> bool:
         """
@@ -169,7 +169,7 @@ class ProductService:
         Returns:
             ProductRevision if found, None otherwise
         """
-        return self._repo.get_revision(part_number, revision)
+        return self._repository.get_revision(part_number, revision)
 
     def get_revisions(self, part_number: str) -> List[ProductRevision]:
         """
@@ -181,7 +181,7 @@ class ProductService:
         Returns:
             List of ProductRevision objects
         """
-        product = self._repo.get_by_part_number(part_number)
+        product = self._repository.get_by_part_number(part_number)
         return product.revisions if product else []
 
     def create_revision(
@@ -208,7 +208,7 @@ class ProductService:
             Created ProductRevision object
         """
         # Get product to link revision
-        product = self._repo.get_by_part_number(part_number)
+        product = self._repository.get_by_part_number(part_number)
         if not product:
             return None
 
@@ -221,7 +221,7 @@ class ProductService:
             part_number=part_number,
             **kwargs
         )
-        return self._repo.save_revision(rev)
+        return self._repository.save_revision(rev)
 
     def update_revision(
         self, revision: ProductRevision
@@ -235,7 +235,7 @@ class ProductService:
         Returns:
             Updated ProductRevision object
         """
-        return self._repo.save_revision(revision)
+        return self._repository.save_revision(revision)
 
     def bulk_save_revisions(
         self, revisions: List[ProductRevision]
@@ -249,7 +249,7 @@ class ProductService:
         Returns:
             List of saved ProductRevision objects
         """
-        return self._repo.save_revisions_bulk(revisions)
+        return self._repository.save_revisions_bulk(revisions)
 
     # =========================================================================
     # Bill of Materials
@@ -276,7 +276,7 @@ class ProductService:
         Returns:
             True if successful
         """
-        return self._repo.update_bom(part_number, revision, bom_items, description)
+        return self._repository.update_bom(part_number, revision, bom_items, description)
 
     # =========================================================================
     # Product Groups
@@ -297,7 +297,7 @@ class ProductService:
         Returns:
             List of ProductGroup objects
         """
-        return self._repo.get_groups(filter_str=filter_str, top=top)
+        return self._repository.get_groups(filter_str=filter_str, top=top)
 
     def get_groups_for_product(
         self, part_number: str, revision: str
@@ -312,7 +312,7 @@ class ProductService:
         Returns:
             List of ProductGroup objects
         """
-        return self._repo.get_groups_for_product(part_number, revision)
+        return self._repository.get_groups_for_product(part_number, revision)
 
     # =========================================================================
     # Tags
@@ -489,7 +489,7 @@ class ProductService:
         Returns:
             List of vendor dictionaries
         """
-        return self._repo.get_vendors()
+        return self._repository.get_vendors()
 
     def save_vendor(
         self, vendor_data: Dict[str, Any]
@@ -503,7 +503,7 @@ class ProductService:
         Returns:
             Created/updated vendor data
         """
-        return self._repo.save_vendor(vendor_data)
+        return self._repository.save_vendor(vendor_data)
 
     def delete_vendor(self, vendor_id: str) -> bool:
         """
@@ -515,4 +515,4 @@ class ProductService:
         Returns:
             True if successful
         """
-        return self._repo.delete_vendor(vendor_id)
+        return self._repository.delete_vendor(vendor_id)

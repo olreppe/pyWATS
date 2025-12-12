@@ -1,0 +1,425 @@
+# pyWATS API Architecture
+
+## Overview
+
+pyWATS is a Python library for interacting with the WATS (Web-based Automated Test System) server. The library follows a **layered domain-driven architecture** that separates concerns and provides a clean, maintainable codebase.
+
+## Architecture Layers
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   pyWATS (Facade)                   │
+│              Single entry point for API             │
+└──────────────────┬──────────────────────────────────┘
+                   │
+     ┌─────────────┼─────────────┬──────────────┐
+     │             │             │              │
+┌────▼────┐   ┌───▼────┐   ┌───▼────┐    ┌───▼────┐
+│ Product │   │ Asset  │   │ Report │... │  App   │
+│ Service │   │Service │   │Service │    │Service │
+└────┬────┘   └───┬────┘   └───┬────┘    └───┬────┘
+     │             │             │              │
+┌────▼────┐   ┌───▼────┐   ┌───▼────┐    ┌───▼────┐
+│ Product │   │ Asset  │   │ Report │... │  App   │
+│  Repo   │   │  Repo  │   │  Repo  │    │  Repo  │
+└────┬────┘   └───┬────┘   └───┬────┘    └───┬────┘
+     │             │             │              │
+     └─────────────┴─────────────┴──────────────┘
+                   │
+            ┌──────▼──────┐
+            │ HTTP Client │
+            │  (Core)     │
+            └──────┬──────┘
+                   │
+            ┌──────▼──────┐
+            │ WATS Server │
+            └─────────────┘
+```
+
+## Layer Responsibilities
+
+### 1. Facade Layer (`pywats.py`)
+
+**Purpose**: Single entry point for the entire API
+
+**Responsibilities**:
+- Initialize and manage all domain services
+- Provide property-based access to each domain
+- Handle authentication configuration
+- Manage HTTP client lifecycle
+
+**Example**:
+```python
+from pywats import pyWATS
+
+api = pyWATS(
+    base_url="https://wats.example.com",
+    token="base64_encoded_credentials"
+)
+
+# Access domains through properties
+products = api.product.get_products()
+report = api.report.get_report(uuid)
+```
+
+### 2. Service Layer (`service.py`)
+
+**Purpose**: Business logic and orchestration
+
+**Responsibilities**:
+- Validate business rules beyond basic field validation
+- Transform and enrich data
+- Orchestrate multiple repository calls
+- Provide high-level convenience methods
+- Handle complex workflows
+
+**Example**:
+```python
+class ProductService:
+    def __init__(self, repository: ProductRepository):
+        self._repo = repository
+    
+    def get_active_products(self) -> List[Product]:
+        """Get only active products"""
+        products = self._repo.get_products()
+        return [p for p in products if p.state == ProductState.ACTIVE]
+```
+
+### 3. Repository Layer (`repository.py`)
+
+**Purpose**: Data access and API communication
+
+**Responsibilities**:
+- Make HTTP requests to WATS server
+- Parse responses into domain models
+- Handle HTTP errors
+- No business logic - pure data access
+
+**Example**:
+```python
+class ProductRepository:
+    def __init__(self, client: HttpClient, error_handler: ErrorHandler):
+        self._client = client
+        self._error_handler = error_handler
+    
+    def get_product(self, part_number: str) -> Optional[Product]:
+        response = self._client.get(f"/api/Product/{part_number}")
+        if response.status == 404:
+            return self._error_handler.handle_not_found(...)
+        return Product.model_validate(response.data)
+```
+
+### 4. Model Layer (`models.py`)
+
+**Purpose**: Data structures and validation
+
+**Responsibilities**:
+- Define data models using Pydantic
+- Field-level validation
+- Serialization/deserialization rules
+- Type safety
+- No business logic, no API calls
+
+**Example**:
+```python
+class Product(PyWATSModel):
+    part_number: str = Field(..., alias="partNumber")
+    state: ProductState = Field(default=ProductState.ACTIVE)
+    description: Optional[str] = None
+```
+
+### 5. Core Layer (`core/`)
+
+**Purpose**: Infrastructure and shared utilities
+
+**Components**:
+- `client.py` - HTTP client with authentication
+- `exceptions.py` - Custom exception hierarchy
+
+### 6. Shared Layer (`shared/`)
+
+**Purpose**: Cross-cutting concerns
+
+**Components**:
+- `base_model.py` - Base Pydantic model configuration
+- `common_types.py` - Shared types (e.g., `Setting`)
+
+## Domain Structure
+
+Each domain follows the same structure:
+
+```
+domains/
+└── {domain}/
+    ├── __init__.py          # Public exports
+    ├── models.py            # Data models
+    ├── enums.py            # Enumerations (optional)
+    ├── service.py          # Business logic
+    └── repository.py       # API communication
+```
+
+### Available Domains
+
+| Domain | Purpose | Key Models |
+|--------|---------|------------|
+| **product** | Product/part management | Product, ProductRevision, BOM |
+| **asset** | Test equipment tracking | Asset, AssetType, AssetLog |
+| **production** | Serial number/unit tracking | Unit, UnitChange, SerialNumberType |
+| **report** | Test report submission/query | UUTReport, UURReport, WATSFilter |
+| **rootcause** | Issue ticketing system | Ticket, TicketUpdate |
+| **app** | Statistics and KPIs | YieldData, ProcessInfo |
+| **software** | Software distribution | SoftwarePackage |
+| **process** | Operation/process data | ProcessType, ProcessDefinition |
+
+## Data Flow
+
+### 1. Reading Data (Query)
+
+```
+User Code
+   ↓
+api.{domain}.get_*()
+   ↓
+Service (business logic/filtering)
+   ↓
+Repository (HTTP GET)
+   ↓
+HttpClient (authentication/request)
+   ↓
+WATS Server
+   ↓
+Response → Model (validation)
+   ↓
+User Code
+```
+
+### 2. Writing Data (Command)
+
+```
+User Code (creates model)
+   ↓
+api.{domain}.create_*() or send_*()
+   ↓
+Service (validation/enrichment)
+   ↓
+Repository (HTTP POST/PUT)
+   ↓
+HttpClient (authentication/request)
+   ↓
+WATS Server
+   ↓
+Response → Model
+   ↓
+User Code
+```
+
+## Authentication & Configuration
+
+### Basic Authentication
+
+```python
+import base64
+
+credentials = base64.b64encode(b"username:password").decode()
+api = pyWATS(
+    base_url="https://wats.example.com",
+    token=credentials
+)
+```
+
+### Error Modes
+
+```python
+from pywats.core.exceptions import ErrorMode
+
+# STRICT mode (default) - raises exceptions
+api = pyWATS(..., error_mode=ErrorMode.STRICT)
+
+# LENIENT mode - returns None for 404s
+api = pyWATS(..., error_mode=ErrorMode.LENIENT)
+```
+
+### Timeouts
+
+```python
+# 60 second timeout
+api = pyWATS(..., timeout=60)
+```
+
+## Best Practices
+
+### 1. Use Domain Properties
+
+```python
+# ✓ Good
+products = api.product.get_products()
+
+# ✗ Avoid
+from pywats.domains.product import ProductService
+service = ProductService(...)  # Don't instantiate directly
+```
+
+### 2. Import Models from Top-Level
+
+```python
+# ✓ Good - common models
+from pywats import Product, Asset, Unit
+
+# ✓ Good - report models
+from pywats.models import UUTReport, UURReport
+
+# ✓ Good - domain-specific
+from pywats.domains.report import WATSFilter
+```
+
+### 3. Use Service Methods, Not Direct API
+
+```python
+# ✓ Good - uses service methods
+report = api.report.get_report_by_serial("SN-001")
+
+# ✗ Avoid - bypassing service layer
+response = api._http_client.get("/api/Report/...")  # Don't access private
+```
+
+### 4. Model Validation is Automatic
+
+```python
+# Models validate automatically
+product = Product(
+    part_number="PART-001",
+    state=ProductState.ACTIVE  # Enum validated
+)
+# Pydantic raises ValidationError if invalid
+```
+
+## Testing Architecture
+
+The layered architecture enables easy testing:
+
+### Unit Testing Services
+
+```python
+from unittest.mock import Mock
+
+def test_get_active_products():
+    mock_repo = Mock()
+    mock_repo.get_products.return_value = [
+        Product(part_number="P1", state=ProductState.ACTIVE),
+        Product(part_number="P2", state=ProductState.OBSOLETE),
+    ]
+    
+    service = ProductService(mock_repo)
+    active = service.get_active_products()
+    
+    assert len(active) == 1
+    assert active[0].part_number == "P1"
+```
+
+### Integration Testing
+
+```python
+def test_product_roundtrip(wats_client):
+    # Uses real pyWATS instance with test server
+    product = wats_client.product.get_product("TEST-001")
+    assert product.part_number == "TEST-001"
+```
+
+## Extension Points
+
+### Adding Internal APIs
+
+Some domains have `_internal` variants for undocumented APIs:
+
+```python
+# Public API
+api.product.get_product("PART-001")
+
+# Internal API (subject to change)
+api.product_internal.get_box_build_template("PART-001")
+```
+
+Create `service_internal.py` and `repository_internal.py` for these.
+
+### Custom Validation
+
+Extend service layer for custom business rules:
+
+```python
+class CustomProductService(ProductService):
+    def create_product(self, **kwargs):
+        # Add custom validation
+        if kwargs['part_number'].startswith('TEST'):
+            raise ValueError("Test parts not allowed in production")
+        return super().create_product(**kwargs)
+```
+
+## Error Handling
+
+### Exception Hierarchy
+
+```
+PyWATSError (base)
+├── AuthenticationError (401)
+├── NotFoundError (404)
+├── ValidationError (400)
+├── ServerError (500)
+└── ConnectionError (network)
+```
+
+### Usage
+
+```python
+from pywats import NotFoundError
+
+try:
+    product = api.product.get_product("INVALID")
+except NotFoundError:
+    print("Product not found")
+```
+
+## Performance Considerations
+
+### 1. Connection Pooling
+
+The HTTP client uses connection pooling automatically.
+
+### 2. Batch Operations
+
+Use batch methods when available:
+
+```python
+# ✓ Good - single request
+units = api.production.get_units([sn1, sn2, sn3])
+
+# ✗ Avoid - multiple requests
+units = [api.production.get_unit(sn) for sn in [sn1, sn2, sn3]]
+```
+
+### 3. Filtering Server-Side
+
+```python
+# ✓ Good - filter on server
+filter = WATSFilter(part_number="PART-001", date_from=start)
+headers = api.report.query_uut_headers(filter)
+
+# ✗ Avoid - fetch all, filter locally
+headers = api.report.query_uut_headers()
+filtered = [h for h in headers if h.part_number == "PART-001"]
+```
+
+## Version Compatibility
+
+The API is designed for forward compatibility:
+
+- **Adding fields**: New optional fields won't break existing code
+- **Deprecation**: Old methods maintained with warnings
+- **Breaking changes**: Only in major versions (e.g., 2.0 → 3.0)
+
+## Further Reading
+
+See module-specific documentation in `docs/usage/`:
+- [Report Module](usage/REPORT_MODULE.md) - Test reports and factory methods
+- [Product Module](usage/PRODUCT_MODULE.md) - Product/BOM management
+- [Production Module](usage/PRODUCTION_MODULE.md) - Serial number tracking
+- [Asset Module](usage/ASSET_MODULE.md) - Equipment management

@@ -2,12 +2,11 @@
 
 All business operations for statistics, KPIs, and dashboard data.
 """
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 
 from .repository import AppRepository
 from .models import YieldData, ProcessInfo, LevelInfo, ProductGroup
 from ..report.models import WATSFilter, ReportHeader
-from ...core import HttpClient
 
 
 class AppService:
@@ -17,18 +16,14 @@ class AppService:
     Provides high-level operations for statistics, KPIs, and analytics.
     """
 
-    def __init__(self, repository_or_client: Union[AppRepository, HttpClient]):
+    def __init__(self, repository: AppRepository):
         """
-        Initialize with AppRepository or HttpClient.
+        Initialize with AppRepository.
 
         Args:
-            repository_or_client: AppRepository instance or HttpClient (for backward compatibility)
+            repository: AppRepository instance for data access
         """
-        if isinstance(repository_or_client, AppRepository):
-            self._repository = repository_or_client
-        else:
-            # Backward compatibility: create repository from HttpClient
-            self._repository = AppRepository(repository_or_client)
+        self._repository = repository
 
     # =========================================================================
     # System Info

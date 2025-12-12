@@ -23,17 +23,17 @@ class ProductionRepository:
 
     def __init__(
         self, 
-        client: "HttpClient",
+        http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
         """
         Initialize with HTTP client.
 
         Args:
-            client: HttpClient for making HTTP requests
+            http_client: HttpClient for making HTTP requests
             error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
-        self._http = client
+        self._http_client = http_client
         # Import here to avoid circular imports
         from ...core.exceptions import ErrorHandler, ErrorMode
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
@@ -57,7 +57,7 @@ class ProductionRepository:
         Returns:
             Unit object or None if not found
         """
-        response = self._http.get(
+        response = self._http_client.get(
             f"/api/Production/Unit/{serial_number}/{part_number}"
         )
         if response.is_success and response.data:
@@ -83,7 +83,7 @@ class ProductionRepository:
             if isinstance(u, Unit) else u
             for u in units
         ]
-        response = self._http.put("/api/Production/Units", data=data)
+        response = self._http_client.put("/api/Production/Units", data=data)
         if response.is_success and response.data:
             # Check if response is a list (success) or dict (batch result)
             if isinstance(response.data, list):
@@ -128,7 +128,7 @@ class ProductionRepository:
         }
         if revision:
             params["revision"] = revision
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Production/UnitVerification", params=params
         )
         if response.is_success and response.data:
@@ -160,7 +160,7 @@ class ProductionRepository:
         }
         if revision:
             params["revision"] = revision
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Production/UnitVerification", params=params
         )
         if response.is_success and response.data:
@@ -199,7 +199,7 @@ class ProductionRepository:
         }
         if comment:
             params["comment"] = comment
-        response = self._http.put(
+        response = self._http_client.put(
             "/api/Production/SetUnitPhase", params=params
         )
         return response.is_success
@@ -233,7 +233,7 @@ class ProductionRepository:
             params["processCode"] = process_code
         if comment:
             params["comment"] = comment
-        response = self._http.put(
+        response = self._http_client.put(
             "/api/Production/SetUnitProcess", params=params
         )
         return response.is_success
@@ -272,7 +272,7 @@ class ProductionRepository:
             params["$top"] = top
         if skip:
             params["$skip"] = skip
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Production/Units/Changes",
             params=params if params else None
         )
@@ -292,7 +292,7 @@ class ProductionRepository:
         Returns:
             True if successful
         """
-        response = self._http.delete(
+        response = self._http_client.delete(
             f"/api/Production/Units/Changes/{change_id}"
         )
         return response.is_success
@@ -328,7 +328,7 @@ class ProductionRepository:
             "childSerialNumber": child_serial,
             "childPartNumber": child_part
         }
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/Production/AddChildUnit", params=params
         )
         return response.is_success
@@ -360,7 +360,7 @@ class ProductionRepository:
             "childSerialNumber": child_serial,
             "childPartNumber": child_part
         }
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/Production/RemoveChildUnit", params=params
         )
         return response.is_success
@@ -389,7 +389,7 @@ class ProductionRepository:
             "partNumber": part_number,
             "revision": revision
         }
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Production/CheckChildUnits", params=params
         )
         if response.is_success and response.data:
@@ -409,7 +409,7 @@ class ProductionRepository:
         Returns:
             List of SerialNumberType objects
         """
-        response = self._http.get("/api/Production/SerialNumbers/Types")
+        response = self._http_client.get("/api/Production/SerialNumbers/Types")
         if response.is_success and response.data:
             return [
                 SerialNumberType.model_validate(item)
@@ -452,7 +452,7 @@ class ProductionRepository:
             params["refPN"] = reference_pn
         if station_name:
             params["stationName"] = station_name
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/Production/SerialNumbers/Take", params=params
         )
         if response.is_success and response.data:
@@ -492,7 +492,7 @@ class ProductionRepository:
             "from": from_serial,
             "to": to_serial
         }
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Production/SerialNumbers/ByRange", params=params
         )
         if response.is_success and response.data:
@@ -525,7 +525,7 @@ class ProductionRepository:
             params["referenceSerialNumber"] = reference_serial
         if reference_part:
             params["referencePartNumber"] = reference_part
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Production/SerialNumbers/ByReference", params=params
         )
         if response.is_success and response.data:
@@ -552,7 +552,7 @@ class ProductionRepository:
             True if successful
         """
         headers = {"Content-Type": content_type}
-        response = self._http.put(
+        response = self._http_client.put(
             "/api/Production/SerialNumbers",
             data=file_content,
             headers=headers
@@ -583,7 +583,7 @@ class ProductionRepository:
             params["state"] = state
         if format:
             params["format"] = format
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Production/SerialNumbers", params=params
         )
         if response.is_success:
@@ -613,7 +613,7 @@ class ProductionRepository:
             if isinstance(b, ProductionBatch) else b
             for b in batches
         ]
-        response = self._http.put("/api/Production/Batches", data=data)
+        response = self._http_client.put("/api/Production/Batches", data=data)
         if response.is_success and response.data:
             return [
                 ProductionBatch.model_validate(item)

@@ -48,7 +48,7 @@ class ProcessRepository:
         Returns:
             List of ProcessInfo objects
         """
-        response = self._http.get("/api/App/Processes")
+        response = self._http_client.get("/api/App/Processes")
         if response.is_success and response.data:
             return [ProcessInfo.model_validate(p) for p in response.data]
         return []

@@ -98,9 +98,38 @@ pyWATS/
 
 ## Documentation
 
+### Architecture & Design
+
+- [Architecture Overview](docs/ARCHITECTURE.md) - System design and layered architecture
+- [API Specifications](docs/api_specs/) - OpenAPI specs for WATS server
+
+### Module Usage Guides
+
+- [Report Module](docs/usage/REPORT_MODULE.md) - Test reports and factory methods ⭐
+- [Product Module](docs/usage/PRODUCT_MODULE.md) - Product/BOM management
+- [Production Module](docs/usage/PRODUCTION_MODULE.md) - Serial number and unit tracking
+- [Asset Module](docs/usage/ASSET_MODULE.md) - Equipment management (coming soon)
+
+### Additional Documentation
+
 - [Basic Usage Example](docs/examples/basic_usage.py)
 - [REST API Instructions](docs/REST_API_INSTRUCTION.md)
-- [API Specifications](docs/api_specs/)
+- [Quick Reference](QUICK_REFERENCE.md) - API quick reference
+
+## Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest tests/test_report.py
+
+# Run with coverage
+pytest --cov=src --cov-report=html
+```
 
 ## License
 

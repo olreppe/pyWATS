@@ -26,7 +26,7 @@ class ProductionService:
         Args:
             repository: ProductionRepository for data access
         """
-        self._repo = repository
+        self._repository = repository
 
     # =========================================================================
     # Unit Operations
@@ -45,7 +45,7 @@ class ProductionService:
         Returns:
             Unit if found, None otherwise
         """
-        return self._repo.get_unit(serial_number, part_number)
+        return self._repository.get_unit(serial_number, part_number)
 
     def create_units(self, units: Sequence[Unit]) -> List[Unit]:
         """
@@ -57,7 +57,7 @@ class ProductionService:
         Returns:
             List of created Unit objects
         """
-        return self._repo.save_units(units)
+        return self._repository.save_units(units)
 
     def update_unit(self, unit: Unit) -> Optional[Unit]:
         """
@@ -69,7 +69,7 @@ class ProductionService:
         Returns:
             Updated Unit object
         """
-        result = self._repo.save_units([unit])
+        result = self._repository.save_units([unit])
         return result[0] if result else None
 
     # =========================================================================
@@ -93,7 +93,7 @@ class ProductionService:
         Returns:
             UnitVerification result
         """
-        return self._repo.get_unit_verification(
+        return self._repository.get_unit_verification(
             serial_number, part_number, revision
         )
 
@@ -114,7 +114,7 @@ class ProductionService:
         Returns:
             UnitVerificationGrade result
         """
-        return self._repo.get_unit_verification_grade(
+        return self._repository.get_unit_verification_grade(
             serial_number, part_number, revision
         )
 
@@ -133,7 +133,7 @@ class ProductionService:
         Returns:
             True if unit is passing
         """
-        grade = self._repo.get_unit_verification_grade(
+        grade = self._repository.get_unit_verification_grade(
             serial_number, part_number
         )
         if grade:
@@ -163,7 +163,7 @@ class ProductionService:
         Returns:
             True if successful
         """
-        return self._repo.set_unit_phase(
+        return self._repository.set_unit_phase(
             serial_number, part_number, phase, comment
         )
 
@@ -186,7 +186,7 @@ class ProductionService:
         Returns:
             True if successful
         """
-        return self._repo.set_unit_process(
+        return self._repository.set_unit_process(
             serial_number, part_number, process_code, comment
         )
 
@@ -211,7 +211,7 @@ class ProductionService:
         Returns:
             List of UnitChange objects
         """
-        return self._repo.get_unit_changes(
+        return self._repository.get_unit_changes(
             serial_number=serial_number,
             part_number=part_number,
             top=top
@@ -227,7 +227,7 @@ class ProductionService:
         Returns:
             True if successful
         """
-        return self._repo.delete_unit_change(change_id)
+        return self._repository.delete_unit_change(change_id)
 
     # =========================================================================
     # Assembly (Parent/Child)
@@ -252,7 +252,7 @@ class ProductionService:
         Returns:
             True if successful
         """
-        return self._repo.add_child_unit(
+        return self._repository.add_child_unit(
             parent_serial, parent_part, child_serial, child_part
         )
 
@@ -275,7 +275,7 @@ class ProductionService:
         Returns:
             True if successful
         """
-        return self._repo.remove_child_unit(
+        return self._repository.remove_child_unit(
             parent_serial, parent_part, child_serial, child_part
         )
 
@@ -296,7 +296,7 @@ class ProductionService:
         Returns:
             Verification results or None
         """
-        return self._repo.check_child_units(
+        return self._repository.check_child_units(
             serial_number, part_number, revision
         )
 
@@ -311,7 +311,7 @@ class ProductionService:
         Returns:
             List of SerialNumberType objects
         """
-        return self._repo.get_serial_number_types()
+        return self._repository.get_serial_number_types()
 
     def allocate_serial_numbers(
         self,
@@ -334,7 +334,7 @@ class ProductionService:
         Returns:
             List of allocated serial numbers
         """
-        return self._repo.take_serial_numbers(
+        return self._repository.take_serial_numbers(
             type_name, count, reference_sn, reference_pn, station_name
         )
 
@@ -355,7 +355,7 @@ class ProductionService:
         Returns:
             List of serial number records
         """
-        return self._repo.get_serial_numbers_by_range(
+        return self._repository.get_serial_numbers_by_range(
             type_name, from_serial, to_serial
         )
 
@@ -376,7 +376,7 @@ class ProductionService:
         Returns:
             List of serial number records
         """
-        return self._repo.get_serial_numbers_by_reference(
+        return self._repository.get_serial_numbers_by_reference(
             type_name, reference_serial, reference_part
         )
 
@@ -395,7 +395,7 @@ class ProductionService:
         Returns:
             True if successful
         """
-        return self._repo.upload_serial_numbers(file_content, content_type)
+        return self._repository.upload_serial_numbers(file_content, content_type)
 
     def export_serial_numbers(
         self,
@@ -414,7 +414,7 @@ class ProductionService:
         Returns:
             File content as bytes or None
         """
-        return self._repo.export_serial_numbers(type_name, state, format)
+        return self._repository.export_serial_numbers(type_name, state, format)
 
     # =========================================================================
     # Batches
@@ -432,4 +432,4 @@ class ProductionService:
         Returns:
             List of saved ProductionBatch objects
         """
-        return self._repo.save_batches(batches)
+        return self._repository.save_batches(batches)

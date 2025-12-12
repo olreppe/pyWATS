@@ -21,17 +21,17 @@ class ReportRepository:
 
     def __init__(
         self, 
-        client: "HttpClient",
+        http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
         """
         Initialize with HTTP client.
 
         Args:
-            client: HttpClient for making HTTP requests
+            http_client: HttpClient for making HTTP requests
             error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
-        self._http = client
+        self._http_client = http_client
         # Import here to avoid circular imports
         from ...core.exceptions import ErrorHandler, ErrorMode
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
@@ -65,7 +65,7 @@ class ReportRepository:
                 )
             else:
                 params.update(filter_data)
-        response = self._http.get("/api/Report/Query/Header", params=params)
+        response = self._http_client.get("/api/Report/Query/Header", params=params)
         if response.is_success and response.data:
             return [
                 ReportHeader.model_validate(item)
@@ -98,7 +98,7 @@ class ReportRepository:
         }
         if top:
             params["$top"] = top
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Report/Query/HeaderByMiscInfo", params=params
         )
         if response.is_success and response.data:
@@ -150,7 +150,7 @@ class ReportRepository:
                     uur_info['execTime'] = report.uur_info.exec_time
         else:
             data = report
-        response = self._http.post("/api/Report/WSJF", data=data)
+        response = self._http_client.post("/api/Report/WSJF", data=data)
         
         # Check for error responses
         if not response.is_success:
@@ -202,7 +202,7 @@ class ReportRepository:
         Returns:
             UUTReport or UURReport, or None
         """
-        response = self._http.get(f"/api/Report/Wsjf/{report_id}")
+        response = self._http_client.get(f"/api/Report/Wsjf/{report_id}")
         if response.is_success and response.data:
             if response.data.get("uur"):
                 return UURReport.model_validate(response.data)
@@ -226,7 +226,7 @@ class ReportRepository:
             Report ID if successful, None otherwise
         """
         headers = {"Content-Type": "application/xml"}
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/Report/WSXF",
             data=xml_content,
             headers=headers
@@ -249,7 +249,7 @@ class ReportRepository:
         Returns:
             XML as bytes or None
         """
-        response = self._http.get(f"/api/Report/Wsxf/{report_id}")
+        response = self._http_client.get(f"/api/Report/Wsxf/{report_id}")
         if response.is_success:
             return response.raw
         return None
@@ -280,7 +280,7 @@ class ReportRepository:
             params["attachmentId"] = attachment_id
         if step_id:
             params["stepId"] = step_id
-        response = self._http.get("/api/Report/Attachment", params=params)
+        response = self._http_client.get("/api/Report/Attachment", params=params)
         if response.is_success:
             return response.raw
         return None
@@ -297,7 +297,7 @@ class ReportRepository:
         Returns:
             Zip file content as bytes or None
         """
-        response = self._http.get(f"/api/Report/Attachments/{report_id}")
+        response = self._http_client.get(f"/api/Report/Attachments/{report_id}")
         if response.is_success:
             return response.raw
         return None
@@ -318,7 +318,7 @@ class ReportRepository:
         Returns:
             Certificate content as bytes or None
         """
-        response = self._http.get(f"/api/Report/Certificate/{report_id}")
+        response = self._http_client.get(f"/api/Report/Certificate/{report_id}")
         if response.is_success:
             return response.raw
         return None

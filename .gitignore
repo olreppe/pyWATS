@@ -119,9 +119,10 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments - Keep our .venv but ignore others
+# Environments
 .env
-# .venv  # COMMENTED OUT - We want to track our .venv directory
+.venv
+.venv-*/
 env/
 venv/
 ENV/

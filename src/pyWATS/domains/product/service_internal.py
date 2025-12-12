@@ -41,7 +41,7 @@ class ProductServiceInternal:
             repository: ProductRepository for public API
             repository_internal: ProductRepositoryInternal for internal API
         """
-        self._repo = repository
+        self._repository = repository
         self._repo_internal = repository_internal
     
     # =========================================================================
@@ -58,7 +58,7 @@ class ProductServiceInternal:
         Returns:
             Product or None if not found
         """
-        return self._repo.get_by_part_number(part_number)
+        return self._repository.get_by_part_number(part_number)
     
     def get_revision(self, part_number: str, revision: str) -> Optional[ProductRevision]:
         """

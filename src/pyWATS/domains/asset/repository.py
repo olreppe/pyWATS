@@ -21,17 +21,16 @@ class AssetRepository:
 
     def __init__(
         self, 
-        http: "HttpClient",
+        http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
         """
         Initialize with HTTP client.
 
-        Args:
-            http: HttpClient instance for making requests
+        Args:`n            http_client: HttpClient instance for making requests
             error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
-        self._http = http
+        self._http_client = http_client
         # Import here to avoid circular imports
         from ...core.exceptions import ErrorHandler, ErrorMode
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
@@ -62,7 +61,7 @@ class AssetRepository:
         if skip:
             params["$skip"] = skip
 
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Asset",
             params=params if params else None
         )
@@ -76,7 +75,7 @@ class AssetRepository:
 
         GET /api/Asset/{assetId}
         """
-        response = self._http.get(f"/api/Asset/{asset_id}")
+        response = self._http_client.get(f"/api/Asset/{asset_id}")
         if response.is_success and response.data:
             return Asset.model_validate(response.data)
         return None
@@ -87,7 +86,7 @@ class AssetRepository:
 
         GET /api/Asset/{serialNumber}
         """
-        response = self._http.get(f"/api/Asset/{serial_number}")
+        response = self._http_client.get(f"/api/Asset/{serial_number}")
         if response.is_success and response.data:
             return Asset.model_validate(response.data)
         return None
@@ -102,7 +101,7 @@ class AssetRepository:
             data = asset.model_dump(mode="json", by_alias=True, exclude_none=True)
         else:
             data = asset
-        response = self._http.put("/api/Asset", data=data)
+        response = self._http_client.put("/api/Asset", data=data)
         if response.is_success and response.data:
             return Asset.model_validate(response.data)
         return None
@@ -113,7 +112,7 @@ class AssetRepository:
 
         DELETE /api/Asset
         """
-        response = self._http.delete(
+        response = self._http_client.delete(
             "/api/Asset",
             params={"assetId": asset_id}
         )
@@ -129,7 +128,7 @@ class AssetRepository:
 
         GET /api/Asset/Status
         """
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Asset/Status",
             params={"assetId": asset_id}
         )
@@ -152,7 +151,7 @@ class AssetRepository:
         params: Dict[str, Any] = {"assetId": asset_id, "state": state_value}
         if comment:
             params["comment"] = comment
-        response = self._http.put("/api/Asset/State", params=params)
+        response = self._http_client.put("/api/Asset/State", params=params)
         return response.is_success
 
     # =========================================================================
@@ -175,7 +174,7 @@ class AssetRepository:
             params["totalCount"] = total_count
         if increment_by is not None:
             params["incrementBy"] = increment_by
-        response = self._http.put("/api/Asset/Count", params=params)
+        response = self._http_client.put("/api/Asset/Count", params=params)
         return response.is_success
 
     def reset_running_count(self, asset_id: str) -> bool:
@@ -184,7 +183,7 @@ class AssetRepository:
 
         POST /api/Asset/ResetRunningCount
         """
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/Asset/ResetRunningCount",
             params={"assetId": asset_id}
         )
@@ -200,7 +199,7 @@ class AssetRepository:
 
         POST /api/Asset/Calibration
         """
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/Asset/Calibration",
             data=calibration_data
         )
@@ -216,7 +215,7 @@ class AssetRepository:
 
         POST /api/Asset/Maintenance
         """
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/Asset/Maintenance",
             data=maintenance_data
         )
@@ -247,7 +246,7 @@ class AssetRepository:
             params["$top"] = top
         if skip:
             params["$skip"] = skip
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Asset/Log",
             params=params if params else None
         )
@@ -269,7 +268,7 @@ class AssetRepository:
         data: Dict[str, Any] = {"assetId": asset_id, "comment": message}
         if user:
             data["user"] = user
-        response = self._http.post("/api/Asset/Message", data=data)
+        response = self._http_client.post("/api/Asset/Message", data=data)
         return response.is_success
 
     # =========================================================================
@@ -291,7 +290,7 @@ class AssetRepository:
             params["$filter"] = filter_str
         if top:
             params["$top"] = top
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Asset/Types",
             params=params if params else None
         )
@@ -312,7 +311,7 @@ class AssetRepository:
             data = asset_type.model_dump(by_alias=True, exclude_none=True)
         else:
             data = asset_type
-        response = self._http.put("/api/Asset/Types", data=data)
+        response = self._http_client.put("/api/Asset/Types", data=data)
         if response.is_success and response.data:
             return AssetType.model_validate(response.data)
         return None
@@ -327,7 +326,7 @@ class AssetRepository:
 
         GET /api/Asset/SubAssets
         """
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/Asset/SubAssets",
             params={"parentId": parent_id}
         )

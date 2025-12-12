@@ -22,17 +22,17 @@ class RootCauseRepository:
 
     def __init__(
         self, 
-        client: "HttpClient",
+        http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
         """
         Initialize with HTTP client.
 
         Args:
-            client: HttpClient for making HTTP requests
+            http_client: HttpClient for making HTTP requests
             error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
-        self._http = client
+        self._http_client = http_client
         # Import here to avoid circular imports
         from ...core.exceptions import ErrorHandler, ErrorMode
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
@@ -53,7 +53,7 @@ class RootCauseRepository:
         Returns:
             Ticket object or None if not found
         """
-        response = self._http.get(
+        response = self._http_client.get(
             "/api/RootCause/Ticket", params={"ticketId": str(ticket_id)}
         )
         if response.is_success and response.data:
@@ -83,7 +83,7 @@ class RootCauseRepository:
         if search_string:
             params["searchString"] = search_string
 
-        response = self._http.get("/api/RootCause/Tickets", params=params)
+        response = self._http_client.get("/api/RootCause/Tickets", params=params)
         if response.is_success and response.data:
             return [Ticket.model_validate(item) for item in response.data]
         return []
@@ -100,7 +100,7 @@ class RootCauseRepository:
         Returns:
             Created Ticket object with assigned ID and ticket number
         """
-        response = self._http.post(
+        response = self._http_client.post(
             "/api/RootCause/Ticket",
             data=ticket.model_dump(mode="json", by_alias=True, exclude_none=True),
         )
@@ -120,7 +120,7 @@ class RootCauseRepository:
         Returns:
             Updated Ticket object
         """
-        response = self._http.put(
+        response = self._http_client.put(
             "/api/RootCause/Ticket",
             data=ticket.model_dump(mode="json", by_alias=True, exclude_none=True),
         )
@@ -145,7 +145,7 @@ class RootCauseRepository:
             Ticket object or None
         """
         ids = [str(tid) for tid in ticket_ids]
-        response = self._http.post("/api/RootCause/ArchiveTickets", data=ids)
+        response = self._http_client.post("/api/RootCause/ArchiveTickets", data=ids)
         if response.is_success and response.data:
             return Ticket.model_validate(response.data)
         return None
@@ -175,7 +175,7 @@ class RootCauseRepository:
         if filename:
             params["fileName"] = filename
 
-        response = self._http.get("/api/RootCause/Attachment", params=params)
+        response = self._http_client.get("/api/RootCause/Attachment", params=params)
         if response.is_success:
             return response.raw
         return None
@@ -196,7 +196,7 @@ class RootCauseRepository:
             UUID of the created attachment, or None if failed
         """
         files = {"file": (filename, file_content)}
-        response = self._http.post("/api/RootCause/Attachment", files=files)
+        response = self._http_client.post("/api/RootCause/Attachment", files=files)
         if response.is_success and response.data:
             return (
                 UUID(response.data) if isinstance(response.data, str) else None
