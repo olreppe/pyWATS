@@ -11,6 +11,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QCoreApplication
+from PySide6.QtGui import QIcon
 
 from .main_window import MainWindow
 from .login_window import LoginWindow
@@ -44,6 +45,11 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     
     # Create Qt application
     qt_app = QApplication(sys.argv)
+    
+    # Set application icon
+    icon_path = Path(__file__).parent / "resources" / "favicon.ico"
+    if icon_path.exists():
+        qt_app.setWindowIcon(QIcon(str(icon_path)))
     
     # Apply dark theme
     qt_app.setStyle("Fusion")

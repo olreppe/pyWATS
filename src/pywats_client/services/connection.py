@@ -96,7 +96,7 @@ class ConnectionService:
         """Register callback for status changes"""
         self._status_callbacks.append(callback)
     
-    async def authenticate(self, server_url: str, password: str, username: str = "") -> bool:
+    def authenticate(self, server_url: str, password: str, username: str = "") -> bool:
         """
         Authenticate with server using password and store encrypted token.
         
@@ -123,7 +123,7 @@ class ConnectionService:
         
         try:
             # Exchange password for API token
-            token = await self._exchange_credentials(server_url, password)
+            token = self._exchange_credentials(server_url, password)
             
             if not token:
                 self.status = ConnectionStatus.ERROR
@@ -138,7 +138,7 @@ class ConnectionService:
             self._save_config()
             
             # Now connect using the token
-            return await self.connect()
+            return self.connect()
             
         except Exception as e:
             logger.error(f"Authentication failed: {e}")
@@ -146,7 +146,7 @@ class ConnectionService:
             self._last_error = f"Authentication failed: {e}"
             return False
     
-    async def _exchange_credentials(self, server_url: str, password: str) -> Optional[str]:
+    def _exchange_credentials(self, server_url: str, password: str) -> Optional[str]:
         """
         Exchange password for API token.
         
@@ -181,7 +181,7 @@ class ConnectionService:
             logger.error(f"Error during credential exchange: {e}")
             return None
     
-    async def connect(self) -> bool:
+    def connect(self) -> bool:
         """
         Establish connection to WATS server using stored credentials.
         
@@ -212,15 +212,11 @@ class ConnectionService:
             )
             
             # Test connection
-            if await self.test_connection():
+            if self.test_connection():
                 self.status = ConnectionStatus.ONLINE
                 self.config.mark_connected()
                 self._save_config()
                 self._reconnect_attempts = 0
-                
-                # Start health check task
-                if not self._check_task or self._check_task.done():
-                    self._check_task = asyncio.create_task(self._health_check_loop())
                 
                 logger.info("Connected to WATS server")
                 return True
@@ -229,11 +225,6 @@ class ConnectionService:
                 self.config.mark_offline()
                 self._save_config()
                 self._last_error = "Server unreachable"
-                
-                # Start health check for auto-reconnect
-                if self.config.auto_reconnect:
-                    if not self._check_task or self._check_task.done():
-                        self._check_task = asyncio.create_task(self._health_check_loop())
                 
                 return False
                 
@@ -248,7 +239,7 @@ class ConnectionService:
             self._last_error = str(e)
             return False
     
-    async def disconnect(self, clear_credentials: bool = True) -> None:
+    def disconnect(self, clear_credentials: bool = True) -> None:
         """
         Disconnect from WATS server.
         
@@ -256,13 +247,9 @@ class ConnectionService:
             clear_credentials: If True, clears stored credentials (logout).
                              If False, keeps credentials for reconnect (temporary disconnect).
         """
-        # Cancel health check task
+        # Cancel health check task if exists
         if self._check_task:
             self._check_task.cancel()
-            try:
-                await self._check_task
-            except asyncio.CancelledError:
-                pass
             self._check_task = None
         
         self._pywats_client = None
@@ -285,7 +272,7 @@ class ConnectionService:
             except Exception as e:
                 logger.error(f"Error saving config: {e}")
     
-    async def test_connection(self) -> bool:
+    def test_connection(self) -> bool:
         """
         Test connection to WATS server.
         
@@ -317,7 +304,7 @@ class ConnectionService:
                 await asyncio.sleep(self.config.health_check_interval)
                 
                 # Record health check
-                is_healthy = await self.test_connection()
+                is_healthy = self.test_connection()
                 self.config.record_health_check(is_healthy)
                 
                 if is_healthy:
@@ -405,7 +392,7 @@ class ConnectionService:
             "reconnect_attempts": self._reconnect_attempts,
         }
     
-    async def restore_connection(self) -> bool:
+    def restore_connection(self) -> bool:
         """
         Restore connection using stored credentials.
         
@@ -424,4 +411,4 @@ class ConnectionService:
             return False
         
         logger.info("Restoring connection from stored credentials")
-        return await self.connect()
+        return self.connect()

@@ -5,7 +5,6 @@ Separate authentication screen shown before main GUI.
 Handles password authentication and instance selection.
 """
 
-import asyncio
 from typing import Optional
 from pathlib import Path
 
@@ -14,12 +13,34 @@ from PySide6.QtWidgets import (
     QPushButton, QComboBox, QCheckBox, QFrame, QMessageBox,
     QProgressBar
 )
-from PySide6.QtCore import Qt, Signal, Slot, QTimer
+from PySide6.QtCore import Qt, Signal, Slot, QTimer, QThread, QObject
 from PySide6.QtGui import QFont, QIcon
 
 from ..services.connection import ConnectionService
 from ..core.connection_config import ConnectionConfig
 from ..core.config import ClientConfig
+
+
+class AuthWorker(QObject):
+    """Worker for performing authentication in a separate thread."""
+    
+    finished = Signal(bool, str)  # success, error_message
+    
+    def __init__(self, connection_service: ConnectionService, url: str, password: str, username: str = "admin"):
+        super().__init__()
+        self.connection_service = connection_service
+        self.url = url
+        self.password = password
+        self.username = username
+    
+    def run(self):
+        """Perform authentication."""
+        try:
+            success = self.connection_service.authenticate(self.url, self.password, self.username)
+            error = self.connection_service.last_error if not success else ""
+            self.finished.emit(success, error)
+        except Exception as e:
+            self.finished.emit(False, str(e))
 
 
 class LoginWindow(QDialog):
@@ -263,10 +284,10 @@ class LoginWindow(QDialog):
     @Slot()
     def _on_connect_clicked(self):
         """Handle connect button click"""
-        asyncio.create_task(self._perform_authentication())
+        self._perform_authentication()
     
-    async def _perform_authentication(self):
-        """Perform authentication asynchronously"""
+    def _perform_authentication(self):
+        """Perform authentication in a separate thread"""
         url = self.url_input.text().strip()
         password = self.password_input.text().strip()
         remember = self.remember_cb.isChecked()
@@ -293,38 +314,56 @@ class LoginWindow(QDialog):
             # Create connection service
             self.connection_service = ConnectionService(connection_config)
             
-            # Attempt authentication
-            success = await self.connection_service.authenticate(url, password)
+            # Create worker and thread for authentication
+            self.auth_thread = QThread()
+            self.auth_worker = AuthWorker(self.connection_service, url, password)
+            self.auth_worker.moveToThread(self.auth_thread)
             
-            if success:
-                # Authentication successful
-                self.status_label.setText("✓ Connected successfully!")
-                self.status_label.setStyleSheet("color: #10d010; font-size: 11px;")
-                
-                # Update config
-                self.config.service_address = url
-                self.config.api_token = password if not remember else ""
-                self.config.auto_connect = remember
-                self.config.was_connected = True
-                
-                # Add connection to config
-                if not hasattr(self.config, 'connection'):
-                    setattr(self.config, 'connection', connection_config)
-                
-                # Close dialog after short delay
-                QTimer.singleShot(500, lambda: self._on_auth_success())
-            else:
-                # Authentication failed
-                error = self.connection_service.last_error or "Authentication failed"
-                self.status_label.setText(f"✗ {error}")
-                self.status_label.setStyleSheet("color: #f04040; font-size: 11px;")
-                
-                # Re-enable UI
-                self._reset_ui()
+            # Connect signals
+            self.auth_thread.started.connect(self.auth_worker.run)
+            self.auth_worker.finished.connect(self._on_auth_finished)
+            self.auth_worker.finished.connect(self.auth_thread.quit)
+            self.auth_worker.finished.connect(self.auth_worker.deleteLater)
+            self.auth_thread.finished.connect(self.auth_thread.deleteLater)
+            
+            # Start authentication
+            self.auth_thread.start()
         
         except Exception as e:
             self.status_label.setText(f"✗ Error: {str(e)}")
             self.status_label.setStyleSheet("color: #f04040; font-size: 11px;")
+            self._reset_ui()
+    
+    def _on_auth_finished(self, success: bool, error_message: str):
+        """Handle authentication completion."""
+        if success:
+            # Authentication successful
+            self.status_label.setText("✓ Connected successfully!")
+            self.status_label.setStyleSheet("color: #10d010; font-size: 11px;")
+            
+            # Update config
+            url = self.url_input.text().strip()
+            password = self.password_input.text()
+            remember = self.remember_cb.isChecked()
+            
+            self.config.service_address = url
+            self.config.api_token = password if not remember else ""
+            self.config.auto_connect = remember
+            self.config.was_connected = True
+            
+            # Add connection to config
+            if self.connection_service and not hasattr(self.config, 'connection'):
+                setattr(self.config, 'connection', self.connection_service.config)
+            
+            # Close dialog after short delay
+            QTimer.singleShot(500, lambda: self._on_auth_success())
+        else:
+            # Authentication failed
+            error = error_message or "Authentication failed"
+            self.status_label.setText(f"✗ {error}")
+            self.status_label.setStyleSheet("color: #f04040; font-size: 11px;")
+            
+            # Re-enable UI
             self._reset_ui()
     
     def _on_auth_success(self):
