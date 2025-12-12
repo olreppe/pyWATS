@@ -257,9 +257,32 @@ class SetupPage(BasePage):
     def _on_connect_clicked(self) -> None:
         """Handle connect/disconnect button click"""
         if self._is_connected:
-            # Disconnect
-            self.set_connected(False)
-            self.connection_changed.emit(False)
+            # Show confirmation dialog for disconnect
+            reply = QMessageBox.question(
+                self,
+                "Disconnect",
+                "Do you really want to disconnect the client and exit the application?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Clear credentials from config
+                self.config.service_address = ""
+                self.config.api_token = ""
+                self.config.auto_connect = False
+                self.config.was_connected = False
+                
+                # Clear encrypted connection if exists
+                if hasattr(self.config, 'connection'):
+                    from ...core.connection_config import ConnectionConfig
+                    self.config.connection = ConnectionConfig()
+                
+                self.config.save()
+                
+                # Close the main window
+                if self._main_window:
+                    self._main_window.close()
         else:
             # Validate fields before connecting
             if not self._server_edit.text().strip():

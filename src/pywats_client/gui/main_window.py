@@ -252,7 +252,6 @@ class MainWindow(QMainWindow):
         # Create pages matching reference design (from screenshots)
         self._pages: Dict[str, BasePage] = {
             "Setup": SetupPage(self.config, self),
-            "Connection": ConnectionPage(self.config, self),
             "Location": LocationPage(self.config, self),
             "Converters": ConvertersPage(self.config, self),
             "SN Handler": SNHandlerPage(self.config, self),
