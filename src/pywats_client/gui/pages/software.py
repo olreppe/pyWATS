@@ -17,9 +17,10 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QGroupBox, QTableWidget, QTableWidgetItem, 
     QHeaderView, QComboBox, QProgressBar, QMessageBox,
-    QCheckBox
+    QCheckBox, QTreeWidget, QTreeWidgetItem
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 
 from .base import BasePage
 from ...core.config import ClientConfig
@@ -61,24 +62,6 @@ class SoftwarePage(BasePage):
         self._auto_update_cb.stateChanged.connect(self._emit_changed)
         settings_layout.addWidget(self._auto_update_cb)
         
-        # Virtual folder selection
-        folder_layout = QHBoxLayout()
-        folder_label = QLabel("Virtual Folder:")
-        folder_label.setFixedWidth(100)
-        folder_layout.addWidget(folder_label)
-        
-        self._folder_combo = QComboBox()
-        self._folder_combo.addItem("(All Folders)", "")
-        self._folder_combo.setToolTip("Filter packages by virtual folder")
-        folder_layout.addWidget(self._folder_combo, 1)
-        
-        self._refresh_folders_btn = QPushButton("Refresh")
-        self._refresh_folders_btn.setFixedWidth(80)
-        self._refresh_folders_btn.clicked.connect(self._on_refresh_folders)
-        folder_layout.addWidget(self._refresh_folders_btn)
-        
-        settings_layout.addLayout(folder_layout)
-        
         self._layout.addWidget(settings_group)
         
         self._layout.addSpacing(15)
@@ -104,33 +87,32 @@ class SoftwarePage(BasePage):
         self._search_edit.textChanged.connect(self._on_filter_changed)
         filter_layout.addWidget(self._search_edit, 1)
         
+        # Add small refresh button inline with filters
+        self._refresh_btn = QPushButton("⟳")
+        self._refresh_btn.setFixedSize(28, 28)
+        self._refresh_btn.setToolTip("Refresh packages from server")
+        self._refresh_btn.clicked.connect(self._on_refresh_packages)
+        filter_layout.addWidget(self._refresh_btn)
+        
         packages_layout.addLayout(filter_layout)
         
-        # Packages table
-        self._packages_table = QTableWidget()
-        self._packages_table.setColumnCount(5)
-        self._packages_table.setHorizontalHeaderLabels([
-            "Name", "Version", "Status", "Description", "Updated"
+        # Packages tree view (organized by virtual folders)
+        self._packages_tree = QTreeWidget()
+        self._packages_tree.setColumnCount(4)
+        self._packages_tree.setHeaderLabels([
+            "Package / Folder", "Version", "Status", "Updated"
         ])
-        self._packages_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        self._packages_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        self._packages_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        self._packages_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-        self._packages_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-        self._packages_table.verticalHeader().setVisible(False)
-        self._packages_table.setAlternatingRowColors(True)
-        self._packages_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self._packages_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self._packages_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self._packages_table.setColumnWidth(0, 200)
-        packages_layout.addWidget(self._packages_table)
+        self._packages_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self._packages_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self._packages_tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self._packages_tree.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self._packages_tree.setAlternatingRowColors(True)
+        self._packages_tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
+        self._packages_tree.setColumnWidth(0, 300)
+        packages_layout.addWidget(self._packages_tree)
         
         # Action buttons
         btn_layout = QHBoxLayout()
-        
-        self._refresh_btn = QPushButton("Refresh List")
-        self._refresh_btn.clicked.connect(self._on_refresh_packages)
-        btn_layout.addWidget(self._refresh_btn)
         
         self._download_btn = QPushButton("Download Selected")
         self._download_btn.setEnabled(False)
@@ -154,8 +136,8 @@ class SoftwarePage(BasePage):
         self._status_label.setStyleSheet("color: #808080; font-style: italic;")
         self._layout.addWidget(self._status_label)
         
-        # Connect table selection
-        self._packages_table.itemSelectionChanged.connect(self._on_selection_changed)
+        # Connect tree selection
+        self._packages_tree.itemSelectionChanged.connect(self._on_selection_changed)
         
         # Auto-load packages if connected
         if self._main_window and self._main_window.app.wats_client:
@@ -164,22 +146,16 @@ class SoftwarePage(BasePage):
     
     def _on_selection_changed(self) -> None:
         """Handle package selection change"""
-        selected = self._packages_table.selectedItems()
-        self._download_btn.setEnabled(len(selected) > 0)
+        selected = self._packages_tree.selectedItems()
+        # Only enable download if a package (not folder) is selected
+        is_package = selected and selected[0].parent() is not None
+        self._download_btn.setEnabled(is_package)
     
     def _on_filter_changed(self) -> None:
         """Handle filter changes - refresh displayed packages"""
-        self._populate_packages_table()
+        self._populate_packages_tree()
     
-    def _on_refresh_folders(self) -> None:
-        """Refresh virtual folders from server"""
-        if self._main_window and self._main_window.app.wats_client:
-            self._load_virtual_folders()
-        else:
-            QMessageBox.warning(
-                self, "Not Connected",
-                "Please connect to WATS server first."
-            )
+
     
     def _on_refresh_packages(self) -> None:
         """Refresh packages from server"""
@@ -207,15 +183,7 @@ class SoftwarePage(BasePage):
                 "This will download the package files to the local machine."
             )
     
-    def _load_virtual_folders(self) -> None:
-        """Load virtual folders from WATS server"""
-        try:
-            self._status_label.setText("Loading virtual folders...")
-            # TODO: Implement when client has software module access
-            # folders = self._main_window.app.wats_client.software.get_virtual_folders()
-            self._status_label.setText("Virtual folders loaded")
-        except Exception as e:
-            self._status_label.setText(f"Error loading folders: {str(e)}")
+
     
     def _load_packages(self) -> None:
         """Load packages from WATS server"""
@@ -240,8 +208,8 @@ class SoftwarePage(BasePage):
                 print(f"[Software] No client - main_window: {self._main_window}, wats_client: {self._main_window.app.wats_client if self._main_window else None}")
                 self._packages = []
             
-            print(f"[Software] Populating table with {len(self._packages)} packages")
-            self._populate_packages_table()
+            print(f"[Software] Populating tree with {len(self._packages)} packages")
+            self._populate_packages_tree()
             self._progress_bar.setVisible(False)
             self._status_label.setText(f"Found {len(self._packages)} packages")
             
@@ -252,13 +220,16 @@ class SoftwarePage(BasePage):
             self._progress_bar.setVisible(False)
             self._status_label.setText(f"Error loading packages: {str(e)}")
     
-    def _populate_packages_table(self) -> None:
-        """Populate packages table with filtered results"""
+    def _populate_packages_tree(self) -> None:
+        """Populate packages tree with folders and filtered results"""
         search_text = self._search_edit.text().lower()
         status_filter = self._status_combo.currentText()
         
-        # Filter packages
-        filtered = []
+        self._packages_tree.clear()
+        
+        # Organize packages by virtual folder
+        folders: Dict[str, List[Any]] = {}
+        
         for pkg in self._packages:
             # Status filter
             if status_filter != "All":
@@ -277,22 +248,43 @@ class SoftwarePage(BasePage):
                 if search_text not in name and search_text not in desc:
                     continue
             
-            filtered.append(pkg)
+            # Get folder from tags or use "Uncategorized"
+            folder_name = "Uncategorized"
+            if pkg.tags:
+                for tag in pkg.tags:
+                    if hasattr(tag, 'key') and tag.key == "Folder":
+                        folder_name = tag.value or "Uncategorized"
+                        break
+            
+            if folder_name not in folders:
+                folders[folder_name] = []
+            folders[folder_name].append(pkg)
         
-        # Populate table
-        self._packages_table.setRowCount(len(filtered))
-        for row, pkg in enumerate(filtered):
-            self._packages_table.setItem(row, 0, QTableWidgetItem(pkg.name or ""))
-            self._packages_table.setItem(row, 1, QTableWidgetItem(str(pkg.version) if pkg.version else ""))
-            # Status might be enum or string
-            if hasattr(pkg.status, 'value'):
-                status_str = str(pkg.status.value)
-            else:
-                status_str = str(pkg.status) if pkg.status else ""
-            self._packages_table.setItem(row, 2, QTableWidgetItem(status_str))
-            self._packages_table.setItem(row, 3, QTableWidgetItem(pkg.description or ""))
-            modified = str(pkg.modified_utc)[:10] if pkg.modified_utc else ""
-            self._packages_table.setItem(row, 4, QTableWidgetItem(modified))
+        # Create tree structure
+        for folder_name in sorted(folders.keys()):
+            # Create folder item
+            folder_item = QTreeWidgetItem(self._packages_tree)
+            folder_item.setText(0, f"📁 {folder_name}")
+            folder_item.setExpanded(True)
+            
+            # Add packages to folder
+            for pkg in folders[folder_name]:
+                pkg_item = QTreeWidgetItem(folder_item)
+                pkg_item.setText(0, pkg.name or "")
+                pkg_item.setText(1, str(pkg.version) if pkg.version else "")
+                
+                # Status might be enum or string
+                if hasattr(pkg.status, 'value'):
+                    status_str = str(pkg.status.value)
+                else:
+                    status_str = str(pkg.status) if pkg.status else ""
+                pkg_item.setText(2, status_str)
+                
+                modified = str(pkg.modified_utc)[:10] if pkg.modified_utc else ""
+                pkg_item.setText(3, modified)
+                
+                # Store package data
+                pkg_item.setData(0, Qt.ItemDataRole.UserRole, pkg)
     
     def save_config(self) -> None:
         """Save configuration"""
