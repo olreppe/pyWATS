@@ -5,8 +5,11 @@
 Uses internal WATS API endpoints that are not publicly documented.
 These methods may change or be removed without notice.
 """
+import logging
 from typing import List, Optional, Dict, Any
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from .repository import ProductRepository
 from .repository_internal import ProductRepositoryInternal
@@ -165,8 +168,8 @@ class ProductServiceInternal:
                 for rel_data in relations_data:
                     try:
                         relations.append(ProductRevisionRelation.model_validate(rel_data))
-                    except Exception:
-                        pass  # Skip invalid relations
+                    except Exception as e:
+                        logger.debug(f"Skipping invalid product revision relation: {e}")
                 return relations
         
         return []

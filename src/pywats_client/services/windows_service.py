@@ -140,7 +140,8 @@ def is_auto_start_enabled() -> bool:
             
     except WindowsError:
         return False
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Error checking auto-start status: {e}")
         return False
 
 

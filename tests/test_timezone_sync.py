@@ -1,8 +1,11 @@
 """Test timezone synchronization between start and start_utc fields."""
 
+import logging
 from datetime import datetime, timezone, timedelta
 from pywats.domains.report.report_models import UUTReport
 from pywats.domains.report.report_models.uut.uut_info import UUTInfo
+
+logger = logging.getLogger(__name__)
 
 
 def test_default_behavior():
@@ -18,8 +21,8 @@ def test_default_behavior():
         info=UUTInfo(operator="TestOp")
     )
     
-    print(f"start:     {report.start}")
-    print(f"start_utc: {report.start_utc}")
+    logger.debug(f"start:     {report.start}")
+    logger.debug(f"start_utc: {report.start_utc}")
     
     assert report.start is not None, "start should be set by default"
     assert report.start_utc is not None, "start_utc should be computed"
@@ -50,9 +53,9 @@ def test_set_local_time_only():
         info=UUTInfo(operator="TestOp")
     )
     
-    print(f"Input:     {local_time}")
-    print(f"start:     {report.start}")
-    print(f"start_utc: {report.start_utc}")
+    logger.debug(f"Input:     {local_time}")
+    logger.debug(f"start:     {report.start}")
+    logger.debug(f"start_utc: {report.start_utc}")
     
     assert report.start == local_time, "start should match input"
     assert report.start_utc is not None, "start_utc should be computed"
@@ -78,9 +81,9 @@ def test_set_utc_time_only():
         info=UUTInfo(operator="TestOp")
     )
     
-    print(f"Input UTC: {utc_time}")
-    print(f"start:     {report.start}")
-    print(f"start_utc: {report.start_utc}")
+    logger.debug(f"Input UTC: {utc_time}")
+    logger.debug(f"start:     {report.start}")
+    logger.debug(f"start_utc: {report.start_utc}")
     
     assert report.start_utc == utc_time, "start_utc should match input"
     assert report.start is not None, "start should be computed from start_utc"
@@ -108,10 +111,10 @@ def test_set_both_times():
         info=UUTInfo(operator="TestOp")
     )
     
-    print(f"Input local: {local_time}")
-    print(f"Input UTC:   {utc_time}")
-    print(f"start:       {report.start}")
-    print(f"start_utc:   {report.start_utc}")
+    logger.debug(f"Input local: {local_time}")
+    logger.debug(f"Input UTC:   {utc_time}")
+    logger.debug(f"start:       {report.start}")
+    logger.debug(f"start_utc:   {report.start_utc}")
     
     assert report.start == local_time, "start should match input"
     assert report.start_utc == utc_time, "start_utc should match input"
@@ -133,9 +136,9 @@ def test_naive_datetime_handling():
         info=UUTInfo(operator="TestOp")
     )
     
-    print(f"Input (naive): {naive_time}")
-    print(f"start:         {report.start}")
-    print(f"start_utc:     {report.start_utc}")
+    logger.debug(f"Input (naive): {naive_time}")
+    logger.debug(f"start:         {report.start}")
+    logger.debug(f"start_utc:     {report.start_utc}")
     
     assert report.start.tzinfo is not None, "Naive datetime should be made aware"
     assert report.start_utc is not None, "start_utc should be computed"
@@ -157,14 +160,14 @@ def test_serialization_excludes_start_utc():
     
     json_data = report.model_dump(mode="json", by_alias=True, exclude_none=True)
     
-    print(f"JSON keys: {list(json_data.keys())}")
-    print(f"'start' in JSON: {'start' in json_data}")
-    print(f"'startUTC' in JSON: {'startUTC' in json_data}")
+    logger.debug(f"JSON keys: {list(json_data.keys())}")
+    logger.debug(f"'start' in JSON: {'start' in json_data}")
+    logger.debug(f"'startUTC' in JSON: {'startUTC' in json_data}")
     
     assert 'start' in json_data, "start should be in JSON"
     assert 'startUTC' not in json_data, "startUTC should be excluded from JSON"
     
-    print(f"\nstart value: {json_data['start']}")
+    logger.debug(f"start value: {json_data['start']}")
 
 
 def test_deserialization_includes_start_utc():
@@ -188,8 +191,8 @@ def test_deserialization_includes_start_utc():
     
     report = UUTReport.model_validate(server_data)
     
-    print(f"start:     {report.start}")
-    print(f"start_utc: {report.start_utc}")
+    logger.debug(f"start:     {report.start}")
+    logger.debug(f"start_utc: {report.start_utc}")
     
     assert report.start is not None, "start should be deserialized"
     assert report.start_utc is not None, "start_utc should be deserialized"

@@ -61,8 +61,9 @@ class FileInfo:
             try:
                 if file_path.exists():
                     self.file_type = magic.from_file(str(file_path), mime=True)
-            except Exception:
-                pass
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).debug(f"Could not detect file type for {file_path}: {e}")
     
     def __str__(self) -> str:
         return f"FileInfo({self.name}, {self.size} bytes, {self.mime_type or 'unknown'})"

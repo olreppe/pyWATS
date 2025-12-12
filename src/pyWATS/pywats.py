@@ -2,9 +2,12 @@
 
 The main entry point for the pyWATS library.
 """
+import logging
 from typing import Optional
 
 from .core.client import HttpClient
+
+logger = logging.getLogger(__name__)
 from .core.exceptions import ErrorMode, ErrorHandler
 from .domains.product import (
     ProductService, 
@@ -340,7 +343,8 @@ class pyWATS:
         try:
             version = self.app.get_version()
             return version is not None
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Connection test failed: {e}")
             return False
     
     def get_version(self) -> dict:

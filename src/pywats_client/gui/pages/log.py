@@ -24,7 +24,7 @@ class QTextEditLogger(logging.Handler, QObject):
     """
     log_signal = Signal(str)
     
-    def __init__(self):
+    def __init__(self) -> None:
         logging.Handler.__init__(self)
         QObject.__init__(self)
         
@@ -35,13 +35,13 @@ class QTextEditLogger(logging.Handler, QObject):
         )
         self.setFormatter(formatter)
     
-    def emit(self, record):
+    def emit(self, record) -> None:
         """Emit log record to Qt signal"""
         try:
             msg = self.format(record)
             self.log_signal.emit(msg)
         except Exception:
-            self.handleError(record)
+            self.handleError(record)  # Standard logging handler pattern
 
 
 class LogPage(BasePage):

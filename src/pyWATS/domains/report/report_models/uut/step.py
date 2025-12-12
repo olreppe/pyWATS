@@ -128,8 +128,8 @@ class Step(WATSBase, ABC):
                 # Optionally delete the file
                 if delete_after_upload:
                     os.remove(file_name)
-        except:
-            raise(ValueError("Failed to attach file"))
+        except (OSError, IOError) as e:
+            raise ValueError(f"Failed to attach file '{file_name}': {e}") from e
         
         # Set the name of the attachment as the filename
         self.attachment.name = os.path.basename(file_name)

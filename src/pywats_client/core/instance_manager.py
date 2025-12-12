@@ -107,7 +107,8 @@ class InstanceLock:
                     kernel32.CloseHandle(handle)
                     return True
                 return False
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Error checking if process {pid} is running: {e}")
                 return False
         else:
             try:
@@ -176,7 +177,8 @@ class InstanceManager:
                     kernel32.CloseHandle(handle)
                     return True
                 return False
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Error checking if process {pid} is running: {e}")
                 return False
         else:
             try:

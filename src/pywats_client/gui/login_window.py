@@ -26,14 +26,14 @@ class AuthWorker(QObject):
     
     finished = Signal(bool, str)  # success, error_message
     
-    def __init__(self, connection_service: ConnectionService, url: str, password: str, username: str = "admin"):
+    def __init__(self, connection_service: ConnectionService, url: str, password: str, username: str = "admin") -> None:
         super().__init__()
         self.connection_service = connection_service
         self.url = url
         self.password = password
         self.username = username
     
-    def run(self):
+    def run(self) -> None:
         """Perform authentication."""
         try:
             success = self.connection_service.authenticate(self.url, self.password, self.username)
@@ -251,7 +251,7 @@ class LoginWindow(QDialog):
             }
         """)
     
-    def _populate_from_config(self):
+    def _populate_from_config(self) -> None:
         """Populate fields from existing config"""
         if self.config.service_address:
             self.url_input.setText(self.config.service_address)
@@ -260,7 +260,7 @@ class LoginWindow(QDialog):
         # User must re-enter on login screen
     
     @Slot()
-    def _on_input_changed(self):
+    def _on_input_changed(self) -> None:
         """Validate input and enable/disable connect button"""
         url = self.url_input.text().strip()
         password = self.password_input.text().strip()
@@ -274,7 +274,7 @@ class LoginWindow(QDialog):
             self.status_label.setText("")
     
     @Slot(int)
-    def _on_show_password_changed(self, state):
+    def _on_show_password_changed(self, state) -> None:
         """Toggle password visibility"""
         if state == Qt.CheckState.Checked.value:
             self.password_input.setEchoMode(QLineEdit.EchoMode.Normal)
@@ -282,11 +282,11 @@ class LoginWindow(QDialog):
             self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
     
     @Slot()
-    def _on_connect_clicked(self):
+    def _on_connect_clicked(self) -> None:
         """Handle connect button click"""
         self._perform_authentication()
     
-    def _perform_authentication(self):
+    def _perform_authentication(self) -> None:
         """Perform authentication in a separate thread"""
         url = self.url_input.text().strip()
         password = self.password_input.text().strip()
@@ -366,12 +366,12 @@ class LoginWindow(QDialog):
             # Re-enable UI
             self._reset_ui()
     
-    def _on_auth_success(self):
+    def _on_auth_success(self) -> None:
         """Handle successful authentication"""
         self.authenticated.emit(self.config)
         self.accept()
     
-    def _reset_ui(self):
+    def _reset_ui(self) -> None:
         """Reset UI to allow retry"""
         self.url_input.setEnabled(True)
         self.password_input.setEnabled(True)

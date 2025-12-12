@@ -265,8 +265,9 @@ class UURReport(Report):
         if value and self.process_code:
             try:
                 self._load_fail_codes()
-            except Exception:
-                pass  # Fail silently if fail codes can't be loaded
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).debug(f"Could not load fail codes: {e}")
     
     @property
     def execution_time(self) -> float:
@@ -580,8 +581,9 @@ class UURReport(Report):
                 fail_code_list = self._api.process_internal.get_fail_codes(self.process_code)
                 # Store as dictionary keyed by GUID for quick lookup
                 self._fail_codes = {fc['guid']: fc for fc in fail_code_list}
-        except Exception:
-            pass  # Fail silently
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).debug(f"Failed to load fail codes from API: {e}")
     
     def get_fail_code(self, guid: Union[str, UUID]) -> Optional[FailCode]:
         """Get a fail code by GUID.

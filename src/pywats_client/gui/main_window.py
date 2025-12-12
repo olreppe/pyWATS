@@ -6,8 +6,11 @@ and content pages matching the WATS Client design.
 """
 
 import asyncio
+import logging
 from typing import Optional, Dict, Any, TYPE_CHECKING, cast
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget,
@@ -507,7 +510,8 @@ class MainWindow(QMainWindow):
             try:
                 self.app.wats_client.process.refresh()
                 return True
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Connection test failed: {e}")
                 return False
         return False
     
@@ -520,7 +524,8 @@ class MainWindow(QMainWindow):
             self.config.was_connected = True
             self._save_config()
             return True
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed to start services: {e}")
             return False
     
     async def stop_services(self) -> None:

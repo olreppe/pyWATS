@@ -356,6 +356,7 @@ class ReportQueueService:
             try:
                 with open(file, 'r', encoding='utf-8') as f:
                     failed.append(json.load(f))
-            except Exception:
+            except (json.JSONDecodeError, IOError) as e:
+                logger.debug(f"Could not load failed report {file}: {e}")
                 continue
         return failed

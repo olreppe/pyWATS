@@ -7,6 +7,7 @@ Provides secure encryption/decryption of API tokens using machine-specific keys.
 import os
 import hashlib
 import base64
+import subprocess
 from typing import Optional
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
@@ -65,8 +66,8 @@ def get_machine_id() -> str:
                 for line in result.stdout.split('\n'):
                     if 'IOPlatformUUID' in line:
                         return line.split('"')[3]
-            except:
-                pass
+            except (subprocess.SubprocessError, FileNotFoundError, IndexError) as e:
+                logger.debug(f"Could not get macOS IOPlatformUUID: {e}")
             
             # Final fallback
             return os.environ.get('HOSTNAME', 'default-machine')
