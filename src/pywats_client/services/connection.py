@@ -168,13 +168,19 @@ class ConnectionService:
             # For now, use password as token (WATS API uses password as token)
             client = pyWATS(base_url=server_url, token=password)
             
-            # Test if credentials work
+            # Test if credentials work by getting version
             try:
-                client.process.refresh()
-                logger.info("Authentication successful")
-                return password  # In WATS, the password IS the API token
+                version = client.get_version()
+                if version:
+                    logger.info("Authentication successful")
+                    return password  # In WATS, the password IS the API token
+                else:
+                    logger.error("Credential test failed: get_version returned None")
+                    self._last_error = "Invalid credentials or server unreachable"
+                    return None
             except Exception as e:
                 logger.error(f"Credential test failed: {e}")
+                self._last_error = f"Connection failed: {str(e)}"
                 return None
                 
         except Exception as e:
@@ -279,16 +285,21 @@ class ConnectionService:
         Returns True if server is reachable and credentials are valid.
         """
         if not self._pywats_client:
+            self._last_error = "Client not initialized"
             return False
         
         try:
             # Try to get version info as a simple connection test
             version = self._pywats_client.get_version()
             self._last_check = datetime.now()
-            return version is not None
+            if version is not None:
+                return True
+            else:
+                self._last_error = "get_version returned None"
+                return False
         except Exception as e:
-            logger.debug(f"Connection test failed: {e}")
-            self._last_error = str(e)
+            logger.error(f"Connection test failed: {e}")
+            self._last_error = f"Connection test failed: {str(e)}"
             return False
     
     async def _health_check_loop(self) -> None:
