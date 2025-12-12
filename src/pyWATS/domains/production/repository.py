@@ -3,6 +3,8 @@
 All API interactions for production units, serial numbers, and batches.
 """
 from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING, cast
+import logging
+import logging
 
 if TYPE_CHECKING:
     from ...core import HttpClient

@@ -144,6 +144,37 @@ class Product(PyWATSModel):
 - `base_model.py` - Base Pydantic model configuration
 - `common_types.py` - Shared types (e.g., `Setting`)
 
+### 7. Logging (`core/logging.py`)
+
+**Purpose**: Diagnostic and troubleshooting support
+
+**Features**:
+- Uses Python's standard `logging` module
+- Library never configures handlers (user's responsibility)
+- Each module has its own logger under `pywats.*` hierarchy
+- Quick debug helper: `enable_debug_logging()`
+
+**Logging Levels**:
+- **DEBUG**: Detailed operations (HTTP requests, parameters, response sizes)
+- **INFO**: Successful operations with context (counts, IDs)
+- **WARNING**: Non-critical issues (empty responses in LENIENT mode)
+- **ERROR**: Actual errors with full context
+
+**Example**:
+```python
+from pywats import enable_debug_logging
+
+# Quick debug mode
+enable_debug_logging()
+
+# Or custom configuration
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('pywats.http_client').setLevel(logging.DEBUG)
+```
+
+See [LOGGING_STRATEGY.md](../LOGGING_STRATEGY.md) for comprehensive guide.
+
 ## Domain Structure
 
 Each domain follows the same structure:

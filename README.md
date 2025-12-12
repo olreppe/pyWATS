@@ -68,6 +68,25 @@ filter = WATSFilter(top_count=10)
 headers = api.report.query_uut_headers(filter)
 ```
 
+### Enable Debug Logging
+
+```python
+from pywats import pyWATS, enable_debug_logging
+
+# Quick debug mode - shows all library operations
+enable_debug_logging()
+
+# Or configure logging your way
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('pywats').setLevel(logging.DEBUG)
+
+# Now use the API with detailed logging
+api = pyWATS(base_url="...", token="...")
+```
+
+See [LOGGING_STRATEGY.md](LOGGING_STRATEGY.md) for comprehensive logging documentation.
+
 ## Running the GUI Client
 
 ```bash
@@ -115,6 +134,7 @@ pyWATS/
 - [Basic Usage Example](docs/examples/basic_usage.py)
 - [REST API Instructions](docs/REST_API_INSTRUCTION.md)
 - [Quick Reference](QUICK_REFERENCE.md) - API quick reference
+- [Logging Strategy](LOGGING_STRATEGY.md) - Comprehensive logging guide ⭐
 
 ## Testing
 
