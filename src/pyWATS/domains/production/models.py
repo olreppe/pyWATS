@@ -171,7 +171,7 @@ class Unit(PyWATSModel):
         validation_alias=AliasChoices("unitPhase", "unit_phase"),
         serialization_alias="unitPhase"
     )
-    process_code: Optional[str] = Field(
+    process_code: Optional[int] = Field(
         default=None,
         validation_alias=AliasChoices("processCode", "process_code"),
         serialization_alias="processCode"
