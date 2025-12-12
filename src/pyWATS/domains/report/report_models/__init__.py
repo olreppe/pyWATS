@@ -20,6 +20,7 @@ from .deserialization_context import DeserializationContext
 from .uut.uut_report import UUTReport
 from .uut.uut_info import UUTInfo
 from .uut.step import Step, StepStatus
+from .uut.steps.sequence_call import SequenceCall
 
 # UUR classes  
 from .uur.uur_report import UURReport
@@ -32,6 +33,6 @@ __all__ = [
     'ReportInfo', 'MiscInfo', 'AdditionalData', 'BinaryData',
     'Asset', 'AssetStats', 'Chart', 'ChartSeries', 'ChartType',
     'SubUnit', 'Attachment', 'DeserializationContext',
-    'UUTReport', 'UUTInfo', 'Step', 'StepStatus',
+    'UUTReport', 'UUTInfo', 'Step', 'StepStatus', 'SequenceCall',
     'UURReport', 'UURInfo', 'SubRepair'
 ]

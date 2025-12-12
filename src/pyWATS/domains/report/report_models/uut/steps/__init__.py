@@ -5,7 +5,7 @@ from .boolean_step import BooleanStep, MultiBooleanStep
 from .string_step import StringStep, MultiStringStep
 from .action_step import ActionStep
 from .callexe_step import CallExeStep
-from .generic_step import GenericStep
+from .generic_step import GenericStep, FlowType
 from .chart_step import ChartStep
 from .message_popup_step import MessagePopUpStep
 
@@ -21,6 +21,7 @@ __all__ = [
     "ActionStep",
     "CallExeStep",
     "GenericStep",
+    "FlowType",
     "ChartStep",
     "MessagePopUpStep"
 ]
