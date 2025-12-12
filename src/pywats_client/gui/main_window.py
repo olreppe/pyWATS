@@ -75,11 +75,9 @@ class MainWindow(QMainWindow):
     
     def _auto_start_on_startup(self) -> None:
         """Auto-start application on startup if configured"""
-        # Check if we should auto-start
-        if self.config.auto_connect and self.config.was_connected:
-            # Only auto-start if we have valid credentials
-            if self.config.service_address and self.config.api_token:
-                self._do_auto_start()
+        # Auto-start disabled - connection established at login
+        # User is already connected when main window opens
+        pass
     
     def _do_auto_start(self) -> None:
         """Perform auto-start of application services"""
