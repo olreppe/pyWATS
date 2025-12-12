@@ -10,7 +10,8 @@ from typing import Optional, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QListWidget, QListWidgetItem, QGroupBox,
-    QSplitter, QTextEdit, QFileDialog, QMessageBox
+    QSplitter, QTextEdit, QFileDialog, QMessageBox, QTableWidget,
+    QTableWidgetItem, QHeaderView, QDialog, QPlainTextEdit
 )
 from PySide6.QtCore import Qt
 
@@ -19,6 +20,107 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+
+
+class ConverterEditorDialog(QDialog):
+    """Dialog for viewing/editing converter details"""
+    
+    def __init__(self, file_path: str, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.file_path = Path(file_path)
+        self.setWindowTitle(f"Converter: {self.file_path.stem}")
+        self.resize(800, 600)
+        
+        self._setup_ui()
+        self._load_converter()
+    
+    def _setup_ui(self) -> None:
+        """Setup UI components"""
+        layout = QVBoxLayout(self)
+        
+        # File info
+        info_layout = QHBoxLayout()
+        info_layout.addWidget(QLabel("File:"))
+        self._path_label = QLabel(str(self.file_path))
+        self._path_label.setStyleSheet("color: #4ec9b0;")
+        info_layout.addWidget(self._path_label)
+        info_layout.addStretch()
+        layout.addLayout(info_layout)
+        
+        # Status
+        status_layout = QHBoxLayout()
+        status_layout.addWidget(QLabel("Status:"))
+        self._status_label = QLabel()
+        status_layout.addWidget(self._status_label)
+        status_layout.addStretch()
+        layout.addLayout(status_layout)
+        
+        # Code editor
+        layout.addWidget(QLabel("Converter Code:"))
+        self._code_editor = QPlainTextEdit()
+        self._code_editor.setReadOnly(False)
+        self._code_editor.setStyleSheet("""
+            QPlainTextEdit {
+                font-family: 'Consolas', 'Courier New', monospace;
+                font-size: 10pt;
+                background-color: #1e1e1e;
+                color: #d4d4d4;
+            }
+        """)
+        layout.addWidget(self._code_editor)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        
+        self._save_btn = QPushButton("Save")
+        self._save_btn.clicked.connect(self._save_converter)
+        button_layout.addWidget(self._save_btn)
+        
+        self._close_btn = QPushButton("Close")
+        self._close_btn.clicked.connect(self.reject)
+        button_layout.addWidget(self._close_btn)
+        
+        layout.addLayout(button_layout)
+    
+    def _load_converter(self) -> None:
+        """Load converter from file"""
+        try:
+            content = self.file_path.read_text()
+            self._code_editor.setPlainText(content)
+            
+            # Check validity
+            if "ConverterBase" in content:
+                self._status_label.setText("Valid converter")
+                self._status_label.setStyleSheet("color: #4ec9b0;")
+            else:
+                self._status_label.setText("Missing ConverterBase - not a valid converter")
+                self._status_label.setStyleSheet("color: #dcdcaa;")
+                
+        except Exception as e:
+            self._status_label.setText(f"Error loading: {str(e)}")
+            self._status_label.setStyleSheet("color: #f14c4c;")
+    
+    def _save_converter(self) -> None:
+        """Save converter to file"""
+        try:
+            content = self._code_editor.toPlainText()
+            self.file_path.write_text(content)
+            
+            QMessageBox.information(
+                self,
+                "Saved",
+                f"Converter saved to:\n{self.file_path}"
+            )
+            
+            self.accept()
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Save Error",
+                f"Failed to save converter:\n{str(e)}"
+            )
 
 
 class ConvertersPage(BasePage):
@@ -40,7 +142,7 @@ class ConvertersPage(BasePage):
         return "Converters"
     
     def _setup_ui(self) -> None:
-        """Setup page UI"""
+        """Setup page UI with grid layout"""
         # Converters folder
         folder_layout = QHBoxLayout()
         folder_layout.addWidget(QLabel("Converters folder:"))
@@ -64,21 +166,28 @@ class ConvertersPage(BasePage):
         
         self._layout.addSpacing(10)
         
-        # Splitter for converter list and details
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        # Converters grid/table
+        from PySide6.QtWidgets import QTableWidget, QHeaderView, QTableWidgetItem
         
-        # Left side - converter list
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        
-        list_label = QLabel("Loaded Converters")
-        list_label.setStyleSheet("font-weight: bold;")
-        left_layout.addWidget(list_label)
-        
-        self._converter_list = QListWidget()
-        self._converter_list.currentRowChanged.connect(self._on_converter_selected)
-        left_layout.addWidget(self._converter_list)
+        self._converter_table = QTableWidget()
+        self._converter_table.setColumnCount(5)
+        self._converter_table.setHorizontalHeaderLabels([
+            "Name", "Extensions", "Status", "Description", "File Path"
+        ])
+        self._converter_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        self._converter_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self._converter_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self._converter_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        self._converter_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
+        self._converter_table.verticalHeader().setVisible(False)
+        self._converter_table.setAlternatingRowColors(True)
+        self._converter_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self._converter_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self._converter_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self._converter_table.setColumnWidth(0, 200)
+        self._converter_table.setColumnWidth(4, 300)
+        self._converter_table.doubleClicked.connect(self._on_edit_converter)
+        self._layout.addWidget(self._converter_table, 1)
         
         # Buttons
         btn_layout = QHBoxLayout()
@@ -90,83 +199,16 @@ class ConvertersPage(BasePage):
         self._create_btn.clicked.connect(self._on_create_new)
         btn_layout.addWidget(self._create_btn)
         
+        self._edit_btn = QPushButton("Edit/View...")
+        self._edit_btn.setEnabled(False)
+        self._edit_btn.clicked.connect(self._on_edit_converter)
+        btn_layout.addWidget(self._edit_btn)
+        
         btn_layout.addStretch()
-        left_layout.addLayout(btn_layout)
+        self._layout.addLayout(btn_layout)
         
-        splitter.addWidget(left_widget)
-        
-        # Right side - converter details
-        right_widget = QWidget()
-        right_layout = QVBoxLayout(right_widget)
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        
-        detail_label = QLabel("Converter Details")
-        detail_label.setStyleSheet("font-weight: bold;")
-        right_layout.addWidget(detail_label)
-        
-        self._detail_group = QGroupBox()
-        detail_inner = QVBoxLayout(self._detail_group)
-        
-        # Name
-        name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel("Name:"))
-        self._name_label = QLabel()
-        self._name_label.setStyleSheet("font-weight: bold;")
-        name_layout.addWidget(self._name_label, 1)
-        detail_inner.addLayout(name_layout)
-        
-        # Description
-        desc_layout = QHBoxLayout()
-        desc_layout.addWidget(QLabel("Description:"))
-        self._desc_label = QLabel()
-        self._desc_label.setWordWrap(True)
-        desc_layout.addWidget(self._desc_label, 1)
-        detail_inner.addLayout(desc_layout)
-        
-        # File path
-        path_layout = QHBoxLayout()
-        path_layout.addWidget(QLabel("File:"))
-        self._path_label = QLabel()
-        self._path_label.setWordWrap(True)
-        self._path_label.setStyleSheet("color: #808080;")
-        path_layout.addWidget(self._path_label, 1)
-        detail_inner.addLayout(path_layout)
-        
-        # Status
-        status_layout = QHBoxLayout()
-        status_layout.addWidget(QLabel("Status:"))
-        self._status_label = QLabel()
-        status_layout.addWidget(self._status_label, 1)
-        detail_inner.addLayout(status_layout)
-        
-        # Extensions
-        ext_layout = QHBoxLayout()
-        ext_layout.addWidget(QLabel("Extensions:"))
-        self._ext_label = QLabel()
-        ext_layout.addWidget(self._ext_label, 1)
-        detail_inner.addLayout(ext_layout)
-        
-        right_layout.addWidget(self._detail_group)
-        
-        # Log/output area
-        log_label = QLabel("Converter Output")
-        log_label.setStyleSheet("font-weight: bold;")
-        right_layout.addWidget(log_label)
-        
-        self._log_text = QTextEdit()
-        self._log_text.setReadOnly(True)
-        self._log_text.setMaximumHeight(150)
-        self._log_text.setStyleSheet(
-            "background-color: #1e1e1e; font-family: monospace; font-size: 11px;"
-        )
-        right_layout.addWidget(self._log_text)
-        
-        splitter.addWidget(right_widget)
-        
-        # Set splitter sizes
-        splitter.setSizes([300, 400])
-        
-        self._layout.addWidget(splitter, 1)
+        # Connect selection changed
+        self._converter_table.itemSelectionChanged.connect(self._on_selection_changed)
     
     def save_config(self) -> None:
         """Save configuration"""
@@ -279,9 +321,8 @@ class MyConverter(ConverterBase):
         self._refresh_converter_list()
     
     def _refresh_converter_list(self) -> None:
-        """Refresh the converter list"""
-        self._converter_list.clear()
-        self._clear_details()
+        """Refresh the converter table"""
+        self._converter_table.setRowCount(0)
         
         folder = self._folder_edit.text()
         if not folder:
@@ -291,80 +332,77 @@ class MyConverter(ConverterBase):
         if not folder_path.exists():
             return
         
-        # List Python files
+        # List Python files and populate table
+        row = 0
         for py_file in folder_path.glob("*.py"):
             if py_file.name.startswith("_"):
                 continue
             
-            item = QListWidgetItem(py_file.stem)
-            item.setData(Qt.ItemDataRole.UserRole, str(py_file))
-            self._converter_list.addItem(item)
-    
-    def _on_converter_selected(self, row: int) -> None:
-        """Handle converter selection"""
-        if row < 0:
-            self._clear_details()
-            return
-        
-        item = self._converter_list.item(row)
-        if not item:
-            return
-        
-        file_path = item.data(Qt.ItemDataRole.UserRole)
-        self._show_converter_details(file_path)
-    
-    def _clear_details(self) -> None:
-        """Clear detail display"""
-        self._name_label.setText("")
-        self._desc_label.setText("")
-        self._path_label.setText("")
-        self._status_label.setText("")
-        self._ext_label.setText("")
-        self._log_text.clear()
-    
-    def _show_converter_details(self, file_path: str) -> None:
-        """Show details for a converter"""
-        path = Path(file_path)
-        
-        self._name_label.setText(path.stem)
-        self._path_label.setText(str(path))
-        
-        # Try to load and inspect the converter
-        try:
-            content = path.read_text()
+            # Parse converter details
+            name = py_file.stem
+            extensions = ""
+            status = ""
+            description = ""
             
-            # Simple parsing for docstring and properties
-            if '"""' in content:
-                docstring_start = content.find('"""') + 3
-                docstring_end = content.find('"""', docstring_start)
-                if docstring_end > docstring_start:
-                    desc = content[docstring_start:docstring_end].strip()
-                    self._desc_label.setText(desc[:200])
-            
-            # Check if it contains ConverterBase
-            if "ConverterBase" in content:
-                self._status_label.setText("Valid converter")
-                self._status_label.setStyleSheet("color: #4ec9b0;")
-            else:
-                self._status_label.setText("Missing ConverterBase")
-                self._status_label.setStyleSheet("color: #dcdcaa;")
-            
-            # Try to find extensions
-            import re
-            ext_match = re.search(r'extensions.*?\[([^\]]+)\]', content, re.DOTALL)
-            if ext_match:
-                extensions = ext_match.group(1).strip()
-                self._ext_label.setText(extensions)
-            else:
-                self._ext_label.setText("(not defined)")
+            try:
+                content = py_file.read_text()
                 
-        except Exception as e:
-            self._status_label.setText(f"Error: {str(e)}")
-            self._status_label.setStyleSheet("color: #f14c4c;")
+                # Extract description from docstring
+                if '"""' in content:
+                    docstring_start = content.find('"""') + 3
+                    docstring_end = content.find('"""', docstring_start)
+                    if docstring_end > docstring_start:
+                        description = content[docstring_start:docstring_end].strip()
+                        # Truncate to first line or 100 chars
+                        description = description.split('\n')[0][:100]
+                
+                # Check validity
+                if "ConverterBase" in content:
+                    status = "Valid"
+                else:
+                    status = "Missing ConverterBase"
+                
+                # Extract extensions
+                import re
+                ext_match = re.search(r'extensions.*?\[([^\]]+)\]', content, re.DOTALL)
+                if ext_match:
+                    extensions = ext_match.group(1).strip().replace('"', '').replace("'", "")
+                    
+            except Exception as e:
+                status = f"Error: {str(e)}"
+            
+            # Add row to table
+            self._converter_table.insertRow(row)
+            self._converter_table.setItem(row, 0, QTableWidgetItem(name))
+            self._converter_table.setItem(row, 1, QTableWidgetItem(extensions))
+            self._converter_table.setItem(row, 2, QTableWidgetItem(status))
+            self._converter_table.setItem(row, 3, QTableWidgetItem(description))
+            self._converter_table.setItem(row, 4, QTableWidgetItem(str(py_file)))
+            
+            # Store file path in row 0 data
+            self._converter_table.item(row, 0).setData(Qt.ItemDataRole.UserRole, str(py_file))
+            
+            row += 1
     
-    def append_log(self, message: str) -> None:
-        """Append message to log output"""
-        self._log_text.append(message)
-        # Scroll to bottom
-        scrollbar = self._log_text.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+    def _on_selection_changed(self) -> None:
+        """Handle table selection change"""
+        has_selection = len(self._converter_table.selectedItems()) > 0
+        self._edit_btn.setEnabled(has_selection)
+    
+    def _on_edit_converter(self) -> None:
+        """Open editor for selected converter"""
+        selected_rows = set(item.row() for item in self._converter_table.selectedItems())
+        if not selected_rows:
+            return
+        
+        row = min(selected_rows)
+        name_item = self._converter_table.item(row, 0)
+        if not name_item:
+            return
+        
+        file_path = name_item.data(Qt.ItemDataRole.UserRole)
+        
+        # Show editor dialog
+        dialog = ConverterEditorDialog(file_path, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._refresh_converter_list()

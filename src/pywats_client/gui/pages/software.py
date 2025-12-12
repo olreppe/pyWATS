@@ -168,7 +168,7 @@ class SoftwarePage(BasePage):
     
     def _on_refresh_folders(self) -> None:
         """Refresh virtual folders from server"""
-        if self._main_window and self._main_window.client:
+        if self._main_window and self._main_window.app.wats_client:
             asyncio.create_task(self._load_virtual_folders())
         else:
             QMessageBox.warning(
@@ -178,7 +178,7 @@ class SoftwarePage(BasePage):
     
     def _on_refresh_packages(self) -> None:
         """Refresh packages from server"""
-        if self._main_window and self._main_window.client:
+        if self._main_window and self._main_window.app.wats_client:
             asyncio.create_task(self._load_packages())
         else:
             QMessageBox.warning(
@@ -219,12 +219,16 @@ class SoftwarePage(BasePage):
             self._progress_bar.setVisible(True)
             self._progress_bar.setRange(0, 0)  # Indeterminate
             
-            # TODO: Implement when client has software module access
-            # packages = await self._main_window.client.get_packages()
-            # self._packages = packages
-            
-            # Placeholder
-            self._packages = []
+            if self._main_window and self._main_window.app.wats_client:
+                client = self._main_window.app.wats_client
+                # Get software packages from API
+                packages = client.software.get_packages()
+                if packages:
+                    self._packages = packages
+                else:
+                    self._packages = []
+            else:
+                self._packages = []
             
             self._populate_packages_table()
             self._progress_bar.setVisible(False)
