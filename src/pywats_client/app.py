@@ -22,7 +22,7 @@ from datetime import datetime
 from contextlib import asynccontextmanager
 
 from pywats import pyWATS
-from pywats.core.exceptions import NotFoundError, WATSError
+from pywats.core.exceptions import NotFoundError, PyWATSError
 
 from .core.config import ClientConfig
 from .core.instance_manager import InstanceLock
