@@ -283,7 +283,7 @@ class ConnectionService:
         
         try:
             # Try to get version info as a simple connection test
-            version = self._pywats_client.app.get_version()
+            version = self._pywats_client.get_version()
             self._last_check = datetime.now()
             return version is not None
         except Exception as e:
