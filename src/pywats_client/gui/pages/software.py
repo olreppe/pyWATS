@@ -108,26 +108,42 @@ class SoftwarePage(BasePage):
         self._packages_tree.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         self._packages_tree.setAlternatingRowColors(True)
         self._packages_tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
+        self._packages_tree.setIndentation(20)
         self._packages_tree.setColumnWidth(0, 300)
+        # Apply styling to match other grids in the app
+        self._packages_tree.setStyleSheet("""
+            QTreeWidget {
+                font-size: 11pt;
+                background-color: #1e1e1e;
+                alternate-background-color: #2d2d2d;
+                border: 1px solid #3c3c3c;
+            }
+            QTreeWidget::item {
+                padding: 4px;
+            }
+            QTreeWidget::item:selected {
+                background-color: #0078d4;
+            }
+            QTreeWidget::item:hover {
+                background-color: #2d2d2d;
+            }
+            QHeaderView::section {
+                background-color: #2d2d2d;
+                padding: 4px;
+                border: 1px solid #3c3c3c;
+                font-weight: bold;
+            }
+        """)
         packages_layout.addWidget(self._packages_tree)
         
-        # Action buttons
-        btn_layout = QHBoxLayout()
-        
-        self._download_btn = QPushButton("Download Selected")
-        self._download_btn.setEnabled(False)
-        self._download_btn.clicked.connect(self._on_download_package)
-        btn_layout.addWidget(self._download_btn)
-        
-        btn_layout.addStretch()
-        
         # Progress indicator
+        progress_layout = QHBoxLayout()
+        progress_layout.addStretch()
         self._progress_bar = QProgressBar()
         self._progress_bar.setVisible(False)
         self._progress_bar.setMaximumWidth(200)
-        btn_layout.addWidget(self._progress_bar)
-        
-        packages_layout.addLayout(btn_layout)
+        progress_layout.addWidget(self._progress_bar)
+        packages_layout.addLayout(progress_layout)
         
         self._layout.addWidget(packages_group, 1)
         
@@ -146,10 +162,8 @@ class SoftwarePage(BasePage):
     
     def _on_selection_changed(self) -> None:
         """Handle package selection change"""
-        selected = self._packages_tree.selectedItems()
-        # Only enable download if a package (not folder) is selected
-        is_package = selected and selected[0].parent() is not None
-        self._download_btn.setEnabled(is_package)
+        # Selection tracking for future features
+        pass
     
     def _on_filter_changed(self) -> None:
         """Handle filter changes - refresh displayed packages"""
@@ -167,21 +181,7 @@ class SoftwarePage(BasePage):
                 "Please connect to WATS server first."
             )
     
-    def _on_download_package(self) -> None:
-        """Download selected package"""
-        selected_row = self._packages_table.currentRow()
-        if selected_row < 0:
-            return
-        
-        # Get package name from table
-        name_item = self._packages_table.item(selected_row, 0)
-        if name_item:
-            package_name = name_item.text()
-            QMessageBox.information(
-                self, "Download",
-                f"Download functionality for '{package_name}' not yet implemented.\n"
-                "This will download the package files to the local machine."
-            )
+
     
 
     
