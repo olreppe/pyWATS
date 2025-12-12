@@ -172,6 +172,16 @@ class SNHandlerPage(BasePage):
         
         # Add stretch
         self._layout.addStretch()
+        
+        # Auto-load types if connected
+        if self._main_window and self._main_window.app.wats_client:
+            print("[SN Handler] Auto-loading types on initialization")
+            self._load_sn_types()
+        
+        # Auto-load types if connected
+        if self._main_window and self._main_window.app.wats_client:
+            print("[SN Handler] Auto-loading types on initialization")
+            self._load_sn_types()
     
     def _on_type_selected(self) -> None:
         """Handle serial number type selection in table"""
@@ -222,25 +232,34 @@ class SNHandlerPage(BasePage):
         """Load serial number types from WATS server"""
         try:
             self._status_label.setText("Loading serial number types...")
+            print("[SN Handler] Starting to load serial number types...")
             
             if self._main_window and self._main_window.app.wats_client:
                 client = self._main_window.app.wats_client
+                print(f"[SN Handler] WATS client available: {client}")
                 # Get serial number types from production API
                 types = client.production.get_serial_number_types()
+                print(f"[SN Handler] Received {len(types) if types else 0} types from API")
                 if types:
                     self._sn_types = types
+                    print(f"[SN Handler] First type: {types[0].name if types else 'N/A'}")
                 else:
                     self._sn_types = []
             else:
+                print(f"[SN Handler] No client - main_window: {self._main_window}, wats_client: {self._main_window.app.wats_client if self._main_window else None}")
                 self._sn_types = []
                 self._status_label.setText("Not connected to WATS server")
                 return
             
+            print(f"[SN Handler] Populating table with {len(self._sn_types)} types")
             self._populate_types_table()
             self._populate_type_combo()
             self._status_label.setText(f"Found {len(self._sn_types)} serial number types")
             
         except Exception as e:
+            print(f"[SN Handler] Error: {e}")
+            import traceback
+            traceback.print_exc()
             self._status_label.setText(f"Error: {str(e)}")
     
     async def _take_serial_numbers(self) -> None:

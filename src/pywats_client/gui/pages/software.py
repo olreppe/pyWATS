@@ -156,6 +156,11 @@ class SoftwarePage(BasePage):
         
         # Connect table selection
         self._packages_table.itemSelectionChanged.connect(self._on_selection_changed)
+        
+        # Auto-load packages if connected
+        if self._main_window and self._main_window.app.wats_client:
+            print("[Software] Auto-loading packages on initialization")
+            self._load_packages()
     
     def _on_selection_changed(self) -> None:
         """Handle package selection change"""
@@ -218,23 +223,32 @@ class SoftwarePage(BasePage):
             self._status_label.setText("Loading packages...")
             self._progress_bar.setVisible(True)
             self._progress_bar.setRange(0, 0)  # Indeterminate
+            print("[Software] Starting to load packages...")
             
             if self._main_window and self._main_window.app.wats_client:
                 client = self._main_window.app.wats_client
+                print(f"[Software] WATS client available: {client}")
                 # Get software packages from API
                 packages = client.software.get_packages()
+                print(f"[Software] Received {len(packages) if packages else 0} packages from API")
                 if packages:
                     self._packages = packages
+                    print(f"[Software] First package: {packages[0].name if packages else 'N/A'}")
                 else:
                     self._packages = []
             else:
+                print(f"[Software] No client - main_window: {self._main_window}, wats_client: {self._main_window.app.wats_client if self._main_window else None}")
                 self._packages = []
             
+            print(f"[Software] Populating table with {len(self._packages)} packages")
             self._populate_packages_table()
             self._progress_bar.setVisible(False)
             self._status_label.setText(f"Found {len(self._packages)} packages")
             
         except Exception as e:
+            print(f"[Software] Error: {e}")
+            import traceback
+            traceback.print_exc()
             self._progress_bar.setVisible(False)
             self._status_label.setText(f"Error loading packages: {str(e)}")
     
