@@ -21,6 +21,7 @@ from PySide6.QtCore import Qt, QSize, Signal, Slot, QTimer
 from PySide6.QtGui import QAction, QCloseEvent
 
 from .styles import DARK_STYLESHEET
+from .settings_dialog import SettingsDialog
 from .pages import (
     BasePage, SetupPage, GeneralPage, ConnectionPage, ProxySettingsPage, 
     ConvertersPage, LocationPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage
@@ -235,10 +236,37 @@ class MainWindow(QMainWindow):
         self._nav_list.currentRowChanged.connect(self._on_nav_changed)
         sidebar_layout.addWidget(self._nav_list, 1)
         
-        # Footer
+        # Footer with Settings button
         footer_frame = QFrame()
         footer_layout = QVBoxLayout(footer_frame)
         footer_layout.setContentsMargins(15, 10, 15, 15)
+        footer_layout.setSpacing(10)
+        
+        # Settings button row
+        settings_row = QHBoxLayout()
+        settings_row.setContentsMargins(0, 0, 0, 5)
+        
+        self._settings_btn = QPushButton("⚙  Settings")
+        self._settings_btn.setObjectName("settingsButton")
+        self._settings_btn.setStyleSheet("""
+            QPushButton#settingsButton {
+                background-color: transparent;
+                border: none;
+                color: #808080;
+                text-align: left;
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+            QPushButton#settingsButton:hover {
+                background-color: #2a2d2e;
+                color: #ffffff;
+            }
+        """)
+        self._settings_btn.clicked.connect(self._open_settings_dialog)
+        settings_row.addWidget(self._settings_btn)
+        settings_row.addStretch()
+        
+        footer_layout.addLayout(settings_row)
         
         from .. import __version__
         footer_label = QLabel(f"pyWATS Client | v{__version__}")
@@ -402,6 +430,22 @@ class MainWindow(QMainWindow):
         if page_name and page_name in self._pages:
             page_index = list(self._pages.keys()).index(page_name)
             self._page_stack.setCurrentIndex(page_index)
+    
+    def _open_settings_dialog(self) -> None:
+        """Open the settings dialog"""
+        dialog = SettingsDialog(self.config, parent=self)
+        dialog.settings_changed.connect(self._on_settings_dialog_closed)
+        dialog.exec()
+    
+    def _on_settings_dialog_closed(self) -> None:
+        """Handle settings dialog changes"""
+        # Notify all pages that config may have changed
+        for page in self._pages.values():
+            if hasattr(page, 'load_config'):
+                page.load_config()
+        
+        # Save client config
+        self.config.save()
     
     # Button handlers
     
