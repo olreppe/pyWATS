@@ -2,12 +2,13 @@
 
 Provides high-level operations for asset management.
 """
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict, Union
 from datetime import datetime
 from uuid import UUID
+from pathlib import Path
 
 from .models import Asset, AssetType, AssetLog
-from .enums import AssetState
+from .enums import AssetState, AssetAlarmState
 from .repository import AssetRepository
 
 
@@ -19,14 +20,16 @@ class AssetService:
     validation, state management, and business rules.
     """
 
-    def __init__(self, repository: AssetRepository):
+    def __init__(self, repository: AssetRepository, base_url: Optional[str] = None):
         """
         Initialize with repository.
 
         Args:
             repository: AssetRepository for data access
+            base_url: Base URL for internal API file operations
         """
         self._repository = repository
+        self._base_url = base_url or "https://wats.com"
 
     # =========================================================================
     # Asset Operations
@@ -80,6 +83,8 @@ class AssetService:
         asset_name: Optional[str] = None,
         description: Optional[str] = None,
         location: Optional[str] = None,
+        parent_asset_id: Optional[str] = None,
+        parent_serial_number: Optional[str] = None,
         **kwargs: Any
     ) -> Optional[Asset]:
         """
@@ -91,6 +96,8 @@ class AssetService:
             asset_name: Optional display name
             description: Optional description
             location: Optional location
+            parent_asset_id: Optional parent asset ID for hierarchy
+            parent_serial_number: Optional parent serial number for hierarchy
             **kwargs: Additional asset fields
 
         Returns:
@@ -102,6 +109,8 @@ class AssetService:
             asset_name=asset_name,
             description=description,
             location=location,
+            parent_asset_id=parent_asset_id,
+            parent_serial_number=parent_serial_number,
             **kwargs
         )
         return self._repository.save(asset)
@@ -118,17 +127,63 @@ class AssetService:
         """
         return self._repository.save(asset)
 
-    def delete_asset(self, asset_id: str) -> bool:
+    def delete_asset(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
+    ) -> bool:
         """
-        Delete an asset.
+        Delete an asset by ID or serial number.
 
         Args:
             asset_id: Asset ID to delete
+            serial_number: Asset serial number to delete
 
         Returns:
             True if successful
         """
-        return self._repository.delete(asset_id)
+        # Repository requires asset_id as first arg, but we handle both
+        if asset_id:
+            return self._repository.delete(asset_id=asset_id, serial_number=serial_number)
+        elif serial_number:
+            # Get asset by serial to get ID
+            asset = self._repository.get_by_serial_number(serial_number)
+            if asset and asset.asset_id:
+                return self._repository.delete(asset_id=asset.asset_id)
+        return False
+
+    # =========================================================================
+    # Status Operations
+    # =========================================================================
+
+    def get_status(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        translate: bool = True,
+        culture_code: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get asset status including alarm information.
+
+        This is the primary way to check if an asset is in alarm
+        (needs calibration, maintenance, or has exceeded counts).
+
+        Args:
+            asset_id: Asset ID
+            serial_number: Asset serial number
+            translate: Whether to translate status messages
+            culture_code: Culture for translations (e.g., 'en-US')
+
+        Returns:
+            Status dictionary with alarm info or None
+        """
+        return self._repository.get_status(
+            asset_id=asset_id,
+            serial_number=serial_number,
+            translate=translate,
+            culture_code=culture_code
+        )
 
     # =========================================================================
     # State Management
@@ -149,95 +204,159 @@ class AssetService:
 
     def set_asset_state(
         self,
-        asset_id: str,
         state: AssetState,
-        comment: Optional[str] = None
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
     ) -> bool:
         """
         Set the state of an asset.
 
         Args:
-            asset_id: Asset ID
             state: New state
-            comment: Optional comment
+            asset_id: Asset ID
+            serial_number: Asset serial number
 
         Returns:
             True if successful
         """
-        return self._repository.set_state(asset_id, state, comment)
+        return self._repository.set_state(
+            state=state,
+            asset_id=asset_id,
+            serial_number=serial_number
+        )
 
-    def needs_calibration(self, asset: Asset) -> bool:
+    def is_in_alarm(self, asset: Asset) -> bool:
         """
-        Check if an asset needs calibration.
+        Check if an asset is in alarm state.
+
+        Uses get_status to determine alarm state.
+        Consider using get_status directly for more detail.
 
         Args:
             asset: Asset to check
 
         Returns:
-            True if asset needs calibration
+            True if asset is in alarm
         """
-        return asset.state == AssetState.NEEDS_CALIBRATION
+        status = self.get_status(
+            asset_id=asset.asset_id,
+            serial_number=asset.serial_number
+        )
+        if status:
+            alarm_state = status.get("alarmState", 0)
+            return bool(alarm_state == AssetAlarmState.ALARM.value)
+        return False
 
-    def needs_maintenance(self, asset: Asset) -> bool:
+    def is_in_warning(self, asset: Asset) -> bool:
         """
-        Check if an asset needs maintenance.
+        Check if an asset is in warning state.
 
         Args:
             asset: Asset to check
 
         Returns:
-            True if asset needs maintenance
+            True if asset is in warning
         """
-        return asset.state == AssetState.NEEDS_MAINTENANCE
+        status = self.get_status(
+            asset_id=asset.asset_id,
+            serial_number=asset.serial_number
+        )
+        if status:
+            alarm_state = status.get("alarmState", 0)
+            return bool(alarm_state == AssetAlarmState.WARNING.value)
+        return False
 
-    def get_assets_needing_maintenance(self) -> List[Asset]:
+    def get_assets_in_alarm(self) -> List[Asset]:
         """
-        Get all assets that need maintenance.
+        Get all assets that are in alarm state.
+
+        Note: This requires checking status for each asset.
+        For large datasets, consider using server-side filtering.
 
         Returns:
-            List of assets needing maintenance
+            List of assets in alarm
         """
         assets = self._repository.get_all()
-        return [a for a in assets if a.state == AssetState.NEEDS_MAINTENANCE]
+        result = []
+        for asset in assets:
+            status = self.get_status(
+                asset_id=asset.asset_id,
+                serial_number=asset.serial_number
+            )
+            if status and status.get("alarmState") == AssetAlarmState.ALARM.value:
+                result.append(asset)
+        return result
 
-    def get_assets_needing_calibration(self) -> List[Asset]:
+    def get_assets_in_warning(self) -> List[Asset]:
         """
-        Get all assets that need calibration.
+        Get all assets that are in warning state.
 
         Returns:
-            List of assets needing calibration
+            List of assets in warning
         """
         assets = self._repository.get_all()
-        return [a for a in assets if a.state == AssetState.NEEDS_CALIBRATION]
+        result = []
+        for asset in assets:
+            status = self.get_status(
+                asset_id=asset.asset_id,
+                serial_number=asset.serial_number
+            )
+            if status and status.get("alarmState") == AssetAlarmState.WARNING.value:
+                result.append(asset)
+        return result
 
     # =========================================================================
     # Count Operations
     # =========================================================================
 
-    def increment_count(self, asset_id: str, amount: int = 1) -> bool:
+    def increment_count(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        amount: int = 1,
+        increment_children: bool = False
+    ) -> bool:
         """
         Increment the usage count of an asset.
 
         Args:
             asset_id: Asset ID
+            serial_number: Asset serial number
             amount: Amount to increment by (default 1)
+            increment_children: Also increment child asset counts
 
         Returns:
             True if successful
         """
-        return self._repository.update_count(asset_id, increment_by=amount)
+        return self._repository.update_count(
+            asset_id=asset_id,
+            serial_number=serial_number,
+            increment_by=amount,
+            increment_children=increment_children
+        )
 
-    def reset_running_count(self, asset_id: str) -> bool:
+    def reset_running_count(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        comment: Optional[str] = None
+    ) -> bool:
         """
         Reset the running count of an asset.
 
         Args:
             asset_id: Asset ID
+            serial_number: Asset serial number
+            comment: Optional comment explaining reset
 
         Returns:
             True if successful
         """
-        return self._repository.reset_running_count(asset_id)
+        return self._repository.reset_running_count(
+            asset_id=asset_id,
+            serial_number=serial_number,
+            comment=comment
+        )
 
     # =========================================================================
     # Calibration & Maintenance
@@ -245,59 +364,59 @@ class AssetService:
 
     def record_calibration(
         self,
-        asset_id: str,
-        user: str,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
         comment: Optional[str] = None,
         calibration_date: Optional[datetime] = None
     ) -> bool:
         """
         Record a calibration event for an asset.
 
+        This resets the calibration interval timer and logs the event.
+
         Args:
             asset_id: Asset ID
-            user: User who performed calibration
+            serial_number: Asset serial number
             comment: Optional comment
             calibration_date: Date of calibration (default: now)
 
         Returns:
             True if successful
         """
-        data = {
-            "assetId": asset_id,
-            "user": user,
-            "date": (calibration_date or datetime.now()).isoformat()
-        }
-        if comment:
-            data["comment"] = comment
-        return self._repository.post_calibration(data)
+        return self._repository.post_calibration(
+            asset_id=asset_id,
+            serial_number=serial_number,
+            date_time=calibration_date,
+            comment=comment
+        )
 
     def record_maintenance(
         self,
-        asset_id: str,
-        user: str,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
         comment: Optional[str] = None,
         maintenance_date: Optional[datetime] = None
     ) -> bool:
         """
         Record a maintenance event for an asset.
 
+        This resets the maintenance interval timer and logs the event.
+
         Args:
             asset_id: Asset ID
-            user: User who performed maintenance
+            serial_number: Asset serial number
             comment: Optional comment
             maintenance_date: Date of maintenance (default: now)
 
         Returns:
             True if successful
         """
-        data = {
-            "assetId": asset_id,
-            "user": user,
-            "date": (maintenance_date or datetime.now()).isoformat()
-        }
-        if comment:
-            data["comment"] = comment
-        return self._repository.post_maintenance(data)
+        return self._repository.post_maintenance(
+            asset_id=asset_id,
+            serial_number=serial_number,
+            date_time=maintenance_date,
+            comment=comment
+        )
 
     # =========================================================================
     # Log Operations
@@ -355,8 +474,12 @@ class AssetService:
     def create_asset_type(
         self,
         type_name: str,
+        running_count_limit: Optional[int] = None,
+        total_count_limit: Optional[int] = None,
         calibration_interval: Optional[float] = None,
         maintenance_interval: Optional[float] = None,
+        warning_threshold: Optional[float] = None,
+        alarm_threshold: Optional[float] = None,
         **kwargs: Any
     ) -> Optional[AssetType]:
         """
@@ -364,8 +487,12 @@ class AssetService:
 
         Args:
             type_name: Name of the asset type
+            running_count_limit: Max running count (triggers alarm)
+            total_count_limit: Max total count
             calibration_interval: Days between calibrations
             maintenance_interval: Days between maintenance
+            warning_threshold: Warning threshold percentage (0-100)
+            alarm_threshold: Alarm threshold percentage (0-100)
             **kwargs: Additional fields
 
         Returns:
@@ -373,8 +500,12 @@ class AssetService:
         """
         asset_type = AssetType(
             type_name=type_name,
+            running_count_limit=running_count_limit,
+            total_count_limit=total_count_limit,
             calibration_interval=calibration_interval,
             maintenance_interval=maintenance_interval,
+            warning_threshold=warning_threshold,
+            alarm_threshold=alarm_threshold,
             **kwargs
         )
         return self._repository.save_type(asset_type)
@@ -383,14 +514,192 @@ class AssetService:
     # Sub-Assets
     # =========================================================================
 
-    def get_child_assets(self, parent_id: str) -> List[Asset]:
+    def get_child_assets(
+        self,
+        parent_id: Optional[str] = None,
+        parent_serial: Optional[str] = None,
+        level: Optional[int] = None
+    ) -> List[Asset]:
         """
         Get child assets of a parent.
 
         Args:
             parent_id: Parent asset ID
+            parent_serial: Parent asset serial number
+            level: Optional depth level (None = all levels)
 
         Returns:
             List of child Asset objects
         """
-        return self._repository.get_sub_assets(parent_id)
+        return self._repository.get_sub_assets(
+            parent_id=parent_id,
+            parent_serial=parent_serial,
+            level=level
+        )
+
+    def add_child_asset(
+        self,
+        parent_serial: str,
+        child_serial: str,
+        child_type_id: UUID,
+        child_name: Optional[str] = None,
+        **kwargs: Any
+    ) -> Optional[Asset]:
+        """
+        Create a new child asset under a parent.
+
+        Args:
+            parent_serial: Parent asset serial number
+            child_serial: New child asset serial number
+            child_type_id: Asset type ID for child
+            child_name: Optional display name for child
+            **kwargs: Additional asset fields
+
+        Returns:
+            Created child Asset object
+        """
+        child = Asset(
+            serial_number=child_serial,
+            type_id=child_type_id,
+            asset_name=child_name,
+            parent_serial_number=parent_serial,
+            **kwargs
+        )
+        return self._repository.save(child)
+
+    # =========================================================================
+    # File Operations
+    # =========================================================================
+
+    def upload_file(
+        self,
+        asset_id: str,
+        filename: str,
+        content: bytes
+    ) -> bool:
+        """
+        Upload a file attachment to an asset.
+
+        ⚠️ Uses internal API - requires base_url to be set.
+
+        Args:
+            asset_id: Asset ID
+            filename: Unique filename
+            content: File content as bytes
+
+        Returns:
+            True if successful
+        """
+        return self._repository.upload_file(
+            asset_id=asset_id,
+            filename=filename,
+            content=content,
+            base_url=self._base_url
+        )
+
+    def upload_file_from_path(
+        self,
+        asset_id: str,
+        file_path: Union[str, Path],
+        filename: Optional[str] = None
+    ) -> bool:
+        """
+        Upload a file from disk to an asset.
+
+        Args:
+            asset_id: Asset ID
+            file_path: Path to the file to upload
+            filename: Optional custom filename (defaults to original)
+
+        Returns:
+            True if successful
+        """
+        path = Path(file_path)
+        with open(path, "rb") as f:
+            content = f.read()
+        return self.upload_file(
+            asset_id=asset_id,
+            filename=filename or path.name,
+            content=content
+        )
+
+    def download_file(
+        self,
+        asset_id: str,
+        filename: str
+    ) -> Optional[bytes]:
+        """
+        Download a file attachment from an asset.
+
+        Args:
+            asset_id: Asset ID
+            filename: Filename to download
+
+        Returns:
+            File content as bytes, or None if not found
+        """
+        return self._repository.download_file(
+            asset_id=asset_id,
+            filename=filename,
+            base_url=self._base_url
+        )
+
+    def download_file_to_path(
+        self,
+        asset_id: str,
+        filename: str,
+        destination: Union[str, Path]
+    ) -> bool:
+        """
+        Download a file from an asset to disk.
+
+        Args:
+            asset_id: Asset ID
+            filename: Filename to download
+            destination: Path to save the file
+
+        Returns:
+            True if successful
+        """
+        content = self.download_file(asset_id=asset_id, filename=filename)
+        if content:
+            with open(destination, "wb") as f:
+                f.write(content)
+            return True
+        return False
+
+    def list_files(self, asset_id: str) -> List[str]:
+        """
+        List all file attachments for an asset.
+
+        Args:
+            asset_id: Asset ID
+
+        Returns:
+            List of filenames
+        """
+        return self._repository.list_files(
+            asset_id=asset_id,
+            base_url=self._base_url
+        )
+
+    def delete_files(
+        self,
+        asset_id: str,
+        filenames: List[str]
+    ) -> bool:
+        """
+        Delete file attachments from an asset.
+
+        Args:
+            asset_id: Asset ID
+            filenames: List of filenames to delete
+
+        Returns:
+            True if successful
+        """
+        return self._repository.delete_files(
+            asset_id=asset_id,
+            filenames=filenames,
+            base_url=self._base_url
+        )

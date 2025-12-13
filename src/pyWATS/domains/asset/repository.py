@@ -3,6 +3,7 @@
 Handles all API calls for asset management.
 """
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
+from datetime import datetime
 import logging
 
 if TYPE_CHECKING:
@@ -53,6 +54,15 @@ class AssetRepository:
         Get all assets with optional OData filtering.
 
         GET /api/Asset
+
+        Args:
+            filter_str: OData filter string (e.g., "assetType eq 'Station'")
+            orderby: OData order by string (e.g., "name asc")
+            top: Maximum number of assets to return
+            skip: Number of assets to skip (for pagination)
+
+        Returns:
+            List of Asset objects, empty list if none found
         """
         logger.debug(f"Fetching assets (filter={filter_str}, top={top})")
         params: Dict[str, Any] = {}
@@ -81,6 +91,12 @@ class AssetRepository:
         Get an asset by its ID.
 
         GET /api/Asset/{assetId}
+
+        Args:
+            asset_id: Asset UUID
+
+        Returns:
+            Asset object or None if not found
         """
         logger.debug(f"Fetching asset: {asset_id}")
         response = self._http_client.get(f"/api/Asset/{asset_id}")
@@ -96,6 +112,12 @@ class AssetRepository:
         Get an asset by its serial number.
 
         GET /api/Asset/{serialNumber}
+
+        Args:
+            serial_number: Asset serial number
+
+        Returns:
+            Asset object or None if not found
         """
         response = self._http_client.get(f"/api/Asset/{serial_number}")
         if response.is_success and response.data:
@@ -107,6 +129,12 @@ class AssetRepository:
         Create a new asset or update an existing one.
 
         PUT /api/Asset
+
+        Args:
+            asset: Asset object or dict with asset data
+
+        Returns:
+            Created/updated Asset object, or None on failure
         """
         if isinstance(asset, Asset):
             data = asset.model_dump(mode="json", by_alias=True, exclude_none=True)
@@ -117,51 +145,98 @@ class AssetRepository:
             return Asset.model_validate(response.data)
         return None
 
-    def delete(self, asset_id: str) -> bool:
+    def delete(self, asset_id: str, serial_number: Optional[str] = None) -> bool:
         """
-        Delete an asset.
+        Delete an asset by ID or serial number.
 
         DELETE /api/Asset
+        
+        Args:
+            asset_id: Asset ID (GUID)
+            serial_number: Asset serial number (alternative to asset_id)
+
+        Returns:
+            True if deleted successfully, False otherwise
         """
-        response = self._http_client.delete(
-            "/api/Asset",
-            params={"assetId": asset_id}
-        )
+        params: Dict[str, Any] = {}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        response = self._http_client.delete("/api/Asset", params=params)
         return response.is_success
 
     # =========================================================================
     # Asset Status and State
     # =========================================================================
 
-    def get_status(self, asset_id: str) -> Optional[Dict[str, Any]]:
+    def get_status(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        translate: bool = True,
+        culture_code: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
         """
-        Get the current status of an asset.
+        Get the current status of an asset including alarm state.
 
         GET /api/Asset/Status
+        
+        The status includes:
+        - state: Current asset state (AssetState)
+        - alarmState: 0=OK, 1=Warning, 2=Alarm
+        - message: Human-readable status message
+        - runningCount, totalCount, etc.
+        
+        Args:
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+            translate: Whether to translate messages
+            culture_code: Culture for translations (e.g., 'zh-CN')
+
+        Returns:
+            Dict with status information, or None if not found
         """
-        response = self._http_client.get(
-            "/api/Asset/Status",
-            params={"assetId": asset_id}
-        )
+        params: Dict[str, Any] = {}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        if not translate:
+            params["translate"] = "false"
+        if culture_code:
+            params["cultureCode"] = culture_code
+            
+        response = self._http_client.get("/api/Asset/Status", params=params)
         if response.is_success and response.data:
             return cast(Dict[str, Any], response.data)
         return None
 
     def set_state(
         self,
-        asset_id: str,
         state: Union[AssetState, int],
-        comment: Optional[str] = None
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
     ) -> bool:
         """
         Set the state of an asset.
 
         PUT /api/Asset/State
+        
+        Args:
+            state: New state (0-6)
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+
+        Returns:
+            True if state was set successfully, False otherwise
         """
         state_value = state.value if isinstance(state, AssetState) else state
-        params: Dict[str, Any] = {"assetId": asset_id, "state": state_value}
-        if comment:
-            params["comment"] = comment
+        params: Dict[str, Any] = {"state": state_value}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
         response = self._http_client.put("/api/Asset/State", params=params)
         return response.is_success
 
@@ -171,32 +246,70 @@ class AssetRepository:
 
     def update_count(
         self,
-        asset_id: str,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
         total_count: Optional[int] = None,
-        increment_by: Optional[int] = None
+        increment_by: Optional[int] = None,
+        increment_children: bool = False
     ) -> bool:
         """
         Increment the running and total count on an asset.
 
         PUT /api/Asset/Count
+        
+        Args:
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+            total_count: New total count (calculates increment)
+            increment_by: Direct increment value
+            increment_children: Also increment child assets
+
+        Returns:
+            True if count was updated successfully, False otherwise
         """
-        params: Dict[str, Any] = {"assetId": asset_id}
+        params: Dict[str, Any] = {}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
         if total_count is not None:
             params["totalCount"] = total_count
         if increment_by is not None:
             params["incrementBy"] = increment_by
+        if increment_children:
+            params["incrementChildren"] = "true"
         response = self._http_client.put("/api/Asset/Count", params=params)
         return response.is_success
 
-    def reset_running_count(self, asset_id: str) -> bool:
+    def reset_running_count(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        comment: Optional[str] = None
+    ) -> bool:
         """
         Reset the running count to 0.
 
         POST /api/Asset/ResetRunningCount
+        
+        Args:
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+            comment: Log message
+
+        Returns:
+            True if running count was reset successfully, False otherwise
         """
+        params: Dict[str, Any] = {}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        if comment:
+            params["comment"] = comment
         response = self._http_client.post(
             "/api/Asset/ResetRunningCount",
-            params={"assetId": asset_id}
+            params=params
         )
         return response.is_success
 
@@ -204,32 +317,76 @@ class AssetRepository:
     # Calibration
     # =========================================================================
 
-    def post_calibration(self, calibration_data: Dict[str, Any]) -> bool:
+    def post_calibration(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        date_time: Optional[datetime] = None,
+        comment: Optional[str] = None
+    ) -> bool:
         """
         Inform that an asset has been calibrated.
 
         POST /api/Asset/Calibration
+        
+        This resets the running count and updates the calibration dates.
+        
+        Args:
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+            date_time: Calibration date (default: now)
+            comment: Log message
+
+        Returns:
+            True if calibration was recorded successfully, False otherwise
         """
-        response = self._http_client.post(
-            "/api/Asset/Calibration",
-            data=calibration_data
-        )
+        params: Dict[str, Any] = {}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        if date_time:
+            params["dateTime"] = date_time.isoformat()
+        if comment:
+            params["comment"] = comment
+        response = self._http_client.post("/api/Asset/Calibration", params=params)
         return response.is_success
 
     # =========================================================================
     # Maintenance
     # =========================================================================
 
-    def post_maintenance(self, maintenance_data: Dict[str, Any]) -> bool:
+    def post_maintenance(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        date_time: Optional[datetime] = None,
+        comment: Optional[str] = None
+    ) -> bool:
         """
         Inform that an asset has had maintenance.
 
         POST /api/Asset/Maintenance
+        
+        Args:
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+            date_time: Maintenance date (default: now)
+            comment: Log message
+
+        Returns:
+            True if maintenance was recorded successfully, False otherwise
         """
-        response = self._http_client.post(
-            "/api/Asset/Maintenance",
-            data=maintenance_data
-        )
+        params: Dict[str, Any] = {}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        if date_time:
+            params["dateTime"] = date_time.isoformat()
+        if comment:
+            params["comment"] = comment
+        response = self._http_client.post("/api/Asset/Maintenance", params=params)
         return response.is_success
 
     # =========================================================================
@@ -247,6 +404,15 @@ class AssetRepository:
         Get asset log records.
 
         GET /api/Asset/Log
+
+        Args:
+            filter_str: OData filter string
+            orderby: OData order by string
+            top: Maximum number of log entries to return
+            skip: Number of entries to skip (for pagination)
+
+        Returns:
+            List of AssetLog objects, empty list if none found
         """
         params: Dict[str, Any] = {}
         if filter_str:
@@ -275,6 +441,14 @@ class AssetRepository:
         Post a message to the asset log.
 
         POST /api/Asset/Message
+
+        Args:
+            asset_id: Asset ID
+            message: Log message to post
+            user: User who posted the message (optional)
+
+        Returns:
+            True if message was posted successfully, False otherwise
         """
         data: Dict[str, Any] = {"assetId": asset_id, "comment": message}
         if user:
@@ -295,6 +469,13 @@ class AssetRepository:
         Get all asset types.
 
         GET /api/Asset/Types
+
+        Args:
+            filter_str: OData filter string
+            top: Maximum number of types to return
+
+        Returns:
+            List of AssetType objects, empty list if none found
         """
         params: Dict[str, Any] = {}
         if filter_str:
@@ -317,6 +498,12 @@ class AssetRepository:
         Create or update an asset type.
 
         PUT /api/Asset/Types
+
+        Args:
+            asset_type: AssetType object or dict with type data
+
+        Returns:
+            Created/updated AssetType object, or None on failure
         """
         if isinstance(asset_type, AssetType):
             data = asset_type.model_dump(by_alias=True, exclude_none=True)
@@ -331,16 +518,163 @@ class AssetRepository:
     # Sub-Assets
     # =========================================================================
 
-    def get_sub_assets(self, parent_id: str) -> List[Asset]:
+    def get_sub_assets(
+        self,
+        parent_id: Optional[str] = None,
+        parent_serial: Optional[str] = None,
+        level: Optional[int] = None
+    ) -> List[Asset]:
         """
         Get child assets of a parent asset.
 
         GET /api/Asset/SubAssets
+        
+        Args:
+            parent_id: Parent asset ID
+            parent_serial: Parent asset serial number (alternative)
+            level: How many levels deep (0=all, 1=direct children)
+
+        Returns:
+            List of child Asset objects, empty list if none found
         """
-        response = self._http_client.get(
-            "/api/Asset/SubAssets",
-            params={"parentId": parent_id}
-        )
+        params: Dict[str, Any] = {}
+        if parent_id:
+            params["id"] = parent_id
+        if parent_serial:
+            params["serialNumber"] = parent_serial
+        if level is not None:
+            params["level"] = level
+        response = self._http_client.get("/api/Asset/SubAssets", params=params)
         if response.is_success and response.data:
             return [Asset.model_validate(item) for item in response.data]
         return []
+
+    # =========================================================================
+    # File Operations (Internal API)
+    # =========================================================================
+
+    def upload_file(
+        self,
+        asset_id: str,
+        filename: str,
+        content: bytes,
+        base_url: str
+    ) -> bool:
+        """
+        Upload a file to an asset.
+
+        POST /api/internal/Blob/Asset
+        
+        ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
+        
+        Args:
+            asset_id: Asset ID
+            filename: Unique filename
+            content: File content as bytes
+            base_url: Base URL for Referer header
+
+        Returns:
+            True if file was uploaded successfully, False otherwise
+        """
+        params = {"assetId": asset_id, "filename": filename}
+        response = self._http_client.post(
+            "/api/internal/Blob/Asset",
+            params=params,
+            data=content,
+            headers={
+                "Referer": base_url,
+                "Content-Type": "application/octet-stream"
+            }
+        )
+        return response.is_success
+
+    def download_file(
+        self,
+        asset_id: str,
+        filename: str,
+        base_url: str
+    ) -> Optional[bytes]:
+        """
+        Download a file from an asset.
+
+        GET /api/internal/Blob/Asset
+        
+        ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
+        
+        Args:
+            asset_id: Asset ID
+            filename: Filename to download
+            base_url: Base URL for Referer header
+            
+        Returns:
+            File content as bytes, or None if not found
+        """
+        params = {"assetId": asset_id, "filename": filename}
+        response = self._http_client.get(
+            "/api/internal/Blob/Asset",
+            params=params,
+            headers={"Referer": base_url}
+        )
+        if response.is_success:
+            # Response might be raw bytes or JSON
+            if isinstance(response.data, bytes):
+                return response.data
+            # If it's a dict, it might contain base64 encoded content
+            if isinstance(response.data, dict):
+                import base64
+                content = response.data.get("content") or response.data.get("Content")
+                if content:
+                    return base64.b64decode(content)
+        return None
+
+    def list_files(self, asset_id: str, base_url: str) -> List[str]:
+        """
+        List all files attached to an asset.
+
+        GET /api/internal/Blob/Asset/List/{assetId}
+        
+        ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
+        
+        Args:
+            asset_id: Asset ID
+            base_url: Base URL for Referer header
+            
+        Returns:
+            List of filenames
+        """
+        response = self._http_client.get(
+            f"/api/internal/Blob/Asset/List/{asset_id}",
+            headers={"Referer": base_url}
+        )
+        if response.is_success and response.data:
+            return list(response.data) if isinstance(response.data, list) else []
+        return []
+
+    def delete_files(
+        self,
+        asset_id: str,
+        filenames: List[str],
+        base_url: str
+    ) -> bool:
+        """
+        Delete files from an asset.
+
+        DELETE /api/internal/Blob/Assets
+        
+        ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
+        
+        Args:
+            asset_id: Asset ID
+            filenames: List of filenames to delete
+            base_url: Base URL for Referer header
+
+        Returns:
+            True if files were deleted successfully, False otherwise
+        """
+        response = self._http_client.delete(
+            "/api/internal/Blob/Assets",
+            params={"assetId": asset_id},
+            data=filenames,
+            headers={"Referer": base_url}
+        )
+        return response.is_success

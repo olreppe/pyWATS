@@ -34,7 +34,7 @@ class ProcessRepository:
             http_client: The HTTP client for API calls
             error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
-        self._http = http_client
+        self._http_client = http_client
         # Import here to avoid circular imports
         from ...core.exceptions import ErrorHandler, ErrorMode
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)

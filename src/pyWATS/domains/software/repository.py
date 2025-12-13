@@ -77,7 +77,7 @@ class SoftwareRepository:
     def get_package_by_name(
         self,
         name: str,
-        status: Optional[PackageStatus] = None,
+        status: Optional[Union[PackageStatus, str]] = None,
         version: Optional[int] = None,
     ) -> Optional[Package]:
         """
@@ -87,7 +87,7 @@ class SoftwareRepository:
 
         Args:
             name: Package name
-            status: Optional status filter
+            status: Optional status filter (PackageStatus enum or string)
             version: Optional specific version number
 
         Returns:
@@ -95,7 +95,8 @@ class SoftwareRepository:
         """
         params: Dict[str, Any] = {"name": name}
         if status:
-            params["status"] = status.value
+            # Handle both enum and string
+            params["status"] = status.value if hasattr(status, 'value') else status
         if version is not None:
             params["version"] = version
         response = self._http_client.get("/api/Software/PackageByName", params=params)
@@ -107,7 +108,7 @@ class SoftwareRepository:
         self,
         tag: str,
         value: str,
-        status: Optional[PackageStatus] = None,
+        status: Optional[Union[PackageStatus, str]] = None,
     ) -> List[Package]:
         """
         Get packages filtered by tag.
@@ -117,14 +118,15 @@ class SoftwareRepository:
         Args:
             tag: Tag name to filter by
             value: Tag value to match
-            status: Optional status filter
+            status: Optional status filter (PackageStatus enum or string)
 
         Returns:
             List of matching Package objects
         """
         params = {"tag": tag, "value": value}
         if status:
-            params["status"] = status.value
+            # Handle both enum and string
+            params["status"] = status.value if hasattr(status, 'value') else status
         response = self._http_client.get("/api/Software/PackagesByTag", params=params)
         if response.is_success and response.data:
             if isinstance(response.data, list):
@@ -174,7 +176,8 @@ class SoftwareRepository:
         Returns:
             Updated Package object or None
         """
-        data = package.model_dump(by_alias=True, exclude_none=True)
+        # Use mode="json" to properly serialize UUIDs, datetimes, and enums
+        data = package.model_dump(mode="json", by_alias=True, exclude_none=True)
         response = self._http_client.put(
             f"/api/Software/Package/{package_id}", data=data
         )
