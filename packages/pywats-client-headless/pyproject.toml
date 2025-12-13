@@ -40,7 +40,7 @@ keywords = [
 dependencies = [
     "pywats>=2.0.0",
     "pywats-client-service>=2.0.0",
-    "aiohttp>=3.8.0",
+    "aiohttp>=3.9.4",
 ]
 requires-python = ">=3.8"
 
