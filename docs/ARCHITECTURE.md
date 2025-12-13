@@ -454,3 +454,154 @@ See module-specific documentation in `docs/usage/`:
 - [Product Module](usage/PRODUCT_MODULE.md) - Product/BOM management
 - [Production Module](usage/PRODUCTION_MODULE.md) - Serial number tracking
 - [Asset Module](usage/ASSET_MODULE.md) - Equipment management
+
+---
+
+## pyWATS Client Architecture
+
+The pyWATS Client (`pywats_client`) provides a complete application layer on top of the pyWATS API. It supports both GUI and headless operation modes.
+
+### Client Architecture Layers
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   User Interface Layer                       │
+├─────────────────┬─────────────────┬─────────────────────────┤
+│   Qt GUI        │   CLI           │   HTTP Control API      │
+│   (PySide6)     │   (argparse)    │   (stdlib http.server)  │
+│   Desktop only  │   Headless      │   Remote management     │
+│   gui/          │   control/cli   │   control/http_api      │
+└────────┬────────┴────────┬────────┴────────┬────────────────┘
+         │                 │                 │
+         └─────────────────┴─────────────────┘
+                           │
+         ┌─────────────────┴─────────────────┐
+         │      pyWATSApplication (app.py)    │
+         │      Core application - No GUI     │
+         │      Service lifecycle management  │
+         └─────────────────┬─────────────────┘
+                           │
+         ┌─────────────────┴─────────────────┐
+         │          Services Layer            │
+         │  services/                         │
+         │  ├── connection.py                 │
+         │  ├── process_sync.py               │
+         │  ├── report_queue.py               │
+         │  ├── converter_manager.py          │
+         │  └── settings_manager.py           │
+         └─────────────────┬─────────────────┘
+                           │
+         ┌─────────────────┴─────────────────┐
+         │           pyWATS API               │
+         │           (pywats/)                │
+         └───────────────────────────────────┘
+```
+
+### Installation Profiles
+
+| Profile | Command | Qt Required | Use Case |
+|---------|---------|-------------|----------|
+| API Only | `pip install pywats-api` | No | Python scripts, integrations |
+| Full Client | `pip install pywats-api[client]` | Yes | Desktop workstations |
+| Headless | `pip install pywats-api[client-headless]` | No | Raspberry Pi, servers, Docker |
+
+### GUI Mode (Desktop)
+
+The Qt GUI (`gui/`) provides a full desktop application:
+
+```bash
+python -m pywats_client
+# or
+pywats-client  # (without arguments defaults to GUI)
+```
+
+Components:
+- `gui/app.py` - Application entry point
+- `gui/main_window.py` - Main window with navigation
+- `gui/login_window.py` - Authentication
+- `gui/settings_dialog.py` - Configuration UI
+- `gui/pages/` - Feature pages (converters, queue, log)
+
+### Headless Mode (CLI/API)
+
+The control module (`control/`) enables headless operation:
+
+```bash
+# CLI commands
+pywats-client config show
+pywats-client status
+pywats-client start --api --api-port 8765
+
+# Run as daemon (Linux)
+pywats-client start --daemon
+```
+
+Components:
+- `control/cli.py` - Command-line interface
+- `control/http_api.py` - REST API server (stdlib, no dependencies)
+- `control/service.py` - Daemon/service runner
+
+### Control Interfaces Comparison
+
+| Interface | Port | Use Case | Dependency |
+|-----------|------|----------|------------|
+| CLI | - | Local management, scripting | None |
+| HTTP API | 8765 | Remote management, monitoring | None |
+| GUI | - | Interactive desktop use | PySide6 |
+
+### HTTP API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/status` | Service status |
+| GET | `/config` | Get configuration |
+| POST | `/config` | Update configuration |
+| GET | `/converters` | List converters |
+| POST | `/start` | Start services |
+| POST | `/stop` | Stop services |
+| POST | `/restart` | Restart services |
+
+### Deployment Patterns
+
+#### Desktop Workstation
+```bash
+pip install pywats-api[client]
+python -m pywats_client  # GUI
+```
+
+#### Raspberry Pi / Embedded
+```bash
+pip install pywats-api[client-headless]
+pywats-client config init --server-url https://wats.example.com
+pywats-client start --api  # With remote management
+```
+
+#### Linux Server (systemd)
+```bash
+pip install pywats-api[client-headless]
+sudo cp pywats-client.service /etc/systemd/system/
+sudo systemctl enable pywats-client
+sudo systemctl start pywats-client
+```
+
+#### Docker Container
+```dockerfile
+FROM python:3.11-slim
+RUN pip install pywats-api[client-headless]
+CMD ["pywats-client", "start", "--api", "--api-host", "0.0.0.0"]
+```
+
+### Service Layer Details
+
+All services are GUI-independent and can run headless:
+
+| Service | Purpose | Key Features |
+|---------|---------|--------------|
+| `ConnectionService` | Server connectivity | Auto-reconnect, status monitoring |
+| `ProcessSyncService` | Process data sync | Incremental sync, offline cache |
+| `ReportQueueService` | Report upload queue | Retry logic, persistent storage |
+| `ConverterManager` | File conversion | File watching, plugin loading |
+| `SettingsManager` | Configuration | JSON persistence, validation |
+
+See [Headless Operation Guide](../src/pywats_client/control/HEADLESS_GUIDE.md) for complete setup instructions.

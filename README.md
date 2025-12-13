@@ -12,10 +12,12 @@ A Python library for interacting with the WATS (Web-based Automated Test System)
   - RootCause ticket system
   - Statistics and analytics
 
-- **pyWATS Client** (`src/pywats_client/`) - Desktop GUI application
+- **pyWATS Client** (`src/pywats_client/`) - Desktop and headless client application
   - Connection management
   - Converter configuration
   - Report queue management
+  - **GUI Mode**: Qt-based desktop application (Windows, macOS, Linux)
+  - **Headless Mode**: CLI and HTTP API for servers, Raspberry Pi, embedded systems
 
 ## Installation
 
@@ -29,8 +31,14 @@ python -m venv .venv
 .venv\Scripts\activate  # Windows
 source .venv/bin/activate  # Linux/Mac
 
-# Install dependencies
+# Install core API only
 pip install -e .
+
+# Install with GUI client (requires Qt)
+pip install -e ".[client]"
+
+# Install headless client (no Qt - for Raspberry Pi, servers)
+pip install -e ".[client-headless]"
 ```
 
 ## Configuration
@@ -108,6 +116,45 @@ The GUI supports modular tab configuration and logging control:
 
 See [GUI Configuration Guide](src/pywats_client/GUI_CONFIGURATION.md) for detailed setup instructions.
 
+## Running Headless (Raspberry Pi, Servers)
+
+For systems without display or Qt support:
+
+```bash
+# Initialize configuration
+pywats-client config init
+
+# Test connection
+pywats-client test-connection
+
+# Run service with HTTP control API
+pywats-client start --api --api-port 8765
+
+# Run as daemon (Linux)
+pywats-client start --daemon
+```
+
+### CLI Commands
+
+```bash
+pywats-client config show          # Show configuration
+pywats-client config set key value # Set config value
+pywats-client status               # Show service status
+pywats-client converters list      # List converters
+```
+
+### HTTP Control API
+
+When running with `--api`, manage the service remotely:
+
+```bash
+curl http://localhost:8765/status    # Get status
+curl http://localhost:8765/config    # Get configuration
+curl -X POST http://localhost:8765/restart  # Restart services
+```
+
+See [Headless Operation Guide](src/pywats_client/control/HEADLESS_GUIDE.md) for complete documentation.
+
 ## Project Structure
 
 ```
@@ -117,9 +164,10 @@ pyWATS/
 │   │   ├── models/          # Pydantic data models
 │   │   ├── modules/         # High-level API modules
 │   │   └── rest_api/        # REST API wrappers
-│   └── pywats_client/       # GUI application
+│   └── pywats_client/       # Client application
 │       ├── core/            # Core client functionality
-│       ├── gui/             # GUI components
+│       ├── gui/             # Qt GUI components (optional)
+│       ├── control/         # Headless control (CLI, HTTP API)
 │       └── services/        # Background services
 ├── converters/              # User converter plugins
 ├── docs/                    # Documentation
@@ -151,6 +199,7 @@ pyWATS/
 - [Quick Reference](QUICK_REFERENCE.md) - API quick reference
 - [Logging Strategy](LOGGING_STRATEGY.md) - Comprehensive logging guide ⭐
 - [GUI Configuration](src/pywats_client/GUI_CONFIGURATION.md) - Client GUI setup and tab customization ⭐
+- [Headless Operation](src/pywats_client/control/HEADLESS_GUIDE.md) - CLI, HTTP API, Raspberry Pi setup ⭐
 
 ## Testing
 

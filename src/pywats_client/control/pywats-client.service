@@ -1,0 +1,66 @@
+# pyWATS Client - Systemd Service Configuration
+#
+# Installation (Raspberry Pi / Linux):
+# 1. Copy this file to /etc/systemd/system/pywats-client.service
+# 2. Edit the User, WorkingDirectory, and ExecStart paths
+# 3. Enable and start:
+#    sudo systemctl daemon-reload
+#    sudo systemctl enable pywats-client
+#    sudo systemctl start pywats-client
+#
+# Logs:
+#    journalctl -u pywats-client -f
+
+[Unit]
+Description=pyWATS Client Service
+Documentation=https://github.com/olreppe/pyWATS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# User to run as (change this!)
+User=pi
+Group=pi
+
+# Working directory (change this!)
+WorkingDirectory=/home/pi/pywats
+
+# Python virtual environment and command
+# Option 1: Using venv
+ExecStart=/home/pi/pywats/.venv/bin/python -m pywats_client start --api
+
+# Option 2: System Python (if installed system-wide)
+# ExecStart=/usr/bin/python3 -m pywats_client start --api
+
+# Configuration file location (optional)
+# Environment=PYWATS_CONFIG=/home/pi/.pywats_client/config.json
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Process management
+KillMode=mixed
+TimeoutStopSec=30
+
+# Security hardening (optional)
+# NoNewPrivileges=yes
+# ProtectSystem=strict
+# ProtectHome=read-only
+# PrivateTmp=yes
+
+# Resource limits (optional)
+# MemoryMax=256M
+# CPUQuota=50%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pywats-client
+
+[Install]
+WantedBy=multi-user.target

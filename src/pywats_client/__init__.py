@@ -6,10 +6,21 @@ Features:
 - Offline report storage and automatic upload when online
 - Converter framework for file-to-report conversion
 - Qt-based GUI (optional - can run headless)
+- CLI interface for headless configuration and control
+- HTTP control API for remote management
 - Multi-instance support
 - Persistent settings and serial number management
 - File monitoring and auto-conversion
-- Service/daemon mode support
+- Service/daemon mode support (systemd, Windows Service)
+
+Installation Profiles:
+- pip install pywats-api[client]          # Full client with Qt GUI
+- pip install pywats-api[client-headless] # Headless only (no Qt)
+
+Usage:
+- GUI Mode:      python -m pywats_client
+- CLI Mode:      pywats-client config show
+- Service Mode:  pywats-client start --api --daemon
 """
 
 __version__ = "1.0.0"
@@ -47,6 +58,10 @@ from .converters.base import (
     FileInfo,
     CSVConverter,
 )
+
+# Control interfaces (headless)
+from .control.service import HeadlessService, ServiceConfig
+from .control.cli import ConfigCLI, cli_main
 
 __all__ = [
     # Core
@@ -91,4 +106,10 @@ __all__ = [
     "PostProcessAction",
     "FileInfo",
     "CSVConverter",
+    
+    # Control interfaces (headless)
+    "HeadlessService",
+    "ServiceConfig",
+    "ConfigCLI",
+    "cli_main",
 ]

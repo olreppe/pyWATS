@@ -1,0 +1,8 @@
+# Test Instance Data Directory
+# ============================
+# This directory contains runtime data for test instances.
+# Contents are gitignored to avoid committing test artifacts.
+
+*
+!.gitignore
+!README.md

@@ -1,0 +1,11 @@
+{
+  "instance_id": "A",
+  "name": "Test Client A",
+  "description": "Primary test instance - standard configuration",
+  "base_url": "https://python.wats.com",
+  "token": "cHlXQVRTX0FQSV9BVVRPVEVTVDo2cGhUUjg0ZTVIMHA1R3JUWGtQZlY0UTNvbmk2MiM=",
+  "station_name": "TEST-STATION-A",
+  "location": "Test Lab Alpha",
+  "converters_enabled": true,
+  "offline_mode": false
+}

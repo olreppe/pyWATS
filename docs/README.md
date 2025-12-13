@@ -79,6 +79,20 @@ Detailed guides for each domain module:
   - Quick guide for converter development
   - Common patterns
 
+### Client Application
+
+- **[GUI Configuration](../src/pywats_client/GUI_CONFIGURATION.md)**
+  - Tab visibility settings
+  - Debug logging integration
+  - Multi-instance support
+
+- **[Headless Operation Guide](../src/pywats_client/control/HEADLESS_GUIDE.md)** ⭐
+  - CLI commands reference
+  - HTTP control API
+  - Raspberry Pi setup
+  - systemd service configuration
+  - Docker deployment
+
 ### REST API
 
 - **[REST API Instructions](REST_API_INSTRUCTION.md)**

@@ -35,8 +35,14 @@ dependencies = [
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
+# Full client with Qt GUI (Windows, macOS, Linux desktop)
 client = [
     "PySide6>=6.4.0",
+    "watchdog>=3.0.0",
+    "aiofiles>=23.0.0",
+]
+# Headless client without Qt (Raspberry Pi, servers, embedded)
+client-headless = [
     "watchdog>=3.0.0",
     "aiofiles>=23.0.0",
 ]
