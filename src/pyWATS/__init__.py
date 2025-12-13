@@ -32,6 +32,7 @@ from .exceptions import (
     ConnectionError
 )
 from .core.logging import enable_debug_logging
+from .core.station import Station, StationRegistry, StationConfig, Purpose
 
 # Import commonly used models from domains for convenience
 from .domains.product import Product, ProductRevision, ProductGroup, ProductView
@@ -59,6 +60,11 @@ __version__ = "2.0.0"
 __all__ = [
     # Main class
     "pyWATS",
+    # Station concept
+    "Station",
+    "StationRegistry",
+    "StationConfig",
+    "Purpose",
     # Logging utilities
     "enable_debug_logging",
     # Exceptions

@@ -3,9 +3,10 @@
 The main entry point for the pyWATS library.
 """
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 from .core.client import HttpClient
+from .core.station import Station, StationRegistry
 
 logger = logging.getLogger(__name__)
 from .core.exceptions import ErrorMode, ErrorHandler
@@ -42,6 +43,23 @@ class pyWATS:
     - app: Statistics and KPIs
     - rootcause: Ticketing system for issue collaboration
     
+    Station Configuration:
+        pyWATS supports a Station concept for managing test station identity.
+        A Station encapsulates: name (machineName), location, and purpose.
+        
+        Single station mode (most common):
+            api = pyWATS(
+                base_url="https://your-wats-server.com",
+                token="your-api-token",
+                station=Station("TEST-STATION-01", "Lab A", "Production")
+            )
+        
+        Multi-station mode (hub):
+            api = pyWATS(base_url="...", token="...")
+            api.stations.add("line-1", Station("PROD-LINE-1", "Building A", "Production"))
+            api.stations.add("line-2", Station("PROD-LINE-2", "Building A", "Production"))
+            api.stations.set_active("line-1")
+    
     Usage:
         from pywats import pyWATS
         
@@ -75,6 +93,7 @@ class pyWATS:
         self,
         base_url: str,
         token: str,
+        station: Optional[Station] = None,
         timeout: int = 30,
         process_refresh_interval: int = DEFAULT_PROCESS_REFRESH_INTERVAL,
         error_mode: ErrorMode = ErrorMode.STRICT
@@ -85,6 +104,9 @@ class pyWATS:
         Args:
             base_url: Base URL of the WATS server (e.g., "https://your-wats.com")
             token: API token (Base64-encoded credentials)
+            station: Default station configuration for reports. If provided,
+                     this station's name, location, and purpose will be used
+                     when creating reports (unless overridden).
             timeout: Request timeout in seconds (default: 30)
             process_refresh_interval: Process cache refresh interval in seconds (default: 300)
             error_mode: Error handling mode (STRICT or LENIENT). Default is STRICT.
@@ -97,6 +119,12 @@ class pyWATS:
         self._process_refresh_interval = process_refresh_interval
         self._error_mode = error_mode
         self._error_handler = ErrorHandler(error_mode)
+        
+        # Station configuration
+        self._station: Optional[Station] = station
+        self._station_registry = StationRegistry()
+        if station:
+            self._station_registry.set_default(station)
         
         # Initialize HTTP client
         self._http_client = HttpClient(
@@ -205,7 +233,7 @@ class pyWATS:
         """
         if self._report is None:
             repo = ReportRepository(self._http_client, self._error_handler)
-            self._report = ReportService(repo)
+            self._report = ReportService(repo, station_provider=self._get_station)
         return self._report
     
     @property
@@ -328,6 +356,73 @@ class pyWATS:
     def error_mode(self) -> ErrorMode:
         """Get the configured error handling mode."""
         return self._error_mode
+    
+    # -------------------------------------------------------------------------
+    # Station Configuration
+    # -------------------------------------------------------------------------
+    
+    @property
+    def station(self) -> Optional[Station]:
+        """
+        Get the currently active station.
+        
+        Returns the active station from the registry, or the default station
+        if no active station is set.
+        
+        Returns:
+            Active Station or None
+        """
+        return self._station_registry.active or self._station
+    
+    @station.setter
+    def station(self, station: Optional[Station]) -> None:
+        """
+        Set the default station.
+        
+        This station will be used for reports when no station is explicitly
+        specified.
+        
+        Args:
+            station: Station to set as default
+        """
+        self._station = station
+        if station:
+            self._station_registry.set_default(station)
+    
+    @property
+    def stations(self) -> StationRegistry:
+        """
+        Access the station registry for multi-station support.
+        
+        Use this for scenarios where a single client handles reports
+        from multiple stations (hub mode).
+        
+        Example:
+            # Add stations
+            api.stations.add("line-1", Station("PROD-LINE-1", "Building A", "Production"))
+            api.stations.add("line-2", Station("PROD-LINE-2", "Building A", "Production"))
+            
+            # Set active station
+            api.stations.set_active("line-1")
+            
+            # Get active station
+            station = api.stations.active
+        
+        Returns:
+            StationRegistry instance
+        """
+        return self._station_registry
+    
+    def _get_station(self) -> Optional[Station]:
+        """
+        Internal method to get the current station.
+        
+        Used by services that need station information.
+        
+        Returns:
+            Current station or None
+        """
+        return self.station
     
     # -------------------------------------------------------------------------
     # Utility Methods

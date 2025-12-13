@@ -2,7 +2,7 @@
 
 All business operations for test reports (UUT/UUR).
 """
-from typing import Optional, List, Dict, Any, overload
+from typing import Optional, List, Dict, Any, overload, Callable, Union, TYPE_CHECKING
 from datetime import datetime, timedelta
 from uuid import uuid4, UUID
 
@@ -13,22 +13,90 @@ from .report_models import UUTReport, UURReport
 from .report_models.uut.uut_info import UUTInfo
 from .report_models.uur.uur_info import UURInfo
 
+if TYPE_CHECKING:
+    from pywats.core.station import Station
+
 
 class ReportService:
     """
     Report business logic layer.
 
     Provides high-level operations for working with WATS test reports.
+    
+    Supports station configuration through:
+    - Explicit Station parameter on report creation methods
+    - Legacy station_name/location/purpose parameters
+    - Default station from pyWATS API instance
     """
 
-    def __init__(self, repository: ReportRepository):
+    def __init__(
+        self, 
+        repository: ReportRepository,
+        station_provider: Optional[Callable[[], Optional["Station"]]] = None
+    ):
         """
         Initialize with ReportRepository.
 
         Args:
             repository: ReportRepository instance for data access
+            station_provider: Optional callable that returns the current Station
         """
         self._repository = repository
+        self._station_provider = station_provider
+    
+    def _resolve_station(
+        self,
+        station: Optional["Station"] = None,
+        station_name: Optional[str] = None,
+        location: Optional[str] = None,
+        purpose: Optional[str] = None
+    ) -> tuple:
+        """
+        Resolve station information from various sources.
+        
+        Priority:
+        1. Explicit Station object
+        2. Legacy station_name/location/purpose parameters
+        3. Default station from API (via station_provider)
+        4. Fallback to "Unknown" values
+        
+        Args:
+            station: Explicit Station object
+            station_name: Legacy station name parameter
+            location: Legacy location parameter
+            purpose: Legacy purpose parameter
+            
+        Returns:
+            Tuple of (station_name, location, purpose)
+        """
+        # Priority 1: Explicit Station object
+        if station is not None:
+            return (station.name, station.location, station.purpose)
+        
+        # Priority 2: Legacy parameters (if station_name is provided)
+        if station_name:
+            return (
+                station_name,
+                location or "",
+                purpose or "Development"
+            )
+        
+        # Priority 3: Default station from API
+        if self._station_provider:
+            default_station = self._station_provider()
+            if default_station:
+                return (
+                    default_station.name,
+                    location or default_station.location,
+                    purpose or default_station.purpose
+                )
+        
+        # Priority 4: Fallback
+        return (
+            "Unknown",
+            location or "Unknown",
+            purpose or "Development"
+        )
 
     # =========================================================================
     # Report Factory Methods
@@ -41,6 +109,7 @@ class ReportService:
         revision: str,
         serial_number: str,
         operation_type: int,
+        station: Optional["Station"] = None,
         station_name: Optional[str] = None,
         location: Optional[str] = None,
         purpose: Optional[str] = None
@@ -54,18 +123,31 @@ class ReportService:
             revision: Revision of the unit
             serial_number: Serial number of the unit
             operation_type: Process code/operation type
-            station_name: Optional station name
-            location: Optional location
-            purpose: Optional purpose
+            station: Station object with name, location, and purpose
+            station_name: Optional station name (legacy, use station instead)
+            location: Optional location (legacy, use station instead)
+            purpose: Optional purpose (legacy, use station instead)
 
         Returns:
             A new UUTReport object ready for adding steps and submission
+        
+        Note:
+            Station information priority:
+            1. Explicit station parameter
+            2. Legacy station_name/location/purpose parameters
+            3. API's default station (from pyWATS instance)
+            4. Fallback to "Unknown" values
         
         See Also:
             For a fluent interface with comprehensive factory methods:
                 from pywats.tools.test_uut import TestUUT
                 report = TestUUT(pn, sn, rev, operator, process_code).get_root()
         """
+        # Resolve station information
+        resolved_station_name, resolved_location, resolved_purpose = self._resolve_station(
+            station, station_name, location, purpose
+        )
+        
         uut_info = UUTInfo(
             operator=operator
         )
@@ -77,9 +159,9 @@ class ReportService:
             sn=serial_number,
             rev=revision,
             process_code=operation_type,
-            station_name=station_name or "Unknown",
-            location=location or "Unknown",
-            purpose=purpose or "Development",
+            station_name=resolved_station_name,
+            location=resolved_location,
+            purpose=resolved_purpose,
             start=datetime.now().astimezone(),
             info=uut_info
         )
@@ -98,6 +180,7 @@ class ReportService:
         *,
         repair_process_code: int = 500,
         operator: Optional[str] = None,
+        station: Optional["Station"] = None,
         station_name: Optional[str] = None,
         location: Optional[str] = None,
         comment: Optional[str] = None
@@ -115,6 +198,7 @@ class ReportService:
         repair_process_code: int = 500,
         revision: str = "A",
         operator: Optional[str] = None,
+        station: Optional["Station"] = None,
         station_name: Optional[str] = None,
         location: Optional[str] = None,
         comment: Optional[str] = None
@@ -130,6 +214,7 @@ class ReportService:
         repair_process_code: int = 500,
         revision: str = "A",
         operator: Optional[str] = None,
+        station: Optional["Station"] = None,
         station_name: Optional[str] = None,
         location: Optional[str] = None,
         comment: Optional[str] = None
@@ -148,6 +233,7 @@ class ReportService:
         # Dual process codes (key UUR architectural feature)
         repair_process_code: int = 500,
         test_operation_code: Optional[int] = None,
+        station: Optional["Station"] = None,
         station_name: Optional[str] = None,
         location: Optional[str] = None,
         purpose: Optional[str] = None,
@@ -292,6 +378,14 @@ class ReportService:
         if not sn:
             raise ValueError("serial_number is required")
 
+        # Resolve station information
+        resolved_station_name, resolved_location, resolved_purpose = self._resolve_station(
+            station, station_name, location, purpose
+        )
+        # Default purpose for UUR is "Repair"
+        if resolved_purpose == "Development":
+            resolved_purpose = "Repair"
+
         # Get current timestamp for timing fields
         now = datetime.now().astimezone()
 
@@ -319,9 +413,9 @@ class ReportService:
             sn=sn,
             rev=rev,
             process_code=repair_process_code,  # Repair operation (500, 510, etc.)
-            station_name=station_name or "Unknown",
-            location=location or "Unknown",
-            purpose=purpose or "Repair",
+            station_name=resolved_station_name,
+            location=resolved_location,
+            purpose=resolved_purpose,
             start=datetime.now().astimezone(),
             uur_info=uur_info
         )

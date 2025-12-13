@@ -347,7 +347,7 @@ class MainWindow(QMainWindow):
         self._nav_list.setCurrentRow(0)
     
     def _create_status_bar(self) -> None:
-        """Create status bar"""
+        """Create status bar with station indicator"""
         status_bar = self.statusBar()
         
         # Connection status
@@ -356,9 +356,31 @@ class MainWindow(QMainWindow):
         
         status_bar.addWidget(QLabel(" | "))
         
+        # Station indicator (shows effective station name)
+        station_label = QLabel("Station:")
+        status_bar.addWidget(station_label)
+        
+        self._station_status_label = QLabel(self._get_effective_station_display())
+        self._station_status_label.setToolTip("Active station name for reports")
+        status_bar.addWidget(self._station_status_label)
+        
+        status_bar.addWidget(QLabel(" | "))
+        
         # Instance info
         self._instance_label = QLabel(f"Instance: {self.config.instance_id}")
         status_bar.addWidget(self._instance_label)
+    
+    def _get_effective_station_display(self) -> str:
+        """Get the effective station name for status bar display."""
+        station_name = self.config.get_effective_station_name()
+        if self.config.multi_station_enabled:
+            return f"📍 {station_name}"
+        return station_name
+    
+    def _update_station_status(self) -> None:
+        """Update station display in status bar."""
+        if hasattr(self, '_station_status_label'):
+            self._station_status_label.setText(self._get_effective_station_display())
     
     def _apply_styles(self) -> None:
         """Apply dark theme stylesheet"""
@@ -378,6 +400,9 @@ class MainWindow(QMainWindow):
         if "Setup" in self._pages:
             setup_page = cast(SetupPage, self._pages["Setup"])
             setup_page.connection_changed.connect(self._on_connection_request)
+            # Connect station change signal to update status bar
+            if hasattr(setup_page, 'station_changed'):
+                setup_page.station_changed.connect(self._update_station_status)
     
     @Slot(bool)
     def _on_connection_request(self, should_connect: bool) -> None:
@@ -593,6 +618,8 @@ class MainWindow(QMainWindow):
         Creates a comprehensive test report with various test types
         and submits it to the WATS server.
         
+        Uses effective station info from config (respects multi-station mode).
+        
         Returns:
             dict with keys:
                 - success: bool indicating if submission was successful
@@ -604,18 +631,28 @@ class MainWindow(QMainWindow):
         from pywats.tools.test_uut import create_test_uut_report
         
         try:
-            # Create test report with station name from config
+            # Get effective station info from config (respects multi-station mode)
+            station_name = self.config.get_effective_station_name() or "pyWATS-Client"
+            location = self.config.get_effective_location() or "TestLocation"
+            purpose = self.config.get_effective_purpose() or "Development"
+            
+            # Create test report with effective station info
             report = create_test_uut_report(
-                station_name=self.config.station_name or "pyWATS-Client",
-                location=self.config.location or "TestLocation",
+                station_name=station_name,
+                location=location,
                 operator_name=getattr(self.config, 'operator', 'pyWATS-User')
             )
+            
+            # Override purpose if create_test_uut_report doesn't accept it
+            if hasattr(report, 'purpose'):
+                report.purpose = purpose
             
             result = {
                 "success": False,
                 "serial_number": report.sn,
                 "part_number": report.pn,
-                "report_id": str(report.id)
+                "report_id": str(report.id),
+                "station_name": station_name
             }
             
             if self.app.wats_client:
@@ -645,8 +682,7 @@ class MainWindow(QMainWindow):
         """
         Create and submit a test UUT report.
         
-        Uses the test_uut module to create a comprehensive test report
-        demonstrating all pyWATS features.
+        Uses effective station info (respects multi-station mode).
         """
         if not self.app.wats_client:
             return False
@@ -654,10 +690,14 @@ class MainWindow(QMainWindow):
         try:
             from pywats.tools import create_test_uut_report
             
-            # Create test report using configured location and station
+            # Get effective station info from config
+            station_name = self.config.get_effective_station_name() or "pyWATS-Client"
+            location = self.config.get_effective_location() or "TestLocation"
+            
+            # Create test report using effective station info
             report = create_test_uut_report(
-                station_name=self.config.station_name or "pyWATS-Client",
-                location=self.config.location or "TestLocation",
+                station_name=station_name,
+                location=location,
             )
             
             # Convert to dictionary for submission (Pydantic model_dump with by_alias for serialization)

@@ -3,6 +3,7 @@ Client Configuration Management
 
 Handles configuration for pyWATS Client instances including:
 - Server connection settings
+- Station configuration (single and multi-station modes)
 - Converter configurations
 - Sync intervals
 - Instance identification
@@ -10,6 +11,7 @@ Handles configuration for pyWATS Client instances including:
 
 import json
 import os
+import socket
 import uuid
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
@@ -53,14 +55,43 @@ class ProxyConfig:
 
 
 @dataclass
+class StationPreset:
+    """
+    Configuration for a saved station preset.
+    
+    Used in multi-station mode to manage multiple stations from a single client.
+    """
+    key: str                      # Unique identifier within registry
+    name: str                     # Station name (machineName in reports)
+    location: str = ""            # Location string
+    purpose: str = "Production"   # Purpose string
+    description: str = ""         # Optional description
+    is_default: bool = False      # Is this the default station?
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "StationPreset":
+        return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
+
+
+@dataclass
 class ClientConfig:
     """
     Main configuration for pyWATS Client instance.
     
     Each instance has its own configuration file allowing
     multiple instances to run on the same machine.
+    
+    Station vs Client Identity:
+    - instance_name: The name of this client installation
+    - station_name: The station identity used in reports (machineName)
+    
+    By default, these can be the same. However, a single client can
+    represent multiple stations (hub mode) by using station_presets.
     """
-    # Instance identification
+    # Instance identification (the client installation)
     instance_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     instance_name: str = "WATS Client"
     
@@ -69,13 +100,24 @@ class ClientConfig:
     api_token: str = ""
     username: str = ""
     
-    # Station identification (from WATS server)
-    station_name: str = ""
-    location: str = ""
-    purpose: str = ""
-    station_description: str = ""
-    auto_detect_location: bool = False
-    include_station_in_reports: bool = True
+    # Station identification (the test station identity in reports)
+    station_name: str = ""               # Default station name for reports
+    location: str = ""                   # Default location
+    purpose: str = ""                    # Default purpose
+    station_description: str = ""        # Optional description
+    auto_detect_location: bool = False   # Use GPS/network location
+    include_station_in_reports: bool = True  # Apply station info to reports
+    
+    # Station name source: "hostname", "config", "manual"
+    # - hostname: Use computer hostname as station name
+    # - config: Use station_name from config
+    # - manual: User must specify for each report
+    station_name_source: str = "hostname"
+    
+    # Multi-station mode (hub)
+    multi_station_enabled: bool = False      # Enable multi-station support
+    station_presets: List[StationPreset] = field(default_factory=list)
+    active_station_key: str = ""             # Key of currently active preset
     
     # Serial Number Handler settings
     sn_mode: str = "Manual Entry"  # "Manual Entry", "Auto-increment", "Barcode Scanner", "External Source"
@@ -162,6 +204,120 @@ class ClientConfig:
                 else:
                     converted.append(c)
             self.converters = converted
+        # Convert station presets
+        if self.station_presets:
+            converted_presets = []
+            for sp in self.station_presets:
+                if isinstance(sp, dict):
+                    converted_presets.append(StationPreset.from_dict(sp))
+                else:
+                    converted_presets.append(sp)
+            self.station_presets = converted_presets
+    
+    # =========================================================================
+    # Station Properties and Methods
+    # =========================================================================
+    
+    def get_effective_station_name(self) -> str:
+        """
+        Get the effective station name to use for reports.
+        
+        Priority:
+        1. Active station preset (if multi-station enabled)
+        2. Configured station_name
+        3. Computer hostname (if station_name_source is "hostname")
+        
+        Returns:
+            Station name to use for reports
+        """
+        # Check multi-station mode first
+        if self.multi_station_enabled and self.active_station_key:
+            preset = self.get_active_station_preset()
+            if preset:
+                return preset.name
+        
+        # Use configured station name
+        if self.station_name:
+            return self.station_name
+        
+        # Fall back to hostname if configured
+        if self.station_name_source == "hostname":
+            return socket.gethostname().upper()
+        
+        return ""
+    
+    def get_effective_location(self) -> str:
+        """Get the effective location for reports."""
+        if self.multi_station_enabled and self.active_station_key:
+            preset = self.get_active_station_preset()
+            if preset:
+                return preset.location
+        return self.location
+    
+    def get_effective_purpose(self) -> str:
+        """Get the effective purpose for reports."""
+        if self.multi_station_enabled and self.active_station_key:
+            preset = self.get_active_station_preset()
+            if preset:
+                return preset.purpose
+        return self.purpose
+    
+    def get_active_station_preset(self) -> Optional[StationPreset]:
+        """Get the currently active station preset."""
+        if not self.active_station_key:
+            return None
+        for preset in self.station_presets:
+            if preset.key == self.active_station_key:
+                return preset
+        return None
+    
+    def set_active_station(self, key: str) -> bool:
+        """
+        Set the active station by key.
+        
+        Args:
+            key: Key of the station preset to activate
+            
+        Returns:
+            True if successful, False if key not found
+        """
+        for preset in self.station_presets:
+            if preset.key == key:
+                self.active_station_key = key
+                return True
+        return False
+    
+    def add_station_preset(self, preset: StationPreset) -> None:
+        """Add a station preset to the list."""
+        # Remove existing preset with same key
+        self.station_presets = [p for p in self.station_presets if p.key != preset.key]
+        self.station_presets.append(preset)
+        
+        # If this is the first preset, make it active
+        if len(self.station_presets) == 1:
+            self.active_station_key = preset.key
+    
+    def remove_station_preset(self, key: str) -> bool:
+        """
+        Remove a station preset by key.
+        
+        Args:
+            key: Key of the preset to remove
+            
+        Returns:
+            True if removed, False if not found
+        """
+        original_count = len(self.station_presets)
+        self.station_presets = [p for p in self.station_presets if p.key != key]
+        
+        if len(self.station_presets) < original_count:
+            # Update active key if needed
+            if self.active_station_key == key:
+                self.active_station_key = (
+                    self.station_presets[0].key if self.station_presets else ""
+                )
+            return True
+        return False
     
     @property
     def identifier(self) -> str:
@@ -211,6 +367,11 @@ class ClientConfig:
             "station_description": self.station_description,
             "auto_detect_location": self.auto_detect_location,
             "include_station_in_reports": self.include_station_in_reports,
+            "station_name_source": self.station_name_source,
+            # Multi-station mode
+            "multi_station_enabled": self.multi_station_enabled,
+            "station_presets": [sp.to_dict() for sp in self.station_presets],
+            "active_station_key": self.active_station_key,
             # Serial Number Handler
             "sn_mode": self.sn_mode,
             "sn_prefix": self.sn_prefix,
