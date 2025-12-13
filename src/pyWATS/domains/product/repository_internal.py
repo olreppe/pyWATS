@@ -174,6 +174,9 @@ class ProductRepositoryInternal:
         
         ⚠️ INTERNAL API - uses /api/internal/Product/GetProductByPN
         
+        NOTE: This endpoint does NOT return ChildProductRevisionRelations.
+        Use get_product_hierarchy() instead for box build relations.
+        
         Args:
             part_number: Product part number
             revision: Optional specific revision to filter
@@ -186,6 +189,37 @@ class ProductRepositoryInternal:
             params={"PN": part_number}
         )
         return data
+    
+    def get_product_hierarchy(
+        self,
+        part_number: str,
+        revision: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Get product hierarchy including all child revision relations.
+        
+        ⚠️ INTERNAL API - uses /api/internal/Product/GetProductInfo
+        
+        This returns the full product tree including:
+        - The parent product at hlevel=0
+        - All child relations at hlevel=1+ with ProductRevisionRelationId
+        
+        Args:
+            part_number: Product part number
+            revision: Product revision
+            
+        Returns:
+            List of hierarchy items. Each item includes:
+            - PartNumber, Revision, ProductRevisionId
+            - ParentProductRevisionId, ProductRevisionRelationId (for children)
+            - hlevel (0=parent, 1+=children)
+            - Quantity, RevisionMask
+        """
+        data = self._internal_get(
+            "/api/internal/Product/GetProductInfo",
+            params={"partNumber": part_number, "revision": revision}
+        )
+        return data if isinstance(data, list) else []
     
     def create_revision_relation(
         self,
@@ -210,21 +244,35 @@ class ProductRepositoryInternal:
         Returns:
             Created ProductRevisionRelation or None
         """
+        # API expects PascalCase field names:
+        # - ParentProductRevisionId: Parent revision
+        # - ProductRevisionId: Child revision (NOT "childProductRevisionId")
+        # - Quantity, RevisionMask (optional)
         data = {
-            "parentProductRevisionId": str(parent_revision_id),
-            "childProductRevisionId": str(child_revision_id),
-            "quantity": quantity,
+            "ParentProductRevisionId": str(parent_revision_id),
+            "ProductRevisionId": str(child_revision_id),
+            "Quantity": quantity,
         }
-        if item_number:
-            data["itemNumber"] = item_number
         if revision_mask:
-            data["revisionMask"] = revision_mask
+            data["RevisionMask"] = revision_mask
             
         result = self._internal_post(
             "/api/internal/Product/PostProductRevisionRelation",
             data=data
         )
-        if result:
+        
+        # API returns the full hierarchy as a list, find the newly created relation
+        if result and isinstance(result, list):
+            # Look for the child relation with matching revision ID
+            for item in result:
+                if (item.get("ProductRevisionId") == str(child_revision_id) and 
+                    item.get("ParentProductRevisionId") == str(parent_revision_id) and
+                    item.get("ProductRevisionRelationId")):
+                    return ProductRevisionRelation.model_validate(item)
+            # If not found by exact match, return None (relation already existed)
+            return None
+        elif result:
+            # If single object returned
             return ProductRevisionRelation.model_validate(result)
         return None
     
@@ -243,7 +291,8 @@ class ProductRepositoryInternal:
         Returns:
             Updated ProductRevisionRelation or None
         """
-        data = relation.model_dump(by_alias=True, exclude_none=True)
+        # Use mode='json' to convert UUIDs to strings for JSON serialization
+        data = relation.model_dump(by_alias=True, exclude_none=True, mode='json')
         result = self._internal_put(
             "/api/internal/Product/PutProductRevisionRelation",
             data=data
@@ -266,7 +315,7 @@ class ProductRepositoryInternal:
         """
         return self._internal_delete(
             "/api/internal/Product/DeleteProductRevisionRelation",
-            params={"id": str(relation_id)}
+            params={"productRevisionRelationId": str(relation_id)}
         )
     
     # =========================================================================

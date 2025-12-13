@@ -10,6 +10,66 @@ if TYPE_CHECKING:
     from ..product.models import Product, ProductRevision
 
 
+class UnitPhase(PyWATSModel):
+    """
+    Represents a unit phase in WATS.
+    
+    Unit phases are predefined states that units can be in during their lifecycle.
+    These are constant values defined server-side. Each phase ID is a power of 2,
+    allowing potential bitwise combination for filtering.
+    
+    See Also:
+        UnitPhaseFlag: Enum with predefined phase values for type-safe usage.
+    
+    Phase Values (from UnitPhaseFlag enum):
+        - UNKNOWN = 1
+        - UNDER_PRODUCTION = 2
+        - PRODUCTION_REPAIR = 4
+        - SERVICE_REPAIR = 8
+        - FINALIZED = 16
+        - SCRAPPED = 32
+        - EXTENDED_TEST = 64
+        - CUSTOMIZATION = 128
+        - REPAIRED = 256
+        - MISSING = 512
+        - IN_STORAGE = 1024
+        - SHIPPED = 2048
+    
+    Attributes:
+        phase_id: Unique phase identifier (power of 2)
+        code: Machine-readable code (e.g., "Finalized", "Under_Production")
+        name: Human-readable name (e.g., "Finalized", "Under production")
+        description: Optional description
+    """
+    phase_id: int = Field(
+        validation_alias=AliasChoices("UnitPhaseId", "unitPhaseId", "phase_id"),
+        serialization_alias="UnitPhaseId"
+    )
+    code: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("Code", "code"),
+        serialization_alias="Code"
+    )
+    name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("Name", "name"),
+        serialization_alias="Name"
+    )
+    description: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("Description", "description"),
+        serialization_alias="Description"
+    )
+    
+    def __str__(self) -> str:
+        """String representation."""
+        return f"{self.name} (ID={self.phase_id})"
+    
+    def __repr__(self) -> str:
+        """Detailed representation."""
+        return f"UnitPhase(id={self.phase_id}, code='{self.code}', name='{self.name}')"
+
+
 class SerialNumberType(PyWATSModel):
     """
     Represents a serial number type configuration.

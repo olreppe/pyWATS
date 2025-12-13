@@ -59,9 +59,9 @@ class ProductRevisionRelation(PyWATSModel):
     For example, a main board (parent) may contain multiple PCBAs (children).
 
     Attributes:
-        relation_id: Unique identifier for this relation
+        relation_id: Unique identifier for this relation (ProductRevisionRelationId)
         parent_product_revision_id: Parent product revision ID
-        child_product_revision_id: Child product revision ID
+        child_product_revision_id: Child product revision ID (API field: ProductRevisionId)
         quantity: Number of child units required (default 1)
         item_number: Optional item/position number
         child_part_number: Child product part number (read-only)
@@ -69,48 +69,53 @@ class ProductRevisionRelation(PyWATSModel):
     """
     relation_id: Optional[UUID] = Field(
         default=None,
-        validation_alias=AliasChoices("relationId", "relation_id", "RelationId"),
-        serialization_alias="relationId"
+        validation_alias=AliasChoices(
+            "ProductRevisionRelationId", "productRevisionRelationId", 
+            "relationId", "relation_id", "RelationId"
+        ),
+        serialization_alias="ProductRevisionRelationId"
     )
     parent_product_revision_id: UUID = Field(
         ...,
         validation_alias=AliasChoices(
-            "parentProductRevisionId", "parent_product_revision_id", "ParentProductRevisionId"
+            "ParentProductRevisionId", "parentProductRevisionId", "parent_product_revision_id"
         ),
-        serialization_alias="parentProductRevisionId"
+        serialization_alias="ParentProductRevisionId"
     )
+    # Note: The API uses "ProductRevisionId" for the CHILD revision (confusingly named)
     child_product_revision_id: UUID = Field(
         ...,
         validation_alias=AliasChoices(
+            "ProductRevisionId", "productRevisionId",
             "childProductRevisionId", "child_product_revision_id", "ChildProductRevisionId"
         ),
-        serialization_alias="childProductRevisionId"
+        serialization_alias="ProductRevisionId"
     )
     quantity: int = Field(
         default=1,
-        validation_alias=AliasChoices("quantity", "Quantity"),
-        serialization_alias="quantity"
+        validation_alias=AliasChoices("Quantity", "quantity"),
+        serialization_alias="Quantity"
     )
     item_number: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("itemNumber", "item_number", "ItemNumber"),
-        serialization_alias="itemNumber"
+        validation_alias=AliasChoices("ItemNumber", "itemNumber", "item_number"),
+        serialization_alias="ItemNumber"
     )
     # Read-only fields populated by API
     child_part_number: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("childPartNumber", "child_part_number", "ChildPartNumber"),
-        serialization_alias="childPartNumber"
+        validation_alias=AliasChoices("ChildPartNumber", "childPartNumber", "child_part_number"),
+        serialization_alias="ChildPartNumber"
     )
     child_revision: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("childRevision", "child_revision", "ChildRevision"),
-        serialization_alias="childRevision"
+        validation_alias=AliasChoices("ChildRevision", "childRevision", "child_revision"),
+        serialization_alias="ChildRevision"
     )
     revision_mask: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("revisionMask", "revision_mask", "RevisionMask"),
-        serialization_alias="revisionMask",
+        validation_alias=AliasChoices("RevisionMask", "revisionMask", "revision_mask"),
+        serialization_alias="RevisionMask",
         description="Comma-separated revision patterns with optional % wildcard (e.g., '1.0,2.%,3.1')"
     )
     

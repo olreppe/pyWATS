@@ -427,14 +427,35 @@ class TestBomOperations:
 
 
 # =============================================================================
-# Box Build Template Tests
+# =============================================================================
+# Box Build Template Tests (PRODUCT DOMAIN)
+# =============================================================================
+#
+# Box Build Templates define WHAT subunits are REQUIRED to build a product.
+# This is a PRODUCT-LEVEL (design-time) definition.
+#
+# KEY DISTINCTION:
+#   - Box Build Template (Product Domain - this section):
+#     Defines requirements: "Product X needs 2x PCBA and 1x PSU"
+#     
+#   - Unit Assembly (Production Domain - see test_production.py):
+#     Builds actual units: "Unit X-001 contains PCBA-456 and PSU-789"
+#
+# For building actual assemblies, see:
+#   - api.production.add_child_to_assembly()
+#   - api.production.verify_assembly()
 # =============================================================================
 
 class TestBoxBuildTemplate:
-    """Test Box Build template management.
+    """Test Box Build template management (Product Domain).
     
     ⚠️ INTERNAL API - Uses internal Product API endpoints.
+    
     Box Build templates define which subunits are required to assemble a product.
+    This is a DESIGN-TIME definition - not production units.
+    
+    To attach actual production units, use the Production domain:
+        api.production.add_child_to_assembly()
     
     Note: Tests that modify box builds (add/remove subunits) require the 
     Production module to be enabled and are marked to skip if not available.
@@ -442,13 +463,13 @@ class TestBoxBuildTemplate:
     
     @pytest.fixture
     def parent_product_pn(self) -> str:
-        """Parent product for box build testing"""
-        return "PYWATS-TEST-001"
+        """Parent product for box build testing - uses existing test product"""
+        return "BOXBUILD-CONTROLLER-MODULE"
     
     @pytest.fixture
     def subunit_product_pn(self) -> str:
-        """Subunit product for box build testing"""
-        return "PYWATS-SUB-001"
+        """Subunit product for box build testing - uses existing test product"""
+        return "BOXBUILD-POWER-SUPPLY"
     
     def test_get_box_build_template(
         self, wats_client: Any, parent_product_pn: str
@@ -488,7 +509,6 @@ class TestBoxBuildTemplate:
         
         assert isinstance(parts, list)
     
-    @pytest.mark.skip(reason="Requires Production module - saves box build relations")
     def test_add_subunit_to_box_build(
         self, 
         wats_client: Any, 
@@ -502,14 +522,14 @@ class TestBoxBuildTemplate:
         initial_count = len(template.subunits)
         
         print(f"Initial subunits: {initial_count}")
-        print(f"Adding: {subunit_product_pn}/1.0 x2 with mask '1.%'")
+        print(f"Adding: {subunit_product_pn}/A x2 with mask 'A,%'")
         
         # Add subunit with revision mask
         template.add_subunit(
             subunit_product_pn, 
-            "1.0", 
+            "A", 
             quantity=2, 
-            revision_mask="1.%"
+            revision_mask="A,%"
         )
         
         print(f"After add (unsaved): {len(template.subunits)} subunits")
@@ -526,7 +546,6 @@ class TestBoxBuildTemplate:
         
         assert len(template.subunits) >= initial_count
     
-    @pytest.mark.skip(reason="Requires Production module - saves box build relations")
     def test_validate_subunit_revision(
         self, 
         wats_client: Any, 
@@ -543,9 +562,9 @@ class TestBoxBuildTemplate:
         try:
             template.add_subunit(
                 subunit_product_pn, 
-                "1.0", 
+                "A", 
                 quantity=1, 
-                revision_mask="1.%,2.0"
+                revision_mask="A,B,C"
             )
             template.save()
         except ValueError:
@@ -555,16 +574,15 @@ class TestBoxBuildTemplate:
         template.reload()
         
         print(f"Validating revisions for {subunit_product_pn}:")
-        print(f"  1.0 valid: {template.validate_subunit(subunit_product_pn, '1.0')}")
-        print(f"  1.5 valid: {template.validate_subunit(subunit_product_pn, '1.5')}")
-        print(f"  2.0 valid: {template.validate_subunit(subunit_product_pn, '2.0')}")
-        print(f"  3.0 valid: {template.validate_subunit(subunit_product_pn, '3.0')}")
+        print(f"  A valid: {template.validate_subunit(subunit_product_pn, 'A')}")
+        print(f"  B valid: {template.validate_subunit(subunit_product_pn, 'B')}")
+        print(f"  C valid: {template.validate_subunit(subunit_product_pn, 'C')}")
+        print(f"  D valid: {template.validate_subunit(subunit_product_pn, 'D')}")
         print("=================================\n")
         
-        # At minimum, 1.0 should be valid (it's the default)
+        # At minimum, A should be valid (it's the default)
         # The full validation depends on what mask was saved
     
-    @pytest.mark.skip(reason="Requires Production module - saves box build relations")
     def test_box_build_context_manager(
         self, 
         wats_client: Any, 
@@ -593,7 +611,6 @@ class TestBoxBuildTemplate:
         print("Exited context (auto-saved)")
         print("=================================\n")
     
-    @pytest.mark.skip(reason="Requires Production module - saves box build relations")
     def test_remove_subunit_from_box_build(
         self, 
         wats_client: Any, 

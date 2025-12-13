@@ -1,7 +1,51 @@
 """Box Build Template management.
 
-Provides a builder pattern for managing product revision relations (box builds).
-A box build defines which subunits/components are required to build a parent product.
+This module manages **product-level** box build definitions (templates).
+
+KEY CONCEPT DISTINCTION:
+========================
+
+Box Build Template (Product Domain - THIS MODULE)
+-------------------------------------------------
+Defines WHAT subunits are REQUIRED to build a parent product.
+This is a blueprint/template that specifies:
+- Which child products are needed (e.g., PCBA, Power Supply)  
+- How many of each (quantity)
+- Which revisions are acceptable (revision mask)
+
+This is DESIGN-TIME configuration - it defines the structure of the product,
+not specific production units.
+
+Example: "A Controller Module (CTRL-100 rev A) requires:
+         - 1x Power Supply (PSU-200, any revision)
+         - 2x Sensor Board (SNS-300, revision A or B)"
+
+Unit Assembly (Production Domain - see production.service)
+----------------------------------------------------------
+Actually BUILDS a specific unit by attaching child UNITS to a parent UNIT.
+This happens at RUNTIME during production when real serial numbers are involved.
+
+Example: "Unit CTRL-SN-001 now contains:
+         - PSU-SN-456 (Power Supply)
+         - SNS-SN-789 (Sensor Board slot 1)
+         - SNS-SN-790 (Sensor Board slot 2)"
+
+WORKFLOW:
+=========
+1. Define box build template (Product Domain):
+   api.product_internal.get_box_build("CTRL-100", "A").add_subunit("PSU-200", "A").save()
+
+2. Create production units (Production Domain):
+   api.production.create_units([parent_unit, child_units...])
+
+3. Finalize child units before assembly:
+   api.production.set_unit_phase(child_serial, child_part, "Finalized")
+
+4. Build assembly (Production Domain):
+   api.production.add_child_to_assembly(parent_sn, parent_pn, child_sn, child_pn)
+
+5. Verify assembly matches template:
+   api.production.verify_assembly(parent_sn, parent_pn, parent_rev)
 """
 from typing import List, Optional, TYPE_CHECKING
 from uuid import UUID
@@ -14,10 +58,14 @@ if TYPE_CHECKING:
 
 class BoxBuildTemplate:
     """
-    Builder class for managing box build templates.
+    Builder class for managing box build templates (product-level definitions).
     
     A box build template defines the subunits required to build a parent product.
-    For example, a main board may require 2 PCBAs, 1 power supply, etc.
+    For example, a controller module may require 2 PCBAs, 1 power supply, etc.
+    
+    This is a PRODUCT-LEVEL definition - it specifies WHAT is needed to build
+    the product, not the actual production units. To attach actual units during
+    production, use the Production domain's add_child_to_assembly() method.
     
     This class provides a fluent interface for adding/removing subunits and
     commits all changes to the server when save() is called.
@@ -26,7 +74,7 @@ class BoxBuildTemplate:
         # Get or create a box build template
         template = api.product_internal.get_box_build("MAIN-BOARD", "A")
         
-        # Add subunits
+        # Add subunits (defines what's needed)
         template.add_subunit("PCBA-001", "A", quantity=2)
         template.add_subunit("PSU-100", "B", quantity=1)
         
@@ -40,6 +88,10 @@ class BoxBuildTemplate:
         with api.product_internal.get_box_build("MAIN-BOARD", "A") as template:
             template.add_subunit("PCBA-001", "A", quantity=2)
         # Changes saved automatically
+        
+    See Also:
+        - ProductionService.add_child_to_assembly(): Attach actual units
+        - ProductionService.verify_assembly(): Verify assembly matches template
     """
     
     def __init__(

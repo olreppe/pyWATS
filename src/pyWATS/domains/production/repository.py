@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from .models import (
     Unit, UnitChange, ProductionBatch, SerialNumberType,
-    UnitVerification, UnitVerificationGrade
+    UnitVerification, UnitVerificationGrade, UnitPhase
 )
 
 
@@ -176,7 +176,7 @@ class ProductionRepository:
         self,
         serial_number: str,
         part_number: str,
-        phase: str,
+        phase: Union[int, str],
         comment: Optional[str] = None
     ) -> bool:
         """
@@ -187,7 +187,7 @@ class ProductionRepository:
         Args:
             serial_number: The unit serial number
             part_number: The product part number
-            phase: The new phase
+            phase: The phase ID (int) or phase name (str)
             comment: Optional comment
 
         Returns:
@@ -620,4 +620,30 @@ class ProductionRepository:
                 ProductionBatch.model_validate(item)
                 for item in response.data
             ]
+        return []
+
+    # =========================================================================
+    # Unit Phases
+    # =========================================================================
+
+    def get_unit_phases(self, base_url: str) -> List[UnitPhase]:
+        """
+        Get all available unit phases.
+
+        GET /api/internal/Mes/GetUnitPhases
+
+        Note: This uses an internal API that requires the Referer header.
+
+        Args:
+            base_url: The base URL for the Referer header
+
+        Returns:
+            List of UnitPhase objects
+        """
+        response = self._http_client.get(
+            "/api/internal/Mes/GetUnitPhases",
+            headers={"Referer": base_url}
+        )
+        if response.is_success and response.data:
+            return [UnitPhase.model_validate(item) for item in response.data]
         return []

@@ -4,6 +4,32 @@
 
 Uses internal WATS API endpoints that are not publicly documented.
 These methods may change or be removed without notice.
+
+BOX BUILD TEMPLATE OVERVIEW
+===========================
+
+The Box Build Template functionality defines WHAT subunits are required to build 
+a parent product. This is a PRODUCT-LEVEL definition (design-time), not production.
+
+Key Distinction:
+- Box Build Template (this module): Defines required subunits (WHAT is needed)
+- Unit Assembly (production domain): Attaches actual units (WHO gets attached)
+
+Example:
+    # Define the template (Product domain)
+    template = api.product_internal.get_box_build("CONTROLLER", "A")
+    template.add_subunit("POWER-SUPPLY", "A", quantity=1)
+    template.add_subunit("SENSOR-BOARD", "A", quantity=2)
+    template.save()
+    
+    # Later, during production (Production domain)
+    api.production.add_child_to_assembly("CTRL-001", "CONTROLLER", "PSU-456", "POWER-SUPPLY")
+    api.production.add_child_to_assembly("CTRL-001", "CONTROLLER", "SNS-789", "SENSOR-BOARD")
+    
+See Also:
+    - BoxBuildTemplate: Builder class for managing templates
+    - ProductionService.add_child_to_assembly(): Attach actual units
+    - ProductionService.verify_assembly(): Verify units match template
 """
 import logging
 from typing import List, Optional, Dict, Any
@@ -89,7 +115,15 @@ class ProductServiceInternal:
         return None
     
     # =========================================================================
-    # Box Build Templates
+    # Box Build Templates (Product-Level Definitions)
+    # =========================================================================
+    #
+    # These methods manage box build TEMPLATES - the design-time definition
+    # of what subunits are required to build a product.
+    #
+    # To attach ACTUAL units during production, use:
+    #   api.production.add_child_to_assembly()
+    #
     # =========================================================================
     
     def get_box_build(self, part_number: str, revision: str) -> BoxBuildTemplate:
@@ -98,9 +132,11 @@ class ProductServiceInternal:
         
         ⚠️ INTERNAL API
         
-        A box build template defines the subunits required to build a product.
+        A box build template defines WHAT subunits are required to build a product.
+        This is a PRODUCT-LEVEL definition - it does not create production units.
+        
         Use the returned BoxBuildTemplate to add/remove subunits, then call
-        save() to persist changes.
+        save() to persist changes to the server.
         
         Args:
             part_number: Parent product part number
@@ -113,9 +149,10 @@ class ProductServiceInternal:
             ValueError: If product revision not found
             
         Example:
-            # Simple usage
+            # Define what subunits a product needs (Product domain)
             template = api.product_internal.get_box_build("MAIN-BOARD", "A")
             template.add_subunit("PCBA-001", "A", quantity=2)
+            template.add_subunit("PSU-100", "B", quantity=1)
             template.save()
             
             # Context manager (auto-save)
@@ -147,6 +184,9 @@ class ProductServiceInternal:
         
         ⚠️ INTERNAL API
         
+        Uses GetProductInfo which returns the full hierarchy including
+        all child relations with their ProductRevisionRelationId.
+        
         Args:
             part_number: Product part number
             revision: Product revision
@@ -154,25 +194,32 @@ class ProductServiceInternal:
         Returns:
             List of ProductRevisionRelation
         """
-        data = self._repo_internal.get_product_with_relations(part_number)
-        if not data:
+        hierarchy = self._repo_internal.get_product_hierarchy(part_number, revision)
+        if not hierarchy:
             return []
         
-        # Find the matching revision
-        revisions_data = data.get("ProductRevisions", [])
-        for rev_data in revisions_data:
-            if rev_data.get("Revision") == revision:
-                # Extract child relations (subunits in box build)
-                relations_data = rev_data.get("ChildProductRevisionRelations") or []
-                relations = []
-                for rel_data in relations_data:
-                    try:
-                        relations.append(ProductRevisionRelation.model_validate(rel_data))
-                    except Exception as e:
-                        logger.debug(f"Skipping invalid product revision relation: {e}")
-                return relations
+        # Extract child relations (hlevel > 0 with ProductRevisionRelationId)
+        relations = []
+        for item in hierarchy:
+            if item.get("hlevel", 0) > 0 and item.get("ProductRevisionRelationId"):
+                try:
+                    # Map hierarchy fields to ProductRevisionRelation fields
+                    # Note: Hierarchy uses PartNumber/Revision, model expects ChildPartNumber/ChildRevision
+                    rel_data = {
+                        "ProductRevisionRelationId": item.get("ProductRevisionRelationId"),
+                        "ParentProductRevisionId": item.get("ParentProductRevisionId"),
+                        "ProductRevisionId": item.get("ProductRevisionId"),  # Child revision ID
+                        "Quantity": item.get("Quantity", 1),
+                        "RevisionMask": item.get("RevisionMask"),
+                        # Map PartNumber/Revision to ChildPartNumber/ChildRevision
+                        "ChildPartNumber": item.get("PartNumber"),
+                        "ChildRevision": item.get("Revision"),
+                    }
+                    relations.append(ProductRevisionRelation.model_validate(rel_data))
+                except Exception as e:
+                    logger.debug(f"Skipping invalid product revision relation: {e}")
         
-        return []
+        return relations
     
     def get_box_build_subunits(
         self, 

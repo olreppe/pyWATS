@@ -215,12 +215,16 @@ class pyWATS:
         - serial_number: Serial number operations
         - verification: Unit verification operations
         
+        Unit phases are cached and accessible via:
+        - get_phases(): Get all available phases
+        - get_phase(id_or_name): Get a specific phase
+        
         Returns:
             ProductionService instance
         """
         if self._production is None:
             repo = ProductionRepository(self._http_client, self._error_handler)
-            self._production = ProductionService(repo)
+            self._production = ProductionService(repo, base_url=self._base_url)
         return self._production
     
     @property

@@ -4,9 +4,9 @@ Provides models, services, and repository for production unit management.
 """
 from .models import (
     Unit, UnitChange, ProductionBatch, SerialNumberType,
-    UnitVerification, UnitVerificationGrade
+    UnitVerification, UnitVerificationGrade, UnitPhase
 )
-from .enums import SerialNumberIdentifier
+from .enums import SerialNumberIdentifier, UnitPhaseFlag
 from .service import ProductionService
 from .repository import ProductionRepository
 
@@ -18,12 +18,14 @@ __all__ = [
     # Models
     "Unit",
     "UnitChange",
+    "UnitPhase",
     "ProductionBatch",
     "SerialNumberType",
     "UnitVerification",
     "UnitVerificationGrade",
     # Enums
     "SerialNumberIdentifier",
+    "UnitPhaseFlag",
     # Service & Repository
     "ProductionService",
     "ProductionRepository",

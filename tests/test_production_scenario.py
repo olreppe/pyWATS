@@ -265,19 +265,19 @@ class TestProductionScenario:
                 raise
 
     def _setup_pcba_for_production(self) -> None:
-        """Step 3: Set phase to queued and add lot number tag"""
-        print(f"\nSetting PCBA phase to 'Under Production - Queued'")
+        """Step 3: Set phase to under production and add lot number tag"""
+        print(f"\nSetting PCBA phase to 'Under production'")
         
-        # Set phase (phase name may vary by server configuration)
+        # Set phase using standard WATS phase name
         success = self.api.production.set_unit_phase(
             serial_number=self.pcba_serial,
             part_number=self.pcba_pn,
-            phase="Under Production - Queued",
+            phase="Under production",
             comment="PCBA ready for production testing"
         )
         
         if success:
-            print(f"  [OK] Phase set to 'Under Production - Queued'")
+            print(f"  [OK] Phase set to 'Under production'")
         else:
             print(f"  [!] Failed to set phase (phase name may not exist on server)")
         
@@ -481,11 +481,11 @@ class TestProductionScenario:
 
     def _setup_module_for_testing(self) -> None:
         """Step 7: Setup module unit for testing"""
-        print(f"\nSetting Module phase to 'Under Production - Queued'")
+        print(f"\nSetting Module phase to 'Under production'")
         self.api.production.set_unit_phase(
             serial_number=self.module_serial,
             part_number=self.module_pn,
-            phase="Under Production - Queued",
+            phase="Under production",
             comment="Module ready for testing"
         )
         
