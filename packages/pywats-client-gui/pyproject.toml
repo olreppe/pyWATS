@@ -1,0 +1,99 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pywats-client-gui"
+version = "2.0.0"
+description = "Desktop GUI application for pyWATS - Qt-based client for Windows, macOS, and Linux"
+readme = "README.md"
+license = {file = "../../LICENSE"}
+authors = [
+    {name = "Virinco", email = "support@virinco.com"}
+]
+maintainers = [
+    {name = "Virinco", email = "support@virinco.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Software Development :: Testing",
+    "Environment :: X11 Applications :: Qt",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: MacOS X",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+]
+keywords = [
+    "wats", "testing", "manufacturing", "gui", "desktop",
+    "qt", "pyside6", "client", "test-automation"
+]
+dependencies = [
+    "pywats>=2.0.0",
+    "pywats-client-service>=2.0.0",
+    "PySide6>=6.4.0",
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-qt>=4.2.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.10.0",
+    "black>=22.0",
+    "isort>=5.0",
+    "flake8>=5.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/olreppe/pyWATS"
+Repository = "https://github.com/olreppe/pyWATS"
+Documentation = "https://github.com/olreppe/pyWATS/blob/main/src/pywats_client/GUI_CONFIGURATION.md"
+Issues = "https://github.com/olreppe/pyWATS/issues"
+
+[project.scripts]
+pywats-client-gui = "pywats_client.__main__:main"
+
+[project.gui-scripts]
+pywats-client-gui = "pywats_client.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["../../src"]
+include = ["pywats_client*"]
+
+[tool.setuptools.package-dir]
+"" = "../../src"
+
+[tool.black]
+line-length = 88
+target-version = ["py38", "py39", "py310", "py311"]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["../../tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

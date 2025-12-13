@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pywats-client-service"
+version = "2.0.0"
+description = "Core client services for pyWATS - converter management, queue processing, and connection handling"
+readme = "README.md"
+license = {file = "../../LICENSE"}
+authors = [
+    {name = "Virinco", email = "support@virinco.com"}
+]
+maintainers = [
+    {name = "Virinco", email = "support@virinco.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Testing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = ["wats", "testing", "manufacturing", "client", "converter", "test-automation"]
+dependencies = [
+    "pywats>=2.0.0",
+    "watchdog>=3.0.0",
+    "aiofiles>=23.0.0",
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.10.0",
+    "black>=22.0",
+    "isort>=5.0",
+    "flake8>=5.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/olreppe/pyWATS"
+Repository = "https://github.com/olreppe/pyWATS"
+Documentation = "https://github.com/olreppe/pyWATS/tree/main/docs"
+Issues = "https://github.com/olreppe/pyWATS/issues"
+
+[tool.setuptools.packages.find]
+where = ["../../src"]
+include = ["pywats_client*"]
+exclude = ["pywats_client.gui*", "pywats_client.control*"]
+
+[tool.setuptools.package-dir]
+"" = "../../src"
+
+[tool.black]
+line-length = 88
+target-version = ["py38", "py39", "py310", "py311"]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["../../tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

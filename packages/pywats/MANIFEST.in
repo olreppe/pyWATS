@@ -1,0 +1,9 @@
+include README.md
+include CHANGELOG.md
+include ../../LICENSE
+recursive-include ../../src/pyWATS *.py
+recursive-include ../../docs *.md
+recursive-include ../../docs/usage *.md
+recursive-include ../../docs/api_specs *.json *.yaml
+exclude ../../src/pyWATS/**/*.pyc
+exclude ../../src/pyWATS/**/__pycache__

@@ -1,0 +1,9 @@
+include README.md
+include CHANGELOG.md
+include ../../LICENSE
+recursive-include ../../src/pywats_client *.py
+exclude ../../src/pywats_client/gui
+recursive-include ../../src/pywats_client/control *.md
+include ../../src/pywats_client/control/pywats-client.service
+exclude ../../src/pywats_client/**/*.pyc
+exclude ../../src/pywats_client/**/__pycache__
