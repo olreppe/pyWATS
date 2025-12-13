@@ -358,7 +358,7 @@ def main():
         client_config = manager.get_client_config(args.client)
         
         # Import and run GUI
-        from pywats_client.gui import run_gui
+        from pywats_client.gui.app import run_gui
         run_gui(client_config)
         return
     

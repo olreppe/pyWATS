@@ -214,8 +214,8 @@ class ControlAPIHandler(BaseHTTPRequestHandler):
         
         if self.app:
             from ..app import ApplicationStatus
-            status_data["connected"] = self.app._status == ApplicationStatus.RUNNING
-            status_data["application_status"] = self.app._status.value
+            status_data["connected"] = self.app.status == ApplicationStatus.RUNNING
+            status_data["application_status"] = self.app.status.value
             
             # Service status
             if self.app._connection:
@@ -223,11 +223,28 @@ class ControlAPIHandler(BaseHTTPRequestHandler):
                     "status": self.app._connection.status.value if self.app._connection.status else "unknown"
                 }
             if self.app._report_queue:
-                status_data["services"]["report_queue"] = {
-                    "pending": 0  # TODO: Get actual count
-                }
+                # Get actual queue stats
+                queue_stats = self._get_queue_stats()
+                status_data["services"]["report_queue"] = queue_stats
         
         return APIResponse.json(status_data)
+    
+    def _get_queue_stats(self) -> Dict[str, Any]:
+        """Get report queue statistics"""
+        stats = {"pending": 0, "failed": 0, "processed_today": 0}
+        if self.app and self.app._report_queue:
+            try:
+                # Try to get actual counts from the queue service
+                queue = self.app._report_queue
+                if hasattr(queue, 'get_pending_count'):
+                    stats["pending"] = queue.get_pending_count()
+                if hasattr(queue, 'get_failed_count'):
+                    stats["failed"] = queue.get_failed_count()
+                if hasattr(queue, '_pending_reports'):
+                    stats["pending"] = len(queue._pending_reports)
+            except Exception:
+                pass
+        return stats
     
     def _handle_get_config(self, query: Dict) -> tuple:
         """Get configuration"""
@@ -283,44 +300,55 @@ class ControlAPIHandler(BaseHTTPRequestHandler):
     
     def _handle_queue_status(self, query: Dict) -> tuple:
         """Get report queue status"""
-        queue_data = {
-            "pending": 0,
-            "failed": 0,
-            "processed_today": 0,
-        }
-        
-        if self.app and self.app._report_queue:
-            # TODO: Get actual queue stats
-            pass
-        
+        queue_data = self._get_queue_stats()
         return APIResponse.json(queue_data)
     
     def _handle_process_queue(self, query: Dict) -> tuple:
         """Manually process the report queue"""
         if self.app and self.app._report_queue:
-            # Trigger queue processing
-            asyncio.create_task(self.app._report_queue.process_queue())
+            # Schedule async task safely from sync context
+            self._run_async(self.app._report_queue._process_queue())
             return APIResponse.ok("Queue processing triggered")
         return APIResponse.error("Report queue not available")
+    
+    def _run_async(self, coro) -> None:
+        """Run an async coroutine from sync HTTP handler.
+        
+        This schedules the coroutine on the application's event loop
+        if available, otherwise creates a new thread.
+        """
+        import threading
+        
+        def run_in_thread():
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(coro)
+                loop.close()
+            except Exception as e:
+                logger.error(f"Async task error: {e}")
+        
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
     
     def _handle_start(self, query: Dict) -> tuple:
         """Start services"""
         if self.app:
-            asyncio.create_task(self.app.start())
+            self._run_async(self.app.start())
             return APIResponse.ok("Services starting")
         return APIResponse.error("Application not available")
     
     def _handle_stop(self, query: Dict) -> tuple:
         """Stop services"""
         if self.app:
-            asyncio.create_task(self.app.stop())
+            self._run_async(self.app.stop())
             return APIResponse.ok("Services stopping")
         return APIResponse.error("Application not available")
     
     def _handle_restart(self, query: Dict) -> tuple:
         """Restart services"""
         if self.app:
-            asyncio.create_task(self.app.restart())
+            self._run_async(self.app.restart())
             return APIResponse.ok("Services restarting")
         return APIResponse.error("Application not available")
 

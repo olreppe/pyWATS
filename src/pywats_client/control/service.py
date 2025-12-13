@@ -98,6 +98,7 @@ class HeadlessService:
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._running = False
         self._restart_count = 0
+        self._log_file = None  # For daemon mode log file handle
         
         # Setup signal handlers
         self._setup_signals()
@@ -186,9 +187,10 @@ class HeadlessService:
         # Redirect stdout/stderr to log file
         if self.service_config.log_to_file:
             log_path = Path(self.client_config.data_path) / self.service_config.log_file
-            log_file = open(log_path, 'a+')
-            os.dup2(log_file.fileno(), sys.stdout.fileno())
-            os.dup2(log_file.fileno(), sys.stderr.fileno())
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            self._log_file = open(log_path, 'a+')
+            os.dup2(self._log_file.fileno(), sys.stdout.fileno())
+            os.dup2(self._log_file.fileno(), sys.stderr.fileno())
         
         # Write PID file
         self._write_pid_file()
@@ -267,7 +269,7 @@ class HeadlessService:
                 await asyncio.sleep(1)
                 
                 # Watchdog check
-                if self._app._status == ApplicationStatus.ERROR:
+                if self._app.status == ApplicationStatus.ERROR:
                     logger.warning("Application in error state")
                     if self.service_config.restart_on_failure:
                         if self._restart_count < self.service_config.max_restarts:

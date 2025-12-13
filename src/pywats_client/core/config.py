@@ -176,6 +176,19 @@ class ClientConfig:
         ident = self.identifier
         return ":".join(ident[i:i+2] for i in range(0, min(len(ident), 12), 2))
     
+    @property
+    def data_path(self) -> Path:
+        """Get the base data path for this instance.
+        
+        This is the directory containing config, reports, logs, etc.
+        """
+        if self._config_path:
+            return self._config_path.parent
+        # Fallback to default location
+        if os.name == 'nt':
+            return Path(os.environ.get('APPDATA', '')) / 'pyWATS_Client'
+        return Path.home() / '.config' / 'pywats_client'
+    
     def get_reports_path(self) -> Path:
         """Get absolute path to reports folder"""
         if os.path.isabs(self.reports_folder):

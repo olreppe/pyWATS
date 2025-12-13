@@ -173,31 +173,26 @@ class ConfigCLI:
             print("  ✗ No API token configured")
             return False
         
-        async def _test():
+        try:
+            from pywats import pyWATS
+            client = pyWATS(
+                base_url=self.config.service_address,
+                token=self.config.api_token
+            )
+            print("  ✓ Client initialized successfully")
+            
+            # Try a simple API call (pyWATS API is synchronous)
             try:
-                from pywats import pyWATS
-                client = pyWATS(
-                    base_url=self.config.service_address,
-                    token=self.config.api_token
-                )
-                # Try to get user info or similar lightweight call
-                # For now just check if we can create the client
-                print("  ✓ Client initialized successfully")
-                
-                # Try a simple API call
-                try:
-                    processes = await client.production.get_processes(page_size=1)
-                    print("  ✓ API connection successful")
-                    return True
-                except Exception as e:
-                    print(f"  ✗ API call failed: {e}")
-                    return False
-                    
+                version = client.app.get_version()
+                print(f"  ✓ API connection successful (server version: {version})")
+                return True
             except Exception as e:
-                print(f"  ✗ Connection failed: {e}")
+                print(f"  ✗ API call failed: {e}")
                 return False
-        
-        return asyncio.run(_test())
+                
+        except Exception as e:
+            print(f"  ✗ Connection failed: {e}")
+            return False
     
     def show_status(self) -> Dict[str, Any]:
         """Show current service status"""
@@ -225,7 +220,7 @@ class ConfigCLI:
     
     def list_converters(self) -> List[Dict[str, Any]]:
         """List available converters"""
-        converters_dir = Path(self.config.data_path) / "converters"
+        converters_dir = self.config.data_path / "converters"
         
         print("\n" + "=" * 50)
         print("Available Converters")
@@ -236,13 +231,15 @@ class ConfigCLI:
             return []
         
         converters = []
+        # Get list of enabled converters from config
+        enabled_list = [c.name for c in self.config.converters if c.enabled]
+        
         for py_file in converters_dir.glob("*.py"):
             if py_file.name.startswith("_"):
                 continue
             
             converter_name = py_file.stem
-            # Check if enabled in config
-            enabled = converter_name in getattr(self.config, 'enabled_converters', [])
+            enabled = converter_name in enabled_list
             
             converters.append({
                 "name": converter_name,
@@ -259,6 +256,47 @@ class ConfigCLI:
         
         print("=" * 50)
         return converters
+    
+    def enable_converter(self, name: str) -> None:
+        """Enable a converter by name"""
+        # Check if converter exists in config
+        for conv in self.config.converters:
+            if conv.name == name:
+                conv.enabled = True
+                self.config.save(self.config_path)
+                print(f"✓ Enabled converter: {name}")
+                return
+        
+        # Converter not in config, add it
+        converters_dir = self.config.data_path / "converters"
+        converter_path = converters_dir / f"{name}.py"
+        
+        if not converter_path.exists():
+            print(f"✗ Converter not found: {name}")
+            print(f"  Expected at: {converter_path}")
+            return
+        
+        from ..core.config import ConverterConfig
+        new_conv = ConverterConfig(
+            name=name,
+            module_path=str(converter_path),
+            watch_folder=str(self.config.data_path / "watch" / name),
+            enabled=True,
+        )
+        self.config.converters.append(new_conv)
+        self.config.save(self.config_path)
+        print(f"✓ Added and enabled converter: {name}")
+    
+    def disable_converter(self, name: str) -> None:
+        """Disable a converter by name"""
+        for conv in self.config.converters:
+            if conv.name == name:
+                conv.enabled = False
+                self.config.save(self.config_path)
+                print(f"✓ Disabled converter: {name}")
+                return
+        
+        print(f"✗ Converter not found in config: {name}")
     
     def init_config(self, 
                     server_url: Optional[str] = None,
@@ -452,8 +490,10 @@ def cli_main(args: Optional[List[str]] = None) -> int:
         elif parsed.command == "converters":
             if parsed.conv_action == "list":
                 cli.list_converters()
-            elif parsed.conv_action in ("enable", "disable"):
-                print(f"TODO: {parsed.conv_action} converter {parsed.name}")
+            elif parsed.conv_action == "enable":
+                cli.enable_converter(parsed.name)
+            elif parsed.conv_action == "disable":
+                cli.disable_converter(parsed.name)
             else:
                 parser.parse_args(["converters", "--help"])
                 
