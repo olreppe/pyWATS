@@ -543,3 +543,12 @@ wats_tdm_data/
 */wats_data/
 */temp_wats/
 */wats_tdm_data/
+
+# Package build artifacts
+packages/*/build/
+packages/*/dist/
+packages/*/*.egg-info/
+
+# Test virtual environments
+.test_venv/
+test_env/
