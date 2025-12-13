@@ -45,9 +45,19 @@ for package in "${PACKAGES[@]}"; do
     echo "Installing: $package"
     echo "=========================================="
     
-    WHEEL_FILE=$(ls "$ROOT_DIR/packages/$package/dist/"*.whl 2>/dev/null | head -1)
+    DIST_DIR="$ROOT_DIR/packages/$package/dist"
     
-    if [ -z "$WHEEL_FILE" ]; then
+    if [ ! -d "$DIST_DIR" ]; then
+        echo "Error: Dist directory not found for $package"
+        echo "Run: bash scripts/build_all_packages.sh"
+        deactivate
+        rm -rf "$VENV_DIR"
+        exit 1
+    fi
+    
+    WHEEL_FILE=$(find "$DIST_DIR" -name "*.whl" -type f 2>/dev/null | head -1)
+    
+    if [ -z "$WHEEL_FILE" ] || [ ! -f "$WHEEL_FILE" ]; then
         echo "Error: No wheel file found for $package"
         echo "Run: bash scripts/build_all_packages.sh"
         deactivate

@@ -60,7 +60,12 @@ echo ""
 # Show what was built
 for package in "${PACKAGES[@]}"; do
     echo "$package:"
-    ls -lh "$ROOT_DIR/packages/$package/dist/" 2>/dev/null | grep -E '\.(whl|tar\.gz)$' || echo "  No files found"
+    DIST_DIR="$ROOT_DIR/packages/$package/dist"
+    if [ -d "$DIST_DIR" ] && [ -n "$(ls -A "$DIST_DIR" 2>/dev/null)" ]; then
+        ls -lh "$DIST_DIR" | grep -E '\.(whl|tar\.gz)$' || echo "  No package files found"
+    else
+        echo "  Dist directory empty or not found"
+    fi
     echo ""
 done
 

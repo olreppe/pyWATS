@@ -46,6 +46,8 @@ This document provides a comprehensive checklist of tasks needed to prepare pyWA
 
 ### 1. Version Management (HIGH PRIORITY)
 
+**Note**: LICENSE file paths in pyproject.toml are relative to the package directory. They reference `../../LICENSE` which is correct when building from `packages/*/` directories.
+
 - [ ] **Update version numbers** to match across all packages:
   - [ ] `packages/pywats/pyproject.toml` → version = "2.0.0"
   - [ ] `packages/pywats-client-service/pyproject.toml` → version = "2.0.0"

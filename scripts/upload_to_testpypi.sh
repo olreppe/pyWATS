@@ -36,7 +36,13 @@ for package in "${PACKAGES[@]}"; do
     
     DIST_DIR="$ROOT_DIR/packages/$package/dist"
     
-    if [ ! -d "$DIST_DIR" ] || [ -z "$(ls -A $DIST_DIR)" ]; then
+    if [ ! -d "$DIST_DIR" ]; then
+        echo "Error: Dist directory not found for $package"
+        echo "Run: bash scripts/build_all_packages.sh"
+        exit 1
+    fi
+    
+    if [ -z "$(ls -A $DIST_DIR 2>/dev/null)" ]; then
         echo "Error: No dist files found for $package"
         echo "Run: bash scripts/build_all_packages.sh"
         exit 1
