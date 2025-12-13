@@ -74,7 +74,10 @@ class ProductionService:
         Returns:
             List of created Unit objects
         """
-        return self._repository.save_units(units)
+        results = self._repository.save_units(units)
+        for unit in results:
+            logger.info(f"UNIT_CREATED: {unit.serial_number} (pn={unit.part_number})")
+        return results
 
     def update_unit(self, unit: Unit) -> Optional[Unit]:
         """
@@ -87,6 +90,8 @@ class ProductionService:
             Updated Unit object
         """
         result = self._repository.save_units([unit])
+        if result:
+            logger.info(f"UNIT_UPDATED: {unit.serial_number} (pn={unit.part_number})")
         return result[0] if result else None
 
     # =========================================================================

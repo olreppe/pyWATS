@@ -5,8 +5,11 @@ All business operations for test reports (UUT/UUR).
 from typing import Optional, List, Dict, Any, overload, Callable, Union, TYPE_CHECKING
 from datetime import datetime, timedelta
 from uuid import uuid4, UUID
+import logging
 
 from .repository import ReportRepository
+
+logger = logging.getLogger(__name__)
 from .models import WATSFilter, ReportHeader
 from .enums import DateGrouping
 from .report_models import UUTReport, UURReport
@@ -671,7 +674,17 @@ class ReportService:
         Returns:
             Report ID if successful, None otherwise
         """
-        return self._repository.post_wsjf(report)
+        result = self._repository.post_wsjf(report)
+        if result:
+            # Extract identifying info for logging
+            if isinstance(report, dict):
+                pn = report.get('pn') or report.get('partNumber', 'unknown')
+                sn = report.get('sn') or report.get('serialNumber', 'unknown')
+            else:
+                pn = getattr(report, 'pn', None) or getattr(report, 'part_number', 'unknown')
+                sn = getattr(report, 'sn', None) or getattr(report, 'serial_number', 'unknown')
+            logger.info(f"REPORT_SUBMITTED: id={result} (pn={pn}, sn={sn})")
+        return result
 
     def submit(
         self, report: Union[UUTReport, UURReport, Dict[str, Any]]
@@ -713,7 +726,10 @@ class ReportService:
         Returns:
             Report ID if successful, None otherwise
         """
-        return self._repository.post_wsxf(xml_content)
+        result = self._repository.post_wsxf(xml_content)
+        if result:
+            logger.info(f"REPORT_SUBMITTED_XML: id={result}")
+        return result
 
     # =========================================================================
     # Attachments

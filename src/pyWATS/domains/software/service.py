@@ -4,8 +4,11 @@ All business operations for software distribution packages.
 """
 from typing import Optional, List, Union
 from uuid import UUID
+import logging
 
 from .repository import SoftwareRepository
+
+logger = logging.getLogger(__name__)
 from .models import Package, PackageFile, PackageTag, VirtualFolder
 from .enums import PackageStatus
 from ...core import HttpClient
@@ -145,7 +148,10 @@ class SoftwareService:
             priority=priority,
             tags=tags,
         )
-        return self._repository.create_package(package)
+        result = self._repository.create_package(package)
+        if result:
+            logger.info(f"PACKAGE_CREATED: {result.name} (id={result.package_id}, version={result.version})")
+        return result
 
     def update_package(self, package: Package) -> Optional[Package]:
         """
@@ -163,7 +169,10 @@ class SoftwareService:
         """
         if not package.package_id:
             return None
-        return self._repository.update_package(package.package_id, package)
+        result = self._repository.update_package(package.package_id, package)
+        if result:
+            logger.info(f"PACKAGE_UPDATED: {result.name} (id={result.package_id})")
+        return result
 
     def delete_package(self, package_id: Union[str, UUID]) -> bool:
         """
@@ -177,7 +186,10 @@ class SoftwareService:
         Returns:
             True if deleted successfully
         """
-        return self._repository.delete_package(package_id)
+        result = self._repository.delete_package(package_id)
+        if result:
+            logger.info(f"PACKAGE_DELETED: id={package_id}")
+        return result
 
     def delete_package_by_name(
         self, name: str, version: Optional[int] = None
@@ -194,7 +206,10 @@ class SoftwareService:
         Returns:
             True if deleted successfully
         """
-        return self._repository.delete_package_by_name(name, version)
+        result = self._repository.delete_package_by_name(name, version)
+        if result:
+            logger.info(f"PACKAGE_DELETED: {name} (version={version})")
+        return result
 
     # =========================================================================
     # Package Status Workflow
@@ -210,9 +225,12 @@ class SoftwareService:
         Returns:
             True if successful
         """
-        return self._repository.update_package_status(
+        result = self._repository.update_package_status(
             package_id, PackageStatus.PENDING
         )
+        if result:
+            logger.info(f"PACKAGE_SUBMITTED_FOR_REVIEW: id={package_id} (status=PENDING)")
+        return result
 
     def return_to_draft(self, package_id: Union[str, UUID]) -> bool:
         """
@@ -224,9 +242,12 @@ class SoftwareService:
         Returns:
             True if successful
         """
-        return self._repository.update_package_status(
+        result = self._repository.update_package_status(
             package_id, PackageStatus.DRAFT
         )
+        if result:
+            logger.info(f"PACKAGE_RETURNED_TO_DRAFT: id={package_id} (status=DRAFT)")
+        return result
 
     def release_package(self, package_id: Union[str, UUID]) -> bool:
         """
@@ -238,9 +259,12 @@ class SoftwareService:
         Returns:
             True if successful
         """
-        return self._repository.update_package_status(
+        result = self._repository.update_package_status(
             package_id, PackageStatus.RELEASED
         )
+        if result:
+            logger.info(f"PACKAGE_RELEASED: id={package_id} (status=RELEASED)")
+        return result
 
     def revoke_package(self, package_id: Union[str, UUID]) -> bool:
         """
@@ -252,9 +276,12 @@ class SoftwareService:
         Returns:
             True if successful
         """
-        return self._repository.update_package_status(
+        result = self._repository.update_package_status(
             package_id, PackageStatus.REVOKED
         )
+        if result:
+            logger.info(f"PACKAGE_REVOKED: id={package_id} (status=REVOKED)")
+        return result
 
     # =========================================================================
     # Package Files
@@ -297,9 +324,12 @@ class SoftwareService:
         Returns:
             True if upload successful
         """
-        return self._repository.upload_package_zip(
+        result = self._repository.upload_package_zip(
             package_id, zip_content, clean_install
         )
+        if result:
+            logger.info(f"PACKAGE_ZIP_UPLOADED: id={package_id} (size={len(zip_content)}, clean_install={clean_install})")
+        return result
 
     def update_file_attribute(
         self, file_id: Union[str, UUID], attributes: str

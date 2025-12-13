@@ -3,11 +3,14 @@
 High-level operations for product management.
 """
 from typing import Optional, List, Dict, Any, TYPE_CHECKING
+import logging
 
 if TYPE_CHECKING:
     from .models import BomItem
 
 from .models import Product, ProductRevision, ProductGroup, ProductView
+
+logger = logging.getLogger(__name__)
 from .enums import ProductState
 from .repository import ProductRepository
 
@@ -103,7 +106,10 @@ class ProductService:
             state=state,
             **kwargs
         )
-        return self._repository.save(product)
+        result = self._repository.save(product)
+        if result:
+            logger.info(f"PRODUCT_CREATED: {result.part_number} (name={name}, state={state.name})")
+        return result
 
     def update_product(self, product: Product) -> Optional[Product]:
         """
@@ -115,7 +121,10 @@ class ProductService:
         Returns:
             Updated Product object
         """
-        return self._repository.save(product)
+        result = self._repository.save(product)
+        if result:
+            logger.info(f"PRODUCT_UPDATED: {result.part_number}")
+        return result
 
     def bulk_save_products(
         self, products: List[Product]
@@ -129,7 +138,10 @@ class ProductService:
         Returns:
             List of saved Product objects
         """
-        return self._repository.save_bulk(products)
+        results = self._repository.save_bulk(products)
+        if results:
+            logger.info(f"PRODUCTS_BULK_SAVED: count={len(results)}")
+        return results
 
     def is_active(self, product: Product) -> bool:
         """
@@ -221,7 +233,10 @@ class ProductService:
             part_number=part_number,
             **kwargs
         )
-        return self._repository.save_revision(rev)
+        result = self._repository.save_revision(rev)
+        if result:
+            logger.info(f"REVISION_CREATED: {part_number}/{revision} (name={name})")
+        return result
 
     def update_revision(
         self, revision: ProductRevision
@@ -235,7 +250,10 @@ class ProductService:
         Returns:
             Updated ProductRevision object
         """
-        return self._repository.save_revision(revision)
+        result = self._repository.save_revision(revision)
+        if result:
+            logger.info(f"REVISION_UPDATED: {result.part_number}/{result.revision}")
+        return result
 
     def bulk_save_revisions(
         self, revisions: List[ProductRevision]
@@ -249,7 +267,10 @@ class ProductService:
         Returns:
             List of saved ProductRevision objects
         """
-        return self._repository.save_revisions_bulk(revisions)
+        results = self._repository.save_revisions_bulk(revisions)
+        if results:
+            logger.info(f"REVISIONS_BULK_SAVED: count={len(results)}")
+        return results
 
     # =========================================================================
     # Bill of Materials
@@ -276,7 +297,10 @@ class ProductService:
         Returns:
             True if successful
         """
-        return self._repository.update_bom(part_number, revision, bom_items, description)
+        result = self._repository.update_bom(part_number, revision, bom_items, description)
+        if result:
+            logger.info(f"BOM_UPDATED: {part_number}/{revision} (items={len(bom_items)})")
+        return result
 
     # =========================================================================
     # Product Groups

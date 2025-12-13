@@ -6,8 +6,11 @@ from typing import Optional, List, Any, Dict, Union
 from datetime import datetime
 from uuid import UUID
 from pathlib import Path
+import logging
 
 from .models import Asset, AssetType, AssetLog
+
+logger = logging.getLogger(__name__)
 from .enums import AssetState, AssetAlarmState
 from .repository import AssetRepository
 
@@ -113,7 +116,10 @@ class AssetService:
             parent_serial_number=parent_serial_number,
             **kwargs
         )
-        return self._repository.save(asset)
+        result = self._repository.save(asset)
+        if result:
+            logger.info(f"ASSET_CREATED: {result.serial_number} (type_id={type_id}, name={asset_name})")
+        return result
 
     def update_asset(self, asset: Asset) -> Optional[Asset]:
         """
@@ -125,7 +131,10 @@ class AssetService:
         Returns:
             Updated Asset object
         """
-        return self._repository.save(asset)
+        result = self._repository.save(asset)
+        if result:
+            logger.info(f"ASSET_UPDATED: {result.serial_number} (id={result.asset_id})")
+        return result
 
     def delete_asset(
         self,
@@ -144,12 +153,18 @@ class AssetService:
         """
         # Repository requires asset_id as first arg, but we handle both
         if asset_id:
-            return self._repository.delete(asset_id=asset_id, serial_number=serial_number)
+            result = self._repository.delete(asset_id=asset_id, serial_number=serial_number)
+            if result:
+                logger.info(f"ASSET_DELETED: id={asset_id} (sn={serial_number})")
+            return result
         elif serial_number:
             # Get asset by serial to get ID
             asset = self._repository.get_by_serial_number(serial_number)
             if asset and asset.asset_id:
-                return self._repository.delete(asset_id=asset.asset_id)
+                result = self._repository.delete(asset_id=asset.asset_id)
+                if result:
+                    logger.info(f"ASSET_DELETED: {serial_number} (id={asset.asset_id})")
+                return result
         return False
 
     # =========================================================================
@@ -219,11 +234,15 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repository.set_state(
+        result = self._repository.set_state(
             state=state,
             asset_id=asset_id,
             serial_number=serial_number
         )
+        if result:
+            identifier = serial_number or asset_id
+            logger.info(f"ASSET_STATE_CHANGED: {identifier} (state={state.name})")
+        return result
 
     def is_in_alarm(self, asset: Asset) -> bool:
         """
@@ -352,11 +371,15 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repository.reset_running_count(
+        result = self._repository.reset_running_count(
             asset_id=asset_id,
             serial_number=serial_number,
             comment=comment
         )
+        if result:
+            identifier = serial_number or asset_id
+            logger.info(f"ASSET_RUNNING_COUNT_RESET: {identifier}")
+        return result
 
     # =========================================================================
     # Calibration & Maintenance
@@ -383,12 +406,16 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repository.post_calibration(
+        result = self._repository.post_calibration(
             asset_id=asset_id,
             serial_number=serial_number,
             date_time=calibration_date,
             comment=comment
         )
+        if result:
+            identifier = serial_number or asset_id
+            logger.info(f"ASSET_CALIBRATED: {identifier}")
+        return result
 
     def record_maintenance(
         self,
@@ -411,12 +438,16 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repository.post_maintenance(
+        result = self._repository.post_maintenance(
             asset_id=asset_id,
             serial_number=serial_number,
             date_time=maintenance_date,
             comment=comment
         )
+        if result:
+            identifier = serial_number or asset_id
+            logger.info(f"ASSET_MAINTENANCE_RECORDED: {identifier}")
+        return result
 
     # =========================================================================
     # Log Operations
@@ -456,7 +487,10 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repository.post_message(asset_id, message, user)
+        result = self._repository.post_message(asset_id, message, user)
+        if result:
+            logger.info(f"ASSET_LOG_MESSAGE_ADDED: id={asset_id}")
+        return result
 
     # =========================================================================
     # Asset Types
@@ -508,7 +542,10 @@ class AssetService:
             alarm_threshold=alarm_threshold,
             **kwargs
         )
-        return self._repository.save_type(asset_type)
+        result = self._repository.save_type(asset_type)
+        if result:
+            logger.info(f"ASSET_TYPE_CREATED: {result.type_name} (id={result.type_id})")
+        return result
 
     # =========================================================================
     # Sub-Assets
@@ -565,7 +602,10 @@ class AssetService:
             parent_serial_number=parent_serial,
             **kwargs
         )
-        return self._repository.save(child)
+        result = self._repository.save(child)
+        if result:
+            logger.info(f"ASSET_CHILD_ADDED: {child_serial} (parent={parent_serial})")
+        return result
 
     # =========================================================================
     # File Operations
@@ -590,12 +630,15 @@ class AssetService:
         Returns:
             True if successful
         """
-        return self._repository.upload_file(
+        result = self._repository.upload_file(
             asset_id=asset_id,
             filename=filename,
             content=content,
             base_url=self._base_url
         )
+        if result:
+            logger.info(f"ASSET_FILE_UPLOADED: id={asset_id} (filename={filename}, size={len(content)})")
+        return result
 
     def upload_file_from_path(
         self,

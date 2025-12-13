@@ -4,8 +4,11 @@ All business operations for the RootCause ticketing system.
 """
 from typing import Optional, List, Union
 from uuid import UUID
+import logging
 
 from .repository import RootCauseRepository
+
+logger = logging.getLogger(__name__)
 from .models import Ticket, TicketUpdate
 from .enums import TicketStatus, TicketPriority, TicketView
 from ...core import HttpClient
@@ -133,7 +136,10 @@ class RootCauseService:
         if initial_comment:
             ticket.update = TicketUpdate(content=initial_comment)
 
-        return self._repository.create_ticket(ticket)
+        result = self._repository.create_ticket(ticket)
+        if result:
+            logger.info(f"TICKET_CREATED: {result.ticket_id} (subject={subject}, priority={priority.name})")
+        return result
 
     def update_ticket(self, ticket: Ticket) -> Optional[Ticket]:
         """
@@ -145,7 +151,10 @@ class RootCauseService:
         Returns:
             Updated Ticket object or None
         """
-        return self._repository.update_ticket(ticket)
+        result = self._repository.update_ticket(ticket)
+        if result:
+            logger.info(f"TICKET_UPDATED: {result.ticket_id}")
+        return result
 
     def add_comment(
         self, ticket_id: Union[str, UUID], comment: str
@@ -166,7 +175,10 @@ class RootCauseService:
             ),
             update=TicketUpdate(content=comment),
         )
-        return self._repository.update_ticket(ticket)
+        result = self._repository.update_ticket(ticket)
+        if result:
+            logger.info(f"TICKET_COMMENT_ADDED: {ticket_id}")
+        return result
 
     def change_status(
         self, ticket_id: Union[str, UUID], status: TicketStatus
@@ -187,7 +199,10 @@ class RootCauseService:
             ),
             status=status,
         )
-        return self._repository.update_ticket(ticket)
+        result = self._repository.update_ticket(ticket)
+        if result:
+            logger.info(f"TICKET_STATUS_CHANGED: {ticket_id} (status={status.name})")
+        return result
 
     def assign_ticket(
         self, ticket_id: Union[str, UUID], assignee: str
@@ -208,7 +223,10 @@ class RootCauseService:
             ),
             assignee=assignee,
         )
-        return self._repository.update_ticket(ticket)
+        result = self._repository.update_ticket(ticket)
+        if result:
+            logger.info(f"TICKET_ASSIGNED: {ticket_id} (assignee={assignee})")
+        return result
 
     def archive_tickets(
         self, ticket_ids: List[Union[str, UUID]]
@@ -224,7 +242,10 @@ class RootCauseService:
         Returns:
             Ticket object or None
         """
-        return self._repository.archive_tickets(ticket_ids)
+        result = self._repository.archive_tickets(ticket_ids)
+        if result:
+            logger.info(f"TICKETS_ARCHIVED: count={len(ticket_ids)}")
+        return result
 
     # =========================================================================
     # Attachment Operations

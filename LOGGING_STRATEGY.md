@@ -1,6 +1,7 @@
 # Logging and Console Output Strategy for pyWATS
 
 **Date:** December 12, 2025  
+**Updated:** January 2025  
 **Topic:** Architectural recommendations for logging and console output
 
 ## Executive Summary
@@ -11,6 +12,52 @@ Based on your layered architecture (Facade → Service → Repository → HttpCl
 **Logging:** Client application feature (comprehensive, configurable)
 
 This follows the **Separation of Concerns** principle and allows library users to control their own logging strategies.
+
+## ✅ Implementation Status (January 2025)
+
+Enhanced INFO-level logging has been added to all service layer mutating operations:
+
+### Logged Operations by Domain
+
+| Domain | Operations | Log Format |
+|--------|------------|------------|
+| **Asset** | create, update, delete, state_change, calibration, maintenance, counter_reset, type_create, child_add, file_upload, log_message | `ASSET_*: identifier (key=value)` |
+| **Product** | create, update, bulk_save, revision_create, revision_update, bom_update | `PRODUCT_*: part_number (key=value)` |
+| **Production** | create_units, update_unit | `UNIT_*: serial_number (pn=part_number)` |
+| **Report** | submit, submit_xml | `REPORT_SUBMITTED: id=guid (pn=..., sn=...)` |
+| **RootCause** | create_ticket, update, comment, status_change, assign, archive | `TICKET_*: ticket_id (key=value)` |
+| **Software** | create_package, update, delete, status_workflow, upload_zip | `PACKAGE_*: name (key=value)` |
+
+### Log Message Format
+
+All log messages follow a consistent format for easy filtering and parsing:
+
+```
+DOMAIN_ACTION: identifier (key=value, key=value)
+```
+
+Examples:
+- `ASSET_CREATED: SN-123 (type_id=abc, name=Station1)`
+- `UNIT_UPDATED: UNIT-456 (pn=PROD-001)`
+- `REPORT_SUBMITTED: id=abc-123-def (pn=PROD-001, sn=UNIT-456)`
+- `TICKET_STATUS_CHANGED: 550e8400-e29b-41d4-a716-446655440000 (status=SOLVED)`
+- `PACKAGE_RELEASED: id=pkg-123 (status=RELEASED)`
+
+### How to Use
+
+```python
+import logging
+
+# Enable INFO level to see operation logs
+logging.basicConfig(level=logging.INFO)
+
+# Or filter to just pywats logs
+logging.getLogger('pywats').setLevel(logging.INFO)
+
+# Hook into specific domains
+logging.getLogger('pywats.domains.asset.service').setLevel(logging.INFO)
+logging.getLogger('pywats.domains.report.service').setLevel(logging.INFO)
+```
 
 ---
 
