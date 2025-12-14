@@ -51,6 +51,10 @@ client-headless = [
     "watchdog>=3.0.0",
     "aiofiles>=23.0.0",
 ]
+# MCP server for AI assistant integration
+mcp = [
+    "mcp>=1.0.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -73,6 +77,7 @@ Changelog = "https://github.com/olreppe/pyWATS/blob/main/CHANGELOG.md"
 
 [project.scripts]
 pywats-client = "pywats_client.__main__:main"
+pywats-mcp = "pywats_mcp.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

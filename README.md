@@ -44,6 +44,9 @@ pip install pywats-api[client]
 
 # Install headless client (no Qt - for Raspberry Pi, servers)
 pip install pywats-api[client-headless]
+
+# Install with MCP server (for AI assistant integration)
+pip install pywats-api[mcp]
 ```
 
 ### From Source (Development)
