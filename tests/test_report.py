@@ -21,8 +21,9 @@ class TestServerConfiguration:
         print(f"Token (first 20 chars): {wats_config['token'][:20]}...")
         print(f"==========================\n")
         
-        assert wats_config['base_url'] == "https://python.wats.com"
-        assert len(wats_config['token']) > 0
+        # Just verify we have valid configuration (loaded from config file)
+        assert wats_config['base_url'], "Server URL must be configured"
+        assert len(wats_config['token']) > 0, "Token must be configured"
 
 
 class TestReportCreation:

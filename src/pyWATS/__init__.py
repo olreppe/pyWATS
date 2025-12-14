@@ -56,7 +56,8 @@ from .shared import Setting, PyWATSModel
 # UUT/UUR Report models (import separately to avoid name conflicts)
 # from pywats.models import UUTReport, UURReport, Step, etc.
 
-__version__ = "2.0.0"
+__version__ = "0.1.0b1"
+__wats_server_version__ = "2025.3.9.824"  # Minimum required WATS server version
 __all__ = [
     # Main class
     "pyWATS",

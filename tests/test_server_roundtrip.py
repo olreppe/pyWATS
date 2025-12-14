@@ -1,6 +1,12 @@
 """
 Test actual server round-trip to see what time the server stores/returns
+
+This test requires a real WATS server connection.
+Configure via tests/instances/client_a_config.json or environment variables:
+  WATS_BASE_URL - Your WATS server URL
+  WATS_AUTH_TOKEN - Your base64-encoded token
 """
+import os
 from datetime import datetime
 from pywats import pyWATS
 from pywats.domains.report.report_models.uut.uut_report import UUTReport
@@ -43,12 +49,26 @@ print(f"\n2. JSON BEING SENT TO SERVER:")
 print(f"   start field: {json_data.get('start')}")
 print(f"   startUTC in JSON: {'startUTC' in json_str}")
 
-# Initialize client with credentials
+# Initialize client with credentials from environment or config
+base_url = os.environ.get("WATS_BASE_URL", "")
+token = os.environ.get("WATS_AUTH_TOKEN", "")
+
+if not base_url or not token:
+    # Try loading from config file
+    import json as json_module
+    config_path = os.path.join(os.path.dirname(__file__), "instances", "client_a_config.json")
+    if os.path.exists(config_path):
+        with open(config_path) as f:
+            config = json_module.load(f)
+            base_url = config.get("base_url", "")
+            token = config.get("token", "")
+
+if not base_url or not token:
+    print("ERROR: No WATS server configured. Set WATS_BASE_URL and WATS_AUTH_TOKEN or configure tests/instances/client_a_config.json")
+    exit(1)
+
 try:
-    client = pyWATS(
-        base_url="https://python.wats.com",
-        token="cHlXQVRTX0FQSV9BVVRPVEVTVDo2cGhUUjg0ZTVIMHA1R3JUWGtQZlY0UTNvbmk2MiM="
-    )
+    client = pyWATS(base_url=base_url, token=token)
     print(f"\n3. SENDING REPORT TO SERVER...")
     
     # Send report

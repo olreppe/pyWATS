@@ -1,0 +1,86 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, release]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run linting
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Run unit tests (no server required)
+      run: |
+        pytest tests/ -v \
+          --ignore=tests/instances \
+          --ignore=tests/fixtures \
+          --ignore=tests/acceptance \
+          -m "not server and not integration" \
+          --tb=short \
+          -x
+      env:
+        # Provide dummy values so tests don't fail on missing env vars
+        WATS_BASE_URL: "https://demo.wats.com"
+        WATS_AUTH_TOKEN: "dGVzdDp0ZXN0"
+
+  type-check:
+    name: Type checking
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        pip install -e ".[dev]"
+    - name: Run mypy
+      run: mypy src/pywats --ignore-missing-imports
+      continue-on-error: true  # Don't fail build on type errors for now
+
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install build tools
+      run: pip install build twine
+    - name: Build
+      run: python -m build
+    - name: Check
+      run: twine check dist/*
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/

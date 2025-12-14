@@ -1,18 +1,30 @@
 # pyWATS
 
-A Python library for interacting with the WATS (Web-based Automated Test System) API.
+[![PyPI version](https://badge.fury.io/py/pywats-api.svg)](https://badge.fury.io/py/pywats-api)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A Python library for interacting with the [WATS](https://wats.com) (Web-based Automated Test System) API.
+
+> **⚠️ Beta Release**: This is a beta version. The API is stabilizing but may have changes before 1.0.
+
+## Requirements
+
+- **Python 3.8** or later
+- **WATS Server 2025.3.9.824** or later
 
 ## Features
 
-- **pyWATS Library** (`src/pywats/`) - Core API library for WATS integration
+- **pyWATS Library** - Core API library for WATS integration
   - Product management
   - Asset management  
   - Report creation and submission
   - Production/serial number management
   - RootCause ticket system
+  - Software distribution
   - Statistics and analytics
 
-- **pyWATS Client** (`src/pywats_client/`) - Desktop and headless client application
+- **pyWATS Client** - Desktop and headless client application
   - Connection management
   - Converter configuration
   - Report queue management
@@ -20,6 +32,21 @@ A Python library for interacting with the WATS (Web-based Automated Test System)
   - **Headless Mode**: CLI and HTTP API for servers, Raspberry Pi, embedded systems
 
 ## Installation
+
+### From PyPI (Recommended)
+
+```bash
+# Install core API library only
+pip install pywats-api
+
+# Install with GUI client (requires Qt)
+pip install pywats-api[client]
+
+# Install headless client (no Qt - for Raspberry Pi, servers)
+pip install pywats-api[client-headless]
+```
+
+### From Source (Development)
 
 ```bash
 # Clone the repository
@@ -31,29 +58,28 @@ python -m venv .venv
 .venv\Scripts\activate  # Windows
 source .venv/bin/activate  # Linux/Mac
 
-# Install core API only
-pip install -e .
-
-# Install with GUI client (requires Qt)
-pip install -e ".[client]"
-
-# Install headless client (no Qt - for Raspberry Pi, servers)
-pip install -e ".[client-headless]"
+# Install in development mode
+pip install -e ".[dev]"
 ```
 
 ## Configuration
 
-1. Copy `.env.template` to `.env`
-2. Update with your WATS credentials:
+Create a configuration with your WATS credentials:
+
+```python
+from pywats import pyWATS
+
+api = pyWATS(
+    base_url="https://your-server.wats.com",
+    token="your_base64_encoded_token"
+)
+```
+
+Or use environment variables:
 
 ```env
 WATS_BASE_URL=https://your-server.wats.com
 WATS_AUTH_TOKEN=your_base64_encoded_token
-```
-
-**Having environment issues?** See [ENVIRONMENT_SETUP_GUIDE.md](ENVIRONMENT_SETUP_GUIDE.md) or run:
-```powershell
-.\scripts\fix_environment.ps1
 ```
 
 ## Quick Start
@@ -180,42 +206,32 @@ pyWATS/
 
 ## Documentation
 
-### Architecture & Design
-
 - [Architecture Overview](docs/ARCHITECTURE.md) - System design and layered architecture
-- [API Specifications](docs/api_specs/) - OpenAPI specs for WATS server
-
-### Module Usage Guides
-
-- [Report Module](docs/usage/REPORT_MODULE.md) - Test reports and factory methods ⭐
+- [Report Module](docs/usage/REPORT_MODULE.md) - Test reports and factory methods
 - [Product Module](docs/usage/PRODUCT_MODULE.md) - Product/BOM management
 - [Production Module](docs/usage/PRODUCTION_MODULE.md) - Serial number and unit tracking
-- [Asset Module](docs/usage/ASSET_MODULE.md) - Equipment management (coming soon)
-
-### Additional Documentation
-
-- [Basic Usage Example](docs/examples/basic_usage.py)
-- [REST API Instructions](docs/REST_API_INSTRUCTION.md)
-- [Quick Reference](QUICK_REFERENCE.md) - API quick reference
-- [Logging Strategy](LOGGING_STRATEGY.md) - Comprehensive logging guide ⭐
-- [GUI Configuration](src/pywats_client/GUI_CONFIGURATION.md) - Client GUI setup and tab customization ⭐
-- [Headless Operation](src/pywats_client/control/HEADLESS_GUIDE.md) - CLI, HTTP API, Raspberry Pi setup ⭐
 
 ## Testing
-
-Run the test suite:
 
 ```bash
 # Run all tests
 pytest
 
-# Run specific test file
-pytest tests/test_report.py
-
 # Run with coverage
 pytest --cov=src --cov-report=html
 ```
 
+## Contributing
+
+This project is maintained by [Virinco AS](https://virinco.com). 
+
 ## License
 
-Proprietary - Virinco
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Links
+
+- [WATS Website](https://wats.com)
+- [Virinco](https://virinco.com)
+- [GitHub Repository](https://github.com/olreppe/pyWATS)
+- [Changelog](CHANGELOG.md)

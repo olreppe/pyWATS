@@ -1,0 +1,11 @@
+{
+  "instance_id": "B",
+  "name": "Test Client B",
+  "description": "Secondary test instance - alternative configuration",
+  "base_url": "https://demo.wats.com",
+  "token": "YOUR_BASE64_ENCODED_TOKEN_HERE",
+  "station_name": "TEST-STATION-B",
+  "location": "Test Lab Beta",
+  "converters_enabled": false,
+  "offline_mode": true
+}

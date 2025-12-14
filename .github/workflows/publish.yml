@@ -1,0 +1,47 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # Required for trusted publishing
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Build package
+      run: python -m build
+
+    - name: Check package
+      run: |
+        twine check dist/*
+        # Verify no sensitive data in package
+        echo "Checking for sensitive patterns..."
+        tar -tzf dist/*.tar.gz > /tmp/files.txt
+        if grep -q "client_a_config.json\|client_b_config.json" /tmp/files.txt; then
+          echo "ERROR: Test config files found in package!"
+          exit 1
+        fi
+        echo "Package contents look clean."
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      # Uses trusted publishing - configure at https://pypi.org/manage/account/publishing/

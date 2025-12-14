@@ -58,7 +58,7 @@ class ConverterConfig:
 class ApplicationSettings:
     """Application-wide settings"""
     # Server and API
-    server_url: str = "https://python.wats.com"
+    server_url: str = ""  # User must configure - e.g., https://yourcompany.wats.com
     api_token: str = ""
     check_ssl: bool = True
     

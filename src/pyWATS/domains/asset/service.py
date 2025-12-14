@@ -32,7 +32,7 @@ class AssetService:
             base_url: Base URL for internal API file operations
         """
         self._repository = repository
-        self._base_url = base_url or "https://wats.com"
+        self._base_url = base_url or ""
 
     # =========================================================================
     # Asset Operations

@@ -8,17 +8,33 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from pywats import pyWATS as WATS
+import os
 
 def main():
     print("=" * 80)
     print("Testing Deserialization Timezone Handling")
     print("=" * 80)
     
+    # Get credentials from environment or config
+    base_url = os.environ.get("WATS_BASE_URL", "")
+    token = os.environ.get("WATS_AUTH_TOKEN", "")
+    
+    if not base_url or not token:
+        # Try loading from config file
+        import json
+        config_path = os.path.join(os.path.dirname(__file__), "instances", "client_a_config.json")
+        if os.path.exists(config_path):
+            with open(config_path) as f:
+                config = json.load(f)
+                base_url = config.get("base_url", "")
+                token = config.get("token", "")
+    
+    if not base_url or not token:
+        print("ERROR: No WATS server configured. Set WATS_BASE_URL and WATS_AUTH_TOKEN")
+        return
+    
     # Connect to server
-    wats = WATS(
-        base_url="https://python.wats.com",
-        token="cHlXQVRTX0FQSV9BVVRPVEVTVDo2cGhUUjg0ZTVIMHA1R3JUWGtQZlY0UTNvbmk2MiM="
-    )
+    wats = WATS(base_url=base_url, token=token)
     
     # Get current local time
     now_local = datetime.now().astimezone()

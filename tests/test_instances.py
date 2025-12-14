@@ -46,9 +46,10 @@ class TestInstanceConfig:
     name: str
     description: str
     
-    # Connection settings (can be customized per instance)
-    base_url: str = "https://python.wats.com"
-    token: str = "cHlXQVRTX0FQSV9BVVRPVEVTVDo2cGhUUjg0ZTVIMHA1R3JUWGtQZlY0UTNvbmk2MiM="
+    # Connection settings - use environment variables or load from config file
+    # Default to demo.wats.com for CI/public use
+    base_url: str = ""  # Will be loaded from config file or env
+    token: str = ""  # Will be loaded from config file or env
     
     # Client-specific settings
     station_name: str = ""
