@@ -24,7 +24,8 @@ from .styles import DARK_STYLESHEET
 from .settings_dialog import SettingsDialog
 from .pages import (
     BasePage, SetupPage, GeneralPage, ConnectionPage, ProxySettingsPage, 
-    ConvertersPage, LocationPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage
+    ConvertersPage, LocationPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
+    AssetPage, RootCausePage, ProductionPage, ProductPage
 )
 from ..core.config import ClientConfig
 from ..app import pyWATSApplication, ApplicationStatus
@@ -220,6 +221,14 @@ class MainWindow(QMainWindow):
             nav_items.append(("Proxy Settings", "🌐"))
         if self.config.show_software_tab:
             nav_items.append(("Software", "💻"))
+        if self.config.show_asset_tab:
+            nav_items.append(("Assets", "🔧"))
+        if self.config.show_rootcause_tab:
+            nav_items.append(("RootCause", "🎫"))
+        if self.config.show_production_tab:
+            nav_items.append(("Production", "🏭"))
+        if self.config.show_product_tab:
+            nav_items.append(("Products", "📦"))
         
         for name, icon in nav_items:
             if not name:  # Separator
@@ -293,6 +302,7 @@ class MainWindow(QMainWindow):
         self._pages: Dict[str, BasePage] = {
             "Setup": SetupPage(self.config, self),
             "General": GeneralPage(self.config, self),
+            "Connection": ConnectionPage(self.config, self),
             "Log": LogPage(self.config, self),
         }
         
@@ -307,6 +317,14 @@ class MainWindow(QMainWindow):
             self._pages["Proxy Settings"] = ProxySettingsPage(self.config)
         if self.config.show_software_tab:
             self._pages["Software"] = SoftwarePage(self.config, self)
+        if self.config.show_asset_tab:
+            self._pages["Assets"] = AssetPage(self.config, self)
+        if self.config.show_rootcause_tab:
+            self._pages["RootCause"] = RootCausePage(self.config, self)
+        if self.config.show_production_tab:
+            self._pages["Production"] = ProductionPage(self.config, self)
+        if self.config.show_product_tab:
+            self._pages["Products"] = ProductPage(self.config, self)
         
         for page in self._pages.values():
             self._page_stack.addWidget(page)

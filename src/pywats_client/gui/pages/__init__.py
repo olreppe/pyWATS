@@ -15,6 +15,10 @@ from .sn_handler import SNHandlerPage
 from .software import SoftwarePage
 from .about import AboutPage
 from .log import LogPage
+from .asset import AssetPage
+from .rootcause import RootCausePage
+from .production import ProductionPage
+from .product import ProductPage
 
 __all__ = [
     "BasePage",
@@ -28,4 +32,8 @@ __all__ = [
     "SoftwarePage",
     "AboutPage",
     "LogPage",
+    "AssetPage",
+    "RootCausePage",
+    "ProductionPage",
+    "ProductPage",
 ]

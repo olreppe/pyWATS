@@ -173,6 +173,10 @@ class ClientConfig:
     show_converters_tab: bool = True
     show_location_tab: bool = True
     show_proxy_tab: bool = True
+    show_asset_tab: bool = True
+    show_rootcause_tab: bool = True
+    show_production_tab: bool = True
+    show_product_tab: bool = True
     
     # Connection state - persist connected state
     auto_connect: bool = True  # Always try to connect on startup
@@ -410,6 +414,10 @@ class ClientConfig:
             "show_converters_tab": self.show_converters_tab,
             "show_location_tab": self.show_location_tab,
             "show_proxy_tab": self.show_proxy_tab,
+            "show_asset_tab": self.show_asset_tab,
+            "show_rootcause_tab": self.show_rootcause_tab,
+            "show_production_tab": self.show_production_tab,
+            "show_product_tab": self.show_product_tab,
             "auto_connect": self.auto_connect,
             "was_connected": self.was_connected,
             "service_auto_start": self.service_auto_start,
