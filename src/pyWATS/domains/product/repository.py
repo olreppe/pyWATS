@@ -223,6 +223,103 @@ class ProductRepository:
     # Bill of Materials
     # =========================================================================
 
+    def get_bom(
+        self,
+        part_number: str,
+        revision: str
+    ) -> Optional[str]:
+        """
+        Get BOM (Bill of Materials) for a product revision as WSBF XML.
+
+        GET /api/internal/Product/Bom?partNumber={partNumber}&revision={revision}
+        
+        Returns the BOM in WSBF (WATS Standard BOM Format) XML format.
+        Example response:
+            <BOM xmlns="http://wats.virinco.com/schemas/WATS/wsbf" 
+                 Partnumber="100100" Revision="1.0" Desc="Product Description">
+                <Component Number="100200" Rev="1.0" Qty="2" Desc="Description" Ref="R1;R2"/>
+            </BOM>
+
+        Args:
+            part_number: Product part number
+            revision: Product revision
+
+        Returns:
+            WSBF XML string or None if not found
+        """
+        logger.debug(f"Fetching BOM for {part_number} rev {revision}")
+        response = self._http_client.get(
+            "/api/internal/Product/Bom",
+            params={"partNumber": part_number, "revision": revision}
+        )
+        if response.is_success and response.data:
+            # Response may be XML string or object
+            if isinstance(response.data, str):
+                return response.data
+            # If JSON response, convert back to string
+            return str(response.data)
+        return None
+
+    def get_bom_items(
+        self,
+        part_number: str,
+        revision: str
+    ) -> List[BomItem]:
+        """
+        Get BOM items as parsed objects.
+
+        Fetches the WSBF XML and parses it into BomItem objects.
+
+        Args:
+            part_number: Product part number
+            revision: Product revision
+
+        Returns:
+            List of BomItem objects
+        """
+        wsbf_xml = self.get_bom(part_number, revision)
+        if not wsbf_xml:
+            return []
+        
+        return self._parse_wsbf_xml(wsbf_xml)
+
+    def _parse_wsbf_xml(self, xml_content: str) -> List[BomItem]:
+        """
+        Parse WSBF XML into BomItem objects.
+        
+        Args:
+            xml_content: WSBF XML string
+            
+        Returns:
+            List of BomItem objects
+        """
+        try:
+            root = ET.fromstring(xml_content)
+            items: List[BomItem] = []
+            
+            # Handle namespace
+            ns = {"wsbf": "http://wats.virinco.com/schemas/WATS/wsbf"}
+            
+            # Try with namespace first, then without
+            components = root.findall("wsbf:Component", ns)
+            if not components:
+                components = root.findall("Component")
+            
+            for comp in components:
+                item = BomItem(
+                    part_number=comp.get("Number", ""),
+                    component_ref=comp.get("Ref"),
+                    description=comp.get("Desc"),
+                    quantity=int(comp.get("Qty", "1")) if comp.get("Qty") else 1,
+                    manufacturer_pn=comp.get("Rev"),  # Rev stored in manufacturer_pn
+                )
+                items.append(item)
+            
+            return items
+        except ET.ParseError as e:
+            logger.error(f"Failed to parse WSBF XML: {e}")
+            return []
+
     def update_bom(
         self,
         part_number: str,

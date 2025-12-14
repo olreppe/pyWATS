@@ -17,7 +17,8 @@ from PySide6.QtWidgets import (
     QPushButton, QGroupBox, QTableWidget, QTableWidgetItem, 
     QHeaderView, QComboBox, QMessageBox, QDialog,
     QFormLayout, QTextEdit, QDialogButtonBox, QSplitter,
-    QCheckBox, QTreeWidget, QTreeWidgetItem
+    QCheckBox, QTreeWidget, QTreeWidgetItem, QTabWidget,
+    QSpinBox
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
@@ -121,8 +122,79 @@ class ProductDialog(QDialog):
         }
 
 
+class AddSubunitDialog(QDialog):
+    """Dialog for adding a subunit to a box build template"""
+    
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self._setup_ui()
+    
+    def _setup_ui(self) -> None:
+        """Setup dialog UI"""
+        self.setWindowTitle("Add Subunit")
+        self.setMinimumWidth(350)
+        
+        layout = QVBoxLayout(self)
+        
+        # Form
+        form = QFormLayout()
+        form.setSpacing(10)
+        
+        self.part_edit = QLineEdit()
+        self.part_edit.setPlaceholderText("Child product part number (required)")
+        form.addRow("Part Number:", self.part_edit)
+        
+        self.rev_edit = QLineEdit()
+        self.rev_edit.setPlaceholderText("Child product revision (required)")
+        form.addRow("Revision:", self.rev_edit)
+        
+        self.qty_spin = QSpinBox()
+        self.qty_spin.setMinimum(1)
+        self.qty_spin.setMaximum(999)
+        self.qty_spin.setValue(1)
+        form.addRow("Quantity:", self.qty_spin)
+        
+        self.item_edit = QLineEdit()
+        self.item_edit.setPlaceholderText("Optional position/item number")
+        form.addRow("Item Number:", self.item_edit)
+        
+        layout.addLayout(form)
+        
+        # Buttons
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | 
+            QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self._validate_and_accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+    
+    def _validate_and_accept(self) -> None:
+        """Validate input"""
+        if not self.part_edit.text().strip():
+            QMessageBox.warning(self, "Validation", "Part number is required")
+            return
+        if not self.rev_edit.text().strip():
+            QMessageBox.warning(self, "Validation", "Revision is required")
+            return
+        self.accept()
+    
+    def get_data(self) -> Dict[str, Any]:
+        """Get subunit data"""
+        return {
+            'part_number': self.part_edit.text().strip(),
+            'revision': self.rev_edit.text().strip(),
+            'quantity': self.qty_spin.value(),
+            'item_number': self.item_edit.text().strip() or None,
+        }
+
+
 class ProductPage(BasePage):
     """Product Management page - manage products and revisions"""
+    
+    # Constants for tree item types
+    ITEM_TYPE_PRODUCT = 0
+    ITEM_TYPE_REVISION = 1
     
     def __init__(
         self, 
@@ -133,6 +205,7 @@ class ProductPage(BasePage):
         self._main_window = main_window
         self._products: List[Dict[str, Any]] = []
         self._selected_product: Optional[Dict[str, Any]] = None
+        self._selected_revision: Optional[str] = None
         super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
@@ -154,6 +227,11 @@ class ProductPage(BasePage):
         self._add_btn = QPushButton("+ Add Product")
         self._add_btn.clicked.connect(self._on_add_product)
         toolbar_layout.addWidget(self._add_btn)
+        
+        self._add_rev_btn = QPushButton("+ Add Revision")
+        self._add_rev_btn.setEnabled(False)
+        self._add_rev_btn.clicked.connect(self._on_add_revision)
+        toolbar_layout.addWidget(self._add_rev_btn)
         
         toolbar_layout.addStretch()
         
@@ -177,41 +255,39 @@ class ProductPage(BasePage):
         # Main content - splitter
         splitter = QSplitter(Qt.Orientation.Horizontal)
         
-        # Left side - products table
+        # Left side - hierarchical products/revisions tree
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
         left_layout.setContentsMargins(0, 0, 0, 0)
         
-        table_group = QGroupBox("Products")
-        table_layout = QVBoxLayout(table_group)
+        tree_group = QGroupBox("Products & Revisions")
+        tree_layout = QVBoxLayout(tree_group)
         
-        self._products_table = QTableWidget()
-        self._products_table.setColumnCount(4)
-        self._products_table.setHorizontalHeaderLabels([
-            "Part Number", "Name", "State", "Non-Serial"
-        ])
-        self._products_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        self._products_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self._products_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        self._products_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        self._products_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self._products_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self._products_table.setAlternatingRowColors(True)
-        self._products_table.itemSelectionChanged.connect(self._on_selection_changed)
-        self._products_table.doubleClicked.connect(self._on_edit_product)
+        self._products_tree = QTreeWidget()
+        self._products_tree.setColumnCount(3)
+        self._products_tree.setHeaderLabels(["Part Number / Revision", "Name / State", "State"])
+        self._products_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self._products_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._products_tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self._products_tree.setSelectionBehavior(QTreeWidget.SelectionBehavior.SelectRows)
+        self._products_tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
+        self._products_tree.setAlternatingRowColors(True)
+        self._products_tree.itemSelectionChanged.connect(self._on_tree_selection_changed)
+        self._products_tree.itemDoubleClicked.connect(self._on_tree_item_double_clicked)
+        self._products_tree.itemExpanded.connect(self._on_item_expanded)
         
         # Apply dark theme styling
-        self._products_table.setStyleSheet("""
-            QTableWidget {
+        self._products_tree.setStyleSheet("""
+            QTreeWidget {
                 font-size: 11pt;
                 background-color: #1e1e1e;
                 alternate-background-color: #2d2d2d;
                 border: 1px solid #3c3c3c;
             }
-            QTableWidget::item {
+            QTreeWidget::item {
                 padding: 4px;
             }
-            QTableWidget::item:selected {
+            QTreeWidget::item:selected {
                 background-color: #0078d4;
             }
             QHeaderView::section {
@@ -221,111 +297,129 @@ class ProductPage(BasePage):
                 font-weight: bold;
             }
         """)
-        table_layout.addWidget(self._products_table)
+        tree_layout.addWidget(self._products_tree)
         
-        left_layout.addWidget(table_group)
+        left_layout.addWidget(tree_group)
         splitter.addWidget(left_widget)
         
-        # Right side - details and revisions
+        # Right side - tabbed interface
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Details group
-        details_group = QGroupBox("Product Details")
-        details_layout = QVBoxLayout(details_group)
+        # Tab widget for Product Info / BOM / Box Build
+        self._tabs = QTabWidget()
+        self._tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #3c3c3c;
+                background-color: #252526;
+            }
+            QTabBar::tab {
+                background-color: #2d2d2d;
+                color: #cccccc;
+                padding: 8px 16px;
+                border: 1px solid #3c3c3c;
+                border-bottom: none;
+                margin-right: 2px;
+            }
+            QTabBar::tab:selected {
+                background-color: #1e1e1e;
+                color: #ffffff;
+            }
+            QTabBar::tab:hover:!selected {
+                background-color: #3c3c3c;
+            }
+            QTabBar::tab:disabled {
+                color: #555555;
+                background-color: #252526;
+            }
+        """)
         
-        self._details_label = QLabel("Select a product to view details")
+        # === Tab 1: Product Info ===
+        info_tab = QWidget()
+        info_layout = QVBoxLayout(info_tab)
+        
+        # Product info
+        self._details_label = QLabel("Select a product or revision to view details")
         self._details_label.setStyleSheet("color: #808080; font-style: italic;")
         self._details_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._details_label.setWordWrap(True)
-        details_layout.addWidget(self._details_label)
+        info_layout.addWidget(self._details_label)
         
         # Action buttons
         action_layout = QHBoxLayout()
-        
-        self._edit_btn = QPushButton("Edit")
+        self._edit_btn = QPushButton("Edit Product")
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._on_edit_product)
         action_layout.addWidget(self._edit_btn)
-        
         action_layout.addStretch()
-        details_layout.addLayout(action_layout)
+        info_layout.addLayout(action_layout)
         
-        right_layout.addWidget(details_group)
+        info_layout.addStretch()
         
-        # Revisions group
-        revisions_group = QGroupBox("Revisions")
-        revisions_layout = QVBoxLayout(revisions_group)
+        self._tabs.addTab(info_tab, "📋 Product Info")
         
-        self._revisions_tree = QTreeWidget()
-        self._revisions_tree.setColumnCount(3)
-        self._revisions_tree.setHeaderLabels(["Revision", "State", "Modified"])
-        self._revisions_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self._revisions_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        self._revisions_tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        self._revisions_tree.setStyleSheet("""
-            QTreeWidget {
-                font-size: 11pt;
-                background-color: #1e1e1e;
-                border: 1px solid #3c3c3c;
-            }
-            QTreeWidget::item {
-                padding: 4px;
-            }
-            QTreeWidget::item:selected {
-                background-color: #0078d4;
-            }
-            QHeaderView::section {
-                background-color: #2d2d2d;
-                padding: 4px;
-                border: 1px solid #3c3c3c;
-                font-weight: bold;
-            }
-        """)
-        revisions_layout.addWidget(self._revisions_tree)
+        # === Tab 2: BOM ===
+        bom_tab = QWidget()
+        bom_layout = QVBoxLayout(bom_tab)
         
-        # Add revision button
-        self._add_rev_btn = QPushButton("+ Add Revision")
-        self._add_rev_btn.setEnabled(False)
-        self._add_rev_btn.clicked.connect(self._on_add_revision)
-        revisions_layout.addWidget(self._add_rev_btn)
-        
-        right_layout.addWidget(revisions_group)
-        
-        # BOM preview group
-        bom_group = QGroupBox("Bill of Materials")
-        bom_layout = QVBoxLayout(bom_group)
+        self._bom_info_label = QLabel("Select a revision to view BOM")
+        self._bom_info_label.setStyleSheet("color: #808080; font-style: italic;")
+        bom_layout.addWidget(self._bom_info_label)
         
         self._bom_tree = QTreeWidget()
-        self._bom_tree.setColumnCount(3)
-        self._bom_tree.setHeaderLabels(["Part Number", "Name", "Quantity"])
-        self._bom_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self._bom_tree.setColumnCount(4)
+        self._bom_tree.setHeaderLabels(["Part Number", "Description", "Ref", "Qty"])
+        self._bom_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self._bom_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self._bom_tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        self._bom_tree.setMaximumHeight(150)
-        self._bom_tree.setStyleSheet("""
-            QTreeWidget {
-                font-size: 10pt;
-                background-color: #1e1e1e;
-                border: 1px solid #3c3c3c;
-            }
-            QTreeWidget::item {
-                padding: 2px;
-            }
-            QTreeWidget::item:selected {
-                background-color: #0078d4;
-            }
-            QHeaderView::section {
-                background-color: #2d2d2d;
-                padding: 4px;
-                border: 1px solid #3c3c3c;
-                font-weight: bold;
-            }
-        """)
+        self._bom_tree.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self._bom_tree.setStyleSheet(self._get_tree_style())
         bom_layout.addWidget(self._bom_tree)
         
-        right_layout.addWidget(bom_group)
+        self._tabs.addTab(bom_tab, "📦 BOM")
+        
+        # === Tab 3: Box Build ===
+        boxbuild_tab = QWidget()
+        boxbuild_layout = QVBoxLayout(boxbuild_tab)
+        
+        self._boxbuild_info_label = QLabel("Select a revision to view/edit Box Build template")
+        self._boxbuild_info_label.setStyleSheet("color: #808080; font-style: italic;")
+        self._boxbuild_info_label.setWordWrap(True)
+        boxbuild_layout.addWidget(self._boxbuild_info_label)
+        
+        self._boxbuild_tree = QTreeWidget()
+        self._boxbuild_tree.setColumnCount(4)
+        self._boxbuild_tree.setHeaderLabels(["Child Part Number", "Revision", "Item #", "Qty"])
+        self._boxbuild_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self._boxbuild_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self._boxbuild_tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self._boxbuild_tree.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self._boxbuild_tree.setStyleSheet(self._get_tree_style())
+        boxbuild_layout.addWidget(self._boxbuild_tree)
+        
+        # Box build actions
+        boxbuild_actions = QHBoxLayout()
+        self._add_subunit_btn = QPushButton("+ Add Subunit")
+        self._add_subunit_btn.setEnabled(False)
+        self._add_subunit_btn.clicked.connect(self._on_add_subunit)
+        boxbuild_actions.addWidget(self._add_subunit_btn)
+        
+        self._remove_subunit_btn = QPushButton("- Remove")
+        self._remove_subunit_btn.setEnabled(False)
+        self._remove_subunit_btn.clicked.connect(self._on_remove_subunit)
+        boxbuild_actions.addWidget(self._remove_subunit_btn)
+        
+        boxbuild_actions.addStretch()
+        boxbuild_layout.addLayout(boxbuild_actions)
+        
+        self._tabs.addTab(boxbuild_tab, "🔧 Box Build")
+        
+        # Initially disable BOM and Box Build tabs (enabled when revision selected)
+        self._tabs.setTabEnabled(1, False)
+        self._tabs.setTabEnabled(2, False)
+        
+        right_layout.addWidget(self._tabs)
         
         splitter.addWidget(right_widget)
         splitter.setSizes([400, 400])
@@ -341,51 +435,178 @@ class ProductPage(BasePage):
         if self._main_window and self._main_window.app.wats_client:
             self._load_products()
     
-    def _on_selection_changed(self) -> None:
-        """Handle product selection change"""
-        selected = len(self._products_table.selectedItems()) > 0
-        self._edit_btn.setEnabled(selected)
-        self._add_rev_btn.setEnabled(selected)
+    def _get_tree_style(self) -> str:
+        """Return consistent tree widget styling"""
+        return """
+            QTreeWidget {
+                font-size: 11pt;
+                background-color: #1e1e1e;
+                border: 1px solid #3c3c3c;
+            }
+            QTreeWidget::item {
+                padding: 4px;
+            }
+            QTreeWidget::item:selected {
+                background-color: #0078d4;
+            }
+            QHeaderView::section {
+                background-color: #2d2d2d;
+                padding: 4px;
+                border: 1px solid #3c3c3c;
+                font-weight: bold;
+            }
+        """
+    
+    def _on_tree_selection_changed(self) -> None:
+        """Handle tree selection change - product or revision selected"""
+        selected_items = self._products_tree.selectedItems()
         
-        if selected:
-            row = self._products_table.currentRow()
-            if 0 <= row < len(self._products):
-                product = self._products[row]
-                self._selected_product = product
-                self._show_product_details(product)
-        else:
-            self._selected_product = None
+        if not selected_items:
             self._clear_details()
+            return
+        
+        item = selected_items[0]
+        item_type = item.data(0, Qt.ItemDataRole.UserRole)
+        
+        if item_type == self.ITEM_TYPE_PRODUCT:
+            # Product selected
+            part_number = item.text(0)
+            product = self._find_product_by_part_number(part_number)
+            if product:
+                self._selected_product = product
+                self._selected_revision = None
+                self._show_product_details(product)
+                
+                # Enable product actions, disable revision-specific
+                self._edit_btn.setEnabled(True)
+                self._add_rev_btn.setEnabled(True)
+                self._add_subunit_btn.setEnabled(False)
+                
+                # Only Product Info tab enabled
+                self._tabs.setTabEnabled(0, True)
+                self._tabs.setTabEnabled(1, False)
+                self._tabs.setTabEnabled(2, False)
+                self._tabs.setCurrentIndex(0)
+                
+                # Update BOM/BoxBuild info labels
+                self._bom_info_label.setText("Select a revision to view BOM")
+                self._boxbuild_info_label.setText("Select a revision to view/edit Box Build template")
+                
+        elif item_type == self.ITEM_TYPE_REVISION:
+            # Revision selected
+            parent_item = item.parent()
+            if parent_item:
+                part_number = parent_item.text(0)
+                revision = item.text(0)
+                product = self._find_product_by_part_number(part_number)
+                if product:
+                    self._selected_product = product
+                    self._selected_revision = revision
+                    self._show_revision_details(product, revision)
+                    
+                    # Enable all actions
+                    self._edit_btn.setEnabled(True)
+                    self._add_rev_btn.setEnabled(True)
+                    self._add_subunit_btn.setEnabled(True)
+                    
+                    # All tabs enabled
+                    self._tabs.setTabEnabled(0, True)
+                    self._tabs.setTabEnabled(1, True)
+                    self._tabs.setTabEnabled(2, True)
+                    
+                    # Load BOM and Box Build
+                    self._load_bom(product, revision)
+                    self._load_box_build(product, revision)
+                    
+                    # Update info labels
+                    self._bom_info_label.setText(f"Bill of Materials for {part_number} rev {revision}")
+                    self._boxbuild_info_label.setText(f"Box Build Template for {part_number} rev {revision}")
+    
+    def _on_tree_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
+        """Handle double-click on tree item"""
+        item_type = item.data(0, Qt.ItemDataRole.UserRole)
+        if item_type == self.ITEM_TYPE_PRODUCT:
+            self._on_edit_product()
+    
+    def _on_item_expanded(self, item: QTreeWidgetItem) -> None:
+        """Handle item expansion - load revisions lazily"""
+        item_type = item.data(0, Qt.ItemDataRole.UserRole)
+        if item_type == self.ITEM_TYPE_PRODUCT:
+            # Check if we have a placeholder child
+            if item.childCount() == 1:
+                child = item.child(0)
+                if child and child.data(0, Qt.ItemDataRole.UserRole) == "placeholder":
+                    # Load actual revisions
+                    part_number = item.text(0)
+                    self._load_revisions_for_item(item, part_number)
+    
+    def _find_product_by_part_number(self, part_number: str) -> Optional[Dict[str, Any]]:
+        """Find product in cache by part number"""
+        for product in self._products:
+            if product.get('partNumber') == part_number:
+                return product
+        return None
     
     def _show_product_details(self, product: Dict[str, Any]) -> None:
-        """Display product details"""
+        """Display product details (product level, no revision)"""
         details = f"""
-<b>Part Number:</b> {product.get('partNumber', 'N/A')}<br>
-<b>Name:</b> {product.get('name', 'N/A')}<br>
-<b>Description:</b> {product.get('description', 'N/A')}<br>
-<b>State:</b> {product.get('state', 'N/A')}<br>
-<b>Non-Serial:</b> {'Yes' if product.get('nonSerial') else 'No'}<br>
-<b>Created:</b> {product.get('created', 'N/A')}<br>
+<h3>{product.get('partNumber', 'N/A')}</h3>
+<p><b>Name:</b> {product.get('name', 'N/A')}</p>
+<p><b>Description:</b> {product.get('description', 'N/A')}</p>
+<p><b>State:</b> {product.get('state', 'N/A')}</p>
+<p><b>Non-Serial:</b> {'Yes' if product.get('nonSerial') else 'No'}</p>
+<p><b>Created:</b> {product.get('created', 'N/A')}</p>
+<hr>
+<p style="color: #808080; font-style: italic;">
+Expand the product node or select a revision to view BOM and Box Build.
+</p>
 """
         self._details_label.setText(details)
         self._details_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         
-        # Load revisions
-        self._load_revisions(product.get('partNumber'))
-        
-        # Load BOM if available
-        self._load_bom(product)
+        # Clear BOM and BoxBuild
+        self._bom_tree.clear()
+        self._boxbuild_tree.clear()
+    
+    def _show_revision_details(self, product: Dict[str, Any], revision: str) -> None:
+        """Display revision details"""
+        details = f"""
+<h3>{product.get('partNumber', 'N/A')} - Rev {revision}</h3>
+<p><b>Name:</b> {product.get('name', 'N/A')}</p>
+<p><b>Description:</b> {product.get('description', 'N/A')}</p>
+<p><b>State:</b> {product.get('state', 'N/A')}</p>
+<p><b>Non-Serial:</b> {'Yes' if product.get('nonSerial') else 'No'}</p>
+<p><b>Revision:</b> <span style="color: #4ec9b0; font-weight: bold;">{revision}</span></p>
+<hr>
+<p style="color: #4ec9b0;">
+BOM and Box Build tabs are now available for this revision.
+</p>
+"""
+        self._details_label.setText(details)
+        self._details_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
     
     def _clear_details(self) -> None:
         """Clear details panel"""
-        self._details_label.setText("Select a product to view details")
+        self._selected_product = None
+        self._selected_revision = None
+        self._details_label.setText("Select a product or revision to view details")
         self._details_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._revisions_tree.clear()
         self._bom_tree.clear()
+        self._boxbuild_tree.clear()
+        self._edit_btn.setEnabled(False)
+        self._add_rev_btn.setEnabled(False)
+        self._add_subunit_btn.setEnabled(False)
+        self._remove_subunit_btn.setEnabled(False)
+        
+        # Disable BOM and Box Build tabs
+        self._tabs.setTabEnabled(1, False)
+        self._tabs.setTabEnabled(2, False)
+        self._tabs.setCurrentIndex(0)
     
-    def _load_revisions(self, part_number: str) -> None:
-        """Load revisions for a product"""
-        self._revisions_tree.clear()
+    def _load_revisions_for_item(self, parent_item: QTreeWidgetItem, part_number: str) -> None:
+        """Load revisions for a product tree item"""
+        # Remove placeholder
+        parent_item.takeChildren()
         
         try:
             if self._main_window and self._main_window.app.wats_client:
@@ -394,45 +615,134 @@ class ProductPage(BasePage):
                 
                 if product and hasattr(product, 'revisions') and product.revisions:
                     for rev in product.revisions:
-                        item = QTreeWidgetItem([
-                            getattr(rev, 'revision', '') or 'Default',
-                            getattr(rev, 'state', '') or 'Active',
-                            str(getattr(rev, 'modified', ''))[:19] if hasattr(rev, 'modified') else ''
-                        ])
-                        self._revisions_tree.addTopLevelItem(item)
+                        rev_name = getattr(rev, 'revision', '') or 'Default'
+                        rev_state = getattr(rev, 'state', '') or 'Active'
+                        
+                        rev_item = QTreeWidgetItem([rev_name, rev_state, ""])
+                        rev_item.setData(0, Qt.ItemDataRole.UserRole, self.ITEM_TYPE_REVISION)
+                        
+                        # Color code state
+                        if rev_state == "Active":
+                            rev_item.setForeground(1, QColor("#4CAF50"))
+                        elif rev_state == "Deprecated":
+                            rev_item.setForeground(1, QColor("#FF9800"))
+                        
+                        parent_item.addChild(rev_item)
                 else:
                     # No revisions
-                    item = QTreeWidgetItem(["(No revisions)", "", ""])
-                    self._revisions_tree.addTopLevelItem(item)
+                    no_rev_item = QTreeWidgetItem(["(No revisions)", "", ""])
+                    no_rev_item.setForeground(0, QColor("#808080"))
+                    parent_item.addChild(no_rev_item)
         except Exception as e:
             print(f"[Product] Failed to load revisions: {e}")
+            error_item = QTreeWidgetItem([f"(Error loading)", "", ""])
+            error_item.setForeground(0, QColor("#f44336"))
+            parent_item.addChild(error_item)
     
-    def _load_bom(self, product: Dict[str, Any]) -> None:
-        """Load BOM for a product"""
+    def _load_bom(self, product: Dict[str, Any], revision: Optional[str] = None) -> None:
+        """Load BOM for a product revision.
+        
+        Args:
+            product: Product dictionary
+            revision: Specific revision to load BOM for (default: first/active revision)
+        """
         self._bom_tree.clear()
         
         try:
             if self._main_window and self._main_window.app.wats_client:
                 client = self._main_window.app.wats_client
-                full_product = client.product.get_product(product.get('partNumber'))
+                part_number = product.get('partNumber', '')
                 
-                if full_product and hasattr(full_product, 'bom') and full_product.bom:
-                    for bom_item in full_product.bom:
-                        item = QTreeWidgetItem([
-                            getattr(bom_item, 'part_number', ''),
-                            getattr(bom_item, 'name', ''),
-                            str(getattr(bom_item, 'quantity', 1))
-                        ])
+                # Get revision - either specified or first available
+                if not revision:
+                    full_product = client.product.get_product(part_number)
+                    if full_product and hasattr(full_product, 'revisions') and full_product.revisions:
+                        revision = full_product.revisions[0].revision
+                
+                if revision:
+                    # Fetch BOM by part number and revision using the new method
+                    bom_items = client.product.get_bom_items(part_number, revision)
+                    
+                    if bom_items:
+                        for bom_item in bom_items:
+                            item = QTreeWidgetItem([
+                                getattr(bom_item, 'part_number', ''),
+                                getattr(bom_item, 'description', '') or '',
+                                getattr(bom_item, 'component_ref', '') or '',
+                                str(getattr(bom_item, 'quantity', 1))
+                            ])
+                            self._bom_tree.addTopLevelItem(item)
+                    else:
+                        item = QTreeWidgetItem(["(No BOM items)", "", "", ""])
                         self._bom_tree.addTopLevelItem(item)
                 else:
-                    item = QTreeWidgetItem(["(No BOM items)", "", ""])
+                    item = QTreeWidgetItem(["(No revision)", "", "", ""])
                     self._bom_tree.addTopLevelItem(item)
         except Exception as e:
             print(f"[Product] Failed to load BOM: {e}")
+            item = QTreeWidgetItem([f"(Error: {str(e)[:30]})", "", "", ""])
+            self._bom_tree.addTopLevelItem(item)
+    
+    def _load_box_build(self, product: Dict[str, Any], revision: Optional[str] = None) -> None:
+        """Load Box Build template for a product revision.
+        
+        Args:
+            product: Product dictionary
+            revision: Specific revision to load (default: first/active revision)
+        """
+        self._boxbuild_tree.clear()
+        self._remove_subunit_btn.setEnabled(False)
+        
+        try:
+            if self._main_window and self._main_window.app.wats_client:
+                client = self._main_window.app.wats_client
+                part_number = product.get('partNumber', '')
+                
+                # Get revision - either specified or first available
+                if not revision:
+                    full_product = client.product.get_product(part_number)
+                    if full_product and hasattr(full_product, 'revisions') and full_product.revisions:
+                        revision = full_product.revisions[0].revision
+                
+                if revision:
+                    # Try to load box build template (uses internal API)
+                    try:
+                        template = client.product_internal.get_box_build(part_number, revision)
+                        subunits = template.get_subunits() if template else []
+                        
+                        if subunits:
+                            for rel in subunits:
+                                item = QTreeWidgetItem([
+                                    getattr(rel, 'child_part_number', '') or '',
+                                    getattr(rel, 'child_revision', '') or '',
+                                    getattr(rel, 'item_number', '') or '',
+                                    str(getattr(rel, 'quantity', 1))
+                                ])
+                                self._boxbuild_tree.addTopLevelItem(item)
+                            # Enable remove button when items exist
+                            self._boxbuild_tree.itemSelectionChanged.connect(
+                                lambda: self._remove_subunit_btn.setEnabled(
+                                    len(self._boxbuild_tree.selectedItems()) > 0
+                                )
+                            )
+                        else:
+                            item = QTreeWidgetItem(["(No subunits defined)", "", "", ""])
+                            self._boxbuild_tree.addTopLevelItem(item)
+                    except Exception as e:
+                        # Internal API may not be available
+                        item = QTreeWidgetItem(["(Box Build requires internal API)", "", "", ""])
+                        self._boxbuild_tree.addTopLevelItem(item)
+                else:
+                    item = QTreeWidgetItem(["(No revision)", "", "", ""])
+                    self._boxbuild_tree.addTopLevelItem(item)
+        except Exception as e:
+            print(f"[Product] Failed to load Box Build: {e}")
+            item = QTreeWidgetItem([f"(Error: {str(e)[:30]})", "", "", ""])
+            self._boxbuild_tree.addTopLevelItem(item)
     
     def _on_filter_changed(self) -> None:
         """Handle filter changes"""
-        self._populate_table()
+        self._populate_tree()
     
     def _on_refresh(self) -> None:
         """Refresh products from server"""
@@ -453,7 +763,7 @@ class ProductPage(BasePage):
                 products = client.product.get_products()
                 self._products = [self._product_to_dict(p) for p in products] if products else []
                 
-                self._populate_table()
+                self._populate_tree()
                 self._status_label.setText(f"Loaded {len(self._products)} products")
             else:
                 self._status_label.setText("Not connected to WATS server")
@@ -474,9 +784,9 @@ class ProductPage(BasePage):
             }
         return dict(product) if isinstance(product, dict) else {}
     
-    def _populate_table(self) -> None:
-        """Populate the products table with filtered data"""
-        self._products_table.setRowCount(0)
+    def _populate_tree(self) -> None:
+        """Populate the products tree with hierarchical data"""
+        self._products_tree.clear()
         
         search_text = self._search_edit.text().lower()
         state_filter = self._state_filter.currentText()
@@ -494,26 +804,32 @@ class ProductPage(BasePage):
                 if product.get('state', '') != state_filter:
                     continue
             
-            row = self._products_table.rowCount()
-            self._products_table.insertRow(row)
-            
-            self._products_table.setItem(row, 0, QTableWidgetItem(product.get('partNumber', '')))
-            self._products_table.setItem(row, 1, QTableWidgetItem(product.get('name', '')))
-            
-            # State with color coding
+            # Create product item (parent)
+            part_number = product.get('partNumber', '')
+            name = product.get('name', '')
             state = product.get('state', 'Active')
-            state_item = QTableWidgetItem(state)
-            if state == "Active":
-                state_item.setForeground(QColor("#4CAF50"))  # Green
-            elif state == "Deprecated":
-                state_item.setForeground(QColor("#FF9800"))  # Orange
-            elif state == "Obsolete":
-                state_item.setForeground(QColor("#f44336"))  # Red
-            self._products_table.setItem(row, 2, state_item)
             
-            # Non-serial
-            non_serial = "Yes" if product.get('nonSerial') else "No"
-            self._products_table.setItem(row, 3, QTableWidgetItem(non_serial))
+            product_item = QTreeWidgetItem([part_number, name, state])
+            product_item.setData(0, Qt.ItemDataRole.UserRole, self.ITEM_TYPE_PRODUCT)
+            
+            # Style the product row
+            product_item.setForeground(0, QColor("#4ec9b0"))  # Cyan for part number
+            
+            # Color code state
+            if state == "Active":
+                product_item.setForeground(2, QColor("#4CAF50"))
+            elif state == "Deprecated":
+                product_item.setForeground(2, QColor("#FF9800"))
+            elif state == "Obsolete":
+                product_item.setForeground(2, QColor("#f44336"))
+            
+            # Add a placeholder child so the item shows as expandable
+            placeholder = QTreeWidgetItem(["Loading revisions...", "", ""])
+            placeholder.setData(0, Qt.ItemDataRole.UserRole, "placeholder")
+            placeholder.setForeground(0, QColor("#808080"))
+            product_item.addChild(placeholder)
+            
+            self._products_tree.addTopLevelItem(product_item)
     
     def _on_add_product(self) -> None:
         """Show dialog to add new product"""
@@ -603,11 +919,80 @@ class ProductPage(BasePage):
                 
                 if result:
                     QMessageBox.information(self, "Success", f"Revision '{revision}' created")
-                    self._load_revisions(part_number)
+                    # Refresh the tree to show new revision
+                    self._load_products()
                 else:
                     QMessageBox.warning(self, "Error", "Failed to create revision")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to create revision: {e}")
+    
+    def _on_add_subunit(self) -> None:
+        """Add subunit to box build template"""
+        if not self._selected_product or not self._selected_revision:
+            QMessageBox.warning(self, "No Revision", "Please select a revision first")
+            return
+        
+        revision = self._selected_revision
+        part_number = self._selected_product.get('partNumber')
+        
+        # Dialog for adding subunit
+        dialog = AddSubunitDialog(parent=self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            try:
+                data = dialog.get_data()
+                client = self._main_window.app.wats_client
+                
+                template = client.product_internal.get_box_build(part_number, revision)
+                template.add_subunit(
+                    child_part_number=data['part_number'],
+                    child_revision=data['revision'],
+                    quantity=data.get('quantity', 1),
+                    item_number=data.get('item_number')
+                )
+                template.save()
+                
+                QMessageBox.information(self, "Success", "Subunit added to template")
+                self._load_box_build(self._selected_product, revision)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to add subunit: {e}")
+    
+    def _on_remove_subunit(self) -> None:
+        """Remove selected subunit from box build template"""
+        selected_items = self._boxbuild_tree.selectedItems()
+        if not selected_items:
+            return
+        
+        if not self._selected_product or not self._selected_revision:
+            return
+        
+        revision = self._selected_revision
+        part_number = self._selected_product.get('partNumber')
+        
+        # Get subunit info from selected row
+        item = selected_items[0]
+        child_part = item.text(0)
+        child_rev = item.text(1)
+        
+        if child_part.startswith("("):
+            return  # Skip placeholder items
+        
+        reply = QMessageBox.question(
+            self, "Confirm Remove",
+            f"Remove subunit {child_part} rev {child_rev} from template?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                client = self._main_window.app.wats_client
+                template = client.product_internal.get_box_build(part_number, revision)
+                template.remove_subunit(child_part, child_rev)
+                template.save()
+                
+                QMessageBox.information(self, "Success", "Subunit removed from template")
+                self._load_box_build(self._selected_product, revision)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to remove subunit: {e}")
     
     def save_config(self) -> None:
         """Save configuration"""

@@ -6,7 +6,6 @@ Contains all page widgets for the main window.
 
 from .base import BasePage
 from .setup import SetupPage
-from .general import GeneralPage
 from .connection import ConnectionPage
 from .proxy_settings import ProxySettingsPage
 from .converters import ConvertersPage
@@ -23,7 +22,6 @@ from .product import ProductPage
 __all__ = [
     "BasePage",
     "SetupPage",
-    "GeneralPage",
     "ConnectionPage",
     "ProxySettingsPage",
     "ConvertersPage",

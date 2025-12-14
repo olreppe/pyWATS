@@ -311,7 +311,7 @@ class SetupPage(BasePage):
     
     @property
     def page_title(self) -> str:
-        return "Setup"
+        return "General"
     
     def _setup_ui(self) -> None:
         """Setup page UI with station configuration"""
@@ -461,63 +461,39 @@ class SetupPage(BasePage):
         self._layout.addSpacing(10)
         
         # =========================================================================
-        # Connection Section
+        # Connection Status (read-only summary - full settings on Connection page)
         # =========================================================================
-        connection_group = QGroupBox("Connection")
-        connection_layout = QVBoxLayout(connection_group)
+        status_group = QGroupBox("Connection Status")
+        status_layout = QVBoxLayout(status_group)
         
-        # Account / Server
+        # Connected server display
         server_layout = QHBoxLayout()
-        server_label = QLabel("Account / Server")
+        server_label = QLabel("Connected to")
         server_label.setFixedWidth(120)
         server_layout.addWidget(server_label)
         
-        self._server_edit = QLineEdit()
-        self._server_edit.setPlaceholderText("https://your-account.wats.com/")
-        self._server_edit.setReadOnly(True)
-        self._server_edit.setStyleSheet("background-color: #3c3c3c;")
-        self._server_edit.setToolTip("Server URL from login (read-only)")
-        server_layout.addWidget(self._server_edit, 1)
+        self._server_display = QLabel()
+        self._server_display.setStyleSheet("color: #4ec9b0;")
+        server_layout.addWidget(self._server_display, 1)
+        status_layout.addLayout(server_layout)
         
-        connection_layout.addLayout(server_layout)
+        # Status display
+        conn_status_layout = QHBoxLayout()
+        conn_status_label = QLabel("Status")
+        conn_status_label.setFixedWidth(120)
+        conn_status_layout.addWidget(conn_status_label)
         
-        # Token
-        token_layout = QHBoxLayout()
-        token_label = QLabel("Token")
-        token_label.setFixedWidth(120)
-        token_layout.addWidget(token_label)
+        self._connection_status = QLabel("Not connected")
+        self._connection_status.setStyleSheet("color: #808080;")
+        conn_status_layout.addWidget(self._connection_status, 1)
+        status_layout.addLayout(conn_status_layout)
         
-        self._token_edit = QLineEdit()
-        self._token_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self._token_edit.setPlaceholderText("API access token")
-        self._token_edit.setReadOnly(True)
-        self._token_edit.setStyleSheet("background-color: #3c3c3c;")
-        self._token_edit.setToolTip("API token from login (read-only)")
-        token_layout.addWidget(self._token_edit, 1)
+        # Info text
+        info_label = QLabel("Go to Connection page for full connection settings.")
+        info_label.setStyleSheet("color: #808080; font-size: 11px; font-style: italic;")
+        status_layout.addWidget(info_label)
         
-        connection_layout.addLayout(token_layout)
-        
-        # Buttons
-        button_layout = QHBoxLayout()
-        button_layout.addSpacing(125)
-        
-        self._disconnect_btn = QPushButton("Disconnect")
-        self._disconnect_btn.setObjectName("primaryButton")
-        self._disconnect_btn.setFixedWidth(100)
-        self._disconnect_btn.clicked.connect(self._on_disconnect_clicked)
-        button_layout.addWidget(self._disconnect_btn)
-        
-        button_layout.addSpacing(20)
-        
-        self._new_customer_btn = QPushButton("New customer")
-        self._new_customer_btn.setFixedWidth(120)
-        self._new_customer_btn.clicked.connect(self._on_new_customer_clicked)
-        button_layout.addWidget(self._new_customer_btn)
-        
-        button_layout.addStretch()
-        connection_layout.addLayout(button_layout)
-        
-        self._layout.addWidget(connection_group)
+        self._layout.addWidget(status_group)
         self._layout.addSpacing(10)
         
         # =========================================================================
@@ -671,60 +647,21 @@ class SetupPage(BasePage):
         self._manage_stations_btn.setEnabled(enabled)
         self._sync_edit.setEnabled(enabled)
         self._auto_start_cb.setEnabled(enabled)
-        self._new_customer_btn.setEnabled(enabled)
     
     def set_connected(self, connected: bool) -> None:
         """Update UI for connected/disconnected state"""
         self._is_connected = connected
         self._set_fields_enabled(connected)
-    
-    @Slot()
-    def _on_disconnect_clicked(self) -> None:
-        """Handle disconnect button click"""
-        # Show confirmation dialog for disconnect
-        reply = QMessageBox.question(
-            self,
-            "Disconnect",
-            "Do you really want to disconnect the client and exit the application?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
         
-        if reply == QMessageBox.StandardButton.Yes:
-            # Clear credentials from config
-            self.config.service_address = ""
-            self.config.api_token = ""
-            self.config.auto_connect = False
-            self.config.was_connected = False
-            
-            # Clear encrypted connection if exists
-            if hasattr(self.config, 'connection'):
-                from ...core.connection_config import ConnectionConfig
-                self.config.connection = ConnectionConfig()
-                
-                self.config.save()
-                
-                # Close the main window
-                if self._main_window:
-                    self._main_window.close()
+        # Update status display
+        if connected:
+            self._server_display.setText(self.config.service_address)
+            self._connection_status.setText("Connected")
+            self._connection_status.setStyleSheet("color: #4ec9b0; font-weight: bold;")
         else:
-            # Validate fields before connecting
-            if not self._server_edit.text().strip():
-                QMessageBox.warning(self, "Validation Error", "Please enter a server address.")
-                self._server_edit.setFocus()
-                return
-            
-            if not self._token_edit.text().strip():
-                QMessageBox.warning(self, "Validation Error", "Please enter an API token.")
-                self._token_edit.setFocus()
-                return
-            
-            # Save configuration before connecting
-            self.save_config()
-            
-            # Connect
-            self.set_connected(True)
-            self.connection_changed.emit(True)
+            self._server_display.setText("")
+            self._connection_status.setText("Not connected")
+            self._connection_status.setStyleSheet("color: #808080;")
     
     @Slot()
     def _on_new_customer_clicked(self) -> None:
@@ -748,10 +685,6 @@ class SetupPage(BasePage):
         
         # Multi-station mode
         self.config.multi_station_enabled = self._multi_station_cb.isChecked()
-        
-        # Connection (read-only but store)
-        self.config.service_address = self._server_edit.text().strip()
-        self.config.api_token = self._token_edit.text().strip()
         
         # Advanced
         self.config.service_auto_start = self._auto_start_cb.isChecked()
@@ -801,9 +734,15 @@ class SetupPage(BasePage):
         if self.config.multi_station_enabled:
             self._refresh_station_combo()
         
-        # Connection
-        self._server_edit.setText(self.config.service_address)
-        self._token_edit.setText(self.config.api_token)
+        # Connection status display
+        if self.config.service_address:
+            self._server_display.setText(self.config.service_address)
+            self._connection_status.setText("Connected")
+            self._connection_status.setStyleSheet("color: #4ec9b0; font-weight: bold;")
+        else:
+            self._server_display.setText("Not configured")
+            self._connection_status.setText("Not connected")
+            self._connection_status.setStyleSheet("color: #808080;")
         
         # Advanced
         self._sync_edit.setText(str(self.config.sync_interval_seconds))

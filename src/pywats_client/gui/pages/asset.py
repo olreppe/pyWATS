@@ -271,20 +271,17 @@ class AssetPage(BasePage):
         # Action buttons for selected asset
         action_layout = QHBoxLayout()
         
-        self._edit_btn = QPushButton("Edit")
+        self._edit_btn = QPushButton("✏️ Edit")
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._on_edit_asset)
         action_layout.addWidget(self._edit_btn)
         
-        self._status_btn = QPushButton("Check Status")
+        self._status_btn = QPushButton("📊 Check Status")
         self._status_btn.setEnabled(False)
         self._status_btn.clicked.connect(self._on_check_status)
         action_layout.addWidget(self._status_btn)
         
-        self._delete_btn = QPushButton("Delete")
-        self._delete_btn.setEnabled(False)
-        self._delete_btn.clicked.connect(self._on_delete_asset)
-        action_layout.addWidget(self._delete_btn)
+        # Note: Delete functionality removed as assets should be managed via WATS web interface
         
         action_layout.addStretch()
         details_layout.addLayout(action_layout)
@@ -308,7 +305,6 @@ class AssetPage(BasePage):
         selected = len(self._assets_table.selectedItems()) > 0
         self._edit_btn.setEnabled(selected)
         self._status_btn.setEnabled(selected)
-        self._delete_btn.setEnabled(selected)
         
         if selected:
             row = self._assets_table.currentRow()
@@ -483,17 +479,25 @@ class AssetPage(BasePage):
                 data = dialog.get_asset_data()
                 client = self._main_window.app.wats_client
                 
-                # Update asset
-                result = client.asset.update_asset_by_serial(
-                    serial_number=data['serialNumber'],
-                    asset_name=data.get('assetName'),
-                    description=data.get('description'),
-                    location=data.get('location'),
-                )
+                # First get the full asset object
+                full_asset = client.asset.get_asset(serial_number=data['serialNumber'])
                 
-                if result:
-                    QMessageBox.information(self, "Success", "Asset updated successfully")
-                    self._load_assets()
+                if full_asset:
+                    # Update the fields
+                    full_asset.asset_name = data.get('assetName') or full_asset.asset_name
+                    full_asset.description = data.get('description') or full_asset.description
+                    full_asset.location = data.get('location') or full_asset.location
+                    
+                    # Update via API
+                    result = client.asset.update_asset(full_asset)
+                    
+                    if result:
+                        QMessageBox.information(self, "Success", "Asset updated successfully")
+                        self._load_assets()
+                    else:
+                        QMessageBox.warning(self, "Error", "Failed to update asset - no result returned")
+                else:
+                    QMessageBox.warning(self, "Error", f"Could not find asset with serial number: {data['serialNumber']}")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to update asset: {e}")
     
@@ -526,34 +530,6 @@ class AssetPage(BasePage):
                 QMessageBox.information(self, "Asset Status", f"No status available for {serial}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to get status: {e}")
-    
-    def _on_delete_asset(self) -> None:
-        """Delete selected asset"""
-        row = self._assets_table.currentRow()
-        if row < 0 or row >= len(self._assets):
-            return
-        
-        asset = self._assets[row]
-        serial = asset.get('serialNumber')
-        
-        reply = QMessageBox.question(
-            self, "Confirm Delete",
-            f"Are you sure you want to delete asset '{serial}'?\n\nThis action cannot be undone.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            try:
-                client = self._main_window.app.wats_client
-                result = client.asset.delete_asset(serial_number=serial)
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Asset deleted successfully")
-                    self._load_assets()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to delete asset")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete asset: {e}")
     
     def save_config(self) -> None:
         """Save configuration"""

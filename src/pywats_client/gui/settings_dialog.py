@@ -540,9 +540,11 @@ class ClientConnectionPanel(SettingsPanel):
 
 
 class ClientProxyPanel(SettingsPanel):
-    """Client proxy settings."""
+    """Client proxy settings - full configuration matching WATS Client design."""
     
     def setup_ui(self) -> None:
+        from PySide6.QtWidgets import QRadioButton, QButtonGroup
+        
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         
@@ -556,49 +558,121 @@ class ClientProxyPanel(SettingsPanel):
             "Configure proxy settings for server connections."
         ))
         
-        # Proxy group
-        proxy_group, proxy_layout = self._create_group("HTTP Proxy")
+        # Proxy mode selection
+        mode_group, mode_layout = self._create_group("Proxy Mode")
         
-        self.use_proxy_check = self._create_checkbox("Use proxy")
-        proxy_layout.addRow(self.use_proxy_check)
+        self._proxy_mode_group = QButtonGroup(self)
+        
+        self.no_proxy_radio = QRadioButton("No proxy")
+        self.system_proxy_radio = QRadioButton("Use system proxy settings")
+        self.manual_proxy_radio = QRadioButton("Manual proxy configuration")
+        
+        self._proxy_mode_group.addButton(self.no_proxy_radio, 0)
+        self._proxy_mode_group.addButton(self.system_proxy_radio, 1)
+        self._proxy_mode_group.addButton(self.manual_proxy_radio, 2)
+        
+        mode_layout.addRow(self.no_proxy_radio)
+        mode_layout.addRow(self.system_proxy_radio)
+        mode_layout.addRow(self.manual_proxy_radio)
+        
+        self._proxy_mode_group.buttonToggled.connect(self._on_proxy_mode_changed)
+        
+        form_layout.addRow(mode_group)
+        
+        # Manual proxy settings group
+        self.manual_group, manual_layout = self._create_group("Manual Proxy Settings")
         
         self.proxy_host_edit = self._create_lineedit("proxy.example.com")
-        proxy_layout.addRow("Proxy Host:", self.proxy_host_edit)
+        manual_layout.addRow("Proxy Host:", self.proxy_host_edit)
         
         self.proxy_port_spin = self._create_spinbox(1, 65535)
         self.proxy_port_spin.setValue(8080)
-        proxy_layout.addRow("Proxy Port:", self.proxy_port_spin)
+        manual_layout.addRow("Proxy Port:", self.proxy_port_spin)
+        
+        # Authentication
+        self.auth_check = self._create_checkbox("Proxy requires authentication")
+        self.auth_check.stateChanged.connect(self._on_auth_toggled)
+        manual_layout.addRow(self.auth_check)
         
         self.proxy_user_edit = self._create_lineedit("Username")
-        proxy_layout.addRow("Username:", self.proxy_user_edit)
+        manual_layout.addRow("Username:", self.proxy_user_edit)
         
         self.proxy_pass_edit = self._create_lineedit("Password")
         self.proxy_pass_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        proxy_layout.addRow("Password:", self.proxy_pass_edit)
+        manual_layout.addRow("Password:", self.proxy_pass_edit)
         
-        form_layout.addRow(proxy_group)
+        form_layout.addRow(self.manual_group)
+        
+        # Bypass list
+        self.bypass_group, bypass_layout = self._create_group("Bypass Proxy")
+        
+        self.bypass_edit = self._create_lineedit("localhost, 127.0.0.1, *.local")
+        bypass_layout.addRow("Bypass List:", self.bypass_edit)
+        bypass_layout.addRow(self._create_description_label(
+            "Comma-separated list of hosts that should bypass the proxy"
+        ))
+        
+        form_layout.addRow(self.bypass_group)
         
         form_layout.addRow(QWidget())
         main_layout.addWidget(scroll)
+        
+        # Set initial state
+        self.system_proxy_radio.setChecked(True)
+        self._update_manual_group_state()
+        self._on_auth_toggled()
+    
+    def _on_proxy_mode_changed(self) -> None:
+        """Handle proxy mode selection change."""
+        self._update_manual_group_state()
+        self.mark_modified()
+    
+    def _update_manual_group_state(self) -> None:
+        """Enable/disable manual proxy settings based on mode."""
+        is_manual = self.manual_proxy_radio.isChecked()
+        self.manual_group.setEnabled(is_manual)
+        self.bypass_group.setEnabled(is_manual)
+    
+    def _on_auth_toggled(self) -> None:
+        """Enable/disable authentication fields."""
+        checked = self.auth_check.isChecked()
+        self.proxy_user_edit.setEnabled(checked)
+        self.proxy_pass_edit.setEnabled(checked)
     
     def load_settings(self, config: ClientConfig) -> None:
-        proxy = config.proxy
-        self.use_proxy_check.setChecked(proxy.enabled if proxy else False)
-        self.proxy_host_edit.setText(proxy.host if proxy else "")
-        self.proxy_port_spin.setValue(proxy.port if proxy and proxy.port else 8080)
-        self.proxy_user_edit.setText(proxy.username if proxy else "")
-        self.proxy_pass_edit.setText(proxy.password if proxy else "")
+        mode = getattr(config, 'proxy_mode', 'system')
+        if mode == "none":
+            self.no_proxy_radio.setChecked(True)
+        elif mode == "system":
+            self.system_proxy_radio.setChecked(True)
+        else:
+            self.manual_proxy_radio.setChecked(True)
+        
+        self.proxy_host_edit.setText(getattr(config, 'proxy_host', ''))
+        self.proxy_port_spin.setValue(getattr(config, 'proxy_port', 8080))
+        self.auth_check.setChecked(getattr(config, 'proxy_auth', False))
+        self.proxy_user_edit.setText(getattr(config, 'proxy_username', ''))
+        self.proxy_pass_edit.setText(getattr(config, 'proxy_password', ''))
+        self.bypass_edit.setText(getattr(config, 'proxy_bypass', ''))
+        
+        self._update_manual_group_state()
+        self._on_auth_toggled()
         self.clear_modified()
     
     def save_settings(self, config: ClientConfig) -> None:
-        if config.proxy is None:
-            from ..core.config import ProxyConfig
-            config.proxy = ProxyConfig()
-        config.proxy.enabled = self.use_proxy_check.isChecked()
-        config.proxy.host = self.proxy_host_edit.text()
-        config.proxy.port = self.proxy_port_spin.value()
-        config.proxy.username = self.proxy_user_edit.text()
-        config.proxy.password = self.proxy_pass_edit.text()
+        if self.no_proxy_radio.isChecked():
+            config.proxy_mode = "none"
+        elif self.system_proxy_radio.isChecked():
+            config.proxy_mode = "system"
+        else:
+            config.proxy_mode = "manual"
+        
+        config.proxy_host = self.proxy_host_edit.text()
+        config.proxy_port = self.proxy_port_spin.value()
+        config.proxy_auth = self.auth_check.isChecked()
+        config.proxy_username = self.proxy_user_edit.text()
+        config.proxy_password = self.proxy_pass_edit.text()
+        config.proxy_bypass = self.bypass_edit.text()
 
 
 class ClientConverterPanel(SettingsPanel):
@@ -648,9 +722,154 @@ class ClientConverterPanel(SettingsPanel):
         config.converters_folder = self.converters_folder_edit.text()
 
 
+class ClientLocationPanel(SettingsPanel):
+    """Client location services settings."""
+    
+    def setup_ui(self) -> None:
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        scroll, form_layout = self._create_scrollable_form()
+        
+        # Header
+        header = QLabel("Location Services")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #f0a30a;")
+        form_layout.addRow(header)
+        form_layout.addRow(self._create_description_label(
+            "Configure location services for the WATS client."
+        ))
+        
+        # Location Services group
+        location_group, location_layout = self._create_group("Location Services")
+        
+        self.location_enabled_check = self._create_checkbox(
+            "Allow this app to use location services"
+        )
+        location_layout.addRow(self.location_enabled_check)
+        location_layout.addRow(self._create_description_label(
+            "When enabled, the client can send location data with reports.\n"
+            "This helps track where units are tested."
+        ))
+        
+        form_layout.addRow(location_group)
+        
+        # Info section
+        info_group, info_layout = self._create_group("Benefits")
+        
+        info_layout.addRow(self._create_description_label(
+            "Location services allow the WATS client to include geographical\n"
+            "coordinates when submitting test reports. This can help with:\n\n"
+            "  • Tracking where units are manufactured or tested\n"
+            "  • Identifying location-specific yield issues\n"
+            "  • Compliance and traceability requirements"
+        ))
+        
+        form_layout.addRow(info_group)
+        
+        # Privacy section
+        privacy_group, privacy_layout = self._create_group("Privacy")
+        
+        privacy_layout.addRow(self._create_description_label(
+            "When location services are enabled:\n\n"
+            "  • Location data is only sent with test reports\n"
+            "  • No background location tracking occurs\n"
+            "  • Location accuracy depends on your network/GPS settings\n"
+            "  • You can disable this at any time"
+        ))
+        
+        form_layout.addRow(privacy_group)
+        
+        form_layout.addRow(QWidget())
+        main_layout.addWidget(scroll)
+    
+    def load_settings(self, config: ClientConfig) -> None:
+        self.location_enabled_check.setChecked(
+            getattr(config, 'location_services_enabled', False)
+        )
+        self.clear_modified()
+    
+    def save_settings(self, config: ClientConfig) -> None:
+        config.location_services_enabled = self.location_enabled_check.isChecked()
+
+
 # ==============================================================================
 # GUI Settings Panels
 # ==============================================================================
+
+class GUIStartupPanel(SettingsPanel):
+    """GUI startup and window settings."""
+    
+    def setup_ui(self) -> None:
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        scroll, form_layout = self._create_scrollable_form()
+        
+        # Header
+        header = QLabel("Startup & Window Settings")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #f0a30a;")
+        form_layout.addRow(header)
+        form_layout.addRow(self._create_description_label(
+            "Configure application startup behavior and window settings."
+        ))
+        
+        # Startup group
+        startup_group, startup_layout = self._create_group("Startup")
+        
+        self.start_minimized_check = self._create_checkbox("Start minimized")
+        startup_layout.addRow(self.start_minimized_check)
+        startup_layout.addRow(self._create_description_label(
+            "Start the application in minimized state"
+        ))
+        
+        self.minimize_to_tray_check = self._create_checkbox("Minimize to system tray")
+        startup_layout.addRow(self.minimize_to_tray_check)
+        startup_layout.addRow(self._create_description_label(
+            "Minimize to system tray instead of taskbar"
+        ))
+        
+        form_layout.addRow(startup_group)
+        
+        # Instance group
+        instance_group, instance_layout = self._create_group("Instance")
+        
+        self.instance_name_edit = self._create_lineedit("Client Instance Name")
+        instance_layout.addRow("Instance Name:", self.instance_name_edit)
+        instance_layout.addRow(self._create_description_label(
+            "Display name for this client instance"
+        ))
+        
+        form_layout.addRow(instance_group)
+        
+        # Logging group
+        logging_group, logging_layout = self._create_group("Logging")
+        
+        self.log_level_combo = self._create_combobox(["DEBUG", "INFO", "WARNING", "ERROR"])
+        logging_layout.addRow("Log Level:", self.log_level_combo)
+        logging_layout.addRow(self._create_description_label(
+            "Minimum severity level for log messages"
+        ))
+        
+        form_layout.addRow(logging_group)
+        
+        form_layout.addRow(QWidget())
+        main_layout.addWidget(scroll)
+    
+    def load_settings(self, config: ClientConfig) -> None:
+        self.start_minimized_check.setChecked(config.start_minimized)
+        self.minimize_to_tray_check.setChecked(config.minimize_to_tray)
+        self.instance_name_edit.setText(config.instance_name or "")
+        index = self.log_level_combo.findText(config.log_level)
+        if index >= 0:
+            self.log_level_combo.setCurrentIndex(index)
+        self.clear_modified()
+    
+    def save_settings(self, config: ClientConfig) -> None:
+        config.start_minimized = self.start_minimized_check.isChecked()
+        config.minimize_to_tray = self.minimize_to_tray_check.isChecked()
+        config.instance_name = self.instance_name_edit.text()
+        config.log_level = self.log_level_combo.currentText()
+
 
 class GUIAppearancePanel(SettingsPanel):
     """GUI appearance settings."""
@@ -726,25 +945,48 @@ class GUITabsPanel(SettingsPanel):
         # Tabs group
         tabs_group, tabs_layout = self._create_group("Visible Tabs")
         
-        self.show_software_check = self._create_checkbox("Software")
-        tabs_layout.addRow(self.show_software_check)
-        tabs_layout.addRow(self._create_description_label("Software distribution and updates"))
-        
-        self.show_sn_handler_check = self._create_checkbox("SN Handler")
-        tabs_layout.addRow(self.show_sn_handler_check)
-        tabs_layout.addRow(self._create_description_label("Serial number configuration"))
+        self.show_location_check = self._create_checkbox("Location")
+        tabs_layout.addRow(self.show_location_check)
+        tabs_layout.addRow(self._create_description_label("Station location settings"))
         
         self.show_converters_check = self._create_checkbox("Converters")
         tabs_layout.addRow(self.show_converters_check)
         tabs_layout.addRow(self._create_description_label("Test report converter management"))
         
-        self.show_location_check = self._create_checkbox("Location")
-        tabs_layout.addRow(self.show_location_check)
-        tabs_layout.addRow(self._create_description_label("Station location settings"))
+        self.show_sn_handler_check = self._create_checkbox("SN Handler")
+        tabs_layout.addRow(self.show_sn_handler_check)
+        tabs_layout.addRow(self._create_description_label("Serial number configuration"))
         
         self.show_proxy_check = self._create_checkbox("Proxy Settings")
         tabs_layout.addRow(self.show_proxy_check)
         tabs_layout.addRow(self._create_description_label("Network proxy configuration"))
+        
+        self.show_software_check = self._create_checkbox("Software")
+        tabs_layout.addRow(self.show_software_check)
+        tabs_layout.addRow(self._create_description_label("Software distribution and updates"))
+        
+        self.show_asset_check = self._create_checkbox("Assets")
+        tabs_layout.addRow(self.show_asset_check)
+        tabs_layout.addRow(self._create_description_label("Asset management and tracking"))
+        
+        self.show_rootcause_check = self._create_checkbox("RootCause")
+        tabs_layout.addRow(self.show_rootcause_check)
+        tabs_layout.addRow(self._create_description_label("Root cause analysis and tracking"))
+        
+        self.show_production_check = self._create_checkbox("Production")
+        tabs_layout.addRow(self.show_production_check)
+        tabs_layout.addRow(self._create_description_label("Production and manufacturing data"))
+        
+        self.show_product_check = self._create_checkbox("Products")
+        tabs_layout.addRow(self.show_product_check)
+        tabs_layout.addRow(self._create_description_label("Product and revision management"))
+        
+        # Note about restart
+        restart_note = self._create_description_label(
+            "Note: Changes to tab visibility require an application restart to take effect."
+        )
+        restart_note.setStyleSheet("color: #f0a30a; font-size: 11px; margin-top: 10px;")
+        tabs_layout.addRow(restart_note)
         
         form_layout.addRow(tabs_group)
         
@@ -752,19 +994,27 @@ class GUITabsPanel(SettingsPanel):
         main_layout.addWidget(scroll)
     
     def load_settings(self, config: ClientConfig) -> None:
-        self.show_software_check.setChecked(config.show_software_tab)
-        self.show_sn_handler_check.setChecked(config.show_sn_handler_tab)
-        self.show_converters_check.setChecked(config.show_converters_tab)
         self.show_location_check.setChecked(config.show_location_tab)
+        self.show_converters_check.setChecked(config.show_converters_tab)
+        self.show_sn_handler_check.setChecked(config.show_sn_handler_tab)
         self.show_proxy_check.setChecked(config.show_proxy_tab)
+        self.show_software_check.setChecked(config.show_software_tab)
+        self.show_asset_check.setChecked(config.show_asset_tab)
+        self.show_rootcause_check.setChecked(config.show_rootcause_tab)
+        self.show_production_check.setChecked(config.show_production_tab)
+        self.show_product_check.setChecked(config.show_product_tab)
         self.clear_modified()
     
     def save_settings(self, config: ClientConfig) -> None:
-        config.show_software_tab = self.show_software_check.isChecked()
-        config.show_sn_handler_tab = self.show_sn_handler_check.isChecked()
-        config.show_converters_tab = self.show_converters_check.isChecked()
         config.show_location_tab = self.show_location_check.isChecked()
+        config.show_converters_tab = self.show_converters_check.isChecked()
+        config.show_sn_handler_tab = self.show_sn_handler_check.isChecked()
         config.show_proxy_tab = self.show_proxy_check.isChecked()
+        config.show_software_tab = self.show_software_check.isChecked()
+        config.show_asset_tab = self.show_asset_check.isChecked()
+        config.show_rootcause_tab = self.show_rootcause_check.isChecked()
+        config.show_production_tab = self.show_production_check.isChecked()
+        config.show_product_tab = self.show_product_check.isChecked()
 
 
 # ==============================================================================
@@ -980,12 +1230,26 @@ class SettingsDialog(QDialog):
         conv_panel.settings_changed.connect(self._on_panel_modified)
         self._add_panel("client_converter", conv_item, conv_panel)
         
+        # Client Location
+        location_item = QTreeWidgetItem(["Location"])
+        client_item.addChild(location_item)
+        location_panel = ClientLocationPanel()
+        location_panel.settings_changed.connect(self._on_panel_modified)
+        self._add_panel("client_location", location_item, location_panel)
+        
         # GUI Settings
         gui_item = QTreeWidgetItem(["GUI Settings"])
         font = gui_item.font(0)
         font.setBold(True)
         gui_item.setFont(0, font)
         self.tree.addTopLevelItem(gui_item)
+        
+        # GUI Startup & Window
+        startup_item = QTreeWidgetItem(["Startup"])
+        gui_item.addChild(startup_item)
+        startup_panel = GUIStartupPanel()
+        startup_panel.settings_changed.connect(self._on_panel_modified)
+        self._add_panel("gui_startup", startup_item, startup_panel)
         
         # GUI Appearance
         appearance_item = QTreeWidgetItem(["Appearance"])
@@ -1071,8 +1335,12 @@ class SettingsDialog(QDialog):
             self._panels["client_proxy"].load_settings(self.client_config)
         if "client_converter" in self._panels:
             self._panels["client_converter"].load_settings(self.client_config)
+        if "client_location" in self._panels:
+            self._panels["client_location"].load_settings(self.client_config)
         
         # Load GUI settings
+        if "gui_startup" in self._panels:
+            self._panels["gui_startup"].load_settings(self.client_config)
         if "gui_appearance" in self._panels:
             self._panels["gui_appearance"].load_settings(self.client_config)
         if "gui_tabs" in self._panels:
@@ -1119,8 +1387,12 @@ class SettingsDialog(QDialog):
             self._panels["client_proxy"].save_settings(self.client_config)
         if "client_converter" in self._panels:
             self._panels["client_converter"].save_settings(self.client_config)
+        if "client_location" in self._panels:
+            self._panels["client_location"].save_settings(self.client_config)
         
         # Save GUI settings
+        if "gui_startup" in self._panels:
+            self._panels["gui_startup"].save_settings(self.client_config)
         if "gui_appearance" in self._panels:
             self._panels["gui_appearance"].save_settings(self.client_config)
         if "gui_tabs" in self._panels:

@@ -5,20 +5,26 @@ Serial Number Handler page for managing serial numbers through the WATS server.
 This page allows users to:
 - View available serial number types configured on the server
 - Take/reserve serial numbers for testing
-- View serial number usage statistics
+- View serial number usage history in a grid
 
 Based on the WATS Production API:
-- GET /api/Production/SerialNumberTypes - List available types
-- POST /api/Production/TakeSerialNumber - Reserve serial numbers
-- GET /api/Production/SerialNumbers - Query serial numbers
+- GET /api/Production/SerialNumbers/Types - List available types
+- POST /api/Production/SerialNumbers/Take - Take serial numbers
+
+Note on Reserve vs Take:
+- The internal API has GetAndReserveNewSerialNumbers which is used by WATS Client
+  for pre-allocating serial numbers (reserve count controlled by config)
+- The public API uses /Take endpoint which immediately assigns serial numbers
+- Both effectively "consume" serial numbers from the pool
 """
 
+from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QGroupBox, QTableWidget, QTableWidgetItem,
-    QHeaderView, QSpinBox, QMessageBox, QTextEdit,
-    QDialog, QDialogButtonBox
+    QHeaderView, QSpinBox, QMessageBox, QSplitter,
+    QDialog, QDialogButtonBox, QFrame, QApplication
 )
 from PySide6.QtCore import Qt
 
@@ -140,6 +146,7 @@ class SNHandlerPage(BasePage):
     ):
         self._main_window = main_window
         self._sn_types: List = []
+        self._taken_serials: List[dict] = []  # History of taken serials
         super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
@@ -150,7 +157,16 @@ class SNHandlerPage(BasePage):
     
     def _setup_ui(self) -> None:
         """Setup page UI for Serial Number handling"""
-        # Serial Number Types Group
+        # Main splitter to divide types and results
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        
+        # =========================================================================
+        # Top Section: Serial Number Types
+        # =========================================================================
+        types_widget = QWidget()
+        types_main_layout = QVBoxLayout(types_widget)
+        types_main_layout.setContentsMargins(0, 0, 0, 0)
+        
         types_group = QGroupBox("Serial Number Types")
         types_layout = QVBoxLayout(types_group)
         
@@ -169,62 +185,107 @@ class SNHandlerPage(BasePage):
         self._types_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._types_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._types_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self._types_table.setMaximumHeight(150)
         self._types_table.setColumnWidth(0, 150)
         self._types_table.itemSelectionChanged.connect(self._on_type_selected)
-        types_layout.addWidget(self._types_table)
+        types_layout.addWidget(self._types_table, 1)
         
-        # Action buttons in header
+        # Action buttons
         action_layout = QHBoxLayout()
-        self._refresh_btn = QPushButton("Refresh")
+        self._refresh_btn = QPushButton("🔄 Refresh")
         self._refresh_btn.clicked.connect(self._on_refresh_types)
         action_layout.addWidget(self._refresh_btn)
         
-        self._take_btn = QPushButton("Take")
+        self._take_btn = QPushButton("📥 Take Serial Numbers")
         self._take_btn.setEnabled(False)
+        self._take_btn.setObjectName("primaryButton")
         self._take_btn.clicked.connect(self._on_take_serials)
         action_layout.addWidget(self._take_btn)
         
         action_layout.addStretch()
         types_layout.addLayout(action_layout)
         
-        self._layout.addWidget(types_group)
+        types_main_layout.addWidget(types_group)
+        splitter.addWidget(types_widget)
         
-        self._layout.addSpacing(15)
+        # =========================================================================
+        # Bottom Section: Results Grid (larger area)
+        # =========================================================================
+        results_widget = QWidget()
+        results_main_layout = QVBoxLayout(results_widget)
+        results_main_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Results Group
         results_group = QGroupBox("Taken Serial Numbers")
         results_layout = QVBoxLayout(results_group)
         
-        self._results_text = QTextEdit()
-        self._results_text.setReadOnly(True)
-        self._results_text.setMaximumHeight(120)
-        self._results_text.setStyleSheet(
-            "background-color: #1e1e1e; font-family: monospace; font-size: 11px;"
-        )
-        self._results_text.setPlaceholderText(
-            "Serial numbers will appear here after taking..."
-        )
-        results_layout.addWidget(self._results_text)
+        # Results grid table
+        self._results_table = QTableWidget()
+        self._results_table.setColumnCount(6)
+        self._results_table.setHorizontalHeaderLabels([
+            "Serial Number", "Type", "Ref SN", "Ref PN", "Station", "Timestamp"
+        ])
+        self._results_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        self._results_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self._results_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+        self._results_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
+        self._results_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
+        self._results_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        self._results_table.verticalHeader().setVisible(False)
+        self._results_table.setAlternatingRowColors(True)
+        self._results_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self._results_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self._results_table.setColumnWidth(0, 180)
+        self._results_table.setColumnWidth(2, 100)
+        self._results_table.setColumnWidth(3, 100)
+        self._results_table.setColumnWidth(4, 100)
+        results_layout.addWidget(self._results_table, 1)
         
-        # Copy button
-        copy_layout = QHBoxLayout()
-        self._copy_btn = QPushButton("Copy to Clipboard")
+        # Results action buttons
+        results_action_layout = QHBoxLayout()
+        
+        self._copy_btn = QPushButton("📋 Copy Selected")
         self._copy_btn.setEnabled(False)
-        self._copy_btn.clicked.connect(self._on_copy_results)
-        copy_layout.addWidget(self._copy_btn)
-        copy_layout.addStretch()
-        results_layout.addLayout(copy_layout)
+        self._copy_btn.clicked.connect(self._on_copy_selected)
+        results_action_layout.addWidget(self._copy_btn)
         
-        self._layout.addWidget(results_group)
+        self._copy_all_btn = QPushButton("📋 Copy All Serial Numbers")
+        self._copy_all_btn.setEnabled(False)
+        self._copy_all_btn.clicked.connect(self._on_copy_all)
+        results_action_layout.addWidget(self._copy_all_btn)
         
-        # Status
+        self._clear_btn = QPushButton("🗑️ Clear")
+        self._clear_btn.clicked.connect(self._on_clear_results)
+        results_action_layout.addWidget(self._clear_btn)
+        
+        results_action_layout.addStretch()
+        results_layout.addLayout(results_action_layout)
+        
+        results_main_layout.addWidget(results_group)
+        splitter.addWidget(results_widget)
+        
+        # Set initial splitter sizes (types: 35%, results: 65%)
+        splitter.setSizes([250, 450])
+        
+        self._layout.addWidget(splitter, 1)
+        
+        # Status bar
+        status_frame = QFrame()
+        status_layout = QHBoxLayout(status_frame)
+        status_layout.setContentsMargins(5, 5, 5, 5)
+        
         self._status_label = QLabel("Connect to WATS server to manage serial numbers")
         self._status_label.setStyleSheet("color: #808080; font-style: italic;")
-        self._layout.addWidget(self._status_label)
+        status_layout.addWidget(self._status_label)
         
-        # Add stretch
-        self._layout.addStretch()
+        status_layout.addStretch()
+        
+        self._count_label = QLabel("Total taken: 0")
+        self._count_label.setStyleSheet("color: #4ec9b0;")
+        status_layout.addWidget(self._count_label)
+        
+        self._layout.addWidget(status_frame)
+        
+        # Connect selection change to enable copy button
+        self._results_table.itemSelectionChanged.connect(self._on_result_selection_changed)
         
         # Auto-load types if connected
         if self._main_window and self._main_window.app.wats_client:
@@ -234,8 +295,12 @@ class SNHandlerPage(BasePage):
     def _on_type_selected(self) -> None:
         """Handle serial number type selection in table"""
         selected = self._types_table.selectedItems()
-        # Enable Take button only when a type is selected
         self._take_btn.setEnabled(len(selected) > 0)
+    
+    def _on_result_selection_changed(self) -> None:
+        """Handle result selection change"""
+        selected = self._results_table.selectedItems()
+        self._copy_btn.setEnabled(len(selected) > 0)
     
     def _on_refresh_types(self) -> None:
         """Refresh serial number types from server"""
@@ -266,23 +331,131 @@ class SNHandlerPage(BasePage):
         dialog = TakeSerialNumbersDialog(type_name, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             values = dialog.get_values()
-            # TODO: Implement actual API call to take serial numbers
-            self._results_text.append(f"Taking {values['count']} serial number(s) of type '{type_name}'...")
-            if values['ref_sn']:
-                self._results_text.append(f"  Reference SN: {values['ref_sn']}")
-            if values['ref_pn']:
-                self._results_text.append(f"  Reference PN: {values['ref_pn']}")
-            if values['ref_station']:
-                self._results_text.append(f"  Station: {values['ref_station']}")
-            self._results_text.append("\n[Not yet implemented - API call needed]\n")
-            self._copy_btn.setEnabled(True)
+            self._take_serial_numbers(
+                type_name=type_name,
+                count=values['count'],
+                ref_sn=values['ref_sn'] or None,
+                ref_pn=values['ref_pn'] or None,
+                ref_station=values['ref_station'] or None
+            )
     
-    def _on_copy_results(self) -> None:
-        """Copy results to clipboard"""
-        from PySide6.QtWidgets import QApplication
-        clipboard = QApplication.clipboard()
-        clipboard.setText(self._results_text.toPlainText())
-        self._status_label.setText("Copied to clipboard")
+    def _take_serial_numbers(
+        self,
+        type_name: str,
+        count: int = 1,
+        ref_sn: Optional[str] = None,
+        ref_pn: Optional[str] = None,
+        ref_station: Optional[str] = None
+    ) -> None:
+        """Take serial numbers from the WATS server"""
+        try:
+            self._status_label.setText(f"Taking {count} serial number(s)...")
+            
+            if not self._main_window or not self._main_window.app.wats_client:
+                QMessageBox.warning(self, "Error", "Not connected to WATS server")
+                return
+            
+            client = self._main_window.app.wats_client
+            
+            # Call the API to allocate/take serial numbers
+            serials = client.production.allocate_serial_numbers(
+                type_name=type_name,
+                count=count,
+                reference_sn=ref_sn,
+                reference_pn=ref_pn,
+                station_name=ref_station
+            )
+            
+            if serials:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                # Add each serial to the results table
+                for serial in serials:
+                    row_data = {
+                        'serial': serial,
+                        'type': type_name,
+                        'ref_sn': ref_sn or '',
+                        'ref_pn': ref_pn or '',
+                        'station': ref_station or '',
+                        'timestamp': timestamp
+                    }
+                    self._taken_serials.append(row_data)
+                    self._add_result_row(row_data)
+                
+                self._status_label.setText(f"Successfully took {len(serials)} serial number(s)")
+                self._update_count()
+                self._copy_all_btn.setEnabled(True)
+                
+                QMessageBox.information(
+                    self, "Success",
+                    f"Successfully took {len(serials)} serial number(s):\n" + 
+                    "\n".join(serials[:10]) + 
+                    (f"\n... and {len(serials) - 10} more" if len(serials) > 10 else "")
+                )
+            else:
+                self._status_label.setText("No serial numbers returned")
+                QMessageBox.warning(self, "Warning", "No serial numbers were returned from the server.")
+                
+        except Exception as e:
+            self._status_label.setText(f"Error: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to take serial numbers:\n{str(e)}")
+    
+    def _add_result_row(self, row_data: dict) -> None:
+        """Add a row to the results table"""
+        row = self._results_table.rowCount()
+        self._results_table.insertRow(row)
+        
+        # Serial number (highlight in green)
+        serial_item = QTableWidgetItem(row_data['serial'])
+        serial_item.setForeground(Qt.GlobalColor.green)
+        self._results_table.setItem(row, 0, serial_item)
+        
+        self._results_table.setItem(row, 1, QTableWidgetItem(row_data['type']))
+        self._results_table.setItem(row, 2, QTableWidgetItem(row_data['ref_sn']))
+        self._results_table.setItem(row, 3, QTableWidgetItem(row_data['ref_pn']))
+        self._results_table.setItem(row, 4, QTableWidgetItem(row_data['station']))
+        self._results_table.setItem(row, 5, QTableWidgetItem(row_data['timestamp']))
+        
+        # Scroll to the new row
+        self._results_table.scrollToBottom()
+    
+    def _update_count(self) -> None:
+        """Update the count label"""
+        self._count_label.setText(f"Total taken: {len(self._taken_serials)}")
+    
+    def _on_copy_selected(self) -> None:
+        """Copy selected serial numbers to clipboard"""
+        selected_rows = set()
+        for item in self._results_table.selectedItems():
+            selected_rows.add(item.row())
+        
+        serials = []
+        for row in sorted(selected_rows):
+            item = self._results_table.item(row, 0)
+            if item:
+                serials.append(item.text())
+        
+        if serials:
+            clipboard = QApplication.clipboard()
+            clipboard.setText("\n".join(serials))
+            self._status_label.setText(f"Copied {len(serials)} serial number(s) to clipboard")
+    
+    def _on_copy_all(self) -> None:
+        """Copy all serial numbers to clipboard"""
+        serials = [data['serial'] for data in self._taken_serials]
+        if serials:
+            clipboard = QApplication.clipboard()
+            clipboard.setText("\n".join(serials))
+            self._status_label.setText(f"Copied {len(serials)} serial number(s) to clipboard")
+    
+    def _on_clear_results(self) -> None:
+        """Clear the results table"""
+        self._results_table.setRowCount(0)
+        self._taken_serials.clear()
+        self._update_count()
+        self._copy_btn.setEnabled(False)
+        self._copy_all_btn.setEnabled(False)
+        self._status_label.setText("Results cleared")
     
     def _load_sn_types(self) -> None:
         """Load serial number types from WATS server"""
@@ -302,7 +475,7 @@ class SNHandlerPage(BasePage):
                 else:
                     self._sn_types = []
             else:
-                print(f"[SN Handler] No client - main_window: {self._main_window}, wats_client: {self._main_window.app.wats_client if self._main_window else None}")
+                print(f"[SN Handler] No client - main_window: {self._main_window}")
                 self._sn_types = []
                 self._status_label.setText("Not connected to WATS server")
                 return
@@ -317,8 +490,6 @@ class SNHandlerPage(BasePage):
             traceback.print_exc()
             self._status_label.setText(f"Error: {str(e)}")
     
-
-    
     def _populate_types_table(self) -> None:
         """Populate serial number types table"""
         self._types_table.setRowCount(len(self._sn_types))
@@ -327,8 +498,6 @@ class SNHandlerPage(BasePage):
             self._types_table.setItem(row, 1, QTableWidgetItem(getattr(sn_type, 'prefix', '') or ""))
             self._types_table.setItem(row, 2, QTableWidgetItem(getattr(sn_type, 'suffix', '') or ""))
             self._types_table.setItem(row, 3, QTableWidgetItem(sn_type.description or ""))
-    
-
     
     def save_config(self) -> None:
         """No configuration to save for this page"""

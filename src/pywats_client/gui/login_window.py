@@ -187,7 +187,7 @@ class LoginWindow(QDialog):
         )
         help_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
         help_text.setOpenExternalLinks(True)
-        help_text.setStyleSheet("color: #0078d4; font-size: 11px;")
+        help_text.setStyleSheet("color: #f0a30a; font-size: 11px;")
         layout.addWidget(help_text)
     
     def _apply_styles(self):
@@ -207,7 +207,7 @@ class LoginWindow(QDialog):
                 color: #ffffff;
             }
             QLineEdit:focus {
-                border: 1px solid #0078d4;
+                border: 1px solid #f0a30a;
             }
             QComboBox {
                 padding: 8px;
@@ -227,11 +227,12 @@ class LoginWindow(QDialog):
                 background-color: #505050;
             }
             QPushButton:default {
-                background-color: #0078d4;
-                border: 1px solid #0078d4;
+                background-color: #f0a30a;
+                border: 1px solid #f0a30a;
+                color: #1e1e1e;
             }
             QPushButton:default:hover {
-                background-color: #1084d8;
+                background-color: #d49209;
             }
             QPushButton:disabled {
                 background-color: #2d2d30;
@@ -247,7 +248,7 @@ class LoginWindow(QDialog):
                 text-align: center;
             }
             QProgressBar::chunk {
-                background-color: #0078d4;
+                background-color: #f0a30a;
             }
         """)
     

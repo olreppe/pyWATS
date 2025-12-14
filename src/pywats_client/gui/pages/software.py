@@ -421,21 +421,49 @@ class SoftwarePage(BasePage):
                 QMessageBox.critical(self, "Error", f"Failed to create package: {e}")
     
     def _on_upload_file(self) -> None:
-        """Upload file to selected package"""
+        """Upload file to selected package as a zip"""
         if not self._selected_package:
             return
         
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Select File to Upload", "",
-            "All Files (*.*)"
+            "ZIP Files (*.zip);;All Files (*.*)"
         )
         
         if file_path:
             try:
+                import zipfile
+                import tempfile
+                from pathlib import Path
+                
                 client = self._main_window.app.wats_client
                 pkg_id = self._selected_package.package_id
                 
-                result = client.software.upload_file(pkg_id, file_path)
+                file_path_obj = Path(file_path)
+                
+                # Check if already a zip file
+                if file_path_obj.suffix.lower() == '.zip':
+                    # Use zip file directly
+                    with open(file_path, 'rb') as f:
+                        zip_content = f.read()
+                else:
+                    # Wrap single file in a zip
+                    # Note: WATS requires files to be in a folder, not at root
+                    with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp:
+                        tmp_path = tmp.name
+                    
+                    try:
+                        with zipfile.ZipFile(tmp_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                            # Put file in a subfolder (required by WATS API)
+                            folder_name = "uploaded_files"
+                            zf.write(file_path, f"{folder_name}/{file_path_obj.name}")
+                        
+                        with open(tmp_path, 'rb') as f:
+                            zip_content = f.read()
+                    finally:
+                        Path(tmp_path).unlink(missing_ok=True)
+                
+                result = client.software.upload_zip(pkg_id, zip_content)
                 
                 if result:
                     QMessageBox.information(self, "Success", "File uploaded successfully")

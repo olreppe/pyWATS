@@ -7,6 +7,7 @@ and content pages matching the WATS Client design.
 
 import asyncio
 import logging
+from enum import Enum
 from typing import Optional, Dict, Any, TYPE_CHECKING, cast
 from pathlib import Path
 
@@ -23,12 +24,19 @@ from PySide6.QtGui import QAction, QCloseEvent
 from .styles import DARK_STYLESHEET
 from .settings_dialog import SettingsDialog
 from .pages import (
-    BasePage, SetupPage, GeneralPage, ConnectionPage, ProxySettingsPage, 
-    ConvertersPage, LocationPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
+    BasePage, SetupPage, ConnectionPage,
+    ConvertersPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
     AssetPage, RootCausePage, ProductionPage, ProductPage
 )
 from ..core.config import ClientConfig
 from ..app import pyWATSApplication, ApplicationStatus
+
+
+class SidebarMode(Enum):
+    """Sidebar display modes"""
+    ADVANCED = "advanced"   # All items visible, full width
+    COMPACT = "compact"     # Essential items only, full width  
+    MINIMIZED = "minimized" # Icons only, narrow width
 
 
 class MainWindow(QMainWindow):
@@ -46,6 +54,9 @@ class MainWindow(QMainWindow):
     # Signals for async updates
     connection_status_changed = Signal(str)
     application_status_changed = Signal(str)
+    
+    # Pages hidden in Compact mode (advanced features)
+    ADVANCED_PAGES = {"Assets", "Software", "RootCause", "Products", "Production"}
     
     def __init__(
         self, 
@@ -170,30 +181,64 @@ class MainWindow(QMainWindow):
         self._create_status_bar()
     
     def _create_sidebar(self, layout: QHBoxLayout) -> None:
-        """Create navigation sidebar"""
-        sidebar = QFrame()
-        sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(200)
-        sidebar.setStyleSheet("background-color: #252526;")
+        """Create navigation sidebar with collapsible modes"""
+        # Track sidebar mode
+        self._sidebar_mode = SidebarMode.ADVANCED
         
-        sidebar_layout = QVBoxLayout(sidebar)
+        self._sidebar = QFrame()
+        self._sidebar.setObjectName("sidebar")
+        self._sidebar.setFixedWidth(200)
+        self._sidebar.setStyleSheet("background-color: #252526;")
+        
+        sidebar_layout = QVBoxLayout(self._sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
         
-        # Logo/Title area
+        # Logo/Title area with mode toggle
         logo_frame = QFrame()
         logo_layout = QHBoxLayout(logo_frame)
         logo_layout.setContentsMargins(15, 15, 15, 15)
         
-        # Logo icon placeholder
-        logo_icon = QLabel("🔧")  # Placeholder - use actual icon
-        logo_icon.setStyleSheet("font-size: 24px;")
-        logo_layout.addWidget(logo_icon)
+        # Logo icon - use bee favicon
+        from PySide6.QtGui import QPixmap
+        self._logo_icon = QLabel()
+        icon_path = Path(__file__).parent / "resources" / "favicon2.ico"
+        if icon_path.exists():
+            pixmap = QPixmap(str(icon_path)).scaled(
+                28, 28, Qt.AspectRatioMode.KeepAspectRatio, 
+                Qt.TransformationMode.SmoothTransformation
+            )
+            self._logo_icon.setPixmap(pixmap)
+        else:
+            self._logo_icon.setText("🐝")
+            self._logo_icon.setStyleSheet("font-size: 24px;")
+        logo_layout.addWidget(self._logo_icon)
         
-        title_label = QLabel("WATS Client")
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #ffffff;")
-        logo_layout.addWidget(title_label)
+        self._title_label = QLabel("WATS Client")
+        self._title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #ffffff;")
+        logo_layout.addWidget(self._title_label)
         logo_layout.addStretch()
+        
+        # Mode toggle button
+        self._mode_btn = QPushButton("◀")
+        self._mode_btn.setObjectName("modeButton")
+        self._mode_btn.setToolTip("Toggle sidebar mode (Advanced/Compact/Minimized)")
+        self._mode_btn.setFixedSize(24, 24)
+        self._mode_btn.setStyleSheet("""
+            QPushButton#modeButton {
+                background-color: transparent;
+                border: none;
+                color: #808080;
+                font-size: 12px;
+            }
+            QPushButton#modeButton:hover {
+                color: #ffffff;
+                background-color: #3c3c3c;
+                border-radius: 4px;
+            }
+        """)
+        self._mode_btn.clicked.connect(self._toggle_sidebar_mode)
+        logo_layout.addWidget(self._mode_btn)
         
         sidebar_layout.addWidget(logo_frame)
         
@@ -201,53 +246,16 @@ class MainWindow(QMainWindow):
         self._nav_list = QListWidget()
         self._nav_list.setObjectName("navList")
         
-        # Add navigation items matching reference design (from screenshots)
-        # Dynamically build based on config visibility settings
-        nav_items = [
-            ("Setup", "⚙️"),
-            ("General", "⚙️"),
-            ("Connection", "🔗"),
-            ("Log", "📋"),
-        ]
-        
-        # Add optional tabs based on configuration
-        if self.config.show_location_tab:
-            nav_items.append(("Location", "📍"))
-        if self.config.show_converters_tab:
-            nav_items.append(("Converters", "🔄"))
-        if self.config.show_sn_handler_tab:
-            nav_items.append(("SN Handler", "🔢"))
-        if self.config.show_proxy_tab:
-            nav_items.append(("Proxy Settings", "🌐"))
-        if self.config.show_software_tab:
-            nav_items.append(("Software", "💻"))
-        if self.config.show_asset_tab:
-            nav_items.append(("Assets", "🔧"))
-        if self.config.show_rootcause_tab:
-            nav_items.append(("RootCause", "🎫"))
-        if self.config.show_production_tab:
-            nav_items.append(("Production", "🏭"))
-        if self.config.show_product_tab:
-            nav_items.append(("Products", "📦"))
-        
-        for name, icon in nav_items:
-            if not name:  # Separator
-                item = QListWidgetItem()
-                item.setFlags(Qt.ItemFlag.NoItemFlags)
-                item.setSizeHint(QSize(0, 20))
-                self._nav_list.addItem(item)
-            else:
-                item = QListWidgetItem(f"  {name}")
-                item.setData(Qt.ItemDataRole.UserRole, name)
-                item.setSizeHint(QSize(0, 45))
-                self._nav_list.addItem(item)
+        # Build nav items - store all items for filtering by mode
+        self._all_nav_items = self._build_nav_items()
+        self._update_nav_list()
         
         self._nav_list.currentRowChanged.connect(self._on_nav_changed)
         sidebar_layout.addWidget(self._nav_list, 1)
         
         # Footer with Settings button
-        footer_frame = QFrame()
-        footer_layout = QVBoxLayout(footer_frame)
+        self._footer_frame = QFrame()
+        footer_layout = QVBoxLayout(self._footer_frame)
         footer_layout.setContentsMargins(15, 10, 15, 15)
         footer_layout.setSpacing(10)
         
@@ -278,13 +286,98 @@ class MainWindow(QMainWindow):
         footer_layout.addLayout(settings_row)
         
         from .. import __version__
-        footer_label = QLabel(f"pyWATS Client | v{__version__}")
-        footer_label.setObjectName("footerLabel")
-        footer_layout.addWidget(footer_label)
+        self._footer_label = QLabel(f"pyWATS Client | v{__version__}")
+        self._footer_label.setObjectName("footerLabel")
+        footer_layout.addWidget(self._footer_label)
         
-        sidebar_layout.addWidget(footer_frame)
+        sidebar_layout.addWidget(self._footer_frame)
         
-        layout.addWidget(sidebar)
+        layout.addWidget(self._sidebar)
+    
+    def _build_nav_items(self) -> list:
+        """Build list of all navigation items based on config"""
+        # Core navigation items that are always shown
+        nav_items = [
+            ("General", "⚙️"),
+            ("Connection", "🔗"),
+            ("Log", "📋"),
+        ]
+        
+        # Add optional operational tabs based on configuration
+        # Note: Location and Proxy Settings are now in Settings dialog only
+        if self.config.show_converters_tab:
+            nav_items.append(("Converters", "🔄"))
+        if self.config.show_sn_handler_tab:
+            nav_items.append(("SN Handler", "🔢"))
+        if self.config.show_software_tab:
+            nav_items.append(("Software", "💻"))
+        if self.config.show_asset_tab:
+            nav_items.append(("Assets", "🔧"))
+        if self.config.show_rootcause_tab:
+            nav_items.append(("RootCause", "🎫"))
+        if self.config.show_production_tab:
+            nav_items.append(("Production", "🏭"))
+        if self.config.show_product_tab:
+            nav_items.append(("Products", "📦"))
+        
+        return nav_items
+    
+    def _update_nav_list(self) -> None:
+        """Update navigation list based on current sidebar mode"""
+        self._nav_list.clear()
+        
+        for name, icon in self._all_nav_items:
+            # In Compact mode, skip advanced pages
+            if self._sidebar_mode == SidebarMode.COMPACT and name in self.ADVANCED_PAGES:
+                continue
+            
+            if self._sidebar_mode == SidebarMode.MINIMIZED:
+                # Icons only
+                item = QListWidgetItem(icon)
+                item.setToolTip(name)
+            else:
+                # Full text with icon
+                item = QListWidgetItem(f"  {icon}  {name}")
+            
+            item.setData(Qt.ItemDataRole.UserRole, name)
+            item.setSizeHint(QSize(0, 45))
+            self._nav_list.addItem(item)
+        
+        # Select first item
+        if self._nav_list.count() > 0:
+            self._nav_list.setCurrentRow(0)
+    
+    def _toggle_sidebar_mode(self) -> None:
+        """Cycle through sidebar modes: Advanced -> Compact -> Minimized -> Advanced"""
+        if self._sidebar_mode == SidebarMode.ADVANCED:
+            self._sidebar_mode = SidebarMode.COMPACT
+            self._mode_btn.setText("◀")
+            self._mode_btn.setToolTip("Compact mode (essential items) - click for Minimized")
+        elif self._sidebar_mode == SidebarMode.COMPACT:
+            self._sidebar_mode = SidebarMode.MINIMIZED
+            self._mode_btn.setText("▶")
+            self._mode_btn.setToolTip("Minimized mode (icons only) - click for Advanced")
+        else:
+            self._sidebar_mode = SidebarMode.ADVANCED
+            self._mode_btn.setText("◀")
+            self._mode_btn.setToolTip("Advanced mode (all items) - click for Compact")
+        
+        self._apply_sidebar_mode()
+    
+    def _apply_sidebar_mode(self) -> None:
+        """Apply current sidebar mode styling and layout"""
+        if self._sidebar_mode == SidebarMode.MINIMIZED:
+            self._sidebar.setFixedWidth(60)
+            self._title_label.hide()
+            self._settings_btn.setText("⚙")
+            self._footer_label.hide()
+        else:
+            self._sidebar.setFixedWidth(200)
+            self._title_label.show()
+            self._settings_btn.setText("⚙  Settings")
+            self._footer_label.show()
+        
+        self._update_nav_list()
     
     def _create_content_area(self, layout: QHBoxLayout) -> None:
         """Create main content area"""
@@ -299,22 +392,19 @@ class MainWindow(QMainWindow):
         
         # Create pages matching reference design (from screenshots)
         # Build page dict dynamically based on config visibility settings
+        # Note: SetupPage is now shown as "General" in navigation
+        # Note: Location and Proxy Settings are now in Settings dialog only
         self._pages: Dict[str, BasePage] = {
-            "Setup": SetupPage(self.config, self),
-            "General": GeneralPage(self.config, self),
+            "General": SetupPage(self.config, self),
             "Connection": ConnectionPage(self.config, self),
             "Log": LogPage(self.config, self),
         }
         
-        # Add optional pages based on configuration
-        if self.config.show_location_tab:
-            self._pages["Location"] = LocationPage(self.config, self)
+        # Add optional operational pages based on configuration
         if self.config.show_converters_tab:
             self._pages["Converters"] = ConvertersPage(self.config, self)
         if self.config.show_sn_handler_tab:
             self._pages["SN Handler"] = SNHandlerPage(self.config, self)
-        if self.config.show_proxy_tab:
-            self._pages["Proxy Settings"] = ProxySettingsPage(self.config)
         if self.config.show_software_tab:
             self._pages["Software"] = SoftwarePage(self.config, self)
         if self.config.show_asset_tab:

@@ -276,6 +276,40 @@ class ProductService:
     # Bill of Materials
     # =========================================================================
 
+    def get_bom(
+        self,
+        part_number: str,
+        revision: str
+    ) -> Optional[str]:
+        """
+        Get BOM (Bill of Materials) as WSBF XML string.
+
+        Args:
+            part_number: Product part number
+            revision: Product revision
+
+        Returns:
+            WSBF XML string or None if not found
+        """
+        return self._repository.get_bom(part_number, revision)
+
+    def get_bom_items(
+        self,
+        part_number: str,
+        revision: str
+    ) -> List["BomItem"]:
+        """
+        Get BOM items as parsed BomItem objects.
+
+        Args:
+            part_number: Product part number
+            revision: Product revision
+
+        Returns:
+            List of BomItem objects
+        """
+        return self._repository.get_bom_items(part_number, revision)
+
     def update_bom(
         self,
         part_number: str,
