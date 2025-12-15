@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b2] - 2025-12-15
+
+### Changed
+
+- **Architecture Refactoring** - Internal API separation
+  - All internal endpoint implementations now in separate `_internal` files
+  - New `AssetRepositoryInternal` and `AssetServiceInternal` for file operations
+  - New `ProductionRepositoryInternal` and `ProductionServiceInternal` for MES operations
+  - Public repositories delegate to internal repositories for internal endpoints
+  - Added `api.asset_internal` for asset file operations (upload, download, list, delete)
+  - Added `api.production_internal` for MES unit phases
+
+### Fixed
+
+- CompOp export path handling for None values
+- TestInstanceConfig field mapping for process_code/test_operation
+
 ## [0.1.0b1] - 2025-12-14
 
 ### Added
@@ -51,4 +68,5 @@ before the 1.0 release. Please report issues on GitHub.
 
 | Version | Date | Status |
 |---------|------|--------|
+| 0.1.0b2 | 2025-12-15 | Beta - Architecture refactoring |
 | 0.1.0b1 | 2025-12-14 | Beta - Initial public release |
