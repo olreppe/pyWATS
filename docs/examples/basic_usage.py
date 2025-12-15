@@ -5,26 +5,36 @@ This example demonstrates basic usage of the PyWATS library for interacting
 with the WATS API.
 
 Setup:
-    1. Copy .env.template to .env
-    2. Update WATS_BASE_URL and WATS_AUTH_TOKEN with your values
-    3. Run: python -m docs.examples.basic_usage
+    Set environment variables before running:
+    - WATS_BASE_URL: Your WATS server URL (e.g., https://your-server.wats.com)
+    - WATS_AUTH_TOKEN: Your base64-encoded authentication token
+    
+    Or modify the credentials below directly.
+    
+    Run: python basic_usage.py
 """
 
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 from pywats import pyWATS, WATSFilter
 
 
 def main():
-    # Initialize the API with credentials from environment variables
-    api = pyWATS(
-        base_url=os.getenv("WATS_BASE_URL"),
-        token=os.getenv("WATS_AUTH_TOKEN"),
-    )
+    # Initialize the API
+    # Option 1: Use environment variables
+    base_url = os.getenv("WATS_BASE_URL")
+    token = os.getenv("WATS_AUTH_TOKEN")
+    
+    # Option 2: Or set credentials directly (for testing)
+    # base_url = "https://your-server.wats.com"
+    # token = "your_base64_encoded_token"
+    
+    if not base_url or not token:
+        print("Error: Please set WATS_BASE_URL and WATS_AUTH_TOKEN environment variables")
+        print("  Or modify the credentials in this script directly")
+        return
+    
+    api = pyWATS(base_url=base_url, token=token)
 
     print("PyWATS Basic Usage Example")
     print("=" * 50)
