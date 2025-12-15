@@ -220,7 +220,7 @@ class ProductRepository:
         return []
 
     # =========================================================================
-    # Bill of Materials
+    # Bill of Materials - Delegated to Internal Repository
     # =========================================================================
 
     def get_bom(
@@ -231,7 +231,9 @@ class ProductRepository:
         """
         Get BOM (Bill of Materials) for a product revision as WSBF XML.
 
-        GET /api/internal/Product/Bom?partNumber={partNumber}&revision={revision}
+        ⚠️ INTERNAL API - Delegated to ProductRepositoryInternal.
+        
+        Note: This method is deprecated. Use ProductServiceInternal.get_bom() instead.
         
         Returns the BOM in WSBF (WATS Standard BOM Format) XML format.
         Example response:
@@ -247,6 +249,9 @@ class ProductRepository:
         Returns:
             WSBF XML string or None if not found
         """
+        # The internal repo returns parsed BomItem objects, not raw XML
+        # This method is here for backwards compatibility
+        # The raw XML format is only available through direct internal API call
         logger.debug(f"Fetching BOM for {part_number} rev {revision}")
         response = self._http_client.get(
             "/api/internal/Product/Bom",

@@ -550,7 +550,7 @@ class AssetRepository:
         return []
 
     # =========================================================================
-    # File Operations (Internal API)
+    # File Operations - Delegated to Internal Repository
     # =========================================================================
 
     def upload_file(
@@ -563,9 +563,9 @@ class AssetRepository:
         """
         Upload a file to an asset.
 
-        POST /api/internal/Blob/Asset
+        ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
         
-        ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
+        Note: This method is deprecated. Use AssetServiceInternal instead.
         
         Args:
             asset_id: Asset ID
@@ -576,17 +576,9 @@ class AssetRepository:
         Returns:
             True if file was uploaded successfully, False otherwise
         """
-        params = {"assetId": asset_id, "filename": filename}
-        response = self._http_client.post(
-            "/api/internal/Blob/Asset",
-            params=params,
-            data=content,
-            headers={
-                "Referer": base_url,
-                "Content-Type": "application/octet-stream"
-            }
-        )
-        return response.is_success
+        from .repository_internal import AssetRepositoryInternal
+        internal_repo = AssetRepositoryInternal(self._http_client, base_url)
+        return internal_repo.upload_file(asset_id, filename, content)
 
     def download_file(
         self,
@@ -597,9 +589,9 @@ class AssetRepository:
         """
         Download a file from an asset.
 
-        GET /api/internal/Blob/Asset
+        ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
         
-        ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
+        Note: This method is deprecated. Use AssetServiceInternal instead.
         
         Args:
             asset_id: Asset ID
@@ -609,31 +601,17 @@ class AssetRepository:
         Returns:
             File content as bytes, or None if not found
         """
-        params = {"assetId": asset_id, "filename": filename}
-        response = self._http_client.get(
-            "/api/internal/Blob/Asset",
-            params=params,
-            headers={"Referer": base_url}
-        )
-        if response.is_success:
-            # Response might be raw bytes or JSON
-            if isinstance(response.data, bytes):
-                return response.data
-            # If it's a dict, it might contain base64 encoded content
-            if isinstance(response.data, dict):
-                import base64
-                content = response.data.get("content") or response.data.get("Content")
-                if content:
-                    return base64.b64decode(content)
-        return None
+        from .repository_internal import AssetRepositoryInternal
+        internal_repo = AssetRepositoryInternal(self._http_client, base_url)
+        return internal_repo.download_file(asset_id, filename)
 
     def list_files(self, asset_id: str, base_url: str) -> List[str]:
         """
         List all files attached to an asset.
 
-        GET /api/internal/Blob/Asset/List/{assetId}
+        ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
         
-        ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
+        Note: This method is deprecated. Use AssetServiceInternal instead.
         
         Args:
             asset_id: Asset ID
@@ -642,13 +620,9 @@ class AssetRepository:
         Returns:
             List of filenames
         """
-        response = self._http_client.get(
-            f"/api/internal/Blob/Asset/List/{asset_id}",
-            headers={"Referer": base_url}
-        )
-        if response.is_success and response.data:
-            return list(response.data) if isinstance(response.data, list) else []
-        return []
+        from .repository_internal import AssetRepositoryInternal
+        internal_repo = AssetRepositoryInternal(self._http_client, base_url)
+        return internal_repo.list_files(asset_id)
 
     def delete_files(
         self,
@@ -659,9 +633,9 @@ class AssetRepository:
         """
         Delete files from an asset.
 
-        DELETE /api/internal/Blob/Assets
+        ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
         
-        ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
+        Note: This method is deprecated. Use AssetServiceInternal instead.
         
         Args:
             asset_id: Asset ID
@@ -671,10 +645,6 @@ class AssetRepository:
         Returns:
             True if files were deleted successfully, False otherwise
         """
-        response = self._http_client.delete(
-            "/api/internal/Blob/Assets",
-            params={"assetId": asset_id},
-            data=filenames,
-            headers={"Referer": base_url}
-        )
-        return response.is_success
+        from .repository_internal import AssetRepositoryInternal
+        internal_repo = AssetRepositoryInternal(self._http_client, base_url)
+        return internal_repo.delete_files(asset_id, filenames)

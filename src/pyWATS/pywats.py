@@ -16,8 +16,18 @@ from .domains.product import (
     ProductServiceInternal,
     ProductRepositoryInternal,
 )
-from .domains.asset import AssetService, AssetRepository
-from .domains.production import ProductionService, ProductionRepository
+from .domains.asset import (
+    AssetService,
+    AssetRepository,
+    AssetServiceInternal,
+    AssetRepositoryInternal,
+)
+from .domains.production import (
+    ProductionService,
+    ProductionRepository,
+    ProductionServiceInternal,
+    ProductionRepositoryInternal,
+)
 from .domains.report import ReportService, ReportRepository
 from .domains.software import SoftwareService, SoftwareRepository
 from .domains.app import AppService, AppRepository
@@ -137,7 +147,9 @@ class pyWATS:
         self._product: Optional[ProductService] = None
         self._product_internal: Optional[ProductServiceInternal] = None
         self._asset: Optional[AssetService] = None
+        self._asset_internal: Optional[AssetServiceInternal] = None
         self._production: Optional[ProductionService] = None
+        self._production_internal: Optional[ProductionServiceInternal] = None
         self._report: Optional[ReportService] = None
         self._software: Optional[SoftwareService] = None
         self._app: Optional[AppService] = None
@@ -207,6 +219,30 @@ class pyWATS:
         return self._asset
     
     @property
+    def asset_internal(self) -> AssetServiceInternal:
+        """
+        Access internal asset operations (file operations).
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        This service uses internal WATS API endpoints that are not publicly
+        documented. Methods may change or be removed without notice.
+        
+        Use this for:
+        - Uploading files to assets
+        - Downloading files from assets
+        - Listing files attached to assets
+        - Deleting files from assets
+        
+        Returns:
+            AssetServiceInternal instance
+        """
+        if self._asset_internal is None:
+            repo = AssetRepositoryInternal(self._http_client, self._base_url)
+            self._asset_internal = AssetServiceInternal(repo)
+        return self._asset_internal
+    
+    @property
     def production(self) -> ProductionService:
         """
         Access production/unit management operations.
@@ -226,6 +262,28 @@ class pyWATS:
             repo = ProductionRepository(self._http_client, self._error_handler)
             self._production = ProductionService(repo, base_url=self._base_url)
         return self._production
+    
+    @property
+    def production_internal(self) -> ProductionServiceInternal:
+        """
+        Access internal production operations (MES operations).
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        This service uses internal WATS API endpoints that are not publicly
+        documented. Methods may change or be removed without notice.
+        
+        Use this for:
+        - Getting unit phases from WATS MES
+        - Getting detailed phase information
+        
+        Returns:
+            ProductionServiceInternal instance
+        """
+        if self._production_internal is None:
+            repo = ProductionRepositoryInternal(self._http_client, self._base_url)
+            self._production_internal = ProductionServiceInternal(repo)
+        return self._production_internal
     
     @property
     def report(self) -> ReportService:

@@ -623,16 +623,16 @@ class ProductionRepository:
         return []
 
     # =========================================================================
-    # Unit Phases
+    # Unit Phases - Delegated to Internal Repository
     # =========================================================================
 
     def get_unit_phases(self, base_url: str) -> List[UnitPhase]:
         """
         Get all available unit phases.
 
-        GET /api/internal/Mes/GetUnitPhases
-
-        Note: This uses an internal API that requires the Referer header.
+        ⚠️ INTERNAL API - Delegated to ProductionRepositoryInternal.
+        
+        Note: This method is deprecated. Use ProductionServiceInternal instead.
 
         Args:
             base_url: The base URL for the Referer header
@@ -640,10 +640,7 @@ class ProductionRepository:
         Returns:
             List of UnitPhase objects
         """
-        response = self._http_client.get(
-            "/api/internal/Mes/GetUnitPhases",
-            headers={"Referer": base_url}
-        )
-        if response.is_success and response.data:
-            return [UnitPhase.model_validate(item) for item in response.data]
-        return []
+        # Delegate to internal repository for proper separation
+        from .repository_internal import ProductionRepositoryInternal
+        internal_repo = ProductionRepositoryInternal(self._http_client, base_url)
+        return internal_repo.get_unit_phases()

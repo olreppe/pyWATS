@@ -9,6 +9,8 @@ from .models import (
 from .enums import SerialNumberIdentifier, UnitPhaseFlag
 from .service import ProductionService
 from .repository import ProductionRepository
+from .service_internal import ProductionServiceInternal
+from .repository_internal import ProductionRepositoryInternal
 
 # Rebuild Unit model to resolve forward references to Product/ProductRevision
 from ..product.models import Product, ProductRevision
@@ -29,4 +31,7 @@ __all__ = [
     # Service & Repository
     "ProductionService",
     "ProductionRepository",
+    # Internal Service & Repository
+    "ProductionServiceInternal",
+    "ProductionRepositoryInternal",
 ]
