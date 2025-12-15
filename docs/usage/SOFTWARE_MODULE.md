@@ -528,7 +528,7 @@ api.software.delete_package(package_id)
 
 ### Package File Download Not Supported
 
-Downloading package files is not currently supported through the pyWATS API. 
+Downloading package files is not currently supported through the PyWATS API. 
 Files can only be uploaded to packages, not downloaded.
 
 To access package files, use the WATS web interface or Production Manager.

@@ -4,7 +4,7 @@
 
 This document tracks the refactoring of all converters from dict-based to UUTReport model-based implementations.
 
-**Critical Rule:** ALL converters MUST use the pyWATS UUTReport model - NO raw dictionaries! If a feature is missing from the API, that's an API problem to fix. NO WORKAROUNDS!
+**Critical Rule:** ALL converters MUST use the PyWATS UUTReport model - NO raw dictionaries! If a feature is missing from the API, that's an API problem to fix. NO WORKAROUNDS!
 
 ## Completed Refactoring (V2 Converters)
 

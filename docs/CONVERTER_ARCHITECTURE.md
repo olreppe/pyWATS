@@ -2,7 +2,7 @@
 
 ## Overview
 
-The pyWATS Client converter architecture provides a flexible framework for converting various file formats into WATS report structures. Converters run on the client (and potentially on the server in the future) and integrate with the file monitoring system.
+The PyWATS Client converter architecture provides a flexible framework for converting various file formats into WATS report structures. Converters run on the client (and potentially on the server in the future) and integrate with the file monitoring system.
 
 ## 📚 Reference Implementations (V2 Converters)
 
@@ -19,9 +19,9 @@ All new converters should follow the patterns demonstrated in these V2 reference
 
 **Start with `converter_template.py`** - it contains the complete API reference with all step types and detailed comments.
 
-## ⚠️ CRITICAL: Use the pyWATS API Models - No Workarounds!
+## ⚠️ CRITICAL: Use the PyWATS API Models - No Workarounds!
 
-**All converters MUST use the pyWATS UUTReport model to build reports.** 
+**All converters MUST use the PyWATS UUTReport model to build reports.** 
 
 Do NOT build raw dictionaries directly. The API provides a complete model with factory methods for creating properly structured reports. If a feature you need is missing from the API, that is an API problem that must be fixed - no workarounds are acceptable.
 

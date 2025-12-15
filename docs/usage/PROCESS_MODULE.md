@@ -382,7 +382,7 @@ api.process.refresh_interval = 60  # 1 minute
 
 ### Read-Only Operations
 
-Process definitions are **read-only** through the pyWATS API. 
+Process definitions are **read-only** through the PyWATS API. 
 Creating, updating, or deleting processes is not supported.
 
 Process management must be done through the WATS Admin interface:

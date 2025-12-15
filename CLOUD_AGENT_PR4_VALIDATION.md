@@ -1,7 +1,7 @@
 # Cloud Agent PR #4 - Architecture Validation Summary
 
 ## Overview
-The cloud agent (PR #4) completed work on fixing the step-type union architecture for the pyWATS report models. The local team also completed comprehensive test coverage. This document validates the cloud agent's work.
+The cloud agent (PR #4) completed work on fixing the step-type union architecture for the PyWATS report models. The local team also completed comprehensive test coverage. This document validates the cloud agent's work.
 
 ## Validation Results
 

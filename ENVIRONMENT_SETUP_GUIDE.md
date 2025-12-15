@@ -25,7 +25,7 @@ Or manually create `.env` from `.env.template`
 Edit the `.env` file with your actual WATS server credentials:
 
 ```dotenv
-# pyWATS Environment Configuration
+# PyWATS Environment Configuration
 
 # WATS API Configuration
 WATS_BASE_URL=https://your-actual-wats-server.com
@@ -160,7 +160,7 @@ Save this as `scripts/fix_environment.ps1`:
 
 ```powershell
 # Fix Environment - Run this when you have environment issues
-Write-Host "=== pyWATS Environment Fix ===" -ForegroundColor Cyan
+Write-Host "=== PyWATS Environment Fix ===" -ForegroundColor Cyan
 
 # Check and create .env
 if (!(Test-Path .env)) {

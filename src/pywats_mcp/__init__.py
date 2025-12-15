@@ -1,5 +1,5 @@
 """
-pyWATS MCP Server - Model Context Protocol server for WATS API.
+PyWATS MCP Server - Model Context Protocol server for WATS API.
 
 Allows AI assistants to interact with WATS manufacturing test data.
 """

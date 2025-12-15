@@ -1,4 +1,4 @@
-# pyWATS
+# PyWATS
 
 [![PyPI version](https://badge.fury.io/py/pywats-api.svg)](https://badge.fury.io/py/pywats-api)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -15,7 +15,7 @@ A Python library for interacting with the [WATS](https://wats.com) (Web-based Au
 
 ## Features
 
-- **pyWATS Library** - Core API library for WATS integration
+- **PyWATS Library** - Core API library for WATS integration
   - Product management
   - Asset management  
   - Report creation and submission
@@ -24,7 +24,7 @@ A Python library for interacting with the [WATS](https://wats.com) (Web-based Au
   - Software distribution
   - Statistics and analytics
 
-- **pyWATS Client** - Desktop and headless client application
+- **PyWATS Client** - Desktop and headless client application
   - Connection management
   - Converter configuration
   - Report queue management
@@ -140,7 +140,7 @@ python -m pywats_client
 The GUI supports modular tab configuration and logging control:
 
 - **Tab Visibility**: Show/hide tabs (Software, SN Handler, etc.) based on your needs
-- **Logging Integration**: Automatic pyWATS library logging when debug mode is enabled
+- **Logging Integration**: Automatic PyWATS library logging when debug mode is enabled
 - **Multiple Instances**: Run multiple client instances with separate configurations
 
 See [GUI Configuration Guide](src/pywats_client/GUI_CONFIGURATION.md) for detailed setup instructions.

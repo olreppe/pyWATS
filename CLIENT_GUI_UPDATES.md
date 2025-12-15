@@ -1,4 +1,4 @@
-# pyWATS Client GUI Updates - Summary
+# PyWATS Client GUI Updates - Summary
 
 **Date:** December 12, 2025  
 **Branch:** main  
@@ -6,8 +6,8 @@
 
 ## Overview
 
-Enhanced the pyWATS Client GUI with:
-1. **pyWATS Library Logging Integration** - Automatic debug logging when client is in DEBUG mode
+Enhanced the PyWATS Client GUI with:
+1. **PyWATS Library Logging Integration** - Automatic debug logging when client is in DEBUG mode
 2. **Modular Tab Configuration** - Dynamic show/hide tabs based on user configuration
 3. **Comprehensive Documentation** - New GUI configuration guide
 
@@ -15,20 +15,20 @@ Enhanced the pyWATS Client GUI with:
 
 ### 1. src/pywats_client/core/client.py
 **Changes:**
-- Added pyWATS library logging integration in `_setup_logging()` method
-- When client log level is DEBUG, automatically enables pyWATS library debug logging
+- Added PyWATS library logging integration in `_setup_logging()` method
+- When client log level is DEBUG, automatically enables PyWATS library debug logging
 - Provides visibility into HTTP requests, API calls, and library operations
 
 **Key Code:**
 ```python
-# Enable pyWATS library logging if debug level
+# Enable PyWATS library logging if debug level
 if log_level == logging.DEBUG:
     try:
         from pywats import enable_debug_logging
         enable_debug_logging()
-        logger.debug("pyWATS library debug logging enabled")
+        logger.debug("PyWATS library debug logging enabled")
     except ImportError:
-        logger.warning("Could not enable pyWATS debug logging - library not found")
+        logger.warning("Could not enable PyWATS debug logging - library not found")
 ```
 
 ### 2. src/pywats_client/core/config.py
@@ -97,7 +97,7 @@ Note: Changes require restart to take effect
 ### 6. src/pywats_client/GUI_CONFIGURATION.md (NEW)
 **Created:** Comprehensive 300+ line documentation covering:
 - Tab visibility configuration (GUI and config file methods)
-- Logging configuration and pyWATS integration
+- Logging configuration and PyWATS integration
 - Configuration file structure and location
 - Example configurations for different scenarios:
   - Minimal (essential tabs only)
@@ -144,19 +144,19 @@ Result: Full production features, no proxy settings, INFO logging
   "log_level": "DEBUG"
 }
 ```
-Result: All tabs visible, full debug logging for both client and pyWATS library
+Result: All tabs visible, full debug logging for both client and PyWATS library
 
 ## Logging Integration Details
 
 When log level is set to **DEBUG**:
 - Client logs: Detailed client operations
-- pyWATS library logs: HTTP requests, API calls, serialization, error handling
+- PyWATS library logs: HTTP requests, API calls, serialization, error handling
 - Combined view: Complete picture of client + library operations
 
 Example debug output:
 ```
-2025-12-12 14:30:15,123 - pywats_client.core.client - INFO - Initializing pyWATS Client
-2025-12-12 14:30:15,125 - pywats_client.core.client - DEBUG - pyWATS library debug logging enabled
+2025-12-12 14:30:15,123 - pywats_client.core.client - INFO - Initializing PyWATS Client
+2025-12-12 14:30:15,125 - pywats_client.core.client - DEBUG - PyWATS library debug logging enabled
 2025-12-12 14:30:15,234 - pywats.http_client - INFO - Initializing HttpClient
 2025-12-12 14:30:15,345 - pywats.http_client - DEBUG - GET https://wats.example.com/api/Product/1234
 2025-12-12 14:30:15,456 - pywats.http_client - DEBUG - Response: 200 OK (1234 bytes)
@@ -166,7 +166,7 @@ Example debug output:
 ## Configuration Location
 
 Configuration files stored at:
-- **Windows:** `%APPDATA%\pyWATS_Client\config.json`
+- **Windows:** `%APPDATA%\PyWATS_Client\config.json`
 - **Linux/Mac:** `~/.config/pywats_client/config.json`
 
 Multiple instances supported:
@@ -257,7 +257,7 @@ Complete documentation available at:
 ```
 feat(client): Add logging integration and modular GUI tabs
 
-- Integrate pyWATS library logging (auto-enabled in DEBUG mode)
+- Integrate PyWATS library logging (auto-enabled in DEBUG mode)
 - Add configurable tab visibility (Location, Converters, SN Handler, Proxy, Software)
 - Add GUI Tab Visibility section to General settings page
 - Create comprehensive GUI_CONFIGURATION.md documentation
@@ -273,7 +273,7 @@ Tests: All 98 tests passing
 ## Summary
 
 This update provides:
-1. **Integrated Logging:** Seamless pyWATS library logging for debugging
+1. **Integrated Logging:** Seamless PyWATS library logging for debugging
 2. **Modular UI:** Configurable tab visibility for simplified interfaces
 3. **Complete Documentation:** Comprehensive guides for setup and usage
 4. **Backward Compatible:** Existing installations work without changes

@@ -1,8 +1,8 @@
-# pyWATS API Architecture
+# PyWATS API Architecture
 
 ## Overview
 
-pyWATS is a Python library for interacting with the WATS (Web-based Automated Test System) server. The library follows a **layered domain-driven architecture** that separates concerns and provides a clean, maintainable codebase.
+PyWATS is a Python library for interacting with the WATS (Web-based Automated Test System) server. The library follows a **layered domain-driven architecture** that separates concerns and provides a clean, maintainable codebase.
 
 ## Architecture Layers
 

@@ -1,7 +1,7 @@
 """
 Example File Converter V2 - Using UUTReport Model
 
-Demonstrates how to create a FileConverter using the pyWATS UUTReport API.
+Demonstrates how to create a FileConverter using the PyWATS UUTReport API.
 
 This example converts CSV test result files into WATS reports using the
 proper API pattern with:
@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# pyWATS Report Model API Imports
+# PyWATS Report Model API Imports
 # ═══════════════════════════════════════════════════════════════════════════════
 from pywats.domains.report.report_models import UUTReport
 from pywats.domains.report.report_models.uut.uut_info import UUTInfo
@@ -203,7 +203,7 @@ class CsvConverter(FileConverter):
         """
         Convert the CSV file to a WATS UUTReport.
         
-        Uses the pyWATS UUTReport model API to build the report properly.
+        Uses the PyWATS UUTReport model API to build the report properly.
         
         Args:
             source: The file source to convert
@@ -295,7 +295,7 @@ class CsvConverter(FileConverter):
         index: int,
     ) -> bool:
         """
-        Add a step from a CSV row using the pyWATS API.
+        Add a step from a CSV row using the PyWATS API.
         
         Returns True if step was added successfully.
         """

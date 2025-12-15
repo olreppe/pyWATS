@@ -1,7 +1,7 @@
 """
-Pytest configuration and providers for pyWATS tests
+Pytest configuration and providers for PyWATS tests
 
-This module provides pytest providers for testing the pyWATS library and client.
+This module provides pytest providers for testing the PyWATS library and client.
 
 Test Instance Architecture:
 --------------------------
@@ -12,7 +12,7 @@ Two persistent test instances are available (ClientA and ClientB) that:
 
 Provider Usage:
 --------------
-API-level testing (pyWATS client only):
+API-level testing (PyWATS client only):
     def test_api_call(wats_client):
         # Uses the default wats_client provider (Client A)
         products = wats_client.product.get_products()

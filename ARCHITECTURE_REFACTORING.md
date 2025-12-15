@@ -1,8 +1,8 @@
-# pyWATS Client Architecture - Service & Client Refactoring
+# PyWATS Client Architecture - Service & Client Refactoring
 
 ## Overview
 
-The pyWATS Client has been refactored into a layered architecture that separates:
+The PyWATS Client has been refactored into a layered architecture that separates:
 
 1. **Base Application Layer** (`pyWATSApplication`) - Core service without GUI
 2. **GUI Layer** (`PySide6`) - Optional Qt-based interface

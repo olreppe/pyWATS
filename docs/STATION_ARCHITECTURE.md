@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document analyzes the current implementation of station-related concepts in pyWATS and proposes improvements to support:
+This document analyzes the current implementation of station-related concepts in PyWATS and proposes improvements to support:
 1. Clear distinction between **Client Name** and **Station Name**
 2. A core **Station** concept in the API layer
 3. **Multi-station support** from a single client (hub mode)
@@ -16,7 +16,7 @@ This document analyzes the current implementation of station-related concepts in
 
 | Concept | Description | Current Location |
 |---------|-------------|------------------|
-| **Client Name** | The pyWATS client installation identity | `ClientConfig.instance_name` |
+| **Client Name** | The PyWATS client installation identity | `ClientConfig.instance_name` |
 | **Station Name** | The test station identity in reports (`machineName`) | `ClientConfig.station_name` |
 | **Location** | Physical/logical location of station | `ClientConfig.location` |
 | **Purpose** | Testing purpose (Production, Debug, etc.) | `ClientConfig.purpose` |

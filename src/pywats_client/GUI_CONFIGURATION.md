@@ -1,6 +1,6 @@
-# pyWATS Client GUI Configuration
+# PyWATS Client GUI Configuration
 
-This document explains how to configure the pyWATS Client GUI, including tab visibility and logging integration.
+This document explains how to configure the PyWATS Client GUI, including tab visibility and logging integration.
 
 ## Table of Contents
 - [GUI Tab Visibility](#gui-tab-visibility)
@@ -10,7 +10,7 @@ This document explains how to configure the pyWATS Client GUI, including tab vis
 
 ## GUI Tab Visibility
 
-The pyWATS Client GUI supports modular tab configuration, allowing you to show or hide specific tabs based on your needs.
+The PyWATS Client GUI supports modular tab configuration, allowing you to show or hide specific tabs based on your needs.
 
 ### Available Tabs
 
@@ -31,7 +31,7 @@ The following tabs can be configured:
 
 #### Option 1: Using the GUI
 
-1. Launch the pyWATS Client
+1. Launch the PyWATS Client
 2. Navigate to **General** → **GUI Tab Visibility**
 3. Check/uncheck the tabs you want to show/hide
 4. Click **Save**
@@ -55,7 +55,7 @@ Save and restart the application.
 
 ## Logging Configuration
 
-The pyWATS Client integrates with the pyWATS library logging system, providing comprehensive debugging capabilities.
+The PyWATS Client integrates with the PyWATS library logging system, providing comprehensive debugging capabilities.
 
 ### Log Levels
 
@@ -83,9 +83,9 @@ The pyWATS Client integrates with the pyWATS library logging system, providing c
 }
 ```
 
-### pyWATS Library Logging Integration
+### PyWATS Library Logging Integration
 
-When the client's log level is set to **DEBUG**, it automatically enables debug logging for the underlying pyWATS library. This provides detailed insights into:
+When the client's log level is set to **DEBUG**, it automatically enables debug logging for the underlying PyWATS library. This provides detailed insights into:
 
 - HTTP requests and responses
 - API calls to the WATS server
@@ -102,8 +102,8 @@ Logs are written to:
 ### Example Log Output (DEBUG level)
 
 ```
-2025-12-12 14:30:15,123 - pywats_client.core.client - INFO - Initializing pyWATS Client (instance: ABC123)
-2025-12-12 14:30:15,125 - pywats_client.core.client - DEBUG - pyWATS library debug logging enabled
+2025-12-12 14:30:15,123 - pywats_client.core.client - INFO - Initializing PyWATS Client (instance: ABC123)
+2025-12-12 14:30:15,125 - pywats_client.core.client - DEBUG - PyWATS library debug logging enabled
 2025-12-12 14:30:15,234 - pywats.http_client - INFO - Initializing HttpClient for https://wats.example.com
 2025-12-12 14:30:15,345 - pywats.http_client - DEBUG - GET https://wats.example.com/api/Product/1234
 2025-12-12 14:30:15,456 - pywats.http_client - DEBUG - Response: 200 OK (1234 bytes)
@@ -237,7 +237,7 @@ For stations behind corporate proxy:
 
 **Problem**: Changed tab visibility settings, but tabs still show/hide incorrectly.
 
-**Solution**: Restart the pyWATS Client application. Tab visibility is read at startup.
+**Solution**: Restart the PyWATS Client application. Tab visibility is read at startup.
 
 ### Logs Too Verbose
 
@@ -245,9 +245,9 @@ For stations behind corporate proxy:
 
 **Solution**: Change `log_level` to `"INFO"` or `"WARNING"` in configuration.
 
-### pyWATS Library Not Logging
+### PyWATS Library Not Logging
 
-**Problem**: Client logs work, but no pyWATS library logs appear.
+**Problem**: Client logs work, but no PyWATS library logs appear.
 
 **Solution**: Ensure log level is set to `"DEBUG"`. Library logging is only enabled at DEBUG level.
 
@@ -262,6 +262,6 @@ For stations behind corporate proxy:
 
 ## Related Documentation
 
-- [pyWATS Library Logging Strategy](../../LOGGING_STRATEGY.md)
+- [PyWATS Library Logging Strategy](../../LOGGING_STRATEGY.md)
 - [Architecture Documentation](../../docs/ARCHITECTURE.md)
 - [Client README](README.md)

@@ -1,4 +1,4 @@
-# Logging and Console Output Strategy for pyWATS
+# Logging and Console Output Strategy for PyWATS
 
 **Date:** December 12, 2025  
 **Updated:** January 2025  
@@ -63,13 +63,13 @@ logging.getLogger('pywats.domains.report.service').setLevel(logging.INFO)
 
 ## 🎯 Recommended Architecture
 
-### Layer 1: Core API (pyWATS Library) - Minimal Output
+### Layer 1: Core API (PyWATS Library) - Minimal Output
 
 **Philosophy:** Libraries should be quiet by default, let applications decide what to log.
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Core API (pyWATS)                          │
+│  Core API (PyWATS)                          │
 │  - Use Python's logging module             │
 │  - Create named loggers                     │
 │  - NEVER print() directly                   │
@@ -518,7 +518,7 @@ def list_products(verbose):
 
 ## 📊 Comparison: Core vs Client
 
-| Feature | Core API (pyWATS) | Client App |
+| Feature | Core API (PyWATS) | Client App |
 |---------|-------------------|------------|
 | **Console Output** | None (only logging) | Yes, formatted |
 | **Progress Bars** | No | Yes (rich, tqdm, etc.) |
@@ -532,7 +532,7 @@ def list_products(verbose):
 
 ## 🎯 Best Practices Summary
 
-### For Core API (pyWATS Library)
+### For Core API (PyWATS Library)
 
 1. ✅ Use `logging.getLogger(__name__)` in every module
 2. ✅ Log at appropriate levels (DEBUG for details, INFO for operations, ERROR for failures)

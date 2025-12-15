@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# pyWATS Report Model API Imports
+# PyWATS Report Model API Imports
 # ═══════════════════════════════════════════════════════════════════════════════
 from pywats.domains.report.report_models import UUTReport
 

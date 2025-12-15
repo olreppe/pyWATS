@@ -16,7 +16,7 @@
 
 ## Executive Summary
 
-This document proposes a comprehensive redesign of the pyWATS converter architecture to address limitations of the Windows/.NET WATS Client API while maintaining backward compatibility with file-based converters.
+This document proposes a comprehensive redesign of the PyWATS converter architecture to address limitations of the Windows/.NET WATS Client API while maintaining backward compatibility with file-based converters.
 
 ### Key Improvements
 
@@ -46,7 +46,7 @@ Client-Side Settings:
 └── PPA (Post-Process Action: Move, Zip, Delete)
 ```
 
-### Current pyWATS Implementation
+### Current PyWATS Implementation
 
 ```
 ConverterBase (abstract):

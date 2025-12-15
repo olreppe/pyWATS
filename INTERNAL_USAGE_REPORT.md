@@ -1,7 +1,7 @@
 # Internal API Usage Report
 
 **Generated:** 2025-12-15  
-**Scope:** Complete audit of all `/api/internal` endpoint usage in pyWATS  
+**Scope:** Complete audit of all `/api/internal` endpoint usage in PyWATS  
 **Purpose:** Documentation for compliance, maintenance, and migration planning
 
 ---

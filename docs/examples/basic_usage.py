@@ -1,7 +1,7 @@
 """
-pyWATS Basic Usage Example
+PyWATS Basic Usage Example
 
-This example demonstrates basic usage of the pyWATS library for interacting 
+This example demonstrates basic usage of the PyWATS library for interacting 
 with the WATS API.
 
 Setup:
@@ -26,7 +26,7 @@ def main():
         token=os.getenv("WATS_AUTH_TOKEN"),
     )
 
-    print("pyWATS Basic Usage Example")
+    print("PyWATS Basic Usage Example")
     print("=" * 50)
 
     # =========================================================================

@@ -1,15 +1,15 @@
 """
 ═══════════════════════════════════════════════════════════════════════════════
- pyWATS CONVERTER TEMPLATE - Reference Implementation
+ PyWATS CONVERTER TEMPLATE - Reference Implementation
 ═══════════════════════════════════════════════════════════════════════════════
 
 This template demonstrates the CORRECT way to build WATS reports using the
-pyWATS UUTReport model API. All converters MUST follow this pattern.
+PyWATS UUTReport model API. All converters MUST follow this pattern.
 
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║  ⚠️  CRITICAL RULE: NO DICTIONARIES FOR REPORT BUILDING!                      ║
 ║                                                                               ║
-║  All converters MUST use the pyWATS UUTReport model with its factory methods. ║
+║  All converters MUST use the PyWATS UUTReport model with its factory methods. ║
 ║  If the API is missing a feature, that's an API problem to fix.               ║
 ║  NO WORKAROUNDS - NO RAW DICTS!                                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -54,7 +54,7 @@ This template converter processes a mock "Simple Test Format" (.stf) file:
     RESULT: PASS
     END: 2024-01-15T10:35:00
 
-Author: pyWATS Development Team
+Author: PyWATS Development Team
 Version: 1.0.0
 """
 
@@ -63,7 +63,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# REQUIRED IMPORTS - pyWATS Report Model API
+# REQUIRED IMPORTS - PyWATS Report Model API
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Core report model - This is the main class for building test reports
@@ -137,7 +137,7 @@ from pywats_client.converters.models import (
 
 class ConverterTemplate(FileConverter):
     """
-    Template converter demonstrating proper pyWATS report building patterns.
+    Template converter demonstrating proper PyWATS report building patterns.
     
     This converter processes mock ".stf" (Simple Test Format) files and
     demonstrates ALL available step types and API patterns.
@@ -175,7 +175,7 @@ class ConverterTemplate(FileConverter):
     def description(self) -> str:
         """Detailed description for documentation"""
         return (
-            "Reference implementation demonstrating proper pyWATS report building. "
+            "Reference implementation demonstrating proper PyWATS report building. "
             "Processes Simple Test Format (.stf) files."
         )
     
@@ -736,7 +736,7 @@ def main():
     import json
     
     print("=" * 80)
-    print("pyWATS Converter Template - Demo")
+    print("PyWATS Converter Template - Demo")
     print("=" * 80)
     
     # Create sample file

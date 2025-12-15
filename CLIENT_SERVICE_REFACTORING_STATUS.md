@@ -1,4 +1,4 @@
-# pyWATS Client Service & Client Refactoring - Status Report
+# PyWATS Client Service & Client Refactoring - Status Report
 
 ## Executive Summary
 

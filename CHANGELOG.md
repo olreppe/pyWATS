@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to pyWATS will be documented in this file.
+All notable changes to PyWATS will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **pyWATS API Library** (`pywats`)
+- **PyWATS API Library** (`pywats`)
   - Product management (get, create, update products and revisions)
   - Asset management (equipment tracking, calibration, maintenance)
   - Report submission and querying (UUT/UUR reports in WSJF format)
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Statistics and analytics endpoints
   - Station concept for multi-station deployments
 
-- **pyWATS Client Application** (`pywats_client`)
+- **PyWATS Client Application** (`pywats_client`)
   - Desktop GUI mode (PySide6/Qt)
   - Headless mode for servers and embedded systems (Raspberry Pi)
   - Connection management with encrypted token storage
