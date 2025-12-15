@@ -32,16 +32,18 @@ exclude .coverage
 exclude pywats.log
 
 # Exclude all markdown files in root except README and CHANGELOG
+# Working notes and internal documentation
 exclude ARCHITECTURE_*.md
 exclude CLIENT_*.md
 exclude CLOUD_*.md
 exclude CONVERTER_*.md
 exclude CRITICAL_*.md
 exclude ENVIRONMENT_*.md
+exclude INTERNAL_*.md
 exclude LOGGING_*.md
 exclude PRODUCTION_*.md
 exclude QUICK_REFERENCE.md
-exclude RELEASE_PREPARATION.md
+exclude RELEASE_*.md
 exclude TIMEZONE_*.md
 
 # Exclude build artifacts
