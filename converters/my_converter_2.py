@@ -154,10 +154,10 @@ class SimpleCSVConverter(ConverterBase):
                     error=f"Insufficient columns in CSV. Expected at least 3, got {len(row)}"
                 )
             
-            # Extract fields
-            part_number = row[0].strip() if len(row) > 0 else ""
-            serial_number = row[1].strip() if len(row) > 1 else ""
-            result = row[2].strip() if len(row) > 2 else ""
+            # Extract fields (we've already validated len(row) >= 3)
+            part_number = row[0].strip()
+            serial_number = row[1].strip()
+            result = row[2].strip()
             station = row[3].strip() if len(row) > 3 else settings.get("default_station", "TestStation")
             
             # Check if conversion should be suspended

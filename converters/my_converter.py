@@ -215,18 +215,35 @@ class MyConverter(ConverterBase):
     
     # Helper methods for parsing (implement your custom logic)
     def _extract_serial(self, content: str) -> str:
-        """Extract serial number from file content"""
-        # TODO: Implement your parsing logic
-        # Example: return re.search(r'SN:(\w+)', content).group(1)
+        r"""
+        Extract serial number from file content.
+        
+        This is a placeholder implementation that returns a demo value.
+        Replace this with your actual parsing logic based on your file format.
+        
+        Example implementations:
+            - Regex: return re.search(r'SN:(\w+)', content).group(1)
+            - Line parsing: return content.split('SerialNumber:')[1].split()[0]
+            - JSON: return json.loads(content)['serial_number']
+        """
+        # TODO: Replace with your actual parsing logic
         return "DEMO-SERIAL-001"
     
     def _extract_part(self, content: str) -> str:
-        """Extract part number from file content"""
-        # TODO: Implement your parsing logic
+        """
+        Extract part number from file content.
+        
+        This is a placeholder implementation. Replace with your parsing logic.
+        """
+        # TODO: Replace with your actual parsing logic
         return "DEMO-PART-001"
     
     def _extract_result(self, content: str) -> str:
-        """Extract test result from file content"""
-        # TODO: Implement your parsing logic
-        # Return "Passed" or "Failed"
+        """
+        Extract test result from file content.
+        
+        This is a placeholder implementation. Replace with your parsing logic.
+        Should return "Passed" or "Failed" based on your test result format.
+        """
+        # TODO: Replace with your actual parsing logic
         return "Passed"

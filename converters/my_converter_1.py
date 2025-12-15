@@ -261,17 +261,18 @@ class AOIConverter(ConverterBase):
                 continue
             
             key, value = line.split(':', 1)
-            key = key.strip().lower()
+            key = key.strip().lower().replace(' ', '_')
             value = value.strip()
             
-            # Map AOI fields to our data structure
-            if 'serial' in key:
+            # Map AOI fields to our data structure using exact key matching
+            # This avoids false matches like 'deserial_number' matching 'serial'
+            if key == 'serial' or key == 'serial_number':
                 data['serial'] = value
-            elif 'board' in key or 'board_id' in key:
+            elif key == 'board_id' or key == 'board':
                 data['board_id'] = value
-            elif 'result' in key:
+            elif key == 'result' or key == 'test_result':
                 data['result'] = value.upper()
-            elif 'defect' in key:
+            elif key == 'defects' or key == 'defect_count':
                 try:
                     data['defects'] = int(value)
                 except ValueError:
