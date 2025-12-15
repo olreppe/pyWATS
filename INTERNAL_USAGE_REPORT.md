@@ -1,6 +1,6 @@
 # Internal API Usage Report
 
-**Generated:** 2025-01-XX  
+**Generated:** 2025-12-15  
 **Scope:** Complete audit of all `/api/internal` endpoint usage in pyWATS  
 **Purpose:** Documentation for compliance, maintenance, and migration planning
 
@@ -13,19 +13,21 @@
 3. [Repository Layer - Internal Endpoints](#repository-layer---internal-endpoints)
    - [ProductRepositoryInternal](#productrepositoryinternal)
    - [ProcessRepositoryInternal](#processrepositoryinternal)
-   - [ProductRepository (Public) with Internal Endpoints](#productrepository-public-with-internal-endpoints)
-   - [ProductionRepository (Public) with Internal Endpoints](#productionrepository-public-with-internal-endpoints)
-   - [AssetRepository (Public) with Internal Endpoints](#assetrepository-public-with-internal-endpoints)
+   - [AssetRepositoryInternal](#assetrepositoryinternal)
+   - [ProductionRepositoryInternal](#productionrepositoryinternal)
 4. [Service Layer - Internal Services](#service-layer---internal-services)
    - [ProductServiceInternal](#productserviceinternal)
    - [ProcessServiceInternal](#processserviceinternal)
-5. [Main API Exposure](#main-api-exposure)
-6. [GUI Client Usage](#gui-client-usage)
-7. [Report Models Usage](#report-models-usage)
-8. [Test File Usage](#test-file-usage)
-9. [Debug Scripts](#debug-scripts)
-10. [Complete Endpoint Reference](#complete-endpoint-reference)
-11. [Risk Assessment](#risk-assessment)
+   - [AssetServiceInternal](#assetserviceinternal)
+   - [ProductionServiceInternal](#productionserviceinternal)
+5. [Public Repositories with Internal Delegation](#public-repositories-with-internal-delegation)
+6. [Main API Exposure](#main-api-exposure)
+7. [GUI Client Usage](#gui-client-usage)
+8. [Report Models Usage](#report-models-usage)
+9. [Test File Usage](#test-file-usage)
+10. [Debug Scripts](#debug-scripts)
+11. [Complete Endpoint Reference](#complete-endpoint-reference)
+12. [Risk Assessment](#risk-assessment)
 
 ---
 
@@ -33,14 +35,19 @@
 
 | Category | Count | Files |
 |----------|-------|-------|
-| Internal Repository Files | 2 | `repository_internal.py` (product, process) |
-| Public Repos with Internal Endpoints | 3 | product, production, asset repositories |
-| Internal Service Files | 2 | `service_internal.py` (product, process) |
-| GUI Files Using Internal API | 1 | `product.py` |
+| Internal Repository Files | 4 | `repository_internal.py` (product, process, asset, production) |
+| Internal Service Files | 4 | `service_internal.py` (product, process, asset, production) |
+| Public Repos with Internal Delegation | 3 | product, production, asset repositories (delegate to internal) |
+| GUI Files Using Internal API | 1 | `product.py` (via service layer) |
 | Test Files Using Internal API | 5 | See [Test File Usage](#test-file-usage) |
 | Debug Scripts | 2 | `debug_boxbuild_api.py`, `debug_boxbuild_workflow.py` |
 | Report Models Using Internal API | 1 | `uur_report.py` |
 | **Total Unique Internal Endpoints** | **18** | See [Complete Endpoint Reference](#complete-endpoint-reference) |
+
+### Architecture Compliance
+
+✅ **Rule 1:** All API usage goes through service and repository layers - no direct REST calls from client/GUI  
+✅ **Rule 2:** All internal endpoint implementations are in separate `_internal` files
 
 ---
 
@@ -110,42 +117,64 @@ headers = {"Referer": base_url}
 
 ---
 
-### ProductRepository (Public) with Internal Endpoints
+### AssetRepositoryInternal
 
-**File:** [src/pywats/domains/product/repository.py](src/pywats/domains/product/repository.py)
+**File:** [src/pywats/domains/asset/repository_internal.py](src/pywats/domains/asset/repository_internal.py)
 
-| Method | HTTP | Endpoint | Line | Purpose |
-|--------|------|----------|------|---------|
-| `get_bom()` | GET | `/api/internal/Product/Bom` | 252 | Legacy method - also in internal repo |
+| Method | HTTP | Endpoint | Purpose |
+|--------|------|----------|---------|
+| `upload_file()` | POST | `/api/internal/Blob/Asset` | Upload file to asset |
+| `download_file()` | GET | `/api/internal/Blob/Asset` | Download file from asset |
+| `list_files()` | GET | `/api/internal/Blob/Asset/List/{assetId}` | List files for asset |
+| `delete_files()` | DELETE | `/api/internal/Blob/Assets` | Delete files from asset |
 
-**Note:** This is a duplicate of `ProductRepositoryInternal.get_bom()`. Both exist for backward compatibility.
+**Note:** File operations on assets (stations, fixtures, etc.) require internal API.
 
 ---
 
-### ProductionRepository (Public) with Internal Endpoints
+### ProductionRepositoryInternal
 
-**File:** [src/pywats/domains/production/repository.py](src/pywats/domains/production/repository.py)
+**File:** [src/pywats/domains/production/repository_internal.py](src/pywats/domains/production/repository_internal.py)
 
-| Method | HTTP | Endpoint | Line | Purpose |
-|--------|------|----------|------|---------|
-| `get_unit_phases()` | GET | `/api/internal/Mes/GetUnitPhases` | 644 | Get all MES unit phases |
+| Method | HTTP | Endpoint | Purpose |
+|--------|------|----------|---------|
+| `get_unit_phases()` | GET | `/api/internal/Mes/GetUnitPhases` | Get all MES unit phases |
 
 **Usage:** Unit phases define production workflow states (e.g., "In Test", "Passed", "Failed").
 
 ---
 
-### AssetRepository (Public) with Internal Endpoints
+## Public Repositories with Internal Delegation
+
+The following public repositories have methods that **delegate** to their internal counterparts.
+This maintains backward compatibility while ensuring all internal API calls are properly encapsulated.
+
+### ProductRepository
+
+**File:** [src/pywats/domains/product/repository.py](src/pywats/domains/product/repository.py)
+
+| Method | Status | Note |
+|--------|--------|------|
+| `get_bom()` | ⚠️ Deprecated | Still makes direct internal call for backward compatibility |
+
+### ProductionRepository
+
+**File:** [src/pywats/domains/production/repository.py](src/pywats/domains/production/repository.py)
+
+| Method | Delegates To |
+|--------|--------------|
+| `get_unit_phases()` | `ProductionRepositoryInternal.get_unit_phases()` |
+
+### AssetRepository
 
 **File:** [src/pywats/domains/asset/repository.py](src/pywats/domains/asset/repository.py)
 
-| Method | HTTP | Endpoint | Line | Purpose |
-|--------|------|----------|------|---------|
-| `upload_file()` | POST | `/api/internal/Blob/Asset` | 581 | Upload file to asset |
-| `download_file()` | GET | `/api/internal/Blob/Asset` | 614 | Download file from asset |
-| `list_files()` | GET | `/api/internal/Blob/Asset/List/{assetId}` | 646 | List files for asset |
-| `delete_files()` | DELETE | `/api/internal/Blob/Assets` | 675 | Delete files from asset |
-
-**Note:** File operations on assets (stations, fixtures, etc.) require internal API.
+| Method | Delegates To |
+|--------|--------------|
+| `upload_file()` | `AssetRepositoryInternal.upload_file()` |
+| `download_file()` | `AssetRepositoryInternal.download_file()` |
+| `list_files()` | `AssetRepositoryInternal.list_files()` |
+| `delete_files()` | `AssetRepositoryInternal.delete_files()` |
 
 ---
 
@@ -197,6 +226,35 @@ headers = {"Referer": base_url}
 
 ---
 
+### AssetServiceInternal
+
+**File:** [src/pywats/domains/asset/service_internal.py](src/pywats/domains/asset/service_internal.py)
+
+**Exposed via:** `api.asset_internal`
+
+| Method | Calls Repository Method | Purpose |
+|--------|------------------------|---------|
+| `upload_file()` | `repo.upload_file()` | Upload file to asset |
+| `download_file()` | `repo.download_file()` | Download file from asset |
+| `list_files()` | `repo.list_files()` | List files attached to asset |
+| `delete_files()` | `repo.delete_files()` | Delete files from asset |
+| `file_exists()` | `repo.list_files()` + check | Helper to check if file exists |
+
+---
+
+### ProductionServiceInternal
+
+**File:** [src/pywats/domains/production/service_internal.py](src/pywats/domains/production/service_internal.py)
+
+**Exposed via:** `api.production_internal`
+
+| Method | Calls Repository Method | Purpose |
+|--------|------------------------|---------|
+| `get_unit_phases()` | `repo.get_unit_phases()` | Get all MES unit phases |
+| `get_phase_by_name()` | `repo.get_unit_phases()` + filter | Find phase by name |
+
+---
+
 ## Main API Exposure
 
 **File:** [src/pywats/pywats.py](src/pywats/pywats.py)
@@ -205,11 +263,19 @@ headers = {"Referer": base_url}
 class pyWATS:
     @property
     def product_internal(self) -> ProductServiceInternal:
-        """⚠️ INTERNAL API - Line 166"""
+        """⚠️ INTERNAL API - Box build templates, BOM, categories"""
         
     @property
     def process_internal(self) -> ProcessServiceInternal:
-        """⚠️ INTERNAL API - Line 317"""
+        """⚠️ INTERNAL API - Process details, repair configs, fail codes"""
+        
+    @property
+    def asset_internal(self) -> AssetServiceInternal:
+        """⚠️ INTERNAL API - File operations on assets"""
+        
+    @property
+    def production_internal(self) -> ProductionServiceInternal:
+        """⚠️ INTERNAL API - MES unit phases"""
 ```
 
 **Usage Pattern:**
@@ -223,6 +289,13 @@ bom = api.product_internal.get_bom("PN", "REV")
 # Process internal
 processes = api.process_internal.get_processes()
 fail_codes = api.process_internal.get_fail_codes(500)
+
+# Asset internal (NEW)
+files = api.asset_internal.list_files(asset_id)
+api.asset_internal.upload_file(asset_id, "config.json", content)
+
+# Production internal (NEW)
+phases = api.production_internal.get_unit_phases()
 ```
 
 ---
