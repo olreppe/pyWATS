@@ -1,11 +1,106 @@
 {
   "instance_id": "A",
-  "name": "Test Client A",
-  "description": "Primary test instance - standard configuration",
-  "base_url": "https://python.wats.com",
-  "token": "cHlXQVRTX0FQSV9BVVRPVEVTVDo2cGhUUjg0ZTVIMHA1R3JUWGtQZlY0UTNvbmk2MiM=",
+  "instance_name": "Test Client A",
+  "description": "Primary test instance - standard configuration with all converters",
+  "service_address": "https://python.wats.com",
+  "api_token": "cHlXQVRTX0FQSV9BVVRPVEVTVDo2cGhUUjg0ZTVIMHA1R3JUWGtQZlY0UTNvbmk2MiM=",
   "station_name": "TEST-STATION-A",
   "location": "Test Lab Alpha",
   "converters_enabled": true,
-  "offline_mode": false
+  "converters_folder": "converters",
+  "converters": [
+    {
+      "name": "AI Converter",
+      "module_path": "ai_converter.AIConverter",
+      "converter_type": "file",
+      "enabled": true,
+      "watch_folder": "uploads/UploadAnyFileHere",
+      "done_folder": "uploads/UploadAnyFileHere/Done",
+      "error_folder": "uploads/UploadAnyFileHere/Error",
+      "pending_folder": "uploads/UploadAnyFileHere/Pending",
+      "file_patterns": ["*.*"],
+      "description": "Auto-selects best converter for any file type",
+      "arguments": {
+        "minConfidence": 0.5,
+        "logAllScores": true
+      }
+    },
+    {
+      "name": "CSV Converter",
+      "module_path": "csv_converter.CsvConverter",
+      "converter_type": "file",
+      "enabled": true,
+      "watch_folder": "uploads/CSV",
+      "done_folder": "uploads/CSV/Done",
+      "error_folder": "uploads/CSV/Error",
+      "file_patterns": ["*.csv"],
+      "description": "Converts CSV test result files"
+    },
+    {
+      "name": "JSON Converter",
+      "module_path": "json_converter.JSONConverter",
+      "converter_type": "file",
+      "enabled": true,
+      "watch_folder": "uploads/JSON",
+      "done_folder": "uploads/JSON/Done",
+      "error_folder": "uploads/JSON/Error",
+      "file_patterns": ["*.json"],
+      "description": "Converts JSON test result files"
+    },
+    {
+      "name": "XML Converter",
+      "module_path": "xml_converter.XMLConverter",
+      "converter_type": "file",
+      "enabled": true,
+      "watch_folder": "uploads/XML",
+      "done_folder": "uploads/XML/Done",
+      "error_folder": "uploads/XML/Error",
+      "file_patterns": ["*.xml"],
+      "description": "Converts XML test result files (DBAudio format)"
+    },
+    {
+      "name": "ICT Converter",
+      "module_path": "ict_converter.ICTConverter",
+      "converter_type": "file",
+      "enabled": true,
+      "watch_folder": "uploads/ICT",
+      "done_folder": "uploads/ICT/Done",
+      "error_folder": "uploads/ICT/Error",
+      "file_patterns": ["*.txt", "*.log"],
+      "description": "Converts Jungheinrich ICT test result files"
+    },
+    {
+      "name": "SPEA Converter",
+      "module_path": "spea_converter.SPEAConverter",
+      "converter_type": "file",
+      "enabled": true,
+      "watch_folder": "uploads/SPEA",
+      "done_folder": "uploads/SPEA/Done",
+      "error_folder": "uploads/SPEA/Error",
+      "file_patterns": ["*.txt", "*.log"],
+      "description": "Converts SPEA/Bitron ICT test result files"
+    },
+    {
+      "name": "XJTAG Converter",
+      "module_path": "xjtag_converter.XJTAGConverter",
+      "converter_type": "file",
+      "enabled": true,
+      "watch_folder": "uploads/XJTAG",
+      "done_folder": "uploads/XJTAG/Done",
+      "error_folder": "uploads/XJTAG/Error",
+      "file_patterns": ["*.zip"],
+      "description": "Converts XJTAG log files (ZIP format)"
+    },
+    {
+      "name": "Klippel Converter",
+      "module_path": "klippel_converter.KlippelConverter",
+      "converter_type": "file",
+      "enabled": true,
+      "watch_folder": "uploads/Klippel",
+      "done_folder": "uploads/Klippel/Done",
+      "error_folder": "uploads/Klippel/Error",
+      "file_patterns": ["*.txt", "*.log"],
+      "description": "Converts Klippel audio test log files"
+    }
+  ]
 }

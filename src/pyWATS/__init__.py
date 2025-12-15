@@ -53,6 +53,9 @@ from .domains.app import YieldData, ProcessInfo, LevelInfo
 # Common models from shared
 from .shared import Setting, PyWATSModel
 
+# Comparison operator for step limits (convenient top-level import)
+from .domains.report.report_models.uut.steps.comp_operator import CompOp
+
 # UUT/UUR Report models (import separately to avoid name conflicts)
 # from pywats.models import UUTReport, UURReport, Step, etc.
 
@@ -112,4 +115,6 @@ __all__ = [
     # Common models
     "Setting",
     "PyWATSModel",
+    # Comparison operator for limits
+    "CompOp",
 ]

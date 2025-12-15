@@ -74,7 +74,19 @@ class TestInstanceConfig:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TestInstanceConfig":
-        return cls(**data)
+        # Map JSON keys to dataclass field names
+        mapped = {
+            "instance_id": data.get("instance_id", ""),
+            "name": data.get("instance_name") or data.get("name", ""),
+            "description": data.get("description", ""),
+            "base_url": data.get("service_address") or data.get("base_url", ""),
+            "token": data.get("api_token") or data.get("token", ""),
+            "station_name": data.get("station_name", ""),
+            "location": data.get("location", ""),
+            "converters_enabled": data.get("converters_enabled", True),
+            "offline_mode": data.get("offline_mode", False),
+        }
+        return cls(**mapped)
 
 
 # Default configurations for test instances

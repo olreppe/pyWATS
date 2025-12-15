@@ -21,20 +21,129 @@ from datetime import datetime
 
 @dataclass
 class ConverterConfig:
-    """Configuration for a single converter"""
-    name: str
-    module_path: str
-    watch_folder: str
+    """
+    Configuration for a single converter instance.
+    
+    This represents a converter assigned to a watch folder.
+    Each folder has exactly one converter.
+    
+    Converter Types:
+        - "file": Triggered when files are created/modified (FileConverter)
+        - "folder": Triggered when folder is ready (FolderConverter)
+        - "scheduled": Runs on timer/cron (ScheduledConverter)
+    """
+    # Required fields
+    name: str                    # Human-readable name
+    module_path: str             # Python module path (e.g., "my_converter.CSVConverter")
+    
+    # Watch folder (for file/folder converters)
+    watch_folder: str = ""       # Folder to watch for files/folders
+    done_folder: str = ""        # Folder for successfully converted files
+    error_folder: str = ""       # Folder for failed files
+    pending_folder: str = ""     # Folder for suspended files (retry)
+    
+    # Converter type
+    converter_type: str = "file"  # "file", "folder", or "scheduled"
+    
+    # State
     enabled: bool = True
+    
+    # Configuration arguments (passed to converter)
     arguments: Dict[str, Any] = field(default_factory=dict)
+    
+    # File/folder patterns (for pre-filtering)
     file_patterns: List[str] = field(default_factory=lambda: ["*.*"])
+    folder_patterns: List[str] = field(default_factory=lambda: ["*"])
+    
+    # Validation thresholds
+    alarm_threshold: float = 0.5    # Warn below this (but allow)
+    reject_threshold: float = 0.2   # Reject below this
+    
+    # Retry settings
+    max_retries: int = 3
+    retry_delay_seconds: int = 60
+    
+    # Scheduled converter settings
+    schedule_interval_seconds: Optional[int] = None  # For scheduled converters
+    cron_expression: Optional[str] = None            # For scheduled converters
+    run_on_startup: bool = False                     # Run immediately on load
+    
+    # Folder converter settings
+    readiness_marker: str = "COMPLETE.marker"  # Marker file for folder readiness
+    min_file_count: Optional[int] = None       # Min files before checking readiness
+    
+    # Post-processing
+    post_action: str = "move"  # "move", "delete", "archive", "keep"
+    archive_folder: str = ""   # For "archive" post action
+    
+    # Metadata
+    description: str = ""
+    author: str = ""
+    version: str = "1.0.0"
     
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConverterConfig":
-        return cls(**data)
+        # Filter to only known fields for forward compatibility
+        known_fields = {f.name for f in cls.__dataclass_fields__.values()}
+        filtered_data = {k: v for k, v in data.items() if k in known_fields}
+        return cls(**filtered_data)
+    
+    @property
+    def is_file_converter(self) -> bool:
+        """True if this is a file-based converter"""
+        return self.converter_type == "file"
+    
+    @property
+    def is_folder_converter(self) -> bool:
+        """True if this is a folder-based converter"""
+        return self.converter_type == "folder"
+    
+    @property
+    def is_scheduled_converter(self) -> bool:
+        """True if this is a scheduled converter"""
+        return self.converter_type == "scheduled"
+    
+    def validate(self) -> List[str]:
+        """
+        Validate the configuration.
+        
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        errors = []
+        
+        if not self.name:
+            errors.append("name is required")
+        
+        if not self.module_path:
+            errors.append("module_path is required")
+        
+        if self.converter_type not in ("file", "folder", "scheduled"):
+            errors.append(f"Invalid converter_type: {self.converter_type}")
+        
+        # File/folder converters need a watch folder
+        if self.converter_type in ("file", "folder") and not self.watch_folder:
+            errors.append("watch_folder is required for file/folder converters")
+        
+        # Scheduled converters need a schedule
+        if self.converter_type == "scheduled":
+            if not self.schedule_interval_seconds and not self.cron_expression:
+                errors.append("Scheduled converters need schedule_interval_seconds or cron_expression")
+        
+        # Threshold validation
+        if not (0.0 <= self.alarm_threshold <= 1.0):
+            errors.append(f"alarm_threshold must be between 0.0 and 1.0")
+        
+        if not (0.0 <= self.reject_threshold <= 1.0):
+            errors.append(f"reject_threshold must be between 0.0 and 1.0")
+        
+        if self.reject_threshold > self.alarm_threshold:
+            errors.append("reject_threshold must be <= alarm_threshold")
+        
+        return errors
 
 
 @dataclass

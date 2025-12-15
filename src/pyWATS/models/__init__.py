@@ -19,6 +19,9 @@ from ..domains.report.report_models import (
     UURReport, UURInfo, SubRepair
 )
 
+# Comparison operator (convenient import without deep path)
+from ..domains.report.report_models.uut.steps.comp_operator import CompOp
+
 __all__ = [
     # UUT/UUR Report models (WSJF format)
     "WATSBase",
@@ -43,5 +46,7 @@ __all__ = [
     "UURReport",
     "UURInfo",
     "SubRepair",
+    # Comparison operator
+    "CompOp",
 ]
 

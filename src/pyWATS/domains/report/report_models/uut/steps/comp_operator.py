@@ -24,7 +24,7 @@ class CompOp(Enum):
     GTLT = "GTLT"  # Greater Than and Less Than
     GTLE = "GTLE"  # Greater Than and Less Than or Equal
     GELT = "GELT"  # Greater Than or Equal and Less Than
-    GELE = "GELE"  # Greater Than or Equal and Less Than or EqualLOG = auto()  # No limit supported
+    GELE = "GELE"  # Greater Than or Equal and Less Than or Equal
 
     def __str__(self):
         """Return the name of the enum instead of its integer value."""

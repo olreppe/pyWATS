@@ -553,3 +553,8 @@ tests/fixtures/client_b_config.json
 
 # Release preparation docs (internal only)
 RELEASE_PREPARATION.md
+# C# converter reference files (too large for GitHub)
+src/pywats_client/converters/C#ConvertersToBeConvertertedTo_pyWATS/
+
+src/pywats_client/converters/WATS Standard Converters/
+src/pywats_client/converters/example_files_to_be_converted/

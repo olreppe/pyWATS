@@ -136,7 +136,7 @@ class SequenceCall(Step):
  
     # --------------------------------------------
     # AddSequenceCall() - Create a new sub-sequence below the current sequence call object 
-    def add_sequence_call(self, name: str, file_name = "SequenceFilename.seq", version: str = "1.0.0.0", path: str = "NaN"):
+    def add_sequence_call(self, name: str, file_name: str = "SequenceFilename.seq", version: str = "1.0.0.0", path: str = "NaN") -> 'SequenceCall':
         new_seq = SequenceCall()
         new_seq.name = name
         new_seq.sequence.file_name = file_name

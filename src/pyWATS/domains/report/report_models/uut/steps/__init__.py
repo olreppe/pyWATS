@@ -8,6 +8,7 @@ from .callexe_step import CallExeStep
 from .generic_step import GenericStep, FlowType
 from .chart_step import ChartStep
 from .message_popup_step import MessagePopUpStep
+from .comp_operator import CompOp
 
 # Re-export the step classes for easier access
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "GenericStep",
     "FlowType",
     "ChartStep",
-    "MessagePopUpStep"
+    "MessagePopUpStep",
+    "CompOp",
 ]

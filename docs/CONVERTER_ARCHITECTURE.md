@@ -4,6 +4,125 @@
 
 The pyWATS Client converter architecture provides a flexible framework for converting various file formats into WATS report structures. Converters run on the client (and potentially on the server in the future) and integrate with the file monitoring system.
 
+## 📚 Reference Implementations (V2 Converters)
+
+All new converters should follow the patterns demonstrated in these V2 reference implementations:
+
+| File | Description | Key Features |
+|------|-------------|--------------|
+| [converter_template.py](../converters/converter_template.py) | **Comprehensive Template** | Complete reference with all step types, mock file format, extensive documentation |
+| [spea_converter_v2.py](../converters/spea_converter_v2.py) | SPEA ICT Converter | Component grouping, numeric steps with limits |
+| [xj_log_converter_v2.py](../converters/xj_log_converter_v2.py) | XJTAG Log Converter | ZIP file processing, boolean steps |
+| [xml_format_converter_v2.py](../converters/xml_format_converter_v2.py) | DBAudio XML Converter | Chart steps with series, multi-numeric statistics |
+| [ict_converter_v2.py](../converters/ict_converter_v2.py) | Jungheinrich ICT Converter | Text parsing, SI unit conversion |
+| [example_file_converter_v2.py](../converters/example_file_converter_v2.py) | CSV Test Converter | Simple CSV parsing, conditional limits |
+
+**Start with `converter_template.py`** - it contains the complete API reference with all step types and detailed comments.
+
+## ⚠️ CRITICAL: Use the pyWATS API Models - No Workarounds!
+
+**All converters MUST use the pyWATS UUTReport model to build reports.** 
+
+Do NOT build raw dictionaries directly. The API provides a complete model with factory methods for creating properly structured reports. If a feature you need is missing from the API, that is an API problem that must be fixed - no workarounds are acceptable.
+
+### The Proper Pattern
+
+```python
+from pywats.domains.report.report_models import UUTReport
+from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.domains.report.report_models.uut.uut_status import UUTStatus
+from pywats.domains.report.report_models.uut.step_status import StepStatus
+
+# 1. Create report with header information
+report = UUTReport(
+    pn="PN12345",
+    sn="SN001", 
+    rev="1.0",
+    process_code=10,
+    station_name="TestStation",
+    result=UUTStatus.PASSED,
+    start=datetime.now()
+)
+
+# 2. Get root sequence call
+root = report.get_root_sequence_call()
+root.name = "Main Test Sequence"
+
+# 3. Add sub-sequences for test groups
+group = root.add_sequence_call(
+    name="Voltage Tests",
+    file_name="voltage.seq",
+    version="1.0"
+)
+
+# 4. Add test steps using factory methods
+group.add_numeric_step(
+    name="VCC Voltage",
+    value=5.02,
+    unit="V",
+    comp_op=CompOp.GELE,  # Greater-or-equal, Less-or-equal
+    low_limit=4.5,
+    high_limit=5.5,
+    status=StepStatus.PASSED
+)
+
+group.add_boolean_step(
+    name="Power OK",
+    status=StepStatus.PASSED
+)
+
+group.add_string_step(
+    name="Firmware Version",
+    value="v2.1.0",
+    status=StepStatus.PASSED
+)
+
+# 5. Return ConverterResult with UUTReport (NOT a dictionary!)
+return ConverterResult.success_result(
+    report=report,  # UUTReport instance
+    post_action=PostProcessAction.MOVE
+)
+```
+
+### Why This Matters
+
+1. **Type Safety**: The model provides proper validation and type checking
+2. **Consistency**: All reports follow the same structure
+3. **Maintainability**: Changes to the report format are handled centrally
+4. **API Evolution**: The model can evolve without breaking converters
+5. **No Hacks**: If the API can't do something, we fix the API
+
+### Available Factory Methods
+
+| Method | Description | Parameters |
+|--------|-------------|------------|
+| `report.get_root_sequence_call()` | Get root SequenceCall | - |
+| `seq.add_sequence_call()` | Add nested sequence | name, file_name, version |
+| `seq.add_numeric_step()` | Single numeric measurement | name, value, unit, comp_op, low_limit, high_limit, status |
+| `seq.add_boolean_step()` | Pass/fail boolean | name, status |
+| `seq.add_string_step()` | String value | name, value, status, report_text |
+| `seq.add_multi_numeric_step()` | Multiple measurements | name, status, then call add_measurement() |
+| `seq.add_chart_step()` | Chart/waveform data | name, status, then add series |
+
+### CompOp (Comparison Operators)
+
+```python
+from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+
+CompOp.LOG   # No limits (log only)
+CompOp.EQ    # Equal
+CompOp.NE    # Not Equal
+CompOp.LT    # Less Than
+CompOp.LE    # Less or Equal
+CompOp.GT    # Greater Than
+CompOp.GE    # Greater or Equal
+CompOp.GELE  # Between (>=low, <=high)
+CompOp.GTLT  # Between exclusive (>low, <high)
+CompOp.GELT  # >=low, <high
+CompOp.GTLE  # >low, <=high
+```
+
 ## Architecture Components
 
 ### 1. ConverterBase (Base Class)
@@ -98,26 +217,40 @@ Monitors drop folders and triggers conversions.
 
 ### Basic Structure
 
+**IMPORTANT**: Always use the UUTReport model - never build raw dictionaries!
+
 ```python
 from pathlib import Path
-from typing import Dict, Any
-from pywats_client.converters.base import (
-    ConverterBase,
+from datetime import datetime
+from typing import Dict, Any, List
+
+# pyWATS model imports - REQUIRED
+from pywats.domains.report.report_models import UUTReport
+from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.domains.report.report_models.uut.uut_status import UUTStatus
+from pywats.domains.report.report_models.uut.step_status import StepStatus
+from pywats.domains.report.report_models.misc_info import MiscInfo
+
+# Converter infrastructure
+from pywats_client.converters.file_converter import FileConverter
+from pywats_client.converters.context import ConverterContext
+from pywats_client.converters.models import (
+    ConverterSource,
     ConverterResult,
-    ConverterArguments,
-    FileInfo,
+    ValidationResult,
     PostProcessAction,
-    ConversionStatus,
+    ArgumentDefinition,
+    ArgumentType,
 )
 
-class MyConverter(ConverterBase):
+
+class MyConverter(FileConverter):
     """
     Custom converter for MyFormat files.
-    """
     
-    def __init__(self, default_station: str = "Station1"):
-        super().__init__()
-        self.default_station = default_station
+    Always uses the pyWATS UUTReport model for building reports.
+    """
     
     @property
     def name(self) -> str:
@@ -129,168 +262,169 @@ class MyConverter(ConverterBase):
     
     @property
     def description(self) -> str:
-        return "Converts MyFormat files to UUT reports"
+        return "Converts MyFormat files to UUT reports using pyWATS API"
     
     @property
-    def supported_extensions(self) -> list[str]:
-        return [".myformat", ".mf"]
+    def file_patterns(self) -> List[str]:
+        return ["*.myformat", "*.mf"]
     
     @property
-    def supported_mime_types(self) -> list[str]:
-        return ["application/x-myformat"]
-    
-    def validate_file(self, file_info: FileInfo) -> tuple[bool, str]:
-        """Validate file before conversion"""
-        # Call base validation (checks extension and MIME type)
-        valid, reason = super().validate_file(file_info)
-        if not valid:
-            return False, reason
-        
-        # Custom validation
-        if file_info.size > 5 * 1024 * 1024:  # 5 MB limit
-            return False, "File exceeds 5 MB limit"
-        
-        # Check file signature (first bytes)
-        try:
-            with open(file_info.path, 'rb') as f:
-                header = f.read(4)
-                if header != b'MFMT':  # Expected magic number
-                    return False, "Invalid file signature"
-        except Exception as e:
-            return False, f"Cannot read file: {e}"
-        
-        return True, ""
-    
-    def convert_file(
-        self,
-        file_path: Path,
-        args: ConverterArguments
-    ) -> ConverterResult:
-        """Convert file to UUT report"""
-        try:
-            # Access converter arguments
-            api = args.api_client
-            file_info = args.file_info
-            settings = args.user_settings
-            
-            # Read and parse file
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = f.read()
-            
-            # Extract data (your custom parsing logic)
-            serial_number = self._extract_serial(data)
-            part_number = self._extract_part(data)
-            result = self._extract_result(data)
-            
-            # Check if conversion should be suspended
-            if not serial_number:
-                return ConverterResult.suspended_result(
-                    reason="No serial number found, waiting for complete data"
-                )
-            
-            # Create WATS report structure
-            report = {
-                "type": "UUT",
-                "serialNumber": serial_number,
-                "partNumber": part_number or settings.get("default_part", "UNKNOWN"),
-                "result": result,
-                "processCode": 10,
-                "stationName": settings.get("station", self.default_station),
-            }
-            
-            # Determine post-processing action
-            post_action_str = settings.get("post_action", "move")
-            post_action = {
-                "delete": PostProcessAction.DELETE,
-                "move": PostProcessAction.MOVE,
-                "zip": PostProcessAction.ZIP,
-                "keep": PostProcessAction.KEEP
-            }.get(post_action_str, PostProcessAction.MOVE)
-            
-            # Return success
-            return ConverterResult.success_result(
-                report=report,
-                post_action=post_action,
-                metadata={
-                    "source_file": file_info.name,
-                    "file_size": file_info.size,
-                }
-            )
-        
-        except Exception as e:
-            return ConverterResult.failed_result(
-                error=f"Conversion error: {str(e)}"
-            )
-    
-    def on_success(
-        self,
-        file_path: Path,
-        result: ConverterResult,
-        args: ConverterArguments
-    ) -> None:
-        """Called after successful conversion"""
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(
-            f"Successfully converted {file_path.name}: "
-            f"SN={result.report['serialNumber']}"
-        )
-    
-    def on_failure(
-        self,
-        file_path: Path,
-        result: ConverterResult,
-        args: ConverterArguments
-    ) -> None:
-        """Called after failed conversion"""
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Failed to convert {file_path.name}: {result.error}")
-    
-    def get_arguments(self) -> Dict[str, Any]:
-        """Define configurable arguments"""
+    def arguments_schema(self) -> Dict[str, ArgumentDefinition]:
         return {
-            "station": {
-                "type": "string",
-                "default": self.default_station,
-                "description": "Test station name",
-                "required": True
-            },
-            "default_part": {
-                "type": "string",
-                "default": "UNKNOWN",
-                "description": "Default part number if not found in file"
-            },
-            "post_action": {
-                "type": "choice",
-                "default": "move",
-                "choices": ["delete", "move", "zip", "keep"],
-                "description": "Post-processing action"
-            },
-            "timeout": {
-                "type": "int",
-                "default": 30,
-                "description": "Conversion timeout (seconds)",
-                "min": 1,
-                "max": 300
-            }
+            "stationName": ArgumentDefinition(
+                arg_type=ArgumentType.STRING,
+                default="Station1",
+                description="Test station name",
+            ),
+            "processCode": ArgumentDefinition(
+                arg_type=ArgumentType.INTEGER,
+                default=10,
+                description="Process/operation code",
+            ),
         }
     
-    # Helper methods
-    def _extract_serial(self, data: str) -> str:
-        """Extract serial number from data"""
-        # Your parsing logic here
-        pass
+    def validate(self, source: ConverterSource, context: ConverterContext) -> ValidationResult:
+        """Validate file before conversion"""
+        if not source.path or not source.path.exists():
+            return ValidationResult.no_match("File not found")
+        
+        try:
+            with open(source.path, 'r', encoding='utf-8') as f:
+                content = f.read(1000)  # Read first 1KB
+            
+            # Check for file signature/pattern
+            if "MYFORMAT_HEADER" in content:
+                # Extract identifiers for validation result
+                serial = self._extract_serial(content)
+                part = self._extract_part(content)
+                
+                return ValidationResult(
+                    can_convert=True,
+                    confidence=0.95,
+                    message="Valid MyFormat file",
+                    detected_serial_number=serial,
+                    detected_part_number=part,
+                )
+            
+            return ValidationResult.no_match("Not a MyFormat file")
+            
+        except Exception as e:
+            return ValidationResult.no_match(f"Error: {e}")
     
-    def _extract_part(self, data: str) -> str:
-        """Extract part number from data"""
-        # Your parsing logic here
-        pass
+    def convert(self, source: ConverterSource, context: ConverterContext) -> ConverterResult:
+        """
+        Convert file to UUTReport.
+        
+        ALWAYS use the pyWATS model - never build raw dictionaries!
+        """
+        try:
+            # Read file
+            with open(source.path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Parse file data
+            serial_number = self._extract_serial(content)
+            part_number = self._extract_part(content)
+            test_result = self._extract_result(content)
+            tests = self._parse_tests(content)
+            
+            # Get arguments
+            station = context.get_argument("stationName", "Station1")
+            process_code = context.get_argument("processCode", 10)
+            
+            # ========================================
+            # BUILD REPORT USING UUTReport MODEL
+            # ========================================
+            
+            # 1. Create the report with header info
+            report = UUTReport(
+                pn=part_number,
+                sn=serial_number,
+                rev="1",
+                process_code=process_code,
+                station_name=station,
+                result=UUTStatus.PASSED if test_result == "P" else UUTStatus.FAILED,
+                start=datetime.now(),
+            )
+            
+            # 2. Get root sequence
+            root = report.get_root_sequence_call()
+            root.name = "MyFormat Tests"
+            
+            # 3. Add test sequences and steps
+            for group_name, group_tests in tests.items():
+                # Create sequence for test group
+                group_seq = root.add_sequence_call(
+                    name=group_name,
+                    file_name=f"{group_name}.seq",
+                    version="1.0"
+                )
+                
+                # Add individual tests
+                for test in group_tests:
+                    self._add_test_step(group_seq, test)
+            
+            # 4. Return success with UUTReport (NOT a dict!)
+            return ConverterResult.success_result(
+                report=report,
+                post_action=PostProcessAction.MOVE,
+            )
+            
+        except Exception as e:
+            return ConverterResult.failed_result(error=f"Conversion error: {e}")
     
-    def _extract_result(self, data: str) -> str:
-        """Extract test result from data"""
+    def _add_test_step(self, sequence: SequenceCall, test: Dict[str, Any]) -> None:
+        """Add a test step to the sequence using factory methods"""
+        test_type = test.get("type", "numeric")
+        name = test.get("name", "Unknown")
+        status = StepStatus.PASSED if test.get("passed") else StepStatus.FAILED
+        
+        if test_type == "numeric":
+            # Build kwargs conditionally (limits are optional)
+            kwargs: Dict[str, Any] = {
+                "name": name,
+                "value": float(test.get("value", 0)),
+                "unit": test.get("unit", ""),
+                "comp_op": CompOp.GELE if test.get("low") else CompOp.LOG,
+                "status": status,
+            }
+            if test.get("low") is not None:
+                kwargs["low_limit"] = float(test["low"])
+            if test.get("high") is not None:
+                kwargs["high_limit"] = float(test["high"])
+            
+            sequence.add_numeric_step(**kwargs)
+            
+        elif test_type == "boolean":
+            sequence.add_boolean_step(name=name, status=status)
+            
+        elif test_type == "string":
+            sequence.add_string_step(
+                name=name,
+                value=str(test.get("value", "")),
+                status=status,
+            )
+    
+    # Helper methods for parsing
+    def _extract_serial(self, content: str) -> str:
+        """Extract serial number from content"""
         # Your parsing logic here
-        pass
+        return ""
+    
+    def _extract_part(self, content: str) -> str:
+        """Extract part number from content"""
+        # Your parsing logic here
+        return ""
+    
+    def _extract_result(self, content: str) -> str:
+        """Extract overall result (P/F) from content"""
+        # Your parsing logic here
+        return "P"
+    
+    def _parse_tests(self, content: str) -> Dict[str, List[Dict[str, Any]]]:
+        """Parse test data from content"""
+        # Your parsing logic here
+        return {}
 ```
 
 ## Converter Arguments (ConverterArguments)
@@ -323,13 +457,27 @@ file_info.file_type   # Detected file type (via magic)
 
 ### Success Result
 
+**Always return a UUTReport instance, not a dictionary!**
+
 ```python
+# ✅ CORRECT - Using UUTReport model
+from pywats.domains.report.report_models import UUTReport
+
+report = UUTReport(pn="PN123", sn="SN001", ...)
+# ... build report using factory methods ...
+
 return ConverterResult.success_result(
-    report={...},                           # WATS report structure
-    post_action=PostProcessAction.MOVE,     # What to do with file
-    warnings=["Minor issue detected"],      # Optional warnings
-    metadata={"rows": 10, "time_ms": 250}   # Optional metadata
+    report=report,                           # UUTReport instance!
+    post_action=PostProcessAction.MOVE,
+    warnings=["Minor issue detected"],
+    metadata={"rows": 10, "time_ms": 250}
 )
+
+# ❌ WRONG - Do NOT use raw dictionaries
+# return ConverterResult.success_result(
+#     report={"serialNumber": "SN001", ...},  # NO! Use UUTReport!
+#     ...
+# )
 ```
 
 ### Failed Result
@@ -555,31 +703,36 @@ uploads/
 
 ## Best Practices
 
-1. **File Validation**
-   - Always validate files in `validate_file()` before conversion
+1. **ALWAYS Use UUTReport Model**
+   - Never build raw dictionaries for reports
+   - Use factory methods: `add_numeric_step()`, `add_sequence_call()`, etc.
+   - If a feature is missing from the API, report it - don't create workarounds!
+
+2. **File Validation**
+   - Always validate files in `validate()` before conversion
    - Check file signature, not just extension
    - Validate size limits
 
-2. **Error Messages**
+3. **Error Messages**
    - Provide clear, actionable error messages
    - Include context (line numbers, field names, etc.)
 
-3. **Suspended Conversions**
+4. **Suspended Conversions**
    - Use sparingly and only for recoverable conditions
    - Provide clear suspend reasons
    - Set reasonable retry limits
 
-4. **Post-Processing**
+5. **Post-Processing**
    - Let users configure the post-action
    - Default to MOVE for safety
    - Use ZIP for audit trails
 
-5. **Logging**
+6. **Logging**
    - Log all conversion attempts
    - Include file names and serial numbers
    - Use appropriate log levels
 
-6. **Performance**
+7. **Performance**
    - Process files asynchronously
    - Avoid blocking operations
    - Handle large files efficiently
