@@ -190,9 +190,9 @@ See [Headless Operation Guide](src/pywats_client/control/HEADLESS_GUIDE.md) for 
 pyWATS/
 ├── src/
 │   ├── pywats/              # Core library
-│   │   ├── models/          # Pydantic data models
-│   │   ├── modules/         # High-level API modules
-│   │   └── rest_api/        # REST API wrappers
+│   │   ├── domains/         # Domain models and services
+│   │   ├── core/            # HTTP client, exceptions, station
+│   │   ├── models/          # Report models (UUT/UUR)
 │   └── pywats_client/       # Client application
 │       ├── core/            # Core client functionality
 │       ├── gui/             # Qt GUI components (optional)

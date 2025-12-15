@@ -1,3 +1,10 @@
+# PyWATS Core Runtime Dependencies
+# 
+# NOTE: This file is for reference only. Install via PyPI for proper dependency management:
+#   pip install pywats-api
+#
+# For optional dependencies: pip install pywats-api[client] or pywats-api[dev]
+
 # Core dependencies
 httpx>=0.24.0  # HTTP client for REST API
 pydantic>=1.10.0  # Data validation and serialization
