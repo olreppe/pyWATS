@@ -2,7 +2,7 @@
 
 All business operations for statistics, KPIs, and dashboard data.
 """
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 
 from .repository import AppRepository
 from .models import YieldData, ProcessInfo, LevelInfo, ProductGroup

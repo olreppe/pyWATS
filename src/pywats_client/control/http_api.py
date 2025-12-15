@@ -31,6 +31,7 @@ from typing import Optional, Dict, Any, Callable, TYPE_CHECKING
 from dataclasses import dataclass, asdict
 from urllib.parse import urlparse, parse_qs
 from functools import partial
+from pathlib import Path
 import threading
 
 if TYPE_CHECKING:
