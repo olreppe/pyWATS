@@ -233,3 +233,24 @@ class Attachment(PyWATSModel):
     )
     size: Optional[int] = Field(default=None)
     description: Optional[str] = Field(default=None)
+
+
+# Re-export the core report structures so importing `pywats.domains.report.models` also pulls in
+# the essential UUT/UUR types (avoids accidentally leaving them out).
+from .report_models import (
+    Report,
+    ReportStatus,
+    ReportInfo,
+    AdditionalData,
+    BinaryData,
+    Asset,
+    AssetStats,
+    Chart,
+    ChartSeries,
+    ChartType,
+    SubUnit,
+    Attachment as ReportAttachment,
+    DeserializationContext,
+    UUTReport,
+    UURReport,
+)

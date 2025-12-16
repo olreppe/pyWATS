@@ -83,6 +83,7 @@ def main():
     for at in asset_types[:3]:
         print(f"   - {at.type_name}")
 
+
     # =========================================================================
     # Report Operations
     # =========================================================================
@@ -99,6 +100,11 @@ def main():
     if headers:
         for h in headers[:3]:
             print(f"   - {h.serial_number} | {h.part_number} | {h.status}")
+
+
+    
+
+
 
     # =========================================================================
     # App Statistics

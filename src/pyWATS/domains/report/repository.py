@@ -18,6 +18,9 @@ class ReportRepository:
     Report data access layer.
 
     Handles all WATS API interactions for test reports.
+
+    This repository exposes the WATS Report endpoints (`/api/Report/Query/...`, `/api/Report/WSJF`,
+    `/api/Report/WSXF`, attachments, and certificates) and keeps the service layer agnostic to HTTP details.
     """
 
     def __init__(
@@ -126,7 +129,12 @@ class ReportRepository:
 
         Returns:
             Report ID if successful, None otherwise
-            
+        
+        Notes:
+            WSJF (WATS Smart JSON Format) accepts both UUT and UUR payloads. When posting repairs,
+            the `uurInfo` block must include `processCode`, `refUUT`, `confirmDate`, `finalizeDate`,
+            and `execTime` even if some values are null; this method enforces those fields before shipping.
+
         Raises:
             ValueError: If the API returns an error with details
         """
@@ -202,6 +210,9 @@ class ReportRepository:
 
         Returns:
             UUTReport or UURReport, or None
+
+        Notes:
+            The WATS response includes an `uur` key for repair reports, which signals casting to `UURReport`.
         """
         response = self._http_client.get(f"/api/Report/Wsjf/{report_id}")
         if response.is_success and response.data:

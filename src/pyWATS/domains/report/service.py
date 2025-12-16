@@ -56,13 +56,13 @@ class ReportService:
     ) -> tuple:
         """
         Resolve station information from various sources.
-        
+
         Priority:
         1. Explicit Station object
         2. Legacy station_name/location/purpose parameters
         3. Default station from API (via station_provider)
         4. Fallback to "Unknown" values
-        
+
         Args:
             station: Explicit Station object
             station_name: Legacy station name parameter
@@ -71,6 +71,10 @@ class ReportService:
             
         Returns:
             Tuple of (station_name, location, purpose)
+
+        The resolved values populate WATS' `stationName`, `location`, and `purpose` dimensions so
+        analytics, root cause searches, and station-specific quotas remain consistent regardless of
+        whether the caller passes a Station object or legacy strings.
         """
         # Priority 1: Explicit Station object
         if station is not None:
@@ -140,6 +144,9 @@ class ReportService:
             2. Legacy station_name/location/purpose parameters
             3. API's default station (from pyWATS instance)
             4. Fallback to "Unknown" values
+
+            The `operation_type` argument maps directly to WATS' processCode lookup (e.g. 100 = end-of-line test, 200 = calibration).
+            The same code flows into the penultimate event so dashboards and failure tracking can join the test log with the correct operation context.
         
         See Also:
             For a fluent interface with comprehensive factory methods:
@@ -310,6 +317,10 @@ class ReportService:
 
         Returns:
             A new UURReport object ready for adding repair info and submission
+        
+        Domain Notes:
+            - WATS requires the top-level `processCode` to describe the repair operation (500, 510, etc.). This is exposed here through `repair_process_code`.
+            - The original test operation that failed is tracked separately via `test_operation_code` (and later stored in `uurInfo.test_operation_code`) so fail code navigation remains tied to the correct test step.
         """
         # Resolve parameters based on calling pattern
         ref_uut_guid: Optional[UUID] = None
@@ -440,6 +451,9 @@ class ReportService:
         Args:
             uut: Source UUT report
             uur: Target UUR report
+        
+        WATS requires each serialized sub_unit to contain `idx` and `parentIdx` so that
+        failure propagation and repair analytics can resolve the correct hierarchy.
         """
         from .report_models.uur.uur_sub_unit import UURSubUnit
         
