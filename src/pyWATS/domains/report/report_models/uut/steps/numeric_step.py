@@ -10,7 +10,7 @@ from .comp_operator import CompOp
 
 class NumericMeasurement(LimitMeasurement):
     value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)
-    unit: str = Field(..., description="The units of the measurement.")
+    unit: Optional[str] = Field(None, description="The units of the measurement.")
  
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization
@@ -24,7 +24,7 @@ class NumericMeasurement(LimitMeasurement):
 class MultiNumericMeasurement(LimitMeasurement):
     name: str = Field(..., description="The name of the measurement - required for MultiStepTypes")
     value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)
-    unit: str = Field(..., description="The units of the measurement.")
+    unit: Optional[str] = Field(None, description="The units of the measurement.")
     
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization
@@ -71,7 +71,15 @@ class NumericStep(Step):
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
         # Numeric Step Validation:
-        if not self.measurement.comp_op.validate_limits(low_limit=self.measurement.low_limit, high_limit=self.measurement.high_limit):
+        # Handle case where comp_op might be a string (due to use_enum_values config)
+        comp_op = self.measurement.comp_op
+        if isinstance(comp_op, str):
+            try:
+                comp_op = CompOp[comp_op]
+            except (KeyError, ValueError):
+                comp_op = CompOp.LOG  # Default fallback
+        
+        if not comp_op.validate_limits(low_limit=self.measurement.low_limit, high_limit=self.measurement.high_limit):
             errors.append(f"{self.get_step_path()} Invalig limits / comp_op.")
             return False
         return True
@@ -101,7 +109,15 @@ class MultiNumericStep(Step):
         # Numeric Step Validation:
         valid_limits = True
         for index, m in enumerate(self.measurements):
-            if not m.comp_op.validate_limits(low_limit=m.low_limit, high_limit=m.low_limit):
+            # Handle case where comp_op might be a string (due to use_enum_values config)
+            comp_op = m.comp_op
+            if isinstance(comp_op, str):
+                try:
+                    comp_op = CompOp[comp_op]
+                except (KeyError, ValueError):
+                    comp_op = CompOp.LOG  # Default fallback
+            
+            if not comp_op.validate_limits(low_limit=m.low_limit, high_limit=m.high_limit):
                 errors.append(f"{self.get_step_path()} Measurement index: {index} - Invalid limits / comp_op.")
                 valid_limits = False
         if not valid_limits:

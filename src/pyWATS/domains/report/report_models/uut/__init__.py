@@ -1,5 +1,5 @@
 from .step import Step, StepType
-from .steps import * #NumericStep, MultiNumericStep, BooleanStep,MultiBooleanStep, StringStep, MultiStringStep,ActionStep, ChartStep, GenericStep, SequenceCall, CallExeStep, MessagePopUpStep
+from .steps import * #NumericStep, MultiNumericStep, BooleanStep,MultiBooleanStep, StringStep, MultiStringStep,ActionStep, ChartStep, GenericStep, SequenceCall, CallExeStep, MessagePopUpStep, UnknownStep
 
 # Rebuild models to resolve forward references
 Step.model_rebuild()
@@ -15,3 +15,4 @@ MessagePopUpStep.model_rebuild()
 CallExeStep.model_rebuild()
 ChartStep.model_rebuild()
 SequenceCall.model_rebuild()
+UnknownStep.model_rebuild()

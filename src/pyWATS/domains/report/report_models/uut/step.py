@@ -3,8 +3,8 @@ from abc import ABC
 import base64
 from enum import Enum
 import os
-from typing import Any, Optional, Self, Union, Literal
-from pydantic import Field, ModelWrapValidatorHandler, model_validator
+from typing import Any, Optional, Self, Union, Literal, Annotated
+from pydantic import Field, ModelWrapValidatorHandler, model_validator, Discriminator, Tag
 from abc import ABC, abstractmethod
 
 from ..wats_base import WATSBase
@@ -139,15 +139,87 @@ class Step(WATSBase, ABC):
 
         
 
-# Union of all Step types
-# IMPORTANT ORDER: 
-# 1. Subclasses MUST come before their parent classes in the inheritance chain
-#    - ChartStep before MultiNumericStep (ChartStep inherits from MultiNumericStep)
-#    - MultiBooleanStep before BooleanStep
-#    - Multi* steps before their single-measurement counterparts
-# 2. GenericStep MUST be last because it matches many step_type values
-# 3. SequenceCall first for common case optimization
-StepType = Union['SequenceCall','ChartStep','MultiNumericStep','NumericStep','MultiBooleanStep','BooleanStep', 'MultiStringStep', 'StringStep', 'CallExeStep','MessagePopUpStep', 'ActionStep', 'GenericStep']
-from .steps import NumericStep,MultiNumericStep,SequenceCall,BooleanStep,MultiBooleanStep,MultiStringStep,StringStep,ChartStep,CallExeStep,MessagePopUpStep,GenericStep,ActionStep  # noqa: E402
+# Discriminator function for StepType Union
+# Maps stepType values to the appropriate Step class tag
+def _discriminate_step_type(v: Any) -> str:
+    """
+    Discriminator function for step types.
+    Returns a tag identifying which Step class should handle this data.
+    Falls back to 'unknown' for unrecognized step types.
+    """
+    if isinstance(v, dict):
+        step_type = v.get('stepType', v.get('step_type', ''))
+    else:
+        step_type = getattr(v, 'step_type', getattr(v, 'stepType', ''))
+    
+    # Map stepType values to class tags
+    # Order matters: Check more specific types first
+    if step_type in ['SequenceCall', 'WATS_SeqCall']:
+        return 'SequenceCall'
+    elif step_type in ['ET_CHAR']:
+        return 'ChartStep'
+    elif step_type in ['ET_MNLT']:
+        return 'MultiNumericStep'
+    elif step_type in ['ET_NLT', 'NumericLimitStep']:
+        return 'NumericStep'
+    elif step_type in ['ET_MPFT']:
+        return 'MultiBooleanStep'
+    elif step_type in ['ET_PFT', 'PassFailStep']:
+        return 'BooleanStep'
+    elif step_type in ['ET_MSVT']:
+        return 'MultiStringStep'
+    elif step_type in ['ET_SVT', 'StringValueStep']:
+        return 'StringStep'
+    elif step_type in ['CallExe']:
+        return 'CallExeStep'
+    elif step_type in ['MessagePopup']:
+        return 'MessagePopUpStep'
+    elif step_type in ['Action']:
+        return 'ActionStep'
+    # GenericStep types (flow control, etc.)
+    elif step_type in [
+        "NI_FTPFiles", "NI_Flow_If", "NI_Flow_ElseIf", "NI_Flow_Else", "NI_Flow_End",
+        "NI_Flow_For", "NI_Flow_ForEach", "NI_Flow_Break", "NI_Flow_Continue",
+        "NI_Flow_DoWhile", "NI_Flow_While", "NI_Flow_Select", "NI_Flow_Case",
+        "NI_Flow_StreamLoop", "NI_Flow_SweepLoop", "NI_Lock", "NI_Rendezvous",
+        "NI_Queue", "NI_Notification", "NI_Wait", "NI_Batch_Sync", "NI_AutoSchedule",
+        "NI_UseResource", "NI_ThreadPriority", "NI_Semaphore", "NI_BatchSpec",
+        "NI_BatchSync", "NI_OpenDatabase", "NI_OpenSQLStatement",
+        "NI_CloseSQLStatement", "NI_CloseDatabase", "NI_DataOperation",
+        "NI_CPUAffinity", "NI_IviDmm", "NI_IviScope", "NI_IviFgen", "NI_IviDCPower",
+        "NI_IviSwitch", "NI_IviTools", "NI_LV_DeployLibrary", "NI_LV_CheckSystemStatus",
+        "NI_LV_RunVIAsynchronously", "NI_PropertyLoader", "NI_VariableAndPropertyLoader",
+        "NI_NewCsvFileInputRecordStream", "NI_NewCsvFileOutputRecordStream",
+        "NI_WriteRecord", "Goto", "Statement", "Label"
+    ]:
+        return 'GenericStep'
+    else:
+        # Unknown/unsupported step type - fallback to UnknownStep
+        return 'unknown'
+
+# Union of all Step types with discriminated union for robust parsing
+# The discriminator function maps stepType values to the appropriate class,
+# with UnknownStep as the ultimate fallback for unrecognized types.
+StepType = Annotated[
+    Union[
+        Annotated['SequenceCall', Tag('SequenceCall')],
+        Annotated['ChartStep', Tag('ChartStep')],
+        Annotated['MultiNumericStep', Tag('MultiNumericStep')],
+        Annotated['NumericStep', Tag('NumericStep')],
+        Annotated['MultiBooleanStep', Tag('MultiBooleanStep')],
+        Annotated['BooleanStep', Tag('BooleanStep')],
+        Annotated['MultiStringStep', Tag('MultiStringStep')],
+        Annotated['StringStep', Tag('StringStep')],
+        Annotated['CallExeStep', Tag('CallExeStep')],
+        Annotated['MessagePopUpStep', Tag('MessagePopUpStep')],
+        Annotated['ActionStep', Tag('ActionStep')],
+        Annotated['GenericStep', Tag('GenericStep')],
+        Annotated['UnknownStep', Tag('unknown')]
+    ],
+    Discriminator(_discriminate_step_type)
+]
+
+# Import step classes after StepType definition to avoid circular imports
+from .steps import NumericStep,MultiNumericStep,SequenceCall,BooleanStep,MultiBooleanStep,MultiStringStep,StringStep,ChartStep,CallExeStep,MessagePopUpStep,GenericStep,ActionStep,UnknownStep  # noqa: E402
 
 Step.model_rebuild()
