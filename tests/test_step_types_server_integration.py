@@ -13,7 +13,7 @@ from pywats.domains.report.report_models.uut.uut_report import UUTReport
 from pywats.domains.report.report_models.uut.uut_info import UUTInfo
 from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
 from pywats.domains.report.report_models.uut.steps.generic_step import FlowType
-from pyWATS.tools.test_uut import create_test_uut_report
+from pywats.tools.test_uut import create_test_uut_report
 
 logger = logging.getLogger(__name__)
 
