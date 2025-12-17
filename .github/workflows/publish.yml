@@ -40,6 +40,39 @@ jobs:
           echo "ERROR: Test config files found in package!"
           exit 1
         fi
+        # Verify dev-only folders are not packaged (tests, docs, etc.)
+        # sdist files are prefixed with the top-level directory (e.g. pywats_api-0.1.0b2/)
+        if grep -Eq "^[^/]+/(tests|docs|converters|examples|scripts|\.github)/" /tmp/files.txt; then
+          echo "ERROR: Dev-only folder found in sdist!"
+          echo "Offending entries:"
+          grep -nE "^[^/]+/(tests|docs|converters|examples|scripts|\.github)/" /tmp/files.txt | head -n 50
+          exit 1
+        fi
+        echo "Checking wheel contents for dev-only folders..."
+        python - <<'PY'
+        import glob
+        import sys
+        import zipfile
+
+        bad_prefixes = (
+            'tests/', 'docs/', 'converters/', 'examples/', 'scripts/', '.github/',
+        )
+        wheels = glob.glob('dist/*.whl')
+        if not wheels:
+            print('ERROR: No wheel found in dist/')
+            sys.exit(1)
+
+        for whl in wheels:
+            with zipfile.ZipFile(whl, 'r') as zf:
+                names = zf.namelist()
+            bad = [n for n in names if n.startswith(bad_prefixes)]
+            if bad:
+                print(f'ERROR: Dev-only folder found in wheel: {whl}')
+                for n in bad[:50]:
+                    print('  ' + n)
+                sys.exit(1)
+        print('Wheel contents look clean.')
+        PY
         echo "Package contents look clean."
 
     - name: Publish to PyPI

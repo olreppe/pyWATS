@@ -52,4 +52,7 @@ global-exclude *.pyo
 global-exclude __pycache__
 global-exclude *.so
 global-exclude .DS_Store
+
+# Exclude generated metadata directories (can appear locally after editable installs)
+prune src/pywats_api.egg-info
 global-exclude *.egg-info
