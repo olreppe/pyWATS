@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b5] - 2025-12-17
+
+### Fixed
+
+- **CI/CD** - Added `contents: read` permission to publish workflow for private repo checkout.
+
 ## [0.1.0b4] - 2025-12-17
 
 ### Fixed
