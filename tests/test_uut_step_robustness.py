@@ -10,11 +10,11 @@ Tests for:
 import json
 from datetime import datetime
 import pytest
-from pyWATS.domains.report.report_models.uut.uut_report import UUTReport
-from pyWATS.domains.report.report_models.uut.steps.unknown_step import UnknownStep
-from pyWATS.domains.report.report_models.uut.steps.numeric_step import NumericStep, MultiNumericStep
-from pyWATS.domains.report.report_models.uut.steps.generic_step import GenericStep
-from pyWATS.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+from pywats.domains.report.report_models.uut.uut_report import UUTReport
+from pywats.domains.report.report_models.uut.steps.unknown_step import UnknownStep
+from pywats.domains.report.report_models.uut.steps.numeric_step import NumericStep, MultiNumericStep
+from pywats.domains.report.report_models.uut.steps.generic_step import GenericStep
+from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
 
 
 class TestUnknownStepParsing:
@@ -363,7 +363,7 @@ class TestMultiNumericStepValidation:
         multi_step = root.add_multi_numeric_step(name='MultiTest', status='P')
         
         # Add measurements with different limits
-        from pyWATS.domains.report.report_models.uut.steps.comp_operator import CompOp
+        from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
         multi_step.add_measurement(
             name='M1',
             value=5.0,
@@ -409,7 +409,7 @@ class TestMultiNumericStepValidation:
         root = report.get_root_sequence_call()
         multi_step = root.add_multi_numeric_step(name='MultiTest', status='P')
         
-        from pyWATS.domains.report.report_models.uut.steps.comp_operator import CompOp
+        from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
         # Add measurement with invalid limits (low > high)
         multi_step.add_measurement(
             name='M1',
