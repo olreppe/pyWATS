@@ -2,7 +2,7 @@
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
-from pydantic import Field, AliasChoices, field_serializer
+from pydantic import Field, AliasChoices, field_serializer, field_validator
 
 from ...shared import PyWATSModel
 from .enums import DateGrouping
@@ -144,6 +144,20 @@ class WATSFilter(PyWATSModel):
     # Used by some analytics endpoints (e.g. App/TestStepAnalysis)
     # 1 = first run, 2 = second, 3 = third, -1 = last run, -2 = all
     run: Optional[int] = Field(default=None)
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def normalize_status_all(cls, v: object) -> object:
+        """Treat status='all' as unset.
+
+        Some WATS servers interpret the literal string 'all' as an actual status
+        value and return empty result sets.
+        """
+        if v is None:
+            return None
+        if isinstance(v, str) and v.strip().lower() == "all":
+            return None
+        return v
 
     @field_serializer('date_from', 'date_to')
     def serialize_datetime(self, v: Optional[datetime]) -> Optional[str]:
