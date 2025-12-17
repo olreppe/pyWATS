@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 import json
 
-from pyWATS import pyWATS
+from pywats import pyWATS
 from pyWATS.domains.report.report_models.uut.uut_report import UUTReport
 from pyWATS.domains.report.report_models.uut.uut_info import UUTInfo
 from pyWATS.domains.report.report_models.uut.steps.comp_operator import CompOp

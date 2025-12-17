@@ -37,7 +37,7 @@ Running GUI with test instances:
 from typing import Generator, Dict, TYPE_CHECKING
 import pytest
 
-from pyWATS import pyWATS
+from pywats import pyWATS
 
 if TYPE_CHECKING:
     from pywats_client.core.config import ClientConfig
