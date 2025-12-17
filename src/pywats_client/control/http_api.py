@@ -26,6 +26,7 @@ Security:
 import asyncio
 import json
 import logging
+from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Optional, Dict, Any, Callable, TYPE_CHECKING
 from dataclasses import dataclass, asdict

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b4] - 2025-12-17
+
+### Fixed
+
+- **Release pipeline** - Fixed flake8 `F821` (missing `Path` import) blocking the PyPI publish workflow.
+
 ## [0.1.0b3] - 2025-12-17
 
 ### Fixed
