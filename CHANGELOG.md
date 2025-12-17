@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b3] - 2025-12-17
+
+### Fixed
+
+- **Cross-platform packaging** - Corrected package directory casing to `src/pywats` to avoid Linux/macOS import/install issues.
+- **Release hygiene** - Ensured `tests/`, `docs/`, and other dev-only folders are excluded from PyPI artifacts and added publish-time guards.
+- **UUT report parsing robustness** - Added a safe fallback for unknown step types and improved tolerance for null numeric values.
+- **Query filtering** - Normalized `status=all` to omit the status filter (treat as “no status filter”).
+
 ## [0.1.0b2] - 2025-12-15
 
 ### Changed
