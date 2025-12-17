@@ -141,6 +141,10 @@ class WATSFilter(PyWATSModel):
     )
     dimensions: Optional[str] = Field(default=None)
 
+    # Used by some analytics endpoints (e.g. App/TestStepAnalysis)
+    # 1 = first run, 2 = second, 3 = third, -1 = last run, -2 = all
+    run: Optional[int] = Field(default=None)
+
     @field_serializer('date_from', 'date_to')
     def serialize_datetime(self, v: Optional[datetime]) -> Optional[str]:
         """Serialize datetime to ISO format."""

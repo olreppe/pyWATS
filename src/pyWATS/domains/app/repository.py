@@ -9,7 +9,13 @@ if TYPE_CHECKING:
     from ...core import HttpClient
     from ...core.exceptions import ErrorHandler
 
-from .models import YieldData, ProcessInfo, LevelInfo, ProductGroup
+from .models import (
+    YieldData,
+    ProcessInfo,
+    LevelInfo,
+    ProductGroup,
+    StepAnalysisRow,
+)
 from ..report.models import WATSFilter, ReportHeader
 
 
@@ -428,7 +434,7 @@ class AppRepository:
 
     def get_test_step_analysis(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    ) -> List[StepAnalysisRow]:
         """
         Get step and measurement statistics (PREVIEW).
 
@@ -438,7 +444,7 @@ class AppRepository:
             filter_data: WATSFilter object or dict
 
         Returns:
-            Step analysis dictionary
+            List of StepAnalysisRow rows
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
@@ -446,8 +452,13 @@ class AppRepository:
             data = filter_data
         response = self._http_client.post("/api/App/TestStepAnalysis", data=data)
         if response.is_success and response.data:
-            return cast(Dict[str, Any], response.data)
-        return {}
+            raw_items: List[Any]
+            if isinstance(response.data, list):
+                raw_items = response.data
+            else:
+                raw_items = [response.data]
+            return [StepAnalysisRow.model_validate(item) for item in raw_items]
+        return []
 
     # =========================================================================
     # Measurements

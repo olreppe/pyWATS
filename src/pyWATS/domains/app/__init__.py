@@ -3,7 +3,7 @@
 Provides statistics, KPIs, and dashboard data services.
 """
 from .enums import YieldDataType, ProcessType
-from .models import YieldData, ProcessInfo, LevelInfo, ProductGroup
+from .models import YieldData, ProcessInfo, LevelInfo, ProductGroup, StepAnalysisRow
 from .repository import AppRepository
 from .service import AppService
 
@@ -16,6 +16,7 @@ __all__ = [
     "ProcessInfo",
     "LevelInfo",
     "ProductGroup",
+    "StepAnalysisRow",
     # Repository & Service
     "AppRepository",
     "AppService",

@@ -14,7 +14,7 @@ import os
 import socket
 import uuid
 from pathlib import Path
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, fields
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
@@ -539,8 +539,12 @@ class ClientConfig:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ClientConfig":
-        """Create from dictionary"""
-        return cls(**data)
+        """Create from dictionary, filtering out unknown fields"""
+        # Get valid field names from the class
+        valid_fields = {f.name for f in fields(cls)}
+        # Filter data to only include valid fields
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        return cls(**filtered_data)
     
     def save(self, path: Optional[Path] = None) -> None:
         """Save configuration to file"""

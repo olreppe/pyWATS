@@ -2,10 +2,17 @@
 
 All business operations for statistics, KPIs, and dashboard data.
 """
-from typing import Optional, List, Dict, Any
+from datetime import datetime, timedelta
+from typing import Optional, List, Dict, Any, Union
 
 from .repository import AppRepository
-from .models import YieldData, ProcessInfo, LevelInfo, ProductGroup
+from .models import (
+    YieldData,
+    ProcessInfo,
+    LevelInfo,
+    ProductGroup,
+    StepAnalysisRow,
+)
 from ..report.models import WATSFilter, ReportHeader
 
 
@@ -218,8 +225,8 @@ class AppService:
         return self._repository.get_top_failed(filter_data, **kwargs)
 
     def get_test_step_analysis(
-        self, filter_data: WATSFilter
-    ) -> Dict[str, Any]:
+        self, filter_data: Union[WATSFilter, Dict[str, Any]]
+    ) -> List[StepAnalysisRow]:
         """
         Get test step analysis data (PREVIEW).
 
@@ -227,9 +234,42 @@ class AppService:
             filter_data: WATSFilter with analysis parameters
 
         Returns:
-            Test step analysis data
+            List of StepAnalysisRow rows
         """
         return self._repository.get_test_step_analysis(filter_data)
+
+    def get_test_step_analysis_for_operation(
+        self,
+        part_number: str,
+        test_operation: str,
+        *,
+        revision: Optional[str] = None,
+        days: int = 30,
+        run: int = 1,
+        max_count: int = 10000,
+    ) -> List[StepAnalysisRow]:
+        """Convenience wrapper for TestStepAnalysis.
+
+        The WATS API requires `partNumber` and `testOperation`.
+        Defaults are aligned with the swagger notes:
+        - maxCount: 10000
+        - dateFrom: now - 30 days
+        - run: 1 (first)
+        """
+        if not part_number:
+            raise ValueError("part_number is required")
+        if not test_operation:
+            raise ValueError("test_operation is required")
+
+        filter_data = WATSFilter(
+            part_number=part_number,
+            test_operation=test_operation,
+            revision=revision,
+            max_count=max_count,
+            date_from=datetime.now() - timedelta(days=days),
+            run=run,
+        )
+        return self.get_test_step_analysis(filter_data)
 
     # =========================================================================
     # Repair History

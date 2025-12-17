@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from pywats.domains.app.models import ProcessInfo, YieldData
+from pywats.domains.app.models import ProcessInfo, YieldData, StepAnalysisRow
 from pywats.domains.app.service import AppService
 from pywats.domains.report.models import WATSFilter, ReportHeader
 
@@ -27,6 +27,12 @@ class DummyAppRepository:
     ) -> List[YieldData]:
         self.last_filter = filter_data
         return [YieldData(part_number="PN-1", fpy=99.0)]
+
+    def get_test_step_analysis(
+        self, filter_data: WATSFilter
+    ) -> List[StepAnalysisRow]:
+        self.last_filter = filter_data
+        return [StepAnalysisRow(step_name="Step1", step_path="Step1")]
 
     def get_serial_number_history(self, filter_data: WATSFilter) -> List[ReportHeader]:
         self.headers_requested = True
@@ -68,3 +74,20 @@ def test_get_serial_number_history_forwards_filters(app_service: AppService) -> 
     headers = app_service.get_serial_number_history(filter_data)
 
     assert app_service._repository.headers_requested
+
+
+def test_get_test_step_analysis_for_operation_builds_required_filter(app_service: AppService) -> None:
+    repo = app_service._repository
+
+    rows = app_service.get_test_step_analysis_for_operation(
+        part_number="PN-1",
+        test_operation="100",
+        days=7,
+        run=1,
+    )
+
+    assert rows
+    assert isinstance(repo.last_filter, WATSFilter)
+    assert repo.last_filter.part_number == "PN-1"
+    assert repo.last_filter.test_operation == "100"
+    assert repo.last_filter.run == 1
