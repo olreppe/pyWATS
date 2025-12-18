@@ -79,38 +79,6 @@ class GeneralPage(BasePage):
         
         self._layout.addWidget(logging_group)
         
-        # GUI Tab Visibility group
-        gui_group = QGroupBox("GUI Tab Visibility")
-        gui_layout = QVBoxLayout(gui_group)
-        
-        gui_layout.addWidget(QLabel("Configure which tabs are shown in the navigation menu:"))
-        
-        self._show_location_cb = QCheckBox("Show Location tab")
-        self._show_location_cb.stateChanged.connect(self._emit_changed)
-        gui_layout.addWidget(self._show_location_cb)
-        
-        self._show_converters_cb = QCheckBox("Show Converters tab")
-        self._show_converters_cb.stateChanged.connect(self._emit_changed)
-        gui_layout.addWidget(self._show_converters_cb)
-        
-        self._show_sn_handler_cb = QCheckBox("Show SN Handler tab")
-        self._show_sn_handler_cb.stateChanged.connect(self._emit_changed)
-        gui_layout.addWidget(self._show_sn_handler_cb)
-        
-        self._show_proxy_cb = QCheckBox("Show Proxy Settings tab")
-        self._show_proxy_cb.stateChanged.connect(self._emit_changed)
-        gui_layout.addWidget(self._show_proxy_cb)
-        
-        self._show_software_cb = QCheckBox("Show Software tab")
-        self._show_software_cb.stateChanged.connect(self._emit_changed)
-        gui_layout.addWidget(self._show_software_cb)
-        
-        restart_note = QLabel("Note: Changes to tab visibility require a restart to take effect.")
-        restart_note.setStyleSheet("color: #808080; font-style: italic;")
-        gui_layout.addWidget(restart_note)
-        
-        self._layout.addWidget(gui_group)
-        
         # Add stretch to push content to top
         self._layout.addStretch()
     
@@ -120,13 +88,6 @@ class GeneralPage(BasePage):
         self.config.start_minimized = self._start_minimized_cb.isChecked()
         self.config.minimize_to_tray = self._minimize_to_tray_cb.isChecked()
         self.config.log_level = self._log_level_combo.currentText()
-        
-        # Save GUI tab visibility settings
-        self.config.show_location_tab = self._show_location_cb.isChecked()
-        self.config.show_converters_tab = self._show_converters_cb.isChecked()
-        self.config.show_sn_handler_tab = self._show_sn_handler_cb.isChecked()
-        self.config.show_proxy_tab = self._show_proxy_cb.isChecked()
-        self.config.show_software_tab = self._show_software_cb.isChecked()
     
     def load_config(self) -> None:
         """Load configuration"""
@@ -138,10 +99,3 @@ class GeneralPage(BasePage):
         index = self._log_level_combo.findText(self.config.log_level)
         if index >= 0:
             self._log_level_combo.setCurrentIndex(index)
-        
-        # Load GUI tab visibility settings
-        self._show_location_cb.setChecked(self.config.show_location_tab)
-        self._show_converters_cb.setChecked(self.config.show_converters_tab)
-        self._show_sn_handler_cb.setChecked(self.config.show_sn_handler_tab)
-        self._show_proxy_cb.setChecked(self.config.show_proxy_tab)
-        self._show_software_cb.setChecked(self.config.show_software_tab)

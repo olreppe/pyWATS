@@ -28,6 +28,10 @@
 - [ ] Ensure all public methods have docstrings with examples
 - [ ] Generate API reference documentation
 - [ ] Update CHANGELOG.md with all changes since last release
+- [ ] **Complete and review examples in `examples/` directory**
+  - Review and correct domain-specific details (UUT vs UUR, etc.)
+  - Ensure examples follow pyWATS architecture (fluent API pattern)
+  - Test examples against actual WATS server
 
 ### 🟢 Quality Assurance
 

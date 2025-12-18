@@ -100,15 +100,6 @@ class WATSClient:
         client_logger.setLevel(log_level)
         client_logger.addHandler(console_handler)
         client_logger.addHandler(file_handler)
-        
-        # Enable pyWATS library logging if debug level
-        if log_level == logging.DEBUG:
-            try:
-                from pywats import enable_debug_logging
-                enable_debug_logging()
-                logger.debug("pyWATS library debug logging enabled")
-            except ImportError:
-                logger.warning("Could not enable pyWATS debug logging - library not found")
     
     @property
     def status(self) -> ClientStatus:
