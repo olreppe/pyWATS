@@ -14,7 +14,7 @@ pip install pywats-api
 - HTTP client (httpx)
 - Data validation (pydantic 2.0+)
 - Date utilities (python-dateutil)
-- Python 3.8+
+- Python 3.10+
 
 **Use this for:**
 - Writing Python scripts to interact with WATS API
@@ -314,7 +314,7 @@ python -c "import os; print(os.getenv('WATS_BASE_URL'))"
 - **GitHub:** https://github.com/olreppe/pyWATS
 - **Current Version:** 0.1.0b2
 - **License:** MIT
-- **Python:** 3.8+
+- **Python:** 3.10+
 - **WATS Server:** 2025.3.9.824 or later
 
 ---

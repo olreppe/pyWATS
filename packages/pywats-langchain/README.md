@@ -57,7 +57,7 @@ print(result["summary"])
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.10+
 - pywats-api
 - pywats-agent
 - langchain (optional, for full functionality)

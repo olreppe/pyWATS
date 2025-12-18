@@ -100,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Requirements
 
-- Python 3.8 or later
+- Python 3.10 or later
 - **WATS Server 2025.3.9.824 or later**
 
 ### Notes

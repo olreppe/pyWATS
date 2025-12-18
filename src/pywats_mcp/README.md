@@ -161,7 +161,7 @@ python -m pywats_mcp
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.10+
 - pywats-api
 - mcp>=1.0.0 (Model Context Protocol SDK)
 

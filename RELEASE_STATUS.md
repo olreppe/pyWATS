@@ -30,7 +30,7 @@
 - **Version:** 0.1.0b1 (beta)
 - **Author:** Virinco AS
 - **License:** MIT
-- **Python:** >=3.8
+- **Python:** >=3.10
 - **WATS Server Required:** 2025.3.9.824+
 
 ## Installation Options
