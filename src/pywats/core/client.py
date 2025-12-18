@@ -9,7 +9,7 @@ It always returns a Response object. Error handling is delegated to the
 ErrorHandler class in the repository layer.
 """
 from typing import Optional, Dict, Any
-from dataclasses import dataclass
+from pydantic import BaseModel, Field, ConfigDict, computed_field
 import httpx
 import json
 
@@ -20,34 +20,47 @@ from .exceptions import (
 )
 
 
-@dataclass
-class Response:
-    """HTTP Response wrapper."""
-    status_code: int
-    data: Any
-    headers: Dict[str, str]
-    raw: bytes
+class Response(BaseModel):
+    """HTTP Response wrapper.
+    
+    Attributes:
+        status_code: HTTP status code (200, 404, 500, etc.)
+        data: Parsed response data (dict, list, or primitive)
+        headers: Response headers as dict
+        raw: Raw response bytes
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    status_code: int = Field(..., description="HTTP status code")
+    data: Any = Field(default=None, description="Parsed response data")
+    headers: Dict[str, str] = Field(default_factory=dict, description="Response headers")
+    raw: bytes = Field(default=b"", description="Raw response bytes")
 
+    @computed_field
     @property
     def is_success(self) -> bool:
         """True if status code is 2xx."""
         return 200 <= self.status_code < 300
 
+    @computed_field
     @property
     def is_error(self) -> bool:
         """True if status code is 4xx or 5xx."""
         return self.status_code >= 400
     
+    @computed_field
     @property
     def is_not_found(self) -> bool:
         """True if status code is 404."""
         return self.status_code == 404
     
+    @computed_field
     @property
     def is_server_error(self) -> bool:
         """True if status code is 5xx."""
         return 500 <= self.status_code < 600
     
+    @computed_field
     @property
     def is_client_error(self) -> bool:
         """True if status code is 4xx."""

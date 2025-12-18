@@ -10,7 +10,8 @@ Some domains also have internal API implementations:
 - service_internal.py: Business logic using internal API
 - repository_internal.py: Data access using internal API
 """
-from . import app
+from . import analytics
+from . import app  # Backward compatibility shim
 from . import asset
 from . import process
 from . import product
@@ -20,7 +21,8 @@ from . import rootcause
 from . import software
 
 __all__ = [
-    "app",
+    "analytics",
+    "app",  # Deprecated alias for analytics
     "asset",
     "process",
     "product",

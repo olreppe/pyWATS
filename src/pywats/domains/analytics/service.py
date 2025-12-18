@@ -1,11 +1,12 @@
-"""App service - business logic layer.
+"""Analytics service - business logic layer.
 
-All business operations for statistics, KPIs, and dashboard data.
+All business operations for statistics, KPIs, yield analysis, and dashboard data.
+Note: Maps to the WATS /api/App/* endpoints (backend naming).
 """
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Union
 
-from .repository import AppRepository
+from .repository import AnalyticsRepository
 from .models import (
     YieldData,
     ProcessInfo,
@@ -16,19 +17,29 @@ from .models import (
 from ..report.models import WATSFilter, ReportHeader
 
 
-class AppService:
+class AnalyticsService:
     """
-    App/Statistics business logic layer.
+    Analytics/Statistics business logic layer.
 
-    Provides high-level operations for statistics, KPIs, and analytics.
+    Provides high-level operations for yield statistics, KPIs, failure analysis,
+    and production analytics. This module wraps the WATS /api/App/* endpoints.
+    
+    Example:
+        >>> api = pyWATS(base_url="...", token="...")
+        >>> # Get yield statistics
+        >>> yield_data = api.analytics.get_dynamic_yield(
+        ...     WATSFilter(part_number="WIDGET-001", period_count=30)
+        ... )
+        >>> # Get top failures
+        >>> failures = api.analytics.get_top_failed(part_number="WIDGET-001")
     """
 
-    def __init__(self, repository: AppRepository):
+    def __init__(self, repository: AnalyticsRepository):
         """
-        Initialize with AppRepository.
+        Initialize with AnalyticsRepository.
 
         Args:
-            repository: AppRepository instance for data access
+            repository: AnalyticsRepository instance for data access
         """
         self._repository = repository
 
@@ -210,19 +221,37 @@ class AppService:
     def get_top_failed(
         self,
         filter_data: Optional[WATSFilter] = None,
-        **kwargs: Any,
+        *,
+        product_group: Optional[str] = None,
+        level: Optional[str] = None,
+        part_number: Optional[str] = None,
+        revision: Optional[str] = None,
+        top_count: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get top failed test steps.
 
+        Can be called with a WATSFilter (uses POST) or with explicit parameters (uses GET).
+
         Args:
-            filter_data: Optional WATSFilter for POST request
-            **kwargs: Additional query parameters for GET
+            filter_data: Optional WATSFilter for POST request (takes precedence)
+            product_group: Filter by product group (GET only)
+            level: Filter by production level (GET only)
+            part_number: Filter by part number (GET only)
+            revision: Filter by revision (GET only)
+            top_count: Maximum number of results (GET only)
 
         Returns:
-            List of top failed step data
+            List of top failed step data with failure counts and rates
         """
-        return self._repository.get_top_failed(filter_data, **kwargs)
+        return self._repository.get_top_failed(
+            filter_data,
+            product_group=product_group,
+            level=level,
+            part_number=part_number,
+            revision=revision,
+            top_count=top_count,
+        )
 
     def get_test_step_analysis(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
@@ -372,25 +401,47 @@ class AppService:
     def get_uut_reports(
         self,
         filter_data: Optional[WATSFilter] = None,
-        **kwargs: Any,
+        *,
+        product_group: Optional[str] = None,
+        level: Optional[str] = None,
+        part_number: Optional[str] = None,
+        revision: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        status: Optional[str] = None,
+        top_count: Optional[int] = None,
     ) -> List[ReportHeader]:
         """
         Get UUT report headers (like Test Reports in Reporting).
 
+        Can be called with a WATSFilter (uses POST) or with explicit parameters (uses GET).
         By default the 1000 newest reports that match the filter are returned.
-        Use topCount filter to change this.
 
         Note: This API is not suitable for workflow or production management,
         use the Production module instead.
 
         Args:
-            filter_data: Optional WATSFilter for POST request
-            **kwargs: Query parameters for GET request
+            filter_data: Optional WATSFilter for POST request (takes precedence)
+            product_group: Filter by product group (GET only)
+            level: Filter by production level (GET only)
+            part_number: Filter by part number (GET only)
+            revision: Filter by revision (GET only)
+            serial_number: Filter by serial number (GET only)
+            status: Filter by status: 'Passed', 'Failed', 'Error' (GET only)
+            top_count: Maximum number of results, default 1000 (GET only)
 
         Returns:
             List of ReportHeader objects
         """
-        return self._repository.get_uut_reports(filter_data, **kwargs)
+        return self._repository.get_uut_reports(
+            filter_data,
+            product_group=product_group,
+            level=level,
+            part_number=part_number,
+            revision=revision,
+            serial_number=serial_number,
+            status=status,
+            top_count=top_count,
+        )
 
     def get_uur_reports(self, filter_data: WATSFilter) -> List[ReportHeader]:
         """

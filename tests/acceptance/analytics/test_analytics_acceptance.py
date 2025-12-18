@@ -3,12 +3,12 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from pywats.domains.app.models import ProcessInfo, YieldData, StepAnalysisRow
-from pywats.domains.app.service import AppService
+from pywats.domains.analytics.models import ProcessInfo, YieldData, StepAnalysisRow
+from pywats.domains.analytics.service import AnalyticsService
 from pywats.domains.report.models import WATSFilter, ReportHeader
 
 
-class DummyAppRepository:
+class DummyAnalyticsRepository:
     def __init__(self) -> None:
         self.process_calls: int = 0
         self.last_filter: Optional[WATSFilter] = None
@@ -38,48 +38,59 @@ class DummyAppRepository:
         self.headers_requested = True
         return [ReportHeader(report_id="ID-001", serial_number="SN-1")]
 
-    def get_uut_reports(self, filter_data: Optional[WATSFilter] = None, **kwargs: Any) -> List[ReportHeader]:
+    def get_uut_reports(
+        self,
+        filter_data: Optional[WATSFilter] = None,
+        *,
+        product_group: Optional[str] = None,
+        level: Optional[str] = None,
+        part_number: Optional[str] = None,
+        revision: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        status: Optional[str] = None,
+        top_count: Optional[int] = None,
+    ) -> List[ReportHeader]:
         return [ReportHeader(report_id="ID-002", serial_number="SN-2")]
 
 
 @pytest.fixture
-def app_service() -> AppService:
-    repository = DummyAppRepository()
-    return AppService(repository=repository)
+def analytics_service() -> AnalyticsService:
+    repository = DummyAnalyticsRepository()
+    return AnalyticsService(repository=repository)
 
 
-def test_get_processes_uses_repository(app_service: AppService) -> None:
-    repo = app_service._repository
+def test_get_processes_uses_repository(analytics_service: AnalyticsService) -> None:
+    repo = analytics_service._repository
 
-    processes = app_service.get_processes()
+    processes = analytics_service.get_processes()
 
     assert len(processes) == 1
     assert processes[0].code == 100
     assert repo.process_calls == 1
 
 
-def test_get_dynamic_yield_passes_filters(app_service: AppService) -> None:
-    repo = app_service._repository
+def test_get_dynamic_yield_passes_filters(analytics_service: AnalyticsService) -> None:
+    repo = analytics_service._repository
     filter_data = WATSFilter(part_number="PN-1")
 
-    result = app_service.get_dynamic_yield(filter_data)
+    result = analytics_service.get_dynamic_yield(filter_data)
 
     assert result
     assert repo.last_filter is filter_data
 
 
-def test_get_serial_number_history_forwards_filters(app_service: AppService) -> None:
+def test_get_serial_number_history_forwards_filters(analytics_service: AnalyticsService) -> None:
     filter_data = WATSFilter(serial_number="SN-ABC")
 
-    headers = app_service.get_serial_number_history(filter_data)
+    headers = analytics_service.get_serial_number_history(filter_data)
 
-    assert app_service._repository.headers_requested
+    assert analytics_service._repository.headers_requested
 
 
-def test_get_test_step_analysis_for_operation_builds_required_filter(app_service: AppService) -> None:
-    repo = app_service._repository
+def test_get_test_step_analysis_for_operation_builds_required_filter(analytics_service: AnalyticsService) -> None:
+    repo = analytics_service._repository
 
-    rows = app_service.get_test_step_analysis_for_operation(
+    rows = analytics_service.get_test_step_analysis_for_operation(
         part_number="PN-1",
         test_operation="100",
         days=7,

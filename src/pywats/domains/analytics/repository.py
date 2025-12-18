@@ -1,6 +1,7 @@
-"""App repository - data access layer.
+"""Analytics repository - data access layer.
 
-All API interactions for statistics, KPIs, and dashboard data.
+All API interactions for statistics, KPIs, yield analysis, and dashboard data.
+Note: Maps to the WATS /api/App/* endpoints (backend naming).
 """
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
 import logging
@@ -19,11 +20,12 @@ from .models import (
 from ..report.models import WATSFilter, ReportHeader
 
 
-class AppRepository:
+class AnalyticsRepository:
     """
-    App/Statistics data access layer.
+    Analytics/Statistics data access layer.
 
-    Handles all WATS API interactions for statistics and KPIs.
+    Handles all WATS API interactions for statistics, KPIs, and yield analysis.
+    Maps to /api/App/* endpoints on the backend.
     """
 
     def __init__(
@@ -400,7 +402,12 @@ class AppRepository:
     def get_top_failed(
         self,
         filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
-        **kwargs: Any,
+        *,
+        product_group: Optional[str] = None,
+        level: Optional[str] = None,
+        part_number: Optional[str] = None,
+        revision: Optional[str] = None,
+        top_count: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get the top failed steps.
@@ -409,7 +416,11 @@ class AppRepository:
 
         Args:
             filter_data: WATSFilter object or dict (for POST)
-            **kwargs: Query parameters (for GET)
+            product_group: Filter by product group (GET only)
+            level: Filter by production level (GET only)
+            part_number: Filter by part number (GET only)
+            revision: Filter by revision (GET only)
+            top_count: Maximum number of results (GET only)
 
         Returns:
             List of failed step dictionaries
@@ -421,8 +432,19 @@ class AppRepository:
                 data = filter_data
             response = self._http_client.post("/api/App/TopFailed", data=data)
         else:
+            params: Dict[str, Any] = {}
+            if product_group:
+                params["productGroup"] = product_group
+            if level:
+                params["level"] = level
+            if part_number:
+                params["partNumber"] = part_number
+            if revision:
+                params["revision"] = revision
+            if top_count is not None:
+                params["topCount"] = top_count
             response = self._http_client.get(
-                "/api/App/TopFailed", params=kwargs if kwargs else None
+                "/api/App/TopFailed", params=params if params else None
             )
         if response.is_success and response.data:
             return (
@@ -579,7 +601,14 @@ class AppRepository:
     def get_uut_reports(
         self,
         filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
-        **kwargs: Any,
+        *,
+        product_group: Optional[str] = None,
+        level: Optional[str] = None,
+        part_number: Optional[str] = None,
+        revision: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        status: Optional[str] = None,
+        top_count: Optional[int] = None,
     ) -> List[ReportHeader]:
         """
         Returns UUT report header info.
@@ -588,7 +617,13 @@ class AppRepository:
 
         Args:
             filter_data: WATSFilter object or dict (for POST)
-            **kwargs: Query parameters (for GET)
+            product_group: Filter by product group (GET only)
+            level: Filter by production level (GET only)
+            part_number: Filter by part number (GET only)
+            revision: Filter by revision (GET only)
+            serial_number: Filter by serial number (GET only)
+            status: Filter by status (GET only)
+            top_count: Maximum results, default 1000 (GET only)
 
         Returns:
             List of ReportHeader objects
@@ -600,8 +635,23 @@ class AppRepository:
                 data = filter_data
             response = self._http_client.post("/api/App/UutReport", data=data)
         else:
+            params: Dict[str, Any] = {}
+            if product_group:
+                params["productGroup"] = product_group
+            if level:
+                params["level"] = level
+            if part_number:
+                params["partNumber"] = part_number
+            if revision:
+                params["revision"] = revision
+            if serial_number:
+                params["serialNumber"] = serial_number
+            if status:
+                params["status"] = status
+            if top_count is not None:
+                params["topCount"] = top_count
             response = self._http_client.get(
-                "/api/App/UutReport", params=kwargs if kwargs else None
+                "/api/App/UutReport", params=params if params else None
             )
         if response.is_success and response.data:
             return [

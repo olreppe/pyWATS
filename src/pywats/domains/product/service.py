@@ -2,7 +2,7 @@
 
 High-level operations for product management.
 """
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from typing import Optional, List, Dict, TYPE_CHECKING
 import logging
 
 if TYPE_CHECKING:
@@ -82,21 +82,32 @@ class ProductService:
         description: Optional[str] = None,
         non_serial: bool = False,
         state: ProductState = ProductState.ACTIVE,
-        **kwargs: Any
+        *,
+        xml_data: Optional[str] = None,
+        product_category_id: Optional[str] = None,
     ) -> Optional[Product]:
         """
         Create a new product.
 
         Args:
-            part_number: Unique part number
-            name: Product name
-            description: Product description
-            non_serial: Whether product can have units
-            state: Product state
-            **kwargs: Additional product fields
+            part_number: Unique part number (required)
+            name: Product display name
+            description: Product description text
+            non_serial: If True, product cannot have serialized units (default: False)
+            state: Product state (default: ProductState.ACTIVE). Values: ACTIVE, INACTIVE
+            xml_data: Custom XML data for key-value storage
+            product_category_id: UUID of product category to assign
 
         Returns:
-            Created Product object
+            Created Product object, or None on failure
+            
+        Example:
+            >>> product = service.create_product(
+            ...     part_number="WIDGET-001",
+            ...     name="Widget Model A",
+            ...     description="Standard widget for testing",
+            ...     state=ProductState.ACTIVE
+            ... )
         """
         product = Product(
             part_number=part_number,
@@ -104,7 +115,8 @@ class ProductService:
             description=description,
             non_serial=non_serial,
             state=state,
-            **kwargs
+            xml_data=xml_data,
+            product_category_id=product_category_id,
         )
         result = self._repository.save(product)
         if result:
@@ -203,21 +215,30 @@ class ProductService:
         name: Optional[str] = None,
         description: Optional[str] = None,
         state: ProductState = ProductState.ACTIVE,
-        **kwargs: Any
+        *,
+        xml_data: Optional[str] = None,
     ) -> Optional[ProductRevision]:
         """
         Create a new product revision.
 
         Args:
-            part_number: Product part number
-            revision: Revision identifier
-            name: Revision name
-            description: Revision description
-            state: Revision state
-            **kwargs: Additional fields
+            part_number: Product part number (required)
+            revision: Revision identifier string (required), e.g., "1.0", "A"
+            name: Revision display name
+            description: Revision description text
+            state: Revision state (default: ProductState.ACTIVE). Values: ACTIVE, INACTIVE
+            xml_data: Custom XML data for key-value storage
 
         Returns:
-            Created ProductRevision object
+            Created ProductRevision object, or None if product not found
+            
+        Example:
+            >>> rev = service.create_revision(
+            ...     part_number="WIDGET-001",
+            ...     revision="1.0",
+            ...     name="Initial Release",
+            ...     state=ProductState.ACTIVE
+            ... )
         """
         # Get product to link revision
         product = self._repository.get_by_part_number(part_number)
@@ -231,7 +252,7 @@ class ProductService:
             state=state,
             product_id=product.product_id,
             part_number=part_number,
-            **kwargs
+            xml_data=xml_data,
         )
         result = self._repository.save_revision(rev)
         if result:

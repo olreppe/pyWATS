@@ -14,8 +14,8 @@ from a single client (hub mode).
 """
 
 import socket
-from dataclasses import dataclass, field, asdict
 from typing import Dict, Optional, Any, Iterator, List
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
 # Common purpose values used in WATS
@@ -31,8 +31,7 @@ class Purpose:
     RMA = "RMA"
 
 
-@dataclass
-class Station:
+class Station(BaseModel):
     """
     Represents a test station identity.
     
@@ -69,17 +68,20 @@ class Station:
                  Development, Repair, Qualification, Calibration.
         description: Optional detailed description of the station.
     """
-    name: str
-    location: str = ""
-    purpose: str = Purpose.DEVELOPMENT
-    description: str = ""
+    model_config = ConfigDict(validate_assignment=True)
     
-    def __post_init__(self):
-        """Validate station name is not empty."""
-        if not self.name or not self.name.strip():
+    name: str = Field(..., description="Station name (appears as machineName in WATS reports)")
+    location: str = Field(default="", description="Physical or logical location")
+    purpose: str = Field(default=Purpose.DEVELOPMENT, description="Testing purpose")
+    description: str = Field(default="", description="Optional station description")
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate station name is not empty and normalize it."""
+        if not v or not v.strip():
             raise ValueError("Station name cannot be empty")
-        # Normalize the name (strip whitespace)
-        self.name = self.name.strip()
+        return v.strip()
     
     @classmethod
     def from_hostname(
@@ -135,12 +137,7 @@ class Station:
         Returns:
             Dictionary with station fields
         """
-        return {
-            "name": self.name,
-            "location": self.location,
-            "purpose": self.purpose,
-            "description": self.description
-        }
+        return self.model_dump()
     
     def copy(self, **kwargs) -> "Station":
         """
@@ -152,9 +149,7 @@ class Station:
         Returns:
             New Station instance
         """
-        data = self.to_dict()
-        data.update(kwargs)
-        return Station.from_dict(data)
+        return self.model_copy(update=kwargs)
     
     def __str__(self) -> str:
         """String representation."""
@@ -164,28 +159,28 @@ class Station:
         if self.purpose:
             parts.append(f"({self.purpose})")
         return " ".join(parts)
-    
-    def __repr__(self) -> str:
-        """Debug representation."""
-        return (
-            f"Station(name={self.name!r}, location={self.location!r}, "
-            f"purpose={self.purpose!r}, description={self.description!r})"
-        )
 
 
-@dataclass
-class StationConfig:
+class StationConfig(BaseModel):
     """
     Configuration for a saved station preset.
     
     Used to persist station configurations in client settings.
+    
+    Attributes:
+        key: Unique identifier within registry
+        name: Station name (machineName)
+        location: Location string
+        purpose: Purpose string
+        description: Optional description
+        is_default: Is this the default station?
     """
-    key: str                      # Unique identifier within registry
-    name: str                     # Station name (machineName)
-    location: str = ""            # Location string
-    purpose: str = Purpose.DEVELOPMENT  # Purpose string
-    description: str = ""         # Optional description
-    is_default: bool = False      # Is this the default station?
+    key: str = Field(..., description="Unique identifier within registry")
+    name: str = Field(..., description="Station name (machineName)")
+    location: str = Field(default="", description="Location string")
+    purpose: str = Field(default=Purpose.DEVELOPMENT, description="Purpose string")
+    description: str = Field(default="", description="Optional description")
+    is_default: bool = Field(default=False, description="Is this the default station?")
     
     def to_station(self) -> Station:
         """Convert to Station instance."""
@@ -210,12 +205,12 @@ class StationConfig:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
-        return asdict(self)
+        return self.model_dump()
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "StationConfig":
         """Create from dictionary."""
-        return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
+        return cls.model_validate(data)
 
 
 class StationRegistry:

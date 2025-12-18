@@ -30,7 +30,7 @@ from .domains.production import (
 )
 from .domains.report import ReportService, ReportRepository
 from .domains.software import SoftwareService, SoftwareRepository
-from .domains.app import AppService, AppRepository
+from .domains.analytics import AnalyticsService, AnalyticsRepository
 from .domains.rootcause import RootCauseService, RootCauseRepository
 from .domains.process import (
     ProcessService, 
@@ -50,7 +50,7 @@ class pyWATS:
     - production: Production/unit management
     - report: Report querying and submission
     - software: Software distribution
-    - app: Statistics and KPIs
+    - analytics: Yield statistics, KPIs, and failure analysis (also available as 'app')
     - rootcause: Ticketing system for issue collaboration
     
     Station Configuration:
@@ -152,7 +152,7 @@ class pyWATS:
         self._production_internal: Optional[ProductionServiceInternal] = None
         self._report: Optional[ReportService] = None
         self._software: Optional[SoftwareService] = None
-        self._app: Optional[AppService] = None
+        self._analytics: Optional[AnalyticsService] = None
         self._rootcause: Optional[RootCauseService] = None
         self._process: Optional[ProcessService] = None
         self._process_internal: Optional[ProcessServiceInternal] = None
@@ -312,17 +312,41 @@ class pyWATS:
         return self._software
     
     @property
-    def app(self) -> AppService:
+    def analytics(self) -> AnalyticsService:
         """
-        Access statistics and KPI operations.
+        Access yield statistics, KPIs, and failure analysis.
+        
+        Provides high-level operations for:
+        - Yield statistics (dynamic yield, volume yield, worst yield)
+        - Failure analysis (top failed steps, test step analysis)
+        - Production metrics (OEE, measurements)
+        - Report queries (serial number history, UUT/UUR reports)
+        
+        Example:
+            >>> # Get yield for a product
+            >>> yield_data = api.analytics.get_dynamic_yield(
+            ...     WATSFilter(part_number="WIDGET-001", period_count=30)
+            ... )
+            >>> # Get top failures
+            >>> failures = api.analytics.get_top_failed(part_number="WIDGET-001")
         
         Returns:
-            AppService instance
+            AnalyticsService instance
         """
-        if self._app is None:
-            repo = AppRepository(self._http_client, self._error_handler)
-            self._app = AppService(repo)
-        return self._app
+        if self._analytics is None:
+            repo = AnalyticsRepository(self._http_client, self._error_handler)
+            self._analytics = AnalyticsService(repo)
+        return self._analytics
+    
+    @property
+    def app(self) -> AnalyticsService:
+        """
+        Deprecated alias for `analytics`. Use `analytics` instead.
+        
+        Returns:
+            AnalyticsService instance
+        """
+        return self.analytics
     
     @property
     def rootcause(self) -> RootCauseService:

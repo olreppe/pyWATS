@@ -48,10 +48,16 @@ from .domains.rootcause import (
     TicketUpdate, TicketUpdateType, TicketAttachment
 )
 from .domains.report import WATSFilter, ReportHeader, Attachment
-from .domains.app import YieldData, ProcessInfo, LevelInfo
+from .domains.analytics import YieldData, ProcessInfo, LevelInfo
 
 # Common models from shared
 from .shared import Setting, PyWATSModel
+
+# Result types for structured error handling (LLM/Agent-friendly)
+from .shared import Result, Success, Failure, ErrorCode, failure_from_exception
+
+# Discovery helpers for API exploration (LLM/Agent-friendly)
+from .shared import discover
 
 # Comparison operator for step limits (convenient top-level import)
 from .domains.report.report_models.uut.steps.comp_operator import CompOp
@@ -115,6 +121,14 @@ __all__ = [
     # Common models
     "Setting",
     "PyWATSModel",
+    # Result types for structured error handling
+    "Result",
+    "Success",
+    "Failure",
+    "ErrorCode",
+    "failure_from_exception",
+    # Discovery helpers
+    "discover",
     # Comparison operator for limits
     "CompOp",
 ]

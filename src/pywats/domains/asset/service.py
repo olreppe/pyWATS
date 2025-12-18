@@ -2,7 +2,7 @@
 
 Provides high-level operations for asset management.
 """
-from typing import Optional, List, Any, Dict, Union
+from typing import Optional, List, Dict, Union
 from datetime import datetime
 from uuid import UUID
 from pathlib import Path
@@ -88,23 +88,55 @@ class AssetService:
         location: Optional[str] = None,
         parent_asset_id: Optional[str] = None,
         parent_serial_number: Optional[str] = None,
-        **kwargs: Any
+        *,
+        part_number: Optional[str] = None,
+        revision: Optional[str] = None,
+        state: AssetState = AssetState.OK,
+        client_id: Optional[int] = None,
+        first_seen_date: Optional[datetime] = None,
+        last_seen_date: Optional[datetime] = None,
+        last_maintenance_date: Optional[datetime] = None,
+        next_maintenance_date: Optional[datetime] = None,
+        last_calibration_date: Optional[datetime] = None,
+        next_calibration_date: Optional[datetime] = None,
+        total_count: Optional[int] = None,
+        running_count: Optional[int] = None,
     ) -> Optional[Asset]:
         """
         Create a new asset.
 
         Args:
-            serial_number: Unique serial number
-            type_id: Asset type ID
+            serial_number: Unique serial number (required)
+            type_id: Asset type UUID (required)
             asset_name: Optional display name
-            description: Optional description
-            location: Optional location
-            parent_asset_id: Optional parent asset ID for hierarchy
-            parent_serial_number: Optional parent serial number for hierarchy
-            **kwargs: Additional asset fields
+            description: Optional description text
+            location: Optional physical location
+            parent_asset_id: Parent asset ID for hierarchical assets
+            parent_serial_number: Parent asset serial number for hierarchy
+            part_number: Asset part number
+            revision: Asset revision string
+            state: Asset state (default: AssetState.OK). Values: OK, Warning, Alarm, etc.
+            client_id: Client identifier
+            first_seen_date: Date asset was first seen
+            last_seen_date: Date asset was last seen
+            last_maintenance_date: Date of last maintenance
+            next_maintenance_date: Date of next scheduled maintenance
+            last_calibration_date: Date of last calibration
+            next_calibration_date: Date of next scheduled calibration
+            total_count: Total usage count
+            running_count: Running count since last calibration
 
         Returns:
-            Created Asset object
+            Created Asset object, or None on failure
+            
+        Example:
+            >>> asset = service.create_asset(
+            ...     serial_number="SN-001",
+            ...     type_id=my_type_id,
+            ...     asset_name="Test Station 1",
+            ...     location="Lab A",
+            ...     state=AssetState.OK
+            ... )
         """
         asset = Asset(
             serial_number=serial_number,
@@ -114,7 +146,18 @@ class AssetService:
             location=location,
             parent_asset_id=parent_asset_id,
             parent_serial_number=parent_serial_number,
-            **kwargs
+            part_number=part_number,
+            revision=revision,
+            state=state,
+            client_id=client_id,
+            first_seen_date=first_seen_date,
+            last_seen_date=last_seen_date,
+            last_maintenance_date=last_maintenance_date,
+            next_maintenance_date=next_maintenance_date,
+            last_calibration_date=last_calibration_date,
+            next_calibration_date=next_calibration_date,
+            total_count=total_count,
+            running_count=running_count,
         )
         result = self._repository.save(asset)
         if result:
@@ -262,7 +305,8 @@ class AssetService:
             serial_number=asset.serial_number
         )
         if status:
-            alarm_state = status.get("alarmState", 0)
+            # Support both snake_case (preferred) and camelCase (backend) keys
+            alarm_state = status.get("alarm_state") or status.get("alarmState", 0)
             return bool(alarm_state == AssetAlarmState.ALARM.value)
         return False
 
@@ -281,7 +325,8 @@ class AssetService:
             serial_number=asset.serial_number
         )
         if status:
-            alarm_state = status.get("alarmState", 0)
+            # Support both snake_case (preferred) and camelCase (backend) keys
+            alarm_state = status.get("alarm_state") or status.get("alarmState", 0)
             return bool(alarm_state == AssetAlarmState.WARNING.value)
         return False
 
@@ -302,7 +347,9 @@ class AssetService:
                 asset_id=asset.asset_id,
                 serial_number=asset.serial_number
             )
-            if status and status.get("alarmState") == AssetAlarmState.ALARM.value:
+            # Support both snake_case (preferred) and camelCase (backend) keys
+            alarm_state = status.get("alarm_state") or status.get("alarmState") if status else None
+            if alarm_state == AssetAlarmState.ALARM.value:
                 result.append(asset)
         return result
 
@@ -320,7 +367,9 @@ class AssetService:
                 asset_id=asset.asset_id,
                 serial_number=asset.serial_number
             )
-            if status and status.get("alarmState") == AssetAlarmState.WARNING.value:
+            # Support both snake_case (preferred) and camelCase (backend) keys
+            alarm_state = status.get("alarm_state") or status.get("alarmState") if status else None
+            if alarm_state == AssetAlarmState.WARNING.value:
                 result.append(asset)
         return result
 
@@ -514,23 +563,32 @@ class AssetService:
         maintenance_interval: Optional[float] = None,
         warning_threshold: Optional[float] = None,
         alarm_threshold: Optional[float] = None,
-        **kwargs: Any
+        *,
+        icon: Optional[str] = None,
     ) -> Optional[AssetType]:
         """
         Create a new asset type.
 
         Args:
-            type_name: Name of the asset type
-            running_count_limit: Max running count (triggers alarm)
-            total_count_limit: Max total count
-            calibration_interval: Days between calibrations
-            maintenance_interval: Days between maintenance
+            type_name: Name of the asset type (required)
+            running_count_limit: Max running count before alarm triggers
+            total_count_limit: Maximum total usage count
+            calibration_interval: Days between calibrations (float)
+            maintenance_interval: Days between maintenance (float)
             warning_threshold: Warning threshold percentage (0-100)
             alarm_threshold: Alarm threshold percentage (0-100)
-            **kwargs: Additional fields
+            icon: Icon identifier string for UI display
 
         Returns:
-            Created AssetType object
+            Created AssetType object, or None on failure
+            
+        Example:
+            >>> asset_type = service.create_asset_type(
+            ...     type_name="Test Station",
+            ...     calibration_interval=365.0,
+            ...     warning_threshold=80.0,
+            ...     alarm_threshold=90.0
+            ... )
         """
         asset_type = AssetType(
             type_name=type_name,
@@ -540,7 +598,7 @@ class AssetService:
             maintenance_interval=maintenance_interval,
             warning_threshold=warning_threshold,
             alarm_threshold=alarm_threshold,
-            **kwargs
+            icon=icon,
         )
         result = self._repository.save_type(asset_type)
         if result:
@@ -580,27 +638,48 @@ class AssetService:
         child_serial: str,
         child_type_id: UUID,
         child_name: Optional[str] = None,
-        **kwargs: Any
+        *,
+        description: Optional[str] = None,
+        location: Optional[str] = None,
+        part_number: Optional[str] = None,
+        revision: Optional[str] = None,
+        state: AssetState = AssetState.OK,
     ) -> Optional[Asset]:
         """
         Create a new child asset under a parent.
 
         Args:
-            parent_serial: Parent asset serial number
-            child_serial: New child asset serial number
-            child_type_id: Asset type ID for child
+            parent_serial: Parent asset serial number (required)
+            child_serial: New child asset serial number (required)
+            child_type_id: Asset type UUID for child (required)
             child_name: Optional display name for child
-            **kwargs: Additional asset fields
+            description: Optional description text
+            location: Optional physical location
+            part_number: Child asset part number
+            revision: Child asset revision string
+            state: Asset state (default: AssetState.OK)
 
         Returns:
-            Created child Asset object
+            Created child Asset object, or None on failure
+            
+        Example:
+            >>> child = service.add_child_asset(
+            ...     parent_serial="PARENT-001",
+            ...     child_serial="CHILD-001",
+            ...     child_type_id=probe_type_id,
+            ...     child_name="Probe A"
+            ... )
         """
         child = Asset(
             serial_number=child_serial,
             type_id=child_type_id,
             asset_name=child_name,
             parent_serial_number=parent_serial,
-            **kwargs
+            description=description,
+            location=location,
+            part_number=part_number,
+            revision=revision,
+            state=state,
         )
         result = self._repository.save(child)
         if result:

@@ -691,12 +691,13 @@ class ReportService:
         result = self._repository.post_wsjf(report)
         if result:
             # Extract identifying info for logging
+            # Prefer snake_case (part_number, serial_number), fallback to aliases (pn, sn, partNumber, serialNumber)
             if isinstance(report, dict):
-                pn = report.get('pn') or report.get('partNumber', 'unknown')
-                sn = report.get('sn') or report.get('serialNumber', 'unknown')
+                pn = report.get('part_number') or report.get('pn') or report.get('partNumber', 'unknown')
+                sn = report.get('serial_number') or report.get('sn') or report.get('serialNumber', 'unknown')
             else:
-                pn = getattr(report, 'pn', None) or getattr(report, 'part_number', 'unknown')
-                sn = getattr(report, 'sn', None) or getattr(report, 'serial_number', 'unknown')
+                pn = getattr(report, 'part_number', None) or getattr(report, 'pn', None) or 'unknown'
+                sn = getattr(report, 'serial_number', None) or getattr(report, 'sn', None) or 'unknown'
             logger.info(f"REPORT_SUBMITTED: id={result} (pn={pn}, sn={sn})")
         return result
 

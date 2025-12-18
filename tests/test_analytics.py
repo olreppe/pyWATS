@@ -1,17 +1,19 @@
 """
-Tests for app module - statistics and KPI endpoints
+Tests for analytics module - statistics and KPI endpoints
 
 These tests make actual API calls to the WATS server.
+Uses api.app alias to test backward compatibility.
+(api.analytics is the new preferred name)
 """
 from typing import Any
 import pytest
 
 
-class TestAppVersion:
-    """Test app version endpoint"""
+class TestAnalyticsVersion:
+    """Test analytics version endpoint"""
 
     def test_get_version(self, wats_client: Any) -> None:
-        """Test getting API version"""
+        """Test getting API version (using api.app alias for backward compat)"""
         print("\n=== GET VERSION ===")
         
         version = wats_client.app.get_version()

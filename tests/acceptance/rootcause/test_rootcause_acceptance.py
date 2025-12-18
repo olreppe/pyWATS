@@ -63,4 +63,3 @@ def test_assign_ticket_updates_assignee(rootcause_service: RootCauseService) -> 
     assert result is not None
     assert rootcause_service._repository.updated is not None
     assert rootcause_service._repository.updated.assignee == "assigned"
-*** End of file***

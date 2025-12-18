@@ -1,11 +1,31 @@
-"""App domain module.
+"""Backward compatibility shim - use pywats.domains.analytics instead.
 
-Provides statistics, KPIs, and dashboard data services.
+DEPRECATED: This module is deprecated. Import from pywats.domains.analytics instead.
+
+Example:
+    # Old (deprecated)
+    from pywats.domains.app import AppService
+    
+    # New (preferred)
+    from pywats.domains.analytics import AnalyticsService
 """
-from .enums import YieldDataType, ProcessType
-from .models import YieldData, ProcessInfo, LevelInfo, ProductGroup, StepAnalysisRow
-from .repository import AppRepository
-from .service import AppService
+import warnings
+
+# Re-export everything from analytics for backward compatibility
+from ..analytics import (
+    YieldDataType,
+    ProcessType,
+    YieldData,
+    ProcessInfo,
+    LevelInfo,
+    ProductGroup,
+    StepAnalysisRow,
+    AnalyticsRepository,
+    AnalyticsService,
+    # Backward compatibility aliases
+    AppRepository,
+    AppService,
+)
 
 __all__ = [
     # Enums
@@ -17,7 +37,10 @@ __all__ = [
     "LevelInfo",
     "ProductGroup",
     "StepAnalysisRow",
-    # Repository & Service
+    # Repository & Service (new names)
+    "AnalyticsRepository",
+    "AnalyticsService",
+    # Deprecated aliases
     "AppRepository",
     "AppService",
 ]
