@@ -11,6 +11,9 @@ from pywats_agent.tools.yield_tool import (
 )
 
 
+pytestmark = pytest.mark.agent  # Mark all tests in this module as agent tests
+
+
 class TestPerspectiveResolution:
     """Tests for perspective resolution from natural language."""
 

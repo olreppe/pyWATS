@@ -6,8 +6,8 @@ This module provides pytest providers for testing the PyWATS library and client.
 Test Instance Architecture:
 --------------------------
 Two persistent test instances are available (ClientA and ClientB) that:
-- Store configs in tests/instances/ (version controlled)
-- Store data in tests/instances/data/ (gitignored)
+- Store configs in api-tests/instances/ (version controlled)
+- Store data in api-tests/instances/data/ (gitignored)
 - Can be customized independently for different test scenarios
 
 Provider Usage:
@@ -31,11 +31,18 @@ Client application testing (full pyWATSApplication):
         assert client_config_a.instance_name == "Test Client A"
 
 Running GUI with test instances:
-    python -m tests.test_instances --client A --gui
-    python -m tests.test_instances --client B --gui
+    python -m api-tests.test_instances --client A --gui
+    python -m api-tests.test_instances --client B --gui
 """
 from typing import Generator, Dict, TYPE_CHECKING
+from pathlib import Path
+import sys
 import pytest
+
+# Add api-tests directory to path for imports
+_api_tests_dir = Path(__file__).parent
+if str(_api_tests_dir) not in sys.path:
+    sys.path.insert(0, str(_api_tests_dir))
 
 from pywats import pyWATS
 
@@ -51,7 +58,7 @@ if TYPE_CHECKING:
 @pytest.fixture(scope="session")
 def test_instance_manager():
     """Get the test instance manager for managing test configurations."""
-    from tests.test_instances import get_test_instance_manager
+    from test_instances import get_test_instance_manager
     return get_test_instance_manager()
 
 
@@ -65,9 +72,9 @@ def wats_config() -> Dict[str, str]:
     WATS configuration for Client A.
     
     This is the primary test configuration used by most tests.
-    Configuration is stored in tests/instances/client_a_config.json
+    Configuration is stored in api-tests/instances/client_a_config.json
     """
-    from tests.test_instances import get_test_instance_manager
+    from test_instances import get_test_instance_manager
     manager = get_test_instance_manager()
     config = manager.get_test_instance_config("A")
     return {
@@ -144,9 +151,9 @@ def wats_config_b() -> Dict[str, str]:
     WATS configuration for Client B.
     
     This is the secondary test configuration for comparison testing.
-    Configuration is stored in tests/instances/client_b_config.json
+    Configuration is stored in api-tests/instances/client_b_config.json
     """
-    from tests.test_instances import get_test_instance_manager
+    from test_instances import get_test_instance_manager
     manager = get_test_instance_manager()
     config = manager.get_test_instance_config("B")
     return {
