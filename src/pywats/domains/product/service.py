@@ -2,7 +2,7 @@
 
 High-level operations for product management.
 """
-from typing import Optional, List, Dict, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 import logging
 
 if TYPE_CHECKING:

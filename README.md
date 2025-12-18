@@ -1,7 +1,7 @@
 # PyWATS
 
 [![PyPI version](https://badge.fury.io/py/pywats-api.svg)](https://badge.fury.io/py/pywats-api)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Python library for interacting with the [WATS](https://wats.com) (Web-based Automated Test System) API.
@@ -10,7 +10,7 @@ A Python library for interacting with the [WATS](https://wats.com) (Web-based Au
 
 ## Requirements
 
-- **Python 3.8** or later
+- **Python 3.10** or later
 - **WATS Server 2025.3.9.824** or later
 
 ## Features

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Python Version Requirement** - Minimum Python version raised from 3.8 to 3.10
+  - Updated `requires-python` in pyproject.toml
+  - Updated README badges and requirements section
+  - Updated CI workflow to test Python 3.10, 3.11, and 3.12
+
+### Fixed
+
+- **Import Errors** - Fixed F821 errors for missing `Any` type imports
+  - Added `Any` import to `asset/service.py`
+  - Added `Any` import to `product/service.py`
+
 ## [0.1.0b6] - 2025-12-18
 
 ### Added

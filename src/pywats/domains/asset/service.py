@@ -2,7 +2,7 @@
 
 Provides high-level operations for asset management.
 """
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union, Any
 from datetime import datetime
 from uuid import UUID
 from pathlib import Path
