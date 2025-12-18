@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Repository Organization** - Moved working documentation files to `docs/working-notes/`
+  - Moved 20+ internal documentation files out of root directory
+  - Created `docs/working-notes/` for development notes and status tracking
+  - Root directory now cleaner with only essential project files
+  - Updated references in README.md and GUI_CONFIGURATION.md
+
 - **Python Version Requirement** - Minimum Python version raised from 3.8 to 3.10
   - Updated `requires-python` in pyproject.toml
   - Updated README badges and requirements section

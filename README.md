@@ -127,7 +127,7 @@ logging.getLogger('pywats').setLevel(logging.DEBUG)
 api = pyWATS(base_url="...", token="...")
 ```
 
-See [LOGGING_STRATEGY.md](LOGGING_STRATEGY.md) for comprehensive logging documentation.
+See [LOGGING_STRATEGY.md](docs/working-notes/LOGGING_STRATEGY.md) for comprehensive logging documentation.
 
 ## Running the GUI Client
 

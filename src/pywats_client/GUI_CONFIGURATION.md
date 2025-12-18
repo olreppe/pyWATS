@@ -262,6 +262,6 @@ For stations behind corporate proxy:
 
 ## Related Documentation
 
-- [PyWATS Library Logging Strategy](../../LOGGING_STRATEGY.md)
+- [PyWATS Library Logging Strategy](../../docs/working-notes/LOGGING_STRATEGY.md)
 - [Architecture Documentation](../../docs/ARCHITECTURE.md)
 - [Client README](README.md)
