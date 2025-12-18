@@ -17,33 +17,33 @@ from ...core import HttpClient
 class AssetRepositoryInternal:
     """
     Asset data access layer using internal API for file operations.
-    
+
     ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-    
+
     Uses:
     - POST /api/internal/Blob/Asset (upload file)
     - GET /api/internal/Blob/Asset (download file)
     - GET /api/internal/Blob/Asset/List/{assetId} (list files)
     - DELETE /api/internal/Blob/Assets (delete files)
-    
+
     The internal API requires the Referer header.
     """
-    
+
     def __init__(self, http_client: HttpClient, base_url: str):
         """
         Initialize repository with HTTP client and base URL.
-        
+
         Args:
             http_client: The HTTP client for API calls
             base_url: The base URL (needed for Referer header)
         """
         self._http = http_client
         self._base_url = base_url.rstrip('/')
-    
+
     def _internal_get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """
         Make an internal API GET request with Referer header.
-        
+
         ⚠️ INTERNAL: Adds Referer header required by internal API.
         """
         response = self._http.get(
@@ -54,7 +54,7 @@ class AssetRepositoryInternal:
         if response.is_success:
             return response.data
         return None
-    
+
     def _internal_post(
         self,
         endpoint: str,
@@ -64,7 +64,7 @@ class AssetRepositoryInternal:
     ) -> Any:
         """
         Make an internal API POST request with Referer header.
-        
+
         ⚠️ INTERNAL: Adds Referer header required by internal API.
         """
         all_headers = {"Referer": self._base_url}
@@ -77,7 +77,7 @@ class AssetRepositoryInternal:
             headers=all_headers
         )
         return response
-    
+
     def _internal_delete(
         self,
         endpoint: str,
@@ -86,7 +86,7 @@ class AssetRepositoryInternal:
     ) -> bool:
         """
         Make an internal API DELETE request with Referer header.
-        
+
         ⚠️ INTERNAL: Adds Referer header required by internal API.
         """
         response = self._http.delete(
@@ -96,11 +96,11 @@ class AssetRepositoryInternal:
             headers={"Referer": self._base_url}
         )
         return response.is_success
-    
+
     # =========================================================================
     # File Operations (Blob)
     # =========================================================================
-    
+
     def upload_file(
         self,
         asset_id: str,
@@ -111,9 +111,9 @@ class AssetRepositoryInternal:
         Upload a file to an asset.
 
         POST /api/internal/Blob/Asset
-        
+
         ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
-        
+
         Args:
             asset_id: Asset ID (GUID)
             filename: Unique filename for the file
@@ -130,7 +130,7 @@ class AssetRepositoryInternal:
             headers={"Content-Type": "application/octet-stream"}
         )
         return response.is_success if response else False
-    
+
     def download_file(
         self,
         asset_id: str,
@@ -140,13 +140,13 @@ class AssetRepositoryInternal:
         Download a file from an asset.
 
         GET /api/internal/Blob/Asset
-        
+
         ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
-        
+
         Args:
             asset_id: Asset ID (GUID)
             filename: Filename to download
-            
+
         Returns:
             File content as bytes, or None if not found
         """
@@ -166,18 +166,18 @@ class AssetRepositoryInternal:
                 if content:
                     return base64.b64decode(content)
         return None
-    
+
     def list_files(self, asset_id: str) -> List[str]:
         """
         List all files attached to an asset.
 
         GET /api/internal/Blob/Asset/List/{assetId}
-        
+
         ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
-        
+
         Args:
             asset_id: Asset ID (GUID)
-            
+
         Returns:
             List of filenames
         """
@@ -185,7 +185,7 @@ class AssetRepositoryInternal:
         if data:
             return list(data) if isinstance(data, list) else []
         return []
-    
+
     def delete_files(
         self,
         asset_id: str,
@@ -195,9 +195,9 @@ class AssetRepositoryInternal:
         Delete files from an asset.
 
         DELETE /api/internal/Blob/Assets
-        
+
         ⚠️ INTERNAL API - Uses internal endpoint with Referer header.
-        
+
         Args:
             asset_id: Asset ID (GUID)
             filenames: List of filenames to delete

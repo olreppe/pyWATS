@@ -35,7 +35,7 @@ class AnalyticsRepository:
     """
 
     def __init__(
-        self, 
+        self,
         http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
@@ -63,13 +63,13 @@ class AnalyticsRepository:
             Version string (e.g., "24.1.0") or None
         """
         response = self._http_client.get("/api/App/Version")
-        
+
         if self._error_handler:
             data = self._error_handler.handle_response(
                 response, operation="get_version", allow_empty=True
             )
             return str(data) if data else None
-        
+
         # Backward compatibility: original behavior
         if response.is_success and response.data:
             return str(response.data)
@@ -85,7 +85,7 @@ class AnalyticsRepository:
             List of ProcessInfo objects
         """
         response = self._http_client.get("/api/App/Processes")
-        
+
         if self._error_handler:
             data = self._error_handler.handle_response(
                 response, operation="get_processes", allow_empty=True
@@ -93,7 +93,7 @@ class AnalyticsRepository:
             if data:
                 return [ProcessInfo.model_validate(item) for item in data]
             return []
-        
+
         # Backward compatibility
         if response.is_success and response.data:
             return [ProcessInfo.model_validate(item) for item in response.data]
@@ -109,7 +109,7 @@ class AnalyticsRepository:
             List of LevelInfo objects
         """
         response = self._http_client.get("/api/App/Levels")
-        
+
         if self._error_handler:
             data = self._error_handler.handle_response(
                 response, operation="get_levels", allow_empty=True
@@ -117,7 +117,7 @@ class AnalyticsRepository:
             if data:
                 return [LevelInfo.model_validate(item) for item in data]
             return []
-        
+
         # Backward compatibility
         if response.is_success and response.data:
             return [LevelInfo.model_validate(item) for item in response.data]
@@ -133,7 +133,7 @@ class AnalyticsRepository:
             List of ProductGroup objects
         """
         response = self._http_client.get("/api/App/ProductGroups")
-        
+
         if self._error_handler:
             data = self._error_handler.handle_response(
                 response, operation="get_product_groups", allow_empty=True
@@ -141,7 +141,7 @@ class AnalyticsRepository:
             if data:
                 return [ProductGroup.model_validate(item) for item in data]
             return []
-        
+
         # Backward compatibility
         if response.is_success and response.data:
             return [

@@ -11,7 +11,7 @@ from .comp_operator import CompOp
 class NumericMeasurement(LimitMeasurement):
     value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)
     unit: Optional[str] = Field(None, description="The units of the measurement.")
- 
+
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization
         "arbitrary_types_allowed": True,    # Fixes StepList issue
@@ -25,7 +25,7 @@ class MultiNumericMeasurement(LimitMeasurement):
     name: str = Field(..., description="The name of the measurement - required for MultiStepTypes")
     value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)
     unit: Optional[str] = Field(None, description="The units of the measurement.")
-    
+
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization
         "arbitrary_types_allowed": True,    # Fixes StepList issue
@@ -46,17 +46,17 @@ class NumericStep(Step):
     def unpack_measurement(cls, data: dict) -> dict:
         if 'numericMeas' in data:
             meas_data = data['numericMeas']
-            
+
             # Convert list to single item
             if isinstance(meas_data, list):
                 data['numericMeas'] = meas_data[0] if meas_data else None
-            
+
             # Ensure dicts get converted to models
             if isinstance(data['numericMeas'], dict):
                 data['numericMeas'] = NumericMeasurement(**data['numericMeas'])
-    
+
         return data
-    
+
     # Custom serializer for the measurement field
     @field_serializer('measurement', when_used='json')
     def serialize_measurement(self, measurement: Optional[NumericMeasurement]) -> list:
@@ -78,12 +78,12 @@ class NumericStep(Step):
                 comp_op = CompOp[comp_op]
             except (KeyError, ValueError):
                 comp_op = CompOp.LOG  # Default fallback
-        
+
         if not comp_op.validate_limits(low_limit=self.measurement.low_limit, high_limit=self.measurement.high_limit):
             errors.append(f"{self.get_step_path()} Invalig limits / comp_op.")
             return False
         return True
-    
+
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization
         "arbitrary_types_allowed": True,    # Fixes StepList issue
@@ -116,19 +116,19 @@ class MultiNumericStep(Step):
                     comp_op = CompOp[comp_op]
                 except (KeyError, ValueError):
                     comp_op = CompOp.LOG  # Default fallback
-            
+
             if not comp_op.validate_limits(low_limit=m.low_limit, high_limit=m.high_limit):
                 errors.append(f"{self.get_step_path()} Measurement index: {index} - Invalid limits / comp_op.")
                 valid_limits = False
         if not valid_limits:
             return False
-        
+
         # Validate measurement count
         if len(self.measurements) < 2:
             errors.append(f"{self.get_step_path()} MultiNumericStep requires more than one measurement.")
             return False
-        
-        # Validate that step status corresponds with measurement statuses. 
+
+        # Validate that step status corresponds with measurement statuses.
         statuslist = [m.status for m in self.measurements]
         if self.status == StepStatus.Passed:
             # Step is "P", all measurements must be "P"
@@ -143,7 +143,7 @@ class MultiNumericStep(Step):
         return True
 
     def add_measurement(self,*, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float=None, low_limit:float=None):
-        name = self.check_for_duplicates(name) 
+        name = self.check_for_duplicates(name)
         nm = MultiNumericMeasurement(name=name, value=value, unit=unit, status=status, comp_op=comp_op, high_limit=high_limit, low_limit=low_limit, parent_step=self)
         self.measurements.append(nm)
 

@@ -23,7 +23,5 @@ class ChartStep(MultiNumericStep):
 
         # Validate ChartStep here
         # Must have a valid chart
-        
+
         return True
-
-

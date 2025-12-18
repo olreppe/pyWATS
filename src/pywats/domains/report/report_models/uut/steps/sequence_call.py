@@ -90,7 +90,7 @@ class SequenceCallInfo(WATSBase):
 class SequenceCall(Step):
     """
     Class: SequenceCall
-    
+
     sequence(uut):  UUTInfo
     steps:          StepList[StepType]
     """
@@ -102,7 +102,7 @@ class SequenceCall(Step):
     # with complex inheritance and field structures. Instead, we rely on union type resolution
     # which tries each type in order. GenericStep is last in the Union to act as fallback.
     steps: Optional[StepList[StepType]] = Field(default_factory=StepList)
-    
+
     # Model validator (after) - Converts list to StepList and sets parent references
     @model_validator(mode="after")
     def assign_parent(self):
@@ -114,28 +114,28 @@ class SequenceCall(Step):
             self.steps = StepList(self.steps)
         # Set parent reference for all child steps
         self.steps.set_parent(self)
-        return self  
+        return self
 
     # validate_step - all step types
     def validate_step(self, trigger_children=False, errors=None) -> bool:
         if errors is None:
             errors = []
-        
+
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
-        
+
         # Sequence Call Validation:
-        
+
         # Validate child steps
         if trigger_children:
             for step in self.steps:
                 if not step.validate_step(trigger_children=trigger_children, errors=errors):
-                    return False            
-        
+                    return False
+
         return True
- 
+
     # --------------------------------------------
-    # AddSequenceCall() - Create a new sub-sequence below the current sequence call object 
+    # AddSequenceCall() - Create a new sub-sequence below the current sequence call object
     def add_sequence_call(self, name: str, file_name: str = "SequenceFilename.seq", version: str = "1.0.0.0", path: str = "NaN") -> 'SequenceCall':
         new_seq = SequenceCall()
         new_seq.name = name
@@ -154,13 +154,13 @@ class SequenceCall(Step):
                          comp_op: CompOp = CompOp.LOG,
                          low_limit: float = None,
                          high_limit: float = None,
-                         status: str = "P", 
-                         id: Optional[Union[int, str]] = None, 
-                         group: str = "M", 
-                         error_code: Optional[Union[int, str]] = None, 
-                         error_message: Optional[str] = None, 
-                         reportText: Optional[str] = None, 
-                         start: Optional[str] = None, 
+                         status: str = "P",
+                         id: Optional[Union[int, str]] = None,
+                         group: str = "M",
+                         error_code: Optional[Union[int, str]] = None,
+                         error_message: Optional[str] = None,
+                         reportText: Optional[str] = None,
+                         start: Optional[str] = None,
                          tot_time: Optional[Union[float, str]] = None):
         if status == "S":
             value = "NaN"
@@ -171,22 +171,22 @@ class SequenceCall(Step):
         ns.measurement = nm
         self.steps.append(ns)
         return ns
-    
+
         # --------------------------------------------
     # AddNumericLimitStep()
     def add_multi_numeric_step(self, *,
                          name: str,
-                         status: str = "P", 
-                         id: Optional[Union[int, str]] = None, 
-                         group: str = "M", 
-                         error_code: Optional[Union[int, str]] = None, 
-                         error_message: Optional[str] = None, 
-                         reportText: Optional[str] = None, 
-                         start: Optional[str] = None, 
+                         status: str = "P",
+                         id: Optional[Union[int, str]] = None,
+                         group: str = "M",
+                         error_code: Optional[Union[int, str]] = None,
+                         error_message: Optional[str] = None,
+                         reportText: Optional[str] = None,
+                         start: Optional[str] = None,
                          tot_time: Optional[Union[float, str]] = None):
         ns = MultiNumericStep(name=name, status=status, id=id, group=group, errorCode=error_code, error_message=error_message, reportText=reportText, start=start, totTime=tot_time, parent=self)
         self.steps.append(ns)
-        return ns   
+        return ns
     # --------------------------------------------
     # Add a single string step
     def add_string_step(self, *,
@@ -195,20 +195,20 @@ class SequenceCall(Step):
                         unit: str = "Na",
                         comp_op: CompOp = CompOp.LOG,
                         limit: str = None,
-                        status: str = "P", 
-                        id: Optional[Union[int, str]] = None, 
-                        group: str = "M", 
-                        error_code: Optional[Union[int, str]] = None, 
-                        error_message: Optional[str] = None, 
-                        report_text: Optional[str] = None, 
-                        start: Optional[str] = None, 
+                        status: str = "P",
+                        id: Optional[Union[int, str]] = None,
+                        group: str = "M",
+                        error_code: Optional[Union[int, str]] = None,
+                        error_message: Optional[str] = None,
+                        report_text: Optional[str] = None,
+                        start: Optional[str] = None,
                         tot_time: Optional[Union[float, str]] = None) -> StringStep:
         """
         """
         if status == "S":
             value = "Null"
             comp_op = CompOp.LOG
-               
+
         ss = StringStep(name=name, value=value, unit=unit, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)
         ss.measurement= StringMeasurement(value=value, unit=unit, status=status, comp_op=comp_op, limit=limit)
         self.steps.append(ss)
@@ -217,13 +217,13 @@ class SequenceCall(Step):
         # Add a single string step
     def add_multi_string_step(self, *,
                             name: str,
-                            status: str = "P", 
-                            id: Optional[Union[int, str]] = None, 
-                            group: str = "M", 
-                            error_code: Optional[Union[int, str]] = None, 
-                            error_message: Optional[str] = None, 
-                            report_text: Optional[str] = None, 
-                            start: Optional[str] = None, 
+                            status: str = "P",
+                            id: Optional[Union[int, str]] = None,
+                            group: str = "M",
+                            error_code: Optional[Union[int, str]] = None,
+                            error_message: Optional[str] = None,
+                            report_text: Optional[str] = None,
+                            start: Optional[str] = None,
                             tot_time: Optional[Union[float, str]] = None) -> MultiStringStep:
         """
         """
@@ -231,38 +231,38 @@ class SequenceCall(Step):
         self.steps.append(ss)
         return ss
     # --------------------------------------------
-    # Add a single boolean step    
+    # Add a single boolean step
     def add_boolean_step(self, *,
                          name: str,
                          status: str = "P",
-                         id: Optional[Union[int, str]] = None, 
-                         group: str = "M", 
-                         error_code: Optional[Union[int, str]] = None, 
-                         error_message: Optional[str] = None, 
-                         report_text: Optional[str] = None, 
-                         start: Optional[str] = None, 
+                         id: Optional[Union[int, str]] = None,
+                         group: str = "M",
+                         error_code: Optional[Union[int, str]] = None,
+                         error_message: Optional[str] = None,
+                         report_text: Optional[str] = None,
+                         start: Optional[str] = None,
                          tot_time: Optional[Union[float, str]] = None) -> BooleanStep:
         """
         """
         bs = BooleanStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
-        bs.measurement = BooleanMeasurement(status=status)        
+        bs.measurement = BooleanMeasurement(status=status)
         self.steps.append(bs)
         return bs
         # --------------------------------------------
-    # Add a single boolean step    
+    # Add a single boolean step
     def add_multi_boolean_step(self, *,
                          name: str,
                          status: str = "P",
-                         id: Optional[Union[int, str]] = None, 
-                         group: str = "M", 
-                         error_code: Optional[Union[int, str]] = None, 
-                         error_message: Optional[str] = None, 
-                         report_text: Optional[str] = None, 
-                         start: Optional[str] = None, 
+                         id: Optional[Union[int, str]] = None,
+                         group: str = "M",
+                         error_code: Optional[Union[int, str]] = None,
+                         error_message: Optional[str] = None,
+                         report_text: Optional[str] = None,
+                         start: Optional[str] = None,
                          tot_time: Optional[Union[float, str]] = None) -> MultiBooleanStep:
         """
         """
-        bs = MultiBooleanStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)        
+        bs = MultiBooleanStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
         self.steps.append(bs)
         return bs
     # --------------------------------------------
@@ -277,12 +277,12 @@ class SequenceCall(Step):
                       y_label: str,
                       y_unit: Optional[str],
                       series: List[ChartSeries] = None,
-                      id: Optional[Union[int, str]] = None, 
-                      group: str = "M", 
-                      error_code: Optional[Union[int, str]] = None, 
-                      error_message: Optional[str] = None, 
-                      report_text: Optional[str] = None, 
-                      start: Optional[str] = None, 
+                      id: Optional[Union[int, str]] = None,
+                      group: str = "M",
+                      error_code: Optional[Union[int, str]] = None,
+                      error_message: Optional[str] = None,
+                      report_text: Optional[str] = None,
+                      start: Optional[str] = None,
                       tot_time: Optional[Union[float, str]] = None) -> ChartStep:
         cs = ChartStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
         cs.chart = Chart(chart_type=chart_type, label=label, x_label=x_label, y_label=y_label, x_unit=x_unit,y_unit=y_unit, series=series)
@@ -294,12 +294,12 @@ class SequenceCall(Step):
                       step_type: FlowType,
                       name: str,
                       status: str = "P",
-                      id: Optional[Union[int, str]] = None, 
-                      group: str = "M", 
-                      error_code: Optional[Union[int, str]] = None, 
-                      error_message: Optional[str] = None, 
-                      report_text: Optional[str] = None, 
-                      start: Optional[str] = None, 
+                      id: Optional[Union[int, str]] = None,
+                      group: str = "M",
+                      error_code: Optional[Union[int, str]] = None,
+                      error_message: Optional[str] = None,
+                      report_text: Optional[str] = None,
+                      start: Optional[str] = None,
                       tot_time: Optional[Union[float, str]] = None) -> GenericStep:
         # Convert FlowType enum to string value for Pydantic validation
         step_type_str = step_type.value if isinstance(step_type, FlowType) else step_type
@@ -307,8 +307,8 @@ class SequenceCall(Step):
         self.steps.append(fs)
         return fs
 
-        
-        
+
+
 
 
     # PRINT CHILD STEP HIERARCHY - For debugging
@@ -321,13 +321,9 @@ class SequenceCall(Step):
 
         for step in self.steps:
             step_parent_name = getattr(step.parent, "name", "None")  # Get parent name for each step
-            
+
             if isinstance(step, SequenceCall):  # If step is another SequenceCall, recurse
                 self.print_hierarchy(step, indent + 1)
             else:
                 # Print the step with its class name
                 print(f"{prefix}    - {step.__class__.__name__}: {getattr(step, 'name', 'Unnamed')} (Parent: {step_parent_name}, Class: {step.step_type})")
-    
-
-
-

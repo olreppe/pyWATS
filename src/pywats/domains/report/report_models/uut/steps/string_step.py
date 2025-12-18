@@ -12,7 +12,7 @@ class StringMeasurement(BooleanMeasurement):
     comp_op: Optional[CompOp] = Field(default=CompOp.LOG, validation_alias="compOp", serialization_alias="compOp")
     limit: Optional[str] = Field(default=None, validation_alias="limit", serialization_alias="limit")
 
-    
+
 class MultiStringMeasurement(StringMeasurement):
     name: str = Field(..., description="The name of the measurement - required for MultiStepTypes")
 
@@ -31,15 +31,15 @@ class StringStep(Step):
     def unpack_measurement(cls, data: dict) -> dict:
         if 'stringMeas' in data:
             meas_data = data['stringMeas']
-            
+
             # Convert list to single item
             if isinstance(meas_data, list):
                 data['stringMeas'] = meas_data[0] if meas_data else None
-            
+
             # Ensure dicts get converted to models
             if isinstance(data['stringMeas'], dict):
                 data['stringMeas'] = StringMeasurement(**data['stringMeas'])
-        
+
         return data
 
     # Custom serializer for the measurement field
@@ -58,7 +58,7 @@ class MultiStringStep(Step):
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
         return True
-    
+
     def add_measurement(self,*,name: Optional[str] = None, value: Union[str, float], status: str, comp_op: CompOp, limit: Optional[str] = None):
         name = self.check_for_duplicates(name)
         sm = MultiStringMeasurement(name=name, value=str(value), status=status, comp_op=comp_op, limit=limit, parent_step=self)

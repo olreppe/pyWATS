@@ -8,7 +8,7 @@ from .measurement import BooleanMeasurement, MultiBooleanMeasurement
 
 class BooleanStep(Step):
     step_type: Literal["ET_PFT", "PassFailTest"] = Field(default="ET_PFT", validation_alias="stepType",serialization_alias="stepType")
- 
+
     measurement: Optional[BooleanMeasurement] = Field(default=None, validation_alias="booleanMeas", serialization_alias="booleanMeas")
 
     #Critical fix: Pre-process raw JSON data
@@ -16,24 +16,24 @@ class BooleanStep(Step):
     def unpack_measurement(cls, data: dict) -> dict:
         if 'booleanMeas' in data:
             meas_data = data['booleanMeas']
-            
+
             # Convert list to single item
             if isinstance(meas_data, list):
                 data['booleanMeas'] = meas_data[0] if meas_data else None
-            
+
             # Ensure dicts get converted to models
             if isinstance(data['booleanMeas'], dict):
                 data['booleanMeas'] = BooleanMeasurement(**data['booleanMeas'])
-    
+
         return data
-    
+
     # Custom serializer for the measurement field
     @field_serializer('measurement', when_used='json')
     def serialize_measurement(self, measurement: Optional[BooleanMeasurement]) -> list:
         if measurement is None:
             return []
         return [measurement.model_dump(by_alias=True, exclude_none=True)]  # Use aliases during serialization
-    
+
     def validate_step(self, trigger_children=False, errors=None) -> bool:
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
@@ -50,11 +50,11 @@ class MultiBooleanStep(Step):
         if not super().validate_step(trigger_children=trigger_children, errors=errors):
             return False
         # Current Class Validation:
-            
-          # For every validation failure        
+
+          # For every validation failure
               # errors.append(f"{self.get_step_path()} ErrorMessage.")
         return True
-    
+
     def add_measurement(self,*,name:str, status:str="P")-> MultiBooleanMeasurement :
         name = self.check_for_duplicates(name)
         nm = MultiBooleanMeasurement(name=name, status=status, parent_step=self)
@@ -66,7 +66,7 @@ class MultiBooleanStep(Step):
         # Add to list
         self.measurements.append(nm)
         return nm
-    
+
     def check_for_duplicates(self, name):
         """
         Check for duplicate measurement names
@@ -87,8 +87,3 @@ class MultiBooleanStep(Step):
             # Update the measurement's name
             name = new_name
         return name
-    
-   
-
-
-   

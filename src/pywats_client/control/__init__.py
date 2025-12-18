@@ -15,7 +15,7 @@ Usage:
     pywats-client config set server_url https://wats.example.com
     pywats-client status
     pywats-client start --daemon
-    
+
     # HTTP API (optional)
     pywats-client start --api --api-port 8765
 """

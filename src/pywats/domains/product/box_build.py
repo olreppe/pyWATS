@@ -9,7 +9,7 @@ Box Build Template (Product Domain - THIS MODULE)
 -------------------------------------------------
 Defines WHAT subunits are REQUIRED to build a parent product.
 This is a blueprint/template that specifies:
-- Which child products are needed (e.g., PCBA, Power Supply)  
+- Which child products are needed (e.g., PCBA, Power Supply)
 - How many of each (quantity)
 - Which revisions are acceptable (revision mask)
 
@@ -59,41 +59,41 @@ if TYPE_CHECKING:
 class BoxBuildTemplate:
     """
     Builder class for managing box build templates (product-level definitions).
-    
+
     A box build template defines the subunits required to build a parent product.
     For example, a controller module may require 2 PCBAs, 1 power supply, etc.
-    
+
     This is a PRODUCT-LEVEL definition - it specifies WHAT is needed to build
     the product, not the actual production units. To attach actual units during
     production, use the Production domain's add_child_to_assembly() method.
-    
+
     This class provides a fluent interface for adding/removing subunits and
     commits all changes to the server when save() is called.
-    
+
     Example:
         # Get or create a box build template
         template = api.product_internal.get_box_build("MAIN-BOARD", "A")
-        
+
         # Add subunits (defines what's needed)
         template.add_subunit("PCBA-001", "A", quantity=2)
         template.add_subunit("PSU-100", "B", quantity=1)
-        
+
         # Remove a subunit
         template.remove_subunit("OLD-PART", "A")
-        
+
         # Save all changes
         template.save()
-        
+
         # Or use context manager for auto-save
         with api.product_internal.get_box_build("MAIN-BOARD", "A") as template:
             template.add_subunit("PCBA-001", "A", quantity=2)
         # Changes saved automatically
-        
+
     See Also:
         - ProductionService.add_child_to_assembly(): Attach actual units
         - ProductionService.verify_assembly(): Verify assembly matches template
     """
-    
+
     def __init__(
         self,
         parent_revision: ProductRevision,
@@ -102,7 +102,7 @@ class BoxBuildTemplate:
     ):
         """
         Initialize box build template.
-        
+
         Args:
             parent_revision: The parent product revision
             service: ProductServiceInternal for API operations
@@ -110,55 +110,55 @@ class BoxBuildTemplate:
         """
         self._parent = parent_revision
         self._service = service
-        
+
         # Track current state
         self._relations: List[ProductRevisionRelation] = list(existing_relations or [])
-        
+
         # Track pending changes
         self._to_add: List[ProductRevisionRelation] = []
         self._to_update: List[ProductRevisionRelation] = []
         self._to_delete: List[UUID] = []
-    
+
     # =========================================================================
     # Properties
     # =========================================================================
-    
+
     @property
     def parent_part_number(self) -> Optional[str]:
         """Get the parent product part number."""
         return self._parent.part_number
-    
+
     @property
     def parent_revision(self) -> str:
         """Get the parent product revision."""
         return self._parent.revision
-    
+
     @property
     def parent_revision_id(self) -> Optional[UUID]:
         """Get the parent product revision ID."""
         return self._parent.product_revision_id
-    
+
     @property
     def subunits(self) -> List[ProductRevisionRelation]:
         """
         Get current subunits (including pending additions, excluding pending deletions).
-        
+
         Returns:
             List of ProductRevisionRelation representing subunits
         """
         # Current relations minus deletions plus additions
         current = [r for r in self._relations if r.relation_id not in self._to_delete]
         return current + self._to_add
-    
+
     @property
     def has_pending_changes(self) -> bool:
         """Check if there are unsaved changes."""
         return bool(self._to_add or self._to_update or self._to_delete)
-    
+
     # =========================================================================
     # Fluent Builder Methods
     # =========================================================================
-    
+
     def add_subunit(
         self,
         part_number: str,
@@ -169,7 +169,7 @@ class BoxBuildTemplate:
     ) -> "BoxBuildTemplate":
         """
         Add a subunit to the box build template.
-        
+
         Args:
             part_number: Subunit part number
             revision: Subunit revision (default revision for the subunit)
@@ -181,17 +181,17 @@ class BoxBuildTemplate:
                           - "1.0" - Accept only revision 1.0
                           - "1.%" - Accept any revision starting with "1."
                           - "1.0,2.0,3.%" - Accept 1.0, 2.0, or any 3.x
-            
+
         Returns:
             Self for method chaining
-            
+
         Example:
             # Exact revision
             template.add_subunit("PCBA-001", "1.0", quantity=2)
-            
+
             # Accept any 2.x revision
             template.add_subunit("PSU-100", "2.0", revision_mask="2.%")
-            
+
             # Accept multiple specific revisions
             template.add_subunit("CABLE-01", "A", revision_mask="A,B,C")
         """
@@ -199,21 +199,21 @@ class BoxBuildTemplate:
         child_revision = self._service.get_revision(part_number, revision)
         if not child_revision or not child_revision.product_revision_id:
             raise ValueError(f"Product revision not found: {part_number}/{revision}")
-        
+
         if not self._parent.product_revision_id:
             raise ValueError("Parent product revision ID is not set")
-        
+
         # Check if already exists
         for rel in self.subunits:
             if rel.child_product_revision_id == child_revision.product_revision_id:
                 # Update quantity instead of adding duplicate
                 return self.update_subunit(
-                    part_number, revision, 
-                    quantity=quantity, 
+                    part_number, revision,
+                    quantity=quantity,
                     item_number=item_number,
                     revision_mask=revision_mask
                 )
-        
+
         # Create new relation with revision mask
         relation = ProductRevisionRelation(
             parent_product_revision_id=self._parent.product_revision_id,
@@ -225,9 +225,9 @@ class BoxBuildTemplate:
             revision_mask=revision_mask
         )
         self._to_add.append(relation)
-        
+
         return self
-    
+
     def update_subunit(
         self,
         part_number: str,
@@ -238,14 +238,14 @@ class BoxBuildTemplate:
     ) -> "BoxBuildTemplate":
         """
         Update an existing subunit in the box build template.
-        
+
         Args:
             part_number: Subunit part number
             revision: Subunit revision
             quantity: New quantity (if provided)
             item_number: New item number (if provided)
             revision_mask: New revision mask pattern (if provided)
-            
+
         Returns:
             Self for method chaining
         """
@@ -261,7 +261,7 @@ class BoxBuildTemplate:
                 if rel not in self._to_update:
                     self._to_update.append(rel)
                 return self
-        
+
         # Check pending additions
         for rel in self._to_add:
             if rel.child_part_number == part_number and rel.child_revision == revision:
@@ -272,17 +272,17 @@ class BoxBuildTemplate:
                 if revision_mask is not None:
                     rel.revision_mask = revision_mask
                 return self
-        
+
         raise ValueError(f"Subunit not found: {part_number}/{revision}")
-    
+
     def remove_subunit(self, part_number: str, revision: str) -> "BoxBuildTemplate":
         """
         Remove a subunit from the box build template.
-        
+
         Args:
             part_number: Subunit part number
             revision: Subunit revision
-            
+
         Returns:
             Self for method chaining
         """
@@ -295,19 +295,19 @@ class BoxBuildTemplate:
                 if rel in self._to_update:
                     self._to_update.remove(rel)
                 return self
-        
+
         # Check pending additions
         for rel in self._to_add:
             if rel.child_part_number == part_number and rel.child_revision == revision:
                 self._to_add.remove(rel)
                 return self
-        
+
         raise ValueError(f"Subunit not found: {part_number}/{revision}")
-    
+
     def clear_all(self) -> "BoxBuildTemplate":
         """
         Mark all subunits for removal.
-        
+
         Returns:
             Self for method chaining
         """
@@ -317,42 +317,42 @@ class BoxBuildTemplate:
         self._to_add.clear()
         self._to_update.clear()
         return self
-    
+
     def set_quantity(self, part_number: str, revision: str, quantity: int) -> "BoxBuildTemplate":
         """
         Set the quantity for a subunit.
-        
+
         Args:
             part_number: Subunit part number
             revision: Subunit revision
             quantity: New quantity
-            
+
         Returns:
             Self for method chaining
         """
         return self.update_subunit(part_number, revision, quantity=quantity)
-    
+
     # =========================================================================
     # Save/Commit Operations
     # =========================================================================
-    
+
     def save(self) -> "BoxBuildTemplate":
         """
         Save all pending changes to the server.
-        
+
         Performs all additions, updates, and deletions in order.
-        
+
         Returns:
             Self for method chaining
         """
         # Process deletions first
         for relation_id in self._to_delete:
             self._service._repo_internal.delete_revision_relation(relation_id)
-        
+
         # Remove deleted relations from our list
         self._relations = [r for r in self._relations if r.relation_id not in self._to_delete]
         self._to_delete.clear()
-        
+
         # Process updates
         for relation in self._to_update:
             updated = self._service._repo_internal.update_revision_relation(relation)
@@ -362,7 +362,7 @@ class BoxBuildTemplate:
                 if idx is not None:
                     self._relations[idx] = updated
         self._to_update.clear()
-        
+
         # Process additions
         for relation in self._to_add:
             created = self._service._repo_internal.create_revision_relation(
@@ -375,13 +375,13 @@ class BoxBuildTemplate:
             if created:
                 self._relations.append(created)
         self._to_add.clear()
-        
+
         return self
-    
+
     def discard(self) -> "BoxBuildTemplate":
         """
         Discard all pending changes.
-        
+
         Returns:
             Self for method chaining
         """
@@ -389,11 +389,11 @@ class BoxBuildTemplate:
         self._to_update.clear()
         self._to_delete.clear()
         return self
-    
+
     def reload(self) -> "BoxBuildTemplate":
         """
         Reload relations from server, discarding pending changes.
-        
+
         Returns:
             Self for method chaining
         """
@@ -403,25 +403,25 @@ class BoxBuildTemplate:
             self._parent.revision
         )
         return self
-    
+
     # =========================================================================
     # Validation Helpers
     # =========================================================================
-    
+
     def validate_subunit(self, part_number: str, revision: str) -> bool:
         """
         Check if a specific subunit revision is valid for this box build.
-        
+
         This checks if the part number exists in the template and if the
         provided revision matches the revision mask (if defined).
-        
+
         Args:
             part_number: The part number to validate
             revision: The revision to validate
-            
+
         Returns:
             True if the subunit/revision combination is valid
-            
+
         Example:
             # Template has PSU-100 with revision_mask="2.%"
             template.validate_subunit("PSU-100", "2.0")  # True
@@ -432,23 +432,23 @@ class BoxBuildTemplate:
             if rel.child_part_number == part_number:
                 return rel.matches_revision(revision)
         return False
-    
+
     def get_matching_subunits(self, part_number: str) -> List[ProductRevisionRelation]:
         """
         Get all subunit definitions for a given part number.
-        
+
         Args:
             part_number: The part number to search for
-            
+
         Returns:
             List of matching ProductRevisionRelation objects
         """
         return [rel for rel in self.subunits if rel.child_part_number == part_number]
-    
+
     def get_required_parts(self) -> List[dict]:
         """
         Get a summary of all required parts for this box build.
-        
+
         Returns:
             List of dicts with part_number, default_revision, quantity, revision_mask
         """
@@ -462,35 +462,35 @@ class BoxBuildTemplate:
             }
             for rel in self.subunits
         ]
-    
+
     # =========================================================================
     # Context Manager Support
     # =========================================================================
-    
+
     def __enter__(self) -> "BoxBuildTemplate":
         """Enter context manager."""
         return self
-    
+
     def __exit__(
-        self, 
-        exc_type: Optional[type], 
-        exc_val: Optional[BaseException], 
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
         exc_tb: Optional[object]
     ) -> None:
         """Exit context manager - auto-save if no exception."""
         if exc_type is None and self.has_pending_changes:
             self.save()
-    
+
     # =========================================================================
     # String Representation
     # =========================================================================
-    
+
     def __repr__(self) -> str:
         return (
             f"BoxBuildTemplate(parent='{self.parent_part_number}/{self.parent_revision}', "
             f"subunits={len(self.subunits)}, pending_changes={self.has_pending_changes})"
         )
-    
+
     def __str__(self) -> str:
         lines = [f"Box Build: {self.parent_part_number}/{self.parent_revision}"]
         lines.append(f"Subunits ({len(self.subunits)}):")

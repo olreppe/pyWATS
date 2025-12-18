@@ -19,25 +19,25 @@ class Measurement(WATSBase):
         "ser_json_inf_nan": 'strings'
     }
 
-class BooleanMeasurement(Measurement):    
+class BooleanMeasurement(Measurement):
     status: str = Field(default="P", max_length=1, min_length=1, pattern='^[PFS]$')
 
-class MultiBooleanMeasurement(BooleanMeasurement):    
+class MultiBooleanMeasurement(BooleanMeasurement):
     name: str = Field(..., description="The name of the measurement - required for MultiStepTypes")
 
 # ------------------------------------------------------------------------------------------
-# LimitMeasurement 
+# LimitMeasurement
 class LimitMeasurement(BooleanMeasurement):
     value: Union[str,float] = Field(...)
     value_format: str | None = Field(default=None, validation_alias="valueFormat", serialization_alias="valueFormat")
 
     comp_op: Optional[CompOp] = Field(default=CompOp.LOG, validation_alias="compOp", serialization_alias="compOp")
-    
+
     high_limit: float | str | None = Field(default=None, validation_alias="highLimit", serialization_alias="highLimit")
     high_limit_format: str | None = Field(default=None, validation_alias="highLimitFormat", serialization_alias="highLimitFormat")
     low_limit: float | str | None = Field(default=None, validation_alias="lowLimit", serialization_alias="lowLimit")
     low_limit_format: str | None = Field(default=None, validation_alias="lowLimitFormat", serialization_alias="lowLimitFormat")
-        
+
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization
         "arbitrary_types_allowed": True,    # Fixes StepList issue
@@ -48,15 +48,14 @@ class LimitMeasurement(BooleanMeasurement):
     }
     # Validate limits and comOp
     # @model_validator(mode="after")
-    # def check_comp_op_limits(self):  
+    # def check_comp_op_limits(self):
     #     if not self.comp_op.validate_limits(self.low_limit, self.high_limit):
     #         raise ValueError("Invalid limits")
-    #     return self  
-    
+    #     return self
+
     # Using a Pydantic parsing method that supports current functionalities
     # @classmethod
     # def parse_obj(cls, obj):
     #     if isinstance(obj.get('comp_op'), str):
     #         obj['comp_op'] = CompOp[obj['comp_op']].value
     #     return super().model_validate(obj)
-

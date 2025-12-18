@@ -11,7 +11,7 @@ ErrorHandler class in the repository layer.
 Rate Limiting:
     The client includes built-in rate limiting to comply with WATS API limits
     (500 requests per minute by default). Throttling can be configured via:
-    
+
     >>> from pywats.core.throttle import configure_throttling
     >>> configure_throttling(max_requests=500, window_seconds=60, enabled=True)
 """
@@ -30,7 +30,7 @@ from .throttle import RateLimiter, get_default_limiter
 
 class Response(BaseModel):
     """HTTP Response wrapper.
-    
+
     Attributes:
         status_code: HTTP status code (200, 404, 500, etc.)
         data: Parsed response data (dict, list, or primitive)
@@ -38,7 +38,7 @@ class Response(BaseModel):
         raw: Raw response bytes
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    
+
     status_code: int = Field(..., description="HTTP status code")
     data: Any = Field(default=None, description="Parsed response data")
     headers: Dict[str, str] = Field(default_factory=dict, description="Response headers")
@@ -55,42 +55,42 @@ class Response(BaseModel):
     def is_error(self) -> bool:
         """True if status code is 4xx or 5xx."""
         return self.status_code >= 400
-    
+
     @computed_field
     @property
     def is_not_found(self) -> bool:
         """True if status code is 404."""
         return self.status_code == 404
-    
+
     @computed_field
     @property
     def is_server_error(self) -> bool:
         """True if status code is 5xx."""
         return 500 <= self.status_code < 600
-    
+
     @computed_field
     @property
     def is_client_error(self) -> bool:
         """True if status code is 4xx."""
         return 400 <= self.status_code < 500
-    
+
     @property
     def error_message(self) -> Optional[str]:
         """Extract error message from response data if available."""
         if self.is_success:
             return None
-        
+
         if isinstance(self.data, dict):
             return (
-                self.data.get("message") or 
+                self.data.get("message") or
                 self.data.get("Message") or
-                self.data.get("error") or 
+                self.data.get("error") or
                 self.data.get("detail") or
                 self.data.get("title")
             )
         elif isinstance(self.data, str):
             return self.data
-        
+
         return f"HTTP {self.status_code}"
 
 
@@ -100,10 +100,10 @@ class HttpClient:
 
     This client handles all HTTP communication with the WATS server,
     including authentication, request/response handling, and error management.
-    
+
     Rate limiting is enabled by default to comply with WATS API limits
     (500 requests per minute). This can be disabled or customized.
-    
+
     Example:
         >>> client = HttpClient(base_url="https://wats.example.com", token="...")
         >>> response = client.get("/api/Product/ABC123")
@@ -138,7 +138,7 @@ class HttpClient:
         self.token = token
         self.timeout = timeout
         self.verify_ssl = verify_ssl
-        
+
         # Rate limiter - use provided, global default, or create disabled one
         if rate_limiter is not None:
             self._rate_limiter = rate_limiter
@@ -201,7 +201,7 @@ class HttpClient:
 
         Returns:
             Response object with parsed data
-            
+
         Note:
             This method does NOT raise exceptions for HTTP error status codes.
             Error handling is delegated to the ErrorHandler in the repository layer.
@@ -242,14 +242,14 @@ class HttpClient:
 
         Returns:
             Response object
-            
+
         Note:
             This method respects rate limiting. If the rate limit is reached,
             the call will block until a slot becomes available.
         """
         # Acquire rate limiter slot (blocks if limit reached)
         self._rate_limiter.acquire()
-        
+
         # Ensure endpoint starts with /
         if not endpoint.startswith("/"):
             endpoint = f"/{endpoint}"

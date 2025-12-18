@@ -22,20 +22,20 @@ from .sub_repair import SubRepair
 __all__ = [
     # Core models
     'UURReport',
-    'UURInfo', 
+    'UURInfo',
     'UURPartInfo',
     'Failure',
-    
+
     # Support models
     'FailCode',
     'FailCodes',
     'FailureTypeEnum',
     'MiscUURInfo',
-    'MiscUURInfoCollection', 
+    'MiscUURInfoCollection',
     'UURAttachment',
     'UURSubUnit',
     'UURFailure',
-    
+
     # Legacy
     'SubRepair'
 ]

@@ -93,4 +93,3 @@ class AdditionalDataProperty(WATSBase):
     """
     Array information. Used for type Array.
     """
-

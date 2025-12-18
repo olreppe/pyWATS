@@ -67,28 +67,28 @@ __all__ = [
     # Core
     "ClientConfig",
     "WATSClient",
-    
+
     # Application
     "pyWATSApplication",
     "ApplicationStatus",
     "ApplicationError",
     "ServiceError",
-    
+
     # Settings
     "SettingsManager",
     "ApplicationSettings",
     "MonitorFolder",
     "ConverterConfig",
-    
+
     # Serial management
     "SerialNumberManager",
     "ReservedSerial",
-    
+
     # File monitoring
     "FileMonitor",
     "MonitorRule",
     "FileEventType",
-    
+
     # Services
     "ConnectionService",
     "ConnectionStatus",
@@ -97,7 +97,7 @@ __all__ = [
     "ConverterManager",
     "ConverterProcessor",
     "ConversionRecord",
-    
+
     # Converters
     "ConverterBase",
     "ConverterResult",
@@ -106,7 +106,7 @@ __all__ = [
     "PostProcessAction",
     "FileInfo",
     "CSVConverter",
-    
+
     # Control interfaces (headless)
     "HeadlessService",
     "ServiceConfig",

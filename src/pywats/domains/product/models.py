@@ -54,7 +54,7 @@ class ProductRevision(PyWATSModel):
 class ProductRevisionRelation(PyWATSModel):
     """
     Represents a parent-child relationship between product revisions.
-    
+
     Used for box build templates where a parent product contains subunits.
     For example, a main board (parent) may contain multiple PCBAs (children).
 
@@ -70,7 +70,7 @@ class ProductRevisionRelation(PyWATSModel):
     relation_id: Optional[UUID] = Field(
         default=None,
         validation_alias=AliasChoices(
-            "ProductRevisionRelationId", "productRevisionRelationId", 
+            "ProductRevisionRelationId", "productRevisionRelationId",
             "relationId", "relation_id", "RelationId"
         ),
         serialization_alias="ProductRevisionRelationId"
@@ -118,26 +118,26 @@ class ProductRevisionRelation(PyWATSModel):
         serialization_alias="RevisionMask",
         description="Comma-separated revision patterns with optional % wildcard (e.g., '1.0,2.%,3.1')"
     )
-    
+
     def matches_revision(self, revision: str) -> bool:
         """
         Check if a revision matches this relation's revision mask.
-        
+
         The revision mask can contain:
         - Exact matches: '1.0' matches only '1.0'
         - Wildcards: '1.%' matches '1.0', '1.1', '1.2a', etc.
         - Multiple values: '1.0,2.0,3.%' matches any of those
-        
+
         Args:
             revision: The revision string to check
-            
+
         Returns:
             True if revision matches the mask, False otherwise
         """
         if not self.revision_mask:
             # No mask - use exact child_revision match
             return self.child_revision == revision
-        
+
         # Split by comma and check each pattern
         patterns = [p.strip() for p in self.revision_mask.split(",")]
         for pattern in patterns:
@@ -150,14 +150,14 @@ class ProductRevisionRelation(PyWATSModel):
                 # Exact match
                 if revision == pattern:
                     return True
-        
+
         return False
 
 
 class BomItem(PyWATSModel):
     """
     Represents a Bill of Materials (BOM) item.
-    
+
     BOM items define the components that make up a product revision.
 
     Attributes:
@@ -333,7 +333,7 @@ class ProductGroup(PyWATSModel):
         ),
         serialization_alias="productGroupName"
     )
-    
+
     @property
     def name(self) -> Optional[str]:
         """Convenience alias for product_group_name."""

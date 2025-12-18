@@ -24,7 +24,7 @@ class AssetRepository:
     """
 
     def __init__(
-        self, 
+        self,
         http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
@@ -150,7 +150,7 @@ class AssetRepository:
         Delete an asset by ID or serial number.
 
         DELETE /api/Asset
-        
+
         Args:
             asset_id: Asset ID (GUID)
             serial_number: Asset serial number (alternative to asset_id)
@@ -181,13 +181,13 @@ class AssetRepository:
         Get the current status of an asset including alarm state.
 
         GET /api/Asset/Status
-        
+
         The status includes:
         - state: Current asset state (AssetState)
         - alarmState: 0=OK, 1=Warning, 2=Alarm
         - message: Human-readable status message
         - runningCount, totalCount, etc.
-        
+
         Args:
             asset_id: Asset ID
             serial_number: Asset serial number (alternative)
@@ -206,7 +206,7 @@ class AssetRepository:
             params["translate"] = "false"
         if culture_code:
             params["cultureCode"] = culture_code
-            
+
         response = self._http_client.get("/api/Asset/Status", params=params)
         if response.is_success and response.data:
             return cast(Dict[str, Any], response.data)
@@ -222,7 +222,7 @@ class AssetRepository:
         Set the state of an asset.
 
         PUT /api/Asset/State
-        
+
         Args:
             state: New state (0-6)
             asset_id: Asset ID
@@ -256,7 +256,7 @@ class AssetRepository:
         Increment the running and total count on an asset.
 
         PUT /api/Asset/Count
-        
+
         Args:
             asset_id: Asset ID
             serial_number: Asset serial number (alternative)
@@ -291,7 +291,7 @@ class AssetRepository:
         Reset the running count to 0.
 
         POST /api/Asset/ResetRunningCount
-        
+
         Args:
             asset_id: Asset ID
             serial_number: Asset serial number (alternative)
@@ -328,9 +328,9 @@ class AssetRepository:
         Inform that an asset has been calibrated.
 
         POST /api/Asset/Calibration
-        
+
         This resets the running count and updates the calibration dates.
-        
+
         Args:
             asset_id: Asset ID
             serial_number: Asset serial number (alternative)
@@ -367,7 +367,7 @@ class AssetRepository:
         Inform that an asset has had maintenance.
 
         POST /api/Asset/Maintenance
-        
+
         Args:
             asset_id: Asset ID
             serial_number: Asset serial number (alternative)
@@ -528,7 +528,7 @@ class AssetRepository:
         Get child assets of a parent asset.
 
         GET /api/Asset/SubAssets
-        
+
         Args:
             parent_id: Parent asset ID
             parent_serial: Parent asset serial number (alternative)
@@ -564,9 +564,9 @@ class AssetRepository:
         Upload a file to an asset.
 
         ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
-        
+
         Note: This method is deprecated. Use AssetServiceInternal instead.
-        
+
         Args:
             asset_id: Asset ID
             filename: Unique filename
@@ -590,14 +590,14 @@ class AssetRepository:
         Download a file from an asset.
 
         ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
-        
+
         Note: This method is deprecated. Use AssetServiceInternal instead.
-        
+
         Args:
             asset_id: Asset ID
             filename: Filename to download
             base_url: Base URL for Referer header
-            
+
         Returns:
             File content as bytes, or None if not found
         """
@@ -610,13 +610,13 @@ class AssetRepository:
         List all files attached to an asset.
 
         ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
-        
+
         Note: This method is deprecated. Use AssetServiceInternal instead.
-        
+
         Args:
             asset_id: Asset ID
             base_url: Base URL for Referer header
-            
+
         Returns:
             List of filenames
         """
@@ -634,9 +634,9 @@ class AssetRepository:
         Delete files from an asset.
 
         ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
-        
+
         Note: This method is deprecated. Use AssetServiceInternal instead.
-        
+
         Args:
             asset_id: Asset ID
             filenames: List of filenames to delete

@@ -30,14 +30,14 @@ class StepStatus(Enum):
 
 # -----------------------------------------------------------------------
 # Step: Abstract base step for all steps
-class Step(WATSBase, ABC):  
+class Step(WATSBase, ABC):
     # Parent Step - For internal use only - does not seriallize
     parent: Optional['Step'] = Field(default=None, exclude=True)
 
     # Required - Base step_type is str to allow subclasses to override with specific Literals
     # This enables Pydantic's discriminated union to work properly
     step_type: str = Field(default="NONE", validation_alias="stepType", serialization_alias="stepType")
-    
+
     name: str = Field(default="StepName", max_length=100, min_length=1)
     group: str = Field(default="M", max_length=1, min_length=1, pattern='^[SMC]$')
     #status: str = Field(default="P", max_length=1, min_length=1, pattern='^[PFSDET]$')
@@ -50,24 +50,24 @@ class Step(WATSBase, ABC):
     error_code_format: Optional[str] = Field(default=None, validation_alias="errorCodeFormat", serialization_alias="errorCodeFormat")
     error_message: Optional[str] = Field(default=None, validation_alias="errorMessage",serialization_alias="errorMessage")
     report_text: Optional[str] = Field(default=None, validation_alias="reportText",serialization_alias="reportText")
-    
+
     start: Optional[str] = Field(default=None, validation_alias="start",serialization_alias="start")
     tot_time: Optional[Union[float, str]] = Field(default=None, validation_alias="totTime",serialization_alias="totTime")
     tot_time_format: Optional[str] = Field(default=None, validation_alias="totTimeFormat",serialization_alias="totTimeFormat")
     ts_guid: Optional[str] = Field(default=None, validation_alias="tsGuid",serialization_alias="tsGuid")
-    
+
     # Step Caused Failure (ReadOnly)
     caused_seq_failure: Optional[bool] = Field(default=None, validation_alias="causedSeqFailure", serialization_alias="causedSeqFailure")
     caused_uut_failure: Optional[bool] = Field(default=None, validation_alias="causedUUTFailure", serialization_alias="causedUUTFailure")
-    
+
     # LoopInfo
     loop: Optional[LoopInfo] = Field(default=None)
-   
+
     # Additional Results, Charts and Attachments
     additional_results: Optional[list[AdditionalData]] = Field(default=None, validation_alias="additionalResults", serialization_alias="additionalResults")
-    
+
     chart: Optional[Chart] = Field(default=None)
-    attachment: Optional[Attachment] = Field(default=None)  
+    attachment: Optional[Attachment] = Field(default=None)
 
 
 
@@ -91,7 +91,7 @@ class Step(WATSBase, ABC):
         #     if not super().validate_step(trigger_children=trigger_children, errors=errors):
         #         return False
         #     # Current Class Validation:
-        #       # For every validation failure        
+        #       # For every validation failure
         #           errors.append(f"{self.get_step_path()} ErrorMessage.")
         #     return True
 
@@ -108,13 +108,13 @@ class Step(WATSBase, ABC):
     def add_chart(self, chart_type:ChartType, chart_label: str, x_label:str, x_unit:str, y_label: str, y_unit: str) -> Chart:
         self.chart = Chart(chart_type=chart_type, label=chart_label, xLabel=x_label, yLabel=y_label, xUnit=x_unit, yUnit=y_unit)
         return self.chart
-    
-    # Attach a file to the step        
+
+    # Attach a file to the step
     def attach_file(self, file_name: str, delete_after_upload: bool = False) -> None:
         """
         Reads a file, encodes its contents in base64, and stores it in the data property.
         Optionally deletes the file after reading it.
-        
+
         :param file_name: The name or path of the file to attach
         :param delete_after_upload: Whether to delete the file after attaching it (default is True)
         """
@@ -130,14 +130,14 @@ class Step(WATSBase, ABC):
                     os.remove(file_name)
         except (OSError, IOError) as e:
             raise ValueError(f"Failed to attach file '{file_name}': {e}") from e
-        
+
         # Set the name of the attachment as the filename
         self.attachment.name = os.path.basename(file_name)
         import mimetypes
         self.attachment.content_type, _ = mimetypes.guess_type(file_name, strict=False)
 
 
-        
+
 
 # Discriminator function for StepType Union
 # Maps stepType values to the appropriate Step class tag
@@ -151,7 +151,7 @@ def _discriminate_step_type(v: Any) -> str:
         step_type = v.get('stepType', v.get('step_type', ''))
     else:
         step_type = getattr(v, 'step_type', getattr(v, 'stepType', ''))
-    
+
     # Map stepType values to class tags
     # Order matters: Check more specific types first
     if step_type in ['SequenceCall', 'WATS_SeqCall']:

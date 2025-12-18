@@ -30,7 +30,7 @@ class UUTInfo(ReportInfo):
     error_code: int | str | None = Field(default=None, validation_alias="errorCode", serialization_alias="errorCode")
     error_code_format: str | None = Field(default=None, validation_alias="errorCodeFormat", serialization_alias="errorCodeFormat")
     error_message: str | None = Field(default=None, validation_alias="errorMessage", serialization_alias="errorMessage")
-    
+
     batch_number: Optional[str] = Field(default=None, max_length=100, min_length=0, validation_alias="batchSN", serialization_alias="batchSN")
     batch_fail_count: int | None = Field(default=None, validation_alias="batchFailCount", serialization_alias="batchFailCount")
     batch_fail_count_format: str | None = Field(default=None, validation_alias="batchFailCountFormat", serialization_alias="batchFailCountFormat")
@@ -39,5 +39,3 @@ class UUTInfo(ReportInfo):
 
     step_id_caused_uut_failure: int | None = Field(default=None, validation_alias="stepIdCausedUUTFailure", serialization_alias="stepIdCausedUUTFailure")
     referenced_by_uurs: list[RefUURs] | None = Field(default=None, validation_alias="referencedByUURs", serialization_alias="referencedByUURs")
-
-

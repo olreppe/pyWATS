@@ -23,10 +23,10 @@ if TYPE_CHECKING:
 
 class LocationPage(BasePage):
     """Location services settings page"""
-    
+
     def __init__(
-        self, 
-        config: ClientConfig, 
+        self,
+        config: ClientConfig,
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
     ):
@@ -34,17 +34,17 @@ class LocationPage(BasePage):
         super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
-    
+
     @property
     def page_title(self) -> str:
         return "Location"
-    
+
     def _setup_ui(self) -> None:
         """Setup page UI matching WATS Client design"""
         # Location Services Group
         location_group = QGroupBox("Location Services")
         location_layout = QVBoxLayout(location_group)
-        
+
         # Enable location services checkbox
         self._location_enabled_cb = QCheckBox("Allow this app to use location services")
         self._location_enabled_cb.setToolTip(
@@ -53,7 +53,7 @@ class LocationPage(BasePage):
         )
         self._location_enabled_cb.stateChanged.connect(self._emit_changed)
         location_layout.addWidget(self._location_enabled_cb)
-        
+
         # Info text
         info_label = QLabel(
             "Location services allow the WATS client to include geographical\n"
@@ -64,15 +64,15 @@ class LocationPage(BasePage):
         )
         info_label.setStyleSheet("color: #808080; font-size: 11px; margin-top: 10px;")
         location_layout.addWidget(info_label)
-        
+
         self._layout.addWidget(location_group)
-        
+
         self._layout.addSpacing(15)
-        
+
         # Privacy notice
         privacy_group = QGroupBox("Privacy")
         privacy_layout = QVBoxLayout(privacy_group)
-        
+
         privacy_label = QLabel(
             "When location services are enabled:\n\n"
             "  • Location data is only sent with test reports\n"
@@ -82,16 +82,16 @@ class LocationPage(BasePage):
         )
         privacy_label.setStyleSheet("color: #808080; font-size: 11px;")
         privacy_layout.addWidget(privacy_label)
-        
+
         self._layout.addWidget(privacy_group)
-        
+
         # Add stretch to push content to top
         self._layout.addStretch()
-    
+
     def save_config(self) -> None:
         """Save configuration"""
         self.config.location_services_enabled = self._location_enabled_cb.isChecked()
-    
+
     def load_config(self) -> None:
         """Load configuration"""
         self._location_enabled_cb.setChecked(

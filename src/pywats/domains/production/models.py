@@ -13,14 +13,14 @@ if TYPE_CHECKING:
 class UnitPhase(PyWATSModel):
     """
     Represents a unit phase in WATS.
-    
+
     Unit phases are predefined states that units can be in during their lifecycle.
     These are constant values defined server-side. Each phase ID is a power of 2,
     allowing potential bitwise combination for filtering.
-    
+
     See Also:
         UnitPhaseFlag: Enum with predefined phase values for type-safe usage.
-    
+
     Phase Values (from UnitPhaseFlag enum):
         - UNKNOWN = 1
         - UNDER_PRODUCTION = 2
@@ -34,7 +34,7 @@ class UnitPhase(PyWATSModel):
         - MISSING = 512
         - IN_STORAGE = 1024
         - SHIPPED = 2048
-    
+
     Attributes:
         phase_id: Unique phase identifier (power of 2)
         code: Machine-readable code (e.g., "Finalized", "Under_Production")
@@ -60,11 +60,11 @@ class UnitPhase(PyWATSModel):
         validation_alias=AliasChoices("Description", "description"),
         serialization_alias="Description"
     )
-    
+
     def __str__(self) -> str:
         """String representation."""
         return f"{self.name} (ID={self.phase_id})"
-    
+
     def __repr__(self) -> str:
         """Detailed representation."""
         return f"UnitPhase(id={self.phase_id}, code='{self.code}', name='{self.name}')"

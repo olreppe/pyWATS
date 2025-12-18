@@ -24,7 +24,7 @@ class WATSBase(BaseModel):
                     # Skip if the type doesn't match
                     if type_name != cls.__qualname__:
                         continue
-                    
+
                     # Get the alias for the field (if it exists)
                     field_info = cls.model_fields.get(prop_name)
                     alias = (

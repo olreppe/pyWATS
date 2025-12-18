@@ -10,7 +10,7 @@ Expected XML structure:
     <FidMrk>...</FidMrk>
     <ST NM="programname_version" OP="OperatorName" NMP="BoardName">...</ST>
     <BI BC="Barcode" BCP="SerialNumber" SD="StartDate">
-        <TEST F="TestGroup" NM="StepName" MR="Measurement" ML="LowLimit" 
+        <TEST F="TestGroup" NM="StepName" MR="Measurement" ML="LowLimit"
               MH="HighLimit" MU="Unit" TR="Status" TT="TestTime"/>
         ...
     </BI>
@@ -45,29 +45,29 @@ from pywats_client.converters.models import (
 class KitronSeicaXMLConverter(FileConverter):
     """
     Converts Kitron/Seica XML test result files to WATS reports.
-    
+
     File qualification:
     - File extension must be .xml or .Xml
     - Root element must be 'R'
     - Must contain 'ST', 'BI', and 'ET' elements
     """
-    
+
     @property
     def name(self) -> str:
         return "Kitron Seica XML Converter"
-    
+
     @property
     def version(self) -> str:
         return "1.0.0"
-    
+
     @property
     def description(self) -> str:
         return "Converts Kitron/Seica XML test result files into WATS reports"
-    
+
     @property
     def file_patterns(self) -> List[str]:
         return ["*.xml", "*.Xml"]
-    
+
     @property
     def arguments_schema(self) -> Dict[str, ArgumentDefinition]:
         return {
@@ -87,11 +87,11 @@ class KitronSeicaXMLConverter(FileConverter):
                 description="Sequence version from XML attribute",
             ),
         }
-    
+
     def validate(self, source: ConverterSource, context: ConverterContext) -> ValidationResult:
         """
         Validate that the file is a properly formatted Kitron/Seica XML file.
-        
+
         Confidence levels:
         - 0.95: Has root 'R' element with ST, BI, ET elements and TEST children
         - 0.75: Has 'R' root with partial structure
@@ -100,64 +100,64 @@ class KitronSeicaXMLConverter(FileConverter):
         """
         if not source.path or not source.path.exists():
             return ValidationResult.no_match("File not found")
-        
+
         suffix = source.path.suffix.lower()
         if suffix != '.xml':
             return ValidationResult.no_match("Not an XML file")
-        
+
         try:
             tree = ET.parse(source.path)
             root = tree.getroot()
-            
+
             # Check for 'R' root element
             if root.tag != 'R':
                 return ValidationResult.no_match(
                     f"XML file but root is '{root.tag}', not 'R'"
                 )
-            
+
             # Check for required elements
             xml_st = root.find('ST')
             xml_bis = list(root.findall('BI'))
             xml_et = root.find('ET')
-            
+
             if xml_st is None:
                 return ValidationResult(
                     can_convert=True,
                     confidence=0.4,
                     message="Kitron XML but missing ST element"
                 )
-            
+
             if not xml_bis:
                 return ValidationResult(
                     can_convert=True,
                     confidence=0.5,
                     message="Kitron XML but missing BI elements"
                 )
-            
+
             if xml_et is None:
                 return ValidationResult(
                     can_convert=True,
                     confidence=0.6,
                     message="Kitron XML but missing ET element"
                 )
-            
+
             # Extract info for validation result
             nm = xml_st.get('NM', '')
             # Split name on _ or space to get part number and revision
             splitted_nm = re.split(r'[_\s]', nm)
             part_number = splitted_nm[0] if splitted_nm else ''
-            
+
             # Get serial from first BI
             serial_number = xml_bis[0].get('BCP', '') if xml_bis else ''
-            
+
             # Get status from ET
             nf = xml_et.get('NF', '0') if xml_et is not None else '0'
             result_str = "Passed" if nf == "0" else "Failed"
-            
+
             # Check for TEST elements
             has_tests = any(bi.findall('TEST') for bi in xml_bis)
             confidence = 0.85 if has_tests else 0.7
-            
+
             return ValidationResult(
                 can_convert=True,
                 confidence=confidence,
@@ -166,52 +166,52 @@ class KitronSeicaXMLConverter(FileConverter):
                 detected_part_number=part_number,
                 detected_result=result_str,
             )
-            
+
         except ET.ParseError as e:
             return ValidationResult.no_match(f"Invalid XML: {e}")
         except Exception as e:
             return ValidationResult.no_match(f"Error reading file: {e}")
-    
+
     def convert(self, source: ConverterSource, context: ConverterContext) -> ConverterResult:
         """Convert Kitron/Seica XML test file to WATS report(s)"""
         if not source.path:
             return ConverterResult.failed_result(error="No file path provided")
-        
+
         try:
             tree = ET.parse(source.path)
             xml_r = tree.getroot()
-            
+
             # Get arguments
             operation_code = context.get_argument("operationTypeCode", "10")
             seq_name_attr = context.get_argument("sequenceName", "SoftwareName")
             seq_version_attr = context.get_argument("sequenceVersion", "SoftwareVersion")
-            
+
             # Get sections
             xml_st = xml_r.find('ST')
             xml_bis = list(xml_r.findall('BI'))
             xml_et = xml_r.find('ET')
-            
+
             if xml_st is None:
                 return ConverterResult.failed_result(error="Missing ST element")
             if not xml_bis:
                 return ConverterResult.failed_result(error="Missing BI elements")
-            
+
             # Extract program info from ST
             nm = xml_st.get('NM', '')
             operator = xml_st.get('OP', '')
             board_name = xml_st.get('NMP', '')
-            
+
             # Split name to get part number and revision
             splitted_nm = re.split(r'[_\s]', nm)
             part_number = splitted_nm[0] if len(splitted_nm) > 0 else nm
             part_revision = splitted_nm[1] if len(splitted_nm) > 1 else '1'
-            
+
             # Get end time and status from ET
             end_date_string = xml_et.get('ED', '') if xml_et is not None else ''
             uut_status_string = xml_et.get('NF', '0') if xml_et is not None else '0'
-            
+
             reports = []
-            
+
             # Process each board (BI element)
             for xml_bi in xml_bis:
                 report = self._process_board(
@@ -227,7 +227,7 @@ class KitronSeicaXMLConverter(FileConverter):
                     uut_status_string=uut_status_string,
                 )
                 reports.append(report)
-            
+
             # If single report, return it directly
             # If multiple, return the first one (batch mode would handle multiple)
             if len(reports) == 1:
@@ -240,10 +240,10 @@ class KitronSeicaXMLConverter(FileConverter):
                     report=reports[0],
                     post_action=PostProcessAction.MOVE,
                 )
-            
+
         except Exception as e:
             return ConverterResult.failed_result(error=f"Conversion error: {e}")
-    
+
     def _process_board(
         self,
         xml_bi: ET.Element,
@@ -258,16 +258,16 @@ class KitronSeicaXMLConverter(FileConverter):
         uut_status_string: str,
     ) -> Dict[str, Any]:
         """Process a single board (BI element) into a UUT report"""
-        
+
         # Get board info
         serial_number = xml_bi.get('BCP', '')
         start_date_string = xml_bi.get('SD', '')
-        
+
         # Parse dates
         date_format = "%d-%m-%Y %H:%M:%S"
         start_time = None
         execution_time = 0.0
-        
+
         try:
             if start_date_string:
                 start_time = datetime.strptime(start_date_string, date_format)
@@ -276,7 +276,7 @@ class KitronSeicaXMLConverter(FileConverter):
                 execution_time = (end_time - start_time).total_seconds()
         except ValueError:
             pass  # Use defaults if parsing fails
-        
+
         # Build report
         report: Dict[str, Any] = {
             "type": "Test",
@@ -289,18 +289,18 @@ class KitronSeicaXMLConverter(FileConverter):
             "sequenceVersion": seq_version,
             "result": "P" if uut_status_string == "0" else "F",
         }
-        
+
         if start_time:
             report["start"] = start_time.isoformat()
-        
+
         if execution_time > 0:
             report["execTime"] = execution_time
-        
+
         # Add misc info
         report["miscInfos"] = [
             {"name": "Board Name", "value": board_name}
         ]
-        
+
         # Create root sequence
         root_step: Dict[str, Any] = {
             "type": "SEQ",
@@ -308,49 +308,49 @@ class KitronSeicaXMLConverter(FileConverter):
             "status": "Done",
             "stepResults": []
         }
-        
+
         # Process tests grouped by test group (F attribute)
         tests = list(xml_bi.findall('TEST'))
         self._process_tests(tests, root_step)
-        
+
         report["root"] = root_step
-        
+
         return report
-    
+
     def _process_tests(self, tests: List[ET.Element], root_step: Dict[str, Any]) -> None:
         """Process TEST elements, grouping by test group (F attribute)"""
-        
+
         current_group = ""
         current_sequence: Optional[Dict[str, Any]] = None
-        
+
         for test in tests:
             test_group = test.get('F', '')
             step_name = test.get('NM', '')
-            
+
             # Parse measurement values
             try:
                 measurement = float(test.get('MR', '0'))
             except ValueError:
                 measurement = 0.0
-            
+
             try:
                 lower_limit = float(test.get('ML', '0'))
             except ValueError:
                 lower_limit = 0.0
-            
+
             try:
                 upper_limit = float(test.get('MH', '0'))
             except ValueError:
                 upper_limit = 0.0
-            
+
             unit = test.get('MU', '')
             status = test.get('TR', '0')
-            
+
             try:
                 test_time = float(test.get('TT', '0')) / 1000.0  # Convert ms to seconds
             except ValueError:
                 test_time = 0.0
-            
+
             # Create new sequence if group changed
             if current_group == "" or test_group != current_group:
                 current_group = test_group
@@ -361,7 +361,7 @@ class KitronSeicaXMLConverter(FileConverter):
                     "stepResults": []
                 }
                 root_step["stepResults"].append(current_sequence)
-            
+
             # Create numeric limit step
             step: Dict[str, Any] = {
                 "type": "NT",
@@ -372,21 +372,21 @@ class KitronSeicaXMLConverter(FileConverter):
                 "highLimit": upper_limit,
                 "stepStatus": "Passed" if status == "0" else "Failed",
             }
-            
+
             if unit:
                 step["unit"] = unit
-            
+
             if test_time > 0:
                 step["totTime"] = test_time
-            
+
             if current_sequence is not None:
                 current_sequence["stepResults"].append(step)
-    
+
     @staticmethod
     def _get_step_status(status: str) -> str:
         """Convert status code to WATS status string"""
         return "Passed" if status == "0" else "Failed"
-    
+
     @staticmethod
     def _get_uut_status(status: str) -> str:
         """Convert status code to WATS UUT result"""
@@ -396,7 +396,7 @@ class KitronSeicaXMLConverter(FileConverter):
 # Test code
 if __name__ == "__main__":
     import json
-    
+
     sample_xml = """<?xml version="1.0" encoding="utf-8"?>
 <R>
     <FidMrk PRT="0"/>
@@ -410,24 +410,24 @@ if __name__ == "__main__":
     </BI>
     <ET ED="01-01-2024 10:05:00" NF="0"/>
 </R>"""
-    
+
     import tempfile
-    
+
     with tempfile.NamedTemporaryFile(mode='w', suffix='.Xml', delete=False) as f:
         f.write(sample_xml)
         temp_path = Path(f.name)
-    
+
     try:
         converter = KitronSeicaXMLConverter()
         source = ConverterSource.from_file(temp_path)
         context = ConverterContext()
-        
+
         # Validate
         validation = converter.validate(source, context)
         print(f"Validation: can_convert={validation.can_convert}, confidence={validation.confidence:.2f}")
         print(f"  Message: {validation.message}")
         print(f"  Detected: SN={validation.detected_serial_number}, PN={validation.detected_part_number}")
-        
+
         # Convert
         result = converter.convert(source, context)
         print(f"\nConversion status: {result.status.value}")

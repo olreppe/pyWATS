@@ -5,7 +5,7 @@ from .wats_base import WATSBase
 from .common_types import *
 from .report import Report, ReportStatus
 
-# Report info classes  
+# Report info classes
 from .report_info import ReportInfo
 from .misc_info import MiscInfo
 from .additional_data import AdditionalData
@@ -22,7 +22,7 @@ from .uut.uut_info import UUTInfo
 from .uut.step import Step, StepStatus
 from .uut.steps.sequence_call import SequenceCall
 
-# UUR classes  
+# UUR classes
 from .uur.uur_report import UURReport
 from .uur.uur_info import UURInfo
 from .uur.failure import *

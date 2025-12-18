@@ -4,7 +4,7 @@ pyWATS Client Entry Point
 Run the client with:
     python -m pywats_client          # GUI mode (default)
     python -m pywats_client --no-gui # Headless mode
-    
+
 Or use CLI commands:
     pywats-client config show        # Show configuration
     pywats-client config init        # Initialize config
@@ -38,7 +38,7 @@ def _run_gui_mode(config):
         print("Install with: pip install pywats-api[client]")
         print("Or run in headless mode: pywats-client --no-gui")
         sys.exit(1)
-    
+
     from .gui.app import run_gui
     run_gui(config)
 
@@ -46,7 +46,7 @@ def _run_gui_mode(config):
 def _run_headless_mode(config):
     """Run in simple headless mode (legacy)"""
     from .core.client import WATSClient
-    
+
     async def run_headless():
         client = WATSClient(config)
         try:
@@ -58,7 +58,7 @@ def _run_headless_mode(config):
             print("\nShutting down...")
         finally:
             await client.stop()
-    
+
     asyncio.run(run_headless())
 
 
@@ -67,12 +67,12 @@ def main():
     # Check if this is a CLI subcommand
     # CLI commands: config, status, test-connection, converters, start, stop, version
     cli_commands = ["config", "status", "test-connection", "converters", "start", "stop"]
-    
+
     if len(sys.argv) > 1 and sys.argv[1] in cli_commands:
         # Route to CLI handler
         from .control.cli import cli_main
         sys.exit(cli_main())
-    
+
     # Legacy argument parsing for backward compatibility
     parser = argparse.ArgumentParser(
         description="pyWATS Client - WATS Test Report Management",
@@ -137,18 +137,18 @@ CLI Commands (use 'pywats-client <command> --help' for details):
         default="127.0.0.1",
         help="HTTP API host (default: 127.0.0.1)"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Show version
     if args.version:
         from . import __version__
         print(f"pyWATS Client v{__version__}")
         sys.exit(0)
-    
+
     # Load or create configuration
     from .core.config import ClientConfig
-    
+
     if args.config:
         config_path = Path(args.config)
         config = ClientConfig.load_or_create(config_path)
@@ -157,7 +157,7 @@ CLI Commands (use 'pywats-client <command> --help' for details):
         config_dir = Path.home() / ".pywats_client"
         config_path = config_dir / "config.json"
         config = ClientConfig.load_or_create(config_path)
-    
+
     # Apply command line overrides
     if args.instance_name:
         config.instance_name = args.instance_name
@@ -165,22 +165,22 @@ CLI Commands (use 'pywats-client <command> --help' for details):
         config.service_address = args.service_address
     if args.api_token:
         config.api_token = args.api_token
-    
+
     # Determine run mode
     use_headless = args.no_gui or args.daemon or args.api
-    
+
     if use_headless:
         if args.daemon or args.api:
             # Full headless service with API support
             from .control.service import HeadlessService, ServiceConfig
-            
+
             service_config = ServiceConfig(
                 enable_api=args.api,
                 api_host=args.api_host,
                 api_port=args.api_port,
                 daemon=args.daemon,
             )
-            
+
             service = HeadlessService(config, service_config)
             service.run()
         else:

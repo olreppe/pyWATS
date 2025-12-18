@@ -5,7 +5,7 @@ from enum import IntEnum
 class AssetState(IntEnum):
     """
     Asset state enumeration.
-    
+
     Values match the WATS API:
         0 = Unknown
         1 = In Operation
@@ -22,7 +22,7 @@ class AssetState(IntEnum):
     IN_CALIBRATION = 4
     IN_STORAGE = 5
     SCRAPPED = 6
-    
+
     # Aliases for backward compatibility
     OK = 1  # Same as IN_OPERATION
 
@@ -30,7 +30,7 @@ class AssetState(IntEnum):
 class AssetAlarmState(IntEnum):
     """
     Asset alarm state as returned by the Status endpoint.
-    
+
     This indicates alarm conditions based on thresholds configured
     on the asset type (running count, calibration due, etc.)
     """
@@ -42,7 +42,7 @@ class AssetAlarmState(IntEnum):
 class AssetLogType(IntEnum):
     """
     Asset log entry type.
-    
+
     Values from API documentation:
         0 = Message
         1 = Register (Asset created)
@@ -59,7 +59,7 @@ class AssetLogType(IntEnum):
     CALIBRATION = 4
     MAINTENANCE = 5
     STATE_CHANGE = 6
-    
+
     # Aliases for backward compatibility
     UNKNOWN = 0
     CREATED = 1

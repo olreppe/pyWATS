@@ -100,7 +100,7 @@ class ProductService:
 
         Returns:
             Created Product object, or None on failure
-            
+
         Example:
             >>> product = service.create_product(
             ...     part_number="WIDGET-001",
@@ -231,7 +231,7 @@ class ProductService:
 
         Returns:
             Created ProductRevision object, or None if product not found
-            
+
         Example:
             >>> rev = service.create_revision(
             ...     part_number="WIDGET-001",
@@ -340,7 +340,7 @@ class ProductService:
     ) -> bool:
         """
         Update product BOM (Bill of Materials).
-        
+
         Uses the public API which accepts WSBF (WATS Standard BOM Format) XML.
 
         Args:
@@ -413,8 +413,8 @@ class ProductService:
         return []
 
     def set_product_tags(
-        self, 
-        part_number: str, 
+        self,
+        part_number: str,
         tags: List[Dict[str, str]]
     ) -> Optional[Product]:
         """
@@ -430,7 +430,7 @@ class ProductService:
         product = self.get_product(part_number)
         if not product:
             return None
-        
+
         # Convert tags to Setting objects format for XML
         from ...shared import Setting, ChangeType
         product.tags = [
@@ -440,9 +440,9 @@ class ProductService:
         return self.update_product(product)
 
     def add_product_tag(
-        self, 
-        part_number: str, 
-        key: str, 
+        self,
+        part_number: str,
+        key: str,
         value: str
     ) -> Optional[Product]:
         """
@@ -459,23 +459,23 @@ class ProductService:
         product = self.get_product(part_number)
         if not product:
             return None
-        
+
         from ...shared import Setting, ChangeType
-        
+
         # Check if tag already exists
         for tag in product.tags:
             if tag.key == key:
                 tag.value = value
                 tag.change = ChangeType.UPDATE
                 return self.update_product(product)
-        
+
         # Add new tag
         product.tags.append(Setting(key=key, value=value, change=ChangeType.ADD))
         return self.update_product(product)
 
     def get_revision_tags(
-        self, 
-        part_number: str, 
+        self,
+        part_number: str,
         revision: str
     ) -> List[Dict[str, str]]:
         """
@@ -494,8 +494,8 @@ class ProductService:
         return []
 
     def set_revision_tags(
-        self, 
-        part_number: str, 
+        self,
+        part_number: str,
         revision: str,
         tags: List[Dict[str, str]]
     ) -> Optional[ProductRevision]:
@@ -513,7 +513,7 @@ class ProductService:
         rev = self.get_revision(part_number, revision)
         if not rev:
             return None
-        
+
         from ...shared import Setting, ChangeType
         rev.tags = [
             Setting(key=t["key"], value=t["value"], change=ChangeType.ADD)
@@ -522,10 +522,10 @@ class ProductService:
         return self.update_revision(rev)
 
     def add_revision_tag(
-        self, 
-        part_number: str, 
+        self,
+        part_number: str,
         revision: str,
-        key: str, 
+        key: str,
         value: str
     ) -> Optional[ProductRevision]:
         """
@@ -543,16 +543,16 @@ class ProductService:
         rev = self.get_revision(part_number, revision)
         if not rev:
             return None
-        
+
         from ...shared import Setting, ChangeType
-        
+
         # Check if tag already exists
         for tag in rev.tags:
             if tag.key == key:
                 tag.value = value
                 tag.change = ChangeType.UPDATE
                 return self.update_revision(rev)
-        
+
         # Add new tag
         rev.tags.append(Setting(key=key, value=value, change=ChangeType.ADD))
         return self.update_revision(rev)

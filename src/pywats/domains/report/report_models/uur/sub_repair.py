@@ -28,4 +28,3 @@ class SubRepair(SubUnit):
     """
     A list of failures on this sub unit. Only for UUR reports.
     """
-

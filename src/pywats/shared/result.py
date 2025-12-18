@@ -39,7 +39,7 @@ T = TypeVar("T")
 
 class ErrorCode(str, Enum):
     """Standard error codes for pyWATS operations.
-    
+
     These codes help LLMs/Agents understand what went wrong and how to fix it.
     """
     # Validation errors
@@ -47,39 +47,39 @@ class ErrorCode(str, Enum):
     MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD"
     INVALID_FORMAT = "INVALID_FORMAT"
     VALUE_OUT_OF_RANGE = "VALUE_OUT_OF_RANGE"
-    
+
     # Resource errors
     NOT_FOUND = "NOT_FOUND"
     ALREADY_EXISTS = "ALREADY_EXISTS"
     CONFLICT = "CONFLICT"
-    
+
     # Operation errors
     OPERATION_FAILED = "OPERATION_FAILED"
     SAVE_FAILED = "SAVE_FAILED"
     DELETE_FAILED = "DELETE_FAILED"
-    
+
     # Authentication/Authorization
     UNAUTHORIZED = "UNAUTHORIZED"
     FORBIDDEN = "FORBIDDEN"
-    
+
     # Network/API errors
     CONNECTION_ERROR = "CONNECTION_ERROR"
     TIMEOUT = "TIMEOUT"
     API_ERROR = "API_ERROR"
-    
+
     # Unknown
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
 
 
 class Failure(BaseModel):
     """Represents a failed operation with structured error information.
-    
+
     Attributes:
         error_code: Machine-readable error code (use ErrorCode enum values)
         message: Human-readable error description
         details: Additional context (field names, values, suggestions)
         suggestions: List of suggested fixes or next steps
-        
+
     Example:
         >>> failure = Failure(
         ...     error_code="MISSING_REQUIRED_FIELD",
@@ -92,7 +92,7 @@ class Failure(BaseModel):
         use_enum_values=True,
         arbitrary_types_allowed=True,
     )
-    
+
     error_code: str = Field(
         ...,
         description="Machine-readable error code (use ErrorCode enum values)"
@@ -109,22 +109,22 @@ class Failure(BaseModel):
         default_factory=list,
         description="List of suggested fixes or next steps"
     )
-    
+
     @property
     def is_success(self) -> bool:
         """Always False for Failure."""
         return False
-    
+
     @property
     def is_failure(self) -> bool:
         """Always True for Failure."""
         return True
-    
+
     @property
     def value(self) -> None:
         """Failures have no value."""
         return None
-    
+
     def __str__(self) -> str:
         result = f"[{self.error_code}] {self.message}"
         if self.suggestions:
@@ -134,11 +134,11 @@ class Failure(BaseModel):
 
 class Success(BaseModel, Generic[T]):
     """Represents a successful operation with a value.
-    
+
     Attributes:
         value: The result value of the operation
         message: Optional success message
-        
+
     Example:
         >>> product = Product(part_number="WIDGET-001")
         >>> success = Success(value=product, message="Product created")
@@ -148,7 +148,7 @@ class Success(BaseModel, Generic[T]):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
-    
+
     value: Any = Field(
         ...,
         description="The result value of the operation"
@@ -157,22 +157,22 @@ class Success(BaseModel, Generic[T]):
         default="",
         description="Optional success message"
     )
-    
+
     @property
     def is_success(self) -> bool:
         """Always True for Success."""
         return True
-    
+
     @property
     def is_failure(self) -> bool:
         """Always False for Success."""
         return False
-    
+
     @property
     def error_code(self) -> None:
         """Success has no error code."""
         return None
-    
+
     def __str__(self) -> str:
         if self.message:
             return f"Success: {self.message}"
@@ -185,14 +185,14 @@ Result = Union[Success[T], Failure]
 
 def failure_from_exception(exc: Exception, error_code: str = "UNKNOWN_ERROR") -> Failure:
     """Create a Failure from an exception.
-    
+
     Args:
         exc: The exception to convert
         error_code: Error code to use (default: UNKNOWN_ERROR)
-        
+
     Returns:
         Failure with exception details
-        
+
     Example:
         >>> try:
         ...     risky_operation()

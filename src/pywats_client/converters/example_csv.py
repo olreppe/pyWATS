@@ -23,27 +23,27 @@ class CSVConverter(ConverterBase):
     """
     Converts CSV test result files to WATS reports.
     """
-    
+
     @property
     def name(self) -> str:
         return "CSV Test Results Converter"
-    
+
     @property
     def description(self) -> str:
         return "Converts CSV files containing test results to WATS UUT reports"
-    
+
     @property
     def extensions(self) -> list[str]:
         return [".csv"]
-    
+
     def convert(self, file: BinaryIO, filename: str) -> ConverterResult:
         """
         Convert a CSV file to WATS report format.
-        
+
         Args:
             file: Binary file object
             filename: Original filename
-            
+
         Returns:
             ConverterResult with the converted report or error
         """
@@ -51,17 +51,17 @@ class CSVConverter(ConverterBase):
             # Read CSV content
             text_file = TextIOWrapper(file, encoding='utf-8')
             reader = csv.DictReader(text_file)
-            
+
             rows = list(reader)
             if not rows:
                 return ConverterResult(
                     success=False,
                     error="CSV file is empty or has no data rows"
                 )
-            
+
             # Get common fields from first row
             first_row = rows[0]
-            
+
             # Build the WATS report
             report: Dict[str, Any] = {
                 "type": "Test",
@@ -76,24 +76,24 @@ class CSVConverter(ConverterBase):
                     "steps": []
                 }
             }
-            
+
             # Add optional fields if present
             if "station" in first_row:
                 report["machineName"] = first_row["station"]
-            
+
             if "process" in first_row:
                 report["processCode"] = first_row["process"]
-            
+
             # Convert each row to a test step
             for row in rows:
                 step = self._row_to_step(row)
                 report["root"]["steps"].append(step)
-            
+
             return ConverterResult(success=True, report=report)
-            
+
         except Exception as e:
             return ConverterResult(success=False, error=str(e))
-    
+
     def _determine_overall_result(self, rows: list) -> str:
         """Determine overall test result from all rows"""
         for row in rows:
@@ -101,7 +101,7 @@ class CSVConverter(ConverterBase):
             if status in ["F", "FAIL", "FAILED"]:
                 return "F"
         return "P"
-    
+
     def _row_to_step(self, row: dict) -> dict:
         """Convert a CSV row to a WATS test step"""
         status = row.get("status", row.get("result", "P")).upper()
@@ -111,14 +111,14 @@ class CSVConverter(ConverterBase):
             status = "F"
         else:
             status = "D"  # Done/skipped
-        
+
         step: Dict[str, Any] = {
             "stepType": "NumericLimitTest",
             "name": row.get("test_name", "Test"),
             "status": status,
             "group": row.get("group", "Tests")
         }
-        
+
         # Add numeric value if present
         if "value" in row:
             try:
@@ -128,13 +128,13 @@ class CSVConverter(ConverterBase):
                     "value": float(row["value"]),
                     "unit": row.get("unit", ""),
                 }]
-                
+
                 # Add limits if present
                 if "low_limit" in row:
                     step["numericMeas"][0]["lowLimit"] = float(row["low_limit"])
                 if "high_limit" in row:
                     step["numericMeas"][0]["highLimit"] = float(row["high_limit"])
-                    
+
             except ValueError:
                 # If value is not numeric, treat as string
                 step["stepType"] = "StringValueTest"
@@ -143,5 +143,5 @@ class CSVConverter(ConverterBase):
                     "status": status,
                     "value": row["value"],
                 }]
-        
+
         return step

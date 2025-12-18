@@ -12,15 +12,15 @@ class SerialNumberIdentifier(IntEnum):
 class UnitPhaseFlag(IntFlag):
     """
     Unit phase flags representing lifecycle states.
-    
+
     Each value is a power of 2, allowing potential combination via bitwise OR
     for filtering or querying multiple phases. For setting a unit's phase,
     use a single value.
-    
+
     Example:
         # Single phase
         phase = UnitPhaseFlag.FINALIZED
-        
+
         # Multiple phases for filtering (future use)
         phases = UnitPhaseFlag.UNDER_PRODUCTION | UnitPhaseFlag.FINALIZED
     """

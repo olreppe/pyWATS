@@ -6,21 +6,21 @@ Provides CLI commands for headless configuration and control.
 Usage:
     # Show current configuration
     pywats-client config show
-    
+
     # Set configuration values
     pywats-client config set server_url https://wats.example.com
     pywats-client config set api_token YOUR_TOKEN
     pywats-client config set station_name MY_STATION
-    
+
     # Get specific config value
     pywats-client config get server_url
-    
+
     # Show service status
     pywats-client status
-    
+
     # Test connection
     pywats-client test-connection
-    
+
     # Manage converters
     pywats-client converters list
     pywats-client converters enable my_converter
@@ -39,11 +39,11 @@ from dataclasses import fields
 
 class ConfigCLI:
     """CLI interface for configuration management"""
-    
+
     def __init__(self, config_path: Optional[Path] = None):
         """
         Initialize CLI with config path.
-        
+
         Args:
             config_path: Path to config file. Defaults to ~/.pywats_client/config.json
         """
@@ -51,7 +51,7 @@ class ConfigCLI:
             config_path = Path.home() / ".pywats_client" / "config.json"
         self.config_path = config_path
         self._config = None
-    
+
     @property
     def config(self):
         """Lazy load configuration"""
@@ -59,13 +59,13 @@ class ConfigCLI:
             from ..core.config import ClientConfig
             self._config = ClientConfig.load_or_create(self.config_path)
         return self._config
-    
+
     def show_config(self, format: str = "table") -> None:
         """Display current configuration"""
         from ..core.config import ClientConfig
-        
+
         config_dict = self.config.to_dict()
-        
+
         if format == "json":
             print(json.dumps(config_dict, indent=2, default=str))
         elif format == "env":
@@ -81,7 +81,7 @@ class ConfigCLI:
             print("=" * 60)
             print(f"Config file: {self.config_path}")
             print("-" * 60)
-            
+
             # Group settings
             groups = {
                 "Instance": ["instance_id", "instance_name"],
@@ -91,7 +91,7 @@ class ConfigCLI:
                 "Converters": ["converters_enabled", "watch_folders"],
                 "Logging": ["log_level", "log_file"],
             }
-            
+
             for group_name, keys in groups.items():
                 print(f"\n[{group_name}]")
                 for key in keys:
@@ -103,9 +103,9 @@ class ConfigCLI:
                         else:
                             display_value = value
                         print(f"  {key}: {display_value}")
-            
+
             print("\n" + "=" * 60)
-    
+
     def get_value(self, key: str) -> Any:
         """Get a specific configuration value"""
         config_dict = self.config.to_dict()
@@ -121,18 +121,18 @@ class ConfigCLI:
                 else:
                     raise KeyError(f"Unknown configuration key: {key}")
             return value
-    
+
     def set_value(self, key: str, value: str) -> None:
         """
         Set a configuration value.
-        
+
         Args:
             key: Configuration key (supports dot notation for nested values)
             value: Value to set (will be type-converted automatically)
         """
         # Type conversion based on current value type
         current = self.get_value(key) if self._key_exists(key) else None
-        
+
         if current is not None:
             if isinstance(current, bool):
                 value = value.lower() in ("true", "1", "yes", "on")
@@ -146,12 +146,12 @@ class ConfigCLI:
                     value = json.loads(value)
                 except json.JSONDecodeError:
                     value = [v.strip() for v in value.split(",")]
-        
+
         # Set the value
         setattr(self.config, key, value)
         self.config.save(self.config_path)
         print(f"✓ Set {key} = {value}")
-    
+
     def _key_exists(self, key: str) -> bool:
         """Check if a config key exists"""
         try:
@@ -159,20 +159,20 @@ class ConfigCLI:
             return True
         except KeyError:
             return False
-    
+
     def test_connection(self) -> bool:
         """Test connection to WATS server"""
         print("\nTesting connection to WATS server...")
         print(f"  Server: {self.config.service_address}")
-        
+
         if not self.config.service_address:
             print("  ✗ No server address configured")
             return False
-        
+
         if not self.config.api_token:
             print("  ✗ No API token configured")
             return False
-        
+
         try:
             from pywats import pyWATS
             client = pyWATS(
@@ -180,7 +180,7 @@ class ConfigCLI:
                 token=self.config.api_token
             )
             print("  ✓ Client initialized successfully")
-            
+
             # Try a simple API call (pyWATS API is synchronous)
             try:
                 version = client.app.get_version()
@@ -189,11 +189,11 @@ class ConfigCLI:
             except Exception as e:
                 print(f"  ✗ API call failed: {e}")
                 return False
-                
+
         except Exception as e:
             print(f"  ✗ Connection failed: {e}")
             return False
-    
+
     def show_status(self) -> Dict[str, Any]:
         """Show current service status"""
         status = {
@@ -204,59 +204,59 @@ class ConfigCLI:
             "station_name": self.config.station_name or "(not set)",
             "instance_name": self.config.instance_name,
         }
-        
+
         print("\n" + "=" * 50)
         print("pyWATS Client Status")
         print("=" * 50)
-        
+
         for key, value in status.items():
             icon = "✓" if value not in [False, "(not set)", ""] else "✗"
             if isinstance(value, bool):
                 value = "Yes" if value else "No"
             print(f"  {icon} {key.replace('_', ' ').title()}: {value}")
-        
+
         print("=" * 50)
         return status
-    
+
     def list_converters(self) -> List[Dict[str, Any]]:
         """List available converters"""
         converters_dir = self.config.data_path / "converters"
-        
+
         print("\n" + "=" * 50)
         print("Available Converters")
         print("=" * 50)
-        
+
         if not converters_dir.exists():
             print("  (No converters directory found)")
             return []
-        
+
         converters = []
         # Get list of enabled converters from config
         enabled_list = [c.name for c in self.config.converters if c.enabled]
-        
+
         for py_file in converters_dir.glob("*.py"):
             if py_file.name.startswith("_"):
                 continue
-            
+
             converter_name = py_file.stem
             enabled = converter_name in enabled_list
-            
+
             converters.append({
                 "name": converter_name,
                 "path": str(py_file),
                 "enabled": enabled,
             })
-            
+
             icon = "✓" if enabled else "○"
             print(f"  {icon} {converter_name}")
             print(f"      Path: {py_file}")
-        
+
         if not converters:
             print("  (No converters found)")
-        
+
         print("=" * 50)
         return converters
-    
+
     def enable_converter(self, name: str) -> None:
         """Enable a converter by name"""
         # Check if converter exists in config
@@ -266,16 +266,16 @@ class ConfigCLI:
                 self.config.save(self.config_path)
                 print(f"✓ Enabled converter: {name}")
                 return
-        
+
         # Converter not in config, add it
         converters_dir = self.config.data_path / "converters"
         converter_path = converters_dir / f"{name}.py"
-        
+
         if not converter_path.exists():
             print(f"✗ Converter not found: {name}")
             print(f"  Expected at: {converter_path}")
             return
-        
+
         from ..core.config import ConverterConfig
         new_conv = ConverterConfig(
             name=name,
@@ -286,7 +286,7 @@ class ConfigCLI:
         self.config.converters.append(new_conv)
         self.config.save(self.config_path)
         print(f"✓ Added and enabled converter: {name}")
-    
+
     def disable_converter(self, name: str) -> None:
         """Disable a converter by name"""
         for conv in self.config.converters:
@@ -295,17 +295,17 @@ class ConfigCLI:
                 self.config.save(self.config_path)
                 print(f"✓ Disabled converter: {name}")
                 return
-        
+
         print(f"✗ Converter not found in config: {name}")
-    
-    def init_config(self, 
+
+    def init_config(self,
                     server_url: Optional[str] = None,
                     api_token: Optional[str] = None,
                     station_name: Optional[str] = None,
                     interactive: bool = True) -> None:
         """
         Initialize configuration interactively or with provided values.
-        
+
         Args:
             server_url: WATS server URL
             api_token: API token
@@ -315,7 +315,7 @@ class ConfigCLI:
         print("\n" + "=" * 50)
         print("pyWATS Client Setup")
         print("=" * 50)
-        
+
         # Server URL
         if server_url:
             self.config.service_address = server_url
@@ -323,7 +323,7 @@ class ConfigCLI:
             url = input("WATS Server URL [https://wats.example.com]: ").strip()
             if url:
                 self.config.service_address = url
-        
+
         # API Token
         if api_token:
             self.config.api_token = api_token
@@ -332,7 +332,7 @@ class ConfigCLI:
             token = getpass.getpass("API Token: ").strip()
             if token:
                 self.config.api_token = token
-        
+
         # Station Name
         if station_name:
             self.config.station_name = station_name
@@ -341,12 +341,12 @@ class ConfigCLI:
             default_station = socket.gethostname()
             name = input(f"Station Name [{default_station}]: ").strip()
             self.config.station_name = name or default_station
-        
+
         # Save configuration
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         self.config.save(self.config_path)
         print(f"\n✓ Configuration saved to {self.config_path}")
-        
+
         # Test connection
         if interactive:
             test = input("\nTest connection now? [Y/n]: ").strip().lower()
@@ -360,19 +360,19 @@ def create_parser() -> argparse.ArgumentParser:
         prog="pywats-client",
         description="pyWATS Client - Headless Control Interface"
     )
-    
+
     parser.add_argument(
         "--config", "-c",
         type=str,
         help="Path to configuration file"
     )
-    
+
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
-    
+
     # Config commands
     config_parser = subparsers.add_parser("config", help="Configuration management")
     config_subparsers = config_parser.add_subparsers(dest="config_action")
-    
+
     # config show
     show_parser = config_subparsers.add_parser("show", help="Show current configuration")
     show_parser.add_argument(
@@ -381,16 +381,16 @@ def create_parser() -> argparse.ArgumentParser:
         default="table",
         help="Output format"
     )
-    
+
     # config get
     get_parser = config_subparsers.add_parser("get", help="Get a configuration value")
     get_parser.add_argument("key", help="Configuration key")
-    
+
     # config set
     set_parser = config_subparsers.add_parser("set", help="Set a configuration value")
     set_parser.add_argument("key", help="Configuration key")
     set_parser.add_argument("value", help="Value to set")
-    
+
     # config init
     init_parser = config_subparsers.add_parser("init", help="Initialize configuration")
     init_parser.add_argument("--server-url", help="WATS server URL")
@@ -398,25 +398,25 @@ def create_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("--station-name", help="Station name")
     init_parser.add_argument("--non-interactive", action="store_true",
                             help="Don't prompt for input")
-    
+
     # Status command
-    status_parser = subparsers.add_parser("status", help="Show service status")
-    
+    subparsers.add_parser("status", help="Show service status")
+
     # Test connection command
-    test_parser = subparsers.add_parser("test-connection", help="Test server connection")
-    
+    subparsers.add_parser("test-connection", help="Test server connection")
+
     # Converters commands
     conv_parser = subparsers.add_parser("converters", help="Converter management")
     conv_subparsers = conv_parser.add_subparsers(dest="conv_action")
-    
+
     conv_subparsers.add_parser("list", help="List available converters")
-    
+
     enable_parser = conv_subparsers.add_parser("enable", help="Enable a converter")
     enable_parser.add_argument("name", help="Converter name")
-    
+
     disable_parser = conv_subparsers.add_parser("disable", help="Disable a converter")
     disable_parser.add_argument("name", help="Converter name")
-    
+
     # Start command (headless service)
     start_parser = subparsers.add_parser("start", help="Start the service")
     start_parser.add_argument("--daemon", "-d", action="store_true",
@@ -429,38 +429,38 @@ def create_parser() -> argparse.ArgumentParser:
                              help="HTTP API host (default: 127.0.0.1)")
     start_parser.add_argument("--pid-file", type=str,
                              help="Path to PID file for daemon mode")
-    
+
     # Stop command
     stop_parser = subparsers.add_parser("stop", help="Stop the service")
     stop_parser.add_argument("--pid-file", type=str,
                             help="Path to PID file")
-    
+
     # Version command
     subparsers.add_parser("version", help="Show version")
-    
+
     return parser
 
 
 def cli_main(args: Optional[List[str]] = None) -> int:
     """
     Main entry point for CLI.
-    
+
     Args:
         args: Command line arguments (defaults to sys.argv[1:])
-        
+
     Returns:
         Exit code (0 for success, non-zero for error)
     """
     parser = create_parser()
     parsed = parser.parse_args(args)
-    
+
     # Determine config path
     config_path = None
     if parsed.config:
         config_path = Path(parsed.config)
-    
+
     cli = ConfigCLI(config_path)
-    
+
     try:
         if parsed.command == "config":
             if parsed.config_action == "show":
@@ -479,14 +479,14 @@ def cli_main(args: Optional[List[str]] = None) -> int:
                 )
             else:
                 parser.parse_args(["config", "--help"])
-                
+
         elif parsed.command == "status":
             cli.show_status()
-            
+
         elif parsed.command == "test-connection":
             success = cli.test_connection()
             return 0 if success else 1
-            
+
         elif parsed.command == "converters":
             if parsed.conv_action == "list":
                 cli.list_converters()
@@ -496,10 +496,10 @@ def cli_main(args: Optional[List[str]] = None) -> int:
                 cli.disable_converter(parsed.name)
             else:
                 parser.parse_args(["converters", "--help"])
-                
+
         elif parsed.command == "start":
             from .service import HeadlessService, ServiceConfig
-            
+
             service_config = ServiceConfig(
                 enable_api=parsed.api,
                 api_host=parsed.api_host,
@@ -507,23 +507,23 @@ def cli_main(args: Optional[List[str]] = None) -> int:
                 daemon=parsed.daemon,
                 pid_file=parsed.pid_file,
             )
-            
+
             service = HeadlessService(cli.config, service_config)
             service.run()
-            
+
         elif parsed.command == "stop":
             from .service import HeadlessService
             HeadlessService.stop_daemon(parsed.pid_file)
-            
+
         elif parsed.command == "version":
             from .. import __version__
             print(f"pyWATS Client v{__version__}")
-            
+
         else:
             parser.print_help()
-            
+
         return 0
-        
+
     except KeyError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1

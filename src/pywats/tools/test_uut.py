@@ -33,7 +33,7 @@ def create_test_uut_report(
 ) -> UUTReport:
     """
     Create a comprehensive test UUT report demonstrating all pyWATS features.
-    
+
     This function creates a fully populated UUT report with:
     - Multiple sequence calls with nested structure
     - Various numeric tests (all comparison operators)
@@ -42,17 +42,17 @@ def create_test_uut_report(
     - Chart/graph data
     - Misc info entries
     - Sub-units
-    
+
     Args:
         part_number: Part number for the test report (default: "PYWATS-TEST-001")
         serial_number: Serial number (auto-generated if None)
         station_name: Name of the test station
         location: Location/site name
         operator_name: Operator name
-        
+
     Returns:
         UUTReport: A fully populated test report ready to submit
-        
+
     Example:
         >>> from pywats.tools import create_test_uut_report
         >>> report = create_test_uut_report()
@@ -63,7 +63,7 @@ def create_test_uut_report(
     if serial_number is None:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         serial_number = f"PYWATS-{timestamp}-{random.randint(1000, 9999)}"
-    
+
     # Create report with process code 10 = "SW Debug"
     report = UUTReport(
         pn=part_number,
@@ -76,7 +76,7 @@ def create_test_uut_report(
         result="P",  # Will be set based on test results
         start=datetime.now().astimezone(),
     )
-    
+
     # Set UUT Info - using the correct field names
     report.info = UUTInfo(
         operator=operator_name,
@@ -85,13 +85,13 @@ def create_test_uut_report(
     )
     # Set exec_time via alias
     report.info.exec_time = 2.5
-    
+
     # Get root sequence call
     root = report.get_root_sequence_call()
     root.sequence.file_name = "pyWATS_TestSequence.py"
     root.sequence.path = "pyWATS/tests"
     root.sequence.version = "1.0.0"
-    
+
     # =========================================================================
     # Sequence 1: Numeric Limit Tests
     # =========================================================================
@@ -101,9 +101,9 @@ def create_test_uut_report(
         version="1.0.0",
         path="pyWATS/tests/numeric"
     )
-    
+
     # Add various numeric tests demonstrating all comparison operators
-    
+
     # LOG - Log value only (no comparison)
     numeric_seq.add_numeric_step(
         name="Voltage Reading (LOG)",
@@ -112,7 +112,7 @@ def create_test_uut_report(
         comp_op=CompOp.LOG,
         status="P"
     )
-    
+
     # EQ - Equal to
     numeric_seq.add_numeric_step(
         name="Reference Voltage (EQ)",
@@ -122,7 +122,7 @@ def create_test_uut_report(
         low_limit=5.0,
         status="P"
     )
-    
+
     # GE - Greater than or Equal
     numeric_seq.add_numeric_step(
         name="Minimum Current (GE)",
@@ -132,7 +132,7 @@ def create_test_uut_report(
         low_limit=1.0,
         status="P"
     )
-    
+
     # LE - Less than or Equal
     numeric_seq.add_numeric_step(
         name="Max Temperature (LE)",
@@ -142,7 +142,7 @@ def create_test_uut_report(
         low_limit=85.0,
         status="P"
     )
-    
+
     # GT - Greater Than (strict)
     numeric_seq.add_numeric_step(
         name="Signal Strength (GT)",
@@ -152,7 +152,7 @@ def create_test_uut_report(
         low_limit=-50.0,
         status="P"
     )
-    
+
     # LT - Less Than (strict)
     numeric_seq.add_numeric_step(
         name="Noise Level (LT)",
@@ -162,7 +162,7 @@ def create_test_uut_report(
         low_limit=0.01,
         status="P"
     )
-    
+
     # GELE - Between (inclusive)
     numeric_seq.add_numeric_step(
         name="Supply Voltage (GELE)",
@@ -173,7 +173,7 @@ def create_test_uut_report(
         high_limit=3.6,
         status="P"
     )
-    
+
     # GELT - Low inclusive, high exclusive
     numeric_seq.add_numeric_step(
         name="Clock Frequency (GELT)",
@@ -184,7 +184,7 @@ def create_test_uut_report(
         high_limit=26.0,
         status="P"
     )
-    
+
     # GTLT - Strictly between
     numeric_seq.add_numeric_step(
         name="Phase Margin (GTLT)",
@@ -195,7 +195,7 @@ def create_test_uut_report(
         high_limit=65.0,
         status="P"
     )
-    
+
     # GTLE - Low exclusive, high inclusive
     numeric_seq.add_numeric_step(
         name="Gain (GTLE)",
@@ -206,7 +206,7 @@ def create_test_uut_report(
         high_limit=20.0,
         status="P"
     )
-    
+
     # Multi-numeric step
     multi_num = numeric_seq.add_multi_numeric_step(
         name="Power Supply Measurements",
@@ -239,7 +239,7 @@ def create_test_uut_report(
         high_limit=12.5,
         status="P"
     )
-    
+
     # =========================================================================
     # Sequence 2: Pass/Fail Tests
     # =========================================================================
@@ -249,13 +249,13 @@ def create_test_uut_report(
         version="1.0.0",
         path="pyWATS/tests/boolean"
     )
-    
+
     # Simple pass/fail tests
     pf_seq.add_boolean_step(name="Self-Test", status="P")
     pf_seq.add_boolean_step(name="Communication Check", status="P")
     pf_seq.add_boolean_step(name="Hardware Present", status="P")
     pf_seq.add_boolean_step(name="Firmware Valid", status="P")
-    
+
     # Multi-boolean step
     multi_bool = pf_seq.add_multi_boolean_step(
         name="System Health Checks",
@@ -265,7 +265,7 @@ def create_test_uut_report(
     multi_bool.add_measurement(name="Memory OK", status="P")
     multi_bool.add_measurement(name="Storage OK", status="P")
     multi_bool.add_measurement(name="Network OK", status="P")
-    
+
     # =========================================================================
     # Sequence 3: String Tests
     # =========================================================================
@@ -275,7 +275,7 @@ def create_test_uut_report(
         version="1.0.0",
         path="pyWATS/tests/string"
     )
-    
+
     # LOG - Just log value
     string_seq.add_string_step(
         name="Firmware Version",
@@ -283,7 +283,7 @@ def create_test_uut_report(
         comp_op=CompOp.LOG,
         status="P"
     )
-    
+
     # CASESENSIT - Case sensitive comparison
     string_seq.add_string_step(
         name="Product ID (Case Sensitive)",
@@ -292,7 +292,7 @@ def create_test_uut_report(
         limit="PROD-ABC-123",
         status="P"
     )
-    
+
     # IGNORECASE - Case insensitive comparison
     string_seq.add_string_step(
         name="Status Response",
@@ -301,7 +301,7 @@ def create_test_uut_report(
         limit="ok",
         status="P"
     )
-    
+
     # Multi-string step
     multi_str = string_seq.add_multi_string_step(
         name="Device Information",
@@ -326,7 +326,7 @@ def create_test_uut_report(
         comp_op=CompOp.LOG,
         status="P"
     )
-    
+
     # =========================================================================
     # Sequence 4: Chart/Graph Data
     # =========================================================================
@@ -336,17 +336,17 @@ def create_test_uut_report(
         version="1.0.0",
         path="pyWATS/tests/charts"
     )
-    
+
     # Create a sine wave chart
     x_values = [i * 0.1 for i in range(100)]
     y_values = [math.sin(x * 2 * math.pi / 10) * 5 for x in x_values]
-    
+
     sine_series = ChartSeries(
         name="Sine Wave",
         x_data=";".join(str(x) for x in x_values),
         y_data=";".join(f"{y:.3f}" for y in y_values)
     )
-    
+
     # Add reference lines
     upper_limit_series = ChartSeries(
         name="Upper Limit",
@@ -358,7 +358,7 @@ def create_test_uut_report(
         x_data="0;10",
         y_data="-4;-4"
     )
-    
+
     chart_seq.add_chart_step(
         name="Signal Response",
         chart_type=ChartType.LINE,
@@ -370,17 +370,17 @@ def create_test_uut_report(
         series=[sine_series, upper_limit_series, lower_limit_series],
         status="P"
     )
-    
+
     # Power consumption over time
     time_points = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     power_values = [2.1, 2.3, 4.5, 4.2, 4.3, 4.1, 4.4, 4.2, 2.2, 2.1, 2.0]
-    
+
     power_series = ChartSeries(
         name="Power Consumption",
         x_data=";".join(str(t) for t in time_points),
         y_data=";".join(str(p) for p in power_values)
     )
-    
+
     chart_seq.add_chart_step(
         name="Power Profile",
         chart_type=ChartType.LINE,
@@ -392,7 +392,7 @@ def create_test_uut_report(
         series=[power_series],
         status="P"
     )
-    
+
     # =========================================================================
     # Sequence 5: Generic/Action Steps
     # =========================================================================
@@ -402,35 +402,35 @@ def create_test_uut_report(
         version="1.0.0",
         path="pyWATS/tests/actions"
     )
-    
+
     action_seq.add_generic_step(
         step_type=FlowType.Action,
         name="Initialize Hardware",
         status="P",
         tot_time=0.5
     )
-    
+
     action_seq.add_generic_step(
         step_type=FlowType.Action,
         name="Load Firmware",
         status="P",
         tot_time=1.2
     )
-    
+
     action_seq.add_generic_step(
         step_type=FlowType.Action,
         name="Configure DUT",
         status="P",
         tot_time=0.3
     )
-    
+
     action_seq.add_generic_step(
         step_type=FlowType.Action,
         name="Cleanup",
         status="P",
         tot_time=0.2
     )
-    
+
     # =========================================================================
     # Add Misc Info
     # =========================================================================
@@ -438,7 +438,7 @@ def create_test_uut_report(
     report.add_misc_info("Test Type", "Connection Verification")
     report.add_misc_info("Timestamp", datetime.now().isoformat())
     report.add_misc_info("Random Seed", str(random.randint(1, 100000)))
-    
+
     # =========================================================================
     # Add Sub-Units
     # =========================================================================
@@ -454,10 +454,10 @@ def create_test_uut_report(
         pn="MOD-POWER-001",
         rev="B"
     )
-    
+
     # Set overall result to Passed
     report.result = "P"
-    
+
     return report
 
 
@@ -469,22 +469,22 @@ def create_minimal_test_report(
 ) -> UUTReport:
     """
     Create a minimal test report with just basic information.
-    
+
     Useful for quick connection tests with minimal data.
-    
+
     Args:
         part_number: Part number for the test report
         serial_number: Serial number (auto-generated if None)
         station_name: Name of the test station
         location: Location/site name
-        
+
     Returns:
         UUTReport: A minimal test report ready to submit
     """
     if serial_number is None:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         serial_number = f"PYWATS-{timestamp}"
-    
+
     report = UUTReport(
         pn=part_number,
         sn=serial_number,
@@ -496,11 +496,11 @@ def create_minimal_test_report(
         result="P",
         start=datetime.now().astimezone(),
     )
-    
+
     # Add one simple pass step
     root = report.get_root_sequence_call()
     root.add_boolean_step(name="Connection Test", status="P")
-    
+
     report.add_misc_info("Test Type", "Minimal Connection Test")
-    
+
     return report

@@ -22,7 +22,7 @@ class SoftwareRepository:
     """
 
     def __init__(
-        self, 
+        self,
         http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):

@@ -24,7 +24,7 @@ class ReportRepository:
     """
 
     def __init__(
-        self, 
+        self,
         http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
@@ -129,7 +129,7 @@ class ReportRepository:
 
         Returns:
             Report ID if successful, None otherwise
-        
+
         Notes:
             WSJF (WATS Smart JSON Format) accepts both UUT and UUR payloads. When posting repairs,
             the `uurInfo` block must include `processCode`, `refUUT`, `confirmDate`, `finalizeDate`,
@@ -142,7 +142,7 @@ class ReportRepository:
             data = report.model_dump(
                 mode="json", by_alias=True, exclude_none=True
             )
-            
+
             # Special handling for UUR reports: API requires certain fields to be present even if null
             if isinstance(report, UURReport) and 'uurInfo' in data:
                 uur_info = data['uurInfo']
@@ -160,7 +160,7 @@ class ReportRepository:
         else:
             data = report
         response = self._http_client.post("/api/Report/WSJF", data=data)
-        
+
         # Check for error responses
         if not response.is_success:
             # Try to get error details from response
@@ -181,7 +181,7 @@ class ReportRepository:
                     # Sometimes errors come as a list
                     error_msg = "; ".join(str(e) for e in response.data)
             raise ValueError(f"Report submission failed ({response.status_code}): {error_msg}")
-        
+
         if response.data:
             # Response can be a list with a single result or a dict
             result_data = response.data

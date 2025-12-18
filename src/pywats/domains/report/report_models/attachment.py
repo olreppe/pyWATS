@@ -22,4 +22,3 @@ class Attachment(WATSBase):
     """
     The data of the document or file in binary format.
     """
-    

@@ -29,10 +29,10 @@ from pydantic.fields import FieldInfo
 def get_model_fields(model_class: Type[BaseModel]) -> Dict[str, Dict[str, Any]]:
     """
     Get all fields of a Pydantic model with their metadata.
-    
+
     Args:
         model_class: A Pydantic model class (not instance)
-        
+
     Returns:
         Dictionary mapping field names to their metadata:
         - type: The field's type as a string
@@ -40,7 +40,7 @@ def get_model_fields(model_class: Type[BaseModel]) -> Dict[str, Dict[str, Any]]:
         - default: Default value if any
         - description: Field description from docstring or Field()
         - alias: Backend API alias if different from field name
-        
+
     Example:
         >>> from pywats.domains.report.models import WATSFilter
         >>> fields = get_model_fields(WATSFilter)
@@ -54,36 +54,36 @@ def get_model_fields(model_class: Type[BaseModel]) -> Dict[str, Dict[str, Any]]:
         }
     """
     result = {}
-    
+
     # Get type hints for proper type annotation strings
     try:
         hints = get_type_hints(model_class)
     except Exception:
         hints = {}
-    
+
     for field_name, field_info in model_class.model_fields.items():
         # Get type string
         type_str = "Any"
         if field_name in hints:
             type_hint = hints[field_name]
             type_str = _format_type(type_hint)
-        
+
         # Determine if required
         is_required = field_info.is_required()
-        
+
         # Get default
         default = field_info.default if field_info.default is not None else None
-        
+
         # Get description
         description = field_info.description or ""
-        
+
         # Get alias (serialization alias is what goes to the API)
         alias = None
         if field_info.serialization_alias:
             alias = field_info.serialization_alias
         elif field_info.alias:
             alias = field_info.alias
-            
+
         result[field_name] = {
             "type": type_str,
             "required": is_required,
@@ -91,20 +91,20 @@ def get_model_fields(model_class: Type[BaseModel]) -> Dict[str, Dict[str, Any]]:
             "description": description,
             "alias": alias,
         }
-    
+
     return result
 
 
 def get_required_fields(model_class: Type[BaseModel]) -> List[str]:
     """
     Get list of required field names for a model.
-    
+
     Args:
         model_class: A Pydantic model class
-        
+
     Returns:
         List of required field names
-        
+
     Example:
         >>> from pywats.domains.asset.models import Asset
         >>> required = get_required_fields(Asset)
@@ -120,13 +120,13 @@ def get_required_fields(model_class: Type[BaseModel]) -> List[str]:
 def get_optional_fields(model_class: Type[BaseModel]) -> List[str]:
     """
     Get list of optional field names for a model.
-    
+
     Args:
         model_class: A Pydantic model class
-        
+
     Returns:
         List of optional field names
-        
+
     Example:
         >>> from pywats.domains.report.models import WATSFilter
         >>> optional = get_optional_fields(WATSFilter)
@@ -142,13 +142,13 @@ def get_optional_fields(model_class: Type[BaseModel]) -> List[str]:
 def get_enum_values(enum_class: Type[Enum]) -> Dict[str, Any]:
     """
     Get all values of an enum as a dictionary.
-    
+
     Args:
         enum_class: An Enum class
-        
+
     Returns:
         Dictionary mapping enum names to their values
-        
+
     Example:
         >>> from pywats.domains.product.enums import ProductState
         >>> values = get_enum_values(ProductState)
@@ -161,13 +161,13 @@ def get_enum_values(enum_class: Type[Enum]) -> Dict[str, Any]:
 def get_enum_names(enum_class: Type[Enum]) -> List[str]:
     """
     Get all member names of an enum.
-    
+
     Args:
         enum_class: An Enum class
-        
+
     Returns:
         List of enum member names
-        
+
     Example:
         >>> from pywats.domains.asset.enums import AssetState
         >>> names = get_enum_names(AssetState)
@@ -180,16 +180,16 @@ def get_enum_names(enum_class: Type[Enum]) -> List[str]:
 def get_method_signature(method) -> Dict[str, Any]:
     """
     Get the signature of a method with parameter details.
-    
+
     Args:
         method: A method or function
-        
+
     Returns:
         Dictionary with method metadata:
         - parameters: Dict of param names to their info
         - return_type: Return type annotation
         - docstring: Method docstring
-        
+
     Example:
         >>> from pywats.domains.asset.service import AssetService
         >>> sig = get_method_signature(AssetService.create_asset)
@@ -202,12 +202,12 @@ def get_method_signature(method) -> Dict[str, Any]:
         hints = get_type_hints(method)
     except Exception:
         pass
-    
+
     parameters = {}
     for name, param in sig.parameters.items():
         if name == 'self':
             continue
-            
+
         param_info = {
             "type": _format_type(hints.get(name, Any)),
             "required": param.default is inspect.Parameter.empty,
@@ -215,7 +215,7 @@ def get_method_signature(method) -> Dict[str, Any]:
             "kind": str(param.kind).split(".")[-1],  # POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, etc.
         }
         parameters[name] = param_info
-    
+
     return {
         "parameters": parameters,
         "return_type": _format_type(hints.get('return', Any)),
@@ -226,13 +226,13 @@ def get_method_signature(method) -> Dict[str, Any]:
 def list_service_methods(service_class: Type) -> Dict[str, str]:
     """
     List all public methods of a service class with their docstrings.
-    
+
     Args:
         service_class: A service class
-        
+
     Returns:
         Dictionary mapping method names to their first line of docstring
-        
+
     Example:
         >>> from pywats.domains.asset.service import AssetService
         >>> methods = list_service_methods(AssetService)
@@ -252,10 +252,10 @@ def list_service_methods(service_class: Type) -> Dict[str, str]:
 def get_filter_field_categories() -> Dict[str, List[str]]:
     """
     Get WATSFilter fields organized by category.
-    
+
     Returns:
         Dictionary mapping category names to lists of field names.
-        
+
     Example:
         >>> categories = get_filter_field_categories()
         >>> print(categories['identity'])
@@ -264,7 +264,7 @@ def get_filter_field_categories() -> Dict[str, List[str]]:
     return {
         "identity": [
             "serial_number",
-            "part_number", 
+            "part_number",
             "revision",
             "batch_number",
         ],
@@ -313,7 +313,7 @@ def get_filter_field_categories() -> Dict[str, List[str]]:
 def get_valid_status_values() -> List[str]:
     """
     Get valid values for the 'status' filter field.
-    
+
     Returns:
         List of valid status strings
     """
@@ -323,7 +323,7 @@ def get_valid_status_values() -> List[str]:
 def get_valid_date_groupings() -> List[str]:
     """
     Get valid values for the 'date_grouping' filter field.
-    
+
     Returns:
         List of valid date grouping strings
     """
@@ -333,15 +333,15 @@ def get_valid_date_groupings() -> List[str]:
 def get_valid_dimensions() -> List[str]:
     """
     Get valid dimension values for dynamic queries.
-    
+
     These can be used in the 'dimensions' field as a comma-separated string.
-    
+
     Returns:
         List of valid dimension names
     """
     return [
         "partNumber",
-        "productName", 
+        "productName",
         "stationName",
         "location",
         "purpose",
@@ -363,14 +363,14 @@ def _format_type(type_hint) -> str:
     """Format a type hint as a readable string."""
     if type_hint is None:
         return "None"
-    
+
     # Handle string annotations
     if isinstance(type_hint, str):
         return type_hint
-    
+
     # Get origin for generic types (List, Dict, Optional, etc.)
     origin = getattr(type_hint, '__origin__', None)
-    
+
     if origin is Union:
         args = getattr(type_hint, '__args__', ())
         # Check if it's Optional (Union with None)
@@ -378,23 +378,23 @@ def _format_type(type_hint) -> str:
             other = [a for a in args if a is not type(None)][0]
             return f"Optional[{_format_type(other)}]"
         return f"Union[{', '.join(_format_type(a) for a in args)}]"
-    
+
     if origin is list:
         args = getattr(type_hint, '__args__', ())
         if args:
             return f"List[{_format_type(args[0])}]"
         return "List"
-    
+
     if origin is dict:
         args = getattr(type_hint, '__args__', ())
         if len(args) == 2:
             return f"Dict[{_format_type(args[0])}, {_format_type(args[1])}]"
         return "Dict"
-    
+
     # Simple types
     if hasattr(type_hint, '__name__'):
         return type_hint.__name__
-    
+
     return str(type_hint)
 
 

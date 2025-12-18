@@ -10,28 +10,28 @@ Converter Types:
 
 Quick Start:
     from pywats_client.converters import FileConverter, ConverterResult, PostProcessAction
-    
+
     class MyConverter(FileConverter):
         @property
         def name(self) -> str:
             return "My CSV Converter"
-        
+
         @property
         def file_patterns(self) -> list:
             return ["*.csv"]
-        
+
         def convert(self, source, context):
             # Parse the file and build a report
             with open(source.path, 'r') as f:
                 data = f.read()
-            
+
             report = {
                 "type": "UUT",
                 "partNumber": "PN-001",
                 "serialNumber": "SN-001",
                 "result": "Passed",
             }
-            
+
             return ConverterResult.success_result(
                 report=report,
                 post_action=PostProcessAction.MOVE

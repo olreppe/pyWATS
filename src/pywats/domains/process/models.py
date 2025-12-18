@@ -33,12 +33,12 @@ class ProcessInfo(PyWATSModel):
     code: Optional[int] = Field(default=None, validation_alias="code", serialization_alias="code")
     name: Optional[str] = Field(default=None, validation_alias="name", serialization_alias="name")
     description: Optional[str] = Field(default=None, validation_alias="description", serialization_alias="description")
-    
+
     # Type flags (from public API with different casing)
     is_test_operation: bool = Field(default=False, validation_alias="isTestOperation", serialization_alias="isTestOperation")
     is_repair_operation: bool = Field(default=False, validation_alias="isRepairOperation", serialization_alias="isRepairOperation")
     is_wip_operation: bool = Field(default=False, validation_alias="isWipOperation", serialization_alias="isWipOperation")
-    
+
     # Additional fields (internal API provides these with PascalCase)
     process_id: Optional[UUID] = Field(default=None, validation_alias="ProcessID", serialization_alias="ProcessID")
     process_index: Optional[int] = Field(default=None, validation_alias="processIndex", serialization_alias="processIndex")
@@ -52,8 +52,8 @@ class ProcessInfo(PyWATSModel):
 class RepairCategory(PyWATSModel):
     """
     Repair category (fail code category).
-    
-    Categories group related fail codes together (e.g., "Assembly Process", 
+
+    Categories group related fail codes together (e.g., "Assembly Process",
     "Component", "Solder Process").
     """
     guid: UUID = Field(validation_alias="GUID", serialization_alias="GUID")
@@ -69,7 +69,7 @@ class RepairCategory(PyWATSModel):
 class RepairOperationConfig(PyWATSModel):
     """
     Repair operation configuration.
-    
+
     Contains the configuration for a repair operation including:
     - Required fields (UUT, BOM, vendor)
     - Component reference mask for validation

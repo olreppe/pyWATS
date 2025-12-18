@@ -32,13 +32,13 @@ def get_api() -> pyWATS:
     if _api is None:
         base_url = os.environ.get("WATS_BASE_URL")
         token = os.environ.get("WATS_AUTH_TOKEN")
-        
+
         if not base_url or not token:
             raise ValueError(
                 "WATS_BASE_URL and WATS_AUTH_TOKEN environment variables required. "
                 "Set them before running the MCP server."
             )
-        
+
         _api = pyWATS(base_url=base_url, token=token)
     return _api
 
@@ -67,7 +67,7 @@ async def list_tools() -> list[Tool]:
             description="Get all defined test processes/operations in WATS",
             inputSchema={"type": "object", "properties": {}, "required": []}
         ),
-        
+
         # ----- Products -----
         Tool(
             name="wats_get_products",
@@ -101,7 +101,7 @@ async def list_tools() -> list[Tool]:
                 "required": ["part_number"]
             }
         ),
-        
+
         # ----- Reports -----
         Tool(
             name="wats_query_reports",
@@ -166,7 +166,7 @@ async def list_tools() -> list[Tool]:
                 "required": ["serial_number"]
             }
         ),
-        
+
         # ----- Statistics & Yield -----
         Tool(
             name="wats_get_yield",
@@ -202,7 +202,7 @@ async def list_tools() -> list[Tool]:
                 }
             }
         ),
-        
+
         # ----- Assets -----
         Tool(
             name="wats_get_assets",
@@ -241,7 +241,7 @@ async def list_tools() -> list[Tool]:
             description="Get all asset types defined in WATS",
             inputSchema={"type": "object", "properties": {}}
         ),
-        
+
         # ----- Production / Units -----
         Tool(
             name="wats_get_unit",
@@ -267,7 +267,7 @@ async def list_tools() -> list[Tool]:
                 "required": ["serial_number", "part_number"]
             }
         ),
-        
+
         # ----- RootCause / Tickets -----
         Tool(
             name="wats_get_tickets",
@@ -306,7 +306,7 @@ async def list_tools() -> list[Tool]:
                 "required": ["title", "description"]
             }
         ),
-        
+
         # ----- Software Distribution -----
         Tool(
             name="wats_get_software_packages",
@@ -342,7 +342,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Execute a WATS tool."""
     try:
         api = get_api()
-        
+
         # Route to appropriate handler
         handlers = {
             # Connection & System
@@ -379,13 +379,13 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             "wats_get_software_packages": _tool_get_software_packages,
             "wats_get_software_package": _tool_get_software_package,
         }
-        
+
         handler = handlers.get(name)
         if handler:
             return await handler(api, arguments)
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
-            
+
     except Exception as e:
         logger.exception(f"Error executing tool {name}")
         return [TextContent(type="text", text=f"Error: {str(e)}")]
@@ -417,13 +417,13 @@ async def _tool_get_processes(api: pyWATS, args: dict) -> list[TextContent]:
     processes = api.app.get_processes()
     if not processes:
         return [TextContent(type="text", text="No processes defined")]
-    
+
     lines = [f"Test Processes ({len(processes)}):\n"]
     for p in processes:
         code = getattr(p, 'code', getattr(p, 'process_code', 'N/A'))
         name = getattr(p, 'name', 'Unknown')
         lines.append(f"• [{code}] {name}")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -435,17 +435,17 @@ async def _tool_get_products(api: pyWATS, args: dict) -> list[TextContent]:
     """Get products list."""
     limit = args.get("limit", 50)
     products = api.product.get_products()
-    
+
     if not products:
         return [TextContent(type="text", text="No products found")]
-    
+
     lines = [f"Products ({len(products)} total, showing {min(len(products), limit)}):\n"]
     for p in products[:limit]:
         pn = getattr(p, 'part_number', 'N/A')
         name = getattr(p, 'name', 'Unknown')
         state = getattr(p, 'state', 'Unknown')
         lines.append(f"• {pn} - {name} [{state}]")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -454,11 +454,11 @@ async def _tool_get_product(api: pyWATS, args: dict) -> list[TextContent]:
     pn = args.get("part_number")
     if not pn:
         return [TextContent(type="text", text="Error: part_number required")]
-    
+
     product = api.product.get_product(pn)
     if not product:
         return [TextContent(type="text", text=f"Product not found: {pn}")]
-    
+
     lines = [
         f"Product: {pn}",
         "=" * 40,
@@ -467,7 +467,7 @@ async def _tool_get_product(api: pyWATS, args: dict) -> list[TextContent]:
         f"Non-Serial: {getattr(product, 'non_serial', False)}",
         f"Description: {getattr(product, 'description', 'N/A')}",
     ]
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -476,17 +476,17 @@ async def _tool_get_product_revisions(api: pyWATS, args: dict) -> list[TextConte
     pn = args.get("part_number")
     if not pn:
         return [TextContent(type="text", text="Error: part_number required")]
-    
+
     revisions = api.product.get_revisions(pn)
     if not revisions:
         return [TextContent(type="text", text=f"No revisions found for: {pn}")]
-    
+
     lines = [f"Revisions for {pn}:\n"]
     for r in revisions:
         rev = getattr(r, 'revision', getattr(r, 'rev', 'N/A'))
         state = getattr(r, 'state', 'Unknown')
         lines.append(f"• Rev {rev} [{state}]")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -503,9 +503,9 @@ async def _tool_query_reports(api: pyWATS, args: dict) -> list[TextContent]:
     status = args.get("status", "all")
     station = args.get("station")
     operator = args.get("operator")
-    
+
     from pywats import WATSFilter
-    
+
     filter_obj = WATSFilter(
         start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
         part_number=pn,
@@ -513,18 +513,18 @@ async def _tool_query_reports(api: pyWATS, args: dict) -> list[TextContent]:
         station_name=station,
         operator=operator
     )
-    
+
     reports = api.report.query_uut_headers(filter_obj, top=limit)
-    
+
     if not reports:
         return [TextContent(type="text", text=f"No reports found (last {days} days)")]
-    
+
     # Filter by status
     if status == "passed":
         reports = [r for r in reports if getattr(r, 'status', '') == 'P']
     elif status == "failed":
         reports = [r for r in reports if getattr(r, 'status', '') == 'F']
-    
+
     lines = [f"Reports ({len(reports)}, last {days} days):\n"]
     for r in reports[:limit]:
         rid = getattr(r, 'id', 'N/A')
@@ -533,10 +533,10 @@ async def _tool_query_reports(api: pyWATS, args: dict) -> list[TextContent]:
         rst = getattr(r, 'status', 'U')
         rstart = getattr(r, 'start', 'N/A')
         rstation = getattr(r, 'station_name', 'N/A')
-        
+
         icon = "✅" if rst == 'P' else "❌" if rst == 'F' else "⚪"
         lines.append(f"{icon} {rsn} | {rpn} | {rstation} | {rstart} | {rid}")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -545,11 +545,11 @@ async def _tool_get_report(api: pyWATS, args: dict) -> list[TextContent]:
     report_id = args.get("report_id")
     if not report_id:
         return [TextContent(type="text", text="Error: report_id required")]
-    
+
     report = api.report.get_report(report_id)
     if not report:
         return [TextContent(type="text", text=f"Report not found: {report_id}")]
-    
+
     lines = [
         f"Report: {report_id}",
         "=" * 50,
@@ -562,7 +562,7 @@ async def _tool_get_report(api: pyWATS, args: dict) -> list[TextContent]:
         f"Operator: {getattr(report, 'info', {}).get('operator', 'N/A') if isinstance(getattr(report, 'info', None), dict) else getattr(getattr(report, 'info', None), 'operator', 'N/A')}",
         f"Process Code: {getattr(report, 'process_code', 'N/A')}",
     ]
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -570,43 +570,43 @@ async def _tool_get_report_steps(api: pyWATS, args: dict) -> list[TextContent]:
     """Get report step hierarchy."""
     report_id = args.get("report_id")
     failed_only = args.get("failed_only", False)
-    
+
     if not report_id:
         return [TextContent(type="text", text="Error: report_id required")]
-    
+
     report = api.report.get_report(report_id)
     if not report:
         return [TextContent(type="text", text=f"Report not found: {report_id}")]
-    
+
     root = getattr(report, 'root', None)
     steps = getattr(root, 'steps', []) if root else []
-    
+
     if not steps:
         return [TextContent(type="text", text="No steps in report")]
-    
+
     def format_steps(steps_list, indent=0):
         result = []
         for step in steps_list:
             st = getattr(step, 'status', 'U')
             if failed_only and st != 'F':
                 continue
-            
+
             name = getattr(step, 'name', 'Unknown')
             step_type = getattr(step, 'step_type', 'Unknown')
             icon = "✅" if st == 'P' else "❌" if st == 'F' else "⚪"
-            
+
             result.append(f"{'  ' * indent}{icon} {name} [{step_type}]")
-            
+
             # Recurse into child steps
             child_steps = getattr(step, 'steps', [])
             if child_steps:
                 result.extend(format_steps(child_steps, indent + 1))
-        
+
         return result
-    
+
     lines = [f"Steps for report {report_id}:", "-" * 40]
     lines.extend(format_steps(steps))
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -616,31 +616,30 @@ async def _tool_get_failures(api: pyWATS, args: dict) -> list[TextContent]:
     limit = args.get("limit", 50)
     pn = args.get("part_number")
     station = args.get("station")
-    
+
     from pywats import WATSFilter
-    
+
     filter_obj = WATSFilter(
         start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
         part_number=pn,
         station_name=station,
         status="F"
     )
-    
+
     reports = api.report.query_uut_headers(filter_obj, top=limit)
-    
+
     if not reports:
         return [TextContent(type="text", text=f"✅ No failures in the last {days} day(s)!")]
-    
+
     lines = [f"❌ Failures ({len(reports)}, last {days} day(s)):\n"]
     for r in reports[:limit]:
         rsn = getattr(r, 'serial_number', getattr(r, 'sn', 'N/A'))
         rpn = getattr(r, 'part_number', getattr(r, 'pn', 'N/A'))
         rstation = getattr(r, 'station_name', 'N/A')
         rstart = getattr(r, 'start', 'N/A')
-        rid = getattr(r, 'id', 'N/A')
-        
+
         lines.append(f"• SN: {rsn} | PN: {rpn} | Station: {rstation} | {rstart}")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -649,24 +648,24 @@ async def _tool_search_serial(api: pyWATS, args: dict) -> list[TextContent]:
     sn = args.get("serial_number")
     if not sn:
         return [TextContent(type="text", text="Error: serial_number required")]
-    
+
     from pywats import WATSFilter
     filter_obj = WATSFilter(serial_number=sn)
     reports = api.report.query_uut_headers(filter_obj, top=100)
-    
+
     if not reports:
         return [TextContent(type="text", text=f"No test history for: {sn}")]
-    
+
     lines = [f"Test history for {sn} ({len(reports)} tests):\n"]
     for r in reports:
         rst = getattr(r, 'status', 'U')
         rpn = getattr(r, 'part_number', getattr(r, 'pn', 'N/A'))
         rstation = getattr(r, 'station_name', 'N/A')
         rstart = getattr(r, 'start', 'N/A')
-        
+
         icon = "✅" if rst == 'P' else "❌" if rst == 'F' else "⚪"
         lines.append(f"{icon} {rstart} | PN: {rpn} | Station: {rstation}")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -679,29 +678,29 @@ async def _tool_get_yield(api: pyWATS, args: dict) -> list[TextContent]:
     days = args.get("days", 7)
     pn = args.get("part_number")
     station = args.get("station")
-    
+
     from pywats import WATSFilter
     filter_obj = WATSFilter(
         start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
         part_number=pn,
         station_name=station
     )
-    
+
     reports = api.report.query_uut_headers(filter_obj, top=10000)
-    
+
     if not reports:
         return [TextContent(type="text", text="No data for yield calculation")]
-    
+
     total = len(reports)
     passed = sum(1 for r in reports if getattr(r, 'status', '') == 'P')
     failed = total - passed
     yield_pct = (passed / total * 100) if total > 0 else 0
-    
+
     context = []
     if pn: context.append(f"PN: {pn}")
     if station: context.append(f"Station: {station}")
     context_str = " | ".join(context) if context else "All"
-    
+
     lines = [
         f"📊 Yield Statistics ({context_str})",
         f"Period: Last {days} days",
@@ -711,7 +710,7 @@ async def _tool_get_yield(api: pyWATS, args: dict) -> list[TextContent]:
         f"Failed: {failed} ❌",
         f"Yield: {yield_pct:.2f}%",
     ]
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -719,18 +718,18 @@ async def _tool_get_yield_by_station(api: pyWATS, args: dict) -> list[TextConten
     """Compare yield by station."""
     days = args.get("days", 7)
     pn = args.get("part_number")
-    
+
     from pywats import WATSFilter
     filter_obj = WATSFilter(
         start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
         part_number=pn
     )
-    
+
     reports = api.report.query_uut_headers(filter_obj, top=10000)
-    
+
     if not reports:
         return [TextContent(type="text", text="No data for station comparison")]
-    
+
     # Group by station
     stations: dict = {}
     for r in reports:
@@ -740,20 +739,20 @@ async def _tool_get_yield_by_station(api: pyWATS, args: dict) -> list[TextConten
         stations[station]['total'] += 1
         if getattr(r, 'status', '') == 'P':
             stations[station]['passed'] += 1
-    
+
     lines = [f"📊 Yield by Station (last {days} days):", "=" * 50]
-    
+
     # Sort by yield descending
     sorted_stations = sorted(
         stations.items(),
         key=lambda x: (x[1]['passed'] / x[1]['total'] * 100) if x[1]['total'] > 0 else 0,
         reverse=True
     )
-    
+
     for station, data in sorted_stations:
         yield_pct = (data['passed'] / data['total'] * 100) if data['total'] > 0 else 0
         lines.append(f"• {station}: {yield_pct:.1f}% ({data['passed']}/{data['total']})")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -761,18 +760,18 @@ async def _tool_get_yield_trend(api: pyWATS, args: dict) -> list[TextContent]:
     """Get yield trend over time."""
     days = args.get("days", 30)
     pn = args.get("part_number")
-    
+
     from pywats import WATSFilter
     filter_obj = WATSFilter(
         start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
         part_number=pn
     )
-    
+
     reports = api.report.query_uut_headers(filter_obj, top=10000)
-    
+
     if not reports:
         return [TextContent(type="text", text="No data for trend analysis")]
-    
+
     # Group by date
     by_date: dict = {}
     for r in reports:
@@ -782,21 +781,21 @@ async def _tool_get_yield_trend(api: pyWATS, args: dict) -> list[TextContent]:
                 date_str = start[:10]
             else:
                 date_str = start.strftime('%Y-%m-%d')
-            
+
             if date_str not in by_date:
                 by_date[date_str] = {'total': 0, 'passed': 0}
             by_date[date_str]['total'] += 1
             if getattr(r, 'status', '') == 'P':
                 by_date[date_str]['passed'] += 1
-    
+
     lines = [f"📈 Yield Trend (last {days} days):", "=" * 50]
-    
+
     for date_str in sorted(by_date.keys())[-14:]:  # Last 14 days
         data = by_date[date_str]
         yield_pct = (data['passed'] / data['total'] * 100) if data['total'] > 0 else 0
         bar = "█" * int(yield_pct / 5)
         lines.append(f"{date_str}: {bar} {yield_pct:.1f}% (n={data['total']})")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -808,24 +807,24 @@ async def _tool_get_assets(api: pyWATS, args: dict) -> list[TextContent]:
     """Get assets list."""
     limit = args.get("limit", 50)
     asset_type = args.get("asset_type")
-    
+
     assets = api.asset.get_assets(top=limit)
-    
+
     if not assets:
         return [TextContent(type="text", text="No assets found")]
-    
+
     if asset_type:
         assets = [a for a in assets if asset_type.lower() in str(getattr(a, 'type', '')).lower()]
-    
+
     lines = [f"Assets ({len(assets)}):\n"]
     for a in assets[:limit]:
         name = getattr(a, 'name', 'Unknown')
         atype = getattr(a, 'type', 'N/A')
         serial = getattr(a, 'serial_number', 'N/A')
         state = getattr(a, 'state', 'Unknown')
-        
+
         lines.append(f"• {name} ({atype}) | SN: {serial} | State: {state}")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -834,11 +833,11 @@ async def _tool_get_asset(api: pyWATS, args: dict) -> list[TextContent]:
     identifier = args.get("identifier")
     if not identifier:
         return [TextContent(type="text", text="Error: identifier required")]
-    
+
     asset = api.asset.get_asset(identifier)
     if not asset:
         return [TextContent(type="text", text=f"Asset not found: {identifier}")]
-    
+
     lines = [
         f"Asset: {getattr(asset, 'name', 'Unknown')}",
         "=" * 40,
@@ -849,22 +848,22 @@ async def _tool_get_asset(api: pyWATS, args: dict) -> list[TextContent]:
         f"Calibration Due: {getattr(asset, 'calibration_due_date', 'N/A')}",
         f"Description: {getattr(asset, 'description', 'N/A')}",
     ]
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
 async def _tool_get_calibration_due(api: pyWATS, args: dict) -> list[TextContent]:
     """Get assets with calibration due."""
     days = args.get("days", 30)
-    
+
     assets = api.asset.get_assets(top=500)
-    
+
     if not assets:
         return [TextContent(type="text", text="No assets found")]
-    
+
     now = datetime.utcnow()
     due_date = now + timedelta(days=days)
-    
+
     due_assets = []
     for a in assets:
         cal_date = getattr(a, 'calibration_due_date', None)
@@ -874,43 +873,43 @@ async def _tool_get_calibration_due(api: pyWATS, args: dict) -> list[TextContent
                     cal_dt = datetime.fromisoformat(cal_date.replace('Z', '+00:00')).replace(tzinfo=None)
                 else:
                     cal_dt = cal_date.replace(tzinfo=None) if hasattr(cal_date, 'replace') else cal_date
-                
+
                 if cal_dt <= due_date:
                     due_assets.append((a, cal_dt))
-            except:
+            except Exception:
                 pass
-    
+
     if not due_assets:
         return [TextContent(type="text", text=f"✅ No calibrations due within {days} days")]
-    
+
     # Sort by due date
     due_assets.sort(key=lambda x: x[1])
-    
+
     lines = [f"⚠️ Calibration Due ({len(due_assets)} assets within {days} days):\n"]
     for a, cal_dt in due_assets:
         name = getattr(a, 'name', 'Unknown')
         serial = getattr(a, 'serial_number', 'N/A')
         days_left = (cal_dt - now).days
-        
+
         icon = "🔴" if days_left < 0 else "🟡" if days_left < 7 else "🟢"
         lines.append(f"{icon} {name} (SN: {serial}) - Due: {cal_dt.strftime('%Y-%m-%d')} ({days_left} days)")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
 async def _tool_get_asset_types(api: pyWATS, args: dict) -> list[TextContent]:
     """Get asset types."""
     types = api.asset.get_asset_types()
-    
+
     if not types:
         return [TextContent(type="text", text="No asset types defined")]
-    
+
     lines = [f"Asset Types ({len(types)}):\n"]
     for t in types:
         name = getattr(t, 'name', 'Unknown')
         desc = getattr(t, 'description', '')
         lines.append(f"• {name}" + (f" - {desc}" if desc else ""))
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -922,14 +921,14 @@ async def _tool_get_unit(api: pyWATS, args: dict) -> list[TextContent]:
     """Get production unit."""
     sn = args.get("serial_number")
     pn = args.get("part_number")
-    
+
     if not sn or not pn:
         return [TextContent(type="text", text="Error: serial_number and part_number required")]
-    
+
     unit = api.production.get_unit(sn, pn)
     if not unit:
         return [TextContent(type="text", text=f"Unit not found: {sn} / {pn}")]
-    
+
     lines = [
         f"Unit: {sn}",
         "=" * 40,
@@ -938,7 +937,7 @@ async def _tool_get_unit(api: pyWATS, args: dict) -> list[TextContent]:
         f"Created: {getattr(unit, 'created', 'N/A')}",
         f"Batch: {getattr(unit, 'batch_number', 'N/A')}",
     ]
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -946,25 +945,25 @@ async def _tool_get_unit_history(api: pyWATS, args: dict) -> list[TextContent]:
     """Get unit history."""
     sn = args.get("serial_number")
     pn = args.get("part_number")
-    
+
     if not sn or not pn:
         return [TextContent(type="text", text="Error: serial_number and part_number required")]
-    
+
     # Get unit info
     unit = api.production.get_unit(sn, pn)
-    
+
     # Get test history
     from pywats import WATSFilter
     filter_obj = WATSFilter(serial_number=sn, part_number=pn)
     reports = api.report.query_uut_headers(filter_obj, top=100)
-    
+
     lines = [f"History for {sn} (PN: {pn})", "=" * 50]
-    
+
     if unit:
         lines.append(f"Current Phase: {getattr(unit, 'phase', 'N/A')}")
         lines.append(f"Created: {getattr(unit, 'created', 'N/A')}")
         lines.append("")
-    
+
     lines.append(f"Test History ({len(reports) if reports else 0} tests):")
     if reports:
         for r in reports:
@@ -972,12 +971,12 @@ async def _tool_get_unit_history(api: pyWATS, args: dict) -> list[TextContent]:
             rstation = getattr(r, 'station_name', 'N/A')
             rstart = getattr(r, 'start', 'N/A')
             process = getattr(r, 'process_code', 'N/A')
-            
+
             icon = "✅" if rst == 'P' else "❌" if rst == 'F' else "⚪"
             lines.append(f"  {icon} {rstart} | Process: {process} | Station: {rstation}")
     else:
         lines.append("  No test records")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -989,7 +988,7 @@ async def _tool_get_tickets(api: pyWATS, args: dict) -> list[TextContent]:
     """Get RootCause tickets."""
     status = args.get("status", "open")
     limit = args.get("limit", 50)
-    
+
     if status == "open":
         tickets = api.rootcause.get_open_tickets(limit=limit)
     elif status == "closed":
@@ -997,10 +996,10 @@ async def _tool_get_tickets(api: pyWATS, args: dict) -> list[TextContent]:
         tickets = [t for t in tickets if str(getattr(t, 'status', '')).lower() == 'closed']
     else:
         tickets = api.rootcause.get_tickets(limit=limit)
-    
+
     if not tickets:
         return [TextContent(type="text", text=f"No tickets found ({status})")]
-    
+
     lines = [f"Tickets ({len(tickets)}, {status}):\n"]
     for t in tickets[:limit]:
         tid = getattr(t, 'id', 'N/A')
@@ -1008,10 +1007,10 @@ async def _tool_get_tickets(api: pyWATS, args: dict) -> list[TextContent]:
         tstatus = getattr(t, 'status', 'Unknown')
         priority = getattr(t, 'priority', 'N/A')
         created = getattr(t, 'created', getattr(t, 'created_date', 'N/A'))
-        
+
         lines.append(f"• [{tstatus}] {title}")
         lines.append(f"  ID: {tid} | Priority: {priority} | Created: {created}")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -1020,11 +1019,11 @@ async def _tool_get_ticket(api: pyWATS, args: dict) -> list[TextContent]:
     ticket_id = args.get("ticket_id")
     if not ticket_id:
         return [TextContent(type="text", text="Error: ticket_id required")]
-    
+
     ticket = api.rootcause.get_ticket(ticket_id)
     if not ticket:
         return [TextContent(type="text", text=f"Ticket not found: {ticket_id}")]
-    
+
     lines = [
         f"Ticket: {getattr(ticket, 'title', 'No title')}",
         "=" * 50,
@@ -1037,7 +1036,7 @@ async def _tool_get_ticket(api: pyWATS, args: dict) -> list[TextContent]:
         "Description:",
         getattr(ticket, 'description', 'No description'),
     ]
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -1048,14 +1047,14 @@ async def _tool_create_ticket(api: pyWATS, args: dict) -> list[TextContent]:
     priority = args.get("priority", "medium")
     pn = args.get("part_number")
     sn = args.get("serial_number")
-    
+
     if not title or not description:
         return [TextContent(type="text", text="Error: title and description required")]
-    
+
     # Map priority string to enum value
     priority_map = {"low": 1, "medium": 2, "high": 3, "critical": 4}
     priority_val = priority_map.get(priority.lower(), 2)
-    
+
     try:
         ticket = api.rootcause.create_ticket(
             title=title,
@@ -1064,7 +1063,7 @@ async def _tool_create_ticket(api: pyWATS, args: dict) -> list[TextContent]:
             part_number=pn,
             serial_number=sn
         )
-        
+
         if ticket:
             return [TextContent(
                 type="text",
@@ -1083,20 +1082,20 @@ async def _tool_create_ticket(api: pyWATS, args: dict) -> list[TextContent]:
 async def _tool_get_software_packages(api: pyWATS, args: dict) -> list[TextContent]:
     """Get software packages."""
     limit = args.get("limit", 50)
-    
+
     packages = api.software.get_packages()
-    
+
     if not packages:
         return [TextContent(type="text", text="No software packages found")]
-    
+
     lines = [f"Software Packages ({len(packages)}):\n"]
     for p in packages[:limit]:
         name = getattr(p, 'name', 'Unknown')
         version = getattr(p, 'version', 'N/A')
         status = getattr(p, 'status', 'N/A')
-        
+
         lines.append(f"• {name} v{version} [{status}]")
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 
@@ -1104,18 +1103,18 @@ async def _tool_get_software_package(api: pyWATS, args: dict) -> list[TextConten
     """Get software package details."""
     name = args.get("name")
     version = args.get("version")
-    
+
     if not name:
         return [TextContent(type="text", text="Error: name required")]
-    
+
     if version:
         package = api.software.get_package_by_name(name, version)
     else:
         package = api.software.get_released_package(name)
-    
+
     if not package:
         return [TextContent(type="text", text=f"Package not found: {name}" + (f" v{version}" if version else ""))]
-    
+
     lines = [
         f"Package: {getattr(package, 'name', 'Unknown')}",
         "=" * 40,
@@ -1124,7 +1123,7 @@ async def _tool_get_software_package(api: pyWATS, args: dict) -> list[TextConten
         f"Created: {getattr(package, 'created', 'N/A')}",
         f"Description: {getattr(package, 'description', 'N/A')}",
     ]
-    
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 

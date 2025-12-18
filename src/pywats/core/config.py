@@ -27,21 +27,21 @@ T = TypeVar('T', bound='DomainSettings')
 
 class DomainSettings(BaseModel):
     """Settings for a specific API domain.
-    
+
     Attributes:
         enabled: Whether the domain is enabled
         cache_enabled: Whether caching is enabled for this domain
         cache_ttl_seconds: Cache time-to-live in seconds
     """
     model_config = ConfigDict(extra='ignore')
-    
+
     enabled: bool = Field(default=True, description="Whether the domain is enabled")
     cache_enabled: bool = Field(default=True, description="Whether caching is enabled")
     cache_ttl_seconds: int = Field(default=300, description="Cache TTL in seconds (default 5 minutes)")
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
-    
+
     @classmethod
     def from_dict(cls: Type[T], data: Dict[str, Any]) -> T:
         return cls.model_validate(data)
@@ -49,7 +49,7 @@ class DomainSettings(BaseModel):
 
 class ProductDomainSettings(DomainSettings):
     """Product domain specific settings.
-    
+
     Attributes:
         auto_create_products: Automatically create products if not found
         default_revision: Default revision for new products
@@ -60,7 +60,7 @@ class ProductDomainSettings(DomainSettings):
 
 class ReportDomainSettings(DomainSettings):
     """Report domain specific settings.
-    
+
     Attributes:
         auto_submit: Automatically submit reports after creation
         validate_before_submit: Validate reports before submission
@@ -75,7 +75,7 @@ class ReportDomainSettings(DomainSettings):
 
 class ProductionDomainSettings(DomainSettings):
     """Production domain specific settings.
-    
+
     Attributes:
         auto_reserve_serials: Automatically reserve serial numbers
         serial_reserve_count: Number of serials to reserve at once
@@ -88,7 +88,7 @@ class ProductionDomainSettings(DomainSettings):
 
 class ProcessDomainSettings(DomainSettings):
     """Process domain specific settings.
-    
+
     Attributes:
         refresh_interval_seconds: Interval for refreshing process data
         auto_refresh: Enable automatic refresh
@@ -99,7 +99,7 @@ class ProcessDomainSettings(DomainSettings):
 
 class SoftwareDomainSettings(DomainSettings):
     """Software domain specific settings.
-    
+
     Attributes:
         auto_download: Automatically download software updates
         download_path: Path for downloaded files
@@ -126,9 +126,9 @@ class AppDomainSettings(DomainSettings):
 class APISettings(BaseModel):
     """
     Main API configuration settings.
-    
+
     Controls global API behavior and per-domain settings.
-    
+
     Attributes:
         timeout_seconds: HTTP request timeout
         max_retries: Maximum number of retry attempts
@@ -147,22 +147,22 @@ class APISettings(BaseModel):
         app: App/Statistics domain settings
     """
     model_config = ConfigDict(extra='ignore')
-    
+
     # Connection settings
     timeout_seconds: int = Field(default=30, description="HTTP request timeout")
     max_retries: int = Field(default=3, description="Maximum retry attempts")
     retry_delay_seconds: int = Field(default=1, description="Delay between retries")
-    
+
     # Error handling
     error_mode: str = Field(default="strict", description="Error mode: 'strict' or 'lenient'")
-    
+
     # Logging
     log_requests: bool = Field(default=False, description="Log HTTP requests")
     log_responses: bool = Field(default=False, description="Log HTTP responses")
-    
+
     # SSL/TLS
     verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
-    
+
     # Domain settings
     product: ProductDomainSettings = Field(default_factory=ProductDomainSettings)
     report: ReportDomainSettings = Field(default_factory=ReportDomainSettings)
@@ -172,7 +172,7 @@ class APISettings(BaseModel):
     asset: AssetDomainSettings = Field(default_factory=AssetDomainSettings)
     rootcause: RootCauseDomainSettings = Field(default_factory=RootCauseDomainSettings)
     app: AppDomainSettings = Field(default_factory=AppDomainSettings)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         data = {
@@ -195,12 +195,12 @@ class APISettings(BaseModel):
             }
         }
         return data
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "APISettings":
         """Create from dictionary."""
         domains = data.pop("domains", {})
-        
+
         settings = cls(
             timeout_seconds=data.get("timeout_seconds", 30),
             max_retries=data.get("max_retries", 3),
@@ -210,7 +210,7 @@ class APISettings(BaseModel):
             log_responses=data.get("log_responses", False),
             verify_ssl=data.get("verify_ssl", True),
         )
-        
+
         # Load domain settings
         if "product" in domains:
             settings.product = ProductDomainSettings.from_dict(domains["product"])
@@ -228,23 +228,23 @@ class APISettings(BaseModel):
             settings.rootcause = RootCauseDomainSettings.from_dict(domains["rootcause"])
         if "app" in domains:
             settings.app = AppDomainSettings.from_dict(domains["app"])
-        
+
         return settings
 
 
 class APIConfigManager:
     """
     Manages API configuration file operations.
-    
+
     Handles loading, saving, and watching for changes to the API config file.
     """
-    
+
     DEFAULT_CONFIG_FILENAME = "pywats_api.json"
-    
+
     def __init__(self, config_path: Optional[Path] = None):
         """
         Initialize the config manager.
-        
+
         Args:
             config_path: Path to config file. If None, uses default location.
         """
@@ -256,10 +256,10 @@ class APIConfigManager:
             else:
                 base = Path.home() / '.config' / 'pywats'
             config_path = base / self.DEFAULT_CONFIG_FILENAME
-        
+
         self.config_path = Path(config_path)
         self._settings: Optional[APISettings] = None
-    
+
     def load(self) -> APISettings:
         """Load settings from file, creating defaults if not found."""
         if self.config_path.exists():
@@ -274,20 +274,20 @@ class APIConfigManager:
         else:
             logger.debug("No API config file found, using defaults")
             self._settings = APISettings()
-        
+
         return self._settings
-    
+
     def save(self, settings: Optional[APISettings] = None) -> None:
         """Save settings to file."""
         if settings:
             self._settings = settings
-        
+
         if self._settings is None:
             self._settings = APISettings()
-        
+
         # Ensure directory exists
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         try:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 json.dump(self._settings.to_dict(), f, indent=2)
@@ -295,14 +295,14 @@ class APIConfigManager:
         except IOError as e:
             logger.error(f"Failed to save API config: {e}")
             raise
-    
+
     @property
     def settings(self) -> APISettings:
         """Get current settings, loading if needed."""
         if self._settings is None:
             self.load()
         return self._settings  # type: ignore
-    
+
     def reset_to_defaults(self) -> APISettings:
         """Reset all settings to defaults."""
         self._settings = APISettings()

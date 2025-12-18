@@ -7,7 +7,7 @@ from ..common_types import *
 from ..report import Report
 from .uut_info import UUTInfo
 from .steps.sequence_call import SequenceCall, SequenceCallInfo
-    
+
 def_MissingString = "Missing"
 def_MissingNumeric = "NaN"
 
@@ -24,7 +24,7 @@ class UUTReport(Report):
     info: Optional[UUTInfo] = Field(default=None, validation_alias="uut", serialization_alias="uut")     # Info (serializes as alias:uut)
 
     # -------------------------------------------------------------------
-    # Get root sequence call    
+    # Get root sequence call
     def get_root_sequence_call(self) -> SequenceCall:
         self.root.name = "MainSequence Callback"
         return self.root

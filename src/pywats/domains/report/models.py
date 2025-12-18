@@ -18,13 +18,13 @@ from .enums import DateGrouping
 class WATSFilter(PyWATSModel):
     """
     WATS filter for querying reports and statistics.
-    
+
     This filter is used across multiple API endpoints to query reports,
-    yield statistics, and analytics data. All fields are optional - 
+    yield statistics, and analytics data. All fields are optional -
     only specify the fields you want to filter by.
-    
+
     IMPORTANT: Use Python field names (snake_case), not camelCase aliases.
-    
+
     Filter Fields (all optional):
     -----------------------------
     Identity Filters:
@@ -32,44 +32,44 @@ class WATSFilter(PyWATSModel):
         part_number (str): Filter by product part number
         revision (str): Filter by product revision
         batch_number (str): Filter by production batch number
-        
+
     Location/Operation Filters:
         station_name (str): Filter by test station name
         test_operation (str): Filter by test operation name (e.g., "End of line test")
         level (str): Filter by production level (e.g., "PCBA", "Module")
-        
+
     Status Filters:
-        status (str): Filter by result status. Values: "Passed", "Failed", "Error", 
+        status (str): Filter by result status. Values: "Passed", "Failed", "Error",
                       or None/empty for all. Note: "all" is treated as unset.
         yield_value (int): Filter by yield percentage (0-100)
-        
+
     Product Filters:
         product_group (str): Filter by product group name
-        
+
     Software Filters:
         sw_filename (str): Filter by test software filename
         sw_version (str): Filter by test software version
-        
+
     Misc Info Filters:
         misc_description (str): Filter by misc info description field
         misc_value (str): Filter by misc info value field
         socket (str): Filter by socket/fixture identifier
-        
+
     Date Range Filters:
         date_from (datetime): Start of date range (inclusive)
         date_to (datetime): End of date range (inclusive)
-        
+
     Aggregation Options:
         date_grouping (DateGrouping): How to group results by time period.
             Values: HOUR, DAY, WEEK, MONTH, QUARTER, YEAR
         period_count (int): Number of periods to return (default varies by endpoint)
         include_current_period (bool): Whether to include the current incomplete period
-        
+
     Result Limiting:
         max_count (int): Maximum number of results to return
         min_count (int): Minimum count threshold for filtering
         top_count (int): Return only top N results
-        
+
     Advanced Options:
         dimensions (str): Custom dimensions string for dynamic queries.
             Comma-separated list: "partNumber,stationName,period"
@@ -78,7 +78,7 @@ class WATSFilter(PyWATSModel):
             productGroup, level, period, batchNumber, operator, fixtureId
         run (int): Run filter for step analysis.
             Values: 1=first run, 2=second, 3=third, -1=last run, -2=all runs
-    
+
     Example:
         >>> # Filter reports from last 7 days for a specific part
         >>> from datetime import datetime, timedelta
@@ -88,7 +88,7 @@ class WATSFilter(PyWATSModel):
         ...     status="Failed",
         ...     max_count=100
         ... )
-        >>> 
+        >>>
         >>> # Get yield by station for a product group
         >>> filter = WATSFilter(
         ...     product_group="Electronics",

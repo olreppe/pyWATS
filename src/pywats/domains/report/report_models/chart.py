@@ -19,10 +19,10 @@ class ChartSeries(WATSBase):
     A series in a chart.
     """
 
-    data_type: str = Field(default="XYG", 
-                           min_length=1, 
+    data_type: str = Field(default="XYG",
+                           min_length=1,
                            validation_alias="dataType",
-                           serialization_alias="dataType", 
+                           serialization_alias="dataType",
                            json_schema_extra={'error_messages': {'required': 'data_type is rquired'}})
     """
     The data type of series.
@@ -31,17 +31,17 @@ class ChartSeries(WATSBase):
     """
     The name of the series.
     """
-    x_data: Optional[str] = Field(default=None, 
-                                  min_length=1, 
-                                  validation_alias="xdata", 
+    x_data: Optional[str] = Field(default=None,
+                                  min_length=1,
+                                  validation_alias="xdata",
                                   serialization_alias="xdata")
     """
     A semicolon (;) separated list of values on the x-axis.
     """
-    y_data: Optional[str] = Field(default=None, 
-                        min_length=1, 
+    y_data: Optional[str] = Field(default=None,
+                        min_length=1,
                         validation_alias="ydata",
-                        serialization_alias="ydata", 
+                        serialization_alias="ydata",
                         json_schema_extra={'error_messages': {'required': 'y_data is rquired'}})
     """
     A semicolon (;) separated list of values on the y-axis.
@@ -53,7 +53,7 @@ class Chart(WATSBase):
     A step type that contains a chart.
     """
 
-    chart_type: ChartType = Field(default=ChartType.LINE, 
+    chart_type: ChartType = Field(default=ChartType.LINE,
                                   validation_alias="chartType",
                                   serialization_alias="chartType")
     """
@@ -84,14 +84,12 @@ class Chart(WATSBase):
     A list of chart series.
     """
 
-        
-    def AddSeries(self, name: str, y_label:str, y_values: List[float], x_label: str, x_values: List[float] = None) -> ChartSeries:        
+
+    def AddSeries(self, name: str, y_label:str, y_values: List[float], x_label: str, x_values: List[float] = None) -> ChartSeries:
         y_data = ";".join(map(str,y_values))
         x_data = None
         if(x_values is not None):
-            x_data = ";".join(map(str, x_values))       
+            x_data = ";".join(map(str, x_values))
         serie = ChartSeries(name=name, x_data=x_data, y_data=y_data)
         self.series.append(serie)
         return serie
-
-

@@ -22,9 +22,9 @@ from ...shared.base_model import PyWATSModel
 class TopFailedStep(PyWATSModel):
     """
     Represents a top failed step from failure analysis.
-    
+
     Returned from GET/POST /api/App/TopFailed.
-    
+
     Attributes:
         step_name: Name of the failed step
         step_path: Full path to the step
@@ -37,7 +37,7 @@ class TopFailedStep(PyWATSModel):
         fail_rate: Failure rate (0-100)
         first_fail_date: Date of first failure
         last_fail_date: Date of most recent failure
-        
+
     Example:
         >>> step = TopFailedStep(step_name="Voltage Test", fail_count=15, total_count=100)
         >>> print(f"Failure rate: {step.fail_rate}%")
@@ -116,15 +116,15 @@ class TopFailedStep(PyWATSModel):
 
 
 # =============================================================================
-# Repair Statistics Models  
+# Repair Statistics Models
 # =============================================================================
 
 class RepairStatistics(PyWATSModel):
     """
     Represents repair statistics data from dynamic repair analysis.
-    
+
     Returned from POST /api/App/DynamicRepair (PREVIEW API).
-    
+
     Attributes:
         part_number: Product part number
         revision: Product revision
@@ -136,7 +136,7 @@ class RepairStatistics(PyWATSModel):
         station_name: Station where repair occurred
         fail_code: Failure code
         repair_code: Repair action code
-        
+
     Example:
         >>> stats = RepairStatistics(part_number="WIDGET-001", repair_count=5)
         >>> print(f"Repairs: {stats.repair_count}")
@@ -215,9 +215,9 @@ class RepairStatistics(PyWATSModel):
 class RepairHistoryRecord(PyWATSModel):
     """
     Represents a repair history record for a specific part.
-    
+
     Returned from GET /api/App/RelatedRepairHistory.
-    
+
     Attributes:
         serial_number: Unit serial number
         part_number: Product part number
@@ -231,7 +231,7 @@ class RepairHistoryRecord(PyWATSModel):
         symptom: Symptom description
         cause: Root cause
         action: Repair action taken
-        
+
     Example:
         >>> record = RepairHistoryRecord(serial_number="SN001", fail_step_name="Voltage Test")
         >>> print(f"Failed step: {record.fail_step_name}")
@@ -310,9 +310,9 @@ class RepairHistoryRecord(PyWATSModel):
 class MeasurementData(PyWATSModel):
     """
     Represents individual measurement data points.
-    
+
     Returned from POST /api/App/Measurements (PREVIEW API).
-    
+
     Attributes:
         serial_number: Unit serial number
         part_number: Product part number
@@ -324,7 +324,7 @@ class MeasurementData(PyWATSModel):
         unit: Unit of measurement
         status: Measurement status (Pass/Fail)
         timestamp: Measurement timestamp
-        
+
     Example:
         >>> data = MeasurementData(step_name="Voltage", value=5.02, limit_low=4.5, limit_high=5.5)
         >>> print(f"{data.step_name}: {data.value}")
@@ -397,9 +397,9 @@ class MeasurementData(PyWATSModel):
 class AggregatedMeasurement(PyWATSModel):
     """
     Represents aggregated measurement statistics.
-    
+
     Returned from POST /api/App/AggregatedMeasurements.
-    
+
     Attributes:
         step_name: Measurement step name
         step_path: Full step path
@@ -412,7 +412,7 @@ class AggregatedMeasurement(PyWATSModel):
         limit_high: High limit
         cpk: Process capability index
         cp: Process capability
-        
+
     Example:
         >>> agg = AggregatedMeasurement(step_name="Voltage", count=1000, avg=5.01, cpk=1.33)
         >>> print(f"{agg.step_name}: Cpk={agg.cpk}")
@@ -511,11 +511,11 @@ class AggregatedMeasurement(PyWATSModel):
 class OeeAnalysisResult(PyWATSModel):
     """
     Represents OEE (Overall Equipment Effectiveness) analysis results.
-    
+
     Returned from POST /api/App/OeeAnalysis.
-    
+
     OEE = Availability × Performance × Quality
-    
+
     Attributes:
         oee: Overall Equipment Effectiveness (0-100)
         availability: Availability rate (0-100)
@@ -531,7 +531,7 @@ class OeeAnalysisResult(PyWATSModel):
         ideal_cycle_time: Ideal cycle time per unit
         actual_cycle_time: Actual cycle time per unit
         period: Analysis period
-        
+
     Example:
         >>> oee = OeeAnalysisResult(oee=85.0, availability=90.0, performance=95.0, quality=99.5)
         >>> print(f"OEE: {oee.oee}%")
@@ -650,7 +650,7 @@ class YieldData(PyWATSModel):
         spy: Second pass yield
         tpy: Third pass yield
         lpy: Last pass yield
-        
+
     Example:
         >>> yield_data = YieldData(part_number="WIDGET-001", station_name="Station1")
         >>> print(yield_data.part_number)  # Access with Python field name
@@ -737,7 +737,7 @@ class ProcessInfo(PyWATSModel):
         is_wip_operation: True if this is a WIP operation (use this, not 'isWipOperation')
         process_index: Process order index (use this, not 'processIndex')
         state: Process state
-        
+
     Example:
         >>> process = ProcessInfo(code=100, name="EOL Test", is_test_operation=True)
         >>> print(process.is_test_operation)  # Access with Python field name
@@ -771,13 +771,13 @@ class ProcessInfo(PyWATSModel):
         description="Process order index"
     )
     state: Optional[int] = Field(default=None, description="Process state")
-    
+
     # Backward compatibility aliases
     @property
     def process_code(self) -> Optional[int]:
         """Alias for code (backward compatibility)"""
         return self.code
-    
+
     @property
     def process_name(self) -> Optional[str]:
         """Alias for name (backward compatibility)"""
@@ -791,7 +791,7 @@ class LevelInfo(PyWATSModel):
     Attributes:
         level_id: Level ID (use this, not 'levelId')
         level_name: Level name (use this, not 'levelName')
-        
+
     Example:
         >>> level = LevelInfo(level_id=1, level_name="PCBA")
         >>> print(level.level_name)  # Access with Python field name
@@ -818,7 +818,7 @@ class ProductGroup(PyWATSModel):
     Attributes:
         product_group_id: Product group ID (use this, not 'productGroupId')
         product_group_name: Product group name (use this, not 'productGroupName')
-        
+
     Example:
         >>> group = ProductGroup(product_group_id=1, product_group_name="Electronics")
         >>> print(group.product_group_name)  # Access with Python field name
@@ -843,9 +843,9 @@ class StepAnalysisRow(PyWATSModel):
 
     Returned from POST /api/App/TestStepAnalysis.
     The API is in preview and the schema may change.
-    
+
     IMPORTANT: Use Python field names (snake_case), not camelCase aliases.
-    
+
     Attributes:
         step_name: Name of the test step (use this, not 'stepName')
         step_path: Full path to the step (use this, not 'stepPath')
@@ -853,7 +853,7 @@ class StepAnalysisRow(PyWATSModel):
         step_group: Step group (use this, not 'stepGroup')
         step_count: Total step executions (use this, not 'stepCount')
         ... and many more statistical fields
-        
+
     Example:
         >>> row = StepAnalysisRow(step_name="Voltage Test", step_count=100)
         >>> print(row.step_name)  # Access with Python field name

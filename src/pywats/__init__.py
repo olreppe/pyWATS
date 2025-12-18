@@ -5,18 +5,18 @@ A clean, object-oriented Python library for interacting with the WATS server.
 
 Usage:
     from pywats import pyWATS
-    
+
     api = pyWATS(base_url="https://your-wats-server.com", token="your-token")
-    
+
     # Access modules
     products = api.product.get_products()
     product = api.product.get_product("PART-001")
-    
+
     # Use query models
     from pywats.domains.report import WATSFilter
     filter = WATSFilter(part_number="PART-001")
     headers = api.report.query_uut_headers(filter)
-    
+
     # Use report models (WSJF format)
     from pywats.models import UUTReport, UURReport
     report = UUTReport(pn="PART-001", sn="SN-12345", rev="A", ...)

@@ -29,7 +29,7 @@ class AnalyticsService:
 
     Provides high-level operations for yield statistics, KPIs, failure analysis,
     and production analytics. This module wraps the WATS /api/App/* endpoints.
-    
+
     Example:
         >>> api = pyWATS(base_url="...", token="...")
         >>> # Get yield statistics
@@ -59,7 +59,7 @@ class AnalyticsService:
 
         Returns:
             Version string (e.g., "24.1.0") or None if not available
-            
+
         Example:
             >>> version = api.analytics.get_version()
             >>> print(f"WATS Server: {version}")
@@ -73,7 +73,7 @@ class AnalyticsService:
 
         Returns:
             List of ProcessInfo objects
-            
+
         Example:
             >>> processes = api.analytics.get_processes()
             >>> for p in processes:
@@ -89,7 +89,7 @@ class AnalyticsService:
 
         Returns:
             List of LevelInfo objects
-            
+
         Example:
             >>> levels = api.analytics.get_levels()
             >>> for lvl in levels:
@@ -105,7 +105,7 @@ class AnalyticsService:
 
         Returns:
             List of ProductGroup objects
-            
+
         Example:
             >>> groups = api.analytics.get_product_groups()
             >>> for g in groups:
@@ -134,7 +134,7 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(
@@ -159,7 +159,7 @@ class AnalyticsService:
 
         Returns:
             List of RepairStatistics objects with repair counts and rates
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(
@@ -189,7 +189,7 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects
-            
+
         Example:
             >>> # Simple GET request with filters
             >>> yield_data = api.analytics.get_volume_yield(
@@ -219,7 +219,7 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects sorted by worst yield first
-            
+
         Example:
             >>> # Find products with worst yield in PCBA level
             >>> worst = api.analytics.get_worst_yield(level="PCBA")
@@ -241,7 +241,7 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects grouped by product group, sorted by worst yield
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(period_count=30)
@@ -271,7 +271,7 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects sorted by highest volume first
-            
+
         Example:
             >>> # Get highest volume products in Electronics group
             >>> high_vol = api.analytics.get_high_volume(product_group="Electronics")
@@ -293,7 +293,7 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects grouped by product group, sorted by volume
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(period_count=30)
@@ -332,7 +332,7 @@ class AnalyticsService:
 
         Returns:
             List of TopFailedStep objects with failure counts and rates
-            
+
         Example:
             >>> # Simple GET request
             >>> failures = api.analytics.get_top_failed(
@@ -341,7 +341,7 @@ class AnalyticsService:
             ... )
             >>> for f in failures:
             ...     print(f"{f.step_name}: {f.fail_count} failures ({f.fail_rate}%)")
-            
+
             >>> # Or with WATSFilter for more control
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(part_number="WIDGET-001", top_count=10)
@@ -371,7 +371,7 @@ class AnalyticsService:
 
         Returns:
             List of StepAnalysisRow rows with step statistics
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(
@@ -463,7 +463,7 @@ class AnalyticsService:
 
         Returns:
             List of RepairHistoryRecord objects with repair details
-            
+
         Example:
             >>> repairs = api.analytics.get_related_repair_history(
             ...     part_number="WIDGET-001",
@@ -494,7 +494,7 @@ class AnalyticsService:
 
         Returns:
             List of AggregatedMeasurement objects with statistics (min, max, avg, cpk, etc.)
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(
@@ -521,7 +521,7 @@ class AnalyticsService:
 
         Returns:
             List of MeasurementData objects with individual measurement values
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(
@@ -554,7 +554,7 @@ class AnalyticsService:
 
         Returns:
             OeeAnalysisResult object with OEE metrics, or None if no data
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> from datetime import datetime, timedelta
@@ -590,7 +590,7 @@ class AnalyticsService:
 
         Returns:
             List of ReportHeader objects
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(serial_number="SN12345")
@@ -637,7 +637,7 @@ class AnalyticsService:
 
         Returns:
             List of ReportHeader objects
-            
+
         Example:
             >>> # Simple query for recent reports
             >>> reports = api.analytics.get_uut_reports(
@@ -674,7 +674,7 @@ class AnalyticsService:
 
         Returns:
             List of ReportHeader objects
-            
+
         Example:
             >>> from pywats import WATSFilter
             >>> filter_obj = WATSFilter(
@@ -699,7 +699,7 @@ class AnalyticsService:
     ) -> List[YieldData]:
         """
         Get yield summary for a product over a time period.
-        
+
         Convenience wrapper that creates a WATSFilter internally.
 
         Args:
@@ -709,7 +709,7 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects
-            
+
         Example:
             >>> # Get 30-day yield summary for a product
             >>> summary = api.analytics.get_yield_summary(
@@ -732,7 +732,7 @@ class AnalyticsService:
     ) -> List[YieldData]:
         """
         Get yield statistics for a specific test station.
-        
+
         Convenience wrapper that creates a WATSFilter internally.
 
         Args:
@@ -741,7 +741,7 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects
-            
+
         Example:
             >>> # Get 7-day yield for a station
             >>> station_yield = api.analytics.get_station_yield(

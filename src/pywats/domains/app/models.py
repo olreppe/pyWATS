@@ -35,7 +35,7 @@ class YieldData(PyWATSModel):
         spy: Second pass yield
         tpy: Third pass yield
         lpy: Last pass yield
-        
+
     Example:
         >>> yield_data = YieldData(part_number="WIDGET-001", station_name="Station1")
         >>> print(yield_data.part_number)  # Access with Python field name
@@ -120,7 +120,7 @@ class ProcessInfo(PyWATSModel):
         is_wip_operation: True if this is a WIP operation (use this, not 'isWipOperation')
         process_index: Process order index (use this, not 'processIndex')
         state: Process state
-        
+
     Example:
         >>> process = ProcessInfo(code=100, name="EOL Test", is_test_operation=True)
         >>> print(process.is_test_operation)  # Access with Python field name
@@ -154,13 +154,13 @@ class ProcessInfo(PyWATSModel):
         description="Process order index"
     )
     state: Optional[int] = Field(default=None, description="Process state")
-    
+
     # Backward compatibility aliases
     @property
     def process_code(self) -> Optional[int]:
         """Alias for code (backward compatibility)"""
         return self.code
-    
+
     @property
     def process_name(self) -> Optional[str]:
         """Alias for name (backward compatibility)"""
@@ -172,7 +172,7 @@ class LevelInfo(PyWATSModel):
     Attributes:
         level_id: Level ID (use this, not 'levelId')
         level_name: Level name (use this, not 'levelName')
-        
+
     Example:
         >>> level = LevelInfo(level_id=1, level_name="PCBA")
         >>> print(level.level_name)  # Access with Python field name
@@ -199,7 +199,7 @@ class ProductGroup(PyWATSModel):
     Attributes:
         product_group_id: Product group ID (use this, not 'productGroupId')
         product_group_name: Product group name (use this, not 'productGroupName')
-        
+
     Example:
         >>> group = ProductGroup(product_group_id=1, product_group_name="Electronics")
         >>> print(group.product_group_name)  # Access with Python field name
@@ -224,9 +224,9 @@ class StepAnalysisRow(PyWATSModel):
 
     Returned from POST /api/App/TestStepAnalysis.
     The API is in preview and the schema may change.
-    
+
     IMPORTANT: Use Python field names (snake_case), not camelCase aliases.
-    
+
     Attributes:
         step_name: Name of the test step (use this, not 'stepName')
         step_path: Full path to the step (use this, not 'stepPath')
@@ -234,7 +234,7 @@ class StepAnalysisRow(PyWATSModel):
         step_group: Step group (use this, not 'stepGroup')
         step_count: Total step executions (use this, not 'stepCount')
         ... and many more statistical fields
-        
+
     Example:
         >>> row = StepAnalysisRow(step_name="Voltage Test", step_count=100)
         >>> print(row.step_name)  # Access with Python field name

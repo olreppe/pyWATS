@@ -27,5 +27,3 @@ class MessagePopUpStep(Step):
     def validate_step(self, trigger_children=False, errors=None) -> bool:
         """ No validation required """
         return True
-
-

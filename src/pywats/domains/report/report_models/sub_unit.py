@@ -4,7 +4,7 @@ from .wats_base import WATSBase
 
 class SubUnit(WATSBase):
     """
-    A sub unit. 
+    A sub unit.
     """
     pn: str = Field(..., max_length=100, min_length=1)
     """
@@ -24,6 +24,3 @@ class SubUnit(WATSBase):
     """
 
     model_config = ConfigDict(populate_by_name=True)
-    
-
-

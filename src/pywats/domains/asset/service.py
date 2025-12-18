@@ -128,7 +128,7 @@ class AssetService:
 
         Returns:
             Created Asset object, or None on failure
-            
+
         Example:
             >>> asset = service.create_asset(
             ...     serial_number="SN-001",
@@ -581,7 +581,7 @@ class AssetService:
 
         Returns:
             Created AssetType object, or None on failure
-            
+
         Example:
             >>> asset_type = service.create_asset_type(
             ...     type_name="Test Station",
@@ -661,7 +661,7 @@ class AssetService:
 
         Returns:
             Created child Asset object, or None on failure
-            
+
         Example:
             >>> child = service.add_child_asset(
             ...     parent_serial="PARENT-001",

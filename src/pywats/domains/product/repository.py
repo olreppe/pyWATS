@@ -23,7 +23,7 @@ class ProductRepository:
     """
 
     def __init__(
-        self, 
+        self,
         http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
@@ -76,7 +76,7 @@ class ProductRepository:
         logger.debug(f"Fetching product: {part_number}")
         response = self._http_client.get(f"/api/Product/{part_number}")
         data = self._error_handler.handle_response(
-            response, 
+            response,
             operation=f"get_by_part_number('{part_number}')"
         )
         if data is None:
@@ -162,7 +162,7 @@ class ProductRepository:
         """
         # Use query parameters to handle revisions with dots (e.g., "1.0")
         response = self._http_client.get(
-            "/api/Product", 
+            "/api/Product",
             params={"partNumber": part_number, "revision": revision}
         )
         if response.is_success and response.data:
@@ -232,12 +232,12 @@ class ProductRepository:
         Get BOM (Bill of Materials) for a product revision as WSBF XML.
 
         ⚠️ INTERNAL API - Delegated to ProductRepositoryInternal.
-        
+
         Note: This method is deprecated. Use ProductServiceInternal.get_bom() instead.
-        
+
         Returns the BOM in WSBF (WATS Standard BOM Format) XML format.
         Example response:
-            <BOM xmlns="http://wats.virinco.com/schemas/WATS/wsbf" 
+            <BOM xmlns="http://wats.virinco.com/schemas/WATS/wsbf"
                  Partnumber="100100" Revision="1.0" Desc="Product Description">
                 <Component Number="100200" Rev="1.0" Qty="2" Desc="Description" Ref="R1;R2"/>
             </BOM>
@@ -285,31 +285,31 @@ class ProductRepository:
         wsbf_xml = self.get_bom(part_number, revision)
         if not wsbf_xml:
             return []
-        
+
         return self._parse_wsbf_xml(wsbf_xml)
 
     def _parse_wsbf_xml(self, xml_content: str) -> List[BomItem]:
         """
         Parse WSBF XML into BomItem objects.
-        
+
         Args:
             xml_content: WSBF XML string
-            
+
         Returns:
             List of BomItem objects
         """
         try:
             root = ET.fromstring(xml_content)
             items: List[BomItem] = []
-            
+
             # Handle namespace
             ns = {"wsbf": "http://wats.virinco.com/schemas/WATS/wsbf"}
-            
+
             # Try with namespace first, then without
             components = root.findall("wsbf:Component", ns)
             if not components:
                 components = root.findall("Component")
-            
+
             for comp in components:
                 item = BomItem(
                     part_number=comp.get("Number", ""),
@@ -319,7 +319,7 @@ class ProductRepository:
                     manufacturer_pn=comp.get("Rev"),  # Rev stored in manufacturer_pn
                 )
                 items.append(item)
-            
+
             return items
         except ET.ParseError as e:
             logger.error(f"Failed to parse WSBF XML: {e}")
@@ -336,10 +336,10 @@ class ProductRepository:
         Update product BOM (Bill of Materials) using WSBF XML format.
 
         PUT /api/Product/BOM
-        
+
         The public API uses WSBF (WATS Standard BOM Format) XML.
         Example:
-            <BOM xmlns="http://wats.virinco.com/schemas/WATS/wsbf" 
+            <BOM xmlns="http://wats.virinco.com/schemas/WATS/wsbf"
                  Partnumber="100100" Revision="1.0" Desc="Product Description">
                 <Component Number="100200" Rev="1.0" Qty="2" Desc="Description" Ref="R1;R2"/>
             </BOM>
@@ -354,7 +354,7 @@ class ProductRepository:
             True if successful
         """
         xml_content = self._generate_wsbf_xml(part_number, revision, bom_items, description)
-        
+
         # Send as XML with proper content type
         response = self._http_client.put(
             "/api/Product/BOM",
@@ -362,7 +362,7 @@ class ProductRepository:
             headers={"Content-Type": "application/xml"}
         )
         return response.is_success
-    
+
     def _generate_wsbf_xml(
         self,
         part_number: str,
@@ -372,52 +372,51 @@ class ProductRepository:
     ) -> str:
         """
         Generate WSBF (WATS Standard BOM Format) XML.
-        
+
         Args:
             part_number: Product part number
             revision: Product revision
             bom_items: List of BomItem objects
             description: Optional product description
-            
+
         Returns:
             WSBF XML string
         """
         # Create root BOM element with namespace
-        nsmap = {"xmlns": "http://wats.virinco.com/schemas/WATS/wsbf"}
         root = ET.Element("BOM", attrib={
             "xmlns": "http://wats.virinco.com/schemas/WATS/wsbf",
             "Partnumber": part_number,
             "Revision": revision
         })
-        
+
         if description:
             root.set("Desc", description)
-        
+
         # Add Component elements for each BOM item
         for item in bom_items:
             comp_attrib: Dict[str, str] = {}
-            
+
             # Required: Number (part number)
             if item.part_number:
                 comp_attrib["Number"] = item.part_number
-            
+
             # Optional attributes
             if item.component_ref:
                 comp_attrib["Ref"] = item.component_ref
-            
+
             if item.quantity:
                 comp_attrib["Qty"] = str(item.quantity)
-            
+
             if item.description:
                 comp_attrib["Desc"] = item.description
-            
+
             # Add revision if we can get it (from vendor_pn as fallback)
             # The WSBF format uses "Rev" for component revision
             if item.manufacturer_pn:
                 comp_attrib["Rev"] = item.manufacturer_pn
-            
+
             ET.SubElement(root, "Component", attrib=comp_attrib)
-        
+
         # Generate XML string
         return ET.tostring(root, encoding="unicode")
 

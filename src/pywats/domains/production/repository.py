@@ -23,7 +23,7 @@ class ProductionRepository:
     """
 
     def __init__(
-        self, 
+        self,
         http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
@@ -442,7 +442,7 @@ class ProductionRepository:
             List of allocated serial numbers
         """
         import re
-        
+
         params: Dict[str, Any] = {
             "serialNumberType": type_name,
             "quantity": count
@@ -631,7 +631,7 @@ class ProductionRepository:
         Get all available unit phases.
 
         ⚠️ INTERNAL API - Delegated to ProductionRepositoryInternal.
-        
+
         Note: This method is deprecated. Use ProductionServiceInternal instead.
 
         Args:

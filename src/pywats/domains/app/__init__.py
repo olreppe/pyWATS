@@ -5,7 +5,7 @@ DEPRECATED: This module is deprecated. Import from pywats.domains.analytics inst
 Example:
     # Old (deprecated)
     from pywats.domains.app import AppService
-    
+
     # New (preferred)
     from pywats.domains.analytics import AnalyticsService
 """
@@ -59,4 +59,3 @@ __all__ = [
     "AppRepository",
     "AppService",
 ]
-

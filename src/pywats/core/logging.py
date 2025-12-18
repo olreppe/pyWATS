@@ -22,16 +22,16 @@ from typing import Optional
 def get_logger(name: str) -> logging.Logger:
     """
     Get a logger for the given name.
-    
+
     All pyWATS loggers are children of 'pywats' root logger,
     allowing users to control library logging with:
-    
+
         >>> import logging
         >>> logging.getLogger('pywats').setLevel(logging.WARNING)
-    
+
     Args:
         name: Logger name (typically __name__)
-        
+
     Returns:
         Configured logger instance
     """
@@ -41,14 +41,14 @@ def get_logger(name: str) -> logging.Logger:
 def enable_debug_logging(format_string: Optional[str] = None) -> None:
     """
     Convenience function to enable debug logging for pyWATS.
-    
+
     This is a helper for quick debugging but applications should
     configure logging properly for production use.
-    
+
     Args:
         format_string: Custom format string for log messages.
                       Defaults to: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    
+
     Example:
         >>> from pywats import enable_debug_logging
         >>> enable_debug_logging()
@@ -56,7 +56,7 @@ def enable_debug_logging(format_string: Optional[str] = None) -> None:
     """
     if format_string is None:
         format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    
+
     logging.basicConfig(
         level=logging.DEBUG,
         format=format_string

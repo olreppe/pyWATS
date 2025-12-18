@@ -25,7 +25,7 @@ class ReportService:
     Report business logic layer.
 
     Provides high-level operations for working with WATS test reports.
-    
+
     Supports station configuration through:
     - Explicit Station parameter on report creation methods
     - Legacy station_name/location/purpose parameters
@@ -33,7 +33,7 @@ class ReportService:
     """
 
     def __init__(
-        self, 
+        self,
         repository: ReportRepository,
         station_provider: Optional[Callable[[], Optional["Station"]]] = None
     ):
@@ -46,7 +46,7 @@ class ReportService:
         """
         self._repository = repository
         self._station_provider = station_provider
-    
+
     def _resolve_station(
         self,
         station: Optional["Station"] = None,
@@ -68,7 +68,7 @@ class ReportService:
             station_name: Legacy station name parameter
             location: Legacy location parameter
             purpose: Legacy purpose parameter
-            
+
         Returns:
             Tuple of (station_name, location, purpose)
 
@@ -79,7 +79,7 @@ class ReportService:
         # Priority 1: Explicit Station object
         if station is not None:
             return (station.name, station.location, station.purpose)
-        
+
         # Priority 2: Legacy parameters (if station_name is provided)
         if station_name:
             return (
@@ -87,7 +87,7 @@ class ReportService:
                 location or "",
                 purpose or "Development"
             )
-        
+
         # Priority 3: Default station from API
         if self._station_provider:
             default_station = self._station_provider()
@@ -97,7 +97,7 @@ class ReportService:
                     location or default_station.location,
                     purpose or default_station.purpose
                 )
-        
+
         # Priority 4: Fallback
         return (
             "Unknown",
@@ -137,7 +137,7 @@ class ReportService:
 
         Returns:
             A new UUTReport object ready for adding steps and submission
-        
+
         Note:
             Station information priority:
             1. Explicit station parameter
@@ -147,7 +147,7 @@ class ReportService:
 
             The `operation_type` argument maps directly to WATS' processCode lookup (e.g. 100 = end-of-line test, 200 = calibration).
             The same code flows into the penultimate event so dashboards and failure tracking can join the test log with the correct operation context.
-        
+
         See Also:
             For a fluent interface with comprehensive factory methods:
                 from pywats.tools.test_uut import TestUUT
@@ -157,7 +157,7 @@ class ReportService:
         resolved_station_name, resolved_location, resolved_purpose = self._resolve_station(
             station, station_name, location, purpose
         )
-        
+
         uut_info = UUTInfo(
             operator=operator
         )
@@ -256,14 +256,14 @@ class ReportService:
         Create a new UUR (Unit Under Repair) report.
 
         UUR reports require TWO process codes:
-        
+
         1. **repair_process_code**: The type of repair operation (default: 500)
            - Must be a valid repair operation (isRepairOperation=true)
            - Common values: 500 (Repair), 510 (RMA Repair)
            - This becomes the top-level report process_code
-        
+
         2. **test_operation_code**: The original test operation that failed
-           - Must be a valid test operation (isTestOperation=true)  
+           - Must be a valid test operation (isTestOperation=true)
            - Common values: 100 (End of line test), 50 (PCBA test), etc.
            - Automatically extracted from UUTReport if provided
            - Stored in uur_info.test_operation_code
@@ -309,7 +309,7 @@ class ReportService:
             repair_process_code: Repair operation type (default 500=Repair)
             test_operation_code: Original test operation that failed
             station_name: Optional station name
-            location: Optional location  
+            location: Optional location
             purpose: Optional purpose (default "Repair")
             comment: Optional comment for the repair
             process_code: Legacy - use test_operation_code instead
@@ -317,7 +317,7 @@ class ReportService:
 
         Returns:
             A new UURReport object ready for adding repair info and submission
-        
+
         Domain Notes:
             - WATS requires the top-level `processCode` to describe the repair operation (500, 510, etc.). This is exposed here through `repair_process_code`.
             - The original test operation that failed is tracked separately via `test_operation_code` (and later stored in `uurInfo.test_operation_code`) so fail code navigation remains tied to the correct test step.
@@ -433,33 +433,33 @@ class ReportService:
             start=datetime.now().astimezone(),
             uur_info=uur_info
         )
-        
+
         # Copy sub_units from UUT if creating from UUTReport
         if isinstance(uut_or_guid_or_pn, UUTReport):
             uut = uut_or_guid_or_pn
             self._copy_sub_units_to_uur(uut, report)
 
         return report
-    
+
     def _copy_sub_units_to_uur(self, uut: UUTReport, uur: UURReport) -> None:
         """
         Copy sub_units from UUT to UUR report.
-        
+
         UUR uses extended SubUnits with idx, parentIdx, and failures fields.
         The main unit (idx=0) is already created by UURReport.
-        
+
         Args:
             uut: Source UUT report
             uur: Target UUR report
-        
+
         WATS requires each serialized sub_unit to contain `idx` and `parentIdx` so that
         failure propagation and repair analytics can resolve the correct hierarchy.
         """
         from .report_models.uur.uur_sub_unit import UURSubUnit
-        
+
         if not uut.sub_units:
             return
-            
+
         # Copy each sub_unit from UUT, starting from idx=1 (main is idx=0)
         for i, sub_unit in enumerate(uut.sub_units):
             uur_sub = UURSubUnit.from_sub_unit(

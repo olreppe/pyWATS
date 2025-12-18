@@ -3,9 +3,9 @@
 Provides models, services, and repository for product management.
 """
 from .models import (
-    Product, 
-    ProductRevision, 
-    ProductView, 
+    Product,
+    ProductRevision,
+    ProductView,
     ProductGroup,
     ProductCategory,
     ProductRevisionRelation,
