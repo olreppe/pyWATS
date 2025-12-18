@@ -537,19 +537,31 @@ class WATSToolkit:
     @property
     def yield_tool(self) -> "WATSYieldTool":
         """Get the yield analysis tool."""
-        return self._tools[0] if len(self._tools) > 0 else None
+        for tool in self._tools:
+            if isinstance(tool, WATSYieldTool):
+                return tool
+        return None
     
     @property
     def test_step_analysis_tool(self) -> "WATSTestStepAnalysisTool":
         """Get the test step analysis tool."""
-        return self._tools[1] if len(self._tools) > 1 else None
+        for tool in self._tools:
+            if isinstance(tool, WATSTestStepAnalysisTool):
+                return tool
+        return None
     
     @property
     def aggregated_measurement_tool(self) -> "WATSAggregatedMeasurementTool":
         """Get the aggregated measurement tool."""
-        return self._tools[2] if len(self._tools) > 2 else None
+        for tool in self._tools:
+            if isinstance(tool, WATSAggregatedMeasurementTool):
+                return tool
+        return None
     
     @property
     def measurement_data_tool(self) -> "WATSMeasurementDataTool":
         """Get the measurement data tool."""
-        return self._tools[3] if len(self._tools) > 3 else None
+        for tool in self._tools:
+            if isinstance(tool, WATSMeasurementDataTool):
+                return tool
+        return None

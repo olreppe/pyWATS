@@ -214,13 +214,13 @@ Provides detailed execution statistics for each test step including:
         
         # Calculate aggregate statistics
         total_steps = len(data)
-        steps_with_failures = sum(1 for d in data if d.step_failed_count and d.step_failed_count > 0)
+        steps_with_failures = sum(1 for d in data if (d.step_failed_count or 0) > 0)
         total_executions = sum(d.step_count or 0 for d in data)
         total_failures = sum(d.step_failed_count or 0 for d in data)
         
         # Find worst performing steps (by failure count)
         sorted_by_failures = sorted(
-            [d for d in data if d.step_failed_count and d.step_failed_count > 0],
+            [d for d in data if (d.step_failed_count or 0) > 0],
             key=lambda x: x.step_failed_count or 0,
             reverse=True
         )
