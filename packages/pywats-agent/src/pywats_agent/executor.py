@@ -10,6 +10,12 @@ from .result import AgentResult
 from .tools import (
     YieldAnalysisTool,
     get_yield_tool_definition,
+    TestStepAnalysisTool,
+    get_test_step_analysis_tool_definition,
+    AggregatedMeasurementTool,
+    MeasurementDataTool,
+    get_aggregated_measurement_tool_definition,
+    get_measurement_data_tool_definition,
 )
 
 if TYPE_CHECKING:
@@ -56,10 +62,16 @@ class ToolExecutor:
         
         # Initialize tools
         self._yield_tool = YieldAnalysisTool(api)
+        self._test_step_analysis_tool = TestStepAnalysisTool(api)
+        self._aggregated_measurement_tool = AggregatedMeasurementTool(api)
+        self._measurement_data_tool = MeasurementDataTool(api)
         
         # Tool registry
         self._tools: Dict[str, Any] = {
             "analyze_yield": self._yield_tool,
+            "analyze_test_steps": self._test_step_analysis_tool,
+            "get_measurement_statistics": self._aggregated_measurement_tool,
+            "get_measurement_data": self._measurement_data_tool,
         }
     
     def list_tools(self) -> List[str]:
@@ -80,7 +92,9 @@ class ToolExecutor:
         """
         return [
             get_yield_tool_definition(),
-            # Add more tool definitions here as we implement them
+            get_test_step_analysis_tool_definition(),
+            get_aggregated_measurement_tool_definition(),
+            get_measurement_data_tool_definition(),
         ]
     
     def get_openai_tools(self) -> List[Dict[str, Any]]:
@@ -131,6 +145,12 @@ class ToolExecutor:
             # Route to appropriate handler
             if tool_name == "analyze_yield":
                 return tool.analyze_from_dict(parameters)
+            elif tool_name == "analyze_test_steps":
+                return tool.analyze_from_dict(parameters)
+            elif tool_name == "get_measurement_statistics":
+                return tool.analyze_from_dict(parameters)
+            elif tool_name == "get_measurement_data":
+                return tool.analyze_from_dict(parameters)
             else:
                 return AgentResult.error(f"Tool {tool_name} has no handler")
                 
@@ -167,6 +187,21 @@ class ToolExecutor:
     def yield_tool(self) -> YieldAnalysisTool:
         """Get the yield analysis tool directly."""
         return self._yield_tool
+    
+    @property
+    def test_step_analysis_tool(self) -> TestStepAnalysisTool:
+        """Get the test step analysis tool directly."""
+        return self._test_step_analysis_tool
+    
+    @property
+    def aggregated_measurement_tool(self) -> AggregatedMeasurementTool:
+        """Get the aggregated measurement tool directly."""
+        return self._aggregated_measurement_tool
+    
+    @property
+    def measurement_data_tool(self) -> MeasurementDataTool:
+        """Get the measurement data tool directly."""
+        return self._measurement_data_tool
     
     def analyze_yield(
         self,

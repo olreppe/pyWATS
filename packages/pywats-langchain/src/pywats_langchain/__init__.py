@@ -19,13 +19,23 @@ Example:
     >>> result = agent.invoke({"input": "What's the yield for WIDGET-001?"})
 """
 
-from .tools import WATSYieldTool, WATSToolkit, LANGCHAIN_AVAILABLE
+from .tools import (
+    WATSYieldTool, 
+    WATSToolkit, 
+    LANGCHAIN_AVAILABLE,
+    WATSTestStepAnalysisTool,
+    WATSAggregatedMeasurementTool,
+    WATSMeasurementDataTool,
+)
 from .chains import create_wats_agent, WATSAnalyticsChain
 
 __version__ = "0.1.0"
 __all__ = [
     # Tools
     "WATSYieldTool",
+    "WATSTestStepAnalysisTool",
+    "WATSAggregatedMeasurementTool",
+    "WATSMeasurementDataTool",
     "WATSToolkit",
     # Chains and agents
     "create_wats_agent",

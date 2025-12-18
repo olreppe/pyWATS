@@ -16,7 +16,15 @@ except ImportError:
     BaseTool = object
     CallbackManagerForToolRun = None
 
-from pywats_agent import YieldAnalysisTool, YieldFilter
+from pywats_agent import (
+    YieldAnalysisTool, 
+    YieldFilter,
+    TestStepAnalysisTool,
+    TestStepAnalysisFilter,
+    AggregatedMeasurementTool,
+    MeasurementDataTool,
+    MeasurementFilter,
+)
 
 if TYPE_CHECKING:
     from pywats import pyWATS
@@ -189,13 +197,293 @@ Available perspectives:
         async def _arun(self, *args, **kwargs) -> str:
             """Async version - just calls sync for now."""
             return self._run(*args, **kwargs)
+    class WATSTestStepAnalysisTool(BaseTool):
+        """
+        LangChain tool for analyzing test step statistics.
+        
+        This tool provides detailed step-level execution statistics
+        and failure analysis for manufacturing tests.
+        
+        Example:
+            >>> from pywats import pyWATS
+            >>> from pywats_langchain import WATSTestStepAnalysisTool
+            >>> 
+            >>> api = pyWATS(base_url="...", token="...")
+            >>> tool = WATSTestStepAnalysisTool(api=api)
+            >>> 
+            >>> # Use with an agent
+            >>> result = tool.invoke({
+            ...     "part_number": "WIDGET-001",
+            ...     "test_operation": "FCT"
+            ... })
+        """
+        
+        name: str = "analyze_test_steps"
+        description: str = """
+Analyze test step execution statistics and failure patterns.
+
+Use this tool to answer questions like:
+- "Which test steps are failing for WIDGET-001?" 
+- "What are the failure rates for each step in FCT?"
+- "Show me step-level statistics for product X"
+
+Provides detailed execution statistics for each test step.
+"""
+        
+        # Define input schema inline
+        class TestStepAnalysisInput(BaseModel):
+            """Input schema for test step analysis."""
+            part_number: str = Field(description="Product part number (required)")
+            test_operation: str = Field(description="Test operation (required, e.g., 'FCT', 'EOL')")
+            revision: Optional[str] = Field(default=None, description="Product revision")
+            days: int = Field(default=30, description="Number of days to analyze")
+            run: int = Field(default=1, description="Run number to analyze")
+            max_count: int = Field(default=10000, description="Maximum results")
+        
+        args_schema: Type[BaseModel] = TestStepAnalysisInput
+        
+        # Custom attributes
+        api: Any = None
+        _tool: TestStepAnalysisTool = None
+        
+        def __init__(self, api: "pyWATS", **kwargs):
+            """Initialize the tool."""
+            super().__init__(api=api, **kwargs)
+            self._tool = TestStepAnalysisTool(api)
+        
+        def _run(
+            self,
+            part_number: str,
+            test_operation: str,
+            revision: Optional[str] = None,
+            days: int = 30,
+            run: int = 1,
+            max_count: int = 10000,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+        ) -> str:
+            """Execute the test step analysis."""
+            
+            filter_input = TestStepAnalysisFilter(
+                part_number=part_number,
+                test_operation=test_operation,
+                revision=revision,
+                days=days,
+                run=run,
+                max_count=max_count,
+            )
+            
+            result = self._tool.analyze(filter_input)
+            
+            if result.success:
+                return result.summary
+            else:
+                return f"Error: {result.error}"
+        
+        async def _arun(self, *args, **kwargs) -> str:
+            """Async version."""
+            return self._run(*args, **kwargs)
+    
+    class WATSAggregatedMeasurementTool(BaseTool):
+        """
+        LangChain tool for analyzing aggregated measurement statistics.
+        
+        Provides statistical analysis of measurement data including
+        process capability metrics.
+        
+        Example:
+            >>> from pywats import pyWATS
+            >>> from pywats_langchain import WATSAggregatedMeasurementTool
+            >>> 
+            >>> api = pyWATS(base_url="...", token="...")
+            >>> tool = WATSAggregatedMeasurementTool(api=api)
+            >>> 
+            >>> result = tool.invoke({
+            ...     "measurement_path": "Main/Voltage Test/Output Voltage",
+            ...     "part_number": "WIDGET-001"
+            ... })
+        """
+        
+        name: str = "get_measurement_statistics"
+        description: str = """
+Get aggregated measurement statistics and process capability metrics.
+
+Use this tool to answer questions like:
+- "What's the average output voltage for WIDGET-001?"
+- "Show me Cpk for voltage measurements"
+- "What are the min/max values for temperature?"
+
+Provides aggregate statistics including min, max, avg, Cpk, etc.
+"""
+        
+        class AggregatedMeasurementInput(BaseModel):
+            """Input schema for aggregated measurements."""
+            measurement_path: str = Field(description="Path to measurement (required)")
+            part_number: Optional[str] = Field(default=None, description="Product part number")
+            revision: Optional[str] = Field(default=None, description="Product revision")
+            station_name: Optional[str] = Field(default=None, description="Test station")
+            days: int = Field(default=30, description="Number of days to analyze")
+            grouping: Optional[str] = Field(default=None, description="Group results by dimension")
+        
+        args_schema: Type[BaseModel] = AggregatedMeasurementInput
+        
+        api: Any = None
+        _tool: AggregatedMeasurementTool = None
+        
+        def __init__(self, api: "pyWATS", **kwargs):
+            """Initialize the tool."""
+            super().__init__(api=api, **kwargs)
+            self._tool = AggregatedMeasurementTool(api)
+        
+        def _run(
+            self,
+            measurement_path: str,
+            part_number: Optional[str] = None,
+            revision: Optional[str] = None,
+            station_name: Optional[str] = None,
+            days: int = 30,
+            grouping: Optional[str] = None,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+        ) -> str:
+            """Execute the aggregated measurement analysis."""
+            
+            filter_input = MeasurementFilter(
+                measurement_path=measurement_path,
+                part_number=part_number,
+                revision=revision,
+                station_name=station_name,
+                days=days,
+                grouping=grouping,
+            )
+            
+            result = self._tool.analyze(filter_input)
+            
+            if result.success:
+                return result.summary
+            else:
+                return f"Error: {result.error}"
+        
+        async def _arun(self, *args, **kwargs) -> str:
+            """Async version."""
+            return self._run(*args, **kwargs)
+    
+    class WATSMeasurementDataTool(BaseTool):
+        """
+        LangChain tool for retrieving individual measurement data points.
+        
+        Provides access to raw measurement values with timestamps
+        and serial numbers.
+        
+        Example:
+            >>> from pywats import pyWATS
+            >>> from pywats_langchain import WATSMeasurementDataTool
+            >>> 
+            >>> api = pyWATS(base_url="...", token="...")
+            >>> tool = WATSMeasurementDataTool(api=api)
+            >>> 
+            >>> result = tool.invoke({
+            ...     "measurement_path": "Main/Voltage Test/Output Voltage",
+            ...     "part_number": "WIDGET-001",
+            ...     "top_count": 100
+            ... })
+        """
+        
+        name: str = "get_measurement_data"
+        description: str = """
+Get individual measurement data points with timestamps and serial numbers.
+
+Use this tool to answer questions like:
+- "Show me the last 100 voltage measurements"
+- "What were the actual values for serial number X?"
+- "Get raw measurement data for temperature"
+
+Provides individual data points with serial numbers, values, and timestamps.
+"""
+        
+        class MeasurementDataInput(BaseModel):
+            """Input schema for measurement data."""
+            measurement_path: str = Field(description="Path to measurement (required)")
+            part_number: Optional[str] = Field(default=None, description="Product part number")
+            revision: Optional[str] = Field(default=None, description="Product revision")
+            serial_number: Optional[str] = Field(default=None, description="Unit serial number")
+            station_name: Optional[str] = Field(default=None, description="Test station")
+            days: int = Field(default=30, description="Number of days")
+            top_count: Optional[int] = Field(default=1000, description="Limit data points")
+        
+        args_schema: Type[BaseModel] = MeasurementDataInput
+        
+        api: Any = None
+        _tool: MeasurementDataTool = None
+        
+        def __init__(self, api: "pyWATS", **kwargs):
+            """Initialize the tool."""
+            super().__init__(api=api, **kwargs)
+            self._tool = MeasurementDataTool(api)
+        
+        def _run(
+            self,
+            measurement_path: str,
+            part_number: Optional[str] = None,
+            revision: Optional[str] = None,
+            serial_number: Optional[str] = None,
+            station_name: Optional[str] = None,
+            days: int = 30,
+            top_count: Optional[int] = 1000,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+        ) -> str:
+            """Execute the measurement data retrieval."""
+            
+            filter_input = MeasurementFilter(
+                measurement_path=measurement_path,
+                part_number=part_number,
+                revision=revision,
+                serial_number=serial_number,
+                station_name=station_name,
+                days=days,
+                top_count=top_count,
+            )
+            
+            result = self._tool.analyze(filter_input)
+            
+            if result.success:
+                return result.summary
+            else:
+                return f"Error: {result.error}"
+        
+        async def _arun(self, *args, **kwargs) -> str:
+            """Async version."""
+            return self._run(*args, **kwargs)
+
 else:
-    # Stub class when LangChain is not installed
+    # Stub classes when LangChain is not installed
     class WATSYieldTool:
         """Stub - LangChain not installed."""
         def __init__(self, *args, **kwargs):
             raise ImportError(
                 "LangChain is required for WATSYieldTool. "
+                "Install with: pip install pywats-langchain[langchain]"
+            )
+    
+    class WATSTestStepAnalysisTool:
+        """Stub - LangChain not installed."""
+        def __init__(self, *args, **kwargs):
+            raise ImportError(
+                "LangChain is required for WATSTestStepAnalysisTool. "
+                "Install with: pip install pywats-langchain[langchain]"
+            )
+    
+    class WATSAggregatedMeasurementTool:
+        """Stub - LangChain not installed."""
+        def __init__(self, *args, **kwargs):
+            raise ImportError(
+                "LangChain is required for WATSAggregatedMeasurementTool. "
+                "Install with: pip install pywats-langchain[langchain]"
+            )
+    
+    class WATSMeasurementDataTool:
+        """Stub - LangChain not installed."""
+        def __init__(self, *args, **kwargs):
+            raise ImportError(
+                "LangChain is required for WATSMeasurementDataTool. "
                 "Install with: pip install pywats-langchain[langchain]"
             )
 
@@ -232,7 +520,9 @@ class WATSToolkit:
         if LANGCHAIN_AVAILABLE:
             self._tools = [
                 WATSYieldTool(api=api),
-                # Add more tools here as they're implemented
+                WATSTestStepAnalysisTool(api=api),
+                WATSAggregatedMeasurementTool(api=api),
+                WATSMeasurementDataTool(api=api),
             ]
     
     def get_tools(self) -> List[Any]:
@@ -247,4 +537,19 @@ class WATSToolkit:
     @property
     def yield_tool(self) -> "WATSYieldTool":
         """Get the yield analysis tool."""
-        return self._tools[0] if self._tools else None
+        return self._tools[0] if len(self._tools) > 0 else None
+    
+    @property
+    def test_step_analysis_tool(self) -> "WATSTestStepAnalysisTool":
+        """Get the test step analysis tool."""
+        return self._tools[1] if len(self._tools) > 1 else None
+    
+    @property
+    def aggregated_measurement_tool(self) -> "WATSAggregatedMeasurementTool":
+        """Get the aggregated measurement tool."""
+        return self._tools[2] if len(self._tools) > 2 else None
+    
+    @property
+    def measurement_data_tool(self) -> "WATSMeasurementDataTool":
+        """Get the measurement data tool."""
+        return self._tools[3] if len(self._tools) > 3 else None
