@@ -13,6 +13,12 @@ from .models import (
     LevelInfo,
     ProductGroup,
     StepAnalysisRow,
+    TopFailedStep,
+    RepairStatistics,
+    RepairHistoryRecord,
+    MeasurementData,
+    AggregatedMeasurement,
+    OeeAnalysisResult,
 )
 from ..report.models import WATSFilter, ReportHeader
 
@@ -47,14 +53,19 @@ class AnalyticsService:
     # System Info
     # =========================================================================
 
-    def get_version(self) -> Dict[str, Any]:
+    def get_version(self) -> Optional[str]:
         """
         Get WATS API version information.
 
         Returns:
-            Version information dictionary
+            Version string (e.g., "24.1.0") or None if not available
+            
+        Example:
+            >>> version = api.analytics.get_version()
+            >>> print(f"WATS Server: {version}")
+            WATS Server: 24.1.0
         """
-        return self._repository.get_version() or {}
+        return self._repository.get_version()
 
     def get_processes(self) -> List[ProcessInfo]:
         """
@@ -62,6 +73,13 @@ class AnalyticsService:
 
         Returns:
             List of ProcessInfo objects
+            
+        Example:
+            >>> processes = api.analytics.get_processes()
+            >>> for p in processes:
+            ...     print(f"{p.code}: {p.name} (test={p.is_test_operation})")
+            100: End of line test (test=True)
+            500: Repair (test=False)
         """
         return self._repository.get_processes()
 
@@ -71,6 +89,13 @@ class AnalyticsService:
 
         Returns:
             List of LevelInfo objects
+            
+        Example:
+            >>> levels = api.analytics.get_levels()
+            >>> for lvl in levels:
+            ...     print(f"{lvl.level_id}: {lvl.level_name}")
+            1: PCBA
+            2: Box Build
         """
         return self._repository.get_levels()
 
@@ -80,6 +105,13 @@ class AnalyticsService:
 
         Returns:
             List of ProductGroup objects
+            
+        Example:
+            >>> groups = api.analytics.get_product_groups()
+            >>> for g in groups:
+            ...     print(f"{g.product_group_id}: {g.product_group_name}")
+            1: Electronics
+            2: Sensors
         """
         return self._repository.get_product_groups()
 
@@ -93,21 +125,32 @@ class AnalyticsService:
         """
         Get dynamic yield statistics by custom dimensions (PREVIEW).
 
-        Supported dimensions: partNumber, productName, stationName, location,
-        purpose, revision, testOperation, processCode, swFilename, swVersion,
-        productGroup, level, period, batchNumber, operator, fixtureId, etc.
+        Supported dimensions: part_number, product_name, station_name, location,
+        purpose, revision, test_operation, process_code, sw_filename, sw_version,
+        product_group, level, period, batch_number, operator, fixture_id, etc.
 
         Args:
             filter_data: WATSFilter with dimensions and filters
 
         Returns:
             List of YieldData objects
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(
+            ...     part_number="WIDGET-001",
+            ...     period_count=30,
+            ...     dimensions="partNumber;period"
+            ... )
+            >>> yield_data = api.analytics.get_dynamic_yield(filter_obj)
+            >>> for y in yield_data:
+            ...     print(f"{y.part_number} ({y.period}): FPY={y.fpy}%")
         """
         return self._repository.get_dynamic_yield(filter_data)
 
     def get_dynamic_repair(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    ) -> List[RepairStatistics]:
         """
         Get dynamic repair statistics by custom dimensions (PREVIEW).
 
@@ -115,7 +158,18 @@ class AnalyticsService:
             filter_data: WATSFilter with dimensions and filters
 
         Returns:
-            List of repair statistics data
+            List of RepairStatistics objects with repair counts and rates
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(
+            ...     part_number="WIDGET-001",
+            ...     period_count=30,
+            ...     dimensions="partNumber;period"
+            ... )
+            >>> repairs = api.analytics.get_dynamic_repair(filter_obj)
+            >>> for r in repairs:
+            ...     print(f"{r.part_number}: {r.repair_count} repairs ({r.repair_rate}%)")
         """
         return self._repository.get_dynamic_repair(filter_data)
 
@@ -135,6 +189,15 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects
+            
+        Example:
+            >>> # Simple GET request with filters
+            >>> yield_data = api.analytics.get_volume_yield(
+            ...     product_group="Electronics",
+            ...     level="PCBA"
+            ... )
+            >>> for y in yield_data:
+            ...     print(f"{y.part_number}: {y.unit_count} units, FPY={y.fpy}%")
         """
         return self._repository.get_volume_yield(
             filter_data=filter_data, product_group=product_group, level=level
@@ -147,7 +210,7 @@ class AnalyticsService:
         level: Optional[str] = None,
     ) -> List[YieldData]:
         """
-        Get worst yield statistics.
+        Get worst yield statistics (products with lowest yield).
 
         Args:
             filter_data: Optional WATSFilter for POST request
@@ -155,7 +218,13 @@ class AnalyticsService:
             level: Optional level filter (for GET)
 
         Returns:
-            List of YieldData objects
+            List of YieldData objects sorted by worst yield first
+            
+        Example:
+            >>> # Find products with worst yield in PCBA level
+            >>> worst = api.analytics.get_worst_yield(level="PCBA")
+            >>> for y in worst[:5]:  # Top 5 worst
+            ...     print(f"{y.part_number}: FPY={y.fpy}%")
         """
         return self._repository.get_worst_yield(
             filter_data=filter_data, product_group=product_group, level=level
@@ -165,13 +234,20 @@ class AnalyticsService:
         self, filter_data: WATSFilter
     ) -> List[YieldData]:
         """
-        Get worst yield by product group.
+        Get worst yield statistics grouped by product group.
 
         Args:
             filter_data: WATSFilter with parameters
 
         Returns:
-            List of YieldData objects by product group
+            List of YieldData objects grouped by product group, sorted by worst yield
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(period_count=30)
+            >>> worst = api.analytics.get_worst_yield_by_product_group(filter_obj)
+            >>> for y in worst:
+            ...     print(f"{y.product_group}: FPY={y.fpy}%")
         """
         return self._repository.get_worst_yield_by_product_group(filter_data)
 
@@ -186,7 +262,7 @@ class AnalyticsService:
         level: Optional[str] = None,
     ) -> List[YieldData]:
         """
-        Get high volume product list.
+        Get high volume product list (products with most units tested).
 
         Args:
             filter_data: Optional WATSFilter for POST request
@@ -194,7 +270,13 @@ class AnalyticsService:
             level: Optional level filter (for GET)
 
         Returns:
-            List of YieldData objects
+            List of YieldData objects sorted by highest volume first
+            
+        Example:
+            >>> # Get highest volume products in Electronics group
+            >>> high_vol = api.analytics.get_high_volume(product_group="Electronics")
+            >>> for y in high_vol[:5]:  # Top 5 by volume
+            ...     print(f"{y.part_number}: {y.unit_count} units")
         """
         return self._repository.get_high_volume(
             filter_data=filter_data, product_group=product_group, level=level
@@ -204,13 +286,20 @@ class AnalyticsService:
         self, filter_data: WATSFilter
     ) -> List[YieldData]:
         """
-        Get yield by product group sorted by volume.
+        Get yield statistics grouped by product group, sorted by volume.
 
         Args:
             filter_data: WATSFilter with parameters
 
         Returns:
-            List of YieldData objects by product group
+            List of YieldData objects grouped by product group, sorted by volume
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(period_count=30)
+            >>> by_group = api.analytics.get_high_volume_by_product_group(filter_obj)
+            >>> for y in by_group:
+            ...     print(f"{y.product_group}: {y.unit_count} units, FPY={y.fpy}%")
         """
         return self._repository.get_high_volume_by_product_group(filter_data)
 
@@ -227,7 +316,7 @@ class AnalyticsService:
         part_number: Optional[str] = None,
         revision: Optional[str] = None,
         top_count: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[TopFailedStep]:
         """
         Get top failed test steps.
 
@@ -242,7 +331,21 @@ class AnalyticsService:
             top_count: Maximum number of results (GET only)
 
         Returns:
-            List of top failed step data with failure counts and rates
+            List of TopFailedStep objects with failure counts and rates
+            
+        Example:
+            >>> # Simple GET request
+            >>> failures = api.analytics.get_top_failed(
+            ...     part_number="WIDGET-001",
+            ...     top_count=10
+            ... )
+            >>> for f in failures:
+            ...     print(f"{f.step_name}: {f.fail_count} failures ({f.fail_rate}%)")
+            
+            >>> # Or with WATSFilter for more control
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(part_number="WIDGET-001", top_count=10)
+            >>> failures = api.analytics.get_top_failed(filter_obj)
         """
         return self._repository.get_top_failed(
             filter_data,
@@ -260,10 +363,25 @@ class AnalyticsService:
         Get test step analysis data (PREVIEW).
 
         Args:
-            filter_data: WATSFilter with analysis parameters
+            filter_data: WATSFilter with analysis parameters including:
+                - part_number: Product part number (required)
+                - test_operation: Test operation (required)
+                - max_count: Maximum number of results
+                - date_from: Start date
 
         Returns:
-            List of StepAnalysisRow rows
+            List of StepAnalysisRow rows with step statistics
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(
+            ...     part_number="WIDGET-001",
+            ...     test_operation="100",
+            ...     max_count=1000
+            ... )
+            >>> analysis = api.analytics.get_test_step_analysis(filter_obj)
+            >>> for row in analysis:
+            ...     print(f"{row.step_name}: {row.step_count} runs, {row.step_failed_count} failures")
         """
         return self._repository.get_test_step_analysis(filter_data)
 
@@ -279,11 +397,40 @@ class AnalyticsService:
     ) -> List[StepAnalysisRow]:
         """Convenience wrapper for TestStepAnalysis.
 
-        The WATS API requires `partNumber` and `testOperation`.
-        Defaults are aligned with the swagger notes:
-        - maxCount: 10000
-        - dateFrom: now - 30 days
-        - run: 1 (first)
+        A simplified interface that automatically creates the filter object
+        with sensible defaults for common use cases.
+
+        Args:
+            part_number: Product part number (required).
+            test_operation: Test operation name (required).
+            revision: Product revision (optional).
+            days: Number of days to look back from now (default: 30).
+            run: Run number to analyze (default: 1 for first run).
+            max_count: Maximum number of results (default: 10000).
+
+        Returns:
+            List[StepAnalysisRow]: Typed step analysis results.
+
+        Raises:
+            ValueError: If part_number or test_operation is empty.
+
+        Example:
+            >>> # Simple call with just required parameters
+            >>> analysis = api.analytics.get_test_step_analysis_for_operation(
+            ...     part_number="PCBA-001",
+            ...     test_operation="FCT"
+            ... )
+            >>> for row in analysis:
+            ...     print(f"{row.step_name}: {row.step_count} tests")
+
+            >>> # With optional parameters
+            >>> analysis = api.analytics.get_test_step_analysis_for_operation(
+            ...     part_number="PCBA-001",
+            ...     test_operation="FCT",
+            ...     revision="A",
+            ...     days=7,
+            ...     max_count=500
+            ... )
         """
         if not part_number:
             raise ValueError("part_number is required")
@@ -306,7 +453,7 @@ class AnalyticsService:
 
     def get_related_repair_history(
         self, part_number: str, revision: str
-    ) -> List[Dict[str, Any]]:
+    ) -> List[RepairHistoryRecord]:
         """
         Get list of repaired failures related to the part number and revision.
 
@@ -315,7 +462,15 @@ class AnalyticsService:
             revision: Product revision
 
         Returns:
-            List of repair history records
+            List of RepairHistoryRecord objects with repair details
+            
+        Example:
+            >>> repairs = api.analytics.get_related_repair_history(
+            ...     part_number="WIDGET-001",
+            ...     revision="A"
+            ... )
+            >>> for r in repairs:
+            ...     print(f"SN {r.serial_number}: {r.fail_step_name} -> {r.repair_code}")
         """
         return self._repository.get_related_repair_history(
             part_number, revision
@@ -327,29 +482,56 @@ class AnalyticsService:
 
     def get_aggregated_measurements(
         self, filter_data: WATSFilter
-    ) -> List[Dict[str, Any]]:
+    ) -> List[AggregatedMeasurement]:
         """
         Get aggregated measurement statistics.
 
         Args:
-            filter_data: WATSFilter with measurement filters
+            filter_data: WATSFilter with measurement filters including:
+                - measurement_path: Path to the measurement
+                - part_number: Filter by product
+                - grouping: Aggregation grouping
 
         Returns:
-            List of aggregated measurement data
+            List of AggregatedMeasurement objects with statistics (min, max, avg, cpk, etc.)
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(
+            ...     part_number="WIDGET-001",
+            ...     measurement_path="Main/Voltage Test/Output Voltage"
+            ... )
+            >>> measurements = api.analytics.get_aggregated_measurements(filter_obj)
+            >>> for m in measurements:
+            ...     print(f"{m.step_name}: avg={m.avg}, cpk={m.cpk}")
         """
         return self._repository.get_aggregated_measurements(filter_data)
 
     def get_measurements(
         self, filter_data: WATSFilter
-    ) -> List[Dict[str, Any]]:
+    ) -> List[MeasurementData]:
         """
-        Get measurement data (PREVIEW).
+        Get individual measurement data points (PREVIEW).
 
         Args:
-            filter_data: WATSFilter with measurement filters
+            filter_data: WATSFilter with measurement filters including:
+                - measurement_path: Path to the measurement
+                - part_number: Filter by product
+                - top_count: Limit number of results
 
         Returns:
-            List of measurement data
+            List of MeasurementData objects with individual measurement values
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(
+            ...     part_number="WIDGET-001",
+            ...     measurement_path="Main/Voltage Test/Output Voltage",
+            ...     top_count=100
+            ... )
+            >>> data = api.analytics.get_measurements(filter_obj)
+            >>> for m in data:
+            ...     print(f"SN {m.serial_number}: {m.value} (limits: {m.limit_low}-{m.limit_high})")
         """
         return self._repository.get_measurements(filter_data)
 
@@ -357,19 +539,36 @@ class AnalyticsService:
     # OEE Analysis
     # =========================================================================
 
-    def get_oee_analysis(self, filter_data: WATSFilter) -> Dict[str, Any]:
+    def get_oee_analysis(self, filter_data: WATSFilter) -> Optional[OeeAnalysisResult]:
         """
         Get Overall Equipment Effectiveness analysis.
 
-        Supported filters: productGroup, level, partNumber, revision,
-        stationName, testOperation, status, swFilename, swVersion,
-        socket, dateFrom, dateTo
+        OEE = Availability × Performance × Quality
+
+        Supported filters: product_group, level, part_number, revision,
+        station_name, test_operation, status, sw_filename, sw_version,
+        socket, date_from, date_to
 
         Args:
             filter_data: WATSFilter with OEE parameters
 
         Returns:
-            OEE analysis data
+            OeeAnalysisResult object with OEE metrics, or None if no data
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> from datetime import datetime, timedelta
+            >>> filter_obj = WATSFilter(
+            ...     station_name="Line1-EOL",
+            ...     date_from=datetime.now() - timedelta(days=7),
+            ...     date_to=datetime.now()
+            ... )
+            >>> oee = api.analytics.get_oee_analysis(filter_obj)
+            >>> if oee:
+            ...     print(f"OEE: {oee.oee}%")
+            ...     print(f"  Availability: {oee.availability}%")
+            ...     print(f"  Performance: {oee.performance}%")
+            ...     print(f"  Quality: {oee.quality}%")
         """
         return self._repository.get_oee_analysis(filter_data)
 
@@ -383,14 +582,21 @@ class AnalyticsService:
         """
         Get test history for a serial number.
 
-        Supported filters: productGroup, level, serialNumber, partNumber,
-        batchNumber, miscValue
+        Supported filters: product_group, level, serial_number, part_number,
+        batch_number, misc_value
 
         Args:
             filter_data: WATSFilter with serial number and other filters
 
         Returns:
             List of ReportHeader objects
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(serial_number="SN12345")
+            >>> history = api.analytics.get_serial_number_history(filter_obj)
+            >>> for report in history:
+            ...     print(f"{report.start}: {report.status} - {report.part_number}")
         """
         return self._repository.get_serial_number_history(filter_data)
 
@@ -431,6 +637,16 @@ class AnalyticsService:
 
         Returns:
             List of ReportHeader objects
+            
+        Example:
+            >>> # Simple query for recent reports
+            >>> reports = api.analytics.get_uut_reports(
+            ...     part_number="WIDGET-001",
+            ...     status="Failed",
+            ...     top_count=100
+            ... )
+            >>> for r in reports:
+            ...     print(f"{r.serial_number}: {r.status} at {r.start}")
         """
         return self._repository.get_uut_reports(
             filter_data,
@@ -448,7 +664,7 @@ class AnalyticsService:
         Get UUR report headers (like Repair Reports in Reporting).
 
         By default the 1000 newest reports that match the filter are returned.
-        Use topCount filter to change this.
+        Use top_count filter to change this.
 
         Note: This API is not suitable for workflow or production management,
         use the Production module instead.
@@ -458,6 +674,16 @@ class AnalyticsService:
 
         Returns:
             List of ReportHeader objects
+            
+        Example:
+            >>> from pywats import WATSFilter
+            >>> filter_obj = WATSFilter(
+            ...     part_number="WIDGET-001",
+            ...     top_count=50
+            ... )
+            >>> repairs = api.analytics.get_uur_reports(filter_obj)
+            >>> for r in repairs:
+            ...     print(f"{r.serial_number}: repaired at {r.start}")
         """
         return self._repository.get_uur_reports(filter_data)
 
@@ -473,6 +699,8 @@ class AnalyticsService:
     ) -> List[YieldData]:
         """
         Get yield summary for a product over a time period.
+        
+        Convenience wrapper that creates a WATSFilter internally.
 
         Args:
             part_number: Product part number
@@ -481,6 +709,15 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects
+            
+        Example:
+            >>> # Get 30-day yield summary for a product
+            >>> summary = api.analytics.get_yield_summary(
+            ...     part_number="WIDGET-001",
+            ...     days=30
+            ... )
+            >>> for y in summary:
+            ...     print(f"{y.period}: FPY={y.fpy}%")
         """
         filter_data = WATSFilter(
             part_number=part_number,
@@ -495,6 +732,8 @@ class AnalyticsService:
     ) -> List[YieldData]:
         """
         Get yield statistics for a specific test station.
+        
+        Convenience wrapper that creates a WATSFilter internally.
 
         Args:
             station_name: Test station name
@@ -502,6 +741,15 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects
+            
+        Example:
+            >>> # Get 7-day yield for a station
+            >>> station_yield = api.analytics.get_station_yield(
+            ...     station_name="Line1-EOL",
+            ...     days=7
+            ... )
+            >>> for y in station_yield:
+            ...     print(f"{y.period}: {y.unit_count} units, FPY={y.fpy}%")
         """
         filter_data = WATSFilter(
             station_name=station_name,

@@ -48,7 +48,12 @@ from .domains.rootcause import (
     TicketUpdate, TicketUpdateType, TicketAttachment
 )
 from .domains.report import WATSFilter, ReportHeader, Attachment
-from .domains.analytics import YieldData, ProcessInfo, LevelInfo
+from .domains.analytics import (
+    YieldData, ProcessInfo, LevelInfo,
+    # New typed models for analytics
+    TopFailedStep, RepairStatistics, RepairHistoryRecord,
+    MeasurementData, AggregatedMeasurement, OeeAnalysisResult,
+)
 
 # Common models from shared
 from .shared import Setting, PyWATSModel
@@ -118,6 +123,13 @@ __all__ = [
     "YieldData",
     "ProcessInfo",
     "LevelInfo",
+    # Analytics typed models
+    "TopFailedStep",
+    "RepairStatistics",
+    "RepairHistoryRecord",
+    "MeasurementData",
+    "AggregatedMeasurement",
+    "OeeAnalysisResult",
     # Common models
     "Setting",
     "PyWATSModel",

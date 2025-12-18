@@ -20,6 +20,14 @@ from ..analytics import (
     LevelInfo,
     ProductGroup,
     StepAnalysisRow,
+    # New typed models
+    TopFailedStep,
+    RepairStatistics,
+    RepairHistoryRecord,
+    MeasurementData,
+    AggregatedMeasurement,
+    OeeAnalysisResult,
+    # Repository & Service
     AnalyticsRepository,
     AnalyticsService,
     # Backward compatibility aliases
@@ -37,6 +45,13 @@ __all__ = [
     "LevelInfo",
     "ProductGroup",
     "StepAnalysisRow",
+    # New typed models
+    "TopFailedStep",
+    "RepairStatistics",
+    "RepairHistoryRecord",
+    "MeasurementData",
+    "AggregatedMeasurement",
+    "OeeAnalysisResult",
     # Repository & Service (new names)
     "AnalyticsRepository",
     "AnalyticsService",

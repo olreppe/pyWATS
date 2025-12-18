@@ -6,13 +6,17 @@ import pytest
 from pywats.domains.rootcause.enums import TicketStatus, TicketView
 from pywats.domains.rootcause.models import Ticket
 from pywats.domains.rootcause.service import RootCauseService
+from pywats.domains.rootcause.repository import RootCauseRepository
 
 
-class DummyRootCauseRepository:
+class DummyRootCauseRepository(RootCauseRepository):
+    """Test double that inherits from RootCauseRepository to satisfy isinstance checks."""
+
     def __init__(self) -> None:
+        # Don't call super().__init__() - we don't need http_client for tests
         self.created: Optional[Ticket] = None
         self.updated: Optional[Ticket] = None
-        self.archived: List[Union[str, Ticket]] = []
+        self.archived: List[Union[str, UUID]] = []
 
     def get_ticket(self, ticket_id: Union[str, UUID]) -> Optional[Ticket]:
         return Ticket(ticket_id=uuid4(), subject="Existing")

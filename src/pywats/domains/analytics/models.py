@@ -8,11 +8,626 @@ All fields use Python snake_case naming (e.g., part_number, station_name).
 Backend API aliases (camelCase) are handled automatically.
 Always use the Python field names when creating or accessing these models.
 """
-from typing import Optional
+from datetime import datetime
+from typing import List, Optional
 from pydantic import Field, AliasChoices
 
 from ...shared.base_model import PyWATSModel
 
+
+# =============================================================================
+# Top Failed Analysis Models
+# =============================================================================
+
+class TopFailedStep(PyWATSModel):
+    """
+    Represents a top failed step from failure analysis.
+    
+    Returned from GET/POST /api/App/TopFailed.
+    
+    Attributes:
+        step_name: Name of the failed step
+        step_path: Full path to the step
+        step_type: Type of step
+        part_number: Product part number
+        revision: Product revision
+        product_group: Product group
+        fail_count: Number of failures
+        total_count: Total executions
+        fail_rate: Failure rate (0-100)
+        first_fail_date: Date of first failure
+        last_fail_date: Date of most recent failure
+        
+    Example:
+        >>> step = TopFailedStep(step_name="Voltage Test", fail_count=15, total_count=100)
+        >>> print(f"Failure rate: {step.fail_rate}%")
+    """
+
+    step_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepName", "step_name"),
+        serialization_alias="stepName",
+        description="Name of the failed step"
+    )
+    step_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepPath", "step_path"),
+        serialization_alias="stepPath",
+        description="Full path to the step"
+    )
+    step_type: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepType", "step_type"),
+        serialization_alias="stepType",
+        description="Type of step"
+    )
+    step_group: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepGroup", "step_group"),
+        serialization_alias="stepGroup",
+        description="Step group"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    product_group: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("productGroup", "product_group"),
+        serialization_alias="productGroup",
+        description="Product group"
+    )
+    fail_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("failCount", "fail_count"),
+        serialization_alias="failCount",
+        description="Number of failures"
+    )
+    total_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("totalCount", "total_count"),
+        serialization_alias="totalCount",
+        description="Total executions"
+    )
+    fail_rate: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("failRate", "fail_rate"),
+        serialization_alias="failRate",
+        description="Failure rate (0-100)"
+    )
+    first_fail_date: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("firstFailDate", "first_fail_date"),
+        serialization_alias="firstFailDate",
+        description="Date of first failure"
+    )
+    last_fail_date: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("lastFailDate", "last_fail_date"),
+        serialization_alias="lastFailDate",
+        description="Date of most recent failure"
+    )
+
+
+# =============================================================================
+# Repair Statistics Models  
+# =============================================================================
+
+class RepairStatistics(PyWATSModel):
+    """
+    Represents repair statistics data from dynamic repair analysis.
+    
+    Returned from POST /api/App/DynamicRepair (PREVIEW API).
+    
+    Attributes:
+        part_number: Product part number
+        revision: Product revision
+        product_group: Product group
+        repair_count: Number of repairs
+        total_count: Total units
+        repair_rate: Repair rate (0-100)
+        period: Time period
+        station_name: Station where repair occurred
+        fail_code: Failure code
+        repair_code: Repair action code
+        
+    Example:
+        >>> stats = RepairStatistics(part_number="WIDGET-001", repair_count=5)
+        >>> print(f"Repairs: {stats.repair_count}")
+    """
+
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    product_group: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("productGroup", "product_group"),
+        serialization_alias="productGroup",
+        description="Product group"
+    )
+    product_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("productName", "product_name"),
+        serialization_alias="productName",
+        description="Product name"
+    )
+    station_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stationName", "station_name"),
+        serialization_alias="stationName",
+        description="Station name"
+    )
+    test_operation: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("testOperation", "test_operation"),
+        serialization_alias="testOperation",
+        description="Test operation"
+    )
+    period: Optional[str] = Field(
+        default=None,
+        description="Time period"
+    )
+    repair_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairCount", "repair_count"),
+        serialization_alias="repairCount",
+        description="Number of repairs"
+    )
+    total_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("totalCount", "total_count"),
+        serialization_alias="totalCount",
+        description="Total units"
+    )
+    repair_rate: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairRate", "repair_rate"),
+        serialization_alias="repairRate",
+        description="Repair rate (0-100)"
+    )
+    fail_code: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("failCode", "fail_code"),
+        serialization_alias="failCode",
+        description="Failure code"
+    )
+    repair_code: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairCode", "repair_code"),
+        serialization_alias="repairCode",
+        description="Repair action code"
+    )
+
+
+class RepairHistoryRecord(PyWATSModel):
+    """
+    Represents a repair history record for a specific part.
+    
+    Returned from GET /api/App/RelatedRepairHistory.
+    
+    Attributes:
+        serial_number: Unit serial number
+        part_number: Product part number
+        revision: Product revision
+        report_id: Report ID
+        repair_date: Date of repair
+        fail_step_name: Name of failed step
+        fail_step_path: Path of failed step
+        fail_code: Failure code
+        repair_code: Repair action code
+        symptom: Symptom description
+        cause: Root cause
+        action: Repair action taken
+        
+    Example:
+        >>> record = RepairHistoryRecord(serial_number="SN001", fail_step_name="Voltage Test")
+        >>> print(f"Failed step: {record.fail_step_name}")
+    """
+
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber",
+        description="Unit serial number"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    report_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("reportId", "report_id"),
+        serialization_alias="reportId",
+        description="Report ID"
+    )
+    repair_date: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairDate", "repair_date"),
+        serialization_alias="repairDate",
+        description="Date of repair"
+    )
+    fail_step_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("failStepName", "fail_step_name"),
+        serialization_alias="failStepName",
+        description="Name of failed step"
+    )
+    fail_step_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("failStepPath", "fail_step_path"),
+        serialization_alias="failStepPath",
+        description="Path of failed step"
+    )
+    fail_code: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("failCode", "fail_code"),
+        serialization_alias="failCode",
+        description="Failure code"
+    )
+    repair_code: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairCode", "repair_code"),
+        serialization_alias="repairCode",
+        description="Repair action code"
+    )
+    symptom: Optional[str] = Field(
+        default=None,
+        description="Symptom description"
+    )
+    cause: Optional[str] = Field(
+        default=None,
+        description="Root cause"
+    )
+    action: Optional[str] = Field(
+        default=None,
+        description="Repair action taken"
+    )
+
+
+# =============================================================================
+# Measurement Data Models
+# =============================================================================
+
+class MeasurementData(PyWATSModel):
+    """
+    Represents individual measurement data points.
+    
+    Returned from POST /api/App/Measurements (PREVIEW API).
+    
+    Attributes:
+        serial_number: Unit serial number
+        part_number: Product part number
+        step_name: Measurement step name
+        step_path: Full step path
+        value: Measured value
+        limit_low: Low limit
+        limit_high: High limit
+        unit: Unit of measurement
+        status: Measurement status (Pass/Fail)
+        timestamp: Measurement timestamp
+        
+    Example:
+        >>> data = MeasurementData(step_name="Voltage", value=5.02, limit_low=4.5, limit_high=5.5)
+        >>> print(f"{data.step_name}: {data.value}")
+    """
+
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber",
+        description="Unit serial number"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    report_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("reportId", "report_id"),
+        serialization_alias="reportId",
+        description="Report ID"
+    )
+    step_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepName", "step_name"),
+        serialization_alias="stepName",
+        description="Measurement step name"
+    )
+    step_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepPath", "step_path"),
+        serialization_alias="stepPath",
+        description="Full step path"
+    )
+    value: Optional[float] = Field(
+        default=None,
+        description="Measured value"
+    )
+    limit_low: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("limitLow", "limit_low", "limit1"),
+        serialization_alias="limitLow",
+        description="Low limit"
+    )
+    limit_high: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("limitHigh", "limit_high", "limit2"),
+        serialization_alias="limitHigh",
+        description="High limit"
+    )
+    unit: Optional[str] = Field(
+        default=None,
+        description="Unit of measurement"
+    )
+    status: Optional[str] = Field(
+        default=None,
+        description="Measurement status (Pass/Fail)"
+    )
+    timestamp: Optional[datetime] = Field(
+        default=None,
+        description="Measurement timestamp"
+    )
+
+
+class AggregatedMeasurement(PyWATSModel):
+    """
+    Represents aggregated measurement statistics.
+    
+    Returned from POST /api/App/AggregatedMeasurements.
+    
+    Attributes:
+        step_name: Measurement step name
+        step_path: Full step path
+        count: Number of measurements
+        min: Minimum value
+        max: Maximum value
+        avg: Average value
+        stdev: Standard deviation
+        limit_low: Low limit
+        limit_high: High limit
+        cpk: Process capability index
+        cp: Process capability
+        
+    Example:
+        >>> agg = AggregatedMeasurement(step_name="Voltage", count=1000, avg=5.01, cpk=1.33)
+        >>> print(f"{agg.step_name}: Cpk={agg.cpk}")
+    """
+
+    step_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepName", "step_name"),
+        serialization_alias="stepName",
+        description="Measurement step name"
+    )
+    step_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepPath", "step_path"),
+        serialization_alias="stepPath",
+        description="Full step path"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    count: Optional[int] = Field(
+        default=None,
+        description="Number of measurements"
+    )
+    min: Optional[float] = Field(
+        default=None,
+        description="Minimum value"
+    )
+    max: Optional[float] = Field(
+        default=None,
+        description="Maximum value"
+    )
+    avg: Optional[float] = Field(
+        default=None,
+        description="Average value"
+    )
+    stdev: Optional[float] = Field(
+        default=None,
+        description="Standard deviation"
+    )
+    variance: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("var", "variance"),
+        serialization_alias="var",
+        description="Variance"
+    )
+    limit_low: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("limitLow", "limit_low", "limit1"),
+        serialization_alias="limitLow",
+        description="Low limit"
+    )
+    limit_high: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("limitHigh", "limit_high", "limit2"),
+        serialization_alias="limitHigh",
+        description="High limit"
+    )
+    cpk: Optional[float] = Field(
+        default=None,
+        description="Process capability index"
+    )
+    cp: Optional[float] = Field(
+        default=None,
+        description="Process capability"
+    )
+    cp_lower: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("cpLower", "cp_lower"),
+        serialization_alias="cpLower",
+        description="Lower process capability"
+    )
+    cp_upper: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("cpUpper", "cp_upper"),
+        serialization_alias="cpUpper",
+        description="Upper process capability"
+    )
+    unit: Optional[str] = Field(
+        default=None,
+        description="Unit of measurement"
+    )
+
+
+# =============================================================================
+# OEE (Overall Equipment Effectiveness) Models
+# =============================================================================
+
+class OeeAnalysisResult(PyWATSModel):
+    """
+    Represents OEE (Overall Equipment Effectiveness) analysis results.
+    
+    Returned from POST /api/App/OeeAnalysis.
+    
+    OEE = Availability × Performance × Quality
+    
+    Attributes:
+        oee: Overall Equipment Effectiveness (0-100)
+        availability: Availability rate (0-100)
+        performance: Performance rate (0-100)
+        quality: Quality rate (0-100)
+        total_time: Total time in minutes
+        run_time: Actual run time in minutes
+        down_time: Downtime in minutes
+        planned_production_time: Planned production time
+        total_count: Total units produced
+        good_count: Good units count
+        reject_count: Rejected units count
+        ideal_cycle_time: Ideal cycle time per unit
+        actual_cycle_time: Actual cycle time per unit
+        period: Analysis period
+        
+    Example:
+        >>> oee = OeeAnalysisResult(oee=85.0, availability=90.0, performance=95.0, quality=99.5)
+        >>> print(f"OEE: {oee.oee}%")
+    """
+
+    oee: Optional[float] = Field(
+        default=None,
+        description="Overall Equipment Effectiveness (0-100)"
+    )
+    availability: Optional[float] = Field(
+        default=None,
+        description="Availability rate (0-100)"
+    )
+    performance: Optional[float] = Field(
+        default=None,
+        description="Performance rate (0-100)"
+    )
+    quality: Optional[float] = Field(
+        default=None,
+        description="Quality rate (0-100)"
+    )
+    total_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("totalTime", "total_time"),
+        serialization_alias="totalTime",
+        description="Total time in minutes"
+    )
+    run_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("runTime", "run_time"),
+        serialization_alias="runTime",
+        description="Actual run time in minutes"
+    )
+    down_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("downTime", "down_time"),
+        serialization_alias="downTime",
+        description="Downtime in minutes"
+    )
+    planned_production_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("plannedProductionTime", "planned_production_time"),
+        serialization_alias="plannedProductionTime",
+        description="Planned production time"
+    )
+    total_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("totalCount", "total_count"),
+        serialization_alias="totalCount",
+        description="Total units produced"
+    )
+    good_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("goodCount", "good_count"),
+        serialization_alias="goodCount",
+        description="Good units count"
+    )
+    reject_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("rejectCount", "reject_count"),
+        serialization_alias="rejectCount",
+        description="Rejected units count"
+    )
+    ideal_cycle_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("idealCycleTime", "ideal_cycle_time"),
+        serialization_alias="idealCycleTime",
+        description="Ideal cycle time per unit"
+    )
+    actual_cycle_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("actualCycleTime", "actual_cycle_time"),
+        serialization_alias="actualCycleTime",
+        description="Actual cycle time per unit"
+    )
+    period: Optional[str] = Field(
+        default=None,
+        description="Analysis period"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    station_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stationName", "station_name"),
+        serialization_alias="stationName",
+        description="Station name"
+    )
+
+
+# =============================================================================
+# Yield Statistics Models
+# =============================================================================
 
 class YieldData(PyWATSModel):
     """

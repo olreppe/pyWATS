@@ -16,6 +16,12 @@ from .models import (
     LevelInfo,
     ProductGroup,
     StepAnalysisRow,
+    TopFailedStep,
+    RepairStatistics,
+    RepairHistoryRecord,
+    MeasurementData,
+    AggregatedMeasurement,
+    OeeAnalysisResult,
 )
 from ..report.models import WATSFilter, ReportHeader
 
@@ -47,14 +53,14 @@ class AnalyticsRepository:
     # System Info
     # =========================================================================
 
-    def get_version(self) -> Optional[Dict[str, Any]]:
+    def get_version(self) -> Optional[str]:
         """
         Get server/api version.
 
         GET /api/App/Version
 
         Returns:
-            Version info dictionary or None
+            Version string (e.g., "24.1.0") or None
         """
         response = self._http_client.get("/api/App/Version")
         
@@ -62,11 +68,11 @@ class AnalyticsRepository:
             data = self._error_handler.handle_response(
                 response, operation="get_version", allow_empty=True
             )
-            return cast(Dict[str, Any], data) if data else None
+            return str(data) if data else None
         
         # Backward compatibility: original behavior
         if response.is_success and response.data:
-            return cast(Dict[str, Any], response.data)
+            return str(response.data)
         return None
 
     def get_processes(self) -> List[ProcessInfo]:
@@ -340,17 +346,21 @@ class AnalyticsRepository:
 
     def get_dynamic_repair(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    ) -> List[RepairStatistics]:
         """
         Calculate repair statistics by custom dimensions (PREVIEW).
 
         POST /api/App/DynamicRepair
 
         Args:
-            filter_data: WATSFilter object or dict
+            filter_data: WATSFilter object or dict with filters like:
+                - part_number: Filter by product
+                - product_group: Filter by product group
+                - period_count: Number of periods
+                - grouping: Grouping dimension
 
         Returns:
-            List of repair statistics dictionaries
+            List of RepairStatistics objects with repair counts and rates
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
@@ -358,16 +368,13 @@ class AnalyticsRepository:
             data = filter_data
         response = self._http_client.post("/api/App/DynamicRepair", data=data)
         if response.is_success and response.data:
-            return (
-                response.data
-                if isinstance(response.data, list)
-                else [response.data]
-            )
+            items = response.data if isinstance(response.data, list) else [response.data]
+            return [RepairStatistics.model_validate(item) for item in items]
         return []
 
     def get_related_repair_history(
         self, part_number: str, revision: str
-    ) -> List[Dict[str, Any]]:
+    ) -> List[RepairHistoryRecord]:
         """
         Get list of repaired failures related to the part number and revision.
 
@@ -378,7 +385,7 @@ class AnalyticsRepository:
             revision: Product revision
 
         Returns:
-            List of repair history dictionaries
+            List of RepairHistoryRecord objects with repair details
         """
         params: Dict[str, Any] = {
             "partNumber": part_number,
@@ -388,11 +395,8 @@ class AnalyticsRepository:
             "/api/App/RelatedRepairHistory", params=params
         )
         if response.is_success and response.data:
-            return (
-                response.data
-                if isinstance(response.data, list)
-                else [response.data]
-            )
+            items = response.data if isinstance(response.data, list) else [response.data]
+            return [RepairHistoryRecord.model_validate(item) for item in items]
         return []
 
     # =========================================================================
@@ -408,7 +412,7 @@ class AnalyticsRepository:
         part_number: Optional[str] = None,
         revision: Optional[str] = None,
         top_count: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[TopFailedStep]:
         """
         Get the top failed steps.
 
@@ -423,7 +427,7 @@ class AnalyticsRepository:
             top_count: Maximum number of results (GET only)
 
         Returns:
-            List of failed step dictionaries
+            List of TopFailedStep objects with failure statistics
         """
         if filter_data:
             if isinstance(filter_data, WATSFilter):
@@ -447,11 +451,8 @@ class AnalyticsRepository:
                 "/api/App/TopFailed", params=params if params else None
             )
         if response.is_success and response.data:
-            return (
-                response.data
-                if isinstance(response.data, list)
-                else [response.data]
-            )
+            items = response.data if isinstance(response.data, list) else [response.data]
+            return [TopFailedStep.model_validate(item) for item in items]
         return []
 
     def get_test_step_analysis(
@@ -488,17 +489,20 @@ class AnalyticsRepository:
 
     def get_measurements(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    ) -> List[MeasurementData]:
         """
         Get numeric measurements by measurement path (PREVIEW).
 
         POST /api/App/Measurements
 
         Args:
-            filter_data: WATSFilter object or dict
+            filter_data: WATSFilter object or dict with filters like:
+                - measurement_path: Path to the measurement
+                - part_number: Filter by product
+                - top_count: Limit results
 
         Returns:
-            List of measurement dictionaries
+            List of MeasurementData objects with individual measurement values
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
@@ -506,26 +510,26 @@ class AnalyticsRepository:
             data = filter_data
         response = self._http_client.post("/api/App/Measurements", data=data)
         if response.is_success and response.data:
-            return (
-                response.data
-                if isinstance(response.data, list)
-                else [response.data]
-            )
+            items = response.data if isinstance(response.data, list) else [response.data]
+            return [MeasurementData.model_validate(item) for item in items]
         return []
 
     def get_aggregated_measurements(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    ) -> List[AggregatedMeasurement]:
         """
         Get aggregated numeric measurements by measurement path.
 
         POST /api/App/AggregatedMeasurements
 
         Args:
-            filter_data: WATSFilter object or dict
+            filter_data: WATSFilter object or dict with filters like:
+                - measurement_path: Path to the measurement
+                - part_number: Filter by product
+                - grouping: Aggregation grouping
 
         Returns:
-            List of aggregated measurement dictionaries
+            List of AggregatedMeasurement objects with statistics (min, max, avg, cpk, etc.)
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
@@ -535,11 +539,8 @@ class AnalyticsRepository:
             "/api/App/AggregatedMeasurements", data=data
         )
         if response.is_success and response.data:
-            return (
-                response.data
-                if isinstance(response.data, list)
-                else [response.data]
-            )
+            items = response.data if isinstance(response.data, list) else [response.data]
+            return [AggregatedMeasurement.model_validate(item) for item in items]
         return []
 
     # =========================================================================
@@ -548,17 +549,20 @@ class AnalyticsRepository:
 
     def get_oee_analysis(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    ) -> Optional[OeeAnalysisResult]:
         """
         Overall Equipment Effectiveness - analysis.
 
         POST /api/App/OeeAnalysis
 
         Args:
-            filter_data: WATSFilter object or dict
+            filter_data: WATSFilter object or dict with filters like:
+                - part_number: Filter by product
+                - station_name: Filter by station
+                - date_from/date_to: Time range
 
         Returns:
-            OEE analysis dictionary
+            OeeAnalysisResult object with OEE metrics (availability, performance, quality)
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
@@ -566,8 +570,8 @@ class AnalyticsRepository:
             data = filter_data
         response = self._http_client.post("/api/App/OeeAnalysis", data=data)
         if response.is_success and response.data:
-            return cast(Dict[str, Any], response.data)
-        return {}
+            return OeeAnalysisResult.model_validate(response.data)
+        return None
 
     # =========================================================================
     # Serial Number and Unit History
