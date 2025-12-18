@@ -197,6 +197,7 @@ Available perspectives:
         async def _arun(self, *args, **kwargs) -> str:
             """Async version - just calls sync for now."""
             return self._run(*args, **kwargs)
+    
     class WATSTestStepAnalysisTool(BaseTool):
         """
         LangChain tool for analyzing test step statistics.
