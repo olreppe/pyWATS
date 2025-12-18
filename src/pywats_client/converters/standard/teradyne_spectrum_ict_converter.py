@@ -228,7 +228,7 @@ class TerradyneSpectrumICTConverter(FileConverter):
                 try:
                     pn_match = re.search(pn_regex, program_name)
                     part_number = pn_match.group('PartNumber') if pn_match else program_name
-                except:
+                except Exception:
                     part_number = program_name
                 
                 # Extract serial number
@@ -329,7 +329,7 @@ class TerradyneSpectrumICTConverter(FileConverter):
         try:
             pn_match = re.search(pn_regex, program_name)
             part_number = pn_match.group('PartNumber') if pn_match else program_name
-        except:
+        except Exception:
             part_number = program_name
         
         # Parse serial and operator

@@ -877,7 +877,7 @@ async def _tool_get_calibration_due(api: pyWATS, args: dict) -> list[TextContent
                 
                 if cal_dt <= due_date:
                     due_assets.append((a, cal_dt))
-            except:
+            except Exception:
                 pass
     
     if not due_assets:

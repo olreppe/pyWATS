@@ -753,7 +753,7 @@ class TeradyneICTConverter(FileConverter):
                     sn = sn_file.read_text().strip()
                     if sn.isdigit():
                         return sn.zfill(10)
-                except:
+                except Exception:
                     pass
         
         # Generate based on timestamp
