@@ -73,6 +73,65 @@ result = executor.execute(
 
 ## Available Tools
 
+### Yield Analysis
 - **analyze_yield** - Flexible yield analysis with semantic perspectives
 
-More tools coming soon (failure analysis, measurements, repair history).
+```python
+result = executor.execute("analyze_yield", {
+    "part_number": "WIDGET-001",
+    "perspective": "by station",
+    "days": 7
+})
+```
+
+### Test Step Analysis
+- **analyze_test_steps** - Detailed step-level failure analysis
+
+```python
+result = executor.execute("analyze_test_steps", {
+    "part_number": "WIDGET-001",
+    "test_operation": "FCT",
+    "days": 7
+})
+```
+
+### Measurement Statistics
+- **get_measurement_statistics** - Aggregated measurement stats with Cpk
+
+```python
+result = executor.execute("get_measurement_statistics", {
+    "measurement_path": "Main/Voltage Test/Output Voltage",
+    "part_number": "WIDGET-001",
+    "days": 7
+})
+```
+
+### Measurement Data
+- **get_measurement_data** - Individual measurement data points
+
+```python
+result = executor.execute("get_measurement_data", {
+    "measurement_path": "Main/Voltage Test/Output Voltage",
+    "part_number": "WIDGET-001",
+    "top_count": 100,
+    "days": 7
+})
+```
+
+## Tool Definitions for OpenAI
+
+Get all tool definitions:
+
+```python
+from pywats_agent import ToolExecutor
+
+executor = ToolExecutor(api)
+tools = executor.get_openai_tools()
+
+# Use with OpenAI
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Analyze test failures for WIDGET-001"}],
+    tools=tools
+)
+```
