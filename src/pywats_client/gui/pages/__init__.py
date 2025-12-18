@@ -9,6 +9,7 @@ from .setup import SetupPage
 from .connection import ConnectionPage
 from .proxy_settings import ProxySettingsPage
 from .converters import ConvertersPage
+from .converters_v2 import ConvertersPageV2  # New unified converters page
 from .location import LocationPage
 from .sn_handler import SNHandlerPage
 from .software import SoftwarePage
@@ -25,6 +26,7 @@ __all__ = [
     "ConnectionPage",
     "ProxySettingsPage",
     "ConvertersPage",
+    "ConvertersPageV2",
     "LocationPage",
     "SNHandlerPage",
     "SoftwarePage",

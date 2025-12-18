@@ -370,13 +370,21 @@ class ConverterSettingsDialog(QDialog):
 
 
 class ConverterEditorDialog(QDialog):
-    """Dialog for viewing/editing converter source code"""
+    """
+    Dialog for viewing/editing converter source code.
+    
+    Uses the advanced ScriptEditorWidget with:
+    - Tree view showing class structure
+    - Function-by-function editing
+    - Syntax highlighting
+    - Base class method detection
+    """
     
     def __init__(self, file_path: str, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.file_path = Path(file_path)
-        self.setWindowTitle(f"Converter Code: {self.file_path.stem}")
-        self.resize(900, 700)
+        self.setWindowTitle(f"Converter Editor: {self.file_path.stem}")
+        self.resize(1100, 800)
         
         self._setup_ui()
         self._load_converter()
@@ -384,48 +392,43 @@ class ConverterEditorDialog(QDialog):
     def _setup_ui(self) -> None:
         """Setup UI components"""
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
         
-        # File info
-        info_layout = QHBoxLayout()
-        info_layout.addWidget(QLabel("File:"))
+        # File info header
+        header_layout = QHBoxLayout()
+        
+        file_label = QLabel("File:")
+        file_label.setStyleSheet("color: #808080;")
+        header_layout.addWidget(file_label)
+        
         self._path_label = QLabel(str(self.file_path))
-        self._path_label.setStyleSheet("color: #4ec9b0;")
-        info_layout.addWidget(self._path_label)
-        info_layout.addStretch()
-        layout.addLayout(info_layout)
+        self._path_label.setStyleSheet("color: #4ec9b0; font-weight: bold;")
+        header_layout.addWidget(self._path_label)
         
-        # Status
-        status_layout = QHBoxLayout()
-        status_layout.addWidget(QLabel("Status:"))
+        header_layout.addStretch()
+        
         self._status_label = QLabel()
-        status_layout.addWidget(self._status_label)
-        status_layout.addStretch()
-        layout.addLayout(status_layout)
+        header_layout.addWidget(self._status_label)
         
-        # Code editor
-        layout.addWidget(QLabel("Converter Code:"))
-        self._code_editor = QPlainTextEdit()
-        self._code_editor.setReadOnly(False)
-        self._code_editor.setStyleSheet("""
-            QPlainTextEdit {
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 10pt;
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-            }
-        """)
-        layout.addWidget(self._code_editor)
+        layout.addLayout(header_layout)
+        
+        # Script editor widget (with tree view)
+        from ..widgets import ScriptEditorWidget
+        self._script_editor = ScriptEditorWidget()
+        self._script_editor.content_changed.connect(self._on_content_changed)
+        layout.addWidget(self._script_editor)
         
         # Buttons
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        self._save_btn = QPushButton("Save")
+        self._save_btn = QPushButton("Save && Close")
         self._save_btn.clicked.connect(self._save_converter)
+        self._save_btn.setEnabled(False)
         button_layout.addWidget(self._save_btn)
         
         self._close_btn = QPushButton("Close")
-        self._close_btn.clicked.connect(self.reject)
+        self._close_btn.clicked.connect(self._on_close)
         button_layout.addWidget(self._close_btn)
         
         layout.addLayout(button_layout)
@@ -433,34 +436,49 @@ class ConverterEditorDialog(QDialog):
     def _load_converter(self) -> None:
         """Load converter from file"""
         try:
-            content = self.file_path.read_text(encoding='utf-8')
-            self._code_editor.setPlainText(content)
-            
-            # Check validity
-            if "ConverterBase" in content or "FileConverter" in content:
-                self._status_label.setText("Valid converter")
-                self._status_label.setStyleSheet("color: #4ec9b0;")
+            if self._script_editor.load_file(str(self.file_path)):
+                content = self._script_editor.get_source()
+                
+                # Check validity
+                if "FileConverter" in content:
+                    self._status_label.setText("✓ Valid FileConverter")
+                    self._status_label.setStyleSheet("color: #4ec9b0;")
+                elif "FolderConverter" in content:
+                    self._status_label.setText("✓ Valid FolderConverter")
+                    self._status_label.setStyleSheet("color: #4ec9b0;")
+                elif "ScheduledConverter" in content:
+                    self._status_label.setText("✓ Valid ScheduledConverter")
+                    self._status_label.setStyleSheet("color: #4ec9b0;")
+                elif "ConverterBase" in content:
+                    self._status_label.setText("✓ Valid ConverterBase (legacy)")
+                    self._status_label.setStyleSheet("color: #dcdcaa;")
+                else:
+                    self._status_label.setText("⚠ Not a valid converter class")
+                    self._status_label.setStyleSheet("color: #dcdcaa;")
             else:
-                self._status_label.setText("Missing ConverterBase/FileConverter - not a valid converter")
-                self._status_label.setStyleSheet("color: #dcdcaa;")
+                self._status_label.setText("✗ Failed to load file")
+                self._status_label.setStyleSheet("color: #f14c4c;")
                 
         except Exception as e:
-            self._status_label.setText(f"Error loading: {str(e)}")
+            self._status_label.setText(f"✗ Error: {str(e)}")
             self._status_label.setStyleSheet("color: #f14c4c;")
+    
+    def _on_content_changed(self) -> None:
+        """Handle content change"""
+        self._save_btn.setEnabled(True)
+        self.setWindowTitle(f"Converter Editor: {self.file_path.stem} *")
     
     def _save_converter(self) -> None:
         """Save converter to file"""
         try:
-            content = self._code_editor.toPlainText()
-            self.file_path.write_text(content, encoding='utf-8')
-            
-            QMessageBox.information(
-                self,
-                "Saved",
-                f"Converter saved to:\n{self.file_path}"
-            )
-            
-            self.accept()
+            if self._script_editor.save():
+                QMessageBox.information(
+                    self,
+                    "Saved",
+                    f"Converter saved to:\n{self.file_path}"
+                )
+                self._save_btn.setEnabled(False)
+                self.setWindowTitle(f"Converter Editor: {self.file_path.stem}")
             
         except Exception as e:
             QMessageBox.critical(
@@ -468,6 +486,26 @@ class ConverterEditorDialog(QDialog):
                 "Save Error",
                 f"Failed to save converter:\n{str(e)}"
             )
+    
+    def _on_close(self) -> None:
+        """Handle close button"""
+        if self._script_editor.is_modified():
+            reply = QMessageBox.question(
+                self, "Unsaved Changes",
+                "You have unsaved changes. Save before closing?",
+                QMessageBox.StandardButton.Save | 
+                QMessageBox.StandardButton.Discard | 
+                QMessageBox.StandardButton.Cancel
+            )
+            
+            if reply == QMessageBox.StandardButton.Save:
+                self._save_converter()
+                self.accept()
+            elif reply == QMessageBox.StandardButton.Discard:
+                self.reject()
+            # Cancel does nothing
+        else:
+            self.reject()
 
 
 class ConvertersPage(BasePage):
@@ -565,10 +603,10 @@ class ConvertersPage(BasePage):
         
         config_btn_layout.addStretch()
         
-        self._view_code_btn = QPushButton("View Code...")
-        self._view_code_btn.setEnabled(False)
-        self._view_code_btn.clicked.connect(self._on_view_code)
-        config_btn_layout.addWidget(self._view_code_btn)
+        self._edit_code_btn = QPushButton("Edit Code...")
+        self._edit_code_btn.setEnabled(False)
+        self._edit_code_btn.clicked.connect(self._on_view_code)
+        config_btn_layout.addWidget(self._edit_code_btn)
         
         config_layout.addLayout(config_btn_layout)
         
@@ -601,11 +639,17 @@ class ConvertersPage(BasePage):
         
         available_layout.addWidget(self._available_table)
         
-        # Refresh button
+        # Buttons for available converters
         avail_btn_layout = QHBoxLayout()
+        
+        self._new_converter_btn = QPushButton("New Converter...")
+        self._new_converter_btn.clicked.connect(self._on_new_converter)
+        avail_btn_layout.addWidget(self._new_converter_btn)
+        
         self._refresh_btn = QPushButton("Refresh")
         self._refresh_btn.clicked.connect(self._refresh_available)
         avail_btn_layout.addWidget(self._refresh_btn)
+        
         avail_btn_layout.addStretch()
         available_layout.addLayout(avail_btn_layout)
         
@@ -639,7 +683,43 @@ class ConvertersPage(BasePage):
         has_selection = len(self._config_table.selectedItems()) > 0
         self._configure_btn.setEnabled(has_selection)
         self._remove_btn.setEnabled(has_selection)
-        self._view_code_btn.setEnabled(has_selection)
+        self._edit_code_btn.setEnabled(has_selection)
+    
+    def _on_new_converter(self) -> None:
+        """Create a new converter from template"""
+        folder = self._folder_edit.text()
+        if not folder:
+            QMessageBox.warning(
+                self, "No Folder",
+                "Please configure a converters folder first."
+            )
+            return
+        
+        folder_path = Path(folder)
+        if not folder_path.exists():
+            reply = QMessageBox.question(
+                self, "Create Folder?",
+                f"Folder does not exist:\n{folder}\n\nCreate it?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                folder_path.mkdir(parents=True, exist_ok=True)
+            else:
+                return
+        
+        from ..widgets import NewConverterDialog
+        dialog = NewConverterDialog(
+            converters_folder=folder,
+            parent=self
+        )
+        
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.created_path:
+            # Refresh the available converters list
+            self._refresh_available()
+            
+            # Open the new converter in the editor
+            editor_dialog = ConverterEditorDialog(str(dialog.created_path), self)
+            editor_dialog.exec()
     
     def _on_add(self) -> None:
         """Add new converter configuration"""
