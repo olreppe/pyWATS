@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b6] - 2025-12-18
+
+### Added
+
+- **Request Throttling** - Built-in rate limiting to comply with WATS API limits (500 requests/minute)
+  - New `RateLimiter` class with sliding window algorithm
+  - Thread-safe implementation for concurrent usage
+  - Configurable via `configure_throttling()` function
+  - Can be disabled for testing with `configure_throttling(enabled=False)`
+  - Statistics tracking (total requests, wait time, throttle count)
+
+- **Analytics Typed Models** - New Pydantic models for analytics responses
+  - `TopFailedStep` - Failed step statistics
+  - `RepairStatistics` - Repair loop metrics
+  - `RepairHistoryRecord` - Individual repair records
+  - `MeasurementData` - Measurement values with statistics
+  - `AggregatedMeasurement` - Time-series measurement aggregations
+  - `OeeAnalysisResult` - OEE (Overall Equipment Effectiveness) analysis
+
+- **Analytics Documentation** - Added docstrings with examples to all 23 analytics service methods
+
+### Fixed
+
+- **RootCause Acceptance Tests** - Fixed `DummyRootCauseRepository` to properly inherit from `RootCauseRepository`
+
 ## [0.1.0b5] - 2025-12-17
 
 ### Fixed

@@ -7,6 +7,13 @@ for communicating with the WATS server.
 Note: The HttpClient does NOT raise exceptions for HTTP error status codes.
 It always returns a Response object. Error handling is delegated to the
 ErrorHandler class in the repository layer.
+
+Rate Limiting:
+    The client includes built-in rate limiting to comply with WATS API limits
+    (500 requests per minute by default). Throttling can be configured via:
+    
+    >>> from pywats.core.throttle import configure_throttling
+    >>> configure_throttling(max_requests=500, window_seconds=60, enabled=True)
 """
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict, computed_field
@@ -18,6 +25,7 @@ from .exceptions import (
     TimeoutError,
     PyWATSError
 )
+from .throttle import RateLimiter, get_default_limiter
 
 
 class Response(BaseModel):
@@ -92,6 +100,14 @@ class HttpClient:
 
     This client handles all HTTP communication with the WATS server,
     including authentication, request/response handling, and error management.
+    
+    Rate limiting is enabled by default to comply with WATS API limits
+    (500 requests per minute). This can be disabled or customized.
+    
+    Example:
+        >>> client = HttpClient(base_url="https://wats.example.com", token="...")
+        >>> response = client.get("/api/Product/ABC123")
+        >>> print(client.rate_limiter.stats)  # Check throttling statistics
     """
 
     def __init__(
@@ -99,7 +115,9 @@ class HttpClient:
         base_url: str,
         token: str,
         timeout: float = 30.0,
-        verify_ssl: bool = True
+        verify_ssl: bool = True,
+        rate_limiter: Optional[RateLimiter] = None,
+        enable_throttling: bool = True
     ):
         """
         Initialize the HTTP client.
@@ -109,6 +127,8 @@ class HttpClient:
             token: Base64 encoded authentication token for Basic auth
             timeout: Request timeout in seconds (default: 30)
             verify_ssl: Whether to verify SSL certificates (default: True)
+            rate_limiter: Custom RateLimiter instance (default: global limiter)
+            enable_throttling: Enable/disable rate limiting (default: True)
         """
         # Clean up base URL - remove trailing slashes and /api suffixes
         self.base_url = base_url.rstrip("/")
@@ -118,6 +138,14 @@ class HttpClient:
         self.token = token
         self.timeout = timeout
         self.verify_ssl = verify_ssl
+        
+        # Rate limiter - use provided, global default, or create disabled one
+        if rate_limiter is not None:
+            self._rate_limiter = rate_limiter
+        elif enable_throttling:
+            self._rate_limiter = get_default_limiter()
+        else:
+            self._rate_limiter = RateLimiter(enabled=False)
 
         # Default headers
         self._headers = {
@@ -128,6 +156,11 @@ class HttpClient:
 
         # Create httpx client
         self._client: Optional[httpx.Client] = None
+
+    @property
+    def rate_limiter(self) -> RateLimiter:
+        """Get the rate limiter instance."""
+        return self._rate_limiter
 
     @property
     def client(self) -> httpx.Client:
@@ -209,7 +242,14 @@ class HttpClient:
 
         Returns:
             Response object
+            
+        Note:
+            This method respects rate limiting. If the rate limit is reached,
+            the call will block until a slot becomes available.
         """
+        # Acquire rate limiter slot (blocks if limit reached)
+        self._rate_limiter.acquire()
+        
         # Ensure endpoint starts with /
         if not endpoint.startswith("/"):
             endpoint = f"/{endpoint}"

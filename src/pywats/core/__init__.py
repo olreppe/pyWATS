@@ -41,6 +41,11 @@ from .station import (
     Purpose,
     get_default_station,
 )
+from .throttle import (
+    RateLimiter,
+    configure_throttling,
+    get_default_limiter,
+)
 
 __all__ = [
     # Client
@@ -66,6 +71,10 @@ __all__ = [
     "StationRegistry",
     "Purpose",
     "get_default_station",
+    # Rate limiting
+    "RateLimiter",
+    "configure_throttling",
+    "get_default_limiter",
     # Error handling
     "ErrorMode",
     "ErrorHandler",
