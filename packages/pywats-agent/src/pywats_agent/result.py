@@ -24,7 +24,7 @@ class AgentResult(BaseModel):
         metadata: Additional context (counts, averages, etc.)
     
     Example:
-        >>> result = AgentResult.success(
+        >>> result = AgentResult.ok(
         ...     data=[{"station": "A", "fpy": 95.0}],
         ...     summary="Found 1 station with 95% FPY",
         ...     metadata={"total_records": 1}
@@ -53,7 +53,7 @@ class AgentResult(BaseModel):
     )
     
     @classmethod
-    def success(
+    def ok(
         cls,
         data: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
         summary: str = "Operation completed successfully",
@@ -78,7 +78,7 @@ class AgentResult(BaseModel):
         )
     
     @classmethod
-    def error(cls, message: str) -> "AgentResult":
+    def fail(cls, message: str) -> "AgentResult":
         """
         Create an error result.
         

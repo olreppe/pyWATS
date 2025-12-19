@@ -2,6 +2,16 @@
 Intelligent yield analysis tool with semantic dimension mapping.
 
 Translates natural language concepts to WATS API dimensions and filters.
+
+PROCESS TERMINOLOGY IN WATS:
+- test_operation: For testing (UUT/UUTReport - Unit Under Test)
+- repair_operation: For repair logging (UUR/UURReport - Unit Under Repair)  
+- wip_operation: For production tracking (not used in analysis tools)
+
+COMMON PROCESS PROBLEMS:
+1. Mixed processes: Different tests (AOI, ICT) sent to same process causes
+   second test to show 0 units (diagnosed by different sw_filename)
+2. Name confusion: Users use "PCBA" instead of "PCBA test" - use fuzzy matching
 """
 
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
@@ -328,7 +338,7 @@ class YieldFilter(BaseModel):
     )
     test_operation: Optional[str] = Field(
         default=None,
-        description="Filter by test operation (e.g., 'FCT', 'EOL')"
+        description="Filter by test operation (e.g., 'FCT', 'EOL'). Use fuzzy names like 'PCBA' or 'board test'."
     )
     process_code: Optional[str] = Field(
         default=None,
@@ -350,9 +360,11 @@ class YieldFilter(BaseModel):
     # Time range
     # NOTE: WATS defaults to last 30 days if no date range specified.
     # WATS always assumes you want the most recent data.
+    # WARNING: 30 days can be too much for high-volume customers (millions/week).
+    # Consider using adaptive_time=True for automatic adjustment.
     days: int = Field(
         default=30,
-        description="Number of days to analyze (default: 30, matching WATS server default)"
+        description="Number of days to analyze (default: 30). WARNING: May be too large for high-volume production."
     )
     date_from: Optional[datetime] = Field(
         default=None,
@@ -361,6 +373,16 @@ class YieldFilter(BaseModel):
     date_to: Optional[datetime] = Field(
         default=None,
         description="End date (default: now). WATS always assumes you want the most recent data."
+    )
+    
+    # Adaptive time filter
+    adaptive_time: bool = Field(
+        default=False,
+        description="""
+Enable adaptive time filtering based on production volume.
+When True, starts with small window (1 day) and expands as needed.
+Useful for high-volume production where 30 days would be too much data.
+        """
     )
     
     # Result options
@@ -664,6 +686,12 @@ class YieldAnalysisTool:
         ...     yield_type="report",
         ...     days=30
         ... ))
+        >>>
+        >>> # High-volume production - use adaptive time
+        >>> result = tool.analyze(YieldFilter(
+        ...     part_number="HIGH-VOLUME-PRODUCT",
+        ...     adaptive_time=True  # Starts small, expands as needed
+        ... ))
     """
     
     name = "analyze_yield"
@@ -687,12 +715,24 @@ ROLLED THROUGHPUT YIELD (RTY):
 - Use for: Overall unit quality across ALL processes
 - Example: FCT FPY=95%, EOL FPY=98% -> RTY = 93.1%
 
+CRITICAL - PROCESS TERMINOLOGY:
+- test_operation: For testing (UUT/UUTReport - Unit Under Test)
+- repair_operation: For repair logging (UUR/UURReport - Unit Under Repair)
+- Process names are fuzzy-matched - "PCBA", "pcba test", "board test" all work
+
 CRITICAL - YIELD IS PER PROCESS:
 Yield should always be considered per process/test_operation!
 - A product goes through multiple processes (ICT, FCT, EOL, etc.)
 - Each process has its own yield
 - "What's yield for WIDGET-001?" -> Clarify: which process, or RTY?
 - Use perspective="by operation" to see all processes for a product
+
+IMPORTANT - MIXED PROCESS PROBLEM:
+If users send different tests (AOI, ICT) to the same process ("Structural Tests"):
+- First test determines unit counts and FPY
+- Second test shows 0 units (treated as "retest after pass")
+- SYMPTOM: "Why is ICT showing 0 units?"
+- DIAGNOSIS: Look for different sw_filename in the same process
 
 TOP RUNNERS:
 "Top runners" = products with highest volume (units or reports)
@@ -706,8 +746,8 @@ If filtering by a repair/retest station that never sees first runs,
 you will get ZERO units. Use yield_type='report' (TRY) instead.
 
 YIELD OVER TIME (Temporal Analysis):
-- Date range defaults to last 30 days if not specified
-- WATS assumes you want the most recent data
+- Date range defaults to last 30 days (may be too much for high-volume!)
+- Use adaptive_time=True for high-volume production
 - Use perspective: "trend", "daily", "weekly", "monthly" for time-series
 - Period data can be safely aggregated (first-pass rule applies)
 
@@ -724,6 +764,7 @@ Example questions this tool answers:
 - "Compare yield by station" (perspective: "by station")
 - "Show daily yield for the past week" (perspective: "daily", days: 7)
 - "What's the repair station performance?" (yield_type: "report")
+- "Why is ICT showing 0 units?" (check for mixed process problem)
 
 Available perspectives:
 - Time: trend, daily, weekly, monthly
@@ -737,6 +778,48 @@ Available perspectives:
     def __init__(self, api: "pyWATS"):
         """Initialize with a pyWATS instance."""
         self._api = api
+        self._process_resolver = None  # Lazy-loaded
+        self._adaptive_time = None  # Lazy-loaded
+    
+    def _get_process_resolver(self):
+        """Get process resolver (lazy-loaded)."""
+        if self._process_resolver is None:
+            from .process_resolver import ProcessResolver
+            self._process_resolver = ProcessResolver(self._api)
+        return self._process_resolver
+    
+    def _get_adaptive_time(self):
+        """Get adaptive time filter (lazy-loaded)."""
+        if self._adaptive_time is None:
+            from .adaptive_time import AdaptiveTimeFilter
+            self._adaptive_time = AdaptiveTimeFilter(self._api)
+        return self._adaptive_time
+    
+    def resolve_process_name(self, user_input: str) -> Optional[str]:
+        """
+        Resolve a fuzzy process name to the actual process name.
+        
+        Handles common aliases like "PCBA" -> "PCBA test", "board test" -> "PCBA test".
+        
+        Args:
+            user_input: User's process name (may be imprecise)
+            
+        Returns:
+            Resolved process name, or None if no match found
+        """
+        resolver = self._get_process_resolver()
+        match = resolver.resolve(user_input)
+        return match.name if match else None
+    
+    def get_available_processes(self) -> List[Dict[str, Any]]:
+        """
+        Get list of available processes for user context.
+        
+        Returns:
+            List of process info dicts with code, name, and type
+        """
+        resolver = self._get_process_resolver()
+        return resolver.get_process_summary()
     
     @staticmethod
     def get_parameters_schema() -> Dict[str, Any]:
@@ -779,7 +862,7 @@ Leave empty for overall aggregated yield.
                 },
                 "test_operation": {
                     "type": "string",
-                    "description": "Filter by test operation (FCT, EOL, etc.)"
+                    "description": "Filter by test operation (FCT, EOL, PCBA, board test, etc.). Fuzzy names accepted."
                 },
                 "process_code": {
                     "type": "string",
@@ -834,6 +917,68 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
             AgentResult with yield data and summary
         """
         try:
+            # Track any resolution messages for summary
+            resolution_notes = []
+            
+            # Resolve fuzzy process name if provided
+            resolved_process = None
+            if filter_input.test_operation:
+                try:
+                    resolver = self._get_process_resolver()
+                    match = resolver.resolve(filter_input.test_operation)
+                    if match:
+                        if match.name.lower() != filter_input.test_operation.lower():
+                            resolution_notes.append(
+                                f"Process '{filter_input.test_operation}' resolved to '{match.name}'"
+                            )
+                        resolved_process = match.name
+                        # Update filter with resolved name
+                        filter_input = filter_input.model_copy(
+                            update={"test_operation": resolved_process}
+                        )
+                    else:
+                        # No match found, could suggest alternatives
+                        candidates = resolver.resolve_with_candidates(filter_input.test_operation)
+                        if candidates:
+                            suggestions = [c.name for c in candidates[:3]]
+                            resolution_notes.append(
+                                f"Process '{filter_input.test_operation}' not found. "
+                                f"Did you mean: {', '.join(suggestions)}?"
+                            )
+                except Exception:
+                    # Process resolution failed - continue with original value
+                    pass
+            
+            # Handle adaptive time filtering
+            adaptive_time_info = None
+            if getattr(filter_input, 'adaptive_time', False):
+                try:
+                    adaptive = self._get_adaptive_time()
+                    result = adaptive.calculate_optimal_window(
+                        part_number=filter_input.part_number,
+                        test_operation=filter_input.test_operation,
+                        station_name=filter_input.station_name,
+                    )
+                    if result:
+                        adaptive_time_info = result
+                        # Update filter with optimal dates
+                        filter_input = filter_input.model_copy(
+                            update={
+                                "date_from": result.date_from,
+                                "date_to": result.date_to,
+                                "days": None  # Clear days since we have explicit dates
+                            }
+                        )
+                        resolution_notes.append(
+                            f"Adaptive time: Using {result.days_used}-day window "
+                            f"({result.volume_category.value} volume, ~{result.estimated_records:,} records)"
+                        )
+                except Exception:
+                    # Adaptive time failed - continue with default
+                    resolution_notes.append(
+                        "Adaptive time filter failed - using default time range"
+                    )
+            
             # Build WATS filter
             wats_params = build_wats_filter(filter_input)
             
@@ -861,26 +1006,49 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                 if warning:
                     summary += f"\n\n{warning}"
                 
-                return AgentResult.success(
+                # Check for mixed process problem
+                mixed_warning = self._check_mixed_process_problem(filter_input)
+                if mixed_warning:
+                    summary += f"\n\n{mixed_warning}"
+                
+                # Add resolution notes
+                if resolution_notes:
+                    summary = "\n".join(resolution_notes) + "\n\n" + summary
+                
+                return AgentResult.ok(
                     data=[],
-                    summary=summary
+                    summary=summary,
+                    metadata={
+                        "resolution_notes": resolution_notes,
+                        "adaptive_time": adaptive_time_info.__dict__ if adaptive_time_info else None
+                    }
                 )
             
             # Check for potential repair line issue (0 units but filters applied)
             total_units = sum(getattr(d, 'unit_count', 0) or 0 for d in data)
             warning = None
+            mixed_warning = None
             if total_units == 0 and yield_type == 'unit':
                 warning = self._check_repair_line_scenario(filter_input)
+                mixed_warning = self._check_mixed_process_problem(filter_input)
             
             # Build rich summary
             summary = self._build_summary(data, filter_input, wats_params)
+            
+            # Add any warnings
             if warning:
                 summary += f"\n\n{warning}"
+            if mixed_warning:
+                summary += f"\n\n{mixed_warning}"
+            
+            # Prepend resolution notes if any
+            if resolution_notes:
+                summary = "\n".join(resolution_notes) + "\n\n" + summary
             
             # Resolve perspective for metadata
             perspective = resolve_perspective(filter_input.perspective)
             
-            return AgentResult.success(
+            return AgentResult.ok(
                 data=[d.model_dump() for d in data],
                 summary=summary,
                 metadata={
@@ -891,6 +1059,9 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                     "record_count": len(data),
                     "total_units": total_units,
                     "repair_line_warning": warning is not None,
+                    "mixed_process_warning": mixed_warning is not None,
+                    "resolution_notes": resolution_notes,
+                    "adaptive_time": adaptive_time_info.__dict__ if adaptive_time_info else None,
                     "filters_applied": {
                         k: v for k, v in wats_params.items() 
                         if k not in ["dimensions", "date_from", "date_to", "date_grouping", "include_current_period"]
@@ -900,7 +1071,7 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
             )
             
         except Exception as e:
-            return AgentResult.error(f"Yield analysis failed: {str(e)}")
+            return AgentResult.fail(f"Yield analysis failed: {str(e)}")
     
     def _check_repair_line_scenario(self, filter_input: YieldFilter) -> Optional[str]:
         """
@@ -940,6 +1111,46 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
             )
         
         return None
+    
+    def _check_mixed_process_problem(self, filter_input: YieldFilter) -> Optional[str]:
+        """
+        Check if the filter might be hitting the mixed process problem.
+        
+        The mixed process problem occurs when customers send different test types
+        (e.g., AOI and ICT) to the same process/test_operation. In this case:
+        - The first test type (e.g., AOI) determines unit counts and FPY
+        - Subsequent test types (e.g., ICT) are treated as "retests after pass"
+        - This causes the second test to show 0 units and no FPY/LPY
+        
+        DIAGNOSIS: Look for reports with different sw_filename in the same process.
+        
+        Returns a warning message if this scenario might be relevant.
+        """
+        # Only relevant when filtering by test_operation and getting 0 units
+        if not filter_input.test_operation:
+            return None
+        
+        # Try to diagnose using the process resolver
+        try:
+            from .process_resolver import diagnose_mixed_process_problem
+            diagnosis = diagnose_mixed_process_problem(
+                self._api,
+                test_operation=filter_input.test_operation,
+                part_number=filter_input.part_number
+            )
+            if diagnosis:
+                return diagnosis
+        except Exception:
+            # Diagnosis failed - return generic warning
+            pass
+        
+        # Generic warning if we can't diagnose but might be relevant
+        return (
+            "NOTE: If you're seeing 0 units for a process that should have data, "
+            "check if multiple test types (e.g., AOI, ICT) are being sent to the same process. "
+            "This 'mixed process' problem causes the second test type to show 0 units. "
+            "Look for different sw_filename values in reports to this process."
+        )
     
     def analyze_from_dict(self, params: Dict[str, Any]) -> AgentResult:
         """

@@ -203,7 +203,7 @@ Use the available tools to retrieve and analyze data."""
         
         if tool_name not in self._tools:
             available = ", ".join(self.list_tools())
-            return AgentResult.error(
+            return AgentResult.fail(
                 f"Unknown tool: {tool_name}. Available tools: {available}"
             )
         
@@ -220,10 +220,10 @@ Use the available tools to retrieve and analyze data."""
             elif tool_name == "get_measurement_data":
                 return tool.analyze_from_dict(parameters)
             else:
-                return AgentResult.error(f"Tool {tool_name} has no handler")
+                return AgentResult.fail(f"Tool {tool_name} has no handler")
                 
         except Exception as e:
-            return AgentResult.error(f"Error executing {tool_name}: {str(e)}")
+            return AgentResult.fail(f"Error executing {tool_name}: {str(e)}")
     
     def execute_openai_tool_call(self, tool_call: Any) -> AgentResult:
         """

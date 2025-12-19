@@ -69,7 +69,11 @@ Use "by operation" to see all processes for a product.
     )
     test_operation: Optional[str] = Field(
         default=None,
-        description="Filter by test operation/process (FCT, EOL, ICT). IMPORTANT: Yield should be analyzed per process!"
+        description="""
+Filter by test operation/process (FCT, EOL, ICT, PCBA, board test, etc.).
+IMPORTANT: Yield should be analyzed per process!
+Fuzzy names accepted - 'pcba', 'board test', 'ict' will be matched to actual process names.
+        """.strip()
     )
     process_code: Optional[str] = Field(
         default=None,
@@ -89,11 +93,15 @@ Use "by operation" to see all processes for a product.
     )
     days: int = Field(
         default=30,
-        description="Number of days to analyze (default: 30, WATS server default)"
+        description="Number of days to analyze (default: 30). WARNING: May be too much for high-volume production!"
     )
     yield_type: str = Field(
         default="unit",
         description="Type of yield: 'unit' (FPY/LPY) or 'report' (TRY). Use 'report' for retest stations."
+    )
+    adaptive_time: bool = Field(
+        default=False,
+        description="Enable adaptive time filtering. Starts with 1 day and expands as needed. Use for high-volume production."
     )
 
 
@@ -130,6 +138,11 @@ CRITICAL: Yield should be analyzed PER PROCESS (test_operation)!
 - Use perspective="by operation" to see all processes for a product
 - Use RTY (Rolled Throughput Yield) for overall quality across all processes
 
+PROCESS TERMINOLOGY:
+- test_operation: For testing (UUT/UUTReport) - this is what you use for yield
+- repair_operation: For repair logging (UUR/UURReport) - not for yield analysis
+- Process names are fuzzy-matched: "PCBA", "pcba test", "board test" all work
+
 YIELD TYPES:
 - FPY (First Pass Yield): Units passed on first try
 - LPY (Last Pass Yield): Units eventually passed
@@ -140,9 +153,14 @@ TOP RUNNERS: Products with highest volume - must be considered per process!
 
 YIELD OVER TIME:
 - Date range defaults to last 30 days if not specified
+- WARNING: 30 days may be too much for high-volume production!
+- Use adaptive_time=True for automatic adjustment based on volume
 - Use perspective: "trend", "daily", "weekly", "monthly" for time-series
-- Yield trend = change vs previous equally-sized period
-- Period data can be safely aggregated (first-pass rule applies)
+
+MIXED PROCESS PROBLEM:
+If different tests (AOI, ICT) go to same process, second test shows 0 units!
+- Symptom: "Why does ICT show 0 units?"
+- Diagnosis: Check for different sw_filename in same process
 
 Use this tool to answer questions like:
 - "What's FCT yield for WIDGET-001?" (specify test_operation)
@@ -195,6 +213,7 @@ Available perspectives:
             location: Optional[str] = None,
             days: int = 30,
             yield_type: str = "unit",
+            adaptive_time: bool = False,
             run_manager: Optional[CallbackManagerForToolRun] = None,
         ) -> str:
             """Execute the yield analysis."""
@@ -213,6 +232,7 @@ Available perspectives:
                 location=location,
                 days=days,
                 yield_type=yield_type,
+                adaptive_time=adaptive_time,
             )
             
             result = self._tool.analyze(filter_input)

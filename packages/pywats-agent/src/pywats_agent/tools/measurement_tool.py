@@ -200,7 +200,7 @@ Provides aggregate statistics including:
             data = self._api.analytics.get_aggregated_measurements(wats_filter)
             
             if not data:
-                return AgentResult.success(
+                return AgentResult.ok(
                     data=[],
                     summary=self._build_no_data_summary(filter_input)
                 )
@@ -208,7 +208,7 @@ Provides aggregate statistics including:
             # Build rich summary
             summary = self._build_summary(data, filter_input)
             
-            return AgentResult.success(
+            return AgentResult.ok(
                 data=[d.model_dump() for d in data],
                 summary=summary,
                 metadata={
@@ -220,7 +220,7 @@ Provides aggregate statistics including:
             )
             
         except Exception as e:
-            return AgentResult.error(f"Aggregated measurement analysis failed: {str(e)}")
+            return AgentResult.fail(f"Aggregated measurement analysis failed: {str(e)}")
     
     def analyze_from_dict(self, params: Dict[str, Any]) -> AgentResult:
         """
@@ -420,7 +420,7 @@ Provides individual data points including:
             data = self._api.analytics.get_measurements(wats_filter)
             
             if not data:
-                return AgentResult.success(
+                return AgentResult.ok(
                     data=[],
                     summary=self._build_no_data_summary(filter_input)
                 )
@@ -428,7 +428,7 @@ Provides individual data points including:
             # Build rich summary
             summary = self._build_summary(data, filter_input)
             
-            return AgentResult.success(
+            return AgentResult.ok(
                 data=[d.model_dump() for d in data],
                 summary=summary,
                 metadata={
@@ -441,7 +441,7 @@ Provides individual data points including:
             )
             
         except Exception as e:
-            return AgentResult.error(f"Measurement data retrieval failed: {str(e)}")
+            return AgentResult.fail(f"Measurement data retrieval failed: {str(e)}")
     
     def analyze_from_dict(self, params: Dict[str, Any]) -> AgentResult:
         """

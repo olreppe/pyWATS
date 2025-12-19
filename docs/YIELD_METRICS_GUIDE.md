@@ -397,6 +397,204 @@ Retest Rate = (Reports - Units) / Units × 100%
 
 ---
 
+## Adaptive Time Filtering (High-Volume Production)
+
+### The Problem with 30-Day Defaults
+
+For **high-volume production environments**, the default 30-day window can be problematic:
+
+| Volume Level | Daily Units | 30 Days = | Impact |
+|--------------|-------------|-----------|--------|
+| Very High | 100,000+ | 3 million+ | ❌ API timeout, memory issues |
+| High | 10,000-100,000 | 300K-3M | ⚠️ Slow queries, excessive data |
+| Medium | 1,000-10,000 | 30K-300K | ✅ Manageable |
+| Low | <1,000 | <30K | ✅ Fine, might need more days |
+
+### Adaptive Time Filter
+
+The adaptive time filter **automatically adjusts the date range** based on production volume:
+
+```python
+# Enable adaptive time filtering
+result = yield_tool.analyze(YieldFilter(
+    part_number="HIGH-VOLUME-PRODUCT",
+    test_operation="FCT",
+    adaptive_time=True  # Let the system decide optimal window
+))
+```
+
+### How It Works
+
+1. **Start Small**: Begin with 1 day of data
+2. **Evaluate Volume**: Check unit/report counts
+3. **Expand if Needed**: If too few records, double the window
+4. **Stop When Sufficient**: When target record count is reached (default: 100)
+
+### Volume Categories
+
+The system automatically categorizes production volume:
+
+| Category | Units/Day | Typical Window |
+|----------|-----------|----------------|
+| Very High | >100,000 | 1-3 days |
+| High | 10,000-100,000 | 3-7 days |
+| Medium | 1,000-10,000 | 7-14 days |
+| Low | 100-1,000 | 14-30 days |
+| Very Low | <100 | 30-90 days |
+
+### When to Use Adaptive Time
+
+- ✅ High-volume production environments
+- ✅ When you don't know the volume ahead of time
+- ✅ For general queries without specific date requirements
+- ❌ When you need a specific date range (use explicit dates instead)
+
+---
+
+## Process Terminology
+
+### Types of Operations
+
+WATS uses different terminology depending on the workflow:
+
+| Term | Used For | Records |
+|------|----------|---------|
+| `test_operation` | Testing | UUT (Unit Under Test) / UUTReport |
+| `repair_operation` | Repair logging | UUR (Unit Under Repair) / UURReport |
+| `wip_operation` | Production tracking | WIP records |
+
+### Common Confusion
+
+When users ask about "process" or "operation", they almost always mean `test_operation`:
+
+> "What's the yield for PCBA?" → Filter by `test_operation="PCBA test"`
+
+> "Show FCT failures" → Filter by `test_operation="FCT"`
+
+### Repair vs Test Operations
+
+- **Test operations**: Where units are tested (FPY, yields apply)
+- **Repair operations**: Where units are repaired (no yield concept, just repair actions)
+
+Most yield analysis uses `test_operation`. Only use `repair_operation` when specifically analyzing repair workflow.
+
+---
+
+## The Mixed Process Problem
+
+### The Scenario
+
+Some customers send **different test types to the same process**:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│           Process: "Structural Tests"                   │
+│                                                         │
+│   AOI Test (sw_filename: "aoi_test.exe")               │
+│   ICT Test (sw_filename: "ict_test.exe")               │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### The Problem
+
+When multiple test types share a process:
+
+1. **First test type (AOI)** runs → Creates Run 1 → Determines units/FPY
+2. **Second test type (ICT)** runs → Treated as "retest after pass"
+3. **ICT shows 0 units** because AOI already "passed" those units
+
+### Symptoms
+
+| Symptom | Cause |
+|---------|-------|
+| "ICT shows 0 units but has reports" | AOI ran first, ICT is seen as retest |
+| "FPY doesn't make sense for this process" | Mixed test types in one process |
+| "Unit counts don't match between test types" | Different sw_filename = different "tests" |
+
+### Diagnosis
+
+Look for **different `sw_filename` values** in reports to the same process:
+
+```sql
+-- Conceptual query (internal use)
+SELECT DISTINCT sw_filename, COUNT(*) 
+FROM reports 
+WHERE test_operation = 'Structural Tests'
+GROUP BY sw_filename
+```
+
+If you see multiple sw_filename values (e.g., "aoi_test.exe" and "ict_test.exe"), you have a mixed process problem.
+
+### Solutions
+
+| Solution | Pros | Cons |
+|----------|------|------|
+| **Separate processes** | Clean data, proper yields | Requires reconfiguration |
+| **Accept it** | No changes needed | Misleading yield numbers |
+| **Use sw_filename filter** | Can analyze each test type | More complex queries |
+
+### Recommendation
+
+**Best practice**: Each test type should have its own `test_operation`.
+
+```
+❌ Wrong:
+   Process "Structural Tests" → AOI + ICT
+
+✅ Correct:
+   Process "AOI Test" → AOI only
+   Process "ICT Test" → ICT only
+```
+
+---
+
+## Process Name Matching
+
+### Fuzzy Matching
+
+Users often use imprecise process names. The system attempts fuzzy matching:
+
+| User Says | Might Match |
+|-----------|-------------|
+| "PCBA" | "PCBA test", "PCBA Test Station" |
+| "board test" | "PCBA test", "Board Test" |
+| "ict" | "ICT", "ICT Test", "In-Circuit Test" |
+| "fct" | "FCT", "FCT Test", "Functional Test" |
+| "eol" | "EOL", "EOL Test", "End of Line" |
+
+### Common Aliases
+
+The system recognizes common manufacturing test abbreviations:
+
+| Abbreviation | Full Name |
+|--------------|-----------|
+| ICT | In-Circuit Test |
+| FCT | Functional Test |
+| AOI | Automated Optical Inspection |
+| AXI | Automated X-ray Inspection |
+| EOL | End-of-Line |
+| FQC | Final Quality Check |
+| SPI | Solder Paste Inspection |
+
+### When Matching Fails
+
+If the system can't find a match:
+1. **Suggestions** are provided (closest matches)
+2. **User confirmation** may be requested
+3. **List available processes** using `perspective="by operation"`
+
+```python
+# See all available processes
+result = yield_tool.analyze(YieldFilter(
+    part_number="WIDGET-001",
+    perspective="by operation"
+))
+# Returns list of all processes with yield data for this product
+```
+
+---
+
 ## Summary Table
 
 | Metric | Based On | Use For | Affected by Repair Line Problem? |
@@ -496,6 +694,327 @@ result = yield_tool.analyze(YieldFilter(
 
 ---
 
+## Dimensional Analysis for Failure Modes
+
+### The Analysis Workflow
+
+When yield drops, use **dimensional analysis** to find the cause:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                    YIELD ANALYSIS WORKFLOW                         │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  1. DETECT        2. DIAGNOSE         3. ISOLATE      4. FIX      │
+│  ─────────        ───────────         ─────────       ────        │
+│  Yield Tool   →   Dimensional     →   Root Cause  →  Action      │
+│  (by process)     Analysis            Analysis                    │
+│                   (by dimension)      (by step)                   │
+│                                                                    │
+│  "FPY dropped     "Station-3 is       "Voltage Test   "Calibrate  │
+│   to 88%"         10% lower"          failing 25%"    Station-3"  │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### Using Dimensions for Root Cause
+
+**Dimensions** are grouping factors. By querying yield with different dimensions, you can detect patterns:
+
+| Query Dimension | Finding | Likely Cause |
+|----------------|---------|--------------|
+| `stationName` | One station is worse | Equipment issue |
+| `batchNumber` | One batch is worse | Component lot issue |
+| `operator` | One operator is worse | Training issue |
+| `fixtureId` | One fixture is worse | Fixture wear |
+| `period` | Yield declining over time | Equipment drift |
+| `swFilename` | Different tests show different yields | Mixed process problem |
+
+### Example: Finding a Batch-Specific Issue
+
+```python
+# Step 1: Notice overall yield is low
+baseline = yield_tool.analyze(YieldFilter(
+    part_number="WIDGET-001",
+    test_operation="FCT",
+    days=30
+))
+# FPY = 91% (target: 95%)
+
+# Step 2: Query by batch to see if one batch is problematic
+by_batch = yield_tool.analyze(YieldFilter(
+    part_number="WIDGET-001",
+    test_operation="FCT",
+    days=30,
+    dimensions="batchNumber"  # Group by batch
+))
+
+# Results:
+# BATCH-001: FPY=96% (2,400 units)
+# BATCH-002: FPY=97% (2,100 units)
+# BATCH-003: FPY=73% (1,800 units)  ← Problem batch!
+# BATCH-004: FPY=95% (1,900 units)
+
+# Step 3: Investigate BATCH-003
+# Check incoming inspection, supplier, component lot
+```
+
+### Multi-Dimensional Analysis
+
+For complex issues, analyze multiple dimensions:
+
+```python
+# Analyze all common dimensions at once
+failure_modes = dimensional_analysis_tool.analyze(FailureModeFilter(
+    part_number="WIDGET-001",
+    test_operation="FCT",
+    days=30,
+    dimensions=[
+        "stationName",
+        "batchNumber",
+        "operator",
+        "fixtureId",
+        "period"
+    ]
+))
+
+# Tool returns:
+# - Baseline FPY
+# - Each dimension value compared to baseline
+# - Significance level (critical, high, moderate, low)
+# - Recommendations for investigation
+```
+
+### Significance Thresholds
+
+Not all variations matter. Look for:
+
+| Significance | Delta from Baseline | Action |
+|--------------|--------------------|---------| 
+| 🔴 Critical | > 10% below | Immediate investigation |
+| 🟠 High | 5-10% below | Schedule investigation |
+| 🟡 Moderate | 2-5% below | Monitor and track |
+| ⚪ Low | < 2% below | Normal variation |
+
+Also consider **sample size**: 
+- 100+ units = high confidence
+- 20-100 units = moderate confidence
+- <20 units = low confidence (could be noise)
+
+---
+
+## Test Step Analysis (TSA)
+
+### When to Use TSA
+
+After dimensional analysis identifies WHERE failures occur, use **Test Step Analysis** to find WHICH STEP is failing:
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│                    ROOT CAUSE ANALYSIS WORKFLOW                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  1. YIELD        2. DIMENSIONAL      3. TSA            4. MEASUREMENT     │
+│  ──────          ───────────         ────              ───────────        │
+│  "What's         "Where/When?"       "Which step?"     "Why exactly?"     │
+│  failing?"                                                                 │
+│                                                                            │
+│  FPY=88%    →    Station-3     →    Voltage Test   →  Cpk=0.8, drift    │
+│                  is -10%            causing 90%        near upper limit   │
+│                                     of failures                            │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+### TSA Key Concepts
+
+#### Single Product + Process
+
+TSA is designed for **ONE product in ONE process** at a time:
+- Different products have different test sequences
+- Different processes test different things
+- Mixing creates confusing merged data
+
+#### Data Integrity Check
+
+Before analysis, TSA warns about potential data issues:
+
+| Check | Warning | Action |
+|-------|---------|--------|
+| Multiple SW versions | Different test programs mixed | Filter to specific `sw_filename` |
+| Multiple revisions | Different product revisions | Filter to specific `revision` |
+
+#### Step Caused Unit Failure (Critical!)
+
+The most important field in TSA is `step_caused_uut_failed`:
+
+| Field | Meaning | Priority |
+|-------|---------|----------|
+| `step_failed_count` | Step reported failure | Medium |
+| `step_caused_uut_failed` | **Step CAUSED unit to fail** | 🔴 HIGH |
+
+**Important**: A step can fail (report failure) without being the root cause. The `step_caused_uut_*` fields identify true root causes.
+
+### Process Capability (Cpk)
+
+For measurements, TSA provides Cpk analysis:
+
+| Cpk Value | Status | Meaning |
+|-----------|--------|---------|
+| ≥ 1.33 | ✅ Capable | Process is good (3-sigma coverage) |
+| 1.0-1.33 | ⚠️ Marginal | Improvement needed |
+| 0.67-1.0 | ❌ Incapable | Action required |
+| < 0.67 | 🚨 Critical | URGENT - high defect rate |
+
+### TSA Priority Order
+
+When reviewing TSA results:
+
+1. **🔴 CRITICAL**: Steps with `step_caused_uut_failed > 0` (root causes)
+2. **⚠️ CpK CONCERNS**: Measurements with Cpk < 1.33
+3. **📊 HIGH FAILURE**: Steps with >5% failure rate
+
+### Example: TSA Workflow
+
+```python
+# Step 1: Get step analysis
+result = step_analysis_tool.analyze(StepAnalysisInput(
+    part_number="PCBA-001",
+    test_operation="FCT",
+    days=30
+))
+
+# Step 2: Review overall summary
+print(f"Average Cpk: {result.overall_summary.avg_cpk}")
+print(f"Capable: {result.overall_summary.capable_count}")
+print(f"Incapable: {result.overall_summary.incapable_count}")
+
+# Step 3: Check critical steps (caused failures)
+for step in result.critical_steps:
+    print(f"⚠️ {step.step_name}: {step.caused_unit_fail} unit failures")
+    if step.cpk:
+        print(f"   Cpk: {step.cpk:.2f}")
+
+# Step 4: Check Cpk concerns
+for step in result.cpk_concerns:
+    print(f"📉 {step.step_name}: Cpk={step.cpk:.2f}")
+```
+
+### TSA vs Other Tools
+
+| Tool | Question Answered | When to Use |
+|------|-------------------|-------------|
+| Yield Tool | What's failing? | First step - overall picture |
+| Dimensional Analysis | Where/when? | Find failure modes |
+| **TSA** | **Which step?** | **Find root cause step** |
+| Process Capability | Is it stable? Dual Cpk? | Deep capability analysis |
+| Measurement Tool | Why exactly? | Deep dive on specific measurement |
+
+---
+
+## Process Capability Analysis (Advanced)
+
+Process Capability Analysis builds on TSA when you need deeper statistical assessment of measurements with Cpk concerns.
+
+### When to Use Process Capability Analysis
+
+Use after TSA when you see:
+- Measurements with Cpk below 1.33 (marginal or incapable)
+- Questions about process stability
+- Need to understand failure impact on capability
+- Looking for hidden modes (trends, outliers, drift)
+
+### Dual Cpk Analysis
+
+WATS provides two Cpk datasets:
+
+| Dataset | Description | Shows |
+|---------|-------------|-------|
+| **Cpk (all)** | Includes all measurements | Actual capability |
+| **Cpk_wof** | Without failures | Potential capability |
+
+**Key insight**: If Cpk << Cpk_wof, failures are significantly impacting capability. Address failure root cause FIRST.
+
+```
+Example:
+  Cpk = 0.9 (actual with failures)
+  Cpk_wof = 1.5 (potential without failures)
+  
+  Interpretation: Fix the failures and capability should improve to ~1.5
+```
+
+### Stability Assessment
+
+**CRITICAL**: Always check stability before trusting Cpk!
+
+An unstable process makes Cpk meaningless because it will change over time.
+
+Stability issues to detect:
+- **Trends**: Mean drifting up or down
+- **Shifts**: Sudden mean changes
+- **Outliers**: Values beyond 3σ
+- **High variance**: 6σ spread exceeds spec range
+- **Bimodal**: Two populations mixed (σ_wof << σ)
+
+### Hidden Mode Detection
+
+| Mode Type | Description | Action |
+|-----------|-------------|--------|
+| Centering | Process off-center (Cp >> Cpk) | Adjust process center |
+| Approaching limit | Mean < 3σ from limit | High risk of failures |
+| High variance | 6σ > spec range | Reduce variation |
+| Bimodal | Two populations | Find root cause of split |
+
+### Process Capability Workflow
+
+```python
+# Step 1: TSA identifies Cpk concerns
+tsa_result = step_analysis_tool.analyze(...)
+
+# Step 2: Deep dive on concerning measurements  
+if tsa_result.cpk_concerns:
+    cap_result = capability_tool.analyze(ProcessCapabilityInput(
+        part_number="PCBA-001",
+        test_operation="FCT",
+        step_path="Main/Voltage Test/*",  # Focus on concern
+        days=30
+    ))
+    
+    # Step 3: Check stability first
+    if cap_result.unstable_count > 0:
+        print("⚠️ UNSTABLE - fix stability before trusting Cpk!")
+        for m in cap_result.unstable_measurements:
+            print(f"  {m.step_name}: {m.stability.issues}")
+    
+    # Step 4: Check dual Cpk
+    for m in cap_result.failure_impacted:
+        print(f"Failures impact: Cpk {m.dual_cpk.cpk_all:.2f} → "
+              f"{m.dual_cpk.cpk_wof:.2f} (wof)")
+    
+    # Step 5: Check hidden modes
+    for m in cap_result.all_measurements:
+        for mode in m.stability.hidden_modes:
+            print(f"Hidden mode: {mode.mode_type.value} - {mode.description}")
+```
+
+### Improvement Priority Matrix
+
+| Priority | Criteria | Action |
+|----------|----------|--------|
+| 🔴 Critical | Cpk < 0.67 OR Unstable | Immediate action |
+| 🟠 High | Cpk < 1.0 OR Approaching limits | Address soon |
+| 🟡 Medium | Cpk 1.0-1.33 OR Centering issue | Plan improvement |
+| 🟢 Low | Cpk ≥ 1.33 AND Stable | Monitor only |
+
+### Dimensional Considerations
+
+For dimensional analysis within process capability (by station, operator, etc.):
+- Make separate API calls with dimension filters
+- Compare results across dimensions
+- Aggregate data can hide variation between dimensions
+
+---
+
 ## Need Help?
 
 If you're unsure which metric to use:
@@ -503,5 +1022,15 @@ If you're unsure which metric to use:
 1. **Define what you're trying to measure** (units vs test attempts)
 2. **Consider what data your filter will include** (all runs or partial)
 3. **Choose the appropriate metric** (FPY-LPY for units, TRY for reports)
+
+For failure mode detection:
+1. **Start with yield_tool** to see overall yield by process
+2. **Use dimensional analysis** to find which factors correlate with low yield
+3. **Investigate specific findings** with test_step_analysis and measurement tools
+
+For process capability analysis:
+1. **Start with TSA** to identify measurements with Cpk concerns
+2. **Use Process Capability Analysis** for stability, dual Cpk, hidden modes
+3. **Deep dive with measurement tools** for distribution analysis
 
 Contact support if you need assistance interpreting your yield data.

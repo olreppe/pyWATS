@@ -166,7 +166,7 @@ Provides detailed execution statistics for each test step including:
             )
             
             if not data:
-                return AgentResult.success(
+                return AgentResult.ok(
                     data=[],
                     summary=self._build_no_data_summary(filter_input)
                 )
@@ -174,7 +174,7 @@ Provides detailed execution statistics for each test step including:
             # Build rich summary
             summary = self._build_summary(data, filter_input)
             
-            return AgentResult.success(
+            return AgentResult.ok(
                 data=[d.model_dump() for d in data],
                 summary=summary,
                 metadata={
@@ -188,7 +188,7 @@ Provides detailed execution statistics for each test step including:
             )
             
         except Exception as e:
-            return AgentResult.error(f"Test step analysis failed: {str(e)}")
+            return AgentResult.fail(f"Test step analysis failed: {str(e)}")
     
     def analyze_from_dict(self, params: Dict[str, Any]) -> AgentResult:
         """
