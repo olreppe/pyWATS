@@ -21,24 +21,41 @@ class MeasurementFilter(BaseModel):
     
     This is the LLM-friendly interface for querying measurement data,
     both aggregated statistics and individual data points.
+    
+    IMPORTANT: The WATS API requires part_number and test_operation filters
+    for measurement queries. Without them, the API returns measurements from
+    the last 7 days of most failed steps, which can cause timeouts.
+    
+    Best practice: Always provide part_number when querying measurements.
     """
     
     # Required measurement identifier
     measurement_path: str = Field(
         description="""
         Path to the measurement step (required).
-        Format: "Step Group/Step Name/Measurement Name" or use wildcards.
+        
+        Format options:
+        - Using "/" as separator: "Step Group/Step Name/Measurement"
+        - Using "¶" (paragraph mark): "Step Group¶Step Name¶Measurement"  
+        - For multi-numeric: Use "::" for measurement name: "Step Group/Step/Test::MeasName"
+        
         Examples:
         - "Main/Voltage Test/Output Voltage"
-        - "Main/*/Voltage"
-        - "*/Temperature Sensor/Temp"
+        - "Main/Voltage Test::Measurement0" (multi-numeric)
+        - "MainSequence Callback¶NI steps¶Voltage Test"
+        
+        Note: "/" is automatically converted to "¶" for the API.
         """
     )
     
-    # Optional filters
+    # Recommended filters (quasi-required for performance)
     part_number: Optional[str] = Field(
         default=None,
-        description="Filter by product part number (e.g., 'WIDGET-001')"
+        description="Filter by product part number (e.g., 'WIDGET-001'). STRONGLY RECOMMENDED to avoid timeouts."
+    )
+    test_operation: Optional[str] = Field(
+        default=None,
+        description="Filter by test operation name. STRONGLY RECOMMENDED to avoid timeouts."
     )
     revision: Optional[str] = Field(
         default=None,
@@ -179,8 +196,9 @@ Provides aggregate statistics including:
             date_to = filter_input.date_to or datetime.now()
             date_from = filter_input.date_from or (date_to - timedelta(days=filter_input.days))
             
+            # NOTE: measurement_path is passed separately as a query parameter
+            # Do NOT include it in the WATSFilter body
             filter_params = {
-                "measurement_path": filter_input.measurement_path,
                 "date_from": date_from,
                 "date_to": date_to,
             }
@@ -196,8 +214,11 @@ Provides aggregate statistics including:
             
             wats_filter = WATSFilter(**filter_params)
             
-            # Call the API
-            data = self._api.analytics.get_aggregated_measurements(wats_filter)
+            # Call the API with measurement_paths as query parameter
+            data = self._api.analytics.get_aggregated_measurements(
+                wats_filter,
+                measurement_paths=filter_input.measurement_path
+            )
             
             if not data:
                 return AgentResult.ok(
@@ -397,8 +418,9 @@ Provides individual data points including:
             date_to = filter_input.date_to or datetime.now()
             date_from = filter_input.date_from or (date_to - timedelta(days=filter_input.days))
             
+            # NOTE: measurement_path is passed separately as a query parameter
+            # Do NOT include it in the WATSFilter body
             filter_params = {
-                "measurement_path": filter_input.measurement_path,
                 "date_from": date_from,
                 "date_to": date_to,
             }
@@ -416,8 +438,11 @@ Provides individual data points including:
             
             wats_filter = WATSFilter(**filter_params)
             
-            # Call the API
-            data = self._api.analytics.get_measurements(wats_filter)
+            # Call the API with measurement_paths as query parameter
+            data = self._api.analytics.get_measurements(
+                wats_filter,
+                measurement_paths=filter_input.measurement_path
+            )
             
             if not data:
                 return AgentResult.ok(

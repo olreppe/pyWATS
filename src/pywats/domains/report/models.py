@@ -254,6 +254,38 @@ class WATSFilter(PyWATSModel):
             return None
         return v
 
+    @field_validator("date_grouping", mode="before")
+    @classmethod
+    def normalize_date_grouping(cls, v: object) -> object:
+        """Convert string names like 'DAY' to DateGrouping enum.
+        
+        Accepts:
+        - DateGrouping enum values (pass through)
+        - Integer values (-1, 0, 1, 2, 3, 4, 5)
+        - String names: 'NONE', 'YEAR', 'QUARTER', 'MONTH', 'WEEK', 'DAY', 'HOUR'
+        """
+        if v is None:
+            return None
+        if isinstance(v, DateGrouping):
+            return v
+        if isinstance(v, int):
+            return DateGrouping(v)
+        if isinstance(v, str):
+            # Handle string names like "DAY", "WEEK", etc.
+            name = v.strip().upper()
+            try:
+                return DateGrouping[name]
+            except KeyError:
+                # Try parsing as integer string
+                try:
+                    return DateGrouping(int(v))
+                except (ValueError, KeyError):
+                    raise ValueError(
+                        f"Invalid date_grouping: '{v}'. "
+                        f"Valid values: {[e.name for e in DateGrouping]} or {[e.value for e in DateGrouping]}"
+                    )
+        return v
+
     @field_serializer('date_from', 'date_to')
     def serialize_datetime(self, v: Optional[datetime]) -> Optional[str]:
         """Serialize datetime to ISO format."""

@@ -79,7 +79,7 @@ Fuzzy names accepted - 'pcba', 'board test', 'ict' will be matched to actual pro
     )
     process_code: Optional[str] = Field(
         default=None,
-        description="Filter by process code"
+        description="NOTE: Dimension-only (for grouping). Cannot filter by this - use test_operation instead."
     )
     batch_number: Optional[str] = Field(
         default=None,
@@ -87,11 +87,11 @@ Fuzzy names accepted - 'pcba', 'board test', 'ict' will be matched to actual pro
     )
     operator: Optional[str] = Field(
         default=None,
-        description="Filter by operator name"
+        description="NOTE: Dimension-only (for grouping via perspective='by operator'). Cannot filter by this directly."
     )
     location: Optional[str] = Field(
         default=None,
-        description="Filter by location/production line"
+        description="NOTE: Dimension-only (for grouping via perspective='by location'). Cannot filter by this directly."
     )
     days: int = Field(
         default=30,

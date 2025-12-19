@@ -633,6 +633,8 @@ This tool analyzes ONE configuration at a time.
             # Step 1: Get step analysis data with all Cpk fields
             from pywats.domains.report.models import WATSFilter
             
+            # NOTE: step_path and step_name are filtered locally after API call
+            # because WATSFilter doesn't support these fields
             filter_params = {
                 "part_number": filter_input.part_number,
                 "test_operation": filter_input.test_operation,
@@ -641,10 +643,6 @@ This tool analyzes ONE configuration at a time.
             
             if filter_input.revision:
                 filter_params["revision"] = filter_input.revision
-            if filter_input.step_path:
-                filter_params["step_path"] = filter_input.step_path
-            if filter_input.step_name:
-                filter_params["step_name"] = filter_input.step_name
             
             # Date handling
             if filter_input.date_from:
@@ -663,6 +661,16 @@ This tool analyzes ONE configuration at a time.
                     data={"measurements_analyzed": 0},
                     summary=self._build_no_data_summary(filter_input),
                 )
+            
+            # Step 1.5: Apply local step_path/step_name filtering
+            # (The API doesn't support these filters directly)
+            if filter_input.step_path or filter_input.step_name:
+                data = self._filter_by_step(data, filter_input.step_path, filter_input.step_name)
+                if not data:
+                    return AgentResult.ok(
+                        data={"measurements_analyzed": 0},
+                        summary=self._build_no_data_summary(filter_input),
+                    )
             
             # Step 2: Analyze each measurement
             result = self._analyze_measurements(data, filter_input)
@@ -687,6 +695,64 @@ This tool analyzes ONE configuration at a time.
         """Analyze from dictionary parameters (for LLM tool calls)."""
         filter_input = ProcessCapabilityInput(**params)
         return self.analyze(filter_input)
+    
+    def _filter_by_step(
+        self,
+        data: List["StepAnalysisRow"],
+        step_path: Optional[str],
+        step_name: Optional[str],
+    ) -> List["StepAnalysisRow"]:
+        """
+        Filter step analysis results by step_path or step_name locally.
+        
+        The WATSFilter doesn't support step filtering, so we do it locally.
+        
+        Args:
+            data: List of StepAnalysisRow from API
+            step_path: Optional step path filter (supports * wildcard)
+            step_name: Optional step name filter
+            
+        Returns:
+            Filtered list of StepAnalysisRow
+        """
+        import fnmatch
+        
+        filtered = data
+        
+        if step_path:
+            # Support wildcards in step_path
+            if '*' in step_path or '?' in step_path:
+                filtered = [
+                    row for row in filtered
+                    if row.step_path and fnmatch.fnmatch(row.step_path, step_path)
+                ]
+            else:
+                # Exact or prefix match
+                filtered = [
+                    row for row in filtered
+                    if row.step_path and (
+                        row.step_path == step_path or
+                        row.step_path.startswith(step_path + "/") or
+                        row.step_path.startswith(step_path + "¶")
+                    )
+                ]
+        
+        if step_name:
+            # Support wildcards in step_name
+            if '*' in step_name or '?' in step_name:
+                filtered = [
+                    row for row in filtered
+                    if row.step_name and fnmatch.fnmatch(row.step_name, step_name)
+                ]
+            else:
+                # Case-insensitive exact match
+                step_name_lower = step_name.lower()
+                filtered = [
+                    row for row in filtered
+                    if row.step_name and row.step_name.lower() == step_name_lower
+                ]
+        
+        return filtered
     
     def _analyze_measurements(
         self,

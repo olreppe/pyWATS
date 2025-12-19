@@ -342,7 +342,7 @@ class YieldFilter(BaseModel):
     )
     process_code: Optional[str] = Field(
         default=None,
-        description="Filter by process code"
+        description="NOTE: Can only be used as a DIMENSION for grouping, not as a filter. Use test_operation for filtering."
     )
     batch_number: Optional[str] = Field(
         default=None,
@@ -350,11 +350,11 @@ class YieldFilter(BaseModel):
     )
     operator: Optional[str] = Field(
         default=None,
-        description="Filter by operator name"
+        description="NOTE: Can only be used as a DIMENSION for grouping (via perspective='by operator'), not as a filter."
     )
     location: Optional[str] = Field(
         default=None,
-        description="Filter by location/production line"
+        description="NOTE: Can only be used as a DIMENSION for grouping (via perspective='by location'), not as a filter."
     )
     
     # Time range
@@ -552,6 +552,10 @@ def build_wats_filter(yield_filter: YieldFilter) -> Dict[str, Any]:
         filter_params["period_count"] = yield_filter.period_count
     
     # Add explicit filters
+    # NOTE: Only add fields that exist in WATSFilter (PublicWatsFilter schema)
+    # Fields like process_code, operator, location are DIMENSION values,
+    # not filter fields. They can be used in the 'dimensions' string to
+    # group by, but cannot filter by them directly.
     if yield_filter.part_number:
         filter_params["part_number"] = yield_filter.part_number
     if yield_filter.revision:
@@ -564,14 +568,12 @@ def build_wats_filter(yield_filter: YieldFilter) -> Dict[str, Any]:
         filter_params["level"] = yield_filter.level
     if yield_filter.test_operation:
         filter_params["test_operation"] = yield_filter.test_operation
-    if yield_filter.process_code:
-        filter_params["process_code"] = yield_filter.process_code
+    # NOTE: process_code is NOT a valid WATSFilter field - removed
+    # It can be used as a dimension for grouping but not for filtering
     if yield_filter.batch_number:
         filter_params["batch_number"] = yield_filter.batch_number
-    if yield_filter.operator:
-        filter_params["operator"] = yield_filter.operator
-    if yield_filter.location:
-        filter_params["location"] = yield_filter.location
+    # NOTE: operator and location are NOT valid WATSFilter fields - removed
+    # They can be used as dimensions for grouping but not for filtering
     
     return filter_params
 

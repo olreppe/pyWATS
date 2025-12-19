@@ -481,59 +481,82 @@ class AnalyticsService:
     # =========================================================================
 
     def get_aggregated_measurements(
-        self, filter_data: WATSFilter
+        self, 
+        filter_data: WATSFilter,
+        *,
+        measurement_paths: Optional[str] = None,
     ) -> List[AggregatedMeasurement]:
         """
         Get aggregated measurement statistics.
 
+        IMPORTANT: This API requires partNumber and testOperation filters.
+        Without them, it returns measurements from the last 7 days of most 
+        failed steps, which can cause timeouts.
+
         Args:
-            filter_data: WATSFilter with measurement filters including:
-                - measurement_path: Path to the measurement
-                - part_number: Filter by product
-                - grouping: Aggregation grouping
+            filter_data: WATSFilter with measurement filters.
+                REQUIRED: part_number to avoid timeout.
+            measurement_paths: Measurement path(s) as query parameter.
+                Format: "Step Group¶Step Name¶¶MeasurementName"
+                Can use "/" which will be converted to "¶"
+                Multiple paths separated by semicolon (;)
 
         Returns:
             List of AggregatedMeasurement objects with statistics (min, max, avg, cpk, etc.)
             
         Example:
             >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(
-            ...     part_number="WIDGET-001",
-            ...     measurement_path="Main/Voltage Test/Output Voltage"
+            >>> filter_obj = WATSFilter(part_number="WIDGET-001")
+            >>> measurements = api.analytics.get_aggregated_measurements(
+            ...     filter_obj,
+            ...     measurement_paths="Main/Voltage Test/Output Voltage"
             ... )
-            >>> measurements = api.analytics.get_aggregated_measurements(filter_obj)
             >>> for m in measurements:
             ...     print(f"{m.step_name}: avg={m.avg}, cpk={m.cpk}")
         """
-        return self._repository.get_aggregated_measurements(filter_data)
+        return self._repository.get_aggregated_measurements(
+            filter_data, 
+            measurement_paths=measurement_paths
+        )
 
     def get_measurements(
-        self, filter_data: WATSFilter
+        self, 
+        filter_data: WATSFilter,
+        *,
+        measurement_paths: Optional[str] = None,
     ) -> List[MeasurementData]:
         """
         Get individual measurement data points (PREVIEW).
 
+        IMPORTANT: This API requires partNumber and testOperation filters.
+        Without them, it returns measurements from the last 7 days of most 
+        failed steps, which can cause timeouts.
+
         Args:
-            filter_data: WATSFilter with measurement filters including:
-                - measurement_path: Path to the measurement
-                - part_number: Filter by product
-                - top_count: Limit number of results
+            filter_data: WATSFilter with measurement filters.
+                REQUIRED: part_number to avoid timeout.
+            measurement_paths: Measurement path(s) as query parameter.
+                Format: "Step Group¶Step Name¶¶MeasurementName"
+                Can use "/" which will be converted to "¶"
+                Multiple paths separated by semicolon (;)
 
         Returns:
             List of MeasurementData objects with individual measurement values
             
         Example:
             >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(
-            ...     part_number="WIDGET-001",
-            ...     measurement_path="Main/Voltage Test/Output Voltage",
-            ...     top_count=100
+            >>> filter_obj = WATSFilter(part_number="WIDGET-001", top_count=100)
+            >>> data = api.analytics.get_measurements(
+            ...     filter_obj,
+            ...     measurement_paths="Main/Voltage Test/Output Voltage"
             ... )
-            >>> data = api.analytics.get_measurements(filter_obj)
             >>> for m in data:
-            ...     print(f"SN {m.serial_number}: {m.value} (limits: {m.limit_low}-{m.limit_high})")
+            ...     print(f"SN {m.serial_number}: {m.value}")
         """
-        return self._repository.get_measurements(filter_data)
+        return self._repository.get_measurements(
+            filter_data,
+            measurement_paths=measurement_paths
+        )
 
     # =========================================================================
     # OEE Analysis

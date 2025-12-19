@@ -487,56 +487,155 @@ class AnalyticsRepository:
     # Measurements
     # =========================================================================
 
+    @staticmethod
+    def _normalize_measurement_path(path: str) -> str:
+        """
+        Convert user-friendly path format to API format.
+        
+        The API expects paths using paragraph mark (¶) as separator:
+        - "MainSequence¶Step Group¶Step Name" for steps
+        - "MainSequence¶Step Group¶Step Name¶¶MeasurementName" for multi-numeric
+        
+        This method converts common formats:
+        - "/" separator -> "¶"
+        - "::" for measurement name -> "¶¶"
+        
+        Args:
+            path: User-provided path (e.g., "Main/Step/Test" or "Main/Step/Test::Meas1")
+            
+        Returns:
+            API-formatted path with ¶ separators
+        """
+        if not path:
+            return path
+        
+        # Already in API format
+        if "¶" in path:
+            return path
+        
+        # Handle measurement name separator (:: -> ¶¶)
+        if "::" in path:
+            step_path, measurement_name = path.rsplit("::", 1)
+            step_path = step_path.replace("/", "¶")
+            return f"{step_path}¶¶{measurement_name}"
+        
+        # Simple path conversion
+        return path.replace("/", "¶")
+
     def get_measurements(
-        self, filter_data: Union[WATSFilter, Dict[str, Any]]
+        self, 
+        filter_data: Union[WATSFilter, Dict[str, Any]],
+        *,
+        measurement_paths: Optional[str] = None,
     ) -> List[MeasurementData]:
         """
         Get numeric measurements by measurement path (PREVIEW).
 
         POST /api/App/Measurements
 
+        IMPORTANT: This API requires partNumber and testOperation filters.
+        Without them, it returns measurements from the last 7 days of most 
+        failed steps, which can cause timeouts.
+
         Args:
-            filter_data: WATSFilter object or dict with filters like:
-                - measurement_path: Path to the measurement
-                - part_number: Filter by product
-                - top_count: Limit results
+            filter_data: WATSFilter object or dict with filters. 
+                REQUIRED: part_number and test_operation to avoid timeout.
+            measurement_paths: Measurement path(s) as query parameter.
+                Format: "Step Group¶Step Name¶¶MeasurementName"
+                Multiple paths separated by semicolon (;)
+                Can use "/" which will be converted to "¶"
 
         Returns:
             List of MeasurementData objects with individual measurement values
+            
+        Example:
+            >>> # Get specific measurement with proper filters
+            >>> data = analytics.get_measurements(
+            ...     WATSFilter(part_number="PROD-001", test_operation="EOL Test"),
+            ...     measurement_paths="Main¶Voltage Test¶¶Output"
+            ... )
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
-            data = filter_data
-        response = self._http_client.post("/api/App/Measurements", data=data)
+            data = dict(filter_data)
+        
+        # Build query params for measurementPaths
+        params: Dict[str, str] = {}
+        
+        # Check for measurement_path in data (legacy support) and move to query param
+        if "measurement_path" in data:
+            measurement_paths = measurement_paths or data.pop("measurement_path")
+        if "measurementPath" in data:
+            measurement_paths = measurement_paths or data.pop("measurementPath")
+            
+        if measurement_paths:
+            params["measurementPaths"] = self._normalize_measurement_path(measurement_paths)
+        
+        response = self._http_client.post(
+            "/api/App/Measurements", 
+            data=data,
+            params=params if params else None
+        )
         if response.is_success and response.data:
             items = response.data if isinstance(response.data, list) else [response.data]
             return [MeasurementData.model_validate(item) for item in items]
         return []
 
     def get_aggregated_measurements(
-        self, filter_data: Union[WATSFilter, Dict[str, Any]]
+        self, 
+        filter_data: Union[WATSFilter, Dict[str, Any]],
+        *,
+        measurement_paths: Optional[str] = None,
     ) -> List[AggregatedMeasurement]:
         """
         Get aggregated numeric measurements by measurement path.
 
         POST /api/App/AggregatedMeasurements
 
+        IMPORTANT: This API requires partNumber and testOperation filters.
+        Without them, it returns measurements from the last 7 days of most 
+        failed steps, which can cause timeouts.
+
         Args:
-            filter_data: WATSFilter object or dict with filters like:
-                - measurement_path: Path to the measurement
-                - part_number: Filter by product
-                - grouping: Aggregation grouping
+            filter_data: WATSFilter object or dict with filters.
+                REQUIRED: part_number and test_operation to avoid timeout.
+            measurement_paths: Measurement path(s) as query parameter.
+                Format: "Step Group¶Step Name¶¶MeasurementName"
+                Multiple paths separated by semicolon (;)
+                Can use "/" which will be converted to "¶"
 
         Returns:
             List of AggregatedMeasurement objects with statistics (min, max, avg, cpk, etc.)
+            
+        Example:
+            >>> # Get aggregated stats with proper filters
+            >>> data = analytics.get_aggregated_measurements(
+            ...     WATSFilter(part_number="PROD-001", test_operation="EOL Test"),
+            ...     measurement_paths="Main¶Voltage Test¶¶Output"
+            ... )
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
-            data = filter_data
+            data = dict(filter_data)
+        
+        # Build query params for measurementPaths
+        params: Dict[str, str] = {}
+        
+        # Check for measurement_path in data (legacy support) and move to query param
+        if "measurement_path" in data:
+            measurement_paths = measurement_paths or data.pop("measurement_path")
+        if "measurementPath" in data:
+            measurement_paths = measurement_paths or data.pop("measurementPath")
+            
+        if measurement_paths:
+            params["measurementPaths"] = self._normalize_measurement_path(measurement_paths)
+            
         response = self._http_client.post(
-            "/api/App/AggregatedMeasurements", data=data
+            "/api/App/AggregatedMeasurements", 
+            data=data,
+            params=params if params else None
         )
         if response.is_success and response.data:
             items = response.data if isinstance(response.data, list) else [response.data]
