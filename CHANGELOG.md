@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b7] - 2025-12-19
+
+### Added
+
+- **Agent Analysis Tools** (`pywats_agent.tools`) - Comprehensive root cause analysis workflow
+  - **ProcessCapabilityTool** - Advanced SPC with:
+    - Dual Cpk analysis (Cpk vs Cpk_wof - with/without failures)
+    - Stability assessment before trusting Cpk values
+    - Hidden mode detection (outliers, trends, drift, bimodal, centering, approaching limits)
+    - Improvement priority matrix (critical → high → medium → low)
+  - **StepAnalysisTool** - Test Step Analysis (TSA) for:
+    - Root cause identification (steps causing unit failures)
+    - Process capability (Cpk) analysis per measurement
+    - Data integrity checks for SW versions and revisions
+  - **DimensionalAnalysisTool** - Failure mode detection across dimensions:
+    - Station, operator, fixture, batch, SW version analysis
+    - Statistical significance assessment
+    - Prioritized recommendations
+  - **AdaptiveTimeFilter** - Dynamic time windows for varying production volumes:
+    - Automatically adjusts query window based on volume
+    - Prevents query overload for high-volume customers
+  - **ProcessResolver** - Fuzzy matching for process/test operation names:
+    - Handles imprecise user input ("PCBA" → "PCBA test")
+    - Common alias expansion
+    - Diagnoses mixed-test process issues
+
+- **Documentation** - Enhanced domain knowledge documentation:
+  - Process Capability Analysis section in WATS_DOMAIN_KNOWLEDGE.md
+  - Workflow examples in YIELD_METRICS_GUIDE.md
+  - Dual Cpk interpretation guide
+
 ## [0.1.0b6] - 2025-12-18
 
 ### Added
