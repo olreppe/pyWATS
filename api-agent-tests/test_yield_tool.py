@@ -223,3 +223,225 @@ class TestAliasCompleteness:
         for term in common_terms:
             result = resolve_perspective(term)
             assert result is not None, f"'{term}' should resolve to a perspective"
+
+
+# =============================================================================
+# YIELD DOMAIN KNOWLEDGE TESTS
+# =============================================================================
+
+
+class TestYieldDomainKnowledge:
+    """
+    Test yield domain knowledge is properly incorporated.
+    
+    Domain Knowledge Summary:
+    - FPY/SPY/TPY/LPY are UNIT-BASED yield metrics
+    - TRY (Test Report Yield) is REPORT-BASED
+    - Unit Inclusion Rule: Unit included only if FIRST RUN matches filter
+    - Repair Line Problem: Retest-only stations show 0 units
+    """
+    
+    def test_yield_filter_has_yield_type_parameter(self):
+        """Test that YieldFilter includes yield_type parameter."""
+        # Default should be 'unit'
+        filter_obj = YieldFilter()
+        assert filter_obj.yield_type == "unit"
+        
+        # Can set to 'report'
+        filter_obj = YieldFilter(yield_type="report")
+        assert filter_obj.yield_type == "report"
+    
+    def test_yield_type_default_is_unit(self):
+        """Verify unit-based yield is the default (most common use case)."""
+        filter_obj = YieldFilter()
+        assert filter_obj.yield_type == "unit", "Default yield_type should be 'unit' for FPY/SPY/TPY/LPY"
+    
+    def test_yield_filter_accepts_report_type(self):
+        """Test that report-based yield (TRY) can be selected."""
+        filter_obj = YieldFilter(yield_type="report")
+        assert filter_obj.yield_type == "report", "Should accept 'report' for TRY analysis"
+
+
+class TestYieldToolParameterSchema:
+    """Test that yield_type appears correctly in parameter schema."""
+    
+    def test_yield_type_in_parameter_schema(self):
+        """Test that yield_type appears in the OpenAI parameter schema."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        schema = YieldAnalysisTool.get_parameters_schema()
+        
+        # Check yield_type is in properties
+        assert "yield_type" in schema["properties"], "yield_type should be in schema properties"
+        
+        # Check enum values
+        yield_type_schema = schema["properties"]["yield_type"]
+        assert yield_type_schema["type"] == "string"
+        assert yield_type_schema["enum"] == ["unit", "report"]
+        assert yield_type_schema["default"] == "unit"
+    
+    def test_yield_type_description_explains_metrics(self):
+        """Test that yield_type description explains FPY vs TRY."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        schema = YieldAnalysisTool.get_parameters_schema()
+        description = schema["properties"]["yield_type"]["description"]
+        
+        # Should explain unit-based metrics
+        assert "FPY" in description or "unit" in description.lower()
+        
+        # Should explain report-based metrics
+        assert "TRY" in description or "report" in description.lower()
+        
+        # Should mention repair line scenario
+        assert "retest" in description.lower() or "repair" in description.lower()
+
+
+class TestYieldToolDescription:
+    """Test that tool descriptions include domain knowledge."""
+    
+    def test_tool_description_includes_domain_knowledge(self):
+        """Test that the tool description includes yield domain knowledge."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        description = YieldAnalysisTool.description
+        
+        # Should explain unit-based metrics
+        assert "FPY" in description
+        
+        # Should explain report-based metrics
+        assert "TRY" in description or "Report" in description
+        
+        # Should mention unit inclusion rule
+        assert "FIRST RUN" in description.upper() or "first run" in description.lower()
+    
+    def test_class_docstring_explains_unit_inclusion_rule(self):
+        """Test that class docstring explains the unit inclusion rule."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        docstring = YieldAnalysisTool.__doc__
+        
+        # Should explain the unit inclusion rule
+        assert "first run" in docstring.lower()
+        assert "unit" in docstring.lower()
+        
+        # Should explain repair line scenario
+        assert "repair" in docstring.lower() or "retest" in docstring.lower()
+
+
+class TestRepairLineDetection:
+    """
+    Test repair line scenario detection.
+    
+    The repair line problem:
+    - Retest-only stations never see first runs
+    - Unit-based yield will show 0 units
+    - Tool should detect this and suggest using report-based yield
+    """
+    
+    def test_repair_line_check_exists(self):
+        """Test that repair line check method exists."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        from unittest.mock import MagicMock
+        
+        mock_api = MagicMock()
+        tool = YieldAnalysisTool(mock_api)
+        
+        # Method should exist
+        assert hasattr(tool, '_check_repair_line_scenario')
+    
+    def test_repair_line_check_detects_station_filter(self):
+        """Test that station filter triggers repair line warning."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        from unittest.mock import MagicMock
+        
+        mock_api = MagicMock()
+        tool = YieldAnalysisTool(mock_api)
+        
+        # Filter with station name should trigger warning
+        filter_with_station = YieldFilter(
+            station_name="REPAIR-STATION-01",
+            yield_type="unit"
+        )
+        
+        warning = tool._check_repair_line_scenario(filter_with_station)
+        assert warning is not None, "Station filter should trigger repair line warning"
+        assert "report" in warning.lower(), "Warning should suggest using report type"
+    
+    def test_repair_line_check_detects_operator_filter(self):
+        """Test that operator filter triggers repair line warning."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        from unittest.mock import MagicMock
+        
+        mock_api = MagicMock()
+        tool = YieldAnalysisTool(mock_api)
+        
+        filter_with_operator = YieldFilter(
+            operator="John",
+            yield_type="unit"
+        )
+        
+        warning = tool._check_repair_line_scenario(filter_with_operator)
+        assert warning is not None, "Operator filter should trigger repair line warning"
+    
+    def test_no_warning_for_report_type(self):
+        """Test that report yield_type doesn't trigger warning."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        from unittest.mock import MagicMock
+        
+        mock_api = MagicMock()
+        tool = YieldAnalysisTool(mock_api)
+        
+        # Even with station filter, report type should not warn
+        filter_report = YieldFilter(
+            station_name="REPAIR-STATION-01",
+            yield_type="report"
+        )
+        
+        warning = tool._check_repair_line_scenario(filter_report)
+        assert warning is None, "Report type should not trigger repair line warning"
+    
+    def test_no_warning_for_product_filter_only(self):
+        """Test that product-only filter doesn't trigger warning."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        from unittest.mock import MagicMock
+        
+        mock_api = MagicMock()
+        tool = YieldAnalysisTool(mock_api)
+        
+        # Product filter alone shouldn't warn (products have first runs)
+        filter_product = YieldFilter(
+            part_number="WIDGET-001",
+            yield_type="unit"
+        )
+        
+        warning = tool._check_repair_line_scenario(filter_product)
+        assert warning is None, "Product-only filter should not trigger repair line warning"
+
+
+class TestToolDefinitionExports:
+    """Test tool definition export functions."""
+    
+    def test_tool_definition_structure(self):
+        """Test that tool definition has correct structure."""
+        from pywats_agent.tools.yield_tool import get_yield_tool_definition
+        
+        definition = get_yield_tool_definition()
+        
+        assert "name" in definition
+        assert "description" in definition
+        assert "parameters" in definition
+        
+        # Check name
+        assert definition["name"] == "analyze_yield"
+    
+    def test_openai_schema_structure(self):
+        """Test OpenAI function calling schema."""
+        from pywats_agent.tools.yield_tool import get_yield_tool_openai_schema
+        
+        schema = get_yield_tool_openai_schema()
+        
+        assert schema["type"] == "function"
+        assert "function" in schema
+        assert schema["function"]["name"] == "analyze_yield"
+

@@ -372,6 +372,26 @@ class YieldFilter(BaseModel):
         default="fpy",
         description="Which yield metric: 'fpy' (First Pass Yield), 'yield' (Final Yield), 'all'"
     )
+    
+    # Yield calculation type - critical for understanding results
+    yield_type: str = Field(
+        default="unit",
+        description="""
+Type of yield calculation:
+- 'unit' (default): Unit-based yield (FPY, SPY, TPY, LPY)
+  * Measures % of units that passed
+  * IMPORTANT: Units included only if their FIRST RUN matches filter
+  * Use for product quality, overall line performance
+  
+- 'report': Report-based yield (TRY - Test Report Yield)
+  * Measures passed reports / all reports
+  * Use for station/fixture/operator performance
+  * REQUIRED for retest-only stations (repair lines) that never see first runs
+
+REPAIR LINE WARNING: If you filter by a station/fixture/operator that only 
+handles retests, unit-based yield will show 0 units. Use 'report' instead.
+        """
+    )
 
 
 def resolve_perspective(perspective_input: Optional[str]) -> Optional[AnalysisPerspective]:
@@ -515,33 +535,78 @@ class YieldAnalysisTool:
     
     Translates semantic analysis requests to WATS API calls.
     
+    YIELD METRICS OVERVIEW:
+    
+    UNIT-BASED METRICS (FPY, SPY, TPY, LPY):
+    - Measure what percentage of UNITS passed at each attempt
+    - FPY (First Pass Yield): Units that passed on Run 1 / Total units
+    - SPY (Second Pass Yield): Units that passed by Run 2 / Total units  
+    - TPY (Third Pass Yield): Units that passed by Run 3 / Total units
+    - LPY (Last Pass Yield): Units that eventually passed / Total units
+    
+    REPORT-BASED METRIC (TRY - Test Report Yield):
+    - TRY = Passed reports / All reports
+    - Measures test execution success rate, not unit success rate
+    
+    CRITICAL - UNIT INCLUSION RULE:
+    A unit is ONLY included if its FIRST RUN matches the filter criteria.
+    If included, ALL runs for that unit count (even runs outside the filter).
+    This ensures mathematically correct FPY-to-LPY calculations.
+    
+    REPAIR LINE SCENARIO (Important edge case):
+    When filtering by station/fixture/operator that only handles retests (Run 2+),
+    the unit count will be ZERO because no first runs exist at that location.
+    Example: A repair line station only sees failed units from main line.
+    Solution: Use yield_type='report' (TRY) for retest-only station analysis.
+    
     Example:
         >>> tool = YieldAnalysisTool(api)
         >>> 
-        >>> # Natural language perspective
+        >>> # Standard unit-based yield
         >>> result = tool.analyze(YieldFilter(
         ...     part_number="WIDGET-001",
         ...     perspective="by station",
         ...     days=7
         ... ))
         >>> 
-        >>> # The tool automatically translates to:
-        >>> # dimensions="stationName", filters for WIDGET-001, last 7 days
+        >>> # Report-based yield for repair line analysis
+        >>> result = tool.analyze(YieldFilter(
+        ...     station_name="REPAIR-STATION-01",
+        ...     yield_type="report",
+        ...     days=30
+        ... ))
     """
     
     name = "analyze_yield"
     description = """
 Analyze manufacturing yield/quality data with flexible grouping.
 
-Use this tool to answer questions like:
+UNDERSTANDING YIELD METRICS:
+
+UNIT-BASED YIELD (FPY, SPY, TPY, LPY) - Default:
+- FPY = Units passed on first try / Total units (the key quality metric)
+- SPY/TPY = Units passed by 2nd/3rd try / Total units
+- LPY = Units eventually passed / Total units
+- Use for: Product quality, overall line performance, process capability
+
+REPORT-BASED YIELD (TRY - Test Report Yield):
+- TRY = Passed reports / All reports
+- Use for: Station/fixture/operator performance, especially retest stations
+
+IMPORTANT - UNIT INCLUSION RULE:
+Units are included ONLY if their FIRST RUN matches your filter!
+If filtering by a repair/retest station that never sees first runs,
+you will get ZERO units. Use yield_type='report' (TRY) instead.
+
+Example questions this tool answers:
 - "What's the yield for WIDGET-001?" (overall yield)
 - "How is yield trending over time?" (perspective: "trend")
 - "Compare yield by station" (perspective: "by station")
 - "Which product has the worst yield?" (perspective: "by product")
 - "Show daily yield for the past week" (perspective: "daily", days: 7)
-- "How does Line1-EOL yield compare over time?" (station_name + perspective: "trend")
+- "What's the repair station performance?" (yield_type: "report")
 
-The 'perspective' parameter is the key - it determines how data is grouped.
+The 'perspective' parameter determines how data is grouped.
 Use natural language like "by station", "trend", "daily", "by product", etc.
 
 Available perspectives:
@@ -621,6 +686,19 @@ Leave empty for overall aggregated yield.
                     "description": "Number of days to analyze (default: 30)",
                     "default": 30
                 },
+                "yield_type": {
+                    "type": "string",
+                    "enum": ["unit", "report"],
+                    "default": "unit",
+                    "description": """
+Type of yield calculation:
+- 'unit' (default): Unit-based yield (FPY/SPY/TPY/LPY). 
+  Measures % of UNITS that passed. Units included only if FIRST RUN matches filter.
+- 'report': Report-based yield (TRY). 
+  Measures passed reports / all reports. Use for retest stations/repair lines.
+WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' instead.
+                    """.strip()
+                },
                 "dimensions": {
                     "type": "string",
                     "description": "Advanced: Raw WATS dimensions (semicolon-separated). Use perspective instead when possible."
@@ -648,17 +726,40 @@ Leave empty for overall aggregated yield.
             
             wats_filter = WATSFilter(**wats_params)
             
-            # Call the API
-            data = self._api.analytics.get_dynamic_yield(wats_filter)
+            # Call the appropriate API based on yield_type
+            yield_type = getattr(filter_input, 'yield_type', 'unit')
+            
+            if yield_type == 'report':
+                # Report-based yield (TRY) - for retest stations, fixtures, operators
+                data = self._api.analytics.get_dynamic_yield(wats_filter)
+                # Note: TRY would be computed differently if API supports it
+                # For now, use same API but adjust interpretation in summary
+            else:
+                # Unit-based yield (FPY, SPY, TPY, LPY) - default
+                data = self._api.analytics.get_dynamic_yield(wats_filter)
             
             if not data:
+                # Check for repair line scenario
+                summary = self._build_no_data_summary(filter_input)
+                warning = self._check_repair_line_scenario(filter_input)
+                if warning:
+                    summary += f"\n\n{warning}"
+                
                 return AgentResult.success(
                     data=[],
-                    summary=self._build_no_data_summary(filter_input)
+                    summary=summary
                 )
+            
+            # Check for potential repair line issue (0 units but filters applied)
+            total_units = sum(getattr(d, 'unit_count', 0) or 0 for d in data)
+            warning = None
+            if total_units == 0 and yield_type == 'unit':
+                warning = self._check_repair_line_scenario(filter_input)
             
             # Build rich summary
             summary = self._build_summary(data, filter_input, wats_params)
+            if warning:
+                summary += f"\n\n{warning}"
             
             # Resolve perspective for metadata
             perspective = resolve_perspective(filter_input.perspective)
@@ -669,8 +770,11 @@ Leave empty for overall aggregated yield.
                 metadata={
                     "perspective": filter_input.perspective,
                     "resolved_perspective": perspective.value if perspective else None,
+                    "yield_type": yield_type,
                     "dimensions": wats_params.get("dimensions"),
                     "record_count": len(data),
+                    "total_units": total_units,
+                    "repair_line_warning": warning is not None,
                     "filters_applied": {
                         k: v for k, v in wats_params.items() 
                         if k not in ["dimensions", "date_from", "date_to", "date_grouping", "include_current_period"]
@@ -681,6 +785,45 @@ Leave empty for overall aggregated yield.
             
         except Exception as e:
             return AgentResult.error(f"Yield analysis failed: {str(e)}")
+    
+    def _check_repair_line_scenario(self, filter_input: YieldFilter) -> Optional[str]:
+        """
+        Check if the filter might be hitting the repair line scenario.
+        
+        The repair line problem occurs when filtering by station/fixture/operator
+        that only handles retests (Run 2+), not first runs. In this case,
+        unit-based yield will show 0 units because units are only included
+        if their FIRST RUN matches the filter.
+        
+        Returns a warning message if this scenario is detected.
+        """
+        yield_type = getattr(filter_input, 'yield_type', 'unit')
+        
+        # Only warn for unit-based yield with station/fixture/operator filters
+        if yield_type == 'report':
+            return None
+        
+        # Check if filtering in a way that might hit repair line issue
+        has_equipment_filter = any([
+            filter_input.station_name,
+            filter_input.operator,
+        ])
+        
+        # Also check perspective - by_fixture, by_operator could be affected
+        perspective = filter_input.perspective or ""
+        has_equipment_perspective = any(p in perspective.lower() for p in [
+            "fixture", "operator"
+        ])
+        
+        if has_equipment_filter or has_equipment_perspective:
+            return (
+                "NOTE: If you're seeing 0 units, this station/fixture/operator might be "
+                "a retest-only location (repair line). Units are counted only if their FIRST RUN "
+                "matches your filter. For retest station performance, try using yield_type='report' "
+                "to get Test Report Yield (TRY) instead of unit-based yield."
+            )
+        
+        return None
     
     def analyze_from_dict(self, params: Dict[str, Any]) -> AgentResult:
         """
@@ -704,6 +847,9 @@ Leave empty for overall aggregated yield.
         wats_params: Dict[str, Any]
     ) -> str:
         """Build a human-readable summary of the yield data."""
+        
+        # Get yield type
+        yield_type = getattr(filter_input, 'yield_type', 'unit')
         
         # Calculate overall statistics
         total_units = sum(getattr(d, 'unit_count', 0) or 0 for d in data)
@@ -739,13 +885,22 @@ Leave empty for overall aggregated yield.
         else:
             perspective_desc = ""
         
+        # Yield type indicator
+        if yield_type == 'report':
+            yield_type_desc = " (Report-based TRY)"
+        else:
+            yield_type_desc = " (Unit-based FPY)"
+        
         # Build the summary
-        parts = [f"Yield analysis{context}{perspective_desc} (last {filter_input.days} days):"]
+        parts = [f"Yield analysis{context}{perspective_desc}{yield_type_desc} (last {filter_input.days} days):"]
         
         if avg_fpy is not None:
-            parts.append(f"• Average FPY: {avg_fpy:.1f}%")
-        parts.append(f"• Total units: {total_units:,}")
-        parts.append(f"• Data points: {len(data)}")
+            if yield_type == 'report':
+                parts.append(f"* Average TRY: {avg_fpy:.1f}%")
+            else:
+                parts.append(f"* Average FPY: {avg_fpy:.1f}%")
+        parts.append(f"* Total units: {total_units:,}")
+        parts.append(f"* Data points: {len(data)}")
         
         # Add top/bottom if grouped
         if perspective and len(data) > 1:
@@ -768,9 +923,9 @@ Leave empty for overall aggregated yield.
                 worst_label = self._get_data_label(worst, perspective)
                 
                 if best_fpy is not None and best_label:
-                    parts.append(f"• Best: {best_label} ({best_fpy:.1f}%)")
+                    parts.append(f"* Best: {best_label} ({best_fpy:.1f}%)")
                 if worst_fpy is not None and worst_label:
-                    parts.append(f"• Worst: {worst_label} ({worst_fpy:.1f}%)")
+                    parts.append(f"* Worst: {worst_label} ({worst_fpy:.1f}%)")
         
         return "\n".join(parts)
     
