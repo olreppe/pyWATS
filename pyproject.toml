@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pywats-api"
-version = "0.1.0b7"
+version = "0.1.0b8"
 description = "Python API library for WATS (Web-based Automated Test System) - manufacturing test data management"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -49,6 +49,16 @@ client = [
 client-headless = [
     "watchdog>=3.0.0",
     "aiofiles>=23.0.0",
+]
+# AI agent tools for manufacturing analytics (LLM integration)
+agent = [
+    # No additional dependencies - uses pydantic from core
+]
+# LangChain integration for agent tools
+langchain = [
+    "langchain>=0.2.0",
+    "langchain-core>=0.2.0",
+    "langchain-openai>=0.1.0",
 ]
 # MCP server for AI assistant integration
 mcp = [

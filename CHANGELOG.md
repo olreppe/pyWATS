@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b8] - 2025-12-19
+
+### Added
+
+- **Agent Tools in Main Package** - `pywats_agent` is now included in `pywats-api`
+  - Install with `pip install pywats-api[agent]` for explicit dependency
+  - Or just `pip install pywats-api` - agent tools are always included, no extra deps needed
+  - LangChain integration available with `pip install pywats-api[langchain]`
+
+### Fixed
+
+- **Tool Selection Patterns** - Fixed regex patterns in `AgentTestHarness`
+  - Added `\bwhat.?step\b` pattern for "What step is causing..." queries
+  - Added `\bstep.*caus` pattern for step causation queries
+  - Fixed plural forms `measurements?` for individual/raw measurements
+
 ## [0.1.0b7] - 2025-12-19
 
 ### Added
