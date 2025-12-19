@@ -103,6 +103,90 @@ When analyzing yield:
 
 ---
 
+## Yield Over Time (Temporal Analysis)
+
+### Date Range Defaults
+
+WATS always assumes you want the **most recent data**:
+
+| Parameter | Default |
+|-----------|---------|
+| `date_from` | 30 days ago (if omitted) |
+| `date_to` | Now (if omitted) |
+
+**Important**: If you don't specify any date parameters, WATS returns the last 30 days of data.
+
+### Time-Based Perspectives
+
+Use these perspectives for yield over time:
+
+| Perspective | Date Grouping | Example Use |
+|-------------|---------------|-------------|
+| `trend` | DAY | General yield trend |
+| `daily` | DAY | Day-by-day analysis |
+| `weekly` | WEEK | Week-by-week analysis |
+| `monthly` | MONTH | Month-by-month analysis |
+
+**Example**: Daily yield for the past week
+```python
+result = yield_tool.analyze(YieldFilter(
+    part_number="WIDGET-001",
+    test_operation="FCT",
+    perspective="daily",
+    days=7
+))
+```
+
+### Date Grouping Options
+
+For advanced control, you can specify `date_grouping` directly:
+
+| Value | Groups By |
+|-------|-----------|
+| `HOUR` | Hour |
+| `DAY` | Day |
+| `WEEK` | Week |
+| `MONTH` | Month |
+| `QUARTER` | Quarter |
+| `YEAR` | Year |
+
+### Period Count
+
+Use `period_count` to limit the number of time periods returned:
+
+```python
+# Get last 10 days of yield
+result = yield_tool.analyze(YieldFilter(
+    perspective="daily",
+    period_count=10
+))
+```
+
+### Yield Trend Metrics
+
+Yield trend describes **change compared to the previous equally-sized period**:
+
+| This Period | Compared To |
+|-------------|-------------|
+| Today | Yesterday |
+| This week | Last week |
+| This month | Last month |
+
+**Use Case**: Detecting improvement or degradation patterns.
+
+### Safe Period Aggregation
+
+**Key Rule**: When fetching yield over periods, the **first-pass-included rule** applies to each period.
+
+This means:
+- Units are counted only in their first-run period
+- Periods can be safely summed together
+- No double-counting of units across periods
+
+**Example**: You can sum Monday-Friday yields to get a weekly total without worrying about units being counted multiple times.
+
+---
+
 ## Top Runners
 
 ### Definition

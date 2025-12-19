@@ -348,23 +348,44 @@ class YieldFilter(BaseModel):
     )
     
     # Time range
+    # NOTE: WATS defaults to last 30 days if no date range specified.
+    # WATS always assumes you want the most recent data.
     days: int = Field(
         default=30,
-        description="Number of days to analyze (default: 30)"
+        description="Number of days to analyze (default: 30, matching WATS server default)"
     )
     date_from: Optional[datetime] = Field(
         default=None,
-        description="Start date (overrides 'days' if specified)"
+        description="Start date (overrides 'days' if specified). If omitted, WATS uses last 30 days."
     )
     date_to: Optional[datetime] = Field(
         default=None,
-        description="End date (default: now)"
+        description="End date (default: now). WATS always assumes you want the most recent data."
     )
     
     # Result options
     include_current_period: bool = Field(
         default=True,
-        description="Include the current incomplete period"
+        description="Include the current incomplete period in time-based analysis"
+    )
+    
+    # Periodic yield parameters
+    # NOTE: For yield over time, use perspective="trend/daily/weekly/monthly"
+    # which automatically sets date_grouping. These are advanced overrides.
+    period_count: Optional[int] = Field(
+        default=None,
+        description="""
+Number of time periods to return (used with date_grouping).
+Example: period_count=7 with daily perspective returns 7 days of data.
+        """
+    )
+    date_grouping: Optional[str] = Field(
+        default=None,
+        description="""
+How to group data by time: HOUR, DAY, WEEK, MONTH, QUARTER, YEAR.
+Usually set automatically by perspective (daily=DAY, weekly=WEEK, etc.).
+Only specify for advanced use cases.
+        """
     )
     
     # Metric selection
@@ -487,9 +508,9 @@ def build_wats_filter(yield_filter: YieldFilter) -> Dict[str, Any]:
     else:
         date_from = date_to - timedelta(days=yield_filter.days)
     
-    # Determine date grouping
-    date_grouping = None
-    if perspective:
+    # Determine date grouping (explicit override or from perspective)
+    date_grouping = yield_filter.date_grouping  # Explicit override first
+    if not date_grouping and perspective:
         date_grouping = PERSPECTIVE_TO_DATE_GROUPING.get(perspective)
     
     # Build filter dict
@@ -503,6 +524,10 @@ def build_wats_filter(yield_filter: YieldFilter) -> Dict[str, Any]:
         filter_params["dimensions"] = dimensions
     if date_grouping:
         filter_params["date_grouping"] = date_grouping
+    
+    # Add period_count if specified (for limiting time periods)
+    if yield_filter.period_count:
+        filter_params["period_count"] = yield_filter.period_count
     
     # Add explicit filters
     if yield_filter.part_number:
@@ -578,6 +603,30 @@ class YieldAnalysisTool:
     Example: A repair line station only sees failed units from main line.
     Solution: Use yield_type='report' (TRY) for retest-only station analysis.
     
+    YIELD OVER TIME (Temporal Analysis):
+    
+    DATE RANGE DEFAULTS:
+    - If date_from/date_to are not specified, WATS defaults to last 30 days
+    - WATS always assumes you want the MOST RECENT data
+    - Use 'days' parameter for simple "last N days" queries
+    
+    PERIODIC YIELD (Time-Series Analysis):
+    Use perspective="daily/weekly/monthly" or "trend" for yield over time.
+    - This automatically sets date_grouping (DAY, WEEK, MONTH, etc.)
+    - Returns yield for each time period within the date range
+    - Include period_count to limit number of periods returned
+    
+    YIELD TREND METRICS:
+    - Yield trend describes CHANGE compared to the PREVIOUS equally-sized period
+    - Example: "today vs yesterday", "this week vs last week"
+    - Useful for detecting improvement or degradation patterns
+    
+    PERIOD AGGREGATION (Safe Summing):
+    - When fetching yield over periods, the first-pass-included rule applies
+    - This means periods can be safely aggregated (summed) together
+    - Each unit is counted only once in its first-run period
+    - Example: Sum Monday-Friday yields for weekly total (units won't double-count)
+    
     UNIT VERIFICATION RULES:
     - API functions exist to define which processes must pass for each product
     - These rules can be auto-suggested based on yield data analysis
@@ -599,6 +648,14 @@ class YieldAnalysisTool:
         ...     part_number="WIDGET-001",
         ...     perspective="by operation",  # Lists processes with their yields
         ...     days=30
+        ... ))
+        >>> 
+        >>> # Daily yield trend for the last week
+        >>> result = tool.analyze(YieldFilter(
+        ...     part_number="WIDGET-001",
+        ...     test_operation="FCT",
+        ...     perspective="daily",
+        ...     days=7
         ... ))
         >>> 
         >>> # Report-based yield for repair line analysis
@@ -647,6 +704,17 @@ IMPORTANT - UNIT INCLUSION RULE:
 Units are included ONLY if their FIRST RUN matches your filter!
 If filtering by a repair/retest station that never sees first runs,
 you will get ZERO units. Use yield_type='report' (TRY) instead.
+
+YIELD OVER TIME (Temporal Analysis):
+- Date range defaults to last 30 days if not specified
+- WATS assumes you want the most recent data
+- Use perspective: "trend", "daily", "weekly", "monthly" for time-series
+- Period data can be safely aggregated (first-pass rule applies)
+
+YIELD TREND (Change Detection):
+- Yield trend = change compared to previous equally-sized period
+- Example: today vs yesterday, this week vs last week
+- Useful for improvement/degradation analysis
 
 Example questions this tool answers:
 - "What's FCT yield for WIDGET-001?" (test_operation: "FCT")

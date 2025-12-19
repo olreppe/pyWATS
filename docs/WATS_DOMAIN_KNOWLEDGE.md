@@ -97,6 +97,61 @@ Repair/retest stations never see Run 1 (they only handle failed units from main 
 
 ---
 
+## Yield Over Time (Temporal Analysis)
+
+### Date Range Defaults
+
+WATS always assumes you want the **most recent data**:
+
+- If `date_from` and `date_to` are not specified, WATS defaults to **last 30 days**
+- This is the server-side default behavior
+- Use `days` parameter for simple "last N days" queries
+
+### Time-Based Perspectives
+
+| Perspective | Date Grouping | Use Case |
+|-------------|---------------|----------|
+| `trend` | DAY | General yield trend |
+| `daily` | DAY | Day-by-day breakdown |
+| `weekly` | WEEK | Week-by-week analysis |
+| `monthly` | MONTH | Month-by-month trends |
+
+### Yield Trend Metrics
+
+Yield trend describes **change compared to the previous equally-sized period**:
+
+| Analysis Period | Compared To |
+|-----------------|-------------|
+| Today | Yesterday |
+| This week | Last week |
+| This month | Last month |
+
+**Use Case**: Detecting improvement or degradation patterns in production quality.
+
+### Safe Period Aggregation (Important!)
+
+**Key Rule**: When fetching yield over periods, the **first-pass-included rule** applies.
+
+This means:
+- Units are counted only in their first-run period
+- **Periods can be safely summed** without double-counting
+- Example: Sum Monday-Friday yields for weekly total
+
+### Date Grouping Options
+
+For advanced use, specify `date_grouping` directly:
+
+| Value | Groups By |
+|-------|-----------|
+| HOUR | Hour |
+| DAY | Day |
+| WEEK | Week |
+| MONTH | Month |
+| QUARTER | Quarter |
+| YEAR | Year |
+
+---
+
 ## Top Runners
 
 ### Definition

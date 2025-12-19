@@ -89,7 +89,7 @@ Use "by operation" to see all processes for a product.
     )
     days: int = Field(
         default=30,
-        description="Number of days to analyze (default: 30)"
+        description="Number of days to analyze (default: 30, WATS server default)"
     )
     yield_type: str = Field(
         default="unit",
@@ -138,11 +138,18 @@ YIELD TYPES:
 
 TOP RUNNERS: Products with highest volume - must be considered per process!
 
+YIELD OVER TIME:
+- Date range defaults to last 30 days if not specified
+- Use perspective: "trend", "daily", "weekly", "monthly" for time-series
+- Yield trend = change vs previous equally-sized period
+- Period data can be safely aggregated (first-pass rule applies)
+
 Use this tool to answer questions like:
 - "What's FCT yield for WIDGET-001?" (specify test_operation)
 - "What processes does WIDGET-001 go through?" (perspective: "by operation")
 - "Who are the top runners in FCT?" (perspective: "by product", test_operation: "FCT")
 - "How is yield trending over time?" (perspective: "trend")
+- "Show daily yield for the past week" (perspective: "daily", days: 7)
 - "Compare yield by station" (perspective: "by station")
 - "What's the repair station performance?" (yield_type: "report")
 

@@ -597,3 +597,235 @@ class TestTopRunnersQueries:
         assert params.get("test_operation") == "FCT"
 
 
+# =============================================================================
+# TEMPORAL YIELD KNOWLEDGE TESTS
+# =============================================================================
+
+
+class TestTemporalYieldKnowledge:
+    """
+    Test temporal/time-based yield domain knowledge.
+    
+    Key concepts:
+    - date_from/date_to default to last 30 days if not specified
+    - WATS assumes you want the most recent data
+    - period_count and date_grouping for time-series analysis
+    - Yield trend = change compared to previous equally-sized period
+    - Periods can be safely summed due to first-pass-included rule
+    """
+    
+    def test_default_days_is_30(self):
+        """Test that default days is 30 (matching WATS server default)."""
+        filter_obj = YieldFilter()
+        assert filter_obj.days == 30, "Default days should be 30 (WATS server default)"
+    
+    def test_yield_filter_accepts_period_count(self):
+        """Test that YieldFilter accepts period_count parameter."""
+        filter_obj = YieldFilter(period_count=7)
+        assert filter_obj.period_count == 7
+    
+    def test_yield_filter_accepts_date_grouping(self):
+        """Test that YieldFilter accepts date_grouping parameter."""
+        filter_obj = YieldFilter(date_grouping="WEEK")
+        assert filter_obj.date_grouping == "WEEK"
+    
+    def test_build_wats_filter_includes_period_count(self):
+        """Test that period_count is passed to WATS filter."""
+        filter_obj = YieldFilter(
+            perspective="daily",
+            period_count=10,
+            days=14
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        assert "period_count" in params
+        assert params["period_count"] == 10
+    
+    def test_explicit_date_grouping_overrides_perspective(self):
+        """Test that explicit date_grouping overrides perspective's default."""
+        filter_obj = YieldFilter(
+            perspective="daily",  # Would normally be DAY
+            date_grouping="HOUR"  # Override to HOUR
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        assert params["date_grouping"] == "HOUR", "Explicit date_grouping should override"
+    
+    def test_date_grouping_options_documented(self):
+        """Test that valid date_grouping options are documented in the field."""
+        # Check that the field description mentions valid options
+        field_info = YieldFilter.model_fields.get("date_grouping")
+        assert field_info is not None
+        
+        description = field_info.description
+        # Should mention valid options
+        assert "HOUR" in description
+        assert "DAY" in description
+        assert "WEEK" in description
+        assert "MONTH" in description
+
+
+class TestTimePerspectives:
+    """Test time-based perspectives and their date_grouping mappings."""
+    
+    def test_daily_perspective_sets_day_grouping(self):
+        """Test daily perspective sets DAY grouping."""
+        filter_obj = YieldFilter(perspective="daily")
+        params = build_wats_filter(filter_obj)
+        
+        assert params["date_grouping"] == "DAY"
+    
+    def test_weekly_perspective_sets_week_grouping(self):
+        """Test weekly perspective sets WEEK grouping."""
+        filter_obj = YieldFilter(perspective="weekly")
+        params = build_wats_filter(filter_obj)
+        
+        assert params["date_grouping"] == "WEEK"
+    
+    def test_monthly_perspective_sets_month_grouping(self):
+        """Test monthly perspective sets MONTH grouping."""
+        filter_obj = YieldFilter(perspective="monthly")
+        params = build_wats_filter(filter_obj)
+        
+        assert params["date_grouping"] == "MONTH"
+    
+    def test_trend_perspective_sets_day_grouping(self):
+        """Test trend perspective defaults to DAY grouping."""
+        filter_obj = YieldFilter(perspective="trend")
+        params = build_wats_filter(filter_obj)
+        
+        assert params["date_grouping"] == "DAY"
+
+
+class TestTemporalDocumentation:
+    """Test that temporal yield knowledge is in documentation."""
+    
+    def test_tool_docstring_mentions_temporal_analysis(self):
+        """Test that class docstring includes temporal analysis info."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        docstring = YieldAnalysisTool.__doc__
+        
+        # Should mention temporal analysis
+        assert "time" in docstring.lower() or "temporal" in docstring.lower()
+        
+    def test_tool_docstring_mentions_date_defaults(self):
+        """Test that docstring mentions default date behavior."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        docstring = YieldAnalysisTool.__doc__
+        
+        # Should mention 30 days default
+        assert "30" in docstring
+        
+    def test_tool_docstring_mentions_yield_trend(self):
+        """Test that docstring mentions yield trend metrics."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        docstring = YieldAnalysisTool.__doc__
+        
+        # Should mention trend/comparison
+        assert "trend" in docstring.lower()
+        
+    def test_tool_docstring_mentions_period_aggregation(self):
+        """Test that docstring mentions safe period aggregation."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        docstring = YieldAnalysisTool.__doc__
+        
+        # Should mention that periods can be aggregated/summed
+        assert "period" in docstring.lower()
+        assert "aggregat" in docstring.lower() or "sum" in docstring.lower()
+    
+    def test_tool_description_mentions_yield_over_time(self):
+        """Test that tool description includes yield over time info."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        description = YieldAnalysisTool.description
+        
+        # Should mention time-based analysis
+        assert "time" in description.lower() or "trend" in description.lower()
+
+
+class TestPeriodicYieldQueries:
+    """Test queries for periodic/time-series yield analysis."""
+    
+    def test_daily_yield_for_past_week(self):
+        """Test creating a daily yield query for the past week."""
+        filter_obj = YieldFilter(
+            part_number="WIDGET-001",
+            test_operation="FCT",
+            perspective="daily",
+            days=7
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        assert params["part_number"] == "WIDGET-001"
+        assert params["test_operation"] == "FCT"
+        assert params["date_grouping"] == "DAY"
+        assert "dimensions" in params and "period" in params["dimensions"]
+    
+    def test_weekly_trend_with_period_count(self):
+        """Test weekly trend with specific period count."""
+        filter_obj = YieldFilter(
+            perspective="weekly",
+            period_count=4,
+            days=28
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        assert params["date_grouping"] == "WEEK"
+        assert params["period_count"] == 4
+    
+    def test_monthly_yield_analysis(self):
+        """Test monthly yield analysis query."""
+        filter_obj = YieldFilter(
+            product_group="Electronics",
+            perspective="monthly",
+            days=90
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        assert params["product_group"] == "Electronics"
+        assert params["date_grouping"] == "MONTH"
+        assert "dimensions" in params
+
+
+class TestDateRangeHandling:
+    """Test date range parameter handling."""
+    
+    def test_days_parameter_sets_date_from(self):
+        """Test that days parameter correctly calculates date_from."""
+        from datetime import datetime, timedelta
+        
+        filter_obj = YieldFilter(days=7)
+        params = build_wats_filter(filter_obj)
+        
+        # date_to should be approximately now
+        assert params["date_to"] is not None
+        
+        # date_from should be approximately 7 days before date_to
+        delta = params["date_to"] - params["date_from"]
+        assert abs(delta.days - 7) <= 1  # Allow small timing variance
+    
+    def test_explicit_date_range_overrides_days(self):
+        """Test that explicit date_from overrides days parameter."""
+        from datetime import datetime, timedelta
+        
+        explicit_from = datetime.now() - timedelta(days=90)
+        filter_obj = YieldFilter(
+            days=7,  # This should be ignored
+            date_from=explicit_from
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        # Should use explicit date_from
+        assert params["date_from"] == explicit_from
+
+
