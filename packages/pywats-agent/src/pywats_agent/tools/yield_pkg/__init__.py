@@ -58,12 +58,17 @@ from .deviation_tool import (
     resolve_dimension,
     create_yield_deviation_tool,
 )
+from .discovery_tool import (
+    DimensionDiscoveryTool,
+    DiscoveryInput,
+)
 
 __all__ = [
     # Models
     "YieldFilter",
     "TrendInput",
     "DeviationInput",
+    "DiscoveryInput",
     # Enums
     "AnalysisPerspective",
     "TimeGranularity",
@@ -81,6 +86,7 @@ __all__ = [
     "YieldAnalysisTool",
     "YieldTrendTool",
     "YieldDeviationTool",
+    "DimensionDiscoveryTool",
     # Factory functions
     "create_yield_trend_tool",
     "create_yield_deviation_tool",

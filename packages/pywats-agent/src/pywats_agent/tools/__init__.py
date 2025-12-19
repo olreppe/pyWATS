@@ -115,8 +115,10 @@ from .yield_pkg import (
     # New specialized tools
     YieldTrendTool,
     YieldDeviationTool,
+    DimensionDiscoveryTool,
     TrendInput,
     DeviationInput,
+    DiscoveryInput,
     TimeGranularity,
     StandardDimension,
     resolve_dimension,
@@ -232,6 +234,20 @@ from .shared import (
     generate_trend_insight,
     generate_deviation_insight,
     summarize_for_agent,
+    # Statistical configuration
+    AnalysisType,
+    MetricType,
+    SampleSizeThresholds,
+    DeviationThresholds,
+    DimensionCardinalityLimits,
+    StatisticalConfig,
+    DimensionInfo,
+    DimensionCombinationStats,
+    DimensionDiscovery,
+    get_statistical_config,
+    set_statistical_config,
+    reset_statistical_config,
+    discover_dimensions,
 )
 
 # Asset analysis tools
@@ -295,8 +311,10 @@ __all__ = [
     # New specialized yield tools
     "YieldTrendTool",
     "YieldDeviationTool",
+    "DimensionDiscoveryTool",
     "TrendInput",
     "DeviationInput",
+    "DiscoveryInput",
     "TimeGranularity",
     "StandardDimension",
     "resolve_dimension",
@@ -400,6 +418,20 @@ __all__ = [
     "generate_trend_insight",
     "generate_deviation_insight",
     "summarize_for_agent",
+    # Statistical configuration
+    "AnalysisType",
+    "MetricType",
+    "SampleSizeThresholds",
+    "DeviationThresholds",
+    "DimensionCardinalityLimits",
+    "StatisticalConfig",
+    "DimensionInfo",
+    "DimensionCombinationStats",
+    "DimensionDiscovery",
+    "get_statistical_config",
+    "set_statistical_config",
+    "reset_statistical_config",
+    "discover_dimensions",
     
     # Asset analysis tools
     "AssetDimensionTool",

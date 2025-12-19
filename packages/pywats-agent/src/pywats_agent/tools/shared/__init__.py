@@ -52,6 +52,21 @@ from .computations import (
     generate_failure_mode_hypothesis,
     summarize_for_agent,
 )
+from .statistics import (
+    AnalysisType,
+    MetricType,
+    SampleSizeThresholds,
+    DeviationThresholds,
+    DimensionCardinalityLimits,
+    StatisticalConfig,
+    DimensionInfo,
+    DimensionCombinationStats,
+    DimensionDiscovery,
+    get_statistical_config,
+    set_statistical_config,
+    reset_statistical_config,
+    discover_dimensions,
+)
 
 __all__ = [
     # Adaptive time
@@ -92,4 +107,18 @@ __all__ = [
     "generate_deviation_insight",
     "generate_failure_mode_hypothesis",
     "summarize_for_agent",
+    # Statistics
+    "AnalysisType",
+    "MetricType",
+    "SampleSizeThresholds",
+    "DeviationThresholds",
+    "DimensionCardinalityLimits",
+    "StatisticalConfig",
+    "DimensionInfo",
+    "DimensionCombinationStats",
+    "DimensionDiscovery",
+    "get_statistical_config",
+    "set_statistical_config",
+    "reset_statistical_config",
+    "discover_dimensions",
 ]
