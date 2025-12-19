@@ -26,6 +26,7 @@ from .tools import (
     WATSTestStepAnalysisTool,
     WATSAggregatedMeasurementTool,
     WATSMeasurementDataTool,
+    WATSRootCauseAnalysisTool,
 )
 from .chains import create_wats_agent, WATSAnalyticsChain
 
@@ -33,6 +34,7 @@ __version__ = "0.1.0"
 __all__ = [
     # Tools
     "WATSYieldTool",
+    "WATSRootCauseAnalysisTool",
     "WATSTestStepAnalysisTool",
     "WATSAggregatedMeasurementTool",
     "WATSMeasurementDataTool",

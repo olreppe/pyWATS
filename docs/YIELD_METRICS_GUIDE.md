@@ -1015,6 +1015,298 @@ For dimensional analysis within process capability (by station, operator, etc.):
 
 ---
 
+## Top-Down Root Cause Analysis (Trend-Aware)
+
+The Root Cause Analysis tool implements a disciplined, trend-aware methodology for failure investigation. Instead of immediately diving into test step details (chasing symptoms), it starts at the yield level and only investigates deeper when justified.
+
+### Core Principle
+
+> **Test steps are SYMPTOMS, not root causes.**
+> Start at yield level. Only dive into step-level analysis when yield deviations justify it.
+
+### The 9-Step Methodology
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ Step 1: PRODUCT-LEVEL YIELD ASSESSMENT                                          │
+│   • Evaluate overall yield against expected thresholds                          │
+│   • If yield is healthy → STOP (no problem to investigate)                      │
+│   • Poor/degrading yield → triggers root cause analysis                         │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Step 2: DIMENSIONAL YIELD SPLITTING                                             │
+│   • Split yield using UUT header dimensions:                                    │
+│     station, fixture, operator, site, line, time period, batch                  │
+│   • Build yield matrix to find statistically significant deviations             │
+│   • Identify "suspects" - configurations with lower-than-expected yield         │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Step 3: TEMPORAL TREND ANALYSIS                                                 │
+│   • Include time trends (day-over-day, week-over-week)                          │
+│   • Classify issues by pattern:                                                 │
+│     - EMERGING: New problem, yield degrading                                    │
+│     - CHRONIC: Long-standing issue, stable low yield                            │
+│     - RECOVERING: Problem being fixed, yield improving                          │
+│     - INTERMITTENT: Sporadic, hard to reproduce                                 │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Step 4: TREND-AWARE SUSPECT PRIORITIZATION                                      │
+│   • Rank suspects using multiple factors:                                       │
+│     - Absolute yield impact (how much yield is lost)                            │
+│     - Deviation from peers (how much worse than others)                         │
+│     - Trend direction + slope (getting worse vs stable)                         │
+│     - Variability (consistent problem vs sporadic)                              │
+│   • Prioritize EMERGING/DEGRADING over stable known problems                    │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Step 5: STEP-LEVEL INVESTIGATION (Only if warranted)                            │
+│   • Drill into test steps ONLY for high-priority suspects                       │
+│   • Focus on steps that CAUSE unit failures (step_caused_uut_failed)            │
+│   • Look for measurement drift, Cpk degradation                                 │
+│   • Connect step failures to dimensional suspects                               │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Step 6: TOP FAILING STEPS IDENTIFICATION                                        │
+│   • Identify steps using failure contribution metrics                           │
+│   • Key metric: step_caused_uut_failed (actual cause of unit failure)           │
+│   • Calculate failure_contribution_pct for each step                            │
+│   • Only highest-impact steps (>5% contribution) proceed                        │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Step 7: TREND-QUALIFIED STEP ANALYSIS                                           │
+│   • Evaluate steps with temporal context (same as yield)                        │
+│   • Classify step failure patterns:                                             │
+│     - INCREASING: Failures getting worse (regression)                           │
+│     - DECREASING: Failures improving                                            │
+│     - STABLE: Consistent failure rate (chronic)                                 │
+│     - VARIABLE: High variability (noise)                                        │
+│   • Separate regressions from noise                                             │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Step 8: CONTEXTUAL ANALYSIS BASED ON SUSPECTS                                   │
+│   • Compare step failure rates:                                                 │
+│     - Suspect context (e.g., Station-3)                                         │
+│     - Non-suspect contexts (other stations)                                     │
+│     - Historical baseline                                                       │
+│   • Calculate rate_ratio: suspect_rate / non_suspect_rate                       │
+│   • Confirm causality: ratio > 1.5 suggests causal link                         │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Step 9: EXPLAINABLE PRIORITIZED FINDINGS                                        │
+│   • Generate findings with full evidence chain:                                 │
+│     yield → suspect → step → trend → causality                                  │
+│   • Include confidence scores (0-1)                                             │
+│   • Provide actionable recommendations                                          │
+│   • Estimate expected impact of fixes                                           │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Trend Pattern Classification (Yield-Level)
+
+| Pattern | Description | Priority | Typical Action |
+|---------|-------------|----------|----------------|
+| **EMERGING** | New problem, yield degrading | 🔴 Highest | Immediate investigation |
+| **CHRONIC** | Long-standing, stable low yield | 🟠 Medium | Plan for improvement |
+| **RECOVERING** | Problem being fixed | 🟢 Low | Monitor progress |
+| **INTERMITTENT** | Sporadic, inconsistent | 🟡 Medium | Look for correlations |
+| **STABLE** | No significant change | ⚪ Info | Continue monitoring |
+
+### Step Trend Classification (Step 7)
+
+| Pattern | Description | Is Regression? | Action |
+|---------|-------------|----------------|--------|
+| **INCREASING** | Failures getting worse | ✅ Yes | High priority investigation |
+| **DECREASING** | Failures improving | ❌ No | Monitor, may be self-correcting |
+| **STABLE** | Consistent failure rate | ❌ No | Chronic issue, improvement plan |
+| **VARIABLE** | High variability | ❌ Likely noise | Investigate intermittency |
+
+### When to Use Root Cause Analysis
+
+✅ **Use for:**
+- "Why is yield dropping?"
+- "What's causing failures in FCT?"
+- "Why is this station underperforming?"
+- "What should we investigate first?"
+- "Is this a regression or chronic issue?"
+- "Which steps are causing failures?"
+
+❌ **Don't use for:**
+- Simple yield queries (use Yield Tool)
+- Step-level statistics (use Step Analysis Tool)
+- Measurement statistics (use Measurement Tools)
+
+### Yield Assessment Thresholds
+
+| Status | Yield Gap | Action |
+|--------|-----------|--------|
+| **Healthy** | Within 2% of target | ✅ Stop - no investigation needed |
+| **Concerning** | 2-5% below target | 🟡 Investigation recommended |
+| **Poor** | 5-10% below target | 🟠 Investigation needed |
+| **Critical** | >10% below target | 🔴 Immediate investigation |
+
+### Suspect Prioritization Factors
+
+The tool calculates an **impact score** for each suspect based on:
+
+```
+Impact Score = 
+    Yield Impact (0-40 pts) +
+    Peer Deviation (0-30 pts) +
+    Trend Pattern (0-30 pts)
+
+Total: 0-100 points
+```
+
+| Score Range | Priority | Meaning |
+|-------------|----------|---------|
+| 60+ | CRITICAL | Immediate action required |
+| 40-59 | HIGH | Investigate soon |
+| 25-39 | MEDIUM | Worth investigating |
+| 10-24 | LOW | Monitor but not urgent |
+| <10 | INFO | For reference only |
+
+### Example: Full Root Cause Analysis
+
+```python
+from pywats_agent import RootCauseAnalysisTool, RootCauseInput
+
+# Initialize
+tool = RootCauseAnalysisTool(api)
+
+# Run analysis
+result = tool.analyze(RootCauseInput(
+    part_number="WIDGET-001",
+    test_operation="FCT",
+    days=30,
+    target_yield=95.0  # Expected yield
+))
+
+# Check if investigation needed
+if not result.yield_assessment.should_investigate:
+    print(f"✅ No investigation needed: {result.yield_assessment.reason}")
+else:
+    print(f"⚠️ Investigation triggered: {result.yield_assessment.reason}")
+    
+    # Review prioritized suspects
+    for suspect in result.suspects[:5]:
+        print(f"- {suspect.display_name} '{suspect.value}':")
+        print(f"    FPY: {suspect.fpy:.1f}% (Δ{suspect.yield_delta:+.1f}%)")
+        print(f"    Priority: {suspect.priority.value}")
+        if suspect.trend:
+            print(f"    Trend: {suspect.trend.pattern.value}")
+    
+    # Review explainable findings (Steps 6-9)
+    if result.explainable_findings:
+        print("\n🎯 Explainable Findings:")
+        for finding in result.explainable_findings[:3]:
+            print(f"\n  Finding #{finding.finding_id} [{finding.priority.value.upper()}]")
+            print(f"    Step: {finding.step_name}")
+            print(f"    Suspect: {finding.suspect_dimension} '{finding.suspect_value}'")
+            print(f"    Contribution: {finding.step_failure_contribution:.1f}% of failures")
+            print(f"    Confidence: {finding.confidence:.0%}")
+            print(f"    Recommendation: {finding.recommendation.split(chr(10))[0]}")
+```
+
+### Example: Working with Explainable Findings
+
+```python
+# Get the full result
+result = tool.analyze(RootCauseInput(
+    part_number="WIDGET-001",
+    test_operation="FCT",
+    days=30,
+))
+
+# Access detailed findings
+for finding in result.explainable_findings:
+    # Evidence chain
+    print(f"Yield Evidence: {finding.yield_evidence}")
+    print(f"Suspect Evidence: {finding.suspect_evidence}")
+    print(f"Step Evidence: {finding.step_evidence}")
+    print(f"Trend Evidence: {finding.trend_evidence}")
+    print(f"Contextual Evidence: {finding.contextual_evidence}")
+    
+    # Full explanation
+    print(f"\nExplanation:\n{finding.explanation}")
+    
+    # Action items
+    print(f"\nRecommendation:\n{finding.recommendation}")
+    print(f"Expected Impact: {finding.expected_impact}")
+
+# Access intermediate results
+for step in result.top_failing_steps:
+    print(f"Step: {step.step_name}, Contribution: {step.failure_contribution_pct:.1f}%")
+
+for trend_step in result.trend_qualified_steps:
+    print(f"Step: {trend_step.step.step_name}")
+    print(f"  Pattern: {trend_step.trend_pattern.value}")
+    print(f"  Is Regression: {trend_step.is_regression}")
+
+for comparison in result.contextual_comparisons:
+    print(f"Step: {comparison.step_name}")
+    print(f"  Rate Ratio: {comparison.rate_ratio:.1f}x")
+    print(f"  Causally Linked: {comparison.is_causally_linked}")
+```
+
+### Controlling Extended Analysis
+
+```python
+# Disable extended analysis (Steps 6-9)
+result = tool.analyze(RootCauseInput(
+    part_number="WIDGET-001",
+    include_step_analysis=True,
+    include_extended_step_analysis=False,  # Skip Steps 6-9
+))
+
+# Adjust minimum failure contribution threshold
+result = tool.analyze(RootCauseInput(
+    part_number="WIDGET-001",
+    include_extended_step_analysis=True,
+    min_failure_contribution=10.0,  # Only steps with >10% contribution
+))
+```
+
+### Important: When Analysis Stops Early
+
+The tool may STOP at Step 1 if yield is healthy! This is intentional:
+
+```
+Yield is 96% (target: 95%)
+→ Status: HEALTHY
+→ Investigation STOPS
+→ Reason: "Yield is healthy, no investigation needed"
+```
+
+To force a full analysis even with healthy yield:
+```python
+result = tool.analyze(RootCauseInput(
+    part_number="WIDGET-001",
+    force_investigate=True  # Override healthy yield check
+))
+```
+
+### Integration with LangChain Agents
+
+```python
+from pywats_langchain import WATSRootCauseAnalysisTool, WATSToolkit, create_wats_agent
+
+# Option 1: Use individual tool
+tool = WATSRootCauseAnalysisTool(api=api)
+
+# Option 2: Use via toolkit (includes all tools)
+toolkit = WATSToolkit(api)
+tools = toolkit.get_tools()
+
+# Option 3: Create full agent
+agent = create_wats_agent(api)
+result = agent.invoke({
+    "input": "Why is FCT yield dropping for WIDGET-001?"
+})
+```
+
+### Tool Workflow Summary
+
+| Question | Start With | Then Use |
+|----------|------------|----------|
+| "Why is yield low?" | Root Cause Analysis | (includes all steps) |
+| "What's the current yield?" | Yield Tool | - |
+| "Which step is failing?" | Step Analysis | Measurement Tools |
+| "Is process stable?" | Process Capability | - |
+
+---
+
 ## Need Help?
 
 If you're unsure which metric to use:

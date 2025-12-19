@@ -5,12 +5,59 @@ Smart tools that translate semantic concepts to WATS API calls.
 
 ANALYSIS WORKFLOW:
 1. YieldAnalysisTool - Top-level yield by product/process
-2. DimensionalAnalysisTool - Find which factors affect yield (failure modes)
-3. StepAnalysisTool - Comprehensive step analysis (Cpk, root cause)
-4. ProcessCapabilityTool - Advanced capability analysis (stability, dual Cpk)
-5. MeasurementDataTool - Analyze measurement distributions and raw data
+2. RootCauseAnalysisTool - Top-down, trend-aware failure investigation (9 steps)
+3. DimensionalAnalysisTool - Find which factors affect yield (failure modes)
+4. StepAnalysisTool - Comprehensive step analysis (Cpk, root cause)
+5. ProcessCapabilityTool - Advanced capability analysis (stability, dual Cpk)
+6. MeasurementDataTool - Analyze measurement distributions and raw data
 
-ROOT CAUSE & PROCESS CAPABILITY ANALYSIS PATH:
+TOP-DOWN ROOT CAUSE ANALYSIS (9-Step Methodology):
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ CORE PRINCIPLE: Start at yield level. Test steps are SYMPTOMS.                  │
+│ Only dive into step-level analysis when yield deviations justify it.            │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Step 1: PRODUCT-LEVEL YIELD ASSESSMENT
+    - Evaluate overall yield against expected thresholds
+    - If yield is healthy → STOP (no problem to investigate)
+    - Poor/degrading yield → triggers root cause analysis
+
+Step 2: DIMENSIONAL YIELD SPLITTING
+    - Split yield using UUT header dimensions (station, fixture, operator, etc.)
+    - Build yield matrix to find statistically significant deviations
+    - Identify "suspects" - configurations with lower-than-expected yield
+
+Step 3: TEMPORAL TREND ANALYSIS
+    - Include time trends (day-over-day, week-over-week)
+    - Classify issues: EMERGING | CHRONIC | RECOVERING | INTERMITTENT
+    - Classification impacts prioritization (emerging > chronic)
+
+Step 4: TREND-AWARE SUSPECT PRIORITIZATION
+    - Rank by: absolute impact, peer deviation, trend direction, variability
+    - Prioritize EMERGING/DEGRADING over stable known problems
+
+Step 5: STEP-LEVEL INVESTIGATION (Only if warranted)
+    - Drill into test steps ONLY for high-priority suspects
+    - Focus on steps that CAUSE unit failures
+
+Step 6: IDENTIFICATION OF TOP FAILING STEPS
+    - Identify steps using failure contribution metrics (step_caused_uut_failed)
+    - Only highest-impact steps proceed for detailed analysis
+
+Step 7: TREND-QUALIFIED STEP ANALYSIS
+    - Classify step failure patterns: INCREASING | DECREASING | STABLE | VARIABLE
+    - Separate regressions from noise using trend analysis
+
+Step 8: CONTEXTUAL ANALYSIS BASED ON SUSPECTS
+    - Compare step failure rates: suspect context vs non-suspect context
+    - Compare vs historical baseline to confirm causality
+
+Step 9: EXPLAINABLE PRIORITIZED FINDINGS
+    - Each finding traces: yield → suspect → step → trend
+    - Includes evidence chain, confidence score, recommendations
+    - Supports efficient, high-confidence corrective actions
+
+LEGACY ANALYSIS PATH:
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
 │ Yield       │ --> │ Dimensional  │ --> │ Step        │ --> │ Process      │ --> │ Measurement │
 │ Analysis    │     │ Analysis     │     │ Analysis    │     │ Capability   │     │ Deep Dive   │
@@ -110,6 +157,24 @@ from .dimensional_analysis import (
     STANDARD_DIMENSIONS,
     get_dimensional_analysis_tool_definition,
 )
+from .root_cause_analysis import (
+    RootCauseAnalysisTool,
+    RootCauseInput,
+    RootCauseResult,
+    YieldAssessmentResult,
+    SuspectFinding,
+    TrendAnalysis,
+    TrendPattern,
+    YieldAssessment,
+    InvestigationPriority,
+    # Step 6-9 classes
+    StepTrendPattern,
+    FailingStepFinding,
+    TrendQualifiedStep,
+    ContextualComparison,
+    ExplainableFinding,
+    get_root_cause_analysis_tool_definition,
+)
 from .adaptive_time import (
     AdaptiveTimeFilter,
     AdaptiveTimeConfig,
@@ -177,6 +242,23 @@ __all__ = [
     "MeasurementFilter",
     "get_aggregated_measurement_tool_definition",
     "get_measurement_data_tool_definition",
+    # Root Cause Analysis (top-down, trend-aware)
+    "RootCauseAnalysisTool",
+    "RootCauseInput",
+    "RootCauseResult",
+    "YieldAssessmentResult",
+    "SuspectFinding",
+    "TrendAnalysis",
+    "TrendPattern",
+    "YieldAssessment",
+    "InvestigationPriority",
+    # Step 6-9 classes
+    "StepTrendPattern",
+    "FailingStepFinding",
+    "TrendQualifiedStep",
+    "ContextualComparison",
+    "ExplainableFinding",
+    "get_root_cause_analysis_tool_definition",
     # Adaptive time filter
     "AdaptiveTimeFilter",
     "AdaptiveTimeConfig",

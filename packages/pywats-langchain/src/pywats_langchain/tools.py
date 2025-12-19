@@ -24,6 +24,8 @@ from pywats_agent import (
     AggregatedMeasurementTool,
     MeasurementDataTool,
     MeasurementFilter,
+    RootCauseAnalysisTool,
+    RootCauseInput,
 )
 
 if TYPE_CHECKING:
@@ -502,6 +504,174 @@ Provides individual data points with serial numbers, values, and timestamps.
         async def _arun(self, *args, **kwargs) -> str:
             """Async version."""
             return self._run(*args, **kwargs)
+    
+    class RootCauseAnalysisInput(BaseModel):
+        """Input schema for root cause analysis tool."""
+        
+        part_number: Optional[str] = Field(
+            default=None,
+            description="Product to analyze. Recommended for focused analysis."
+        )
+        test_operation: Optional[str] = Field(
+            default=None,
+            description="""
+Test operation/process to analyze. Examples: 'FCT', 'EOL', 'ICT', 'PCBA'.
+Use fuzzy names - 'PCBA', 'pcba test', 'board test' all work.
+            """.strip()
+        )
+        days: int = Field(
+            default=30,
+            description="Number of days to analyze (default: 30)."
+        )
+        target_yield: float = Field(
+            default=95.0,
+            description="Expected/target yield percentage. Below this triggers investigation."
+        )
+        include_step_analysis: bool = Field(
+            default=True,
+            description="Include step-level drill-down for high-priority suspects."
+        )
+        max_suspects: int = Field(
+            default=10,
+            description="Maximum number of suspects to return in prioritized list."
+        )
+        force_investigate: bool = Field(
+            default=False,
+            description="Force investigation even if yield is within acceptable range."
+        )
+    
+    class WATSRootCauseAnalysisTool(BaseTool):
+        """
+        LangChain tool for top-down, trend-aware root cause analysis.
+        
+        This tool implements a 5-step methodology for failure investigation:
+        1. Product-level yield assessment
+        2. Dimensional yield splitting
+        3. Temporal trend analysis
+        4. Trend-aware suspect prioritization
+        5. Step-level investigation (when warranted)
+        
+        CORE PRINCIPLE: Start at yield level. Test steps are SYMPTOMS.
+        Only dive into step-level analysis when yield deviations justify it.
+        
+        Example:
+            >>> from pywats import pyWATS
+            >>> from pywats_langchain import WATSRootCauseAnalysisTool
+            >>> 
+            >>> api = pyWATS(base_url="...", token="...")
+            >>> tool = WATSRootCauseAnalysisTool(api=api)
+            >>> 
+            >>> # Use with an agent
+            >>> result = tool.invoke({
+            ...     "part_number": "WIDGET-001",
+            ...     "test_operation": "FCT"
+            ... })
+        """
+        
+        name: str = "analyze_root_cause"
+        description: str = """
+Top-down root cause analysis for failure investigation.
+
+WHEN TO USE THIS TOOL:
+- "Why is yield dropping for product X?"
+- "What's causing failures in FCT?"
+- "Why is this station/line/batch underperforming?"
+- "Investigate quality issues for product X"
+- "Why are units failing?"
+- "What should we investigate first?"
+
+5-STEP METHODOLOGY:
+1. YIELD ASSESSMENT: Check if product yield actually needs investigation
+   - If yield is healthy → STOPS automatically (no problem to chase)
+   - Poor/degrading yield → triggers full investigation
+
+2. DIMENSIONAL SPLITTING: Find which factors correlate with failures
+   - Analyzes: station, operator, fixture, batch, location, time
+   - Identifies "suspects" with significantly lower yield
+
+3. TREND ANALYSIS: Classify issues by pattern
+   - EMERGING: New problem, getting worse (highest priority)
+   - CHRONIC: Long-standing issue, stable but low
+   - RECOVERING: Problem being fixed
+   - INTERMITTENT: Sporadic, hard to reproduce
+
+4. SUSPECT PRIORITIZATION: Ranks by multiple factors
+   - Absolute yield impact (how much yield is lost)
+   - Deviation from peers (how much worse than others)
+   - Trend direction (getting worse vs improving)
+   - Statistical significance
+
+5. STEP DRILL-DOWN: Only for high-priority suspects
+   - Finds which test steps are causing failures
+   - Links step failures to dimensional suspects
+
+KEY PRINCIPLE: Test steps are SYMPTOMS, not root causes.
+We start at yield level and only dive into steps when justified.
+
+TREND PATTERNS:
+- EMERGING: Yield degrading - prioritize immediately
+- CHRONIC: Stable low yield - known issue
+- RECOVERING: Yield improving - problem being fixed
+- INTERMITTENT: Variable yield - hard to reproduce
+
+IMPORTANT: This tool may STOP early if yield is healthy!
+Use force_investigate=True to always run full analysis.
+
+Example questions:
+- "Why is FCT yield low for WIDGET-001?"
+- "What's causing the recent yield drop?"
+- "Is Station-3's poor yield a new problem or chronic?"
+- "What should we investigate first?"
+"""
+        args_schema: Type[BaseModel] = RootCauseAnalysisInput
+        
+        # Custom attributes
+        api: Any = None
+        _tool: RootCauseAnalysisTool = None
+        
+        def __init__(self, api: "pyWATS", **kwargs):
+            """
+            Initialize the root cause analysis tool.
+            
+            Args:
+                api: Configured pyWATS instance
+            """
+            super().__init__(api=api, **kwargs)
+            self._tool = RootCauseAnalysisTool(api)
+        
+        def _run(
+            self,
+            part_number: Optional[str] = None,
+            test_operation: Optional[str] = None,
+            days: int = 30,
+            target_yield: float = 95.0,
+            include_step_analysis: bool = True,
+            max_suspects: int = 10,
+            force_investigate: bool = False,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+        ) -> str:
+            """Execute the root cause analysis."""
+            
+            filter_input = RootCauseInput(
+                part_number=part_number,
+                test_operation=test_operation,
+                days=days,
+                target_yield=target_yield,
+                include_step_analysis=include_step_analysis,
+                max_suspects=max_suspects,
+                force_investigate=force_investigate,
+            )
+            
+            result = self._tool.analyze(filter_input)
+            
+            if result.success:
+                return result.summary
+            else:
+                return f"Error: {result.error}"
+        
+        async def _arun(self, *args, **kwargs) -> str:
+            """Async version - just calls sync for now."""
+            return self._run(*args, **kwargs)
 
 else:
     # Stub classes when LangChain is not installed
@@ -534,6 +704,14 @@ else:
         def __init__(self, *args, **kwargs):
             raise ImportError(
                 "LangChain is required for WATSMeasurementDataTool. "
+                "Install with: pip install pywats-langchain[langchain]"
+            )
+    
+    class WATSRootCauseAnalysisTool:
+        """Stub - LangChain not installed."""
+        def __init__(self, *args, **kwargs):
+            raise ImportError(
+                "LangChain is required for WATSRootCauseAnalysisTool. "
                 "Install with: pip install pywats-langchain[langchain]"
             )
 
@@ -570,6 +748,7 @@ class WATSToolkit:
         if LANGCHAIN_AVAILABLE:
             self._tools = [
                 WATSYieldTool(api=api),
+                WATSRootCauseAnalysisTool(api=api),
                 WATSTestStepAnalysisTool(api=api),
                 WATSAggregatedMeasurementTool(api=api),
                 WATSMeasurementDataTool(api=api),
@@ -589,6 +768,14 @@ class WATSToolkit:
         """Get the yield analysis tool."""
         for tool in self._tools:
             if isinstance(tool, WATSYieldTool):
+                return tool
+        return None
+    
+    @property
+    def root_cause_analysis_tool(self) -> "WATSRootCauseAnalysisTool":
+        """Get the root cause analysis tool."""
+        for tool in self._tools:
+            if isinstance(tool, WATSRootCauseAnalysisTool):
                 return tool
         return None
     
