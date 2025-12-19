@@ -44,6 +44,7 @@ How to group/analyze the data. Natural language options:
 - Other: "by operator", "by batch", "by level"
 - Combined: "station trend", "product trend"
 Leave empty for overall aggregated yield.
+Use "by operation" to see all processes for a product.
         """.strip()
     )
     part_number: Optional[str] = Field(
@@ -68,7 +69,7 @@ Leave empty for overall aggregated yield.
     )
     test_operation: Optional[str] = Field(
         default=None,
-        description="Filter by test operation (FCT, EOL)"
+        description="Filter by test operation/process (FCT, EOL, ICT). IMPORTANT: Yield should be analyzed per process!"
     )
     process_code: Optional[str] = Field(
         default=None,
@@ -89,6 +90,10 @@ Leave empty for overall aggregated yield.
     days: int = Field(
         default=30,
         description="Number of days to analyze (default: 30)"
+    )
+    yield_type: str = Field(
+        default="unit",
+        description="Type of yield: 'unit' (FPY/LPY) or 'report' (TRY). Use 'report' for retest stations."
     )
 
 
@@ -119,12 +124,27 @@ if LANGCHAIN_AVAILABLE:
         description: str = """
 Analyze manufacturing yield/quality data with flexible grouping.
 
+CRITICAL: Yield should be analyzed PER PROCESS (test_operation)!
+- Products go through multiple processes (ICT, FCT, EOL, etc.)
+- Each process has its own yield
+- Use perspective="by operation" to see all processes for a product
+- Use RTY (Rolled Throughput Yield) for overall quality across all processes
+
+YIELD TYPES:
+- FPY (First Pass Yield): Units passed on first try
+- LPY (Last Pass Yield): Units eventually passed
+- TRY (Test Report Yield): For station/fixture/operator performance
+- RTY = FPY(Process1) x FPY(Process2) x ... (overall quality)
+
+TOP RUNNERS: Products with highest volume - must be considered per process!
+
 Use this tool to answer questions like:
-- "What's the yield for WIDGET-001?" (overall yield)
+- "What's FCT yield for WIDGET-001?" (specify test_operation)
+- "What processes does WIDGET-001 go through?" (perspective: "by operation")
+- "Who are the top runners in FCT?" (perspective: "by product", test_operation: "FCT")
 - "How is yield trending over time?" (perspective: "trend")
 - "Compare yield by station" (perspective: "by station")
-- "Which product has the worst yield?" (perspective: "by product")
-- "Show daily yield for the past week" (perspective: "daily", days: 7)
+- "What's the repair station performance?" (yield_type: "report")
 
 The 'perspective' parameter determines how data is grouped.
 Use natural language: "by station", "trend", "daily", "by product", etc.
@@ -167,6 +187,7 @@ Available perspectives:
             operator: Optional[str] = None,
             location: Optional[str] = None,
             days: int = 30,
+            yield_type: str = "unit",
             run_manager: Optional[CallbackManagerForToolRun] = None,
         ) -> str:
             """Execute the yield analysis."""
@@ -184,6 +205,7 @@ Available perspectives:
                 operator=operator,
                 location=location,
                 days=days,
+                yield_type=yield_type,
             )
             
             result = self._tool.analyze(filter_input)

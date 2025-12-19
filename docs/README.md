@@ -8,6 +8,25 @@ New to pyWATS? Start here:
 2. **[Architecture Overview](ARCHITECTURE.md)** - Understand the system design
 3. **[Report Module Guide](usage/REPORT_MODULE.md)** - Most commonly used module ⭐
 
+## Domain Knowledge (For AI Agents)
+
+Essential understanding of WATS concepts for AI agents:
+
+- **[WATS Domain Knowledge](WATS_DOMAIN_KNOWLEDGE.md)** ⭐ Critical for agents
+  - Process/test_operation context
+  - RTY (Rolled Throughput Yield)
+  - Top runners
+  - Unit verification rules
+  - How to handle ambiguous yield questions
+
+- **[Yield Metrics Guide](YIELD_METRICS_GUIDE.md)** ⭐ Helpdesk article
+  - FPY, SPY, TPY, LPY (unit-based yield)
+  - TRY (report-based yield)
+  - RTY (rolled throughput yield)
+  - Unit Inclusion Rule
+  - Repair Line Problem
+  - When to use each metric
+
 ## API Architecture
 
 Understanding how pyWATS is built:

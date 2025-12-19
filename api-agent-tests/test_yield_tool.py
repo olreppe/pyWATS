@@ -445,3 +445,155 @@ class TestToolDefinitionExports:
         assert "function" in schema
         assert schema["function"]["name"] == "analyze_yield"
 
+
+# =============================================================================
+# RTY AND PROCESS DOMAIN KNOWLEDGE TESTS
+# =============================================================================
+
+
+class TestRTYAndProcessKnowledge:
+    """
+    Test RTY (Rolled Throughput Yield) and process-aware domain knowledge.
+    
+    Key concepts:
+    - Yield should always be considered per process (test_operation)
+    - RTY = FPY1 x FPY2 x ... x FPYn (product of all process FPYs)
+    - Top runners = highest volume products, per process
+    """
+    
+    def test_tool_description_mentions_rty(self):
+        """Test that tool description includes RTY information."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        description = YieldAnalysisTool.description
+        
+        # Should mention RTY
+        assert "RTY" in description or "Rolled" in description
+        
+    def test_tool_description_mentions_process_context(self):
+        """Test that tool description emphasizes process context."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        description = YieldAnalysisTool.description
+        
+        # Should emphasize yield is per process
+        assert "process" in description.lower()
+        assert "test_operation" in description.lower() or "operation" in description.lower()
+    
+    def test_tool_docstring_explains_rty(self):
+        """Test that class docstring explains RTY calculation."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        docstring = YieldAnalysisTool.__doc__
+        
+        # Should explain RTY
+        assert "RTY" in docstring or "Rolled Throughput" in docstring
+        
+    def test_tool_docstring_mentions_top_runners(self):
+        """Test that docstring mentions top runners concept."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        docstring = YieldAnalysisTool.__doc__
+        
+        # Should mention top runners
+        assert "top runner" in docstring.lower() or "volume" in docstring.lower()
+    
+    def test_tool_docstring_mentions_verification_rules(self):
+        """Test that docstring mentions unit verification rules."""
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+        
+        docstring = YieldAnalysisTool.__doc__
+        
+        # Should mention verification rules
+        assert "verification" in docstring.lower()
+
+
+class TestByOperationPerspective:
+    """Test the by operation perspective for discovering processes."""
+    
+    def test_by_operation_perspective_exists(self):
+        """Test that BY_OPERATION perspective is available."""
+        from pywats_agent.tools.yield_tool import AnalysisPerspective
+        
+        assert hasattr(AnalysisPerspective, 'BY_OPERATION')
+    
+    def test_by_operation_alias_resolves(self):
+        """Test that common aliases resolve to BY_OPERATION."""
+        from pywats_agent.tools.yield_tool import resolve_perspective, AnalysisPerspective
+        
+        # Test various aliases
+        assert resolve_perspective("by operation") == AnalysisPerspective.BY_OPERATION
+        assert resolve_perspective("by process") == AnalysisPerspective.BY_PROCESS
+    
+    def test_by_operation_maps_to_correct_dimension(self):
+        """Test BY_OPERATION maps to testOperation dimension."""
+        from pywats_agent.tools.yield_tool import (
+            AnalysisPerspective, 
+            PERSPECTIVE_TO_DIMENSIONS
+        )
+        
+        dimension = PERSPECTIVE_TO_DIMENSIONS.get(AnalysisPerspective.BY_OPERATION)
+        assert dimension is not None
+        assert "testOperation" in dimension or "operation" in dimension.lower()
+
+
+class TestProcessFilterParameter:
+    """Test that test_operation parameter works for process filtering."""
+    
+    def test_yield_filter_accepts_test_operation(self):
+        """Test that YieldFilter accepts test_operation parameter."""
+        filter_obj = YieldFilter(
+            part_number="WIDGET-001",
+            test_operation="FCT"
+        )
+        
+        assert filter_obj.test_operation == "FCT"
+    
+    def test_build_wats_filter_includes_test_operation(self):
+        """Test that test_operation is passed to WATS filter."""
+        filter_obj = YieldFilter(
+            part_number="WIDGET-001",
+            test_operation="FCT",
+            days=30
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        assert "test_operation" in params
+        assert params["test_operation"] == "FCT"
+    
+    def test_yield_filter_with_multiple_params(self):
+        """Test YieldFilter with product and process together."""
+        filter_obj = YieldFilter(
+            part_number="WIDGET-001",
+            test_operation="FCT",
+            perspective="trend",
+            days=7
+        )
+        
+        assert filter_obj.part_number == "WIDGET-001"
+        assert filter_obj.test_operation == "FCT"
+        assert filter_obj.perspective == "trend"
+
+
+class TestTopRunnersQueries:
+    """Test queries for finding top runners (highest volume products)."""
+    
+    def test_by_product_with_process_filter(self):
+        """Test by-product perspective with test_operation filter for top runners."""
+        filter_obj = YieldFilter(
+            test_operation="FCT",
+            perspective="by product",
+            days=30
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        # Should have dimensions for product grouping
+        assert "dimensions" in params
+        assert "partNumber" in params["dimensions"]
+        
+        # Should also filter by test operation
+        assert params.get("test_operation") == "FCT"
+
+

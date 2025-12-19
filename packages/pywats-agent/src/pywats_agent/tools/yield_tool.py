@@ -548,6 +548,25 @@ class YieldAnalysisTool:
     - TRY = Passed reports / All reports
     - Measures test execution success rate, not unit success rate
     
+    ROLLED THROUGHPUT YIELD (RTY):
+    - RTY = Product of FPY across ALL processes/test_operations
+    - Example: If PCBA FPY=95% and EOL FPY=98%, then RTY = 0.95 x 0.98 = 93.1%
+    - Use RTY for overall unit quality across the entire production flow
+    - Yield for a product WITHOUT specifying process is ambiguous - clarify!
+    
+    CRITICAL - PROCESS/TEST_OPERATION CONTEXT:
+    Yield should ALWAYS be considered per process (test_operation):
+    - A product may go through multiple processes (ICT, FCT, EOL, etc.)
+    - Each process has its own yield (FPY, LPY, etc.)
+    - "Yield for WIDGET-001" is incomplete - need to specify which process
+    - Use RTY when asking about overall product quality across all processes
+    
+    TOP RUNNERS:
+    - Products with highest test volume (unit count or report count)
+    - Volume must be considered PER PROCESS - a top runner in FCT may not be
+      a top runner in EOL
+    - Use perspective="by product" with process filter to find top runners
+    
     CRITICAL - UNIT INCLUSION RULE:
     A unit is ONLY included if its FIRST RUN matches the filter criteria.
     If included, ALL runs for that unit count (even runs outside the filter).
@@ -559,14 +578,27 @@ class YieldAnalysisTool:
     Example: A repair line station only sees failed units from main line.
     Solution: Use yield_type='report' (TRY) for retest-only station analysis.
     
+    UNIT VERIFICATION RULES:
+    - API functions exist to define which processes must pass for each product
+    - These rules can be auto-suggested based on yield data analysis
+    - Rarely kept up-to-date by customers, but useful for validation
+    
     Example:
         >>> tool = YieldAnalysisTool(api)
         >>> 
-        >>> # Standard unit-based yield
+        >>> # Yield per process (recommended approach)
         >>> result = tool.analyze(YieldFilter(
         ...     part_number="WIDGET-001",
-        ...     perspective="by station",
+        ...     test_operation="FCT",  # Always specify process!
+        ...     perspective="trend",
         ...     days=7
+        ... ))
+        >>> 
+        >>> # Check what processes exist for a product
+        >>> result = tool.analyze(YieldFilter(
+        ...     part_number="WIDGET-001",
+        ...     perspective="by operation",  # Lists processes with their yields
+        ...     days=30
         ... ))
         >>> 
         >>> # Report-based yield for repair line analysis
@@ -587,11 +619,29 @@ UNIT-BASED YIELD (FPY, SPY, TPY, LPY) - Default:
 - FPY = Units passed on first try / Total units (the key quality metric)
 - SPY/TPY = Units passed by 2nd/3rd try / Total units
 - LPY = Units eventually passed / Total units
-- Use for: Product quality, overall line performance, process capability
+- Use for: Product quality per process, overall line performance
 
 REPORT-BASED YIELD (TRY - Test Report Yield):
 - TRY = Passed reports / All reports
 - Use for: Station/fixture/operator performance, especially retest stations
+
+ROLLED THROUGHPUT YIELD (RTY):
+- RTY = FPY(Process1) x FPY(Process2) x ... x FPY(ProcessN)
+- Use for: Overall unit quality across ALL processes
+- Example: FCT FPY=95%, EOL FPY=98% -> RTY = 93.1%
+
+CRITICAL - YIELD IS PER PROCESS:
+Yield should always be considered per process/test_operation!
+- A product goes through multiple processes (ICT, FCT, EOL, etc.)
+- Each process has its own yield
+- "What's yield for WIDGET-001?" -> Clarify: which process, or RTY?
+- Use perspective="by operation" to see all processes for a product
+
+TOP RUNNERS:
+"Top runners" = products with highest volume (units or reports)
+- Volume must be considered PER PROCESS
+- A top runner in FCT may differ from top runner in EOL
+- Use perspective="by product" with test_operation filter
 
 IMPORTANT - UNIT INCLUSION RULE:
 Units are included ONLY if their FIRST RUN matches your filter!
@@ -599,15 +649,13 @@ If filtering by a repair/retest station that never sees first runs,
 you will get ZERO units. Use yield_type='report' (TRY) instead.
 
 Example questions this tool answers:
-- "What's the yield for WIDGET-001?" (overall yield)
-- "How is yield trending over time?" (perspective: "trend")
+- "What's FCT yield for WIDGET-001?" (test_operation: "FCT")
+- "What processes does WIDGET-001 go through?" (perspective: "by operation")
+- "What's the RTY for WIDGET-001?" (calculate from by-operation results)
+- "Who are the top runners in FCT?" (perspective: "by product", test_operation: "FCT")
 - "Compare yield by station" (perspective: "by station")
-- "Which product has the worst yield?" (perspective: "by product")
 - "Show daily yield for the past week" (perspective: "daily", days: 7)
 - "What's the repair station performance?" (yield_type: "report")
-
-The 'perspective' parameter determines how data is grouped.
-Use natural language like "by station", "trend", "daily", "by product", etc.
 
 Available perspectives:
 - Time: trend, daily, weekly, monthly
