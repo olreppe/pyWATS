@@ -1,5 +1,6 @@
 """Tests for the yield analysis tool."""
 import pytest
+from datetime import datetime, timedelta
 from pywats_agent.tools.yield_tool import (
     AnalysisPerspective,
     PERSPECTIVE_ALIASES,
@@ -630,17 +631,38 @@ class TestTemporalYieldKnowledge:
         assert filter_obj.date_grouping == "WEEK"
     
     def test_build_wats_filter_includes_period_count(self):
-        """Test that period_count is passed to WATS filter."""
+        """Test that period_count is passed to WATS filter.
+        
+        When period_count is used WITH explicit date_from, both are included.
+        """
         filter_obj = YieldFilter(
             perspective="daily",
             period_count=10,
-            days=14
+            date_from=datetime.now() - timedelta(days=14)  # Explicit date
         )
         
         params = build_wats_filter(filter_obj)
         
         assert "period_count" in params
         assert params["period_count"] == 10
+        assert "date_from" in params  # Both present when date_from is explicit
+    
+    def test_period_count_without_explicit_date_omits_date_range(self):
+        """Test that period_count without explicit date_from omits date range.
+        
+        This follows WATS API default behavior.
+        """
+        filter_obj = YieldFilter(
+            perspective="daily",
+            period_count=10
+            # No explicit date_from - let API calculate
+        )
+        
+        params = build_wats_filter(filter_obj)
+        
+        assert "period_count" in params
+        assert params["period_count"] == 10
+        assert "date_from" not in params  # Omitted - let API calculate
     
     def test_explicit_date_grouping_overrides_perspective(self):
         """Test that explicit date_grouping overrides perspective's default."""

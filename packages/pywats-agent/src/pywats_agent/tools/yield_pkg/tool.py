@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from pydantic import BaseModel, Field
 
-from ..result import AgentResult
+from ...result import AgentResult
 
 if TYPE_CHECKING:
     from pywats import pyWATS
@@ -293,9 +293,9 @@ class YieldFilter(BaseModel):
         - "by station", "by tester", "by equipment" - Compare test stations
         - "by product", "by part number" - Compare products
         - "by revision", "by version" - Compare product revisions
-        - "by operation", "by test type" - Compare test operations
-        - "by line", "by location" - Compare production lines
-        - "by batch", "by lot" - Compare production batches
+        - "by operation", "by test type", "by process" - Compare test operations
+        - "by line", "by level" - Compare production lines
+        - "by batch", "by lot", "by work order" - Compare production batches
         - "station trend" - Station performance over time
         - "product trend" - Product performance over time
         
@@ -804,14 +804,14 @@ Available perspectives:
     def _get_process_resolver(self):
         """Get process resolver (lazy-loaded)."""
         if self._process_resolver is None:
-            from .process_resolver import ProcessResolver
+            from ..shared.process_resolver import ProcessResolver
             self._process_resolver = ProcessResolver(self._api)
         return self._process_resolver
     
     def _get_adaptive_time(self):
         """Get adaptive time filter (lazy-loaded)."""
         if self._adaptive_time is None:
-            from .adaptive_time import AdaptiveTimeFilter
+            from ..shared.adaptive_time import AdaptiveTimeFilter
             self._adaptive_time = AdaptiveTimeFilter(self._api)
         return self._adaptive_time
     
@@ -1152,7 +1152,7 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
         
         # Try to diagnose using the process resolver
         try:
-            from .process_resolver import diagnose_mixed_process_problem
+            from ..shared.process_resolver import diagnose_mixed_process_problem
             diagnosis = diagnose_mixed_process_problem(
                 self._api,
                 test_operation=filter_input.test_operation,

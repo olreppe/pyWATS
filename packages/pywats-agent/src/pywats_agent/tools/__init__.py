@@ -97,7 +97,15 @@ PROCESS CAPABILITY WORKFLOW:
 └─────────────────────────────────────────────────────────────────────────────────┘
 """
 
-from .yield_tool import (
+# =============================================================================
+# BACKWARD COMPATIBLE IMPORTS FROM SUBPACKAGES
+# =============================================================================
+# These imports provide backward compatibility with the old flat structure.
+# New code should import directly from the subpackages.
+# =============================================================================
+
+# Yield tools (yield_pkg because 'yield' is a Python keyword)
+from .yield_pkg import (
     YieldAnalysisTool,
     YieldFilter,
     AnalysisPerspective,
@@ -105,12 +113,12 @@ from .yield_tool import (
     resolve_perspective,
     get_yield_tool_definition,
 )
-from .test_step_analysis_tool import (
+
+# Step analysis tools
+from .step import (
     TestStepAnalysisTool,
     TestStepAnalysisFilter,
     get_test_step_analysis_tool_definition,
-)
-from .step_analysis import (
     StepAnalysisTool,
     StepAnalysisInput,
     StepSummary,
@@ -123,8 +131,11 @@ from .step_analysis import (
     CPK_CRITICAL_THRESHOLD,
     get_step_analysis_tool_definition,
 )
-from .process_capability import (
+
+# Process capability tools
+from .capability import (
     ProcessCapabilityTool,
+    ProcessCapabilityFilter,
     ProcessCapabilityInput,
     ProcessCapabilityResult,
     MeasurementCapabilityResult,
@@ -141,23 +152,18 @@ from .process_capability import (
     CPK_EXCELLENT,
     get_process_capability_tool_definition,
 )
-from .measurement_tool import (
+
+# Measurement tools
+from .measurement import (
     AggregatedMeasurementTool,
     MeasurementDataTool,
     MeasurementFilter,
     get_aggregated_measurement_tool_definition,
     get_measurement_data_tool_definition,
 )
-from .dimensional_analysis import (
-    DimensionalAnalysisTool,
-    DimensionYieldResult,
-    FailureModeResult,
-    FailureModeFilter,
-    SignificanceLevel,
-    STANDARD_DIMENSIONS,
-    get_dimensional_analysis_tool_definition,
-)
-from .root_cause_analysis import (
+
+# Root cause analysis tools
+from .root_cause import (
     RootCauseAnalysisTool,
     RootCauseInput,
     RootCauseResult,
@@ -174,36 +180,92 @@ from .root_cause_analysis import (
     ContextualComparison,
     ExplainableFinding,
     get_root_cause_analysis_tool_definition,
+    # Dimensional analysis
+    DimensionalAnalysisTool,
+    DimensionYieldResult,
+    FailureModeResult,
+    FailureModeFilter,
+    SignificanceLevel,
+    STANDARD_DIMENSIONS,
+    get_dimensional_analysis_tool_definition,
 )
-from .adaptive_time import (
+
+# Legacy aliases for backward compatibility
+RootCauseAnalysisFilter = RootCauseInput
+RootCauseAnalysisResult = RootCauseResult
+DimensionalAnalysisFilter = FailureModeFilter
+
+# Shared utilities
+from .shared import (
     AdaptiveTimeFilter,
     AdaptiveTimeConfig,
     AdaptiveTimeResult,
     VolumeCategory,
-)
-from .process_resolver import (
     ProcessResolver,
     PROCESS_ALIASES,
     diagnose_mixed_process_problem,
 )
 
+# Asset analysis tools
+from .asset import (
+    # Tools
+    AssetDimensionTool,
+    AssetHealthTool,
+    AssetDegradationTool,
+    # Tool definitions
+    get_asset_dimension_tool_definition,
+    get_asset_health_tool_definition,
+    get_asset_degradation_tool_definition,
+    # Enums
+    AssetHealthStatus,
+    CalibrationStatus,
+    AssetImpactLevel,
+    DegradationTrend,
+    # Filter models
+    AssetDimensionFilter,
+    AssetHealthFilter,
+    AssetDegradationFilter,
+    # Result models
+    AssetYieldImpact,
+    AssetHealthInfo,
+    CalibrationCycleMetrics,
+    AssetDegradationAnalysis,
+    AssetDimensionResult,
+    AssetHealthResult,
+)
+
+# Base infrastructure (new)
+from ._base import (
+    ToolInput,
+    AgentTool,
+    AnalysisTool,
+)
+from ._registry import (
+    register_tool,
+    get_all_tools,
+    get_tools_by_category,
+    create_tool_instance,
+)
+
 __all__ = [
-    # Yield tool
+    # Base infrastructure
+    "ToolInput",
+    "AgentTool",
+    "AnalysisTool",
+    "register_tool",
+    "get_all_tools",
+    "get_tools_by_category",
+    "create_tool_instance",
+    
+    # Yield tools
     "YieldAnalysisTool",
     "YieldFilter",
     "AnalysisPerspective",
     "PERSPECTIVE_ALIASES",
     "resolve_perspective",
     "get_yield_tool_definition",
-    # Dimensional analysis (failure modes)
-    "DimensionalAnalysisTool",
-    "DimensionYieldResult",
-    "FailureModeResult",
-    "FailureModeFilter",
-    "SignificanceLevel",
-    "STANDARD_DIMENSIONS",
-    "get_dimensional_analysis_tool_definition",
-    # Step analysis (TSA) - comprehensive
+    
+    # Step analysis
     "StepAnalysisTool",
     "StepAnalysisInput",
     "StepSummary",
@@ -215,8 +277,13 @@ __all__ = [
     "CPK_MARGINAL_THRESHOLD",
     "CPK_CRITICAL_THRESHOLD",
     "get_step_analysis_tool_definition",
-    # Process Capability Analysis (advanced)
+    "TestStepAnalysisTool",
+    "TestStepAnalysisFilter",
+    "get_test_step_analysis_tool_definition",
+    
+    # Process capability
     "ProcessCapabilityTool",
+    "ProcessCapabilityFilter",
     "ProcessCapabilityInput",
     "ProcessCapabilityResult",
     "MeasurementCapabilityResult",
@@ -232,40 +299,73 @@ __all__ = [
     "CPK_CRITICAL",
     "CPK_EXCELLENT",
     "get_process_capability_tool_definition",
-    # Test step analysis tool (basic)
-    "TestStepAnalysisTool",
-    "TestStepAnalysisFilter",
-    "get_test_step_analysis_tool_definition",
+    
     # Measurement tools
     "AggregatedMeasurementTool",
     "MeasurementDataTool",
     "MeasurementFilter",
     "get_aggregated_measurement_tool_definition",
     "get_measurement_data_tool_definition",
-    # Root Cause Analysis (top-down, trend-aware)
+    
+    # Root cause analysis
     "RootCauseAnalysisTool",
     "RootCauseInput",
+    "RootCauseAnalysisFilter",
     "RootCauseResult",
+    "RootCauseAnalysisResult",
     "YieldAssessmentResult",
     "SuspectFinding",
     "TrendAnalysis",
     "TrendPattern",
     "YieldAssessment",
     "InvestigationPriority",
-    # Step 6-9 classes
     "StepTrendPattern",
     "FailingStepFinding",
     "TrendQualifiedStep",
     "ContextualComparison",
     "ExplainableFinding",
     "get_root_cause_analysis_tool_definition",
-    # Adaptive time filter
+    
+    # Dimensional analysis
+    "DimensionalAnalysisTool",
+    "DimensionYieldResult",
+    "FailureModeResult",
+    "FailureModeFilter",
+    "DimensionalAnalysisFilter",
+    "SignificanceLevel",
+    "STANDARD_DIMENSIONS",
+    "get_dimensional_analysis_tool_definition",
+    
+    # Shared utilities
     "AdaptiveTimeFilter",
     "AdaptiveTimeConfig",
     "AdaptiveTimeResult",
     "VolumeCategory",
-    # Process resolver
     "ProcessResolver",
     "PROCESS_ALIASES",
     "diagnose_mixed_process_problem",
+    
+    # Asset analysis tools
+    "AssetDimensionTool",
+    "AssetHealthTool",
+    "AssetDegradationTool",
+    "get_asset_dimension_tool_definition",
+    "get_asset_health_tool_definition",
+    "get_asset_degradation_tool_definition",
+    # Asset enums
+    "AssetHealthStatus",
+    "CalibrationStatus",
+    "AssetImpactLevel",
+    "DegradationTrend",
+    # Asset filters
+    "AssetDimensionFilter",
+    "AssetHealthFilter",
+    "AssetDegradationFilter",
+    # Asset results
+    "AssetYieldImpact",
+    "AssetHealthInfo",
+    "CalibrationCycleMetrics",
+    "AssetDegradationAnalysis",
+    "AssetDimensionResult",
+    "AssetHealthResult",
 ]
