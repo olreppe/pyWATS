@@ -1,15 +1,26 @@
-# APP Domain Status
+# Analytics Domain Status
 
-> Based on `TEMPLATE_DOMAIN_STATUS.md` and updated for `pywats.domains.app`.
+> Based on `TEMPLATE_DOMAIN_STATUS.md` and updated for `pywats.domains.analytics`.
+
+## Module Naming Note
+
+**The `analytics` module maps to the WATS backend `/api/App/*` endpoints.**
+
+We chose "analytics" as the Python module name because it better describes the functionality 
+(yield analysis, KPIs, statistics, OEE) while "App" is the legacy backend controller name.
+This is purely a naming choice for better developer experience - all API calls go to `/api/App/*`.
+
+| Python Module | Backend API | Description |
+|---------------|-------------|-------------|
+| `pywats.domains.analytics` | `/api/App/*` | Yield, KPIs, statistics, OEE analysis |
 
 ## 1. Service Functions
-- **Overview:** `AppService` surfaces KPIs, statistical chases, and reporting insights by wrapping `AppRepository` helpers with domain-friendly method names; it also reuses `WATSFilter`/`ReportHeader` from the `report` domain to keep filter construction consistent.
+- **Overview:** `AnalyticsService` surfaces KPIs, statistical analyses, and reporting insights by wrapping `AnalyticsRepository` helpers with domain-friendly method names; it also reuses `WATSFilter`/`ReportHeader` from the `report` domain to keep filter construction consistent.
 - **Key Operations:**
   - System metadata (`get_version`, `get_processes`, `get_levels`, `get_product_groups`).
   - Yield/reliability KPIs (`get_dynamic_yield/repair`, `get_volume_yield`, `get_high_volume`, `get_worst_yield`, `get_top_failed`, `get_test_step_analysis`).
   - Metric analyses (`get_aggregated_measurements`, `get_measurements`, `get_oee_analysis`) plus related repair/history helpers (`get_related_repair_history`, `get_serial_number_history`, `get_uut_reports`, `get_uur_reports`).
   - Convenience helpers that build `WATSFilter` payloads from product codes (`get_yield_summary`).
-- **Open Questions:** Should some of the heavy analytics methods (e.g., `get_high_volume`, `get_worst_yield`, `get_oee_analysis`) be grouped into a secondary `AnalyticsService` so callers can pick the area they need without the 200+ line `AppService` surface?
 
 ## 2. Model Surface
 - **Model Files:**
@@ -24,12 +35,14 @@
 - **Class Relationships:**
 
 ```
-AppService --> AppRepository --> HttpClient
-AppService --> WATSFilter / ReportHeader
-AppService --> YieldData / ProcessInfo models
+AnalyticsService --> AnalyticsRepository --> HttpClient
+AnalyticsService --> WATSFilter / ReportHeader
+AnalyticsService --> YieldData / ProcessInfo models
+
+Note: API calls go to /api/App/* (backend naming)
 ```
 
-- **Refactor Ideas:** Introduce an `AppAnalyticsService` for heavy POST/filters and keep `AppService` as the orchestrator for user-facing KPI entry points.
+- **Refactor Ideas:** The current architecture is clean with AnalyticsService as the main entry point.
 
 ## 4. Inline Documentation
 - **Domain Knowledge Additions:** The service docstrings now call out the data sources (GET vs POST) so callers know which endpoints run after filtering. `ProcessInfo` carries `process_code` and `process_name` properties to keep backwards compatibility with older API consumers.
@@ -37,10 +50,10 @@ AppService --> YieldData / ProcessInfo models
 
 ## 5. Acceptance Testing
 - **Test Scenarios:**
-  1. `test_get_processes_uses_repository` – ensures `AppService.get_processes` proxies to the repository and returns `ProcessInfo` instances.
-  2. `test_get_dynamic_yield_passes_filters` – verifies `WATSFilter` objects are forwarded unchanged to `AppRepository.get_dynamic_yield`.
+  1. `test_get_processes_uses_repository` – ensures `AnalyticsService.get_processes` proxies to the repository and returns `ProcessInfo` instances.
+  2. `test_get_dynamic_yield_passes_filters` – verifies `WATSFilter` objects are forwarded unchanged to `AnalyticsRepository.get_dynamic_yield`.
   3. `test_get_serial_number_history_forwards_filters` – confirms the serial history helper just returns the repository list of `ReportHeader`s.
-  All tests live under [tests/acceptance/app/test_app_acceptance.py](tests/acceptance/app/test_app_acceptance.py).
+  All tests live under [tests/acceptance/analytics/test_analytics_acceptance.py](tests/acceptance/analytics/test_analytics_acceptance.py).
 - **Data Setup Notes:** Tests rely on a dummy repository that returns lightweight models and records the last filter arguments.
 - **Verification Steps:** Assert the stub repository captured calls, filter objects, and returned headers.
 

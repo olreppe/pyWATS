@@ -69,24 +69,22 @@
 
 ## Notes
 
-### Why remove `app` alias?
+### Module Naming: analytics vs App
 
-The `app` domain was renamed to `analytics` because:
-1. "app" is ambiguous (could mean application, root module, etc.)
+The `analytics` module maps to the WATS backend `/api/App/*` endpoints.
+
+**Why the different names?**
+1. "App" is the legacy backend controller name in WATS
 2. "analytics" clearly describes the domain's purpose (yield stats, KPIs, failure analysis)
 3. LLMs/Agents searching for "statistics" or "yield" won't find "app"
 
-The backward compatibility shim (`api.app` → `api.analytics`) exists only for beta users.
-It should be removed in v1.0.0 to keep the API surface clean.
+This is purely a naming choice for better developer experience - all API calls go to `/api/App/*`.
 
-### Migration Guide for Beta Users
+### Usage
 
 ```python
-# Before (deprecated)
-from pywats.domains.app import AppService
-yield_data = api.app.get_dynamic_yield(filter)
+from pywats.domains.analytics import AnalyticsService, YieldData
 
-# After (v1.0.0+)
-from pywats.domains.analytics import AnalyticsService
+# All calls go to /api/App/* endpoints
 yield_data = api.analytics.get_dynamic_yield(filter)
 ```

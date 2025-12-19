@@ -1,6 +1,12 @@
-"""App domain models.
+"""Analytics domain models.
 
-Statistics and KPI data models.
+Statistics, KPI, and yield analysis data models.
+
+BACKEND API MAPPING
+-------------------
+These models are returned from the WATS /api/App/* endpoints.
+The 'analytics' module name was chosen for clarity while the backend
+uses 'App' as the controller name.
 
 FIELD NAMING CONVENTION:
 ------------------------
