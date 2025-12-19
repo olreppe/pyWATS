@@ -7,6 +7,7 @@ This is the main entry point for executing agent tool calls.
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from .result import AgentResult
+from .context import AgentContext
 from .tools import (
     YieldAnalysisTool,
     get_yield_tool_definition,
@@ -51,14 +52,20 @@ class ToolExecutor:
         • Worst: Station-E (89.1%)"
     """
     
-    def __init__(self, api: "pyWATS"):
+    def __init__(
+        self, 
+        api: "pyWATS",
+        context: Optional[AgentContext] = None
+    ):
         """
         Initialize the executor with a pyWATS instance.
         
         Args:
             api: Configured pyWATS API instance
+            context: Optional context from frontend (current product, station, etc.)
         """
         self._api = api
+        self._context = context
         
         # Initialize tools
         self._yield_tool = YieldAnalysisTool(api)
@@ -112,13 +119,70 @@ class ToolExecutor:
             for tool_def in self.get_tool_definitions()
         ]
     
-    def execute(self, tool_name: str, parameters: Dict[str, Any]) -> AgentResult:
+    @property
+    def context(self) -> Optional[AgentContext]:
+        """Get the current context."""
+        return self._context
+    
+    @context.setter
+    def context(self, value: Optional[AgentContext]) -> None:
+        """Set the context."""
+        self._context = value
+    
+    def get_system_prompt(self) -> str:
+        """
+        Get system prompt text including context.
+        
+        Use this to build the system prompt for the LLM.
+        
+        Returns:
+            System prompt text with context information
+        """
+        base_prompt = """You are a manufacturing data analyst assistant.
+You help users analyze test data, yield metrics, and measurements.
+Use the available tools to retrieve and analyze data."""
+        
+        if self._context:
+            context_text = self._context.to_system_prompt()
+            return f"{base_prompt}\n\n{context_text}"
+        
+        return base_prompt
+    
+    def _apply_context_defaults(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Apply context defaults to parameters where not explicitly set.
+        
+        Args:
+            parameters: Tool parameters from the user/LLM
+            
+        Returns:
+            Parameters with context defaults applied
+        """
+        if not self._context:
+            return parameters
+        
+        defaults = self._context.get_default_parameters()
+        result = parameters.copy()
+        
+        for key, value in defaults.items():
+            if key not in result or result[key] is None:
+                result[key] = value
+        
+        return result
+    
+    def execute(
+        self, 
+        tool_name: str, 
+        parameters: Dict[str, Any],
+        apply_context: bool = True
+    ) -> AgentResult:
         """
         Execute a tool with the given parameters.
         
         Args:
             tool_name: Name of the tool to execute
             parameters: Tool parameters as a dictionary
+            apply_context: If True, apply context defaults to missing parameters
             
         Returns:
             AgentResult with data and human-readable summary
@@ -133,6 +197,10 @@ class ToolExecutor:
             >>> print(result.summary)
             "Yield analysis for product WIDGET-001..."
         """
+        # Apply context defaults if enabled
+        if apply_context:
+            parameters = self._apply_context_defaults(parameters)
+        
         if tool_name not in self._tools:
             available = ", ".join(self.list_tools())
             return AgentResult.error(

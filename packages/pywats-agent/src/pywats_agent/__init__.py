@@ -22,6 +22,17 @@ Example:
 
 from .result import AgentResult
 from .executor import ToolExecutor
+from .context import AgentContext, VisibleData
+from .testing import (
+    AgentTestHarness,
+    TestCase,
+    TestResult,
+    ToolCall,
+    get_yield_tool_test_cases,
+    get_step_analysis_test_cases,
+    get_measurement_test_cases,
+    get_all_test_cases,
+)
 from .tools import (
     YieldAnalysisTool,
     YieldFilter,
@@ -44,6 +55,18 @@ __all__ = [
     # Core
     "AgentResult",
     "ToolExecutor",
+    # Context
+    "AgentContext",
+    "VisibleData",
+    # Testing
+    "AgentTestHarness",
+    "TestCase",
+    "TestResult",
+    "ToolCall",
+    "get_yield_tool_test_cases",
+    "get_step_analysis_test_cases",
+    "get_measurement_test_cases",
+    "get_all_test_cases",
     # Yield tool
     "YieldAnalysisTool",
     "YieldFilter",
