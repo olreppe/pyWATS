@@ -4,6 +4,16 @@ Yield analysis tools for AI agents.
 This package provides intelligent yield analysis with semantic dimension mapping.
 Translates natural language concepts to WATS API dimensions and filters.
 
+TOOLS:
+- YieldAnalysisTool: General yield queries with flexible perspectives
+- YieldTrendTool: Temporal analysis (yield over time, change detection)
+- YieldDeviationTool: Configuration analysis (find failure modes by dimension)
+
+ARCHITECTURE:
+- Tools use sticky filter context (AnalysisContext) for conversational flow
+- Analysis sessions cache data for efficient drill-downs
+- Returns token-efficient summaries, not raw data
+
 PROCESS TERMINOLOGY IN WATS:
 - test_operation: For testing (UUT/UUTReport - Unit Under Test)
 - repair_operation: For repair logging (UUR/UURReport - Unit Under Repair)  
@@ -15,8 +25,7 @@ COMMON PROCESS PROBLEMS:
 2. Name confusion: Users use "PCBA" instead of "PCBA test" - use fuzzy matching
 """
 
-# Import everything from the combined tool module
-# Future refactoring can split into separate files while keeping same exports
+# Import from the main yield tool
 from .tool import (
     # Models
     YieldFilter,
@@ -35,20 +44,47 @@ from .tool import (
     build_wats_filter,
 )
 
+# Import specialized tools
+from .trend_tool import (
+    YieldTrendTool,
+    TrendInput,
+    TimeGranularity,
+    create_yield_trend_tool,
+)
+from .deviation_tool import (
+    YieldDeviationTool,
+    DeviationInput,
+    StandardDimension,
+    resolve_dimension,
+    create_yield_deviation_tool,
+)
+
 __all__ = [
     # Models
     "YieldFilter",
-    # Perspectives
+    "TrendInput",
+    "DeviationInput",
+    # Enums
     "AnalysisPerspective",
+    "TimeGranularity",
+    "StandardDimension",
+    # Mappings
     "PERSPECTIVE_TO_DIMENSIONS",
     "PERSPECTIVE_TO_DATE_GROUPING",
     "PERSPECTIVE_ALIASES",
+    # Functions
     "resolve_perspective",
     "get_available_perspectives",
-    # Tool
+    "resolve_dimension",
+    "build_wats_filter",
+    # Tools
     "YieldAnalysisTool",
+    "YieldTrendTool",
+    "YieldDeviationTool",
+    # Factory functions
+    "create_yield_trend_tool",
+    "create_yield_deviation_tool",
+    # Schema helpers
     "get_yield_tool_definition",
     "get_yield_tool_openai_schema",
-    # Helpers
-    "build_wats_filter",
 ]

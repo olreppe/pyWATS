@@ -112,6 +112,16 @@ from .yield_pkg import (
     PERSPECTIVE_ALIASES,
     resolve_perspective,
     get_yield_tool_definition,
+    # New specialized tools
+    YieldTrendTool,
+    YieldDeviationTool,
+    TrendInput,
+    DeviationInput,
+    TimeGranularity,
+    StandardDimension,
+    resolve_dimension,
+    create_yield_trend_tool,
+    create_yield_deviation_tool,
 )
 
 # Step analysis tools
@@ -204,6 +214,24 @@ from .shared import (
     ProcessResolver,
     PROCESS_ALIASES,
     diagnose_mixed_process_problem,
+    # New context and session infrastructure
+    AnalysisContext,
+    FilterMemory,
+    ContextConfidence,
+    get_context,
+    AnalysisSession,
+    SessionManager,
+    SessionType,
+    get_session_manager,
+    # Computation helpers
+    TrendDirection,
+    Volatility,
+    TrendAnalysis as TrendAnalysisResult,  # Renamed to avoid conflict
+    calculate_trend,
+    calculate_deviation_significance,
+    generate_trend_insight,
+    generate_deviation_insight,
+    summarize_for_agent,
 )
 
 # Asset analysis tools
@@ -264,6 +292,16 @@ __all__ = [
     "PERSPECTIVE_ALIASES",
     "resolve_perspective",
     "get_yield_tool_definition",
+    # New specialized yield tools
+    "YieldTrendTool",
+    "YieldDeviationTool",
+    "TrendInput",
+    "DeviationInput",
+    "TimeGranularity",
+    "StandardDimension",
+    "resolve_dimension",
+    "create_yield_trend_tool",
+    "create_yield_deviation_tool",
     
     # Step analysis
     "StepAnalysisTool",
@@ -344,6 +382,24 @@ __all__ = [
     "ProcessResolver",
     "PROCESS_ALIASES",
     "diagnose_mixed_process_problem",
+    # Context and session infrastructure
+    "AnalysisContext",
+    "FilterMemory",
+    "ContextConfidence",
+    "get_context",
+    "AnalysisSession",
+    "SessionManager",
+    "SessionType",
+    "get_session_manager",
+    # Computation helpers
+    "TrendDirection",
+    "Volatility",
+    "TrendAnalysisResult",
+    "calculate_trend",
+    "calculate_deviation_significance",
+    "generate_trend_insight",
+    "generate_deviation_insight",
+    "summarize_for_agent",
     
     # Asset analysis tools
     "AssetDimensionTool",
