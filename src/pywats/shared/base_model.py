@@ -42,7 +42,7 @@ class PyWATSModel(BaseModel):
     
         # Correct usage - use snake_case field names
         filter = WATSFilter(
-            part_number="WIDGET-001",      # NOT "partNumber"
+            part_number="PN23X2",           # NOT "partNumber"
             serial_number="SN-12345",       # NOT "serialNumber"  
             station_name="TestStation",     # NOT "stationName"
         )

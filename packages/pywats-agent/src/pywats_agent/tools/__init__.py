@@ -291,6 +291,27 @@ from ._registry import (
     create_tool_instance,
 )
 
+# Agent variants and profiles
+from .variants import (
+    ToolProfile,
+    ExperimentalVariant,
+    ToolCategory,
+    PROFILES,
+    TOOL_CATEGORIES,
+    get_profile,
+    list_profiles,
+    create_agent_tools,
+    get_tool_definitions,
+    register_variant,
+    get_variant,
+    list_variants,
+    print_profiles,
+    print_variant_diff,
+)
+
+# Load user-defined variants
+from . import variant_config  # noqa: F401
+
 __all__ = [
     # Base infrastructure
     "ToolInput",
@@ -456,4 +477,20 @@ __all__ = [
     "AssetDegradationAnalysis",
     "AssetDimensionResult",
     "AssetHealthResult",
+    
+    # Agent variants and profiles
+    "ToolProfile",
+    "ExperimentalVariant",
+    "ToolCategory",
+    "PROFILES",
+    "TOOL_CATEGORIES",
+    "get_profile",
+    "list_profiles",
+    "create_agent_tools",
+    "get_tool_definitions",
+    "register_variant",
+    "get_variant",
+    "list_variants",
+    "print_profiles",
+    "print_variant_diff",
 ]

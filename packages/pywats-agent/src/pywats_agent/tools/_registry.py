@@ -83,7 +83,77 @@ def get_tool(name: str) -> Optional[Type["AgentTool"]]:
     Returns:
         Tool class or None if not found
     """
-    return _TOOL_REGISTRY.get(name)
+    # Check main registry first
+    tool = _TOOL_REGISTRY.get(name)
+    if tool:
+        return tool
+    
+    # Fallback: Direct imports for known tools
+    # This handles tools that haven't migrated to the decorator pattern yet
+    _KNOWN_TOOLS = {
+        # Yield tools
+        "analyze_yield": (".yield_pkg", "YieldAnalysisTool"),
+        "analyze_yield_trend": (".yield_pkg", "YieldTrendTool"),
+        "analyze_yield_deviation": (".yield_pkg", "YieldDeviationTool"),
+        "yield_discovery": (".yield_pkg", "YieldDiscoveryTool"),
+        # Step tools
+        "analyze_test_steps": (".step", "TestStepAnalysisTool"),
+        "analyze_step": (".step", "BasicStepTool"),
+        # Root cause tools
+        "analyze_root_cause": (".root_cause", "RootCauseAnalysisTool"),
+        "analyze_dimensions": (".root_cause", "DimensionalAnalysisTool"),
+        # Capability tools
+        "analyze_process_capability": (".capability", "ProcessCapabilityTool"),
+        # Measurement tools
+        "get_measurement_data": (".measurement", "MeasurementDataTool"),
+        "get_aggregated_measurements": (".measurement", "AggregatedMeasurementTool"),
+    }
+    
+    if name in _KNOWN_TOOLS:
+        module_path, class_name = _KNOWN_TOOLS[name]
+        try:
+            import importlib
+            # Import relative to this package
+            module = importlib.import_module(module_path, package="pywats_agent.tools")
+            cls = getattr(module, class_name, None)
+            
+            # Ensure the class has get_definition - if not, add a wrapper
+            if cls and not hasattr(cls, 'get_definition'):
+                # Look for module-level definition function
+                def_func_name = f"get_{class_name.lower().replace('tool', '')}_tool_definition"
+                # Try common naming patterns
+                for pattern in [
+                    f"get_{name}_definition",
+                    f"get_{name.replace('analyze_', '')}_tool_definition",
+                    def_func_name,
+                ]:
+                    def_func = getattr(module, pattern, None)
+                    if def_func:
+                        # Create a class method that calls the module function
+                        cls.get_definition = classmethod(lambda c, f=def_func: f())
+                        break
+                
+                # If still no definition, create a basic one from class attributes
+                if not hasattr(cls, 'get_definition'):
+                    cls.get_definition = classmethod(lambda c: {
+                        "name": getattr(c, 'name', name),
+                        "description": getattr(c, 'description', ''),
+                        "parameters": c.get_parameters_schema() if hasattr(c, 'get_parameters_schema') else {},
+                    })
+            
+            return cls
+        except (ImportError, AttributeError) as e:
+            pass
+    
+    # Handle experimental tools
+    if name == "start_tsa":
+        try:
+            from .experimental.tsa_v2 import StartTsaTool
+            return StartTsaTool
+        except ImportError:
+            return None
+    
+    return None
 
 
 def get_all_tools() -> List[str]:
