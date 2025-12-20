@@ -819,7 +819,15 @@ class RootCauseAnalysisTool:
     
     name = "analyze_root_cause"
     description = """
+🔍 INVESTIGATION TOOL - For failure analysis, not simple yield queries.
+
 Top-down root cause analysis for failure investigation.
+
+💡 FOR SIMPLE YIELD QUESTIONS, USE analyze_yield FIRST:
+- "What's the yield?" → analyze_yield
+- "Top runners/volume?" → analyze_yield
+- "Best/worst stations?" → analyze_yield with perspective="by station"
+Use THIS tool when you need to INVESTIGATE WHY yield is bad.
 
 WHEN TO USE THIS TOOL:
 - "Why is yield dropping for product X?"
@@ -842,32 +850,12 @@ METHODOLOGY (9 Steps):
 KEY PRINCIPLE: Test steps are SYMPTOMS, not root causes.
 We start at yield level and only dive into steps when justified.
 
-TREND CLASSIFICATION (Yield):
-- EMERGING: New problem, getting worse (highest priority)
-- CHRONIC: Long-standing issue, stable but low
-- RECOVERING: Problem being fixed
-- INTERMITTENT: Sporadic, hard to reproduce
-
-STEP TREND CLASSIFICATION:
-- INCREASING: Step failures getting worse (regression)
-- DECREASING: Step failures improving
-- STABLE: Consistent failure rate
-- VARIABLE: High variability, likely noise
-
-EXPLAINABLE FINDINGS include:
-- Evidence chain: yield → suspect → step → trend
-- Causality assessment (suspect vs non-suspect comparison)
-- Confidence score
-- Actionable recommendations
-- Expected impact
-
 Example questions this tool answers:
 - "Why is FCT yield low for WIDGET-001?"
 - "What's causing the recent yield drop?"
 - "Is Station-3's poor yield a new problem or chronic?"
 - "What should we investigate first?"
 - "Which test steps are causing the most failures?"
-- "Is this a regression or chronic issue?"
 """
     
     def __init__(self, api: "pyWATS"):

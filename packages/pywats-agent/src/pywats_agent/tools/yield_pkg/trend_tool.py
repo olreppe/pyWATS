@@ -148,6 +148,15 @@ class YieldTrendTool:
     description = """
 Analyze yield changes over time with intelligent insights.
 
+⚠️ SPECIALIZED TOOL - Consider using analyze_yield with perspective="trend" first!
+Use this tool when you need DETAILED trend analysis with:
+- Change point detection (when did shifts occur?)
+- Trend classification (improving/declining/volatile)
+- Rate of change calculations
+- Session-based drill-downs
+
+For simple "show me yield over time", use analyze_yield with perspective="daily/weekly".
+
 Returns:
 - Trend direction (improving/stable/declining/volatile)
 - Rate of change (e.g., "-1.8% per week")

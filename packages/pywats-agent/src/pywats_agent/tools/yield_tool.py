@@ -715,8 +715,19 @@ class YieldAnalysisTool:
     """
     
     name = "analyze_yield"
-    description = """
-Analyze manufacturing yield/quality data with flexible grouping.
+    description = """PRIMARY TOOL for yield metrics, volume analysis, performance comparisons, and trend analysis.
+
+⭐ USE THIS TOOL FIRST when the question involves:
+- Yield, FPY, pass rate, quality metrics
+- Volume, unit counts, report counts, throughput
+- Top runners, best/worst performers
+- Trends over time (daily, weekly, monthly)
+- Performance comparisons (by station, product, line, etc.)
+- Any question about "how many" or "what percentage"
+
+Only use other tools (analyze_test_steps, analyze_root_cause) AFTER using this tool
+to understand the overall yield picture, OR when specifically asked about individual
+test steps or measurements.
 
 UNDERSTANDING YIELD METRICS:
 
@@ -754,11 +765,16 @@ If users send different tests (AOI, ICT) to the same process ("Structural Tests"
 - SYMPTOM: "Why is ICT showing 0 units?"
 - DIAGNOSIS: Look for different sw_filename in the same process
 
-TOP RUNNERS:
+TOP RUNNERS (use perspective="by product"):
 "Top runners" = products with highest volume (units or reports)
 - Volume must be considered PER PROCESS
 - A top runner in FCT may differ from top runner in EOL
 - Use perspective="by product" with test_operation filter
+
+BEST/WORST PERFORMERS (use perspective="by station" or "by product"):
+- By station: Which stations have best/worst yield
+- By product: Which products have best/worst yield
+- Always consider volume - low-volume may have skewed metrics
 
 IMPORTANT - UNIT INCLUSION RULE:
 Units are included ONLY if their FIRST RUN matches your filter!
@@ -777,14 +793,18 @@ YIELD TREND (Change Detection):
 - Useful for improvement/degradation analysis
 
 Example questions this tool answers:
-- "What's FCT yield for WIDGET-001?" (test_operation: "FCT")
-- "What processes does WIDGET-001 go through?" (perspective: "by operation")
-- "What's the RTY for WIDGET-001?" (calculate from by-operation results)
-- "Who are the top runners in FCT?" (perspective: "by product", test_operation: "FCT")
-- "Compare yield by station" (perspective: "by station")
-- "Show daily yield for the past week" (perspective: "daily", days: 7)
-- "What's the repair station performance?" (yield_type: "report")
-- "Why is ICT showing 0 units?" (check for mixed process problem)
+- "What's yield?" -> perspective: "by product" or specify product
+- "What's FCT yield for WIDGET-001?" -> test_operation: "FCT"
+- "What processes does WIDGET-001 go through?" -> perspective: "by operation"
+- "What's the RTY for WIDGET-001?" -> calculate from by-operation results
+- "Who are the top runners?" -> perspective: "by product" (sorted by volume)
+- "Which station is best/worst?" -> perspective: "by station"
+- "Compare yield by station" -> perspective: "by station"
+- "Show daily yield for the past week" -> perspective: "daily", days: 7
+- "What's the yield trend?" -> perspective: "trend"
+- "How many units were tested?" -> check unit_count in results
+- "What's the volume?" -> check unit_count in results
+- "What's the repair station performance?" -> yield_type: "report"
 
 Available perspectives:
 - Time: trend, daily, weekly, monthly

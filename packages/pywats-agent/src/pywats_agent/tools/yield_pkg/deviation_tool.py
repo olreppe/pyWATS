@@ -261,7 +261,25 @@ class YieldDeviationTool:
     
     name = "analyze_yield_deviation"
     description = """
-Find failure modes by analyzing yield deviations across configurations.
+⚠️ SPECIALIZED DRILL-DOWN TOOL - Use after analyze_yield.
+
+This tool finds FAILURE MODES by comparing yield across configurations.
+Use AFTER getting overall yield with analyze_yield to understand WHERE problems occur.
+
+💡 TIP: For general yield questions, use analyze_yield FIRST with perspective="by station"
+or perspective="by batch" for similar but faster results.
+
+WHEN TO USE THIS TOOL:
+✅ "Why is yield low?" - AFTER knowing what the yield actually is
+✅ "Find the root cause of failures" - deviation analysis
+✅ "Compare stations statistically" - significance scoring
+✅ "Is there a bad station/batch/operator?" - multi-dimensional
+
+DO NOT USE FOR:
+❌ "What's the yield?" → Use analyze_yield
+❌ "Show me top runners" → Use analyze_yield
+❌ "Which station is best?" → Use analyze_yield with perspective="by station"
+❌ "Production volume?" → Use analyze_yield
 
 Returns:
 - Baseline yield for comparison
@@ -276,18 +294,6 @@ DIMENSIONS TO ANALYZE:
 - batch/lot: Find incoming material issues
 - location/line: Find line-specific problems
 - software: Find test software regressions
-
-SIGNIFICANCE LEVELS:
-- CRITICAL: >10% below baseline (requires immediate attention)
-- HIGH: 5-10% below baseline (should investigate)
-- MODERATE: 2-5% below baseline (monitor)
-
-WHEN TO USE:
-- "Why is yield low?" → analyze by station, batch, operator
-- "Is there a bad station?" → dimensions=["station_name"]
-- "Is it a batch issue?" → dimensions=["batch_number"]
-- "Which operator needs training?" → dimensions=["operator"]
-- "Cross-check station and batch" → dimensions=["station_name", "batch_number"]
 
 INHERITS CONTEXT:
 This tool inherits filter context from previous queries. If you already

@@ -88,12 +88,23 @@ class TestStepAnalysisTool:
     description = """
 Analyze test step execution statistics and failure patterns.
 
+⚠️ SECONDARY TOOL - Use analyze_yield FIRST for overall metrics!
+Only use this tool when you need STEP-LEVEL details after understanding
+overall yield from analyze_yield, or when user specifically asks about
+individual test steps, measurements, or step-level failures.
+
 Use this tool to answer questions like:
 - "Which test steps are failing for WIDGET-001?" 
 - "What are the failure rates for each step in FCT?"
 - "Show me step-level statistics for product X"
 - "Which test step causes the most failures?"
 - "Get measurement statistics for each test step"
+
+DO NOT use this tool for:
+- Overall yield, FPY, pass rate -> use analyze_yield
+- Top runners, volume, unit counts -> use analyze_yield
+- Trends, comparisons by station/product -> use analyze_yield
+- Best/worst performers -> use analyze_yield
 
 Provides detailed execution statistics for each test step including:
 - Total executions, passes, failures, errors
