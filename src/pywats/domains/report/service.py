@@ -503,33 +503,162 @@ class ReportService:
 
     def query_uut_headers(
         self,
-        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
+        expand: Optional[List[str]] = None,
+        odata_filter: Optional[str] = None,
+        top: Optional[int] = None,
+        orderby: Optional[str] = None,
     ) -> List[ReportHeader]:
         """
         Query UUT report headers.
 
         Args:
             filter_data: WATSFilter or filter dict
+            expand: Fields to expand (subunits, miscinfo, assets, attachments)
+            odata_filter: Raw OData filter string
+            top: Maximum results
+            orderby: Sort order (e.g., "start desc")
 
         Returns:
             List of ReportHeader objects
         """
-        return self._repository.query_headers("uut", filter_data)
+        return self._repository.query_headers(
+            "uut", filter_data, expand=expand, 
+            odata_filter=odata_filter, top=top, orderby=orderby
+        )
 
     def query_uur_headers(
         self,
-        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
+        expand: Optional[List[str]] = None,
+        odata_filter: Optional[str] = None,
+        top: Optional[int] = None,
+        orderby: Optional[str] = None,
     ) -> List[ReportHeader]:
         """
         Query UUR report headers.
 
         Args:
             filter_data: WATSFilter or filter dict
+            expand: Fields to expand (uurSubUnits, uurMiscInfo, uurAttachments)
+            odata_filter: Raw OData filter string
+            top: Maximum results
+            orderby: Sort order (e.g., "start desc")
 
         Returns:
             List of ReportHeader objects
         """
-        return self._repository.query_headers("uur", filter_data)
+        return self._repository.query_headers(
+            "uur", filter_data, expand=expand,
+            odata_filter=odata_filter, top=top, orderby=orderby
+        )
+
+    def query_headers_with_subunits(
+        self,
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
+        report_type: str = "uut",
+        top: Optional[int] = None,
+        orderby: Optional[str] = None,
+        include_misc_info: bool = False,
+        include_assets: bool = False,
+    ) -> List[ReportHeader]:
+        """
+        Query report headers with expanded sub-unit data.
+
+        This is the primary method for sub-unit analysis, automatically
+        expanding the subunits (for UUT) or uurSubUnits (for UUR) fields.
+
+        Args:
+            filter_data: WATSFilter or filter dict
+            report_type: "uut" or "uur"
+            top: Maximum results (default 1000, max 10000)
+            orderby: Sort order (e.g., "start desc")
+            include_misc_info: Also expand misc info
+            include_assets: Also expand assets
+
+        Returns:
+            List of ReportHeader objects with populated sub_units/uur_sub_units
+        """
+        # Build expand list based on report type
+        if report_type == "uut":
+            expand_fields = ["subunits"]
+            if include_misc_info:
+                expand_fields.append("miscinfo")
+            if include_assets:
+                expand_fields.append("assets")
+        else:
+            expand_fields = ["uurSubUnits"]
+            if include_misc_info:
+                expand_fields.append("uurMiscInfo")
+
+        return self._repository.query_headers(
+            report_type, filter_data, expand=expand_fields,
+            top=top, orderby=orderby
+        )
+
+    def query_headers_by_subunit_part_number(
+        self,
+        subunit_part_number: str,
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
+        report_type: str = "uut",
+        top: Optional[int] = None,
+    ) -> List[ReportHeader]:
+        """
+        Query report headers filtering by sub-unit part number.
+
+        Uses OData filter to find parent units containing specific sub-units.
+
+        Args:
+            subunit_part_number: Part number of sub-unit to filter by
+            filter_data: Additional WATSFilter or filter dict for parent
+            report_type: "uut" or "uur"
+            top: Maximum results
+
+        Returns:
+            List of ReportHeader objects with sub-units expanded
+        """
+        if report_type == "uut":
+            odata_filter = f"subunits/any(s: s/partNumber eq '{subunit_part_number}')"
+            expand_fields = ["subunits"]
+        else:
+            odata_filter = f"uurSubUnits/any(s: s/partNumber eq '{subunit_part_number}')"
+            expand_fields = ["uurSubUnits"]
+
+        return self._repository.query_headers(
+            report_type, filter_data, expand=expand_fields,
+            odata_filter=odata_filter, top=top
+        )
+
+    def query_headers_by_subunit_serial(
+        self,
+        subunit_serial_number: str,
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
+        report_type: str = "uut",
+        top: Optional[int] = None,
+    ) -> List[ReportHeader]:
+        """
+        Query report headers filtering by sub-unit serial number.
+
+        Args:
+            subunit_serial_number: Serial number of sub-unit to filter by
+            filter_data: Additional WATSFilter or filter dict for parent
+            report_type: "uut" or "uur"
+            top: Maximum results
+
+        Returns:
+            List of ReportHeader objects with sub-units expanded
+        """
+        if report_type == "uut":
+            odata_filter = f"subunits/any(s: s/serialNumber eq '{subunit_serial_number}')"
+            expand_fields = ["subunits"]
+        else:
+            odata_filter = f"uurSubUnits/any(s: s/serialNumber eq '{subunit_serial_number}')"
+            expand_fields = ["uurSubUnits"]
+
+        return self._repository.query_headers(
+            report_type, filter_data, expand=expand_fields,
+            odata_filter=odata_filter, top=top
+        )
 
     def query_headers_by_misc_info(
         self,

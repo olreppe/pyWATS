@@ -47,19 +47,50 @@ class ReportRepository:
     def query_headers(
         self,
         report_type: str = "uut",
-        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
+        expand: Optional[List[str]] = None,
+        odata_filter: Optional[str] = None,
+        top: Optional[int] = None,
+        orderby: Optional[str] = None,
+        skip: Optional[int] = None,
     ) -> List[ReportHeader]:
         """
         Query report headers matching the filter.
 
         GET /api/Report/Query/Header
 
+        This endpoint supports OData query options for filtering and expanding data.
+        
         Args:
             report_type: Report type ("uut" or "uur")
-            filter_data: WATSFilter object or dict
+            filter_data: WATSFilter object or dict for basic filtering
+            expand: List of fields to expand. Valid values:
+                    - "subunits" - UUT sub-units
+                    - "miscinfo" - UUT misc info
+                    - "assets" - UUT assets
+                    - "attachments" - UUT attachments
+                    - "uurSubUnits" - UUR sub-units
+                    - "uurMiscInfo" - UUR misc info
+                    - "uurAttachments" - UUR attachments
+            odata_filter: Raw OData $filter string (e.g., "partNumber eq 'XYZ' and status eq 'Failed'")
+            top: Maximum number of results ($top)
+            orderby: Sort order ($orderby), e.g., "start desc"
+            skip: Number of results to skip ($skip)
 
         Returns:
-            List of ReportHeader objects
+            List of ReportHeader objects (with expanded data if requested)
+            
+        Example:
+            >>> # Get headers with sub-unit info
+            >>> headers = repo.query_headers(
+            ...     filter_data=WATSFilter(part_number="ASSY-001"),
+            ...     expand=["subunits", "miscinfo"],
+            ...     top=100
+            ... )
+            >>> for h in headers:
+            ...     if h.sub_units:
+            ...         for su in h.sub_units:
+            ...             print(f"  Sub-unit: {su.part_number}/{su.serial_number}")
         """
         params: Dict[str, Any] = {"reportType": report_type}
         if filter_data:
@@ -69,6 +100,19 @@ class ReportRepository:
                 )
             else:
                 params.update(filter_data)
+        
+        # Build OData query parameters
+        if expand:
+            params["$expand"] = ",".join(expand)
+        if odata_filter:
+            params["$filter"] = odata_filter
+        if top is not None:
+            params["$top"] = top
+        if orderby:
+            params["$orderby"] = orderby
+        if skip is not None:
+            params["$skip"] = skip
+            
         response = self._http_client.get("/api/Report/Query/Header", params=params)
         if response.is_success and response.data:
             return [

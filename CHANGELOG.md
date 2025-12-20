@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b9] - 2025-12-20
+
+### Added
+
+- **UnitAnalysisTool** - Comprehensive individual unit analysis
+  - Complete test history and status determination for any serial number
+  - Production/MES tracking information (phase, batch, location)
+  - Unit verification and grading (when rules configured)
+  - Sub-unit (component) tracking from production and test reports
+  - Multiple analysis scopes: quick, standard, full, history, verify
+  - Status classification: passing, failing, in_progress, repaired, scrapped
+  - 40+ unit tests
+
+- **ControlPanelTool** - Unified administrative tool for managing WATS configuration
+  - Single tool handles 5 domains: Asset, Product, Production, Software, Process
+  - 12 operation types: list, get, search, create, update, delete, domain-specific
+  - Entity support: assets, types, products, revisions, units, phases, packages, folders
+  - Comprehensive input validation and confirmation for destructive operations
+  - 50+ unit tests covering all domains and operations
+
+- **SubUnitAnalysisTool** - Deep analysis of sub-unit (component) relationships
+  - Uses query_header endpoint with OData expansion for efficient bulk queries
+  - 4 query types:
+    - `filter_by_subunit`: Find parent units containing a specific component
+    - `get_subunits`: Get all sub-units for filtered parent reports
+    - `statistics`: Aggregate sub-unit counts by type/part number/revision
+    - `deviation`: Detect parents with missing, extra, or unexpected sub-units
+  - Supports both UUT and UUR report types
+  - Automatic baseline inference for deviation detection
+  - 25 unit tests
+
+- **Report Service Enhancements** - Extended query_header capabilities
+  - OData $expand support for sub-units, misc info, assets, attachments
+  - New service methods: `query_headers_with_subunits()`, `query_headers_by_subunit_part_number()`, `query_headers_by_subunit_serial()`
+  - Support for OData $filter, $top, $orderby, $skip parameters
+
+- **Report Models** - New models for expanded header data
+  - `HeaderSubUnit`: serial_number, part_number, revision, part_type
+  - `HeaderMiscInfo`: description, value
+  - `HeaderAsset`: serial_number, running_count, total_count, calibration info
+
 ## [0.1.0b8] - 2025-12-19
 
 ### Added

@@ -10,6 +10,45 @@ ANALYSIS WORKFLOW:
 4. StepAnalysisTool - Comprehensive step analysis (Cpk, root cause)
 5. ProcessCapabilityTool - Advanced capability analysis (stability, dual Cpk)
 6. MeasurementDataTool - Analyze measurement distributions and raw data
+7. UnitAnalysisTool - Individual unit status, history, verification, sub-units
+8. SubUnitAnalysisTool - Deep sub-unit analysis for large datasets (query headers)
+9. ControlPanelTool - Administrative management across all domains
+
+UNIT ANALYSIS WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ UNIT = Unique combination of Part Number + Serial Number                        │
+│ Multiple revisions = same unit (upgraded/reworked)                             │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Unit Analysis provides:
+- Complete test history (all UUT/UUR reports)
+- Production tracking (MES phase, batch, location)
+- Unit verification/grading (if rules configured)
+- Sub-unit (component) tracking
+- Status classification (passing/failing/in-progress/repaired/scrapped)
+
+Data Sources:
+- Analytics: Serial number history (primary source for test records)
+- Production: Unit info, verification rules, phase tracking
+- Report: Full test details, sub-unit assembly information
+
+CONTROL PANEL MANAGER:
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ Unified administrative tool for managing WATS configuration                      │
+│ Single tool handles: Asset, Product, Production, Software, Process              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Domains:
+- ASSET: Equipment, fixtures, calibration, state management
+- PRODUCT: Part numbers, revisions, BOM, box build
+- PRODUCTION: Units, phases, assembly relationships
+- SOFTWARE: Packages, releases, deployment
+- PROCESS: Test/repair/WIP operations (read-only)
+
+Operations:
+- Read: list, get, search
+- Write: create, update, delete (requires confirmation)
+- Domain-specific: set_state, set_phase, add_child, verify, release, revoke
 
 TOP-DOWN ROOT CAUSE ANALYSIS (9-Step Methodology):
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -278,6 +317,31 @@ from .asset import (
     AssetHealthResult,
 )
 
+# Unit analysis tools
+from .unit import (
+    UnitAnalysisTool,
+    UnitAnalysisInput,
+    UnitInfo,
+    UnitStatus,
+    TestSummary,
+    SubUnitInfo,
+)
+
+# Sub-unit analysis tools
+from .subunit import (
+    SubUnitAnalysisTool,
+)
+
+# Control Panel Manager
+from .control_panel import (
+    ControlPanelTool,
+    ControlPanelInput,
+    ControlPanelResult,
+    ManagementDomain,
+    OperationType,
+    DOMAIN_ENTITIES,
+)
+
 # Base infrastructure (new)
 from ._base import (
     ToolInput,
@@ -477,6 +541,25 @@ __all__ = [
     "AssetDegradationAnalysis",
     "AssetDimensionResult",
     "AssetHealthResult",
+    
+    # Unit analysis tools
+    "UnitAnalysisTool",
+    "UnitAnalysisInput",
+    "UnitInfo",
+    "UnitStatus",
+    "TestSummary",
+    "SubUnitInfo",
+    
+    # Sub-unit analysis tools
+    "SubUnitAnalysisTool",
+    
+    # Control Panel Manager
+    "ControlPanelTool",
+    "ControlPanelInput",
+    "ControlPanelResult",
+    "ManagementDomain",
+    "OperationType",
+    "DOMAIN_ENTITIES",
     
     # Agent variants and profiles
     "ToolProfile",

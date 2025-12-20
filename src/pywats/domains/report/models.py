@@ -6,7 +6,7 @@ All fields use Python snake_case naming (e.g., part_number, station_name).
 Backend API aliases (camelCase) are handled automatically.
 Always use the Python field names when creating or accessing these models.
 """
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
 from pydantic import Field, AliasChoices, field_serializer, field_validator
@@ -348,6 +348,91 @@ class ReportHeader(PyWATSModel):
         serialization_alias="rootNodeType"
     )
     operator: Optional[str] = Field(default=None)
+    
+    # Expanded fields (available when using $expand in OData query)
+    sub_units: Optional[List["HeaderSubUnit"]] = Field(
+        default=None,
+        validation_alias=AliasChoices("subUnits", "sub_units"),
+        serialization_alias="subUnits",
+        description="UUT sub-units (expanded via OData)"
+    )
+    uur_sub_units: Optional[List["HeaderSubUnit"]] = Field(
+        default=None,
+        validation_alias=AliasChoices("uurSubUnits", "uur_sub_units"),
+        serialization_alias="uurSubUnits",
+        description="UUR sub-units (expanded via OData)"
+    )
+    misc_info: Optional[List["HeaderMiscInfo"]] = Field(
+        default=None,
+        validation_alias=AliasChoices("miscInfo", "misc_info"),
+        serialization_alias="miscInfo",
+        description="UUT misc info (expanded via OData)"
+    )
+    assets: Optional[List["HeaderAsset"]] = Field(
+        default=None,
+        validation_alias=AliasChoices("assets"),
+        description="UUT assets (expanded via OData)"
+    )
+
+
+class HeaderSubUnit(PyWATSModel):
+    """
+    Sub-unit info from OData expanded header query.
+    
+    This is the lightweight version returned by $expand=subunits.
+    For full sub-unit details, fetch the complete report.
+    """
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber"
+    )
+    revision: Optional[str] = Field(default=None)
+    part_type: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partType", "part_type"),
+        serialization_alias="partType"
+    )
+
+
+class HeaderMiscInfo(PyWATSModel):
+    """Misc info from OData expanded header query."""
+    description: Optional[str] = Field(default=None)
+    value: Optional[str] = Field(default=None)
+
+
+class HeaderAsset(PyWATSModel):
+    """Asset info from OData expanded header query."""
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber"
+    )
+    running_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("runningCount", "running_count"),
+        serialization_alias="runningCount"
+    )
+    total_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("totalCount", "total_count"),
+        serialization_alias="totalCount"
+    )
+    days_since_calibration: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("daysSinceCalibration", "days_since_calibration"),
+        serialization_alias="daysSinceCalibration"
+    )
+    calibration_days_overdue: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("calibrationDaysOverdue", "calibration_days_overdue"),
+        serialization_alias="calibrationDaysOverdue"
+    )
 
 
 class Attachment(PyWATSModel):

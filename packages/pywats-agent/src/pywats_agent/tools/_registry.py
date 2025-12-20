@@ -33,6 +33,8 @@ _TOOL_CATEGORIES: Dict[str, List[str]] = {
     "capability": [],      # Process capability analysis
     "measurement": [],     # Measurement data tools
     "step": [],            # Step-level analysis
+    "unit": [],            # Unit/serial number analysis
+    "admin": [],           # Administrative/management tools
     "shared": [],          # Utility tools
 }
 
@@ -107,6 +109,12 @@ def get_tool(name: str) -> Optional[Type["AgentTool"]]:
         # Measurement tools
         "get_measurement_data": (".measurement", "MeasurementDataTool"),
         "get_aggregated_measurements": (".measurement", "AggregatedMeasurementTool"),
+        # Unit tools
+        "analyze_unit": (".unit", "UnitAnalysisTool"),
+        # Sub-unit tools
+        "analyze_subunits": (".subunit", "SubUnitAnalysisTool"),
+        # Admin/Management tools
+        "control_panel": (".control_panel", "ControlPanelTool"),
     }
     
     if name in _KNOWN_TOOLS:

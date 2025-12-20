@@ -70,6 +70,8 @@ class ToolCategory(str, Enum):
     CAPABILITY = "capability"
     MEASUREMENT = "measurement"
     STEP = "step"
+    UNIT = "unit"
+    ADMIN = "admin"  # Administrative/management tools
     SHARED = "shared"
 
 
@@ -95,6 +97,13 @@ TOOL_CATEGORIES: Dict[str, ToolCategory] = {
     # Step tools
     "analyze_test_steps": ToolCategory.STEP,
     "analyze_step": ToolCategory.STEP,
+    
+    # Unit tools
+    "analyze_unit": ToolCategory.UNIT,
+    "analyze_subunits": ToolCategory.UNIT,
+    
+    # Admin tools
+    "control_panel": ToolCategory.ADMIN,
 }
 
 
@@ -192,6 +201,11 @@ PROFILES: Dict[str, ToolProfile] = {
             # Step
             "analyze_test_steps",
             "analyze_step",
+            # Unit
+            "analyze_unit",
+            "analyze_subunits",
+            # Admin
+            "control_panel",
         },
     ),
     
@@ -233,6 +247,25 @@ PROFILES: Dict[str, ToolProfile] = {
         description="Minimal tool set - just core yield analysis",
         tools={
             "analyze_yield",
+        },
+    ),
+    
+    "unit": ToolProfile(
+        name="unit",
+        description="Unit-focused analysis - serial number history, verification, sub-units",
+        tools={
+            "analyze_unit",
+            "analyze_subunits",  # Deep sub-unit analysis for large datasets
+            "analyze_yield",  # Useful for context
+        },
+    ),
+    
+    "admin": ToolProfile(
+        name="admin",
+        description="Administrative tools - manage assets, products, production, software",
+        tools={
+            "control_panel",
+            "analyze_unit",  # Useful for viewing unit data
         },
     ),
 }
