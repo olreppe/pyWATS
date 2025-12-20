@@ -6,25 +6,29 @@ a frontend application (browser) to the agent, enabling:
 - Context-aware tool selection
 - Pre-loaded data to avoid redundant API calls
 - User preferences and filters already in view
+- Autonomy/rigor configuration
 
 Example:
-    >>> from pywats_agent import AgentContext, ToolExecutor
+    >>> from pywats_agent import AgentContext, AgentConfig, AnalyticalRigor
     >>> 
     >>> # Frontend sends context with the query
     >>> context = AgentContext(
     ...     current_product="WIDGET-001",
     ...     current_station="Line1-FCT",
     ...     date_range=("2024-12-01", "2024-12-19"),
+    ...     config=AgentConfig(rigor=AnalyticalRigor.THOROUGH),
     ... )
     >>> 
     >>> executor = ToolExecutor(api, context=context)
     >>> result = executor.execute("analyze_yield", {"perspective": "by station"})
-    >>> # Agent knows to use WIDGET-001 without being told
+    >>> # Agent knows to use WIDGET-001 and be thorough
 """
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
+
+from .autonomy import AgentConfig
 
 
 class VisibleData(BaseModel):
@@ -139,6 +143,12 @@ class AgentContext(BaseModel):
         description="Additional custom context from the frontend"
     )
     
+    # Agent configuration (autonomy/rigor)
+    config: Optional[AgentConfig] = Field(
+        default=None,
+        description="Agent behavior configuration (rigor level, write mode)"
+    )
+    
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "AgentContext":
         """
@@ -153,6 +163,11 @@ class AgentContext(BaseModel):
         # Handle nested visible_data
         if "visible_data" in data and isinstance(data["visible_data"], dict):
             data["visible_data"] = VisibleData(**data["visible_data"])
+        
+        # Handle nested config
+        if "config" in data and isinstance(data["config"], dict):
+            data["config"] = AgentConfig(**data["config"])
+        
         return cls(**data)
     
     def to_system_prompt(self) -> str:
@@ -162,7 +177,14 @@ class AgentContext(BaseModel):
         Returns:
             Human-readable context description
         """
-        parts = ["Current context:"]
+        parts = []
+        
+        # Include config instructions first (most important)
+        if self.config:
+            parts.append(self.config.get_system_prompt())
+            parts.append("")  # Blank line separator
+        
+        parts.append("Current context:")
         
         if self.current_product:
             line = f"- Product: {self.current_product}"

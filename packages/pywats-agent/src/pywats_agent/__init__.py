@@ -23,6 +23,28 @@ Example:
 from .result import AgentResult
 from .executor import ToolExecutor
 from .context import AgentContext, VisibleData
+from .autonomy import (
+    AnalyticalRigor,
+    WriteMode,
+    AgentConfig,
+    PRESETS,
+    get_preset,
+)
+from .visualization import (
+    ChartType,
+    DataSeries,
+    ReferenceLine,
+    Annotation,
+    ChartPayload,
+    TableColumn,
+    TablePayload,
+    KPIPayload,
+    DrillDownOption,
+    VisualizationPayload,
+    VizBuilder,
+    merge_visualizations,
+    empty_visualization,
+)
 from .testing import (
     AgentTestHarness,
     TestCase,
@@ -58,6 +80,26 @@ __all__ = [
     # Context
     "AgentContext",
     "VisibleData",
+    # Autonomy/Config
+    "AnalyticalRigor",
+    "WriteMode",
+    "AgentConfig",
+    "PRESETS",
+    "get_preset",
+    # Visualization (sidecar pattern)
+    "ChartType",
+    "DataSeries",
+    "ReferenceLine",
+    "Annotation",
+    "ChartPayload",
+    "TableColumn",
+    "TablePayload",
+    "KPIPayload",
+    "DrillDownOption",
+    "VisualizationPayload",
+    "VizBuilder",
+    "merge_visualizations",
+    "empty_visualization",
     # Testing
     "AgentTestHarness",
     "TestCase",

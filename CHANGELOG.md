@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Agent Autonomy System** - Configurable rigor and write safety controls
+  - `AnalyticalRigor` enum: QUICK, BALANCED, THOROUGH, EXHAUSTIVE
+    - Controls how thorough analytics operations are (data gathering, cross-validation)
+    - Affects system prompt instructions and default parameters
+  - `WriteMode` enum: BLOCKED, CONFIRM_ALL, CONFIRM_DESTRUCTIVE
+    - Controls whether write operations (POST/PUT/DELETE) are allowed
+    - Enforces confirmation requirements for mutations
+  - `AgentConfig` class for unified configuration
+    - `get_system_prompt()` - Generates rigor/write mode instructions
+    - `get_default_parameters(rigor)` - Returns sample sizes scaled by rigor
+    - `allows_write(operation)` - Checks if write operation is permitted
+    - `requires_confirmation(operation)` - Checks if confirmation needed
+  - 6 presets for common scenarios:
+    - `viewer` - Read-only analytics, writes blocked
+    - `quick_check` - Fast spot-checks, writes blocked  
+    - `investigation` - Balanced analysis (default)
+    - `audit` - Maximum thoroughness, all writes confirmed
+    - `admin` - Balanced analysis with full write access
+    - `power_user` - Quick analysis with full write access
+  - `AgentContext` integration - Config flows through context to agent
+  - 33 unit tests
+
+- **Visualization Sidecar System** - Optional rich visualization for UI
+  - `VisualizationPayload` - Bypasses LLM context, goes directly to UI
+  - `VizBuilder` - Fluent builder for common chart types:
+    - `line_chart()`, `area_chart()`, `bar_chart()` - Trends and comparisons
+    - `pie_chart()`, `pareto_chart()` - Distribution analysis
+    - `control_chart()` - SPC with UCL/LCL/target lines
+    - `heatmap()`, `histogram()`, `scatter()` - Advanced analysis
+    - `table()`, `kpi()`, `kpi_row()`, `dashboard()` - Data display
+  - Reference lines, annotations, and drill-down support
+  - `AgentResult.viz_payload` - Optional field (UI infers from data when absent)
+  - `to_openai_response()` excludes viz (saves tokens)
+  - `to_ui_response()` includes viz (for frontend rendering)
+  - 37 unit tests
+
 ## [0.1.0b10] - 2025-12-20
 
 ### Added
