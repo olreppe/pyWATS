@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b12] - 2025-01-21
+
+### Fixed
+- **Import path issues** - Resolved package shadowing and import errors
+  - Removed stale `src/pywats_agent/` directory that shadowed the correct package location
+  - Fixed test imports to use public API (`pywats_agent.tools`) instead of internal paths (`pywats_agent.tools.shared.*`)
+  - Added missing exports to `pywats_agent.tools.__init__.py` (TemporalMatrix, DeviationMatrix, DeviationCell, session creators)
+  - All 877 tests now pass (589 agent tests + 288 API tests)
+
+## [0.1.0b11] - Previous Release
+
 ### Added
 
 - **Agent Autonomy System** - Configurable rigor and write safety controls
