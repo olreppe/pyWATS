@@ -38,11 +38,7 @@ jobs:
 
     - name: Run unit tests (no server required)
       run: |
-        pytest tests/ -v \
-          --ignore=tests/instances \
-          --ignore=tests/fixtures \
-          --ignore=tests/acceptance \
-          -m "not server and not integration" \
+        pytest api-agent-tests/ -v \
           --tb=short \
           -x
       env:
