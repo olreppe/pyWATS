@@ -72,7 +72,7 @@ from .tools import (
     get_measurement_data_tool_definition,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.0b16"
 __all__ = [
     # Core
     "AgentResult",

@@ -24,6 +24,8 @@ which provides cached access to all processes with methods like:
 - api.process.get_test_operation(name_or_code) - lookup by name or code
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import re
 from difflib import SequenceMatcher
