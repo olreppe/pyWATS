@@ -851,3 +851,142 @@ class TestDateRangeHandling:
         assert params["date_from"] == explicit_from
 
 
+class TestRealLLMQueryExecution:
+    """INTEGRATION TESTS - Real API calls to trace LLM queries end-to-end."""
+    
+    def test_top_10_runners_real_execution(self, wats_client):
+        """
+        REAL TEST: Execute 'Give me top 10 runners' query against actual WATS server.
+        
+        This test:
+        1. Simulates LLM extracting parameters from "Give me top 10 runners"
+        2. Executes the yield tool with real API
+        3. Makes actual call to api.analytics.get_dynamic_yield
+        4. Validates real response data
+        """
+        from pywats_agent import ToolExecutor
+        
+        print("\n" + "="*60)
+        print("REAL TEST: 'Give me top 10 runners'")
+        print("="*60)
+        
+        # Create real executor with actual API client
+        executor = ToolExecutor(wats_client)
+        
+        # Simulate parameters that LLM would extract from natural language query
+        # "Give me top 10 runners" -> high volume products
+        tool_input = {
+            "top_count": 10,
+            "perspective": "by_product",  # Group by product/part number
+            "sort_by": "unit_count",  # Runners = high volume
+            "period_count": 30
+        }
+        
+        print(f"\nLLM Query: 'Give me top 10 runners'")
+        print(f"Extracted Parameters: {tool_input}")
+        
+        # EXECUTE - This makes a REAL API call
+        result = executor.execute("analyze_yield", tool_input)
+        
+        print(f"\nResult Type: {type(result)}")
+        print(f"Result Status: {'SUCCESS' if result and not getattr(result, 'error', None) else 'ERROR'}")
+        
+        if hasattr(result, 'data'):
+            print(f"Data rows returned: {len(result.data) if result.data else 0}")
+            if result.data and len(result.data) > 0:
+                print(f"\nTop 3 Runners:")
+                for idx, row in enumerate(result.data[:3], 1):
+                    print(f"  {idx}. {row}")
+        
+        if hasattr(result, 'text'):
+            print(f"\nAgent Response:\n{result.text[:500]}")
+        
+        print("="*60 + "\n")
+        
+        # Verify the call succeeded
+        assert result is not None, "Tool execution should return a result"
+        assert not getattr(result, 'error', None), f"Tool should not error: {getattr(result, 'error', None)}"
+    
+    def test_yield_by_station_last_7_days_real(self, wats_client):
+        """
+        REAL TEST: Execute 'Show yield by station for last 7 days' query.
+        """
+        from pywats_agent import ToolExecutor
+        
+        print("\n" + "="*60)
+        print("REAL TEST: 'Show yield by station for last 7 days'")
+        print("="*60)
+        
+        executor = ToolExecutor(wats_client)
+        
+        tool_input = {
+            "perspective": "by_station",
+            "period_count": 7,
+            "date_grouping": "DAY"
+        }
+        
+        print(f"\nLLM Query: 'Show yield by station for last 7 days'")
+        print(f"Extracted Parameters: {tool_input}")
+        
+        # REAL API CALL
+        result = executor.execute("analyze_yield", tool_input)
+        
+        print(f"\nResult Type: {type(result)}")
+        print(f"Result Status: {'SUCCESS' if result and not getattr(result, 'error', None) else 'ERROR'}")
+        
+        if hasattr(result, 'data'):
+            print(f"Station data rows: {len(result.data) if result.data else 0}")
+            if result.data and len(result.data) > 0:
+                print(f"\nFirst 3 Stations:")
+                for idx, row in enumerate(result.data[:3], 1):
+                    print(f"  {idx}. {row}")
+        
+        print("="*60 + "\n")
+        
+        assert result is not None
+        assert not getattr(result, 'error', None), f"Should not error: {getattr(result, 'error', None)}"
+    
+    def test_worst_performers_last_30_days_real(self, wats_client):
+        """
+        REAL TEST: Execute 'Show me the 10 worst performing products in the last 30 days'.
+        """
+        from pywats_agent import ToolExecutor
+        
+        print("\n" + "="*60)
+        print("REAL TEST: 'Show worst performing products (last 30 days)'")
+        print("="*60)
+        
+        executor = ToolExecutor(wats_client)
+        
+        tool_input = {
+            "top_count": 10,
+            "perspective": "by_product",
+            "sort_by": "fpy",
+            "ascending": True,  # Worst first
+            "period_count": 30
+        }
+        
+        print(f"\nLLM Query: 'Show me the 10 worst performing products in the last 30 days'")
+        print(f"Extracted Parameters: {tool_input}")
+        
+        # REAL API CALL
+        result = executor.execute("analyze_yield", tool_input)
+        
+        print(f"\nResult Type: {type(result)}")
+        print(f"Result Status: {'SUCCESS' if result and not getattr(result, 'error', None) else 'ERROR'}")
+        
+        if hasattr(result, 'data'):
+            print(f"Products returned: {len(result.data) if result.data else 0}")
+            if result.data and len(result.data) > 0:
+                print(f"\nWorst 3 Performers:")
+                for idx, row in enumerate(result.data[:3], 1):
+                    print(f"  {idx}. {row}")
+        
+        if hasattr(result, 'text'):
+            print(f"\nAgent Response:\n{result.text[:500]}")
+        
+        print("="*60 + "\n")
+        
+        assert result is not None
+        assert not getattr(result, 'error', None), f"Should not error: {getattr(result, 'error', None)}"
+

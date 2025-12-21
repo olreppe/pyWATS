@@ -414,7 +414,7 @@ async def _tool_get_version(api: pyWATS, args: dict) -> list[TextContent]:
 
 async def _tool_get_processes(api: pyWATS, args: dict) -> list[TextContent]:
     """Get test processes."""
-    processes = api.app.get_processes()
+    processes = api.analytics.get_processes()
     if not processes:
         return [TextContent(type="text", text="No processes defined")]
     

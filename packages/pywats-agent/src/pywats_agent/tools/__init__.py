@@ -381,6 +381,12 @@ from .variants import (
 # Load user-defined variants
 from . import variant_config  # noqa: F401
 
+# Debug tool
+from .debug_tool import (
+    DebugTool,
+    get_debug_tool_definition,
+)
+
 __all__ = [
     # Base infrastructure
     "ToolInput",
@@ -586,4 +592,8 @@ __all__ = [
     "list_variants",
     "print_profiles",
     "print_variant_diff",
+    
+    # Debug tools
+    "DebugTool",
+    "get_debug_tool_definition",
 ]

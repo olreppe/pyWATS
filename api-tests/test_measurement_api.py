@@ -77,12 +77,12 @@ class TestAggregatedMeasurementsAPI:
             days=30,
         )
         
-        top_failed = wats_client.app.get_top_failed(filter_obj)
+        top_failed = wats_client.analytics.get_top_failed(filter_obj)
         
         if not top_failed:
             print("No failed steps found, trying without part_number filter")
             filter_obj = WATSFilter(top_count=5, days=30)
-            top_failed = wats_client.app.get_top_failed(filter_obj)
+            top_failed = wats_client.analytics.get_top_failed(filter_obj)
         
         if not top_failed:
             pytest.skip("No failed steps available to get measurement path")
@@ -141,11 +141,11 @@ class TestMeasurementDataAPI:
             days=30,
         )
         
-        top_failed = wats_client.app.get_top_failed(filter_obj)
+        top_failed = wats_client.analytics.get_top_failed(filter_obj)
         
         if not top_failed:
             filter_obj = WATSFilter(top_count=5, days=30)
-            top_failed = wats_client.app.get_top_failed(filter_obj)
+            top_failed = wats_client.analytics.get_top_failed(filter_obj)
         
         if not top_failed:
             pytest.skip("No failed steps available")

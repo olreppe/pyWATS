@@ -88,7 +88,7 @@ class pyWATS:
         report = api.report.get_report("report-uuid")
         
         # Access statistics
-        yield_data = api.app.get_dynamic_yield(filter)
+        yield_data = api.analytics.get_dynamic_yield(filter)
     
     Authentication:
         The API uses Basic authentication. The token should be a Base64-encoded
@@ -339,16 +339,6 @@ class pyWATS:
         return self._analytics
     
     @property
-    def app(self) -> AnalyticsService:
-        """
-        Deprecated alias for `analytics`. Use `analytics` instead.
-        
-        Returns:
-            AnalyticsService instance
-        """
-        return self.analytics
-    
-    @property
     def rootcause(self) -> RootCauseService:
         """
         Access RootCause ticketing operations.
@@ -522,7 +512,7 @@ class pyWATS:
             True if connection is successful, False otherwise
         """
         try:
-            version = self.app.get_version()
+            version = self.analytics.get_version()
             return version is not None
         except Exception as e:
             logger.debug(f"Connection test failed: {e}")
@@ -535,7 +525,7 @@ class pyWATS:
         Returns:
             Version information dictionary
         """
-        return self.app.get_version()
+        return self.analytics.get_version()
     
     def __repr__(self) -> str:
         """String representation of the pyWATS instance."""

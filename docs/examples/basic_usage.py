@@ -115,7 +115,7 @@ def main():
 
     # Get processes
     print("   Getting processes...")
-    processes = api.app.get_processes()
+    processes = api.analytics.get_processes()
     print(f"   Found {len(processes)} processes")
 
     for p in processes[:5]:

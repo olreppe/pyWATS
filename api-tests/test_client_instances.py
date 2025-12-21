@@ -51,14 +51,14 @@ class TestAPIClients:
     def test_wats_client_a_connection(self, wats_client: "pyWATS") -> None:
         """Test that Client A can connect to WATS server."""
         # Verify connection by getting version
-        version = wats_client.app.get_version()
+        version = wats_client.analytics.get_version()
         assert version is not None
 
     @pytest.mark.client_b
     def test_wats_client_b_connection(self, wats_client_b: "pyWATS") -> None:
         """Test that Client B can connect to WATS server."""
         # Verify connection by getting version  
-        version = wats_client_b.app.get_version()
+        version = wats_client_b.analytics.get_version()
         assert version is not None
 
     def test_both_clients_access_same_server(
@@ -67,8 +67,8 @@ class TestAPIClients:
         wats_client_b: "pyWATS"
     ) -> None:
         """Test both clients connect to the same server."""
-        version_a = wats_client.app.get_version()
-        version_b = wats_client_b.app.get_version()
+        version_a = wats_client.analytics.get_version()
+        version_b = wats_client_b.analytics.get_version()
         # Both should get the same version from the same server
         assert version_a == version_b
 
