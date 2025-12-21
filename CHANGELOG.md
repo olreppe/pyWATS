@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0b12] - 2025-01-21
+## [0.1.0b13 / pywats-agent 0.1.2] - 2025-12-21
+
+### Fixed
+- **Missing type imports** - Added missing `Any` imports to asset and product service modules
+  - Fixed F821 linting errors that were blocking CI
+
+### Added
+- **Pre-release validation script** - New `scripts/pre_release_check.ps1` to catch errors before releasing
+  - Runs flake8 linting checks (same as CI)
+  - Optionally runs full test suite
+  - Use `.\scripts\pre_release_check.ps1` before every release
+
+## [0.1.0b12] - 2025-12-21
 
 ### Fixed
 - **Import path issues** - Resolved package shadowing and import errors
