@@ -16,7 +16,7 @@ Always use the Python field names when creating or accessing these models.
 """
 from datetime import datetime
 from typing import List, Optional
-from pydantic import Field, AliasChoices
+from pydantic import Field, AliasChoices, ConfigDict
 
 from ...shared.base_model import PyWATSModel
 
@@ -661,6 +661,10 @@ class YieldData(PyWATSModel):
         >>> yield_data = YieldData(part_number="WIDGET-001", station_name="Station1")
         >>> print(yield_data.part_number)  # Access with Python field name
     """
+
+    # Preserve forward-compatible fields returned by the backend.
+    # Some WATS servers include built-in trend/baseline fields in yield payloads.
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
 
     part_number: Optional[str] = Field(
         default=None,

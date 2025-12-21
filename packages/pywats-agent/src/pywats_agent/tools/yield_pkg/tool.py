@@ -793,18 +793,16 @@ YIELD TREND (Change Detection):
 - Useful for improvement/degradation analysis
 
 Example questions this tool answers:
-- "What's yield?" -> perspective: "by product" or specify product
-- "What's FCT yield for WIDGET-001?" -> test_operation: "FCT"
+- "What's yield for BOXBUILD overall?" -> leave perspective empty (aggregate)
+- "What's FPY for WIDGET-001 in FCT?" -> part_number + test_operation
 - "What processes does WIDGET-001 go through?" -> perspective: "by operation"
-- "What's the RTY for WIDGET-001?" -> calculate from by-operation results
-- "Who are the top runners?" -> perspective: "by product" (sorted by volume)
-- "Which station is best/worst?" -> perspective: "by station"
-- "Compare yield by station" -> perspective: "by station"
-- "Show daily yield for the past week" -> perspective: "daily", days: 7
-- "What's the yield trend?" -> perspective: "trend"
-- "How many units were tested?" -> check unit_count in results
-- "What's the volume?" -> check unit_count in results
-- "What's the repair station performance?" -> yield_type: "report"
+- "Who are the top runners in EOL?" -> perspective: "by product" + test_operation
+- "Which station is hurting yield the most?" -> perspective: "by station"
+- "Show daily yield for the past 7 days" -> perspective: "daily", period_count: 7
+- "Is yield improving or degrading vs the previous period?" -> look at built-in trend deltas
+- "Why is the trend showing +/-0%?" -> previous period may have no data (fallback)
+- "How many units were tested?" -> unit_count
+- "How is the repair line performing?" -> yield_type: "report" (TRY)
 
 Available perspectives:
 - Time: trend, daily, weekly, monthly
@@ -1221,12 +1219,15 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
         # Calculate overall statistics
         total_units = sum(getattr(d, 'unit_count', 0) or 0 for d in data)
         
-        # Try to get FPY (first_pass_yield)
+        # Try to get primary yield metric (prefer canonical pyWATS model fields)
         fpy_values = []
         for d in data:
-            fpy = getattr(d, 'first_pass_yield', None)
+            fpy = getattr(d, 'fpy', None)
+            if fpy is None:
+                # Backward compatibility for older/alternate model naming
+                fpy = getattr(d, 'first_pass_yield', None)
             if fpy is not None:
-                fpy_values.append(fpy)
+                fpy_values.append(float(fpy))
         
         avg_fpy = sum(fpy_values) / len(fpy_values) if fpy_values else None
         
@@ -1266,6 +1267,15 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                 parts.append(f"* Average TRY: {avg_fpy:.1f}%")
             else:
                 parts.append(f"* Average FPY: {avg_fpy:.1f}%")
+
+        # Surface built-in trend deltas when the backend provides them.
+        # These deltas are typically vs the previous equally-sized period.
+        if len(data) == 1:
+            trend_line, trend_warning = self._build_trend_line(data[0])
+            if trend_line:
+                parts.append(f"* Trend vs previous period: {trend_line}")
+            if trend_warning:
+                parts.append(f"* NOTE: {trend_warning}")
         parts.append(f"* Total units: {total_units:,}")
         parts.append(f"* Data points: {len(data)}")
         
@@ -1290,11 +1300,136 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                 worst_label = self._get_data_label(worst, perspective)
                 
                 if best_fpy is not None and best_label:
-                    parts.append(f"* Best: {best_label} ({best_fpy:.1f}%)")
+                    best_trend_line, _ = self._build_trend_line(best)
+                    trend_suffix = f" ({best_trend_line})" if best_trend_line else ""
+                    parts.append(f"* Best: {best_label} ({best_fpy:.1f}%){trend_suffix}")
                 if worst_fpy is not None and worst_label:
-                    parts.append(f"* Worst: {worst_label} ({worst_fpy:.1f}%)")
+                    worst_trend_line, _ = self._build_trend_line(worst)
+                    trend_suffix = f" ({worst_trend_line})" if worst_trend_line else ""
+                    parts.append(f"* Worst: {worst_label} ({worst_fpy:.1f}%){trend_suffix}")
         
         return "\n".join(parts)
+
+    def _build_trend_line(self, data_point: Any) -> tuple[Optional[str], Optional[str]]:
+        """Extract and format built-in trend deltas from a yield record.
+
+        Returns:
+            (trend_line, warning)
+        """
+        trends = self._extract_trend_deltas(data_point)
+        if not trends:
+            return None, None
+
+        # Prefer common KPI deltas if available
+        ordered_metrics = [
+            ("fpy", "FPY"),
+            ("tpy", "TPY"),
+            ("lpy", "LPY"),
+            ("unitcount", "Units"),
+        ]
+        parts: List[str] = []
+        has_zero_delta = False
+        for metric_key, label in ordered_metrics:
+            if metric_key not in trends:
+                continue
+            value = trends[metric_key]
+            if abs(value) < 1e-12:
+                has_zero_delta = True
+            # Heuristic: Yield deltas are typically percentage points.
+            if metric_key in ("fpy", "tpy", "lpy"):
+                parts.append(f"{label} {value:+.1f}pp")
+            else:
+                # Units could be absolute change or percent; keep generic.
+                parts.append(f"{label} {value:+.0f}")
+
+        trend_line = ", ".join(parts) if parts else None
+        if not trend_line:
+            return None, None
+
+        # Warning for potential 0%-fallback when previous period has no data.
+        warning = None
+        if has_zero_delta and self._trend_baseline_fields_missing(data_point):
+            warning = (
+                "Trend deltas are 0. If the previous period has no data, some WATS servers "
+                "still return +/-0 (fallback), which can look like 'no change'."
+            )
+
+        return trend_line, warning
+
+    def _trend_baseline_fields_missing(self, data_point: Any) -> bool:
+        """Best-effort check for whether baseline/previous-period fields are present."""
+        dump: Dict[str, Any] = {}
+        if hasattr(data_point, "model_dump"):
+            dump = data_point.model_dump(by_alias=True, exclude_none=True)
+        elif isinstance(data_point, dict):
+            dump = data_point
+
+        for key in dump.keys():
+            norm = self._normalize_trend_key(key)
+            if "prev" in norm or "previous" in norm or "baseline" in norm:
+                return False
+        return True
+
+    def _extract_trend_deltas(self, data_point: Any) -> Dict[str, float]:
+        """Extract trend-like numeric fields from a yield record.
+
+        This is intentionally heuristic because different WATS servers may use
+        different field names (e.g., '+/-', 'delta', 'trend').
+        """
+        dump: Dict[str, Any] = {}
+        if hasattr(data_point, "model_dump"):
+            dump = data_point.model_dump(by_alias=True, exclude_none=True)
+        elif isinstance(data_point, dict):
+            dump = data_point
+
+        candidates: Dict[str, tuple[float, int]] = {}
+        metric_prefixes = {
+            "fpy": "fpy",
+            "spy": "spy",
+            "tpy": "tpy",
+            "lpy": "lpy",
+            "unitcount": "unitcount",
+        }
+        trend_markers = ("trend", "delta", "change", "plusminus", "pm")
+
+        for key, raw_value in dump.items():
+            if not isinstance(raw_value, (int, float)):
+                continue
+            norm = self._normalize_trend_key(key)
+
+            # Only consider keys that look like trend/delta fields
+            if not any(m in norm for m in trend_markers):
+                continue
+
+            for metric_key, prefix in metric_prefixes.items():
+                if not norm.startswith(prefix):
+                    continue
+                score = 0
+                if "plusminus" in norm or norm.endswith("pm"):
+                    score += 3
+                if "delta" in norm:
+                    score += 2
+                if "trend" in norm or "change" in norm:
+                    score += 1
+
+                value = float(raw_value)
+                existing = candidates.get(metric_key)
+                if existing is None or score > existing[1]:
+                    candidates[metric_key] = (value, score)
+
+        return {k: v for k, (v, _score) in candidates.items()}
+
+    @staticmethod
+    def _normalize_trend_key(key: str) -> str:
+        """Normalize a backend key for heuristic matching."""
+        import re
+
+        lowered = key.lower()
+        # Map '+/-' to a stable token
+        lowered = lowered.replace("+/-", "plusminus")
+        lowered = lowered.replace("+/-pct", "plusminus")
+        # Strip non-alphanumerics
+        return re.sub(r"[^a-z0-9]+", "", lowered)
     
     def _get_data_label(self, data_point: Any, perspective: AnalysisPerspective) -> Optional[str]:
         """Get a human-readable label for a data point based on the perspective."""

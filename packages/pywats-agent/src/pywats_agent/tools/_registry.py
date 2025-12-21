@@ -115,6 +115,7 @@ def get_tool(name: str) -> Optional[Type["AgentTool"]]:
         "analyze_subunits": (".subunit", "SubUnitAnalysisTool"),
         # Admin/Management tools
         "control_panel": (".control_panel", "ControlPanelTool"),
+
     }
     
     if name in _KNOWN_TOOLS:

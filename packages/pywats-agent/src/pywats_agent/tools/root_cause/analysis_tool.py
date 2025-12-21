@@ -851,11 +851,11 @@ KEY PRINCIPLE: Test steps are SYMPTOMS, not root causes.
 We start at yield level and only dive into steps when justified.
 
 Example questions this tool answers:
-- "Why is FCT yield low for WIDGET-001?"
-- "What's causing the recent yield drop?"
-- "Is Station-3's poor yield a new problem or chronic?"
-- "What should we investigate first?"
-- "Which test steps are causing the most failures?"
+- "Why is FPY low for WIDGET-001 in FCT, and what changed vs the previous period?"
+- "Is the yield drop localized (station/fixture/batch) or system-wide?"
+- "Is Station-3’s poor yield emerging, chronic, or recovering?"
+- "What suspect should we investigate first (impact × deviation × trend)?"
+- "Which test steps contribute most to UUT failures for the top suspect?"
 """
     
     def __init__(self, api: "pyWATS"):

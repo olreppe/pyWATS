@@ -31,6 +31,12 @@ class DebugTool(AgentTool):
     - Top 10 products by unit count
     - Last 30 days
     - Grouped by part_number only
+
+    Example questions this tool answers:
+    - "Is the WATS server up?"
+    - "Can you run a smoke test against DynamicYield?"
+    - "Show top runners (top 10 by volume)"
+    - "I think the API is down — can you verify connectivity?"
     """
     
     name = "debug_server"

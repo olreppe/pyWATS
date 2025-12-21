@@ -862,12 +862,12 @@ EXPLAINABLE FINDINGS include:
 - Expected impact
 
 Example questions this tool answers:
-- "Why is FCT yield low for WIDGET-001?"
-- "What's causing the recent yield drop?"
-- "Is Station-3's poor yield a new problem or chronic?"
-- "What should we investigate first?"
-- "Which test steps are causing the most failures?"
-- "Is this a regression or chronic issue?"
+- "Why is FPY low for WIDGET-001 in FCT, and what changed vs last week?"
+- "We saw a yield drop this week — is it emerging, chronic, or recovering?"
+- "Which station/fixture/operator/batch correlates most with failures?"
+- "What’s the highest-impact suspect to investigate first (volume × yield loss)?"
+- "Which test steps contribute most to UUT failures for the top suspect?"
+- "Is this likely a regression (increasing step failures) or stable noise?"
 """
     
     def __init__(self, api: "pyWATS"):

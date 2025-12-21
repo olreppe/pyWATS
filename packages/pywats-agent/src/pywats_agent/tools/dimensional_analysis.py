@@ -309,10 +309,10 @@ COMMON FINDINGS:
 - Software-specific: Test version differences
 
 Example questions this tool answers:
-- "Why is FCT yield dropping?"
-- "Is there a specific station causing failures?"
-- "Are certain batches having more problems?"
-- "What's different about the failing units?"
+- "What dimension explains the yield drop (station, batch, fixture, SW, operator)?"
+- "Which specific station/fixture combo has the worst FPY (and enough volume)?"
+- "Are failures concentrated in one batch/lot, or spread across production?"
+- "Did the problem start recently (time trend), or is it long-standing?"
 
 WORKFLOW:
 1. Use yield_tool to identify overall yield problem

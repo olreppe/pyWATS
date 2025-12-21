@@ -112,10 +112,8 @@ class AgentTool(ABC):
             return self._execute(input_obj)
             
         except Exception as e:
-            return AgentResult.error(
-                error=str(e),
-                error_type=type(e).__name__,
-            )
+            # Keep failures safe and consistent for callers/LLMs.
+            return AgentResult.fail(f"{type(e).__name__}: {str(e)}")
     
     @abstractmethod
     def _execute(self, input: ToolInput) -> AgentResult:
