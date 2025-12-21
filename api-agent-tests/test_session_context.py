@@ -19,14 +19,30 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import time
 
+# Import all symbols from the public API at tools package level
+from pywats_agent.tools import (
+    SessionManager,
+    SessionType,
+    AnalysisSession,
+    AnalysisContext,
+    FilterMemory,
+    ContextConfidence,
+    get_context,
+    get_session_manager,
+    TemporalMatrix,
+    DeviationMatrix,
+    DeviationCell,
+    create_trend_session,
+    create_deviation_session,
+)
+
 
 class TestSessionManager:
     """Tests for SessionManager singleton and session lifecycle."""
     
     def test_singleton_pattern(self):
         """SessionManager should be a singleton."""
-        from pywats_agent.tools.shared.session import SessionManager
-        
+
         manager1 = SessionManager.get_instance()
         manager2 = SessionManager.get_instance()
         
@@ -34,8 +50,7 @@ class TestSessionManager:
     
     def test_create_session_generates_unique_id(self):
         """Each session should have a unique ID."""
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
+
         SessionManager.reset_instance()
         manager = SessionManager.get_instance()
         
@@ -56,8 +71,7 @@ class TestSessionManager:
     
     def test_get_session_by_id(self):
         """Should retrieve session by ID."""
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
+
         SessionManager.reset_instance()
         manager = SessionManager.get_instance()
         
@@ -72,8 +86,7 @@ class TestSessionManager:
     
     def test_get_nonexistent_session_returns_none(self):
         """Should return None for unknown session ID."""
-        from pywats_agent.tools.shared.session import SessionManager
-        
+
         manager = SessionManager.get_instance()
         result = manager.get_session("nonexistent_123")
         
@@ -81,8 +94,7 @@ class TestSessionManager:
     
     def test_session_ttl_expiration(self):
         """Sessions should expire after TTL."""
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
+
         SessionManager.reset_instance()
         manager = SessionManager.get_instance()
         
@@ -106,8 +118,7 @@ class TestSessionManager:
     
     def test_cleanup_removes_expired_sessions(self):
         """Cleanup should remove expired sessions."""
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
+
         SessionManager.reset_instance()
         manager = SessionManager.get_instance()
         
@@ -131,8 +142,7 @@ class TestSessionManager:
     
     def test_reset_instance_clears_manager(self):
         """reset_instance should clear the singleton."""
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
+
         manager1 = SessionManager.get_instance()
         manager1.create_session(
             session_type=SessionType.GENERAL,
@@ -152,8 +162,7 @@ class TestAnalysisSession:
     
     def test_session_stores_filter_params(self):
         """Session should store original filter parameters."""
-        from pywats_agent.tools.shared.session import AnalysisSession, SessionType
-        
+
         filter_params = {"part_number": "TEST-001", "days": 30}
         session = AnalysisSession(
             session_id="test_123",
@@ -166,8 +175,7 @@ class TestAnalysisSession:
     
     def test_session_touch_updates_last_accessed(self):
         """Touching session should update last_accessed time."""
-        from pywats_agent.tools.shared.session import AnalysisSession, SessionType
-        
+
         session = AnalysisSession(
             session_id="test_123",
             session_type=SessionType.GENERAL,
@@ -183,8 +191,7 @@ class TestAnalysisSession:
     
     def test_session_expiration_check(self):
         """is_expired should correctly identify expired sessions."""
-        from pywats_agent.tools.shared.session import AnalysisSession, SessionType
-        
+
         # Non-expired session
         session = AnalysisSession(
             session_id="test_123",
@@ -201,8 +208,7 @@ class TestAnalysisSession:
     
     def test_session_summary_is_token_efficient(self):
         """Session summary should contain minimal essential info."""
-        from pywats_agent.tools.shared.session import AnalysisSession, SessionType
-        
+
         session = AnalysisSession(
             session_id="trend_abc123",
             session_type=SessionType.TREND,
@@ -220,8 +226,7 @@ class TestAnalysisSession:
     
     def test_session_created_at_set_automatically(self):
         """Session should have created_at set automatically."""
-        from pywats_agent.tools.shared.session import AnalysisSession, SessionType
-        
+
         before = datetime.now()
         session = AnalysisSession(
             session_id="test_123",
@@ -239,8 +244,7 @@ class TestTemporalMatrix:
     
     def test_temporal_matrix_creation(self):
         """TemporalMatrix should store period data correctly."""
-        from pywats_agent.tools.shared.session import TemporalMatrix
-        
+
         matrix = TemporalMatrix(
             periods=["2024-01", "2024-02", "2024-03"],
             yields={"2024-01": 95.0, "2024-02": 93.5, "2024-03": 96.2},
@@ -253,8 +257,7 @@ class TestTemporalMatrix:
     
     def test_get_period_returns_correct_data(self):
         """get_period should return data for specific period."""
-        from pywats_agent.tools.shared.session import TemporalMatrix
-        
+
         matrix = TemporalMatrix(
             periods=["2024-01", "2024-02"],
             yields={"2024-01": 95.0, "2024-02": 93.5},
@@ -270,8 +273,7 @@ class TestTemporalMatrix:
     
     def test_get_period_nonexistent_returns_none(self):
         """get_period should return None for nonexistent period."""
-        from pywats_agent.tools.shared.session import TemporalMatrix
-        
+
         matrix = TemporalMatrix(
             periods=["2024-01"],
             yields={"2024-01": 95.0},
@@ -284,8 +286,7 @@ class TestTemporalMatrix:
     
     def test_get_range_returns_period_subset(self):
         """get_range should return data for period range."""
-        from pywats_agent.tools.shared.session import TemporalMatrix
-        
+
         matrix = TemporalMatrix(
             periods=["2024-01", "2024-02", "2024-03", "2024-04"],
             yields={"2024-01": 95.0, "2024-02": 93.5, "2024-03": 96.2, "2024-04": 94.0},
@@ -301,8 +302,7 @@ class TestTemporalMatrix:
     
     def test_temporal_matrix_with_trend_metrics(self):
         """TemporalMatrix should support trend metrics."""
-        from pywats_agent.tools.shared.session import TemporalMatrix
-        
+
         matrix = TemporalMatrix(
             periods=["2024-01", "2024-02"],
             yields={"2024-01": 95.0, "2024-02": 93.5},
@@ -323,8 +323,7 @@ class TestDeviationMatrix:
     
     def test_deviation_cell_creation(self):
         """DeviationCell should store deviation data correctly."""
-        from pywats_agent.tools.shared.session import DeviationCell
-        
+
         cell = DeviationCell(
             dimension_values={"station_name": "ST-01"},
             yield_value=88.5,
@@ -341,8 +340,7 @@ class TestDeviationMatrix:
     
     def test_deviation_matrix_stores_ranked_cells(self):
         """DeviationMatrix should store pre-ranked cells."""
-        from pywats_agent.tools.shared.session import DeviationMatrix, DeviationCell
-        
+
         critical = DeviationCell(
             dimension_values={"station_name": "ST-01"},
             yield_value=80.0,
@@ -367,8 +365,7 @@ class TestDeviationMatrix:
     
     def test_get_cell_by_dimension_values(self):
         """get_cell should find cell by dimension values."""
-        from pywats_agent.tools.shared.session import DeviationMatrix, DeviationCell
-        
+
         cell1 = DeviationCell(
             dimension_values={"station_name": "ST-01"},
             yield_value=88.5,
@@ -398,8 +395,7 @@ class TestDeviationMatrix:
     
     def test_deviation_cell_to_dict(self):
         """DeviationCell.to_dict should include all relevant fields."""
-        from pywats_agent.tools.shared.session import DeviationCell
-        
+
         cell = DeviationCell(
             dimension_values={"station_name": "ST-01", "test_operation": "FCT"},
             yield_value=88.5,
@@ -418,8 +414,7 @@ class TestDeviationMatrix:
     
     def test_get_dimension_values(self):
         """get_dimension_values should return unique values for dimension."""
-        from pywats_agent.tools.shared.session import DeviationMatrix, DeviationCell
-        
+
         cell1 = DeviationCell(
             dimension_values={"station_name": "ST-01"},
             yield_value=88.5, unit_count=50,
@@ -448,8 +443,7 @@ class TestAnalysisContext:
     
     def test_context_singleton_pattern(self):
         """AnalysisContext should be a singleton."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         ctx1 = AnalysisContext.get_instance()
         ctx2 = AnalysisContext.get_instance()
         
@@ -457,8 +451,7 @@ class TestAnalysisContext:
     
     def test_context_reset_clears_instance(self):
         """reset_instance should allow fresh context."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         ctx1 = AnalysisContext.get_instance()
         ctx1.update_filter(part_number="TEST-001")
         
@@ -469,8 +462,7 @@ class TestAnalysisContext:
     
     def test_update_filter_stores_values(self):
         """update_filter should store filter parameters."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -483,8 +475,7 @@ class TestAnalysisContext:
     
     def test_filter_persistence_across_calls(self):
         """Filters should persist across multiple calls."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -497,8 +488,7 @@ class TestAnalysisContext:
     
     def test_effective_filter_merges_memory_and_explicit(self):
         """get_effective_filter should merge memory with explicit params."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -514,8 +504,7 @@ class TestAnalysisContext:
     
     def test_explicit_params_override_memory(self):
         """Explicit parameters should override memory values."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -529,8 +518,7 @@ class TestAnalysisContext:
     
     def test_clear_method(self):
         """clear should reset all context."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -547,8 +535,7 @@ class TestContextConfidence:
     
     def test_high_confidence_for_recent_interaction(self):
         """Confidence should be HIGH immediately after interaction."""
-        from pywats_agent.tools.shared.context import AnalysisContext, ContextConfidence
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -559,8 +546,7 @@ class TestContextConfidence:
     
     def test_confidence_decay_with_time(self):
         """Confidence should decay as time passes."""
-        from pywats_agent.tools.shared.context import AnalysisContext, ContextConfidence
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -574,8 +560,7 @@ class TestContextConfidence:
     
     def test_expired_confidence_after_long_time(self):
         """Confidence should be EXPIRED after long inactivity."""
-        from pywats_agent.tools.shared.context import AnalysisContext, ContextConfidence
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -593,8 +578,7 @@ class TestTopicShiftDetection:
     
     def test_topic_shift_clears_old_context(self):
         """Shifting to new topic should clear previous context."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -610,8 +594,7 @@ class TestTopicShiftDetection:
     
     def test_detect_topic_shift_via_internal_method(self):
         """Should detect topic shift when product changes."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -623,8 +606,7 @@ class TestTopicShiftDetection:
     
     def test_no_shift_when_adding_context(self):
         """Adding more context shouldn't be detected as shift."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -636,8 +618,7 @@ class TestTopicShiftDetection:
     
     def test_explicit_topic_shift_clears_all(self):
         """shift_topic should explicitly clear all context."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        
+
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
         
@@ -660,8 +641,7 @@ class TestFilterMemory:
     
     def test_filter_memory_timestamps(self):
         """FilterMemory should track when fields were set."""
-        from pywats_agent.tools.shared.context import FilterMemory
-        
+
         memory = FilterMemory()
         memory = memory.update(part_number="TEST-001")
         
@@ -671,8 +651,7 @@ class TestFilterMemory:
     
     def test_clear_stale_fields(self):
         """clear_stale_fields should remove old entries."""
-        from pywats_agent.tools.shared.context import FilterMemory
-        
+
         memory = FilterMemory()
         memory = memory.update(part_number="TEST-001")
         
@@ -685,8 +664,7 @@ class TestFilterMemory:
     
     def test_to_dict_excludes_none_values(self):
         """to_dict should only include non-None values."""
-        from pywats_agent.tools.shared.context import FilterMemory
-        
+
         memory = FilterMemory()
         memory = memory.update(part_number="TEST", station_name="ST-01")
         
@@ -698,8 +676,7 @@ class TestFilterMemory:
     
     def test_describe_provides_human_readable(self):
         """describe should return human-readable context summary."""
-        from pywats_agent.tools.shared.context import FilterMemory
-        
+
         memory = FilterMemory()
         memory = memory.update(
             part_number="WIDGET-001",
@@ -713,8 +690,7 @@ class TestFilterMemory:
     
     def test_has_product_context(self):
         """has_product_context should detect product filters."""
-        from pywats_agent.tools.shared.context import FilterMemory
-        
+
         memory = FilterMemory()
         assert not memory.has_product_context()
         
@@ -723,8 +699,7 @@ class TestFilterMemory:
     
     def test_has_process_context(self):
         """has_process_context should detect process filters."""
-        from pywats_agent.tools.shared.context import FilterMemory
-        
+
         memory = FilterMemory()
         assert not memory.has_process_context()
         
@@ -737,20 +712,17 @@ class TestSessionTypeDetermination:
     
     def test_trend_session_for_temporal_analysis(self):
         """TREND type should be used for time-series analysis."""
-        from pywats_agent.tools.shared.session import SessionType
-        
+
         assert SessionType.TREND.value == "trend"
     
     def test_deviation_session_for_dimension_analysis(self):
         """DEVIATION type should be used for dimensional analysis."""
-        from pywats_agent.tools.shared.session import SessionType
-        
+
         assert SessionType.DEVIATION.value == "deviation"
     
     def test_general_session_for_general_queries(self):
         """GENERAL type should be available for general queries."""
-        from pywats_agent.tools.shared.session import SessionType
-        
+
         assert SessionType.GENERAL.value == "general"
 
 
@@ -759,9 +731,6 @@ class TestIntegration:
     
     def test_context_informs_session_creation(self):
         """Context should inform session filter params."""
-        from pywats_agent.tools.shared.context import AnalysisContext
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
         # Setup context
         AnalysisContext.reset_instance()
         ctx = AnalysisContext.get_instance()
@@ -784,8 +753,7 @@ class TestIntegration:
     
     def test_session_summary_with_matrices(self):
         """Session with data should have computed matrices."""
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
+
         # Mock yield data
         mock_data = [
             Mock(period="2024-01", fpy=95.0, unit_count=100, fp_count=95),
@@ -808,8 +776,7 @@ class TestIntegration:
     
     def test_session_period_detail_drill_down(self):
         """Session should support drill-down by period."""
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
+
         mock_data = [
             Mock(period="2024-01", fpy=95.0, unit_count=100, fp_count=95),
             Mock(period="2024-02", fpy=93.5, unit_count=120, fp_count=112),
@@ -831,8 +798,7 @@ class TestIntegration:
     
     def test_session_compare_periods(self):
         """Session should support comparing two periods."""
-        from pywats_agent.tools.shared.session import SessionManager, SessionType
-        
+
         mock_data = [
             Mock(period="2024-01", fpy=95.0, unit_count=100, fp_count=95),
             Mock(period="2024-02", fpy=93.5, unit_count=120, fp_count=112),
@@ -857,18 +823,13 @@ class TestConvenienceFunctions:
     
     def test_get_session_manager_function(self):
         """get_session_manager should return singleton."""
-        from pywats_agent.tools.shared.session import get_session_manager, SessionManager
-        
+
         manager = get_session_manager()
         assert isinstance(manager, SessionManager)
         assert manager is SessionManager.get_instance()
     
     def test_create_trend_session_function(self):
         """create_trend_session should create TREND type session."""
-        from pywats_agent.tools.shared.session import (
-            create_trend_session, SessionType, SessionManager
-        )
-        
         SessionManager.reset_instance()
         session = create_trend_session(
             filter_params={"part_number": "TEST"},
@@ -879,10 +840,6 @@ class TestConvenienceFunctions:
     
     def test_create_deviation_session_function(self):
         """create_deviation_session should create DEVIATION type session."""
-        from pywats_agent.tools.shared.session import (
-            create_deviation_session, SessionType, SessionManager
-        )
-        
         SessionManager.reset_instance()
         session = create_deviation_session(
             filter_params={"dimensions": "stationName"},
@@ -893,8 +850,7 @@ class TestConvenienceFunctions:
     
     def test_get_context_function(self):
         """get_context should return singleton context."""
-        from pywats_agent.tools.shared.context import get_context, AnalysisContext
-        
+
         ctx = get_context()
         assert isinstance(ctx, AnalysisContext)
         assert ctx is AnalysisContext.get_instance()
