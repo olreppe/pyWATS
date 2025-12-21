@@ -7,7 +7,7 @@ All tools should inherit from AgentTool and use ToolInput for parameters.
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Type, TYPE_CHECKING
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ..result import AgentResult
 
@@ -23,8 +23,7 @@ class ToolInput(BaseModel):
     consistent validation and serialization behavior.
     """
     
-    class Config:
-        extra = "forbid"  # Reject unknown fields - catches API mismatches
+    model_config = ConfigDict(extra="forbid")  # Reject unknown fields - catches API mismatches
 
 
 class AgentTool(ABC):

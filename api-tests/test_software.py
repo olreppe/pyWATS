@@ -2,7 +2,7 @@
 Tests for software module - test software package management
 """
 import pytest
-from src.pywats.domains.software import Package, PackageTag, PackageStatus
+from pywats.domains.software import Package, PackageTag, PackageStatus
 
 
 class TestSoftwarePackage:

@@ -15,12 +15,12 @@ from uuid import uuid4
 from datetime import datetime, timedelta
 import time
 
-from src.pywats.domains.process import (
+from pywats.domains.process import (
     ProcessInfo,
     ProcessService,
     ProcessRepository,
 )
-from src.pywats.domains.process.models import RepairCategory, RepairOperationConfig
+from pywats.domains.process.models import RepairCategory, RepairOperationConfig
 
 
 # =============================================================================

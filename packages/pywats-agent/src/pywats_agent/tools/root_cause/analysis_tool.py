@@ -868,21 +868,21 @@ Example questions this tool answers:
     def _get_yield_tool(self):
         """Get yield analysis tool (lazy-loaded)."""
         if self._yield_tool is None:
-            from .yield_tool import YieldAnalysisTool
+            from ..yield_pkg import YieldAnalysisTool
             self._yield_tool = YieldAnalysisTool(self._api)
         return self._yield_tool
     
     def _get_dimensional_tool(self):
         """Get dimensional analysis tool (lazy-loaded)."""
         if self._dimensional_tool is None:
-            from .dimensional_analysis import DimensionalAnalysisTool
+            from ..dimensional_analysis import DimensionalAnalysisTool
             self._dimensional_tool = DimensionalAnalysisTool(self._api)
         return self._dimensional_tool
     
     def _get_step_tool(self):
         """Get step analysis tool (lazy-loaded)."""
         if self._step_tool is None:
-            from .step_analysis import StepAnalysisTool
+            from ..step_analysis import StepAnalysisTool
             self._step_tool = StepAnalysisTool(self._api)
         return self._step_tool
     

@@ -13,7 +13,7 @@ import pytest
 from uuid import uuid4
 from datetime import datetime
 
-from src.pywats.domains.software import (
+from pywats.domains.software import (
     Package,
     PackageFile,
     PackageTag,

@@ -880,7 +880,7 @@ Example questions this tool answers:
     def _get_yield_tool(self):
         """Get yield analysis tool (lazy-loaded)."""
         if self._yield_tool is None:
-            from .yield_tool import YieldAnalysisTool
+            from .yield_pkg import YieldAnalysisTool
             self._yield_tool = YieldAnalysisTool(self._api)
         return self._yield_tool
     
