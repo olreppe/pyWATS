@@ -866,14 +866,14 @@ class TestRealLLMQueryExecution:
         3. Makes actual call to api.analytics.get_dynamic_yield
         4. Validates real response data
         """
-        from pywats_agent import ToolExecutorV2, InMemoryDataStore
+        from pywats_agent import ToolExecutor, InMemoryDataStore
         
         print("\n" + "="*60)
         print("REAL TEST: 'Give me top 10 runners'")
         print("="*60)
         
         datastore = InMemoryDataStore()
-        executor = ToolExecutorV2.with_default_tools(
+        executor = ToolExecutor.with_default_tools(
             wats_client,
             datastore=datastore,
             enabled_tools=("analyze_yield",),
@@ -910,14 +910,14 @@ class TestRealLLMQueryExecution:
         """
         REAL TEST: Execute 'Show yield by station for last 7 days' query.
         """
-        from pywats_agent import ToolExecutorV2, InMemoryDataStore
+        from pywats_agent import ToolExecutor, InMemoryDataStore
         
         print("\n" + "="*60)
         print("REAL TEST: 'Show yield by station for last 7 days'")
         print("="*60)
         
         datastore = InMemoryDataStore()
-        executor = ToolExecutorV2.with_default_tools(
+        executor = ToolExecutor.with_default_tools(
             wats_client,
             datastore=datastore,
             enabled_tools=("analyze_yield",),
@@ -948,14 +948,14 @@ class TestRealLLMQueryExecution:
         """
         REAL TEST: Execute 'Show me the 10 worst performing products in the last 30 days'.
         """
-        from pywats_agent import ToolExecutorV2, InMemoryDataStore
+        from pywats_agent import ToolExecutor, InMemoryDataStore
         
         print("\n" + "="*60)
         print("REAL TEST: 'Show worst performing products (last 30 days)'")
         print("="*60)
         
         datastore = InMemoryDataStore()
-        executor = ToolExecutorV2.with_default_tools(
+        executor = ToolExecutor.with_default_tools(
             wats_client,
             datastore=datastore,
             enabled_tools=("analyze_yield",),

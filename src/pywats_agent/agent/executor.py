@@ -9,7 +9,7 @@ from .policy import ResponsePolicy, build_preview, normalize_summary
 from .registry import ToolProfile, ToolRegistry
 
 
-class ToolExecutorV2:
+class ToolExecutor:
     """Canonical tool executor.
 
     - Controls tool availability via ToolProfile / enabled_tools.
@@ -52,7 +52,7 @@ class ToolExecutorV2:
         profile_name: str | None = None,
         enabled_tools: Optional[Iterable[str]] = None,
         policy: Optional[ResponsePolicy] = None,
-    ) -> "ToolExecutorV2":
+    ) -> "ToolExecutor":
         from .defaults import build_default_registry, get_profile
 
         profile = get_profile(profile_name) if profile_name else None
@@ -88,7 +88,20 @@ class ToolExecutorV2:
 
         try:
             tool = self._get_instance(tool_name)
-            ok, summary, data, metadata = tool.execute(parameters)
+
+            # Optional HTTP trace capture (UI/debug only): if the API exposes a
+            # WATS HttpClient with capture_traces(), we collect all calls made
+            # during tool execution and store them out-of-band.
+            http_traces: list[dict[str, Any]] | None = None
+            http_client = getattr(self._api, "_http_client", None)
+            capture = getattr(http_client, "capture_traces", None) if http_client is not None else None
+
+            if callable(capture):
+                with capture() as traces:
+                    ok, summary, data, metadata = tool.execute(parameters)
+                    http_traces = list(traces)
+            else:
+                ok, summary, data, metadata = tool.execute(parameters)
 
             summary, summary_truncated = normalize_summary(summary, policy=self._policy)
 
@@ -96,6 +109,12 @@ class ToolExecutorV2:
             preview: dict[str, Any] | None = None
             metrics: dict[str, Any] = {"tool": tool_name, **(metadata or {})}
             warnings: list[str] = []
+
+            if http_traces:
+                trace_key = self._datastore.put(http_traces)
+                metrics["http_trace_key"] = trace_key
+                metrics["http_trace_count"] = len(http_traces)
+                warnings.append("HTTP trace stored out-of-band; use http_trace_key to retrieve")
 
             if data is not None:
                 data_key = self._datastore.put(data)

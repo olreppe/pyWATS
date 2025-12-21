@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pywats_agent.agent import InMemoryDataStore, ToolExecutorV2
+from pywats_agent.agent import InMemoryDataStore, ToolExecutor
 
 
 def test_migrated_wrapped_tools_execute_and_return_data_key(monkeypatch):
@@ -22,7 +22,7 @@ def test_migrated_wrapped_tools_execute_and_return_data_key(monkeypatch):
     monkeypatch.setattr(v1_wrapped, "YieldAnalysisTool", DummyYield)
 
     ds = InMemoryDataStore()
-    ex = ToolExecutorV2.with_default_tools(api=None, datastore=ds, profile_name="minimal")
+    ex = ToolExecutor.with_default_tools(api=None, datastore=ds, profile_name="minimal")
 
     result = ex.execute("analyze_yield", {"perspective": "by station", "days": 7})
 

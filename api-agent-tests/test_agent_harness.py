@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import pytest
 from unittest.mock import MagicMock
 
-from pywats_agent import InMemoryDataStore, ToolExecutorV2
+from pywats_agent import InMemoryDataStore, ToolExecutor
 from pywats_agent.context import AgentContext
 from pywats_agent.testing import (
     AgentTestHarness,
@@ -47,7 +47,7 @@ def mock_api():
 @pytest.fixture
 def executor(mock_api):
     """Create an executor with mock API."""
-    return ToolExecutorV2.with_default_tools(
+    return ToolExecutor.with_default_tools(
         mock_api,
         datastore=InMemoryDataStore(),
         profile_name="minimal",
@@ -274,7 +274,7 @@ def run_interactive_test():
     
     # Create mock API and executor
     mock_api = MagicMock()
-    executor = ToolExecutor(mock_api)
+    executor = ToolExecutor.with_default_tools(mock_api, datastore=InMemoryDataStore())
     harness = AgentTestHarness(executor)
     
     # Show available tools

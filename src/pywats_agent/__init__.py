@@ -6,10 +6,10 @@ Use the v2 executor + result envelope (data handles + bounded previews).
 
 Example:
     >>> from pywats import pyWATS
-    >>> from pywats_agent import ToolExecutorV2, InMemoryDataStore
+    >>> from pywats_agent import ToolExecutor, InMemoryDataStore
     >>>
     >>> api = pyWATS(base_url="...", token="...")
-    >>> executor = ToolExecutorV2.with_default_tools(api, datastore=InMemoryDataStore())
+    >>> executor = ToolExecutor.with_default_tools(api, datastore=InMemoryDataStore())
     >>>
     >>> env = executor.execute("analyze_yield", {"part_number": "WIDGET-001"})
     >>> print(env.summary)
@@ -38,7 +38,7 @@ from .agent import (
     build_default_registry,
     get_profile,
     ResponsePolicy,
-    ToolExecutorV2,
+    ToolExecutor,
     ToolProfile,
     ToolRegistry,
     ToolResultEnvelope,
@@ -54,7 +54,7 @@ __all__ = [
     "build_default_registry",
     "get_profile",
     "ResponsePolicy",
-    "ToolExecutorV2",
+    "ToolExecutor",
     "ToolProfile",
     "ToolRegistry",
     "ToolResultEnvelope",

@@ -6,7 +6,7 @@ from pywats_agent.agent import (
     AgentToolV2,
     InMemoryDataStore,
     ResponsePolicy,
-    ToolExecutorV2,
+    ToolExecutor,
     ToolInput,
     ToolProfile,
     ToolRegistry,
@@ -34,7 +34,7 @@ def test_executor_v2_stores_data_out_of_band_and_previews():
     ds = InMemoryDataStore()
     policy = ResponsePolicy(preview_max_rows=5, preview_max_chars=10_000)
 
-    ex = ToolExecutorV2(api=None, registry=reg, datastore=ds, policy=policy)
+    ex = ToolExecutor(api=None, registry=reg, datastore=ds, policy=policy)
 
     result = ex.execute("echo", {"text": "hello"})
 
@@ -56,7 +56,7 @@ def test_executor_v2_tool_enablement_blocks_calls():
     ds = InMemoryDataStore()
 
     profile = ToolProfile(name="none", enabled_tools=())
-    ex = ToolExecutorV2(api=None, registry=reg, datastore=ds, profile=profile)
+    ex = ToolExecutor(api=None, registry=reg, datastore=ds, profile=profile)
 
     result = ex.execute("echo", {"text": "hello"})
     assert result.ok is False
@@ -68,7 +68,7 @@ def test_executor_v2_openai_tool_schema_is_built_from_pydantic():
     reg.register(EchoTool)
 
     ds = InMemoryDataStore()
-    ex = ToolExecutorV2(api=None, registry=reg, datastore=ds)
+    ex = ToolExecutor(api=None, registry=reg, datastore=ds)
 
     tools = ex.get_openai_tools()
     assert tools

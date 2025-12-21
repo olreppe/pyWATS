@@ -39,27 +39,25 @@ Frontend impact:
 
 The v1 executor could apply `AgentContext` defaults when `apply_context=True`.
 
-The v2 executor (`ToolExecutorV2`) does **not** apply context defaults. If your UI previously relied on implicit defaults (e.g., current part number), you must apply them in your own orchestration layer (typically in your backend).
+The v2 executor (`ToolExecutor`) does **not** apply context defaults. If your UI previously relied on implicit defaults (e.g., current part number), you must apply them in your own orchestration layer (typically in your backend).
 
 ### 3) Public API exports moved to v2
 
 Prefer importing v2 entry points from `pywats_agent`:
 
-- `ToolExecutorV2`
+- `ToolExecutor`
 - `ToolResultEnvelope`
 - `DataStore` / `InMemoryDataStore`
 - `ToolRegistry` / `ToolProfile`
-
-The legacy v1 executor still exists in `pywats_agent.executor.ToolExecutor`, but it is **not** the recommended frontend integration surface.
 
 ---
 
 ## The new data flow (recommended)
 
 1. Frontend sends user message to your LLM backend.
-2. Backend provides tool definitions (OpenAI function schemas) from `ToolExecutorV2`.
+2. Backend provides tool definitions (OpenAI function schemas) from `ToolExecutor`.
 3. LLM produces a tool call.
-4. Backend executes the tool via `ToolExecutorV2.execute(...)`.
+4. Backend executes the tool via `ToolExecutor.execute(...)`.
 5. Backend returns the **envelope** to the LLM (for reasoning) and to the frontend (for display).
 6. If the frontend needs full data (tables/export), it asks the backend to resolve `data_key`.
 
@@ -181,8 +179,8 @@ Security note:
 
 ### Tool definitions
 
-- `ToolExecutorV2.get_tool_definitions()` returns OpenAI function schemas.
-- `ToolExecutorV2.get_openai_tools()` returns `[{"type":"function","function": ...}]`.
+- `ToolExecutor.get_tool_definitions()` returns OpenAI function schemas.
+- `ToolExecutor.get_openai_tools()` returns `[{"type":"function","function": ...}]`.
 
 ### Tool set
 

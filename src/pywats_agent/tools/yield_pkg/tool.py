@@ -1218,17 +1218,39 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
         # Get yield type
         yield_type = getattr(filter_input, 'yield_type', 'unit')
         
+        def _get_field(obj: Any, *names: str):
+            for n in names:
+                if hasattr(obj, n):
+                    v = getattr(obj, n)
+                    if v is not None:
+                        return v
+                if isinstance(obj, dict) and n in obj and obj[n] is not None:
+                    return obj[n]
+            return None
+
         # Calculate overall statistics
-        total_units = sum(getattr(d, 'unit_count', 0) or 0 for d in data)
-        
-        # Try to get FPY (first_pass_yield)
-        fpy_values = []
+        total_units = sum(int(_get_field(d, "unit_count", "unitCount") or 0) for d in data)
+        total_reports = sum(int(_get_field(d, "report_count", "reportCount", "test_report_count", "testReportCount") or 0) for d in data)
+
+        # Prefer the canonical YieldData fields (fpy/lpy/etc). Also accept server variants.
+        yield_values: list[float] = []
+        per_operation_fpy: dict[str, float] = {}
+
         for d in data:
-            fpy = getattr(d, 'first_pass_yield', None)
-            if fpy is not None:
-                fpy_values.append(fpy)
-        
-        avg_fpy = sum(fpy_values) / len(fpy_values) if fpy_values else None
+            fpy = _get_field(d, "fpy", "first_pass_yield", "firstPassYield")
+            try:
+                fpy_val = float(fpy) if fpy is not None else None
+            except (TypeError, ValueError):
+                fpy_val = None
+
+            if fpy_val is not None:
+                yield_values.append(fpy_val)
+
+                op = _get_field(d, "test_operation", "testOperation")
+                if isinstance(op, str) and op and op not in per_operation_fpy:
+                    per_operation_fpy[op] = fpy_val
+
+        avg_fpy = sum(yield_values) / len(yield_values) if yield_values else None
         
         # Build context string
         context_parts = []
@@ -1266,8 +1288,25 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                 parts.append(f"* Average TRY: {avg_fpy:.1f}%")
             else:
                 parts.append(f"* Average FPY: {avg_fpy:.1f}%")
-        parts.append(f"* Total units: {total_units:,}")
+
+        if yield_type == 'report':
+            # Prefer explicit report count if present; fall back to unit_count.
+            if total_reports > 0:
+                parts.append(f"* Total reports: {total_reports:,}")
+            else:
+                parts.append(f"* Total units: {total_units:,}")
+        else:
+            parts.append(f"* Total units: {total_units:,}")
+
         parts.append(f"* Data points: {len(data)}")
+
+        # RTY: only meaningful when we have multiple operations' FPY values.
+        if yield_type != 'report' and not filter_input.test_operation and len(per_operation_fpy) >= 2:
+            rty = 1.0
+            for f in per_operation_fpy.values():
+                f01 = max(0.0, min(float(f), 100.0)) / 100.0
+                rty *= f01
+            parts.append(f"* RTY (product of {len(per_operation_fpy)} operations): {rty * 100.0:.1f}%")
         
         # Add top/bottom if grouped
         if perspective and len(data) > 1:

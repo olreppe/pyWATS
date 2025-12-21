@@ -50,7 +50,7 @@ Tools typically live under:
 
 **BETA rule (no backwards compatibility):** the supported public surface is the v2 executor + registry.
 
-- Prefer importing v2 entry points from `pywats_agent` (e.g., `ToolExecutorV2`, `ToolRegistry`, `ToolProfile`).
+- Prefer importing v2 entry points from `pywats_agent` (e.g., `ToolExecutor`, `ToolRegistry`, `ToolProfile`).
 - Treat `pywats_agent.tools.*` as implementation details that may change or be removed during beta.
 
 ---

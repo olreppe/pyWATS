@@ -1,7 +1,7 @@
 from .datastore import DataStore, InMemoryDataStore
 from .defaults import build_default_registry, get_profile
 from .envelope import ToolResultEnvelope
-from .executor import ToolExecutorV2
+from .executor import ToolExecutor
 from .policy import ResponsePolicy
 from .registry import ToolProfile, ToolRegistry
 from .tooling import AgentToolV2, ToolInput
@@ -12,7 +12,7 @@ __all__ = [
     "build_default_registry",
     "get_profile",
     "ToolResultEnvelope",
-    "ToolExecutorV2",
+    "ToolExecutor",
     "ResponsePolicy",
     "ToolProfile",
     "ToolRegistry",

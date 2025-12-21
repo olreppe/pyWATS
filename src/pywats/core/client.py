@@ -15,7 +15,9 @@ Rate Limiting:
     >>> from pywats.core.throttle import configure_throttling
     >>> configure_throttling(max_requests=500, window_seconds=60, enabled=True)
 """
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterator
+from contextlib import contextmanager
+import time
 from pydantic import BaseModel, Field, ConfigDict, computed_field
 import httpx
 import json
@@ -157,6 +159,81 @@ class HttpClient:
         # Create httpx client
         self._client: Optional[httpx.Client] = None
 
+        # Optional per-call HTTP trace capture (opt-in via capture_traces()).
+        # A stack is used so nested capture contexts work as expected.
+        self._trace_stack: list[list[dict[str, Any]]] = []
+
+    @contextmanager
+    def capture_traces(self) -> Iterator[list[dict[str, Any]]]:
+        """Capture HTTP request/response traces within this context.
+
+        The returned list is populated with dicts like:
+            {
+              "method": "POST",
+              "url": "https://.../api/...",
+              "params": {...},
+              "json": {...},
+              "status_code": 200,
+              "duration_ms": 12.3,
+              "response_bytes": 1234,
+            }
+
+        Notes:
+            - Authorization headers are never recorded.
+            - Intended for UI/debug surfaces; do not inline traces into LLM context.
+        """
+        bucket: list[dict[str, Any]] = []
+        self._trace_stack.append(bucket)
+        try:
+            yield bucket
+        finally:
+            # Pop only if it's still the top (defensive in case of misuse)
+            if self._trace_stack and self._trace_stack[-1] is bucket:
+                self._trace_stack.pop()
+
+    def _emit_trace(self, trace: dict[str, Any]) -> None:
+        """Append trace to all active capture buckets."""
+        if not self._trace_stack:
+            return
+        for bucket in self._trace_stack:
+            bucket.append(trace)
+
+    @staticmethod
+    def _bounded_json(value: Any, *, max_chars: int = 10_000) -> Any:
+        """Return a JSON-serializable structure, bounded for debug surfaces."""
+        if value is None:
+            return None
+        if isinstance(value, (dict, list)):
+            try:
+                text = json.dumps(value, ensure_ascii=False, default=str)
+            except Exception:
+                return {"_unserializable": True, "type": type(value).__name__}
+            if len(text) <= max_chars:
+                return value
+            return {
+                "_truncated": True,
+                "_original_chars": len(text),
+                "_preview": text[:max_chars],
+            }
+        if isinstance(value, (bytes, bytearray)):
+            size = len(value)
+            if size <= max_chars:
+                return value.decode("utf-8", errors="replace")
+            return {
+                "_truncated": True,
+                "_original_bytes": size,
+                "_preview": value[:max_chars].decode("utf-8", errors="replace"),
+            }
+        if isinstance(value, str):
+            if len(value) <= max_chars:
+                return value
+            return {
+                "_truncated": True,
+                "_original_chars": len(value),
+                "_preview": value[:max_chars],
+            }
+        return value
+
     @property
     def rate_limiter(self) -> RateLimiter:
         """Get the rate limiter instance."""
@@ -278,8 +355,24 @@ class HttpClient:
             else:
                 kwargs["content"] = data
 
+        # Build a full URL string for debugging (no auth headers included)
+        full_url = f"{self.base_url}{endpoint}"
+        started = time.perf_counter()
         try:
             response = self.client.request(**kwargs)
+            duration_ms = (time.perf_counter() - started) * 1000.0
+            self._emit_trace(
+                {
+                    "method": method,
+                    "url": full_url,
+                    "params": self._bounded_json(kwargs.get("params")),
+                    "json": self._bounded_json(kwargs.get("json")),
+                    "content": self._bounded_json(kwargs.get("content")),
+                    "status_code": response.status_code,
+                    "duration_ms": duration_ms,
+                    "response_bytes": len(response.content or b""),
+                }
+            )
             return self._handle_response(response)
         except httpx.ConnectError as e:
             raise ConnectionError(f"Failed to connect to {self.base_url}: {e}")

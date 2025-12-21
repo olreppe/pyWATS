@@ -18,10 +18,9 @@ Example:
     ...     date_range=("2024-12-01", "2024-12-19"),
     ...     config=AgentConfig(rigor=AnalyticalRigor.THOROUGH),
     ... )
-    >>> 
-    >>> executor = ToolExecutor(api, context=context)
-    >>> result = executor.execute("analyze_yield", {"perspective": "by station"})
-    >>> # Agent knows to use WIDGET-001 and be thorough
+    >>>
+    >>> # NOTE: ToolExecutor (agent v2) does not apply AgentContext defaults.
+    >>> # Apply context defaults in your orchestration layer before calling the tool.
 """
 
 from datetime import datetime
