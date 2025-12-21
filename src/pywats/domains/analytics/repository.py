@@ -371,16 +371,30 @@ class AnalyticsRepository:
                 - part_number: Filter by product
                 - product_group: Filter by product group
                 - period_count: Number of periods
-                - grouping: Grouping dimension
+                - dimensions: Grouping dimensions (semicolon-separated)
 
         Returns:
             List of RepairStatistics objects with repair counts and rates
         """
         if isinstance(filter_data, WATSFilter):
-            data = filter_data.model_dump(by_alias=True, exclude_none=True)
+            data: Dict[str, Any] = filter_data.model_dump(
+                by_alias=True, exclude_none=True
+            )
         else:
-            data = filter_data
-        response = self._http_client.post("/api/App/DynamicRepair", data=data)
+            data = cast(Dict[str, Any], filter_data)
+
+        # WATS supports an alternate syntax where dimensions are passed as a
+        # query parameter, e.g. POST /api/App/DynamicRepair?dimensions=repairOperation
+        # with an empty JSON body. Some environments appear to rely on this
+        # behavior for certain dimensions.
+        if set(data.keys()) == {"dimensions"} and isinstance(data.get("dimensions"), str):
+            response = self._http_client.post(
+                "/api/App/DynamicRepair",
+                data={},
+                params={"dimensions": data["dimensions"]},
+            )
+        else:
+            response = self._http_client.post("/api/App/DynamicRepair", data=data)
         if response.is_success and response.data:
             items = response.data if isinstance(response.data, list) else [response.data]
             return [RepairStatistics.model_validate(item) for item in items]

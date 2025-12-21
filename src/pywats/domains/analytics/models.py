@@ -131,23 +131,69 @@ class RepairStatistics(PyWATSModel):
     
     Returned from POST /api/App/DynamicRepair (PREVIEW API).
     
+    Supports all dimensions from Swagger specification:
+    - partNumber, revision, productName, productGroup, unitType, repairOperation
+    - period, level, stationName, location, purpose, operator
+    - miscInfoDescription, miscInfoString, repairCode, repairCategory, repairType
+    - componentRef, componentNumber, componentRevision, componentVendor, componentDescription
+    - functionBlock, referencedStep, referencedStepPath
+    - testOperation, testPeriod, testLevel, testStationName, testLocation, testPurpose, testOperator
+    - batchNumber, swFilename, swVersion
+    
+    Supported KPIs:
+    - repairReportCount: Number of repair reports
+    - repairCount: Number of repairs
+    
     Attributes:
         part_number: Product part number
         revision: Product revision
+        product_name: Product name
         product_group: Product group
-        repair_count: Number of repairs
+        unit_type: Unit type
+        repair_operation: Repair operation
+        period: Time period
+        level: Production level
+        station_name: Station where repair occurred
+        location: Location
+        purpose: Purpose
+        operator: Operator
+        misc_info_description: Misc info description
+        misc_info_string: Misc info string value
+        repair_code: Repair action code
+        repair_category: Repair category
+        repair_type: Repair type
+        component_ref: Component reference
+        component_number: Component number
+        component_revision: Component revision
+        component_vendor: Component vendor
+        component_description: Component description
+        function_block: Function block
+        referenced_step: Referenced step
+        referenced_step_path: Referenced step path
+        test_operation: Test operation
+        test_period: Test period
+        test_level: Test level
+        test_station_name: Test station name
+        test_location: Test location
+        test_purpose: Test purpose
+        test_operator: Test operator
+        batch_number: Batch number
+        sw_filename: Software filename
+        sw_version: Software version
+        repair_report_count: Number of repair reports (KPI)
+        repair_count: Number of repairs (KPI)
         total_count: Total units
         repair_rate: Repair rate (0-100)
-        period: Time period
-        station_name: Station where repair occurred
-        fail_code: Failure code
-        repair_code: Repair action code
         
     Example:
         >>> stats = RepairStatistics(part_number="WIDGET-001", repair_count=5)
         >>> print(f"Repairs: {stats.repair_count}")
     """
+    
+    # Preserve forward-compatible fields returned by the backend
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
 
+    # Core product dimensions
     part_number: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("partNumber", "part_number"),
@@ -158,17 +204,41 @@ class RepairStatistics(PyWATSModel):
         default=None,
         description="Product revision"
     )
+    product_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("productName", "product_name"),
+        serialization_alias="productName",
+        description="Product name"
+    )
     product_group: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("productGroup", "product_group"),
         serialization_alias="productGroup",
         description="Product group"
     )
-    product_name: Optional[str] = Field(
+    unit_type: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("productName", "product_name"),
-        serialization_alias="productName",
-        description="Product name"
+        validation_alias=AliasChoices("unitType", "unit_type"),
+        serialization_alias="unitType",
+        description="Unit type"
+    )
+    
+    # Repair operation dimensions
+    repair_operation: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairOperation", "repair_operation"),
+        serialization_alias="repairOperation",
+        description="Repair operation"
+    )
+    
+    # Time and location dimensions
+    period: Optional[str] = Field(
+        default=None,
+        description="Time period"
+    )
+    level: Optional[str] = Field(
+        default=None,
+        description="Production level"
     )
     station_name: Optional[str] = Field(
         default=None,
@@ -176,21 +246,181 @@ class RepairStatistics(PyWATSModel):
         serialization_alias="stationName",
         description="Station name"
     )
+    location: Optional[str] = Field(
+        default=None,
+        description="Location"
+    )
+    purpose: Optional[str] = Field(
+        default=None,
+        description="Purpose"
+    )
+    operator: Optional[str] = Field(
+        default=None,
+        description="Operator"
+    )
+    
+    # Misc info dimensions
+    misc_info_description: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("miscInfoDescription", "misc_info_description"),
+        serialization_alias="miscInfoDescription",
+        description="Misc info description"
+    )
+    misc_info_string: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("miscInfoString", "misc_info_string"),
+        serialization_alias="miscInfoString",
+        description="Misc info string value"
+    )
+    
+    # Repair classification dimensions
+    repair_code: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairCode", "repair_code"),
+        serialization_alias="repairCode",
+        description="Repair action code"
+    )
+    repair_category: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairCategory", "repair_category"),
+        serialization_alias="repairCategory",
+        description="Repair category"
+    )
+    repair_type: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairType", "repair_type"),
+        serialization_alias="repairType",
+        description="Repair type"
+    )
+    
+    # Component dimensions
+    component_ref: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("componentRef", "component_ref"),
+        serialization_alias="componentRef",
+        description="Component reference"
+    )
+    component_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("componentNumber", "component_number"),
+        serialization_alias="componentNumber",
+        description="Component number"
+    )
+    component_revision: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("componentRevision", "component_revision"),
+        serialization_alias="componentRevision",
+        description="Component revision"
+    )
+    component_vendor: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("componentVendor", "component_vendor"),
+        serialization_alias="componentVendor",
+        description="Component vendor"
+    )
+    component_description: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("componentDescription", "component_description"),
+        serialization_alias="componentDescription",
+        description="Component description"
+    )
+    
+    # Step reference dimensions
+    function_block: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("functionBlock", "function_block"),
+        serialization_alias="functionBlock",
+        description="Function block"
+    )
+    referenced_step: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("referencedStep", "referenced_step"),
+        serialization_alias="referencedStep",
+        description="Referenced step"
+    )
+    referenced_step_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("referencedStepPath", "referenced_step_path"),
+        serialization_alias="referencedStepPath",
+        description="Referenced step path"
+    )
+    
+    # Test operation dimensions
     test_operation: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("testOperation", "test_operation"),
         serialization_alias="testOperation",
         description="Test operation"
     )
-    period: Optional[str] = Field(
+    test_period: Optional[str] = Field(
         default=None,
-        description="Time period"
+        validation_alias=AliasChoices("testPeriod", "test_period"),
+        serialization_alias="testPeriod",
+        description="Test period"
+    )
+    test_level: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("testLevel", "test_level"),
+        serialization_alias="testLevel",
+        description="Test level"
+    )
+    test_station_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("testStationName", "test_station_name"),
+        serialization_alias="testStationName",
+        description="Test station name"
+    )
+    test_location: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("testLocation", "test_location"),
+        serialization_alias="testLocation",
+        description="Test location"
+    )
+    test_purpose: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("testPurpose", "test_purpose"),
+        serialization_alias="testPurpose",
+        description="Test purpose"
+    )
+    test_operator: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("testOperator", "test_operator"),
+        serialization_alias="testOperator",
+        description="Test operator"
+    )
+    
+    # Batch and software dimensions
+    batch_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("batchNumber", "batch_number"),
+        serialization_alias="batchNumber",
+        description="Batch number"
+    )
+    sw_filename: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("swFilename", "sw_filename"),
+        serialization_alias="swFilename",
+        description="Software filename"
+    )
+    sw_version: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("swVersion", "sw_version"),
+        serialization_alias="swVersion",
+        description="Software version"
+    )
+    
+    # KPI fields
+    repair_report_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("repairReportCount", "repair_report_count"),
+        serialization_alias="repairReportCount",
+        description="Number of repair reports (KPI)"
     )
     repair_count: Optional[int] = Field(
         default=None,
         validation_alias=AliasChoices("repairCount", "repair_count"),
         serialization_alias="repairCount",
-        description="Number of repairs"
+        description="Number of repairs (KPI)"
     )
     total_count: Optional[int] = Field(
         default=None,
@@ -204,17 +434,13 @@ class RepairStatistics(PyWATSModel):
         serialization_alias="repairRate",
         description="Repair rate (0-100)"
     )
+    
+    # Legacy field support (backward compatibility)
     fail_code: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("failCode", "fail_code"),
         serialization_alias="failCode",
-        description="Failure code"
-    )
-    repair_code: Optional[str] = Field(
-        default=None,
-        validation_alias=AliasChoices("repairCode", "repair_code"),
-        serialization_alias="repairCode",
-        description="Repair action code"
+        description="Failure code (deprecated, use repair_code)"
     )
 
 
