@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0b14 / pywats-agent 0.1.3] - 2025-12-21
+## [0.1.0b15] - 2025-12-21
+
+### Fixed
+- **Agent package bundling** - `pywats_agent` is now properly included in `pywats-api` package
+  - Agent tools available via `from pywats_agent.tools import ...`
+  - No separate package installation required
+
+## [0.1.0b14] - 2025-12-21
 
 ### Fixed
 - **Missing type imports** - Added missing `Any` imports to asset and product service modules
