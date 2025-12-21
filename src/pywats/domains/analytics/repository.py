@@ -171,7 +171,26 @@ class AnalyticsRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http_client.post("/api/App/DynamicYield", data=data)
+
+        # Some WATS servers require `dimensions` in the query string.
+        # To be robust across server versions:
+        # - If the payload is only `dimensions`, send it as query param + empty JSON body.
+        # - If there are other filters, keep `dimensions` in the body and also send it
+        #   as a query param.
+        params: Optional[Dict[str, Any]] = None
+        if isinstance(data, dict) and data.get("dimensions"):
+            dimensions = data.get("dimensions")
+            params = {"dimensions": dimensions}
+            if len(data.keys()) == 1:
+                data = {}
+
+        # Always send an object body (not null) for these preview endpoints.
+        if not data:
+            data = {}
+
+        response = self._http_client.post(
+            "/api/App/DynamicYield", data=data, params=params
+        )
         if response.is_success and response.data:
             return [YieldData.model_validate(item) for item in response.data]
         return []
@@ -366,7 +385,26 @@ class AnalyticsRepository:
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
             data = filter_data
-        response = self._http_client.post("/api/App/DynamicRepair", data=data)
+
+        # Some WATS servers require `dimensions` in the query string.
+        # To be robust across server versions:
+        # - If the payload is only `dimensions`, send it as query param + empty JSON body.
+        # - If there are other filters, keep `dimensions` in the body and also send it
+        #   as a query param.
+        params: Optional[Dict[str, Any]] = None
+        if isinstance(data, dict) and data.get("dimensions"):
+            dimensions = data.get("dimensions")
+            params = {"dimensions": dimensions}
+            if len(data.keys()) == 1:
+                data = {}
+
+        # Always send an object body (not null) for these preview endpoints.
+        if not data:
+            data = {}
+
+        response = self._http_client.post(
+            "/api/App/DynamicRepair", data=data, params=params
+        )
         if response.is_success and response.data:
             items = response.data if isinstance(response.data, list) else [response.data]
             return [RepairStatistics.model_validate(item) for item in items]

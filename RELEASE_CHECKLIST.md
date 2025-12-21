@@ -2,43 +2,30 @@
 
 > Checklist for transitioning from beta to stable release (v1.0.0)
 
-## Automated Release Process
+## Beta bump flow (current)
 
-Use the release script for version bumping and release branch creation:
+While pyWATS is still in beta, use the single supported bump flow:
 
 ```powershell
-# Preview what will happen (dry run)
-.\scripts\release.ps1 -BumpType patch -DryRun
+# Run lint + unit tests (CI-aligned)
+.\scripts\pre_release_check.ps1
 
-# Patch release (0.1.0 -> 0.1.1)
-.\scripts\release.ps1 -BumpType patch
+# Bump beta version, commit, tag, push (triggers publish on tag v*)
+.\scripts\bump.ps1
 
-# Minor release (0.1.0 -> 0.2.0)
-.\scripts\release.ps1 -BumpType minor
-
-# Major release (0.1.0 -> 1.0.0)
-.\scripts\release.ps1 -BumpType major
-
-# Release only agent package
-.\scripts\release.ps1 -BumpType patch -Package agent
+# Preview without changing anything
+.\scripts\bump.ps1 -DryRun
 ```
 
-**What the script does:**
-1. ✅ Validates you're on `main` with clean working tree
-2. ✅ Creates a `release/vX.Y.Z` branch (preserved for rollback)
-3. ✅ Bumps version in pyproject.toml files
-4. ✅ Tags the release (`vX.Y.Z`)
-5. ✅ Pushes branch and tag to origin
-6. ✅ Updates main branch with version bump
+Notes:
+- Publish is triggered by pushing a tag matching `v*` (see `.github/workflows/publish.yml`).
+- Integration tests (`api-tests/`) require a live server; run explicitly:
+  `./scripts/pre_release_check.ps1 -IncludeIntegrationTests`
 
-**Rollback:**
-```powershell
-# See all release branches
-git branch -r | Select-String "release/"
+## Stable release process (future)
 
-# Checkout a previous release
-git checkout release/v0.1.0
-```
+This checklist is for transitioning to stable (v1.0.0). The stable release automation
+should be introduced/reviewed closer to 1.0.
 
 ---
 

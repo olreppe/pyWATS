@@ -340,22 +340,54 @@ def get_valid_dimensions() -> List[str]:
         List of valid dimension names
     """
     return [
+        # Common
         "partNumber",
-        "productName", 
+        "revision",
+        "productName",
+        "productGroup",
+        "unitType",
+        "period",
+        "level",
         "stationName",
         "location",
         "purpose",
-        "revision",
+        "operator",
+        "batchNumber",
         "testOperation",
-        "processCode",
         "swFilename",
         "swVersion",
-        "productGroup",
-        "level",
-        "period",
-        "batchNumber",
-        "operator",
+        "processCode",
         "fixtureId",
+        "socketIndex",
+        "errorCode",
+        # Misc info
+        "miscInfoDescription",
+        "miscInfoString",
+        # Yield-specific
+        "stepCausedUutFailure",
+        "stepPathCausedUutFailure",
+        "assetSerialNumber",
+        "assetName",
+        # Repair-specific
+        "repairOperation",
+        "repairCode",
+        "repairCategory",
+        "repairType",
+        "componentRef",
+        "componentNumber",
+        "componentRevision",
+        "componentVendor",
+        "componentDescription",
+        "functionBlock",
+        "referencedStep",
+        "referencedStepPath",
+        # Test-context dimensions (used by repair stats)
+        "testPeriod",
+        "testLevel",
+        "testStationName",
+        "testLocation",
+        "testPurpose",
+        "testOperator",
     ]
 
 

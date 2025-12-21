@@ -288,7 +288,7 @@ class TestAgentContextIntegration:
     
     def test_context_with_config(self):
         """Should accept config in context."""
-        from pywats_agent import AgentContext
+        from pywats_agent.context import AgentContext
         
         config = AgentConfig(rigor=AnalyticalRigor.THOROUGH)
         context = AgentContext(
@@ -301,7 +301,7 @@ class TestAgentContextIntegration:
     
     def test_context_from_dict_with_config(self):
         """Should parse config from dict."""
-        from pywats_agent import AgentContext
+        from pywats_agent.context import AgentContext
         
         data = {
             "current_product": "TEST-001",
@@ -319,7 +319,8 @@ class TestAgentContextIntegration:
     
     def test_system_prompt_includes_config(self):
         """System prompt should include config instructions."""
-        from pywats_agent import AgentContext
+        from pywats_agent.context import AgentContext
+        from pywats_agent.autonomy import AgentConfig, AnalyticalRigor
         
         config = AgentConfig(rigor=AnalyticalRigor.EXHAUSTIVE)
         context = AgentContext(
@@ -334,7 +335,7 @@ class TestAgentContextIntegration:
     
     def test_context_without_config(self):
         """Should work without config."""
-        from pywats_agent import AgentContext
+        from pywats_agent.context import AgentContext
         
         context = AgentContext(current_product="TEST-001")
         prompt = context.to_system_prompt()
@@ -352,8 +353,8 @@ class TestImports:
     """Test module exports."""
     
     def test_import_from_pywats_agent(self):
-        """Should be importable from main package."""
-        from pywats_agent import (
+        """Autonomy/config stays importable via module paths."""
+        from pywats_agent.autonomy import (
             AnalyticalRigor,
             WriteMode,
             AgentConfig,

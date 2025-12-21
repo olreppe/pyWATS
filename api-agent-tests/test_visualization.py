@@ -464,7 +464,7 @@ class TestAgentResultWithVisualization:
     """Test AgentResult with viz_payload."""
     
     def test_result_without_viz(self):
-        from pywats_agent import AgentResult
+        from pywats_agent.result import AgentResult
         
         result = AgentResult.ok(
             data=[{"station": "A", "yield": 94.5}],
@@ -475,7 +475,8 @@ class TestAgentResultWithVisualization:
         assert result.has_visualization() == False
     
     def test_result_with_viz(self):
-        from pywats_agent import AgentResult, VizBuilder
+        from pywats_agent.result import AgentResult
+        from pywats_agent import VizBuilder
         
         result = AgentResult.ok(
             data=[{"station": "A", "yield": 94.5}],
@@ -492,7 +493,8 @@ class TestAgentResultWithVisualization:
     
     def test_to_openai_excludes_viz(self):
         """Verify viz_payload is NOT in LLM response."""
-        from pywats_agent import AgentResult, VizBuilder
+        from pywats_agent.result import AgentResult
+        from pywats_agent import VizBuilder
         import json
         
         result = AgentResult.ok(
@@ -508,7 +510,8 @@ class TestAgentResultWithVisualization:
     
     def test_to_ui_includes_viz(self):
         """Verify viz_payload IS in UI response."""
-        from pywats_agent import AgentResult, VizBuilder
+        from pywats_agent.result import AgentResult
+        from pywats_agent import VizBuilder
         
         result = AgentResult.ok(
             summary="Yield is 94.5%",

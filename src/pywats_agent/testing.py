@@ -9,7 +9,7 @@ requiring actual LLM calls, enabling:
 - Integration testing with real API but controlled inputs
 
 Example:
-    >>> from pywats_agent import ToolExecutor
+    >>> from pywats_agent import ToolExecutorV2, InMemoryDataStore
     >>> from pywats_agent.testing import AgentTestHarness
     >>> 
     >>> harness = AgentTestHarness(executor)
@@ -32,11 +32,11 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
-from .result import AgentResult
 from .context import AgentContext
+from .agent.envelope import ToolResultEnvelope
 
 if TYPE_CHECKING:
-    from .executor import ToolExecutor
+    from .agent.executor import ToolExecutorV2
 
 
 @dataclass
@@ -95,7 +95,7 @@ class TestResult:
     actual_tool: Optional[str] = None
     actual_parameters: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
-    agent_result: Optional[AgentResult] = None
+    agent_result: Optional[ToolResultEnvelope] = None
 
 
 # ============================================================================
@@ -274,14 +274,14 @@ class AgentTestHarness:
     
     def __init__(
         self, 
-        executor: "ToolExecutor",
+        executor: "ToolExecutorV2",
         context: Optional[AgentContext] = None
     ):
         """
         Initialize the test harness.
         
         Args:
-            executor: ToolExecutor instance to test
+            executor: ToolExecutorV2 instance to test
             context: Optional default context for tests
         """
         self._executor = executor

@@ -21,15 +21,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import pytest
 from unittest.mock import MagicMock
 
-# Import agent components
-from pywats_agent import (
-    AgentContext,
+from pywats_agent import InMemoryDataStore, ToolExecutorV2
+from pywats_agent.context import AgentContext
+from pywats_agent.testing import (
     AgentTestHarness,
-    ToolExecutor,
     TestCase,
-    get_yield_tool_test_cases,
-    get_step_analysis_test_cases,
     get_all_test_cases,
+    get_step_analysis_test_cases,
+    get_yield_tool_test_cases,
 )
 
 
@@ -48,7 +47,11 @@ def mock_api():
 @pytest.fixture
 def executor(mock_api):
     """Create an executor with mock API."""
-    return ToolExecutor(mock_api)
+    return ToolExecutorV2.with_default_tools(
+        mock_api,
+        datastore=InMemoryDataStore(),
+        profile_name="minimal",
+    )
 
 
 @pytest.fixture
@@ -190,19 +193,7 @@ class TestContext:
         assert context.current_product == "TEST-123"
         assert context.current_station == "Station-A"
     
-    def test_executor_with_context(self, mock_api, context_with_product):
-        """Test executor applies context defaults."""
-        executor = ToolExecutor(mock_api, context=context_with_product)
-        
-        # Get system prompt
-        prompt = executor.get_system_prompt()
-        assert "WIDGET-001" in prompt
-        
-        # Test context default application
-        params = {"perspective": "by station"}
-        filled = executor._apply_context_defaults(params)
-        assert filled["part_number"] == "WIDGET-001"
-        assert filled["perspective"] == "by station"  # Original preserved
+    # NOTE: v2 executor intentionally does not apply AgentContext defaults.
 
 
 # ============================================================================

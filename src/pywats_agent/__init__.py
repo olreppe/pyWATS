@@ -1,35 +1,19 @@
-"""
-pyWATS Agent - AI agent tools for pyWATS.
+"""pyWATS Agent (BETA).
 
-Provides tool definitions and executors for AI agents (LangChain, OpenAI, etc.)
-to interact with WATS manufacturing data.
+Public API policy (BETA): **no backwards compatibility**.
+
+Use the v2 executor + result envelope (data handles + bounded previews).
 
 Example:
     >>> from pywats import pyWATS
-    >>> from pywats_agent import ToolExecutor, YieldAnalysisTool
-    >>> 
+    >>> from pywats_agent import ToolExecutorV2, InMemoryDataStore
+    >>>
     >>> api = pyWATS(base_url="...", token="...")
-    >>> executor = ToolExecutor(api)
-    >>> 
-    >>> # Execute a tool call from an LLM
-    >>> result = executor.execute("analyze_yield", {
-    ...     "part_number": "WIDGET-001",
-    ...     "perspective": "by station",
-    ...     "days": 7
-    ... })
-    >>> print(result.summary)
+    >>> executor = ToolExecutorV2.with_default_tools(api, datastore=InMemoryDataStore())
+    >>>
+    >>> env = executor.execute("analyze_yield", {"part_number": "WIDGET-001"})
+    >>> print(env.summary)
 """
-
-from .result import AgentResult
-from .executor import ToolExecutor
-from .context import AgentContext, VisibleData
-from .autonomy import (
-    AnalyticalRigor,
-    WriteMode,
-    AgentConfig,
-    PRESETS,
-    get_preset,
-)
 from .visualization import (
     ChartType,
     DataSeries,
@@ -45,47 +29,36 @@ from .visualization import (
     merge_visualizations,
     empty_visualization,
 )
-from .testing import (
-    AgentTestHarness,
-    TestCase,
-    TestResult,
-    ToolCall,
-    get_yield_tool_test_cases,
-    get_step_analysis_test_cases,
-    get_measurement_test_cases,
-    get_all_test_cases,
-)
-from .tools import (
-    YieldAnalysisTool,
-    YieldFilter,
-    AnalysisPerspective,
-    PERSPECTIVE_ALIASES,
-    resolve_perspective,
-    get_yield_tool_definition,
-    TestStepAnalysisTool,
-    TestStepAnalysisFilter,
-    get_test_step_analysis_tool_definition,
-    AggregatedMeasurementTool,
-    MeasurementDataTool,
-    MeasurementFilter,
-    get_aggregated_measurement_tool_definition,
-    get_measurement_data_tool_definition,
+
+# Clean-sheet agent core (v2): registry/profiles + datastore handles + LLM-safe envelopes
+from .agent import (
+    AgentToolV2,
+    DataStore,
+    InMemoryDataStore,
+    build_default_registry,
+    get_profile,
+    ResponsePolicy,
+    ToolExecutorV2,
+    ToolProfile,
+    ToolRegistry,
+    ToolResultEnvelope,
+    ToolInput,
 )
 
-__version__ = "0.1.0b16"
+__version__ = "0.1.0b17"
 __all__ = [
-    # Core
-    "AgentResult",
-    "ToolExecutor",
-    # Context
-    "AgentContext",
-    "VisibleData",
-    # Autonomy/Config
-    "AnalyticalRigor",
-    "WriteMode",
-    "AgentConfig",
-    "PRESETS",
-    "get_preset",
+    # Clean-sheet agent core (v2)
+    "AgentToolV2",
+    "DataStore",
+    "InMemoryDataStore",
+    "build_default_registry",
+    "get_profile",
+    "ResponsePolicy",
+    "ToolExecutorV2",
+    "ToolProfile",
+    "ToolRegistry",
+    "ToolResultEnvelope",
+    "ToolInput",
     # Visualization (sidecar pattern)
     "ChartType",
     "DataSeries",
@@ -100,30 +73,4 @@ __all__ = [
     "VizBuilder",
     "merge_visualizations",
     "empty_visualization",
-    # Testing
-    "AgentTestHarness",
-    "TestCase",
-    "TestResult",
-    "ToolCall",
-    "get_yield_tool_test_cases",
-    "get_step_analysis_test_cases",
-    "get_measurement_test_cases",
-    "get_all_test_cases",
-    # Yield tool
-    "YieldAnalysisTool",
-    "YieldFilter",
-    "AnalysisPerspective",
-    "PERSPECTIVE_ALIASES",
-    "resolve_perspective",
-    "get_yield_tool_definition",
-    # Test step analysis tool
-    "TestStepAnalysisTool",
-    "TestStepAnalysisFilter",
-    "get_test_step_analysis_tool_definition",
-    # Measurement tools
-    "AggregatedMeasurementTool",
-    "MeasurementDataTool",
-    "MeasurementFilter",
-    "get_aggregated_measurement_tool_definition",
-    "get_measurement_data_tool_definition",
 ]

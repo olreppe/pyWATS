@@ -6,6 +6,7 @@ from pywats_agent.tools import DebugTool
 
 
 pytestmark = pytest.mark.agent
+pytestmark = [pytest.mark.agent, pytest.mark.server]
 
 
 class TestDebugTool:

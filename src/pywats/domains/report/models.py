@@ -153,6 +153,34 @@ class WATSFilter(PyWATSModel):
         serialization_alias="miscValue",
         description="Filter by misc info value field"
     )
+    misc_info_description: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "miscInfoDescription", "misc_info_description"
+        ),
+        serialization_alias="miscInfoDescription",
+        description="Filter by misc info description (for some analytics endpoints)"
+    )
+    misc_info_string: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("miscInfoString", "misc_info_string"),
+        serialization_alias="miscInfoString",
+        description="Filter by misc info string (for some analytics endpoints)"
+    )
+    asset_serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "assetSerialNumber", "assetSerialNum", "asset_serial_number"
+        ),
+        serialization_alias="assetSerialNumber",
+        description="Filter by asset serial number (for some analytics endpoints)"
+    )
+    asset_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("assetName", "asset_name"),
+        serialization_alias="assetName",
+        description="Filter by asset name (for some analytics endpoints)"
+    )
     product_group: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("productGroup", "product_group"),

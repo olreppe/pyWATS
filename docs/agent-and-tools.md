@@ -2,6 +2,8 @@
 
 This document explains how the **`pywats_agent`** layer is structured, what problems it solves, and how a user question becomes one or more **tool calls** that return a final answer (optionally with a visualization payload).
 
+For frontend integration changes (UI/Copilot clients), see: **FRONTEND_COPILOT_MIGRATION.md**
+
 > Scope: the *agent/tooling layer* (tool definitions, execution, selection guidance, results & visualization).  
 > Not scope: the underlying domain services (e.g., `pywats.domains.*`) except where tools call into them.
 
@@ -46,8 +48,10 @@ Tools typically live under:
   - domain-focused tool modules (yield, steps, deviations, root cause, etc.)
   - shared helpers in `pywats_agent.tools.shared.*`
 
-**Important rule:** public imports should come from `pywats_agent.tools` (not internal subpaths).  
-This keeps tests and callers stable even if internal files move.
+**BETA rule (no backwards compatibility):** the supported public surface is the v2 executor + registry.
+
+- Prefer importing v2 entry points from `pywats_agent` (e.g., `ToolExecutorV2`, `ToolRegistry`, `ToolProfile`).
+- Treat `pywats_agent.tools.*` as implementation details that may change or be removed during beta.
 
 ---
 
@@ -78,17 +82,16 @@ If you see “session creator” mentioned in exports, those are the helpers tha
 ---
 
 ### 2.4 Agent result model
-A typical agent response is represented as a structured object (e.g., `AgentResult`) containing:
+In v2, tool execution returns a **LLM-safe envelope** (`ToolResultEnvelope`) containing:
 
-- `text` (final user-facing explanation)
-- optional `data` (structured results useful to downstream code)
-- optional **visualization payload** for UI (charts/tables/KPIs)
+- `summary`: bounded human-readable text
+- `data_key`: an out-of-band handle to full data stored in a `DataStore`
+- `preview`: a bounded preview suitable for LLM context
 
-Two common serialization targets:
-- **LLM / OpenAI-compatible output**: excludes large UI payloads by default
-- **UI output**: includes visualization payload
+This prevents context inflation by design: bulk data is never inlined into the LLM response.
 
-This prevents sending large chart payloads back into the LLM context unnecessarily.
+If you need rich UI payloads (charts/tables), keep them out-of-band (similar to the earlier “sidecar” pattern):
+the SDK can return UI payloads directly to the frontend while only sending the envelope back to the LLM.
 
 ---
 
@@ -276,7 +279,7 @@ Cause:
 - same version/tag published once already; PyPI forbids re-upload of the same filename/version
 
 Fix:
-- bump version (next beta), rebuild and republish
+- bump version (next beta), rebuild and republish (use `./scripts/bump.ps1`)
 - avoid force-pushing tags that already triggered publishing
 
 ---

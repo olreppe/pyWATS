@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b17] - 2025-12-21
+
+### Added
+- **Agent v2 execution core** - LLM-safe tool results via bounded envelopes + out-of-band data handles
+- **DynamicYield filter support** - Added misc-info and asset filter fields to `WATSFilter`
+
+### Changed
+- **Agent public API (BETA)** - v2-only exports (breaking changes by design)
+
 ## [0.1.0b15] - 2025-12-21
 
 ### Fixed

@@ -353,6 +353,9 @@ from ._base import (
     AgentTool,
     AnalysisTool,
 )
+
+# Debug / connectivity tool
+from .debug_tool import DebugTool, get_debug_tool_definition
 from ._registry import (
     register_tool,
     get_all_tools,
@@ -390,6 +393,10 @@ __all__ = [
     "get_all_tools",
     "get_tools_by_category",
     "create_tool_instance",
+
+    # Debug tool
+    "DebugTool",
+    "get_debug_tool_definition",
     
     # Yield tools
     "YieldAnalysisTool",

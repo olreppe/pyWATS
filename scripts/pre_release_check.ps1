@@ -16,7 +16,8 @@
 #>
 
 param(
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$IncludeIntegrationTests
 )
 
 $ErrorActionPreference = "Stop"
@@ -89,15 +90,42 @@ Write-Success "No critical linting errors"
 if (-not $SkipTests) {
     Write-Step "Running test suite"
     Write-Host "  This may take a few minutes..." -ForegroundColor Gray
-    
-    & $VenvPython -m pytest api-agent-tests/ api-tests/ -v --tb=short -x
-    
+
+    # Keep default behavior aligned with CI: unit tests that do not require a live server.
+    $env:WATS_BASE_URL = if ($env:WATS_BASE_URL) { $env:WATS_BASE_URL } else { "https://demo.wats.com" }
+    $env:WATS_AUTH_TOKEN = if ($env:WATS_AUTH_TOKEN) { $env:WATS_AUTH_TOKEN } else { "dGVzdDp0ZXN0" }
+
+    # Exclude server-dependent agent tests by default.
+    & $VenvPython -m pytest api-agent-tests/ -m "not server" -v --tb=short -x
+
     if ($LASTEXITCODE -ne 0) {
-        Write-Error-Custom "Tests failed"
+        Write-Error-Custom "Unit tests failed"
         exit 1
     }
+
+    Write-Success "Unit tests passed"
+
+    if ($IncludeIntegrationTests) {
+        Write-Step "Running agent server tests (requires live server + credentials)"
+        & $VenvPython -m pytest api-agent-tests/ -m server -v --tb=short -x
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error-Custom "Agent server tests failed"
+            exit 1
+        }
+
+        Write-Success "Agent server tests passed"
+
+        Write-Step "Running API integration tests (requires live server + credentials)"
+        & $VenvPython -m pytest api-tests/ -v --tb=short -x
     
-    Write-Success "All tests passed"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error-Custom "Integration tests failed"
+            exit 1
+        }
+
+        Write-Success "Integration tests passed"
+    }
 }
 
 # ============================================================================
@@ -110,6 +138,6 @@ Write-Host "  Pre-release checks passed" -ForegroundColor Green
 Write-Host "================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Ready to release!" -ForegroundColor Cyan
-Write-Host 'Next step: .\scripts\release.ps1 -BumpType patch' -ForegroundColor Gray
+Write-Host 'Next step: .\scripts\bump.ps1' -ForegroundColor Gray
 Write-Host ""
 
