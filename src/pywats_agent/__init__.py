@@ -45,7 +45,7 @@ from .agent import (
     ToolInput,
 )
 
-__version__ = "0.1.0b17"
+__version__ = "0.1.0b18"
 __all__ = [
     # Clean-sheet agent core (v2)
     "AgentToolV2",
