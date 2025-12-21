@@ -17,6 +17,23 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 from unittest.mock import Mock, MagicMock
 
+# Import all statistics symbols from public API
+from pywats_agent.tools import (
+    SampleSizeThresholds,
+    DeviationThresholds,
+    DimensionCardinalityLimits,
+    StatisticalConfig,
+    AnalysisType,
+    MetricType,
+    DimensionDiscovery,
+    DimensionInfo,
+    DimensionCombinationStats,
+    get_statistical_config,
+    set_statistical_config,
+    reset_statistical_config,
+    discover_dimensions,
+)
+
 
 # =============================================================================
 # TEST FIXTURES - Mock yield data
@@ -142,7 +159,6 @@ class TestSampleSizeThresholds:
     
     def test_default_thresholds_exist(self):
         """Default thresholds are defined."""
-        from pywats_agent.tools.shared.statistics import SampleSizeThresholds
         
         thresholds = SampleSizeThresholds()
         
@@ -154,7 +170,6 @@ class TestSampleSizeThresholds:
     
     def test_default_values_match_research(self):
         """Default values align with statistical research."""
-        from pywats_agent.tools.shared.statistics import SampleSizeThresholds
         
         thresholds = SampleSizeThresholds()
         
@@ -166,7 +181,6 @@ class TestSampleSizeThresholds:
     
     def test_confidence_levels(self):
         """Confidence level calculation."""
-        from pywats_agent.tools.shared.statistics import SampleSizeThresholds
         
         thresholds = SampleSizeThresholds()
         
@@ -193,7 +207,6 @@ class TestSampleSizeThresholds:
     
     def test_confidence_is_monotonic(self):
         """Confidence increases with sample size."""
-        from pywats_agent.tools.shared.statistics import SampleSizeThresholds
         
         thresholds = SampleSizeThresholds()
         
@@ -209,7 +222,6 @@ class TestDeviationThresholds:
     
     def test_default_thresholds_exist(self):
         """Default thresholds are defined."""
-        from pywats_agent.tools.shared.statistics import DeviationThresholds
         
         thresholds = DeviationThresholds()
         
@@ -220,7 +232,6 @@ class TestDeviationThresholds:
     
     def test_threshold_ordering(self):
         """Thresholds are in descending order of severity."""
-        from pywats_agent.tools.shared.statistics import DeviationThresholds
         
         thresholds = DeviationThresholds()
         
@@ -230,7 +241,6 @@ class TestDeviationThresholds:
     
     def test_classify_critical(self):
         """Critical deviations classified correctly."""
-        from pywats_agent.tools.shared.statistics import DeviationThresholds
         
         thresholds = DeviationThresholds()
         
@@ -240,7 +250,6 @@ class TestDeviationThresholds:
     
     def test_classify_high(self):
         """High deviations classified correctly."""
-        from pywats_agent.tools.shared.statistics import DeviationThresholds
         
         thresholds = DeviationThresholds()
         
@@ -249,7 +258,6 @@ class TestDeviationThresholds:
     
     def test_classify_moderate(self):
         """Moderate deviations classified correctly."""
-        from pywats_agent.tools.shared.statistics import DeviationThresholds
         
         thresholds = DeviationThresholds()
         
@@ -258,7 +266,6 @@ class TestDeviationThresholds:
     
     def test_classify_low(self):
         """Low deviations classified correctly."""
-        from pywats_agent.tools.shared.statistics import DeviationThresholds
         
         thresholds = DeviationThresholds()
         
@@ -267,7 +274,6 @@ class TestDeviationThresholds:
     
     def test_classify_none(self):
         """Negligible deviations classified as none."""
-        from pywats_agent.tools.shared.statistics import DeviationThresholds
         
         thresholds = DeviationThresholds()
         
@@ -281,7 +287,6 @@ class TestDimensionCardinalityLimits:
     
     def test_default_limits_exist(self):
         """Default limits are defined."""
-        from pywats_agent.tools.shared.statistics import DimensionCardinalityLimits
         
         limits = DimensionCardinalityLimits()
         
@@ -291,7 +296,6 @@ class TestDimensionCardinalityLimits:
     
     def test_check_sparsity_good(self):
         """Good data density passes check."""
-        from pywats_agent.tools.shared.statistics import DimensionCardinalityLimits
         
         limits = DimensionCardinalityLimits()
         
@@ -304,7 +308,6 @@ class TestDimensionCardinalityLimits:
     
     def test_check_sparsity_warns_on_high_cardinality(self):
         """High cardinality triggers warning."""
-        from pywats_agent.tools.shared.statistics import DimensionCardinalityLimits
         
         limits = DimensionCardinalityLimits()
         
@@ -316,7 +319,6 @@ class TestDimensionCardinalityLimits:
     
     def test_check_sparsity_fails_on_sparse(self):
         """Sparse data fails check."""
-        from pywats_agent.tools.shared.statistics import DimensionCardinalityLimits
         
         limits = DimensionCardinalityLimits()
         
@@ -329,7 +331,6 @@ class TestDimensionCardinalityLimits:
     
     def test_extra_dimensions_increase_sparsity(self):
         """Adding dimensions increases sparsity exponentially."""
-        from pywats_agent.tools.shared.statistics import DimensionCardinalityLimits
         
         limits = DimensionCardinalityLimits()
         
@@ -356,7 +357,6 @@ class TestStatisticalConfig:
     
     def test_default_config(self):
         """Default configuration is valid."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -367,7 +367,6 @@ class TestStatisticalConfig:
     
     def test_for_analysis_type_screening(self):
         """Screening analysis has relaxed thresholds."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig, AnalysisType
         
         default = StatisticalConfig()
         screening = StatisticalConfig.for_analysis_type(AnalysisType.SCREENING)
@@ -378,7 +377,6 @@ class TestStatisticalConfig:
     
     def test_for_analysis_type_diagnostic(self):
         """Diagnostic analysis has stricter thresholds."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig, AnalysisType
         
         default = StatisticalConfig()
         diagnostic = StatisticalConfig.for_analysis_type(AnalysisType.DIAGNOSTIC)
@@ -389,7 +387,6 @@ class TestStatisticalConfig:
     
     def test_for_analysis_type_reporting(self):
         """Reporting analysis has highest confidence requirements."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig, AnalysisType
         
         diagnostic = StatisticalConfig.for_analysis_type(AnalysisType.DIAGNOSTIC)
         reporting = StatisticalConfig.for_analysis_type(AnalysisType.REPORTING)
@@ -399,7 +396,6 @@ class TestStatisticalConfig:
     
     def test_for_analysis_type_capability(self):
         """Capability analysis has strictest requirements."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig, AnalysisType
         
         reporting = StatisticalConfig.for_analysis_type(AnalysisType.REPORTING)
         capability = StatisticalConfig.for_analysis_type(AnalysisType.CAPABILITY)
@@ -408,7 +404,6 @@ class TestStatisticalConfig:
     
     def test_calculate_finding_score_high_quality(self):
         """High quality findings get high scores."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -426,7 +421,6 @@ class TestStatisticalConfig:
     
     def test_calculate_finding_score_low_quality(self):
         """Low quality findings get filtered out."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -443,7 +437,6 @@ class TestStatisticalConfig:
     
     def test_calculate_finding_score_marginal(self):
         """Marginal findings handled correctly."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -468,7 +461,6 @@ class TestDimensionDiscovery:
     
     def test_supported_dimensions_exist(self):
         """All expected WATS dimensions are supported."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         expected = [
             "partNumber", "productName", "stationName", "location",
@@ -482,7 +474,6 @@ class TestDimensionDiscovery:
     
     def test_discover_all_dimensions(self):
         """Discovers all dimensions with data."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_diverse_dataset(n_records=50)
         discovery = DimensionDiscovery()
@@ -501,7 +492,6 @@ class TestDimensionDiscovery:
     
     def test_analyze_single_dimension(self):
         """Analyze a single dimension in detail."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_diverse_dataset(n_records=100, n_stations=5)
         discovery = DimensionDiscovery()
@@ -517,7 +507,6 @@ class TestDimensionDiscovery:
     
     def test_analyze_unknown_dimension_returns_none(self):
         """Unknown dimensions return None."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_diverse_dataset()
         discovery = DimensionDiscovery()
@@ -528,7 +517,6 @@ class TestDimensionDiscovery:
     
     def test_sparse_data_triggers_warning(self):
         """Sparse data triggers sparsity warning."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_sparse_dataset(n_records=50)
         discovery = DimensionDiscovery()
@@ -541,7 +529,6 @@ class TestDimensionDiscovery:
     
     def test_analyze_dimension_combination(self):
         """Analyze a dimension combination."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_diverse_dataset(n_records=100, n_stations=3, n_operators=4)
         discovery = DimensionDiscovery()
@@ -559,7 +546,6 @@ class TestDimensionDiscovery:
     
     def test_all_dimensions_at_once(self):
         """Test what happens with ALL dimensions."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_diverse_dataset(n_records=100)
         discovery = DimensionDiscovery()
@@ -581,7 +567,6 @@ class TestDimensionDiscovery:
     
     def test_two_dimension_combination(self):
         """Test two-dimension combination analysis."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_concentrated_dataset(n_records=1000)
         discovery = DimensionDiscovery()
@@ -596,7 +581,6 @@ class TestDimensionDiscovery:
     
     def test_three_dimension_combination(self):
         """Test three-dimension combination analysis."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_concentrated_dataset(n_records=1000)
         discovery = DimensionDiscovery()
@@ -612,7 +596,6 @@ class TestDimensionDiscovery:
     
     def test_suggest_viable_combinations(self):
         """Test automatic viable combination suggestions."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_concentrated_dataset(n_records=500)
         discovery = DimensionDiscovery()
@@ -648,7 +631,6 @@ class TestAllDimensionsMatrix:
     @pytest.mark.parametrize("dimension", WATS_DIMENSIONS)
     def test_single_dimension_analysis(self, dimension):
         """Each dimension can be analyzed individually."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         # Create data with this dimension populated
         data = create_diverse_dataset(n_records=50)
@@ -663,7 +645,6 @@ class TestAllDimensionsMatrix:
     
     def test_all_dimension_pairs(self):
         """Test all possible two-dimension combinations."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         from itertools import combinations
         
         data = create_concentrated_dataset(n_records=500)
@@ -688,7 +669,6 @@ class TestAllDimensionsMatrix:
     
     def test_dimension_triplets(self):
         """Test select three-dimension combinations."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = create_concentrated_dataset(n_records=1000)
         discovery = DimensionDiscovery()
@@ -718,7 +698,6 @@ class TestEdgeCases:
     
     def test_empty_data(self):
         """Empty data handled gracefully."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         discovery = DimensionDiscovery()
         dimensions = discovery.discover_all_dimensions([])
@@ -727,7 +706,6 @@ class TestEdgeCases:
     
     def test_single_record(self):
         """Single record handled gracefully."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = [MockYieldData(station_name="ST-01", unit_count=100)]
         discovery = DimensionDiscovery()
@@ -739,7 +717,6 @@ class TestEdgeCases:
     
     def test_null_dimension_values(self):
         """Null/None dimension values handled."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         data = [
             MockYieldData(station_name="ST-01", operator="OP-1"),
@@ -757,7 +734,6 @@ class TestEdgeCases:
     
     def test_very_high_cardinality(self):
         """Very high cardinality dimension."""
-        from pywats_agent.tools.shared.statistics import DimensionDiscovery
         
         # Serial numbers - unique per unit
         data = [MockYieldData(batch_number=f"SN-{i:08d}") for i in range(1000)]
@@ -771,7 +747,6 @@ class TestEdgeCases:
     
     def test_sample_size_zero(self):
         """Zero sample size handled."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -787,7 +762,6 @@ class TestEdgeCases:
     
     def test_extreme_deviation(self):
         """Extreme deviation values handled."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -810,7 +784,6 @@ class TestStatisticalConfigSingleton:
     
     def test_get_default_config(self):
         """Get default config singleton."""
-        from pywats_agent.tools.shared.statistics import get_statistical_config, reset_statistical_config
         
         reset_statistical_config()  # Clean slate
         
@@ -823,14 +796,6 @@ class TestStatisticalConfigSingleton:
     
     def test_set_custom_config(self):
         """Set custom config."""
-        from pywats_agent.tools.shared.statistics import (
-            StatisticalConfig,
-            AnalysisType,
-            get_statistical_config,
-            set_statistical_config,
-            reset_statistical_config,
-        )
-        
         reset_statistical_config()
         
         # Create custom config
@@ -846,14 +811,6 @@ class TestStatisticalConfigSingleton:
     
     def test_reset_config(self):
         """Reset config to defaults."""
-        from pywats_agent.tools.shared.statistics import (
-            StatisticalConfig,
-            AnalysisType,
-            get_statistical_config,
-            set_statistical_config,
-            reset_statistical_config,
-        )
-        
         # Set custom
         custom = StatisticalConfig.for_analysis_type(AnalysisType.REPORTING)
         set_statistical_config(custom)
@@ -875,7 +832,6 @@ class TestCombinedScoreCalculation:
     
     def test_weights_sum_to_one(self):
         """Weights should sum to 1.0 for proper scoring."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -884,7 +840,6 @@ class TestCombinedScoreCalculation:
     
     def test_score_bounded_zero_to_one(self):
         """Score should always be between 0 and 1."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -901,7 +856,6 @@ class TestCombinedScoreCalculation:
     
     def test_sample_size_dominates_low_samples(self):
         """With very low samples, findings should have low confidence."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -924,7 +878,6 @@ class TestCombinedScoreCalculation:
     
     def test_deviation_dominates_high_samples(self):
         """With high samples, deviation becomes the deciding factor."""
-        from pywats_agent.tools.shared.statistics import StatisticalConfig
         
         config = StatisticalConfig()
         
@@ -994,7 +947,6 @@ class TestDimensionInfoSerialization:
     
     def test_dimension_info_to_dict(self):
         """DimensionInfo serializes correctly."""
-        from pywats_agent.tools.shared.statistics import DimensionInfo
         
         info = DimensionInfo(
             name="station_name",
@@ -1017,7 +969,6 @@ class TestDimensionInfoSerialization:
     
     def test_combination_stats_to_dict(self):
         """DimensionCombinationStats serializes correctly."""
-        from pywats_agent.tools.shared.statistics import DimensionCombinationStats
         
         stats = DimensionCombinationStats(
             dimensions=["station_name", "operator"],
