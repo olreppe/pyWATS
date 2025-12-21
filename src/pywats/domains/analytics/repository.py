@@ -168,10 +168,24 @@ class AnalyticsRepository:
             List of YieldData objects
         """
         if isinstance(filter_data, WATSFilter):
-            data = filter_data.model_dump(by_alias=True, exclude_none=True)
+            data: Dict[str, Any] = filter_data.model_dump(
+                by_alias=True, exclude_none=True
+            )
         else:
-            data = filter_data
-        response = self._http_client.post("/api/App/DynamicYield", data=data)
+            data = cast(Dict[str, Any], filter_data)
+
+        # WATS supports an alternate syntax where dimensions are passed as a
+        # query parameter, e.g. POST /api/App/DynamicYield?dimensions=assetName
+        # with an empty JSON body. Some environments appear to rely on this
+        # behavior for asset/misc dimensions.
+        if set(data.keys()) == {"dimensions"} and isinstance(data.get("dimensions"), str):
+            response = self._http_client.post(
+                "/api/App/DynamicYield",
+                data={},
+                params={"dimensions": data["dimensions"]},
+            )
+        else:
+            response = self._http_client.post("/api/App/DynamicYield", data=data)
         if response.is_success and response.data:
             return [YieldData.model_validate(item) for item in response.data]
         return []

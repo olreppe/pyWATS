@@ -53,7 +53,13 @@ class WATSFilter(PyWATSModel):
     Misc Info Filters:
         misc_description (str): Filter by misc info description field
         misc_value (str): Filter by misc info value field
+        misc_info_description (str): Filter by misc info description (dynamic yield)
+        misc_info_string (str): Filter by misc info string/value (dynamic yield)
         socket (str): Filter by socket/fixture identifier
+
+    Asset Filters (server-dependent):
+        asset_serial_number (str): Filter by asset serial number (dynamic yield)
+        asset_name (str): Filter by asset name (dynamic yield)
         
     Date Range Filters:
         date_from (datetime): Start of date range (inclusive)
@@ -152,6 +158,41 @@ class WATSFilter(PyWATSModel):
         validation_alias=AliasChoices("miscValue", "misc_value"),
         serialization_alias="miscValue",
         description="Filter by misc info value field"
+    )
+
+    # Some servers expose misc info dimensions that can also be used as filters
+    # for analytics endpoints such as /api/App/DynamicYield.
+    misc_info_description: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "miscInfoDescription", "misc_info_description"
+        ),
+        serialization_alias="miscInfoDescription",
+        description="Filter by misc info description (dynamic yield)"
+    )
+    misc_info_string: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("miscInfoString", "misc_info_string"),
+        serialization_alias="miscInfoString",
+        description="Filter by misc info string/value (dynamic yield)"
+    )
+
+    # Assets can be used as dimensions in dynamic yield; some servers also accept
+    # these as filters. We keep them optional to avoid impacting existing usage.
+    asset_serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            # Backend naming differs across WATS versions
+            "assetSerialNumber", "assetSerialNum", "asset_serial_number"
+        ),
+        serialization_alias="assetSerialNumber",
+        description="Filter by asset serial number (dynamic yield; server-dependent)"
+    )
+    asset_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("assetName", "asset_name"),
+        serialization_alias="assetName",
+        description="Filter by asset name (dynamic yield; server-dependent)"
     )
     product_group: Optional[str] = Field(
         default=None,
