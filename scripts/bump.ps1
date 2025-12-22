@@ -16,10 +16,12 @@
 
 .PARAMETER BumpType
     One of:
-        - beta  : 0.1.0b18 -> 0.1.0b19 (or 0.1.0 -> 0.1.0b1)
+    - beta  : 0.1.0b19 -> 0.1.0b20 (or 0.1.0 -> 0.1.0b1)
       - patch : 0.1.0b17 -> 0.1.1b1
       - minor : 0.1.0b17 -> 0.2.0b1
       - major : 0.1.0b17 -> 1.0.0b1
+
+    Note: examples are illustrative; the script bumps based on the current version.
 
 .PARAMETER DryRun
     Preview what would happen without making changes.

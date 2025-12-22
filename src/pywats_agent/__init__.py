@@ -45,7 +45,7 @@ from .agent import (
     ToolInput,
 )
 
-__version__ = "0.1.0b19"
+__version__ = "0.1.0b20"
 __all__ = [
     # Agent core
     "AgentTool",
