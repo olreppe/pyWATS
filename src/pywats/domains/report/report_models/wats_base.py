@@ -1,5 +1,12 @@
 
-from typing import Any, Dict, Optional, Self
+from typing import Any, Dict, Optional
+
+try:
+    # Python 3.11+
+    from typing import Self
+except ImportError:  # pragma: no cover
+    # Python 3.10
+    from typing_extensions import Self
 from pydantic import BaseModel, ModelWrapValidatorHandler, ValidationInfo, model_validator
 
 
