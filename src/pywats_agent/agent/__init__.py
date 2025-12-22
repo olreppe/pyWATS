@@ -4,7 +4,7 @@ from .envelope import ToolResultEnvelope
 from .executor import ToolExecutor
 from .policy import ResponsePolicy
 from .registry import ToolProfile, ToolRegistry
-from .tooling import AgentToolV2, ToolInput
+from .tooling import AgentTool, ToolInput
 
 __all__ = [
     "DataStore",
@@ -16,6 +16,6 @@ __all__ = [
     "ResponsePolicy",
     "ToolProfile",
     "ToolRegistry",
-    "AgentToolV2",
+    "AgentTool",
     "ToolInput",
 ]

@@ -21,6 +21,11 @@ class ToolResultEnvelope(BaseModel):
         description="Handle to full data in a DataStore; never inline bulk data into the LLM",
     )
 
+    viz_key: Optional[str] = Field(
+        default=None,
+        description="Handle to visualization payload in a DataStore (UI sidecar; never inline into the LLM)",
+    )
+
     preview: Optional[dict[str, Any]] = Field(
         default=None,
         description="Bounded preview of data (rows, schema) suitable for LLM context",

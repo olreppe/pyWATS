@@ -12,7 +12,7 @@ class ToolInput(BaseModel):
 TInput = TypeVar("TInput", bound=ToolInput)
 
 
-class AgentToolV2(ABC, Generic[TInput]):
+class AgentTool(ABC, Generic[TInput]):
     """Canonical tool interface for the SDK-side agent layer."""
 
     name: str
@@ -35,14 +35,19 @@ class AgentToolV2(ABC, Generic[TInput]):
             },
         }
 
-    def execute(self, params: Dict[str, Any]) -> tuple[bool, str, Any, dict[str, Any]]:
-        """Executes tool and returns (ok, summary, data, metadata).
+    def execute(self, params: Dict[str, Any]) -> Any:
+        """Executes tool and returns a tuple.
 
-        Data can be arbitrarily large; the executor will store it in a DataStore.
+        Supported return shapes:
+        - (ok, summary, data, metadata)
+        - (ok, summary, data, metadata, viz_payload)
+
+        Data and viz_payload can be arbitrarily large; the executor stores them
+        out-of-band in a DataStore and returns only handles + bounded preview.
         """
         input_obj = self.input_model.model_validate(params)
         return self.run(input_obj)
 
     @abstractmethod
-    def run(self, input_obj: TInput) -> tuple[bool, str, Any, dict[str, Any]]:
+    def run(self, input_obj: TInput) -> Any:
         raise NotImplementedError

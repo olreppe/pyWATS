@@ -156,7 +156,7 @@ def get_tool(name: str) -> Optional[Type["AgentTool"]]:
     # Handle experimental tools
     if name == "start_tsa":
         try:
-            from .experimental.tsa_v2 import StartTsaTool
+            from .experimental.tsa import StartTsaTool
             return StartTsaTool
         except ImportError:
             return None

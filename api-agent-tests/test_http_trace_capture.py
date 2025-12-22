@@ -4,7 +4,7 @@ from pywats.core.client import HttpClient
 from pywats_agent.agent.datastore import InMemoryDataStore
 from pywats_agent.agent.executor import ToolExecutor
 from pywats_agent.agent.registry import ToolRegistry
-from pywats_agent.agent.tooling import AgentToolV2, ToolInput
+from pywats_agent.agent.tooling import AgentTool, ToolInput
 
 
 def _mock_transport_handler(request: httpx.Request) -> httpx.Response:
@@ -41,7 +41,7 @@ class _DummyInput(ToolInput):
     pass
 
 
-class _DummyTool(AgentToolV2[_DummyInput]):
+class _DummyTool(AgentTool[_DummyInput]):
     name = "dummy_trace_tool"
     description = "Dummy tool that performs a single HTTP call"
     input_model = _DummyInput

@@ -851,6 +851,77 @@ class TestDateRangeHandling:
         assert params["date_from"] == explicit_from
 
 
+class TestYieldToolDefaultsAndFallback:
+    """Tests for empty-request defaults and progressive fallback behavior."""
+
+    def test_empty_request_defaults_to_product_operation_dimensions_and_calls_dynamic_yield(self):
+        from unittest.mock import MagicMock
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+
+        mock_api = MagicMock()
+        mock_api.analytics.get_dynamic_yield.return_value = []
+
+        tool = YieldAnalysisTool(mock_api)
+        result = tool.analyze(YieldFilter())
+
+        assert result.success is True
+        assert "NO_DATA" in (result.summary or "")
+
+        # Ensure dynamic_yield was called even with no explicit filters.
+        assert mock_api.analytics.get_dynamic_yield.call_count >= 1
+
+        # Ensure default dimensions were applied in the empty-request case.
+        dims = (result.metadata or {}).get("dimensions")
+        assert dims == "partNumber;testOperation"
+
+        # No data should not be stored as an empty dataset in the v2 envelope layer.
+        assert result.data is None
+
+    def test_fallback_retries_and_loosens_filters_until_data_is_returned(self):
+        from unittest.mock import MagicMock
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+
+        class _Row:
+            def __init__(self):
+                self.unit_count = 10
+                self.fpy = 90.0
+            def model_dump(self):
+                return {"unit_count": 10, "fpy": 90.0}
+
+        mock_api = MagicMock()
+        # First attempt returns nothing, second attempt returns data (simulating loosened filters).
+        mock_api.analytics.get_dynamic_yield.side_effect = [[], [_Row()]]
+
+        tool = YieldAnalysisTool(mock_api)
+        filt = YieldFilter(part_number="WIDGET-001", station_name="NON_EXISTENT_STATION", days=7)
+        result = tool.analyze(filt)
+
+        assert result.success is True
+        assert result.data is not None
+        assert isinstance(result.data, list)
+        assert len(result.data) == 1
+
+        meta = result.metadata or {}
+        assert meta.get("record_count") == 1
+        assert meta.get("fallback_attempts"), "Should record fallback attempts"
+        assert mock_api.analytics.get_dynamic_yield.call_count == 2
+
+    def test_no_data_summary_is_compact_and_machine_obvious(self):
+        from unittest.mock import MagicMock
+        from pywats_agent.tools.yield_tool import YieldAnalysisTool
+
+        mock_api = MagicMock()
+        mock_api.analytics.get_dynamic_yield.return_value = []
+
+        tool = YieldAnalysisTool(mock_api)
+        result = tool.analyze(YieldFilter(part_number="WIDGET-001", test_operation="FCT", days=7))
+
+        assert result.success is True
+        assert result.data is None
+        assert "NO_DATA:" in (result.summary or "")
+        assert "KPIS:" in (result.summary or "")
+
+
 
 @pytest.mark.server
 class TestRealLLMQueryExecution:

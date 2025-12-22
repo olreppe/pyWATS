@@ -2,30 +2,30 @@ from __future__ import annotations
 
 from .registry import ToolProfile, ToolRegistry
 from .tools import (
-    AnalyzeYieldToolV2,
-    AnalyzeTestStepsToolV2,
-    AnalyzeFailureModesToolV2,
-    AnalyzeProcessCapabilityToolV2,
-    AnalyzeRootCauseToolV2,
-    AnalyzeSubUnitsToolV2,
-    AnalyzeUnitToolV2,
-    ControlPanelToolV2,
-    GetMeasurementDataToolV2,
-    GetMeasurementStatisticsToolV2,
+    AnalyzeYieldTool,
+    AnalyzeTestStepsTool,
+    AnalyzeFailureModesTool,
+    AnalyzeProcessCapabilityTool,
+    AnalyzeRootCauseTool,
+    AnalyzeSubUnitsTool,
+    AnalyzeUnitTool,
+    ControlPanelTool,
+    GetMeasurementDataTool,
+    GetMeasurementStatisticsTool,
 )
 
 
 DEFAULT_TOOL_CLASSES = (
-    AnalyzeYieldToolV2,
-    AnalyzeTestStepsToolV2,
-    AnalyzeRootCauseToolV2,
-    AnalyzeFailureModesToolV2,
-    AnalyzeProcessCapabilityToolV2,
-    GetMeasurementStatisticsToolV2,
-    GetMeasurementDataToolV2,
-    AnalyzeUnitToolV2,
-    AnalyzeSubUnitsToolV2,
-    ControlPanelToolV2,
+    AnalyzeYieldTool,
+    AnalyzeTestStepsTool,
+    AnalyzeRootCauseTool,
+    AnalyzeFailureModesTool,
+    AnalyzeProcessCapabilityTool,
+    GetMeasurementStatisticsTool,
+    GetMeasurementDataTool,
+    AnalyzeUnitTool,
+    AnalyzeSubUnitsTool,
+    ControlPanelTool,
 )
 
 

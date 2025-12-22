@@ -7,14 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b19] - 2025-12-21
+
+### Changed
+- **Agent tool surface unified** - single canonical executor/tool interface (removed internal v1/v2 naming)
+- **Wrapped tool module renamed** - internal wrapper module renamed to non-versioned name
+- **Experimental TSA module renamed** - experimental TSA implementation renamed to non-versioned module
+
+### Fixed
+- **Tool result robustness** - tool execution guardrails to avoid blank/no-response outcomes (summary always present; empty data treated as explicit no-data)
+- **Mypy configuration** - corrected `tool.mypy.python_version` to a real Python version
+
 ## [0.1.0b17] - 2025-12-21
 
 ### Added
-- **Agent v2 execution core** - LLM-safe tool results via bounded envelopes + out-of-band data handles
+- **Agent execution core** - LLM-safe tool results via bounded envelopes + out-of-band data handles
 - **DynamicYield filter support** - Added misc-info and asset filter fields to `WATSFilter`
 
 ### Changed
-- **Agent public API (BETA)** - v2-only exports (breaking changes by design)
+- **Agent public API (BETA)** - canonical exports (breaking changes by design)
 
 ## [0.1.0b15] - 2025-12-21
 

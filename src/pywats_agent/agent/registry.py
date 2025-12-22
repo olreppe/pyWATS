@@ -3,14 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable, Type
 
-from .tooling import AgentToolV2
+from .tooling import AgentTool
 
 
 class ToolRegistry:
     def __init__(self) -> None:
-        self._tools: dict[str, Type[AgentToolV2]] = {}
+        self._tools: dict[str, Type[AgentTool]] = {}
 
-    def register(self, tool_cls: Type[AgentToolV2]) -> None:
+    def register(self, tool_cls: Type[AgentTool]) -> None:
         name = getattr(tool_cls, "name", None)
         if not name:
             raise ValueError("Tool class must define 'name'")
@@ -18,11 +18,11 @@ class ToolRegistry:
             raise ValueError(f"Tool '{name}' already registered")
         self._tools[name] = tool_cls
 
-    def register_many(self, tool_classes: Iterable[Type[AgentToolV2]]) -> None:
+    def register_many(self, tool_classes: Iterable[Type[AgentTool]]) -> None:
         for cls in tool_classes:
             self.register(cls)
 
-    def get(self, name: str) -> Type[AgentToolV2]:
+    def get(self, name: str) -> Type[AgentTool]:
         return self._tools[name]
 
     def list_names(self) -> list[str]:

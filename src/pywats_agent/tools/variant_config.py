@@ -27,8 +27,8 @@ from pywats_agent.tools.variants import (
 # Example 1: Focused investigation variant
 # ----------------------------------------
 # Starts with investigation profile but adds trend analysis
-_investigation_v2 = ExperimentalVariant(
-    name="investigation_v2",
+_investigation_trends = ExperimentalVariant(
+    name="investigation_trends",
     description="Investigation with yield trend support",
     base_profile="investigation",
     include_tools=["analyze_yield_trend"],
@@ -81,7 +81,7 @@ _alternative_root_cause = ExperimentalVariant(
 # ============================================================================
 # Uncomment the variants you want to make available
 
-register_variant(_investigation_v2)
+register_variant(_investigation_trends)
 register_variant(_focused_yield)
 register_variant(_no_measurement)
 register_variant(_alternative_root_cause)
@@ -91,7 +91,7 @@ register_variant(_alternative_root_cause)
 # Add Your Custom Variants Below
 # ============================================================================
 
-# TSA v2 - Experimental "start_tsa" approach
+# TSA - Experimental "start_tsa" approach
 # ------------------------------------------
 # New TSA design philosophy:
 # - "Evidence curator" not "storyteller"
@@ -99,8 +99,8 @@ register_variant(_alternative_root_cause)
 # - Preprocess + rank in tool layer
 # - Return top-K candidates, not full grids
 # - Session caching for drill-down
-_tsa_v2 = ExperimentalVariant(
-    name="tsa_v2",
+_tsa = ExperimentalVariant(
+    name="tsa",
     description=(
         "Experimental TSA with preprocessing, ranking, and session caching. "
         "Uses start_tsa instead of analyze_test_steps."
@@ -121,4 +121,4 @@ _tsa_v2 = ExperimentalVariant(
         }
     },
 )
-register_variant(_tsa_v2)
+register_variant(_tsa)

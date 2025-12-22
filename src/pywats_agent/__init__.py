@@ -2,7 +2,7 @@
 
 Public API policy (BETA): **no backwards compatibility**.
 
-Use the v2 executor + result envelope (data handles + bounded previews).
+Use the canonical executor + result envelope (data handles + bounded previews).
 
 Example:
     >>> from pywats import pyWATS
@@ -30,9 +30,9 @@ from .visualization import (
     empty_visualization,
 )
 
-# Clean-sheet agent core (v2): registry/profiles + datastore handles + LLM-safe envelopes
+# Agent core: registry/profiles + datastore handles + LLM-safe envelopes
 from .agent import (
-    AgentToolV2,
+    AgentTool,
     DataStore,
     InMemoryDataStore,
     build_default_registry,
@@ -45,10 +45,10 @@ from .agent import (
     ToolInput,
 )
 
-__version__ = "0.1.0b18"
+__version__ = "0.1.0b19"
 __all__ = [
-    # Clean-sheet agent core (v2)
-    "AgentToolV2",
+    # Agent core
+    "AgentTool",
     "DataStore",
     "InMemoryDataStore",
     "build_default_registry",

@@ -16,7 +16,7 @@
 
 .PARAMETER BumpType
     One of:
-      - beta  : 0.1.0b17 -> 0.1.0b18 (or 0.1.0 -> 0.1.0b1)
+        - beta  : 0.1.0b18 -> 0.1.0b19 (or 0.1.0 -> 0.1.0b1)
       - patch : 0.1.0b17 -> 0.1.1b1
       - minor : 0.1.0b17 -> 0.2.0b1
       - major : 0.1.0b17 -> 1.0.0b1

@@ -959,6 +959,177 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
         try:
             # Track any resolution messages for summary
             resolution_notes = []
+
+            def _is_effectively_empty_request(f: YieldFilter) -> bool:
+                """Detect when the caller provided essentially no intent.
+
+                We treat this as the 'default browse' case and apply:
+                - last 30 days
+                - dimensions: partNumber;testOperation
+                - no other filters
+                """
+                if f.days != 30:
+                    return False
+                if getattr(f, "adaptive_time", False):
+                    return False
+                if f.date_from is not None or f.date_to is not None:
+                    return False
+                if getattr(f, "period_count", None):
+                    return False
+                if getattr(f, "date_grouping", None):
+                    return False
+                if f.perspective is not None:
+                    return False
+                if f.dimensions is not None:
+                    return False
+
+                # Any explicit narrowing filters means it is not "empty".
+                return not any(
+                    [
+                        f.part_number,
+                        f.revision,
+                        f.station_name,
+                        f.product_group,
+                        f.level,
+                        f.test_operation,
+                        f.batch_number,
+                    ]
+                )
+
+            def _describe_time_window_days(f: YieldFilter, wats_params: Dict[str, Any] | None = None) -> int:
+                if wats_params and wats_params.get("date_from") and wats_params.get("date_to"):
+                    try:
+                        dfrom = wats_params["date_from"]
+                        dto = wats_params["date_to"]
+                        days = int(max(1, round((dto - dfrom).total_seconds() / 86400.0)))
+                        return days
+                    except Exception:
+                        pass
+                if getattr(f, "period_count", None):
+                    try:
+                        return int(f.period_count)
+                    except Exception:
+                        pass
+                return int(getattr(f, "days", 30) or 30)
+
+            def _build_fallback_candidates(initial: YieldFilter) -> list[tuple[str, YieldFilter]]:
+                """Progressively loosen filters between attempts."""
+                candidates: list[tuple[str, YieldFilter]] = [("initial", initial)]
+
+                # If the user requested a smaller window, broaden to 30 days first (cheap + often fixes empty).
+                if initial.date_from is None and int(getattr(initial, "days", 30) or 30) < 30:
+                    candidates.append(("broaden_time_30d", initial.model_copy(update={"days": 30})))
+
+                current = candidates[-1][1]
+                drop_order = [
+                    ("station_name", "drop_station"),
+                    ("batch_number", "drop_batch"),
+                    ("revision", "drop_revision"),
+                    ("test_operation", "drop_test_operation"),
+                    ("product_group", "drop_product_group"),
+                    ("level", "drop_level"),
+                ]
+
+                for field, label in drop_order:
+                    if getattr(current, field, None):
+                        current = current.model_copy(update={field: None})
+                        candidates.append((label, current))
+
+                # Last resort: drop part_number (can be wide) to at least return something.
+                if getattr(current, "part_number", None):
+                    current = current.model_copy(update={"part_number": None})
+                    candidates.append(("drop_part_number", current))
+
+                # Absolute last resort: broaden time to 90d if still bounded (only when no explicit dates).
+                if current.date_from is None and int(getattr(current, "days", 30) or 30) < 90:
+                    candidates.append(("broaden_time_90d", current.model_copy(update={"days": 90})))
+
+                # Keep attempt count reasonable.
+                return candidates[:6]
+
+            def _compute_kpis(rows: list[Any], ytype: str) -> dict[str, Any]:
+                """Compute compact KPIs from dynamic_yield rows."""
+
+                def _get_field(obj: Any, *names: str):
+                    for n in names:
+                        if hasattr(obj, n):
+                            v = getattr(obj, n)
+                            if v is not None:
+                                return v
+                        if isinstance(obj, dict) and n in obj and obj[n] is not None:
+                            return obj[n]
+                    return None
+
+                def _as_int(v: Any) -> int:
+                    try:
+                        return int(v)
+                    except Exception:
+                        return 0
+
+                def _as_float(v: Any) -> float | None:
+                    try:
+                        return float(v)
+                    except Exception:
+                        return None
+
+                total_units = 0
+                total_reports = 0
+                weighted_yield_sum = 0.0
+                weighted_yield_den = 0
+
+                has_period = False
+
+                for r in rows:
+                    if _get_field(r, "period") is not None:
+                        has_period = True
+                    uc = _as_int(_get_field(r, "unit_count", "unitCount"))
+                    rc = _as_int(_get_field(r, "report_count", "reportCount", "test_report_count", "testReportCount"))
+                    total_units += uc
+                    total_reports += rc
+
+                    yv = _as_float(_get_field(r, "fpy", "first_pass_yield", "firstPassYield"))
+                    if yv is not None:
+                        # Weight by units if present, otherwise treat as 1.
+                        w = uc if uc > 0 else 1
+                        weighted_yield_sum += yv * w
+                        weighted_yield_den += w
+
+                avg_yield = (weighted_yield_sum / weighted_yield_den) if weighted_yield_den > 0 else None
+
+                return {
+                    "rows": len(rows),
+                    "total_units": total_units,
+                    "total_reports": total_reports,
+                    "avg_yield": avg_yield,
+                    "has_period": has_period,
+                }
+
+            def _sort_rows_for_preview(rows: list[Any]) -> list[Any]:
+                """Sort non-time grids by volume so the preview shows top runners."""
+
+                def _get_field(obj: Any, *names: str):
+                    for n in names:
+                        if hasattr(obj, n):
+                            v = getattr(obj, n)
+                            if v is not None:
+                                return v
+                        if isinstance(obj, dict) and n in obj and obj[n] is not None:
+                            return obj[n]
+                    return None
+
+                # If any row has a period field, preserve server order (time series).
+                for r in rows:
+                    if _get_field(r, "period") is not None:
+                        return rows
+
+                def _vol(r: Any) -> int:
+                    v = _get_field(r, "unit_count", "unitCount", "report_count", "reportCount", "test_report_count", "testReportCount")
+                    try:
+                        return int(v)
+                    except Exception:
+                        return 0
+
+                return sorted(rows, key=_vol, reverse=True)
             
             # Resolve fuzzy process name if provided
             resolved_process = None
@@ -1018,36 +1189,59 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                     resolution_notes.append(
                         "Adaptive time filter failed - using default time range"
                     )
-            
-            # Build WATS filter
-            wats_params = build_wats_filter(filter_input)
-            
+
+            # Ensure we always have a sensible time window.
+            if (getattr(filter_input, "days", None) is None) and (filter_input.date_from is None) and (filter_input.date_to is None):
+                filter_input = filter_input.model_copy(update={"days": 30})
+
+            # Default behavior when nothing is specified: 30 days + partNumber;testOperation and no other filters.
+            if _is_effectively_empty_request(filter_input):
+                filter_input = filter_input.model_copy(update={"dimensions": "partNumber;testOperation"})
+                resolution_notes.append(
+                    "Defaulted to last 30 days with dimensions partNumber;testOperation (no additional filters)"
+                )
+
+            # Call dynamic_yield with progressive fallback when no data is returned.
             # Import here to avoid circular imports
             from pywats.domains.report.models import WATSFilter
-            
-            wats_filter = WATSFilter(**wats_params)
-            
-            # Call the appropriate API based on yield_type
+
             yield_type = getattr(filter_input, 'yield_type', 'unit')
-            
-            if yield_type == 'report':
-                # Report-based yield (TRY) - for retest stations, fixtures, operators
-                data = self._api.analytics.get_dynamic_yield(wats_filter)
-                # Note: TRY would be computed differently if API supports it
-                # For now, use same API but adjust interpretation in summary
-            else:
-                # Unit-based yield (FPY, SPY, TPY, LPY) - default
-                data = self._api.analytics.get_dynamic_yield(wats_filter)
+            last_wats_params: Dict[str, Any] | None = None
+            data = None
+            attempt_notes: list[str] = []
+            used_filter = filter_input
+
+            for label, candidate in _build_fallback_candidates(filter_input):
+                used_filter = candidate
+                last_wats_params = build_wats_filter(candidate)
+                try:
+                    wats_filter = WATSFilter(**last_wats_params)
+                except Exception as e:
+                    attempt_notes.append(f"{label}: invalid filter ({type(e).__name__})")
+                    continue
+
+                try:
+                    # dynamic_yield is always called (requirement)
+                    data = self._api.analytics.get_dynamic_yield(wats_filter)
+                except Exception as e:
+                    attempt_notes.append(f"{label}: dynamic_yield error ({type(e).__name__})")
+                    data = None
+                    continue
+
+                attempt_notes.append(f"{label}: rows={len(data) if data else 0}")
+                if data:
+                    break
             
             if not data:
-                # Check for repair line scenario
-                summary = self._build_no_data_summary(filter_input)
-                warning = self._check_repair_line_scenario(filter_input)
+                # No data after retries: return explicit, compact NO_DATA summary.
+                summary = self._build_no_data_summary(used_filter, attempt_notes, last_wats_params)
+
+                warning = self._check_repair_line_scenario(used_filter)
                 if warning:
                     summary += f"\n\n{warning}"
                 
                 # Check for mixed process problem
-                mixed_warning = self._check_mixed_process_problem(filter_input)
+                mixed_warning = self._check_mixed_process_problem(used_filter)
                 if mixed_warning:
                     summary += f"\n\n{mixed_warning}"
                 
@@ -1056,24 +1250,36 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                     summary = "\n".join(resolution_notes) + "\n\n" + summary
                 
                 return AgentResult.ok(
-                    data=[],
+                    data=None,
                     summary=summary,
                     metadata={
+                        "no_data": True,
+                        "attempts": attempt_notes,
+                        "yield_type": yield_type,
+                        "dimensions": (last_wats_params or {}).get("dimensions"),
+                        "days_used": _describe_time_window_days(used_filter, last_wats_params),
                         "resolution_notes": resolution_notes,
                         "adaptive_time": adaptive_time_info.__dict__ if adaptive_time_info else None
                     }
                 )
             
+            # From here on, we have data. Use the filter/params that produced it.
+            wats_params = last_wats_params or build_wats_filter(used_filter)
+
+            # Prefer a useful ordering for UI preview in non-time grids.
+            data = _sort_rows_for_preview(list(data))
+
             # Check for potential repair line issue (0 units but filters applied)
             total_units = sum(getattr(d, 'unit_count', 0) or 0 for d in data)
             warning = None
             mixed_warning = None
             if total_units == 0 and yield_type == 'unit':
-                warning = self._check_repair_line_scenario(filter_input)
-                mixed_warning = self._check_mixed_process_problem(filter_input)
+                warning = self._check_repair_line_scenario(used_filter)
+                mixed_warning = self._check_mixed_process_problem(used_filter)
             
             # Build rich summary
-            summary = self._build_summary(data, filter_input, wats_params)
+            kpis = _compute_kpis(list(data), yield_type)
+            summary = self._build_summary(data, used_filter, wats_params)
             
             # Add any warnings
             if warning:
@@ -1086,22 +1292,25 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                 summary = "\n".join(resolution_notes) + "\n\n" + summary
             
             # Resolve perspective for metadata
-            perspective = resolve_perspective(filter_input.perspective)
+            perspective = resolve_perspective(used_filter.perspective)
             
             return AgentResult.ok(
                 data=[d.model_dump() for d in data],
                 summary=summary,
                 metadata={
-                    "perspective": filter_input.perspective,
+                    "perspective": used_filter.perspective,
                     "resolved_perspective": perspective.value if perspective else None,
                     "yield_type": yield_type,
                     "dimensions": wats_params.get("dimensions"),
                     "record_count": len(data),
                     "total_units": total_units,
+                    "kpis": kpis,
                     "repair_line_warning": warning is not None,
                     "mixed_process_warning": mixed_warning is not None,
                     "resolution_notes": resolution_notes,
                     "adaptive_time": adaptive_time_info.__dict__ if adaptive_time_info else None,
+                    "fallback_attempts": attempt_notes,
+                    "days_used": _describe_time_window_days(used_filter, wats_params),
                     "filters_applied": {
                         k: v for k, v in wats_params.items() 
                         if k not in ["dimensions", "date_from", "date_to", "date_grouping", "include_current_period"]
@@ -1144,10 +1353,8 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
         
         if has_equipment_filter or has_equipment_perspective:
             return (
-                "NOTE: If you're seeing 0 units, this station/fixture/operator might be "
-                "a retest-only location (repair line). Units are counted only if their FIRST RUN "
-                "matches your filter. For retest station performance, try using yield_type='report' "
-                "to get Test Report Yield (TRY) instead of unit-based yield."
+                "NOTE: 0 units can mean a retest-only location (repair line). "
+                "Try yield_type='report' to compute TRY (report-based yield)."
             )
         
         return None
@@ -1186,10 +1393,8 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
         
         # Generic warning if we can't diagnose but might be relevant
         return (
-            "NOTE: If you're seeing 0 units for a process that should have data, "
-            "check if multiple test types (e.g., AOI, ICT) are being sent to the same process. "
-            "This 'mixed process' problem causes the second test type to show 0 units. "
-            "Look for different sw_filename values in reports to this process."
+            "NOTE: 0 units can be caused by a 'mixed process' setup (different test types sent to the same test_operation). "
+            "Check for multiple sw_filename values within the same test_operation."
         )
     
     def analyze_from_dict(self, params: Dict[str, Any]) -> AgentResult:
@@ -1228,15 +1433,25 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                     return obj[n]
             return None
 
-        # Calculate overall statistics
-        total_units = sum(int(_get_field(d, "unit_count", "unitCount") or 0) for d in data)
-        total_reports = sum(int(_get_field(d, "report_count", "reportCount", "test_report_count", "testReportCount") or 0) for d in data)
-
-        # Prefer the canonical YieldData fields (fpy/lpy/etc). Also accept server variants.
-        yield_values: list[float] = []
+        # Calculate overall statistics (prefer weighted yield by unit_count when possible)
+        total_units = 0
+        total_reports = 0
+        weighted_sum = 0.0
+        weighted_den = 0
         per_operation_fpy: dict[str, float] = {}
 
         for d in data:
+            uc = _get_field(d, "unit_count", "unitCount") or 0
+            rc = _get_field(d, "report_count", "reportCount", "test_report_count", "testReportCount") or 0
+            try:
+                total_units += int(uc)
+            except Exception:
+                pass
+            try:
+                total_reports += int(rc)
+            except Exception:
+                pass
+
             fpy = _get_field(d, "fpy", "first_pass_yield", "firstPassYield")
             try:
                 fpy_val = float(fpy) if fpy is not None else None
@@ -1244,13 +1459,19 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
                 fpy_val = None
 
             if fpy_val is not None:
-                yield_values.append(fpy_val)
+                w = 1
+                try:
+                    w = int(uc) if int(uc) > 0 else 1
+                except Exception:
+                    w = 1
+                weighted_sum += fpy_val * w
+                weighted_den += w
 
                 op = _get_field(d, "test_operation", "testOperation")
                 if isinstance(op, str) and op and op not in per_operation_fpy:
                     per_operation_fpy[op] = fpy_val
 
-        avg_fpy = sum(yield_values) / len(yield_values) if yield_values else None
+        avg_fpy = (weighted_sum / weighted_den) if weighted_den > 0 else None
         
         # Build context string
         context_parts = []
@@ -1280,25 +1501,50 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
         else:
             yield_type_desc = " (Unit-based FPY)"
         
-        # Build the summary
-        parts = [f"Yield analysis{context}{perspective_desc}{yield_type_desc} (last {filter_input.days} days):"]
-        
-        if avg_fpy is not None:
-            if yield_type == 'report':
-                parts.append(f"* Average TRY: {avg_fpy:.1f}%")
-            else:
-                parts.append(f"* Average FPY: {avg_fpy:.1f}%")
+        days_used = None
+        try:
+            if wats_params.get("date_from") and wats_params.get("date_to"):
+                days_used = int(max(1, round((wats_params["date_to"] - wats_params["date_from"]).total_seconds() / 86400.0)))
+        except Exception:
+            days_used = None
+        if days_used is None:
+            days_used = int(getattr(filter_input, "days", 30) or 30)
 
-        if yield_type == 'report':
-            # Prefer explicit report count if present; fall back to unit_count.
-            if total_reports > 0:
-                parts.append(f"* Total reports: {total_reports:,}")
-            else:
-                parts.append(f"* Total units: {total_units:,}")
-        else:
-            parts.append(f"* Total units: {total_units:,}")
+        # Build compact, KPI-first summary.
+        kpi_name = "TRY" if yield_type == "report" else "FPY"
+        avg_part = f"avg_{kpi_name.lower()}={avg_fpy:.1f}%" if avg_fpy is not None else f"avg_{kpi_name.lower()}=n/a"
+        vol_part = (
+            f"reports={total_reports:,}" if (yield_type == "report" and total_reports > 0) else f"units={total_units:,}"
+        )
+        parts = [
+            f"KPIS: rows={len(data)}; {vol_part}; {avg_part}; days={days_used}; dimensions={wats_params.get('dimensions') or 'none'}",
+        ]
 
-        parts.append(f"* Data points: {len(data)}")
+        # Top 5 by volume for non-time grids.
+        has_period = any(_get_field(d, "period") is not None for d in data)
+        if not has_period and len(data) > 1:
+            def _volume(d: Any) -> int:
+                v = _get_field(d, "unit_count", "unitCount", "report_count", "reportCount", "test_report_count", "testReportCount")
+                try:
+                    return int(v)
+                except Exception:
+                    return 0
+
+            top = sorted(data, key=_volume, reverse=True)[:5]
+            parts.append("TOP5_BY_VOLUME:")
+            for i, row in enumerate(top, 1):
+                pn = _get_field(row, "part_number", "partNumber")
+                op = _get_field(row, "test_operation", "testOperation")
+                label_bits = [b for b in [pn, op] if b]
+                label = " / ".join(str(b) for b in label_bits) if label_bits else (self._get_data_label(row, perspective) or "item")
+                v = _volume(row)
+                yv = _get_field(row, "fpy", "first_pass_yield", "firstPassYield")
+                try:
+                    yvf = float(yv) if yv is not None else None
+                except Exception:
+                    yvf = None
+                ypart = f"{kpi_name}={yvf:.1f}%" if yvf is not None else f"{kpi_name}=n/a"
+                parts.append(f"{i}. {label}: {v:,} {('reports' if yield_type == 'report' else 'units')}; {ypart}")
 
         # RTY: only meaningful when we have multiple operations' FPY values.
         if yield_type != 'report' and not filter_input.test_operation and len(per_operation_fpy) >= 2:
@@ -1306,32 +1552,37 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
             for f in per_operation_fpy.values():
                 f01 = max(0.0, min(float(f), 100.0)) / 100.0
                 rty *= f01
-            parts.append(f"* RTY (product of {len(per_operation_fpy)} operations): {rty * 100.0:.1f}%")
+            parts.append(f"RTY: {rty * 100.0:.1f}% (product of {len(per_operation_fpy)} operations)")
         
-        # Add top/bottom if grouped
-        if perspective and len(data) > 1:
-            # Sort by FPY to find best/worst
-            sorted_data = sorted(
-                data, 
-                key=lambda d: getattr(d, 'first_pass_yield', 0) or 0,
-                reverse=True
-            )
+        # Add best/worst only when it adds signal (keep compact).
+        if perspective and len(data) > 1 and not any(_get_field(d, "period") is not None for d in data):
+            def _fpy_key(d: Any) -> float:
+                v = _get_field(d, "fpy", "first_pass_yield", "firstPassYield")
+                try:
+                    return float(v) if v is not None else 0.0
+                except (TypeError, ValueError):
+                    return 0.0
+
+            sorted_data = sorted(data, key=_fpy_key, reverse=True)
             
             if len(sorted_data) >= 2:
                 best = sorted_data[0]
                 worst = sorted_data[-1]
                 
-                best_fpy = getattr(best, 'first_pass_yield', None)
-                worst_fpy = getattr(worst, 'first_pass_yield', None)
+                best_fpy = _get_field(best, "fpy", "first_pass_yield", "firstPassYield")
+                worst_fpy = _get_field(worst, "fpy", "first_pass_yield", "firstPassYield")
                 
                 # Try to get a label for best/worst based on dimensions
                 best_label = self._get_data_label(best, perspective)
                 worst_label = self._get_data_label(worst, perspective)
                 
-                if best_fpy is not None and best_label:
-                    parts.append(f"* Best: {best_label} ({best_fpy:.1f}%)")
-                if worst_fpy is not None and worst_label:
-                    parts.append(f"* Worst: {worst_label} ({worst_fpy:.1f}%)")
+                try:
+                    if best_fpy is not None and best_label:
+                        parts.append(f"BEST: {best_label} ({float(best_fpy):.1f}%)")
+                    if worst_fpy is not None and worst_label:
+                        parts.append(f"WORST: {worst_label} ({float(worst_fpy):.1f}%)")
+                except Exception:
+                    pass
         
         return "\n".join(parts)
     
@@ -1367,18 +1618,54 @@ WARNING: Retest-only stations show 0 units with 'unit' type - use 'report' inste
         
         return None
     
-    def _build_no_data_summary(self, filter_input: YieldFilter) -> str:
-        """Build a summary when no data is found."""
+    def _build_no_data_summary(
+        self,
+        filter_input: YieldFilter,
+        attempt_notes: list[str] | None = None,
+        wats_params: Dict[str, Any] | None = None,
+    ) -> str:
+        """Build a compact summary when no data is found.
+
+        MUST contain an explicit NO_DATA marker so downstream LLM/UI layers can
+        respond safely without hallucinating.
+        """
         context_parts = []
         if filter_input.part_number:
-            context_parts.append(f"product {filter_input.part_number}")
-        if filter_input.station_name:
-            context_parts.append(f"station {filter_input.station_name}")
+            context_parts.append(f"part_number={filter_input.part_number}")
         if filter_input.test_operation:
-            context_parts.append(f"operation {filter_input.test_operation}")
-        
-        context = " for " + ", ".join(context_parts) if context_parts else ""
-        return f"No yield data found{context} in the last {filter_input.days} days"
+            context_parts.append(f"test_operation={filter_input.test_operation}")
+        if filter_input.station_name:
+            context_parts.append(f"station_name={filter_input.station_name}")
+        if filter_input.revision:
+            context_parts.append(f"revision={filter_input.revision}")
+        if filter_input.batch_number:
+            context_parts.append(f"batch_number={filter_input.batch_number}")
+
+        dims = None
+        if wats_params:
+            dims = wats_params.get("dimensions")
+        if not dims:
+            dims = filter_input.dimensions
+
+        days_used = 30
+        try:
+            if wats_params and wats_params.get("date_from") and wats_params.get("date_to"):
+                days_used = int(max(1, round((wats_params["date_to"] - wats_params["date_from"]).total_seconds() / 86400.0)))
+            else:
+                days_used = int(getattr(filter_input, "days", 30) or 30)
+        except Exception:
+            days_used = 30
+
+        lines = [
+            "NO_DATA: dynamic_yield returned 0 rows.",
+            f"KPIS: rows=0; days={days_used}; dimensions={dims or 'none'}",
+        ]
+        if context_parts:
+            lines.append("Filters: " + "; ".join(context_parts))
+        if attempt_notes:
+            lines.append("Attempts: " + " | ".join(attempt_notes))
+        lines.append("Suggestion: broaden time window or remove filters; use perspective='by operation' to discover valid test_operation values.")
+        return "\n".join(lines)
     
     # =========================================================================
     # Convenience methods for common analyses

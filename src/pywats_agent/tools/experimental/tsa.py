@@ -1,5 +1,5 @@
-"""
-Experimental TSA Tool - Version 2 ("start_tsa")
+"""\
+Experimental TSA Tool ("start_tsa")
 
 A new approach to Test Step Analysis that:
 - Acts as "evidence curator" not "storyteller"
@@ -30,7 +30,6 @@ USAGE PATTERN:
 5. Session expires after TTL (default 5 min)
 
 Author: Experimental variant system
-Version: 2.0.0-experimental
 """
 
 import uuid
@@ -474,7 +473,7 @@ class TsaSessionManager:
 
 class StartTsaTool:
     """
-    Start Test Step Analysis (TSA) - Experimental v2.
+    Start Test Step Analysis (TSA) - Experimental.
     
     A new approach to TSA that:
     1. ENFORCES required context (part_number + test_operation)

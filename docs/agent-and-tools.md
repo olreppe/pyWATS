@@ -48,9 +48,9 @@ Tools typically live under:
   - domain-focused tool modules (yield, steps, deviations, root cause, etc.)
   - shared helpers in `pywats_agent.tools.shared.*`
 
-**BETA rule (no backwards compatibility):** the supported public surface is the v2 executor + registry.
+**BETA rule (no backwards compatibility):** the supported public surface is the canonical executor + registry.
 
-- Prefer importing v2 entry points from `pywats_agent` (e.g., `ToolExecutor`, `ToolRegistry`, `ToolProfile`).
+- Prefer importing canonical entry points from `pywats_agent` (e.g., `ToolExecutor`, `ToolRegistry`, `ToolProfile`).
 - Treat `pywats_agent.tools.*` as implementation details that may change or be removed during beta.
 
 ---
@@ -82,7 +82,7 @@ If you see “session creator” mentioned in exports, those are the helpers tha
 ---
 
 ### 2.4 Agent result model
-In v2, tool execution returns a **LLM-safe envelope** (`ToolResultEnvelope`) containing:
+Tool execution returns a **LLM-safe envelope** (`ToolResultEnvelope`) containing:
 
 - `summary`: bounded human-readable text
 - `data_key`: an out-of-band handle to full data stored in a `DataStore`

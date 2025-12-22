@@ -10,7 +10,7 @@ IMPORTANT: Tools here are EXPERIMENTAL and may change significantly.
 - Don't rely on response structure in production until promoted
 """
 
-from .tsa_v2 import (
+from .tsa import (
     StartTsaTool,
     StartTsaInput,
     StartTsaResponse,
@@ -23,7 +23,7 @@ from .tsa_v2 import (
 )
 
 __all__ = [
-    # TSA v2
+    # TSA
     "StartTsaTool",
     "StartTsaInput",
     "StartTsaResponse",

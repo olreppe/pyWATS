@@ -19,7 +19,7 @@ Example:
     ...     config=AgentConfig(rigor=AnalyticalRigor.THOROUGH),
     ... )
     >>>
-    >>> # NOTE: ToolExecutor (agent v2) does not apply AgentContext defaults.
+    >>> # NOTE: ToolExecutor does not apply AgentContext defaults.
     >>> # Apply context defaults in your orchestration layer before calling the tool.
 """
 

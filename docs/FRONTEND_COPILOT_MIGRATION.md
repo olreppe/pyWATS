@@ -1,8 +1,8 @@
-# Frontend Copilot Migration Guide (Agent v2)
+# Frontend Copilot Migration Guide (Canonical Tool Envelope)
 
 This guide is for **frontend clients** ("Copilot" UI) that integrate with the `pywats_agent` tool system.
 
-As of agent **v2**, the primary change is that tool execution returns an **LLM-safe envelope** and stores bulk results out-of-band.
+The primary change is that tool execution returns an **LLM-safe envelope** and stores bulk results out-of-band.
 
 > BETA policy: breaking changes are expected.
 
@@ -12,7 +12,7 @@ As of agent **v2**, the primary change is that tool execution returns an **LLM-s
 
 ### 1) Tool execution result shape changed
 
-**Before (v1):** tools typically returned an `AgentResult`:
+**Before (legacy):** tools typically returned an `AgentResult`:
 
 - `success: bool`
 - `summary: string`
@@ -20,7 +20,7 @@ As of agent **v2**, the primary change is that tool execution returns an **LLM-s
 - `metadata: object`
 - `error: string | null`
 
-**Now (v2):** tools return a `ToolResultEnvelope`:
+**Now (canonical):** tools return a `ToolResultEnvelope`:
 
 - `ok: bool`
 - `summary: string` (bounded)
@@ -37,13 +37,13 @@ Frontend impact:
 
 ### 2) Context-default behavior is not automatic
 
-The v1 executor could apply `AgentContext` defaults when `apply_context=True`.
+The legacy executor could apply `AgentContext` defaults when `apply_context=True`.
 
-The v2 executor (`ToolExecutor`) does **not** apply context defaults. If your UI previously relied on implicit defaults (e.g., current part number), you must apply them in your own orchestration layer (typically in your backend).
+The canonical executor (`ToolExecutor`) does **not** apply context defaults. If your UI previously relied on implicit defaults (e.g., current part number), you must apply them in your own orchestration layer (typically in your backend).
 
-### 3) Public API exports moved to v2
+### 3) Public API exports moved to canonical
 
-Prefer importing v2 entry points from `pywats_agent`:
+Prefer importing canonical entry points from `pywats_agent`:
 
 - `ToolExecutor`
 - `ToolResultEnvelope`
@@ -184,7 +184,7 @@ Security note:
 
 ### Tool set
 
-The default v2 registry includes (at least):
+The default registry includes (at least):
 - `analyze_yield`
 - `analyze_test_steps`
 - `get_measurement_statistics`
@@ -202,7 +202,7 @@ If you use profiles/allowlists, ensure the backend enables the tools the UI expe
 
 ## Migration checklist
 
-- [ ] Update result parsing to the v2 envelope fields (`ok/summary/preview/data_key`).
+- [ ] Update result parsing to the envelope fields (`ok/summary/preview/data_key`).
 - [ ] Stop relying on inline bulk `data`.
 - [ ] Add a backend endpoint/mechanism to resolve `data_key` (optional, but required for full tables/exports).
 - [ ] Move context defaults into your orchestration layer (UI or backend).

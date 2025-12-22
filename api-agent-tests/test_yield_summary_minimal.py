@@ -19,8 +19,9 @@ def test_yield_summary_includes_fpy_and_counts_when_using_fpy_field() -> None:
     data = [_Row(unit_count=10, fpy=90.0)]
     s = tool._build_summary(data, filt, {})
 
-    assert "Average FPY" in s
-    assert "Total units" in s
+    assert "KPIS:" in s
+    assert "units=" in s
+    assert "avg_fpy=" in s
 
 
 def test_yield_summary_includes_rty_when_multiple_operations_present() -> None:

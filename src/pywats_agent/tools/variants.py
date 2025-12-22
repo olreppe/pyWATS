@@ -42,7 +42,7 @@ Usage:
     >>> from pywats_agent.tools.variants import ToolProfile, ExperimentalVariant
     >>> 
     >>> my_variant = ExperimentalVariant(
-    ...     name="test_v1",
+    ...     name="test",
     ...     base_profile="yield",
     ...     include_tools=["analyze_root_cause"],  # Add extra tools
     ...     exclude_tools=["yield_discovery"],      # Remove tools
@@ -290,7 +290,7 @@ class ExperimentalVariant:
     
     Example:
         >>> variant = ExperimentalVariant(
-        ...     name="investigation_v2",
+        ...     name="investigation_trends",
         ...     description="Testing new root cause prompt",
         ...     base_profile="investigation",
         ...     include_tools=["analyze_yield_trend"],
@@ -442,7 +442,7 @@ def register_variant(variant: ExperimentalVariant) -> None:
         
     Example:
         >>> my_variant = ExperimentalVariant(
-        ...     name="test_v1",
+        ...     name="test",
         ...     base_profile="yield",
         ... )
         >>> register_variant(my_variant)
