@@ -51,16 +51,6 @@ client-headless = [
     "watchdog>=3.0.0",
     "aiofiles>=23.0.0",
 ]
-# AI agent tools for manufacturing analytics (LLM integration)
-agent = [
-    # No additional dependencies - uses pydantic from core
-]
-# LangChain integration for agent tools
-langchain = [
-    "langchain>=0.2.0",
-    "langchain-core>=0.2.0",
-    "langchain-openai>=0.1.0",
-]
 # MCP server for AI assistant integration
 mcp = [
     "mcp>=1.0.0",

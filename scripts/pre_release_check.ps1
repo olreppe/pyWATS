@@ -5,7 +5,7 @@
 .DESCRIPTION
     Runs the same checks as CI before creating a release:
     - Flake8 linting for critical errors (syntax, undefined names)
-    - All tests (agent + API)
+    - API tests
     
 .EXAMPLE
     .\scripts\pre_release_check.ps1
@@ -95,8 +95,8 @@ if (-not $SkipTests) {
     $env:WATS_BASE_URL = if ($env:WATS_BASE_URL) { $env:WATS_BASE_URL } else { "https://demo.wats.com" }
     $env:WATS_AUTH_TOKEN = if ($env:WATS_AUTH_TOKEN) { $env:WATS_AUTH_TOKEN } else { "dGVzdDp0ZXN0" }
 
-    # Exclude server-dependent agent tests by default.
-    & $VenvPython -m pytest api-agent-tests/ -m "not server" -v --tb=short -x
+    # Run API tests that do not require a live server.
+    & $VenvPython -m pytest api-tests/ -m "not server" -v --tb=short -x
 
     if ($LASTEXITCODE -ne 0) {
         Write-Error-Custom "Unit tests failed"
@@ -106,18 +106,8 @@ if (-not $SkipTests) {
     Write-Success "Unit tests passed"
 
     if ($IncludeIntegrationTests) {
-        Write-Step "Running agent server tests (requires live server + credentials)"
-        & $VenvPython -m pytest api-agent-tests/ -m server -v --tb=short -x
-
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error-Custom "Agent server tests failed"
-            exit 1
-        }
-
-        Write-Success "Agent server tests passed"
-
         Write-Step "Running API integration tests (requires live server + credentials)"
-        & $VenvPython -m pytest api-tests/ -v --tb=short -x
+        & $VenvPython -m pytest api-tests/ -m server -v --tb=short -x
     
         if ($LASTEXITCODE -ne 0) {
             Write-Error-Custom "Integration tests failed"

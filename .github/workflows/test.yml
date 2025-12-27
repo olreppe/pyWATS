@@ -38,9 +38,10 @@ jobs:
 
     - name: Run unit tests (no server required)
       run: |
-        pytest api-agent-tests/ -v \
+        pytest api-tests/ -v \
           --tb=short \
-          -x
+          -x \
+          -m "not server"
       env:
         # Provide dummy values so tests don't fail on missing env vars
         WATS_BASE_URL: "https://demo.wats.com"
