@@ -166,11 +166,23 @@ class AnalyticsRepository:
 
         Returns:
             List of YieldData objects
+
+        Note:
+            When using period-based filtering (periodCount/dateGrouping),
+            includeCurrentPeriod must be True to return data. This method
+            defaults to True if not explicitly set.
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
-            data = filter_data
+            data = dict(filter_data) if filter_data else {}
+
+        # IMPORTANT: When using period-based filtering, the API requires
+        # includeCurrentPeriod=True to return results (server behavior).
+        # Default to True if periodCount or dateGrouping is set but
+        # includeCurrentPeriod is not explicitly provided.
+        if ("periodCount" in data or "dateGrouping" in data) and "includeCurrentPeriod" not in data:
+            data["includeCurrentPeriod"] = True
 
         # Some WATS servers require `dimensions` in the query string.
         # To be robust across server versions:
@@ -380,11 +392,23 @@ class AnalyticsRepository:
 
         Returns:
             List of RepairStatistics objects with repair counts and rates
+
+        Note:
+            When using period-based filtering (periodCount/dateGrouping),
+            includeCurrentPeriod must be True to return data. This method
+            defaults to True if not explicitly set.
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
         else:
-            data = filter_data
+            data = dict(filter_data) if filter_data else {}
+
+        # IMPORTANT: When using period-based filtering, the API requires
+        # includeCurrentPeriod=True to return results (server behavior).
+        # Default to True if periodCount or dateGrouping is set but
+        # includeCurrentPeriod is not explicitly provided.
+        if ("periodCount" in data or "dateGrouping" in data) and "includeCurrentPeriod" not in data:
+            data["includeCurrentPeriod"] = True
 
         # Some WATS servers require `dimensions` in the query string.
         # To be robust across server versions:

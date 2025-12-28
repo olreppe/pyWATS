@@ -134,6 +134,11 @@ class AnalyticsService:
 
         Returns:
             List of YieldData objects
+
+        Note:
+            When using period-based filtering (period_count/date_grouping),
+            include_current_period defaults to True. Set it explicitly to False
+            only if you want to exclude the current period's data.
             
         Example:
             >>> from pywats import WATSFilter
@@ -154,11 +159,20 @@ class AnalyticsService:
         """
         Get dynamic repair statistics by custom dimensions (PREVIEW).
 
+        Supported dimensions: partNumber, revision, productName, productGroup,
+        unitType, repairOperation, period, level, stationName, location,
+        purpose, operator, repairCode, repairCategory, repairType, etc.
+
         Args:
             filter_data: WATSFilter with dimensions and filters
 
         Returns:
             List of RepairStatistics objects with repair counts and rates
+
+        Note:
+            When using period-based filtering (period_count/date_grouping),
+            include_current_period defaults to True. Set it explicitly to False
+            only if you want to exclude the current period's data.
             
         Example:
             >>> from pywats import WATSFilter
