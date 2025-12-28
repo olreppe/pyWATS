@@ -61,8 +61,7 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 
 $VersionTargets = @(
     @{ Kind = "pyproject"; Path = "$RepoRoot\pyproject.toml" },
-    @{ Kind = "pywats";     Path = "$RepoRoot\src\pywats\__init__.py" },
-    @{ Kind = "agent";     Path = "$RepoRoot\src\pywats_agent\__init__.py" }
+    @{ Kind = "pywats";     Path = "$RepoRoot\src\pywats\__init__.py" }
 )
 
 # ============================================================================
@@ -196,7 +195,8 @@ function Set-PyprojectVersion {
     )
 
     $content = Get-Content $PyprojectPath -Raw
-    $newContent = $content -replace 'version\s*=\s*"[^\"]+"', "version = `"$NewVersion`""
+    # Only match the project version (after [project] section), not tool configs like python_version
+    $newContent = $content -replace '(?m)^version\s*=\s*"[^\"]+"', "version = `"$NewVersion`""
 
     if ($DryRun) {
         Write-DryRunMsg "Would update $PyprojectPath -> $NewVersion"
@@ -320,7 +320,6 @@ try {
     Write-Step "Updating version files"
     Set-PyprojectVersion -PyprojectPath "$RepoRoot\pyproject.toml" -NewVersion $newVersion
     Set-PythonInitVersion -InitPyPath "$RepoRoot\src\pywats\__init__.py" -NewVersion $newVersion
-    Set-PythonInitVersion -InitPyPath "$RepoRoot\src\pywats_agent\__init__.py" -NewVersion $newVersion
 
     Write-Step "Committing + tagging"
 
