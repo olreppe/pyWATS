@@ -46,8 +46,9 @@ class AnalyticsRepository:
             http_client: HttpClient for making HTTP requests
             error_handler: ErrorHandler for response handling (optional for backward compat)
         """
+        from ...core.exceptions import ErrorHandler, ErrorMode
         self._http_client = http_client
-        self._error_handler = error_handler
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
 
     # =========================================================================
     # System Info
@@ -63,17 +64,10 @@ class AnalyticsRepository:
             Version string (e.g., "24.1.0") or None
         """
         response = self._http_client.get("/api/App/Version")
-        
-        if self._error_handler:
-            data = self._error_handler.handle_response(
-                response, operation="get_version", allow_empty=True
-            )
-            return str(data) if data else None
-        
-        # Backward compatibility: original behavior
-        if response.is_success and response.data:
-            return str(response.data)
-        return None
+        data = self._error_handler.handle_response(
+            response, operation="get_version", allow_empty=True
+        )
+        return str(data) if data else None
 
     def get_processes(
         self,
@@ -113,18 +107,11 @@ class AnalyticsRepository:
             "/api/App/Processes", 
             params=params if params else None
         )
-        
-        if self._error_handler:
-            data = self._error_handler.handle_response(
-                response, operation="get_processes", allow_empty=True
-            )
-            if data:
-                return [ProcessInfo.model_validate(item) for item in data]
-            return []
-        
-        # Backward compatibility
-        if response.is_success and response.data:
-            return [ProcessInfo.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_processes", allow_empty=True
+        )
+        if data:
+            return [ProcessInfo.model_validate(item) for item in data]
         return []
 
     def get_levels(self) -> List[LevelInfo]:
@@ -137,18 +124,11 @@ class AnalyticsRepository:
             List of LevelInfo objects
         """
         response = self._http_client.get("/api/App/Levels")
-        
-        if self._error_handler:
-            data = self._error_handler.handle_response(
-                response, operation="get_levels", allow_empty=True
-            )
-            if data:
-                return [LevelInfo.model_validate(item) for item in data]
-            return []
-        
-        # Backward compatibility
-        if response.is_success and response.data:
-            return [LevelInfo.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_levels", allow_empty=True
+        )
+        if data:
+            return [LevelInfo.model_validate(item) for item in data]
         return []
 
     def get_product_groups(
@@ -174,20 +154,11 @@ class AnalyticsRepository:
             "/api/App/ProductGroups",
             params=params if params else None
         )
-        
-        if self._error_handler:
-            data = self._error_handler.handle_response(
-                response, operation="get_product_groups", allow_empty=True
-            )
-            if data:
-                return [ProductGroup.model_validate(item) for item in data]
-            return []
-        
-        # Backward compatibility
-        if response.is_success and response.data:
-            return [
-                ProductGroup.model_validate(item) for item in response.data
-            ]
+        data = self._error_handler.handle_response(
+            response, operation="get_product_groups", allow_empty=True
+        )
+        if data:
+            return [ProductGroup.model_validate(item) for item in data]
         return []
 
     # =========================================================================
@@ -203,15 +174,53 @@ class AnalyticsRepository:
         POST /api/App/DynamicYield
 
         Args:
-            filter_data: WATSFilter object or dict
+            filter_data: WATSFilter object or dict with:
+                - dimensions (str): Semicolon-separated list of dimensions and KPIs.
+                  Order and direction are specified here (e.g., "unitCount desc;partNumber").
+                  
+                  Supported dimensions:
+                  partNumber, productName, stationName, location, purpose, revision,
+                  testOperation, processCode, swFilename, swVersion, productGroup, level,
+                  period, batchNumber, operator, fixtureId, socketIndex, errorCode,
+                  miscInfoDescription, miscInfoString, stepCausedUutFailure,
+                  stepPathCausedUutFailure, assetSerialNumber, assetName
+                  
+                  Supported KPIs (can be ordered with asc/desc):
+                  unitCount, fpCount, spCount, tpCount, lpCount, fpy, spy, tpy, lpy,
+                  testYieldCount, testReportCount, testYield, firstUtc, lastUtc,
+                  fpFailCount, spFailCount, tpFailCount, lpFailCount, retestCount,
+                  ppmFpy, ppmSpy, ppmTpy, ppmLpy, ppmTestYield
+                  
+                - period_count (int): Number of time periods to return
+                - date_grouping (DateGrouping): Period grouping (HOUR, DAY, WEEK, MONTH, etc.)
+                - top_count (int): Limit results to top N entries
+                - Other standard WATSFilter fields (part_number, station_name, etc.)
 
         Returns:
-            List of YieldData objects
+            List of YieldData objects ordered as specified in dimensions
+            
+        Examples:
+            >>> # Top 10 products by unit count, last 30 days
+            >>> filter = WATSFilter(
+            ...     dimensions="unitCount desc;partNumber;testOperation",
+            ...     period_count=30,
+            ...     date_grouping=DateGrouping.DAY,
+            ...     top_count=10
+            ... )
+            >>> 
+            >>> # Yield by station and period
+            >>> filter = WATSFilter(
+            ...     dimensions="stationName;period;fpy desc",
+            ...     period_count=7,
+            ...     date_grouping=DateGrouping.DAY,
+            ...     part_number="WIDGET-001"
+            ... )
 
         Note:
-            When using period-based filtering (periodCount/dateGrouping),
-            includeCurrentPeriod must be True to return data. This method
-            defaults to True if not explicitly set.
+            - Results are ordered by the sequence in the dimensions parameter
+            - Direction hints: "asc" (ascending) or "desc" (descending)
+            - Only requested KPIs are returned (all if none specified)
+            - When using period-based filtering, includeCurrentPeriod defaults to True
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
@@ -244,8 +253,11 @@ class AnalyticsRepository:
         response = self._http_client.post(
             "/api/App/DynamicYield", data=data, params=params
         )
-        if response.is_success and response.data:
-            return [YieldData.model_validate(item) for item in response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_dynamic_yield", allow_empty=True
+        )
+        if result:
+            return [YieldData.model_validate(item) for item in result]
         return []
 
     def get_volume_yield(
@@ -282,8 +294,11 @@ class AnalyticsRepository:
             response = self._http_client.get(
                 "/api/App/VolumeYield", params=params if params else None
             )
-        if response.is_success and response.data:
-            return [YieldData.model_validate(item) for item in response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_volume_yield", allow_empty=True
+        )
+        if result:
+            return [YieldData.model_validate(item) for item in result]
         return []
 
     def get_high_volume(
@@ -320,8 +335,11 @@ class AnalyticsRepository:
             response = self._http_client.get(
                 "/api/App/HighVolume", params=params if params else None
             )
-        if response.is_success and response.data:
-            return [YieldData.model_validate(item) for item in response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_high_volume", allow_empty=True
+        )
+        if result:
+            return [YieldData.model_validate(item) for item in result]
         return []
 
     def get_high_volume_by_product_group(
@@ -345,8 +363,11 @@ class AnalyticsRepository:
         response = self._http_client.post(
             "/api/App/HighVolumeByProductGroup", data=data
         )
-        if response.is_success and response.data:
-            return [YieldData.model_validate(item) for item in response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_high_volume_by_product_group", allow_empty=True
+        )
+        if result:
+            return [YieldData.model_validate(item) for item in result]
         return []
 
     def get_worst_yield(
@@ -383,8 +404,11 @@ class AnalyticsRepository:
             response = self._http_client.get(
                 "/api/App/WorstYield", params=params if params else None
             )
-        if response.is_success and response.data:
-            return [YieldData.model_validate(item) for item in response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_worst_yield", allow_empty=True
+        )
+        if result:
+            return [YieldData.model_validate(item) for item in result]
         return []
 
     def get_worst_yield_by_product_group(
@@ -408,8 +432,11 @@ class AnalyticsRepository:
         response = self._http_client.post(
             "/api/App/WorstYieldByProductGroup", data=data
         )
-        if response.is_success and response.data:
-            return [YieldData.model_validate(item) for item in response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_worst_yield_by_product_group", allow_empty=True
+        )
+        if result:
+            return [YieldData.model_validate(item) for item in result]
         return []
 
     # =========================================================================
@@ -425,19 +452,52 @@ class AnalyticsRepository:
         POST /api/App/DynamicRepair
 
         Args:
-            filter_data: WATSFilter object or dict with filters like:
-                - part_number: Filter by product
-                - product_group: Filter by product group
-                - period_count: Number of periods
-                - grouping: Grouping dimension
+            filter_data: WATSFilter object or dict with:
+                - dimensions (str): Semicolon-separated list of dimensions and KPIs.
+                  Order and direction are specified here (e.g., "repairCount desc;partNumber").
+                  
+                  Supported dimensions:
+                  partNumber, revision, productName, productGroup, unitType, repairOperation,
+                  period, level, stationName, location, purpose, operator,
+                  miscInfoDescription, miscInfoString, repairCode, repairCategory,
+                  repairType, componentRef, componentNumber, componentRevision,
+                  componentVendor, componentDescription, functionBlock, referencedStep,
+                  referencedStepPath, testOperation, testPeriod, testLevel,
+                  testStationName, testLocation, testPurpose, testOperator,
+                  batchNumber, swFilename, swVersion
+                  
+                  Supported KPIs (can be ordered with asc/desc):
+                  repairReportCount, repairCount
+                  
+                - period_count (int): Number of time periods to return
+                - date_grouping (DateGrouping): Period grouping (HOUR, DAY, WEEK, MONTH, etc.)
+                - top_count (int): Limit results to top N entries
+                - Other standard WATSFilter fields (part_number, repair_operation, etc.)
 
         Returns:
-            List of RepairStatistics objects with repair counts and rates
+            List of RepairStatistics objects ordered as specified in dimensions
+            
+        Examples:
+            >>> # Top 10 by repair count, last 30 days
+            >>> filter = WATSFilter(
+            ...     dimensions="repairCount desc;repairReportCount desc;partNumber;repairOperation",
+            ...     period_count=30,
+            ...     date_grouping=DateGrouping.DAY,
+            ...     top_count=10
+            ... )
+            >>> 
+            >>> # Repairs by operation and period
+            >>> filter = WATSFilter(
+            ...     dimensions="repairOperation;period;repairCount desc",
+            ...     period_count=7,
+            ...     date_grouping=DateGrouping.DAY
+            ... )
 
         Note:
-            When using period-based filtering (periodCount/dateGrouping),
-            includeCurrentPeriod must be True to return data. This method
-            defaults to True if not explicitly set.
+            - Results are ordered by the sequence in the dimensions parameter
+            - Direction hints: "asc" (ascending) or "desc" (descending)
+            - Only requested KPIs are returned (all if none specified)
+            - When using period-based filtering, includeCurrentPeriod defaults to True
         """
         if isinstance(filter_data, WATSFilter):
             data = filter_data.model_dump(by_alias=True, exclude_none=True)
@@ -470,8 +530,11 @@ class AnalyticsRepository:
         response = self._http_client.post(
             "/api/App/DynamicRepair", data=data, params=params
         )
-        if response.is_success and response.data:
-            items = response.data if isinstance(response.data, list) else [response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_dynamic_repair", allow_empty=True
+        )
+        if result:
+            items = result if isinstance(result, list) else [result]
             return [RepairStatistics.model_validate(item) for item in items]
         return []
 
@@ -497,8 +560,11 @@ class AnalyticsRepository:
         response = self._http_client.get(
             "/api/App/RelatedRepairHistory", params=params
         )
-        if response.is_success and response.data:
-            items = response.data if isinstance(response.data, list) else [response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_related_repair_history", allow_empty=True
+        )
+        if result:
+            items = result if isinstance(result, list) else [result]
             return [RepairHistoryRecord.model_validate(item) for item in items]
         return []
 
@@ -553,8 +619,11 @@ class AnalyticsRepository:
             response = self._http_client.get(
                 "/api/App/TopFailed", params=params if params else None
             )
-        if response.is_success and response.data:
-            items = response.data if isinstance(response.data, list) else [response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_top_failed", allow_empty=True
+        )
+        if result:
+            items = result if isinstance(result, list) else [result]
             return [TopFailedStep.model_validate(item) for item in items]
         return []
 
@@ -577,12 +646,15 @@ class AnalyticsRepository:
         else:
             data = filter_data
         response = self._http_client.post("/api/App/TestStepAnalysis", data=data)
-        if response.is_success and response.data:
+        result = self._error_handler.handle_response(
+            response, operation="get_test_step_analysis", allow_empty=True
+        )
+        if result:
             raw_items: List[Any]
-            if isinstance(response.data, list):
-                raw_items = response.data
+            if isinstance(result, list):
+                raw_items = result
             else:
-                raw_items = [response.data]
+                raw_items = [result]
             return [StepAnalysisRow.model_validate(item) for item in raw_items]
         return []
 
@@ -680,8 +752,11 @@ class AnalyticsRepository:
             data=data,
             params=params if params else None
         )
-        if response.is_success and response.data:
-            items = response.data if isinstance(response.data, list) else [response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_measurements", allow_empty=True
+        )
+        if result:
+            items = result if isinstance(result, list) else [result]
             return [MeasurementData.model_validate(item) for item in items]
         return []
 
@@ -740,8 +815,11 @@ class AnalyticsRepository:
             data=data,
             params=params if params else None
         )
-        if response.is_success and response.data:
-            items = response.data if isinstance(response.data, list) else [response.data]
+        result = self._error_handler.handle_response(
+            response, operation="get_aggregated_measurements", allow_empty=True
+        )
+        if result:
+            items = result if isinstance(result, list) else [result]
             return [AggregatedMeasurement.model_validate(item) for item in items]
         return []
 
@@ -771,8 +849,11 @@ class AnalyticsRepository:
         else:
             data = filter_data
         response = self._http_client.post("/api/App/OeeAnalysis", data=data)
-        if response.is_success and response.data:
-            return OeeAnalysisResult.model_validate(response.data)
+        result = self._error_handler.handle_response(
+            response, operation="get_oee_analysis", allow_empty=True
+        )
+        if result:
+            return OeeAnalysisResult.model_validate(result)
         return None
 
     # =========================================================================
@@ -798,9 +879,12 @@ class AnalyticsRepository:
         else:
             data = filter_data
         response = self._http_client.post("/api/App/SerialNumberHistory", data=data)
-        if response.is_success and response.data:
+        result = self._error_handler.handle_response(
+            response, operation="get_serial_number_history", allow_empty=True
+        )
+        if result:
             return [
-                ReportHeader.model_validate(item) for item in response.data
+                ReportHeader.model_validate(item) for item in result
             ]
         return []
 
@@ -859,9 +943,12 @@ class AnalyticsRepository:
             response = self._http_client.get(
                 "/api/App/UutReport", params=params if params else None
             )
-        if response.is_success and response.data:
+        result = self._error_handler.handle_response(
+            response, operation="get_uut_reports", allow_empty=True
+        )
+        if result:
             return [
-                ReportHeader.model_validate(item) for item in response.data
+                ReportHeader.model_validate(item) for item in result
             ]
         return []
 
@@ -884,8 +971,11 @@ class AnalyticsRepository:
         else:
             data = filter_data
         response = self._http_client.post("/api/App/UurReport", data=data)
-        if response.is_success and response.data:
+        result = self._error_handler.handle_response(
+            response, operation="get_uur_reports", allow_empty=True
+        )
+        if result:
             return [
-                ReportHeader.model_validate(item) for item in response.data
+                ReportHeader.model_validate(item) for item in result
             ]
         return []
