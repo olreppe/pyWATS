@@ -1,26 +1,22 @@
 # pyWATS Release Checklist
 
-> Checklist for transitioning from beta to stable release (v1.0.0)
+> **⚠️ BETA RELEASES: See [RELEASE.md](RELEASE.md) for the single supported workflow.**
 
-## Beta bump flow (current)
+> This checklist is ONLY for transitioning from beta to stable release (v1.0.0).
 
-While pyWATS is still in beta, use the single supported bump flow:
+---
+
+## ⚠️ While in Beta
+
+**DO NOT use this checklist for beta releases.**
+
+For beta releases (current), see **[RELEASE.md](RELEASE.md)** which documents the single supported workflow:
 
 ```powershell
-# Run lint + unit tests (CI-aligned)
-.\scripts\pre_release_check.ps1
-
-# Bump beta version, commit, tag, push (triggers publish on tag v*)
 .\scripts\bump.ps1
-
-# Preview without changing anything
-.\scripts\bump.ps1 -DryRun
 ```
 
-Notes:
-- Publish is triggered by pushing a tag matching `v*` (see `.github/workflows/publish.yml`).
-- Integration tests (`api-tests/`) require a live server; run explicitly:
-  `./scripts/pre_release_check.ps1 -IncludeIntegrationTests`
+That's the only command you need. Everything else is automatic.
 
 ## Stable release process (future)
 

@@ -226,7 +226,17 @@ pytest --cov=src --cov-report=html
 
 ## Contributing
 
-This project is maintained by [Virinco AS](https://virinco.com). 
+This project is maintained by [Virinco AS](https://virinco.com).
+
+### For Maintainers: Releasing a New Beta Version
+
+**There is only ONE command to release:**
+
+```powershell
+.\scripts\bump.ps1
+```
+
+See [RELEASE.md](RELEASE.md) for complete details. Never manually edit versions or create tags.
 
 ## License
 
