@@ -40,7 +40,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Documentation pointing to internal API alternatives
 
 ### Fixed
+- **Analytics error handling** - `AnalyticsRepository` now properly raises exceptions on HTTP errors in STRICT mode (default):
+  - Added default `ErrorHandler(ErrorMode.STRICT)` initialization, matching all other repositories
+  - HTTP 403 now raises `AuthorizationError` instead of silently returning `[]`
+  - HTTP 404 now raises `NotFoundError` instead of silently returning `[]`
+  - HTTP 400 now raises `ValidationError` instead of silently returning `[]`
+  - HTTP 5xx now raises `ServerError` instead of silently returning `[]`
+  - Fixes silent error swallowing that made debugging permission/config issues difficult
+  
 - **DynamicYield/DynamicRepair period filtering** - `get_dynamic_yield()` and `get_dynamic_repair()` now default `includeCurrentPeriod=True` when using period-based filtering (`period_count`/`date_grouping`). Previously, omitting this parameter would return empty results due to WATS server behavior.
+
+### Documentation
+- **DynamicYield/DynamicRepair** - Enhanced documentation with:
+  - Complete list of supported dimensions for both endpoints
+  - Complete list of supported KPIs that can be ordered
+  - Clear explanation that ordering is done via `dimensions` parameter with asc/desc hints (e.g., `"unitCount desc;partNumber"`)
+  - Practical examples showing multi-level sorting and filtering patterns
 
 ## [0.1.0b20] - 2025-12-22
 
