@@ -330,17 +330,27 @@ class AssetService:
             return bool(alarm_state == AssetAlarmState.WARNING.value)
         return False
 
-    def get_assets_in_alarm(self) -> List[Asset]:
+    def get_assets_in_alarm(
+        self,
+        top: Optional[int] = None
+    ) -> List[Asset]:
         """
-        Get all assets that are in alarm state.
+        Get all assets that are currently in alarm state.
 
-        Note: This requires checking status for each asset.
-        For large datasets, consider using server-side filtering.
+        ⚠️ PERFORMANCE NOTE: This method requires checking status for each asset
+        individually (N+1 API calls). For large datasets, consider:
+        - Using `top` parameter to limit results
+        - Pre-filtering with `get_assets(filter_str=...)` before calling
+        - Using the internal API via AssetRepositoryInternal (if available)
+
+        Args:
+            top: Maximum number of assets to check (default: all)
+                 Recommended for large asset databases.
 
         Returns:
-            List of assets in alarm
+            List of assets in alarm state
         """
-        assets = self._repository.get_all()
+        assets = self._repository.get_all(top=top)
         result = []
         for asset in assets:
             status = self.get_status(
@@ -353,14 +363,27 @@ class AssetService:
                 result.append(asset)
         return result
 
-    def get_assets_in_warning(self) -> List[Asset]:
+    def get_assets_in_warning(
+        self,
+        top: Optional[int] = None
+    ) -> List[Asset]:
         """
-        Get all assets that are in warning state.
+        Get all assets that are currently in warning state.
+
+        ⚠️ PERFORMANCE NOTE: This method requires checking status for each asset
+        individually (N+1 API calls). For large datasets, consider:
+        - Using `top` parameter to limit results
+        - Pre-filtering with `get_assets(filter_str=...)` before calling
+        - Using the internal API via AssetRepositoryInternal (if available)
+
+        Args:
+            top: Maximum number of assets to check (default: all)
+                 Recommended for large asset databases.
 
         Returns:
-            List of assets in warning
+            List of assets in warning state
         """
-        assets = self._repository.get_all()
+        assets = self._repository.get_all(top=top)
         result = []
         for asset in assets:
             status = self.get_status(
@@ -370,6 +393,39 @@ class AssetService:
             # Support both snake_case (preferred) and camelCase (backend) keys
             alarm_state = status.get("alarm_state") or status.get("alarmState") if status else None
             if alarm_state == AssetAlarmState.WARNING.value:
+                result.append(asset)
+        return result
+
+    def get_assets_by_alarm_state(
+        self,
+        alarm_states: List[AssetAlarmState],
+        top: Optional[int] = None
+    ) -> List[Asset]:
+        """
+        Get assets filtered by multiple alarm states.
+
+        ⚠️ PERFORMANCE NOTE: This method requires checking status for each asset
+        individually (N+1 API calls). For large datasets, consider:
+        - Using `top` parameter to limit results
+        - Pre-filtering with `get_assets(filter_str=...)` before calling
+        
+        Args:
+            alarm_states: List of alarm states to include (OK, WARNING, ALARM)
+            top: Maximum number of assets to check (default: all)
+
+        Returns:
+            List of assets matching any of the specified alarm states
+        """
+        assets = self._repository.get_all(top=top)
+        result = []
+        state_values = [s.value for s in alarm_states]
+        for asset in assets:
+            status = self.get_status(
+                asset_id=asset.asset_id,
+                serial_number=asset.serial_number
+            )
+            alarm_state = status.get("alarm_state") or status.get("alarmState") if status else None
+            if alarm_state in state_values:
                 result.append(asset)
         return result
 

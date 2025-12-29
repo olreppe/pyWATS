@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Analytics GET parameters** - Additional filtering options for analytics endpoints:
+  - `get_processes()`: `include_test_operations`, `include_repair_operations`, `include_wip_operations`, `include_inactive_processes`
+  - `get_product_groups()`: `include_filters` parameter to include filter configuration
+
+- **Report bandwidth optimization** - New parameters to reduce payload sizes:
+  - `get_report()`: `detail_level` (0-7), `include_chartdata`, `include_attachments`
+  - `get_report_xml()`: `include_attachments`, `include_chartdata`, `include_indexes`
+
+- **Software internal API** - New `SoftwareRepositoryInternal` class for internal operations:
+  - File management: `get_file()`, `check_file()`
+  - Folder management: `create_package_folder()`, `update_package_folder()`, `delete_package_folder()`, `delete_package_folder_files()`
+  - Package history: `get_package_history()`, `get_package_download_history()`, `get_revoked_packages()`, `get_available_packages()`
+  - Entity details: `get_software_entity_details()`, `log_download()`
+  - Connection: `is_connected()`
+
+- **Production internal API** - Extended `ProductionRepositoryInternal` with full coverage:
+  - Unit operations: `get_unit()`, `get_unit_info()`, `get_unit_hierarchy()`, `get_unit_state_history()`, `get_unit_phase()`, `get_unit_process()`, `get_unit_contents()`, `create_unit()`
+  - Child unit operations: `add_child_unit()`, `remove_child_unit()`, `remove_all_child_units()`, `check_child_units()`
+  - Serial number management: `find_serial_numbers()`, `get_serial_number_count()`, `free_serial_numbers()`, `delete_free_serial_numbers()`, `get_serial_number_ranges()`, `get_serial_number_statistics()`
+  - Sites: `get_sites()`, `is_connected()`
+
+- **Asset alarm state filtering** - New method `get_assets_by_alarm_state()` for multi-state filtering
+
+### Changed
+
+- **Asset performance documentation** - `get_assets_in_alarm()` and `get_assets_in_warning()` now include:
+  - Clear performance warning about N+1 API calls
+  - New `top` parameter to limit assets checked
+  - Documentation pointing to internal API alternatives
+
 ### Fixed
 - **DynamicYield/DynamicRepair period filtering** - `get_dynamic_yield()` and `get_dynamic_repair()` now default `includeCurrentPeriod=True` when using period-based filtering (`period_count`/`date_grouping`). Previously, omitting this parameter would return empty results due to WATS server behavior.
 

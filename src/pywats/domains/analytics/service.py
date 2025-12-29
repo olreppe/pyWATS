@@ -67,21 +67,44 @@ class AnalyticsService:
         """
         return self._repository.get_version()
 
-    def get_processes(self) -> List[ProcessInfo]:
+    def get_processes(
+        self,
+        include_test_operations: Optional[bool] = None,
+        include_repair_operations: Optional[bool] = None,
+        include_wip_operations: Optional[bool] = None,
+        include_inactive_processes: Optional[bool] = None,
+    ) -> List[ProcessInfo]:
         """
         Get all defined test processes/operations.
+
+        By default (no filters), retrieves active processes marked as 
+        isTestOperation, isRepairOperation, or isWipOperation.
+
+        Args:
+            include_test_operations: Include processes marked as IsTestOperation
+            include_repair_operations: Include processes marked as IsRepairOperation
+            include_wip_operations: Include processes marked as IsWipOperation
+            include_inactive_processes: Include inactive processes
 
         Returns:
             List of ProcessInfo objects
             
         Example:
+            >>> # Get all processes (default behavior)
             >>> processes = api.analytics.get_processes()
-            >>> for p in processes:
-            ...     print(f"{p.code}: {p.name} (test={p.is_test_operation})")
-            100: End of line test (test=True)
-            500: Repair (test=False)
+            >>> 
+            >>> # Get only test operations
+            >>> test_ops = api.analytics.get_processes(include_test_operations=True)
+            >>> 
+            >>> # Include inactive processes
+            >>> all_processes = api.analytics.get_processes(include_inactive_processes=True)
         """
-        return self._repository.get_processes()
+        return self._repository.get_processes(
+            include_test_operations=include_test_operations,
+            include_repair_operations=include_repair_operations,
+            include_wip_operations=include_wip_operations,
+            include_inactive_processes=include_inactive_processes,
+        )
 
     def get_levels(self) -> List[LevelInfo]:
         """
@@ -99,9 +122,15 @@ class AnalyticsService:
         """
         return self._repository.get_levels()
 
-    def get_product_groups(self) -> List[ProductGroup]:
+    def get_product_groups(
+        self,
+        include_filters: Optional[bool] = None
+    ) -> List[ProductGroup]:
         """
         Get all product groups.
+
+        Args:
+            include_filters: Include or exclude product group filters (default: None)
 
         Returns:
             List of ProductGroup objects
@@ -112,8 +141,11 @@ class AnalyticsService:
             ...     print(f"{g.product_group_id}: {g.product_group_name}")
             1: Electronics
             2: Sensors
+            >>> 
+            >>> # Include filters for advanced querying
+            >>> groups_with_filters = api.analytics.get_product_groups(include_filters=True)
         """
-        return self._repository.get_product_groups()
+        return self._repository.get_product_groups(include_filters=include_filters)
 
     # =========================================================================
     # Yield Statistics

@@ -242,7 +242,11 @@ class ReportRepository:
         return None
 
     def get_wsjf(
-        self, report_id: str
+        self, 
+        report_id: str,
+        detail_level: Optional[int] = None,
+        include_chartdata: Optional[bool] = None,
+        include_attachments: Optional[bool] = None,
     ) -> Optional[Union[UUTReport, UURReport]]:
         """
         Get a report in WSJF format.
@@ -251,14 +255,41 @@ class ReportRepository:
 
         Args:
             report_id: The report ID (GUID)
+            detail_level: Level of detail (0-7). 0 is report identifying data, 
+                         7 is full report. Default is full report.
+            include_chartdata: Include chart/plot data. Default True. 
+                              Set False to suppress plot data for detail levels 6+.
+            include_attachments: Include attachment data. Default True.
+                                Set False to suppress attachment data for detail levels 4-7.
 
         Returns:
             UUTReport or UURReport, or None
 
         Notes:
             The WATS response includes an `uur` key for repair reports, which signals casting to `UURReport`.
+            
+        Example:
+            >>> # Get full report (default)
+            >>> report = repo.get_wsjf("abc-123")
+            >>> 
+            >>> # Get minimal report (just header info)
+            >>> report = repo.get_wsjf("abc-123", detail_level=0)
+            >>> 
+            >>> # Get report without large chart/attachment data
+            >>> report = repo.get_wsjf("abc-123", include_chartdata=False, include_attachments=False)
         """
-        response = self._http_client.get(f"/api/Report/Wsjf/{report_id}")
+        params: Dict[str, Any] = {}
+        if detail_level is not None:
+            params["detailLevel"] = detail_level
+        if include_chartdata is not None:
+            params["includeChartdata"] = include_chartdata
+        if include_attachments is not None:
+            params["includeAttachments"] = include_attachments
+
+        response = self._http_client.get(
+            f"/api/Report/Wsjf/{report_id}",
+            params=params if params else None
+        )
         if response.is_success and response.data:
             if response.data.get("uur"):
                 return UURReport.model_validate(response.data)
@@ -293,7 +324,13 @@ class ReportRepository:
             return str(response.data)
         return None
 
-    def get_wsxf(self, report_id: str) -> Optional[bytes]:
+    def get_wsxf(
+        self, 
+        report_id: str,
+        include_attachments: Optional[bool] = None,
+        include_chartdata: Optional[bool] = None,
+        include_indexes: Optional[bool] = None,
+    ) -> Optional[bytes]:
         """
         Get a report in WSXF (XML) format.
 
@@ -301,11 +338,27 @@ class ReportRepository:
 
         Args:
             report_id: The report ID (GUID)
+            include_attachments: Include attachment data. Default True.
+                                Set False to suppress attachment data for detail levels 4-7.
+            include_chartdata: Include chart/plot data. Default True. 
+                              Set False to suppress plot data for detail levels 6+.
+            include_indexes: Include index information. Default False.
 
         Returns:
             XML as bytes or None
         """
-        response = self._http_client.get(f"/api/Report/Wsxf/{report_id}")
+        params: Dict[str, Any] = {}
+        if include_attachments is not None:
+            params["includeAttachments"] = include_attachments
+        if include_chartdata is not None:
+            params["includeChartdata"] = include_chartdata
+        if include_indexes is not None:
+            params["includeIndexes"] = include_indexes
+
+        response = self._http_client.get(
+            f"/api/Report/Wsxf/{report_id}",
+            params=params if params else None
+        )
         if response.is_success:
             return response.raw
         return None

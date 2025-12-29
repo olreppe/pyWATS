@@ -75,16 +75,44 @@ class AnalyticsRepository:
             return str(response.data)
         return None
 
-    def get_processes(self) -> List[ProcessInfo]:
+    def get_processes(
+        self,
+        include_test_operations: Optional[bool] = None,
+        include_repair_operations: Optional[bool] = None,
+        include_wip_operations: Optional[bool] = None,
+        include_inactive_processes: Optional[bool] = None,
+    ) -> List[ProcessInfo]:
         """
-        Get processes.
+        Get processes with optional filtering.
 
         GET /api/App/Processes
+
+        By default (no filters), retrieves active processes marked as 
+        isTestOperation, isRepairOperation, or isWipOperation.
+
+        Args:
+            include_test_operations: Include processes marked as IsTestOperation
+            include_repair_operations: Include processes marked as IsRepairOperation
+            include_wip_operations: Include processes marked as IsWipOperation
+            include_inactive_processes: Include inactive processes
 
         Returns:
             List of ProcessInfo objects
         """
-        response = self._http_client.get("/api/App/Processes")
+        params: Dict[str, Any] = {}
+        if include_test_operations is not None:
+            params["includeTestOperations"] = include_test_operations
+        if include_repair_operations is not None:
+            params["includeRepairOperations"] = include_repair_operations
+        if include_wip_operations is not None:
+            params["includeWipOperations"] = include_wip_operations
+        if include_inactive_processes is not None:
+            params["includeInactiveProcesses"] = include_inactive_processes
+
+        response = self._http_client.get(
+            "/api/App/Processes", 
+            params=params if params else None
+        )
         
         if self._error_handler:
             data = self._error_handler.handle_response(
@@ -123,16 +151,29 @@ class AnalyticsRepository:
             return [LevelInfo.model_validate(item) for item in response.data]
         return []
 
-    def get_product_groups(self) -> List[ProductGroup]:
+    def get_product_groups(
+        self,
+        include_filters: Optional[bool] = None
+    ) -> List[ProductGroup]:
         """
         Retrieves all ProductGroups.
 
         GET /api/App/ProductGroups
 
+        Args:
+            include_filters: Include or exclude product group filters (default: None)
+
         Returns:
             List of ProductGroup objects
         """
-        response = self._http_client.get("/api/App/ProductGroups")
+        params: Dict[str, Any] = {}
+        if include_filters is not None:
+            params["includeFilters"] = include_filters
+
+        response = self._http_client.get(
+            "/api/App/ProductGroups",
+            params=params if params else None
+        )
         
         if self._error_handler:
             data = self._error_handler.handle_response(

@@ -792,18 +792,47 @@ class ReportService:
     # =========================================================================
 
     def get_report(
-        self, report_id: str
+        self, 
+        report_id: str,
+        detail_level: Optional[int] = None,
+        include_chartdata: Optional[bool] = None,
+        include_attachments: Optional[bool] = None,
     ) -> Optional[Union[UUTReport, UURReport]]:
         """
         Get a report in WSJF format.
 
         Args:
             report_id: Report ID (GUID)
+            detail_level: Level of detail (0-7). 0 is minimal data, 7 is full report.
+                         Default is full report if not specified.
+            include_chartdata: Include chart/plot data. Default True.
+                              Set False to reduce payload for detail levels 6+.
+            include_attachments: Include attachment data. Default True.
+                                Set False to reduce payload for detail levels 4-7.
 
         Returns:
             UUTReport or UURReport, or None
+            
+        Example:
+            >>> # Get full report (default)
+            >>> report = api.report.get_report("abc-123")
+            >>> 
+            >>> # Get minimal report (header info only)
+            >>> report = api.report.get_report("abc-123", detail_level=0)
+            >>> 
+            >>> # Get report without large binary data
+            >>> report = api.report.get_report(
+            ...     "abc-123", 
+            ...     include_chartdata=False, 
+            ...     include_attachments=False
+            ... )
         """
-        return self._repository.get_wsjf(report_id)
+        return self._repository.get_wsjf(
+            report_id,
+            detail_level=detail_level,
+            include_chartdata=include_chartdata,
+            include_attachments=include_attachments,
+        )
 
     def submit_report(
         self, report: Union[UUTReport, UURReport, Dict[str, Any]]
@@ -848,17 +877,33 @@ class ReportService:
     # WSXF (XML Format) Operations
     # =========================================================================
 
-    def get_report_xml(self, report_id: str) -> Optional[bytes]:
+    def get_report_xml(
+        self, 
+        report_id: str,
+        include_attachments: Optional[bool] = None,
+        include_chartdata: Optional[bool] = None,
+        include_indexes: Optional[bool] = None,
+    ) -> Optional[bytes]:
         """
         Get a report as XML (WSXF format).
 
         Args:
             report_id: Report ID (GUID)
+            include_attachments: Include attachment data. Default True.
+                                Set False to reduce payload.
+            include_chartdata: Include chart/plot data. Default True.
+                              Set False to reduce payload.
+            include_indexes: Include index information. Default False.
 
         Returns:
             XML content as bytes or None
         """
-        return self._repository.get_wsxf(report_id)
+        return self._repository.get_wsxf(
+            report_id,
+            include_attachments=include_attachments,
+            include_chartdata=include_chartdata,
+            include_indexes=include_indexes,
+        )
 
     def submit_report_xml(self, xml_content: str) -> Optional[str]:
         """
