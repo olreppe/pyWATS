@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pywats-api"
-version = "0.1.0b23"
+version = "0.1.0b24"
 description = "Python API library for WATS (Web-based Automated Test System) - manufacturing test data management"
 readme = "README.md"
 license = {file = "LICENSE"}
