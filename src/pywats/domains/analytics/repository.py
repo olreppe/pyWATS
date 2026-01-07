@@ -756,8 +756,19 @@ class AnalyticsRepository:
             response, operation="get_measurements", allow_empty=True
         )
         if result:
+            # API returns nested structure: [{measurementPath, measurements: [...]}]
+            # Extract the nested measurements arrays
+            all_measurements = []
             items = result if isinstance(result, list) else [result]
-            return [MeasurementData.model_validate(item) for item in items]
+            for item in items:
+                if isinstance(item, dict) and "measurements" in item:
+                    # New API format with nested measurements array
+                    for m in item.get("measurements", []):
+                        all_measurements.append(MeasurementData.model_validate(m))
+                else:
+                    # Legacy flat format (backwards compat)
+                    all_measurements.append(MeasurementData.model_validate(item))
+            return all_measurements
         return []
 
     def get_aggregated_measurements(
@@ -819,8 +830,19 @@ class AnalyticsRepository:
             response, operation="get_aggregated_measurements", allow_empty=True
         )
         if result:
+            # API returns nested structure: [{measurementPath, measurements: [...]}]
+            # Extract the nested measurements arrays
+            all_measurements = []
             items = result if isinstance(result, list) else [result]
-            return [AggregatedMeasurement.model_validate(item) for item in items]
+            for item in items:
+                if isinstance(item, dict) and "measurements" in item:
+                    # New API format with nested measurements array
+                    for m in item.get("measurements", []):
+                        all_measurements.append(AggregatedMeasurement.model_validate(m))
+                else:
+                    # Legacy flat format (backwards compat)
+                    all_measurements.append(AggregatedMeasurement.model_validate(item))
+            return all_measurements
         return []
 
     # =========================================================================

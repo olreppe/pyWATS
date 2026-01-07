@@ -25,6 +25,18 @@ class WATSFilter(PyWATSModel):
     
     IMPORTANT: Use Python field names (snake_case), not camelCase aliases.
     
+    WILDCARD PATTERNS:
+    -----------------
+    Most string filter fields support WATS wildcards:
+        ';' - Multiple values separator (e.g., 'PART1;PART2;PART3')
+        '%' - Any number of characters (e.g., 'WIDGET-%' matches 'WIDGET-001')
+        '_' - Exactly one character (e.g., 'SN_001' matches 'SN1001', 'SNA001')
+
+    Wildcard Examples:
+        serial_number="SN001;SN002;SN003" - Query specific serials
+        part_number="WIDGET-%" - All parts starting with 'WIDGET-'
+        station_name="LINE1-%" - All stations on LINE1
+
     Filter Fields (all optional):
     -----------------------------
     Identity Filters:

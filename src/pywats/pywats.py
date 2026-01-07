@@ -30,7 +30,12 @@ from .domains.production import (
 )
 from .domains.report import ReportService, ReportRepository
 from .domains.software import SoftwareService, SoftwareRepository
-from .domains.analytics import AnalyticsService, AnalyticsRepository
+from .domains.analytics import (
+    AnalyticsService, 
+    AnalyticsRepository,
+    AnalyticsServiceInternal,
+    AnalyticsRepositoryInternal,
+)
 from .domains.rootcause import RootCauseService, RootCauseRepository
 from .domains.process import (
     ProcessService, 
@@ -153,6 +158,7 @@ class pyWATS:
         self._report: Optional[ReportService] = None
         self._software: Optional[SoftwareService] = None
         self._analytics: Optional[AnalyticsService] = None
+        self._analytics_internal: Optional[AnalyticsServiceInternal] = None
         self._rootcause: Optional[RootCauseService] = None
         self._process: Optional[ProcessService] = None
         self._process_internal: Optional[ProcessServiceInternal] = None
@@ -337,6 +343,50 @@ class pyWATS:
             repo = AnalyticsRepository(self._http_client, self._error_handler)
             self._analytics = AnalyticsService(repo)
         return self._analytics
+    
+    @property
+    def analytics_internal(self) -> AnalyticsServiceInternal:
+        """
+        Access internal analytics operations (Unit Flow analysis).
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        This service uses internal WATS API endpoints that are not publicly
+        documented. Methods may change or be removed without notice.
+        
+        Provides Unit Flow functionality for:
+        - Production flow visualization
+        - Bottleneck identification
+        - Unit tracing through operations
+        - Flow analysis and statistics
+        
+        Example:
+            >>> from pywats import UnitFlowFilter
+            >>> from datetime import datetime, timedelta
+            >>> 
+            >>> # Get unit flow for a product
+            >>> filter = UnitFlowFilter(
+            ...     part_number="WIDGET-001",
+            ...     date_from=datetime.now() - timedelta(days=7)
+            ... )
+            >>> result = api.analytics_internal.get_unit_flow(filter)
+            >>> 
+            >>> for node in result.nodes:
+            ...     print(f"{node.name}: {node.unit_count} units, {node.yield_percent}% yield")
+            >>> 
+            >>> # Find bottlenecks (operations with low yield)
+            >>> bottlenecks = api.analytics_internal.get_bottlenecks(
+            ...     filter_data=filter,
+            ...     min_yield_threshold=95.0
+            ... )
+        
+        Returns:
+            AnalyticsServiceInternal instance
+        """
+        if self._analytics_internal is None:
+            repo_internal = AnalyticsRepositoryInternal(self._http_client, self._base_url)
+            self._analytics_internal = AnalyticsServiceInternal(repo_internal)
+        return self._analytics_internal
     
     @property
     def rootcause(self) -> RootCauseService:

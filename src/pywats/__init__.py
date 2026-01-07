@@ -54,6 +54,8 @@ from .domains.analytics import (
     # New typed models for analytics
     TopFailedStep, RepairStatistics, RepairHistoryRecord,
     MeasurementData, AggregatedMeasurement, OeeAnalysisResult,
+    # Unit Flow models (internal API)
+    UnitFlowNode, UnitFlowLink, UnitFlowUnit, UnitFlowFilter, UnitFlowResult,
 )
 
 # Common models from shared
@@ -134,6 +136,12 @@ __all__ = [
     "MeasurementData",
     "AggregatedMeasurement",
     "OeeAnalysisResult",
+    # Unit Flow models (internal API)
+    "UnitFlowNode",
+    "UnitFlowLink",
+    "UnitFlowUnit",
+    "UnitFlowFilter",
+    "UnitFlowResult",
     # Common models
     "Setting",
     "PyWATSModel",

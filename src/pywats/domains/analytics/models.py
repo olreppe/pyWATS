@@ -15,8 +15,8 @@ Backend API aliases (camelCase) are handled automatically.
 Always use the Python field names when creating or accessing these models.
 """
 from datetime import datetime
-from typing import List, Optional
-from pydantic import Field, AliasChoices, ConfigDict
+from typing import List, Optional, Union
+from pydantic import Field, AliasChoices, ConfigDict, field_serializer
 
 from ...shared.base_model import PyWATSModel
 
@@ -1318,3 +1318,484 @@ class StepAnalysisRow(PyWATSModel):
         validation_alias=AliasChoices("sigmaLow3Wof", "sigma_low_3_wof"),
         serialization_alias="sigmaLow3Wof"
     )
+
+
+# =============================================================================
+# Unit Flow Models (Internal API)
+# =============================================================================
+
+class UnitFlowNode(PyWATSModel):
+    """
+    Represents a node in the unit flow diagram.
+    
+    A node represents a process/operation that units pass through during production.
+    Used to visualize production flow and identify bottlenecks.
+    
+    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    
+    Returned from GET /api/internal/UnitFlow/Nodes.
+    
+    Attributes:
+        id: Unique node identifier
+        name: Display name of the node (operation/process name)
+        process_code: Process code
+        process_name: Process name
+        station_name: Station name
+        location: Location
+        purpose: Purpose
+        unit_count: Number of units that passed through this node
+        pass_count: Number of passed units
+        fail_count: Number of failed units
+        yield_percent: Yield percentage (0-100)
+        avg_time: Average time spent at this node
+        is_expanded: Whether the node is expanded in the UI
+        is_visible: Whether the node is visible
+        level: Hierarchy level of the node
+        parent_id: Parent node ID for hierarchical structures
+        
+    Example:
+        >>> node = UnitFlowNode(name="End of Line Test", unit_count=1000, yield_percent=98.5)
+        >>> print(f"{node.name}: {node.unit_count} units, {node.yield_percent}% yield")
+    """
+
+    id: Optional[Union[str, int]] = Field(
+        default=None,
+        description="Unique node identifier (can be string or int)"
+    )
+    name: Optional[str] = Field(
+        default=None,
+        description="Display name of the node"
+    )
+    process_code: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("processCode", "process_code"),
+        serialization_alias="processCode",
+        description="Process code"
+    )
+    process_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("processName", "process_name"),
+        serialization_alias="processName",
+        description="Process name"
+    )
+    station_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stationName", "station_name"),
+        serialization_alias="stationName",
+        description="Station name"
+    )
+    location: Optional[str] = Field(
+        default=None,
+        description="Location"
+    )
+    purpose: Optional[str] = Field(
+        default=None,
+        description="Purpose"
+    )
+    unit_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("unitCount", "unit_count"),
+        serialization_alias="unitCount",
+        description="Number of units that passed through this node"
+    )
+    pass_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("passCount", "pass_count"),
+        serialization_alias="passCount",
+        description="Number of passed units"
+    )
+    fail_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("failCount", "fail_count"),
+        serialization_alias="failCount",
+        description="Number of failed units"
+    )
+    yield_percent: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("yieldPercent", "yield_percent", "yield"),
+        serialization_alias="yieldPercent",
+        description="Yield percentage (0-100)"
+    )
+    avg_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("avgTime", "avg_time"),
+        serialization_alias="avgTime",
+        description="Average time spent at this node (seconds)"
+    )
+    is_expanded: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices("isExpanded", "is_expanded"),
+        serialization_alias="isExpanded",
+        description="Whether the node is expanded in the UI"
+    )
+    is_visible: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices("isVisible", "is_visible"),
+        serialization_alias="isVisible",
+        description="Whether the node is visible"
+    )
+    level: Optional[int] = Field(
+        default=None,
+        description="Hierarchy level of the node"
+    )
+    parent_id: Optional[Union[str, int]] = Field(
+        default=None,
+        validation_alias=AliasChoices("parentId", "parent_id"),
+        serialization_alias="parentId",
+        description="Parent node ID for hierarchical structures (can be string or int)"
+    )
+    # Forward-compatible: allow extra fields from backend
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
+
+
+class UnitFlowLink(PyWATSModel):
+    """
+    Represents a link (edge) between nodes in the unit flow diagram.
+    
+    Links show how units transition between operations/processes.
+    Used to trace production flow paths.
+    
+    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    
+    Returned from GET /api/internal/UnitFlow/Links.
+    
+    Attributes:
+        id: Unique link identifier
+        source_id: Source node ID
+        target_id: Target node ID
+        source_name: Source node name
+        target_name: Target node name
+        unit_count: Number of units that traversed this link
+        pass_count: Number of passed units
+        fail_count: Number of failed units
+        avg_time: Average time for transition
+        is_visible: Whether the link is visible
+        
+    Example:
+        >>> link = UnitFlowLink(source_name="Assembly", target_name="Test", unit_count=500)
+        >>> print(f"{link.source_name} -> {link.target_name}: {link.unit_count} units")
+    """
+
+    id: Optional[Union[str, int]] = Field(
+        default=None,
+        description="Unique link identifier (can be string or int)"
+    )
+    source_id: Optional[Union[str, int]] = Field(
+        default=None,
+        validation_alias=AliasChoices("sourceId", "source_id", "source"),
+        serialization_alias="sourceId",
+        description="Source node ID (can be string or int)"
+    )
+    target_id: Optional[Union[str, int]] = Field(
+        default=None,
+        validation_alias=AliasChoices("targetId", "target_id", "target"),
+        serialization_alias="targetId",
+        description="Target node ID (can be string or int)"
+    )
+    source_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("sourceName", "source_name"),
+        serialization_alias="sourceName",
+        description="Source node name"
+    )
+    target_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("targetName", "target_name"),
+        serialization_alias="targetName",
+        description="Target node name"
+    )
+    unit_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("unitCount", "unit_count"),
+        serialization_alias="unitCount",
+        description="Number of units that traversed this link"
+    )
+    pass_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("passCount", "pass_count"),
+        serialization_alias="passCount",
+        description="Number of passed units"
+    )
+    fail_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("failCount", "fail_count"),
+        serialization_alias="failCount",
+        description="Number of failed units"
+    )
+    avg_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("avgTime", "avg_time"),
+        serialization_alias="avgTime",
+        description="Average time for transition (seconds)"
+    )
+    is_visible: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices("isVisible", "is_visible"),
+        serialization_alias="isVisible",
+        description="Whether the link is visible"
+    )
+    # Forward-compatible: allow extra fields from backend
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
+
+
+class UnitFlowUnit(PyWATSModel):
+    """
+    Represents a unit in the unit flow analysis.
+    
+    Contains information about individual units that have traversed
+    the production flow.
+    
+    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    
+    Returned from GET /api/internal/UnitFlow/Units.
+    
+    Attributes:
+        serial_number: Unit serial number
+        part_number: Product part number
+        revision: Product revision
+        status: Current status (Passed, Failed, etc.)
+        start_time: When the unit entered the flow
+        end_time: When the unit exited the flow
+        total_time: Total time in the flow
+        node_path: List of nodes the unit passed through
+        current_node: Current node (if still in flow)
+        
+    Example:
+        >>> unit = UnitFlowUnit(serial_number="SN001", status="Passed")
+        >>> print(f"{unit.serial_number}: {unit.status}")
+    """
+
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber",
+        description="Unit serial number"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    status: Optional[str] = Field(
+        default=None,
+        description="Current status"
+    )
+    start_time: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("startTime", "start_time"),
+        serialization_alias="startTime",
+        description="When the unit entered the flow"
+    )
+    end_time: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("endTime", "end_time"),
+        serialization_alias="endTime",
+        description="When the unit exited the flow"
+    )
+    total_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("totalTime", "total_time"),
+        serialization_alias="totalTime",
+        description="Total time in the flow (seconds)"
+    )
+    node_path: Optional[List[str]] = Field(
+        default=None,
+        validation_alias=AliasChoices("nodePath", "node_path"),
+        serialization_alias="nodePath",
+        description="List of nodes the unit passed through"
+    )
+    current_node: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("currentNode", "current_node"),
+        serialization_alias="currentNode",
+        description="Current node (if still in flow)"
+    )
+    # Forward-compatible: allow extra fields from backend
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
+
+
+class UnitFlowFilter(PyWATSModel):
+    """
+    Filter parameters for Unit Flow queries.
+    
+    Used as request body for POST endpoints.
+    
+    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    
+    Attributes:
+        part_number: Filter by product part number
+        revision: Filter by revision
+        serial_number: Filter by serial number
+        station_name: Filter by station name
+        location: Filter by location
+        purpose: Filter by purpose
+        date_from: Start of date range
+        date_to: End of date range
+        process_codes: List of process codes to include
+        include_passed: Include passed units
+        include_failed: Include failed units
+        split_by: Dimension to split the flow by
+        unit_order: How to order units
+        show_list: List of items to show
+        hide_list: List of items to hide
+        expand_operations: Whether to expand operations
+        
+    Example:
+        >>> filter = UnitFlowFilter(
+        ...     part_number="WIDGET-001",
+        ...     date_from=datetime(2025, 1, 1),
+        ...     include_passed=True,
+        ...     include_failed=True
+        ... )
+    """
+
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Filter by product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Filter by revision"
+    )
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber",
+        description="Filter by serial number"
+    )
+    serial_numbers: Optional[List[str]] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumbers", "serial_numbers"),
+        serialization_alias="serialNumbers",
+        description="Filter by multiple serial numbers"
+    )
+    station_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stationName", "station_name"),
+        serialization_alias="stationName",
+        description="Filter by station name"
+    )
+    location: Optional[str] = Field(
+        default=None,
+        description="Filter by location"
+    )
+    purpose: Optional[str] = Field(
+        default=None,
+        description="Filter by purpose"
+    )
+    date_from: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("dateFrom", "date_from"),
+        serialization_alias="dateFrom",
+        description="Start of date range"
+    )
+    date_to: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("dateTo", "date_to"),
+        serialization_alias="dateTo",
+        description="End of date range"
+    )
+    process_codes: Optional[List[int]] = Field(
+        default=None,
+        validation_alias=AliasChoices("processCodes", "process_codes"),
+        serialization_alias="processCodes",
+        description="List of process codes to include"
+    )
+    include_passed: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices("includePassed", "include_passed"),
+        serialization_alias="includePassed",
+        description="Include passed units"
+    )
+    include_failed: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices("includeFailed", "include_failed"),
+        serialization_alias="includeFailed",
+        description="Include failed units"
+    )
+    split_by: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("splitBy", "split_by"),
+        serialization_alias="splitBy",
+        description="Dimension to split the flow by"
+    )
+    unit_order: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("unitOrder", "unit_order"),
+        serialization_alias="unitOrder",
+        description="How to order units"
+    )
+    show_list: Optional[List[str]] = Field(
+        default=None,
+        validation_alias=AliasChoices("showList", "show_list"),
+        serialization_alias="showList",
+        description="List of items to show"
+    )
+    hide_list: Optional[List[str]] = Field(
+        default=None,
+        validation_alias=AliasChoices("hideList", "hide_list"),
+        serialization_alias="hideList",
+        description="List of items to hide"
+    )
+    expand_operations: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices("expandOperations", "expand_operations"),
+        serialization_alias="expandOperations",
+        description="Whether to expand operations"
+    )
+
+    @field_serializer('date_from', 'date_to')
+    def serialize_datetime(self, v: Optional[datetime]) -> Optional[str]:
+        """Serialize datetime to ISO format for API requests."""
+        return v.isoformat() if v else None
+
+
+class UnitFlowResult(PyWATSModel):
+    """
+    Complete result from a Unit Flow query.
+    
+    Contains nodes, links, and optionally units for the flow diagram.
+    
+    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    
+    Attributes:
+        nodes: List of nodes in the flow
+        links: List of links between nodes
+        units: Optional list of individual units
+        total_units: Total number of units in the flow
+        filter_applied: The filter that was applied
+        
+    Example:
+        >>> result = api.analytics_internal.get_unit_flow(filter)
+        >>> print(f"Flow has {len(result.nodes)} nodes and {len(result.links)} links")
+        >>> for node in result.nodes:
+        ...     print(f"  {node.name}: {node.unit_count} units")
+    """
+
+    nodes: Optional[List[UnitFlowNode]] = Field(
+        default=None,
+        description="List of nodes in the flow"
+    )
+    links: Optional[List[UnitFlowLink]] = Field(
+        default=None,
+        description="List of links between nodes"
+    )
+    units: Optional[List[UnitFlowUnit]] = Field(
+        default=None,
+        description="Optional list of individual units"
+    )
+    total_units: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("totalUnits", "total_units"),
+        serialization_alias="totalUnits",
+        description="Total number of units in the flow"
+    )
+    # Forward-compatible: allow extra fields from backend
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
