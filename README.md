@@ -209,10 +209,36 @@ pyWATS/
 
 ## Documentation
 
-- [Architecture Overview](docs/ARCHITECTURE.md) - System design and layered architecture
-- [Report Module](docs/usage/REPORT_MODULE.md) - Test reports and factory methods
-- [Product Module](docs/usage/PRODUCT_MODULE.md) - Product/BOM management
-- [Production Module](docs/usage/PRODUCTION_MODULE.md) - Serial number and unit tracking
+### Official Documentation
+
+Complete guides shipped with the package:
+
+- **[Documentation Index](docs/INDEX.md)** - Complete documentation overview
+
+#### Domain API Reference
+
+- **[Product Domain](docs/PRODUCT.md)** - Products, revisions, BOMs, box build templates
+- **[Asset Domain](docs/ASSET.md)** - Equipment tracking, calibration, maintenance  
+- **[Production Domain](docs/PRODUCTION.md)** - Unit lifecycle, serial numbers, assembly
+- **[Report Domain](docs/REPORT.md)** - Test reports, measurements, step types
+- **[Analytics Domain](docs/ANALYTICS.md)** - Yield analysis, measurements, Unit Flow
+- **[Software Domain](docs/SOFTWARE.md)** - Package management, versioning, distribution
+- **[RootCause Domain](docs/ROOTCAUSE.md)** - Issue tracking, defect management
+- **[Process Domain](docs/PROCESS.md)** - Operation types, caching
+
+#### Client Documentation
+
+- **[GUI Configuration](src/pywats_client/GUI_CONFIGURATION.md)** - Configure GUI tabs, logging
+- **[Headless Operation](src/pywats_client/control/HEADLESS_GUIDE.md)** - Raspberry Pi, servers, embedded
+
+### Additional Resources
+
+Documentation available in the GitHub repository (not shipped with package):
+
+- [Internal Documentation](docs/internal/) - Architecture, design docs, AI agent knowledge
+- [Internal: Architecture Overview](docs/internal/ARCHITECTURE.md) - System design and architecture
+- [Internal: WATS Domain Knowledge](docs/internal/WATS_DOMAIN_KNOWLEDGE.md) - Core WATS concepts
+- [Logging Strategy](LOGGING_STRATEGY.md) - Logging configuration and best practices
 
 ## Testing
 
