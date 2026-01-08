@@ -17,7 +17,13 @@ class DummyAnalyticsRepository:
     def get_version(self) -> Dict[str, Any]:
         return {"build": "1.0"}
 
-    def get_processes(self) -> List[ProcessInfo]:
+    def get_processes(
+        self,
+        include_test_operations: bool = False,
+        include_repair_operations: bool = False,
+        include_wip_operations: bool = False,
+        include_inactive_processes: bool = False,
+    ) -> List[ProcessInfo]:
         self.process_calls += 1
         return [ProcessInfo(code=100, name="Test", is_test_operation=True)]
 

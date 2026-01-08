@@ -93,9 +93,16 @@ class TestAggregatedMeasurementsAPI:
         print(f"Using step path: {step_path}")
         print(f"Product: {step.part_number}")
         
-        # Now query aggregated measurements
+        # Get a test operation for the filter
+        processes = wats_client.analytics.get_processes(include_test_operations=True)
+        if not processes:
+            pytest.skip("No test operations available")
+        test_operation = str(processes[0].code)
+        
+        # Now query aggregated measurements with required testOperation filter
         measurement_filter = WATSFilter(
             part_number=step.part_number or part_number,
+            test_operation=test_operation,
             days=30,
         )
         
@@ -154,9 +161,16 @@ class TestMeasurementDataAPI:
         step_path = step.step_path or step.step_name
         print(f"Using step path: {step_path}")
         
-        # Query individual measurements with proper filter
+        # Get a test operation for the filter
+        processes = wats_client.analytics.get_processes(include_test_operations=True)
+        if not processes:
+            pytest.skip("No test operations available")
+        test_operation = str(processes[0].code)
+        
+        # Query individual measurements with proper filter including testOperation
         measurement_filter = WATSFilter(
             part_number=step.part_number or part_number,
+            test_operation=test_operation,
             days=7,  # Shorter window for individual data
             top_count=100,  # Limit results
         )
@@ -204,16 +218,26 @@ class TestMeasurementWithStepAnalysis:
         print(f"  Part number: {numeric_step.part_number}")
         print(f"  Fail count: {numeric_step.fail_count}")
         
-        # Query aggregated measurements for this step
+        # Get a test operation for the filter
+        processes = wats_client.analytics.get_processes(include_test_operations=True)
+        if not processes:
+            pytest.skip("No test operations available")
+        test_operation = str(processes[0].code)
+        
+        # Query aggregated measurements for this step with required testOperation
         step_path = numeric_step.step_path or numeric_step.step_name
         
         if numeric_step.part_number:
             measurement_filter = WATSFilter(
                 part_number=numeric_step.part_number,
+                test_operation=test_operation,
                 days=30,
             )
         else:
-            measurement_filter = WATSFilter(days=30)
+            measurement_filter = WATSFilter(
+                test_operation=test_operation,
+                days=30
+            )
         
         results = wats_client.analytics.get_aggregated_measurements(
             measurement_filter,
@@ -262,15 +286,22 @@ class TestMeasurementWithProductAndProcess:
         print(f"  Part number: {header.part_number}")
         print(f"  Serial number: {header.serial_number}")
         
+        # Get a test operation for the filter
+        processes = wats_client.analytics.get_processes(include_test_operations=True)
+        if not processes:
+            pytest.skip("No test operations available")
+        test_operation = str(processes[0].code)
+        
         # Use a generic step path - the API will filter by product
         # Even if no exact match, this tests the API call works correctly
         step_path = "MainSequence Callback"
         print(f"Using step path: {step_path}")
         
-        # Query measurements with proper filters
+        # Query measurements with proper filters including testOperation
         measurement_filter = WATSFilter(
             part_number=header.part_number,
             serial_number=header.serial_number,  # Filter to this unit
+            test_operation=test_operation,
             days=90,
         )
         
