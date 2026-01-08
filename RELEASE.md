@@ -2,7 +2,10 @@
 
 ## ⚠️ IMPORTANT: Single Release Workflow
 
-**There is only ONE way to release pyWATS while in beta:**
+**Before you release:**
+
+1. ✅ **Update CHANGELOG.md** - Add your changes to the `[Unreleased]` section
+2. ✅ Run the bump script
 
 ```powershell
 .\scripts\bump.ps1
@@ -10,13 +13,36 @@
 
 That's it. This script does everything:
 1. ✅ Verifies you're on `main` with a clean working tree
-2. ✅ Runs pre-release checks (lint + unit tests)
-3. ✅ Bumps the beta version (e.g., `0.1.0b22` → `0.1.0b23`)
-4. ✅ Updates version in both `pyproject.toml` and `src/pywats/__init__.py`
-5. ✅ Commits the changes
-6. ✅ Creates and pushes a git tag (e.g., `v0.1.0b23`)
-7. ✅ Pushes to GitHub
-8. ✅ Automatically triggers PyPI publish via GitHub Actions
+2. ✅ **Checks CHANGELOG.md has unreleased changes** (warns if empty)
+3. ✅ Runs pre-release checks (lint + unit tests)
+4. ✅ Bumps the beta version (e.g., `0.1.0b22` → `0.1.0b23`)
+5. ✅ Updates version in both `pyproject.toml` and `src/pywats/__init__.py`
+6. ✅ Commits the changes
+7. ✅ Creates and pushes a git tag (e.g., `v0.1.0b23`)
+8. ✅ Pushes to GitHub
+9. ✅ Automatically triggers PyPI publish via GitHub Actions
+
+## CHANGELOG Format
+
+Before running `bump.ps1`, update `CHANGELOG.md`:
+
+```markdown
+## [Unreleased]
+
+### Added
+- New feature descriptions
+
+### Changed
+- Modified behavior descriptions
+
+### Fixed
+- Bug fix descriptions
+
+### Removed
+- Deprecated feature removals
+```
+
+The bump script will warn you if the `[Unreleased]` section is empty.
 
 ## Branch Protection
 

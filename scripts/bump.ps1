@@ -281,6 +281,27 @@ try {
         }
     }
 
+    Write-Step "Checking CHANGELOG"
+
+    $changelogPath = "$RepoRoot\CHANGELOG.md"
+    $changelogContent = Get-Content $changelogPath -Raw
+
+    if ($changelogContent -match '## \[Unreleased\]\s*$' -or $changelogContent -match '## \[Unreleased\]\s*\n\s*\n\s*##') {
+        Write-Host "" 
+        Write-Host "  ⚠️  WARNING: CHANGELOG.md has no unreleased changes!" -ForegroundColor Yellow
+        Write-Host "" 
+        Write-Host "  The [Unreleased] section appears to be empty." -ForegroundColor Yellow
+        Write-Host "  Please update CHANGELOG.md before bumping the version." -ForegroundColor Yellow
+        Write-Host "" 
+        $response = Read-Host "Continue anyway? (y/N)"
+        if ($response -ne 'y' -and $response -ne 'Y') {
+            throw "Release cancelled - please update CHANGELOG.md first"
+        }
+    }
+    else {
+        Write-Success "CHANGELOG.md has unreleased changes"
+    }
+
     Write-Step "Calculating version"
 
     $currentVersion = Get-PyprojectVersion -PyprojectPath "$RepoRoot\pyproject.toml"
