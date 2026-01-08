@@ -9,6 +9,7 @@ Complete guide to installing, configuring, and initializing pyWATS.
 - [Authentication](#authentication)
 - [Logging Configuration](#logging-configuration)
 - [Exception Handling](#exception-handling)
+- [Internal API Usage](#internal-api-usage)
 - [Client Installation](#client-installation)
 
 ---
@@ -851,6 +852,146 @@ if __name__ == "__main__":
         logging.exception("Application error")
         exit(1)
 ```
+
+---
+
+## Internal API Usage
+
+### Understanding Internal vs Public APIs
+
+pyWATS provides access to both **public** and **internal** WATS API endpoints:
+
+**Public APIs** (Stable):
+- Documented and stable endpoints (e.g., `/api/Product`, `/api/Report`)
+- Accessed through standard modules: `api.product`, `api.report`, `api.asset`, etc.
+- **Guaranteed stability** - Will not change without notice
+- **Recommended** for production code
+
+**Internal APIs** (Unstable):
+- Undocumented endpoints used by WATS frontend (e.g., `/api/internal/UnitFlow`)
+- Accessed through `*_internal` modules: `api.product_internal`, `api.analytics_internal`, etc.
+- **⚠️ MAY CHANGE WITHOUT NOTICE** - Subject to breaking changes
+- **Use with caution** - Only when public APIs don't provide needed functionality
+
+### When to Use Internal APIs
+
+Internal APIs fill gaps where public endpoints don't yet exist:
+
+| Feature | Module | Why Internal? |
+|---------|--------|---------------|
+| Unit Flow Analysis | `analytics_internal` | No public Unit Flow endpoints yet |
+| Box Build Templates | `product_internal` | No public box build management |
+| Asset File Operations | `asset_internal` | No public file upload/download |
+| Unit Phases (MES) | `production_internal` | MES integration not in public API |
+| Process Details | `process_internal` | Full process info not in public API |
+
+### Using Internal APIs Safely
+
+```python
+from pywats import pyWATS
+
+api = pyWATS(base_url="...", token="...")
+
+# ✅ Public API - Use this when available
+products = api.product.get_products()
+
+# ⚠️ Internal API - Use only when necessary
+# This uses internal endpoints that may change
+box_build = api.product_internal.get_box_build("WIDGET-001", "A")
+```
+
+**Best Practices:**
+
+1. **Prefer Public APIs**: Always use public APIs when available
+2. **Isolate Internal Calls**: Wrap internal API calls in your own functions
+3. **Add Error Handling**: Internal APIs may fail differently than public ones
+4. **Document Usage**: Note which parts of your code use internal APIs
+5. **Monitor for Changes**: Subscribe to pyWATS updates for breaking changes
+
+**Example - Isolated Internal API Usage:**
+
+```python
+def get_unit_flow_safely(api, part_number, date_from, date_to):
+    """
+    Get unit flow data using internal API.
+    
+    ⚠️ INTERNAL API: This function uses internal WATS endpoints
+    that may change without notice.
+    """
+    try:
+        from pywats import UnitFlowFilter
+        
+        filter_data = UnitFlowFilter(
+            part_number=part_number,
+            date_from=date_from,
+            date_to=date_to
+        )
+        
+        # Internal API call - wrapped for safety
+        result = api.analytics_internal.get_unit_flow(filter_data)
+        return result
+        
+    except AttributeError:
+        # API may have changed
+        raise RuntimeError(
+            "Unit Flow API has changed. "
+            "Please update pyWATS to the latest version."
+        )
+
+# Use the wrapped function
+try:
+    flow = get_unit_flow_safely(api, "WIDGET-001", date_from, date_to)
+except RuntimeError as e:
+    # Handle API change gracefully
+    logging.error(f"Unit Flow not available: {e}")
+    # Fall back to alternative approach
+```
+
+### Deprecation Warnings
+
+Some internal API methods will emit deprecation warnings:
+
+```python
+# This method is deprecated and will show a warning
+bom_xml = api.product.repository.get_bom("WIDGET-001", "A")
+# DeprecationWarning: ProductRepository.get_bom() uses an internal API endpoint...
+
+# Use the internal module instead
+bom_items = api.product_internal.get_bom_items("WIDGET-001", "A")
+```
+
+To suppress these warnings during testing (not recommended for production):
+
+```python
+import warnings
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    bom = api.product.repository.get_bom("WIDGET-001", "A")
+```
+
+### Future-Proofing Your Code
+
+As public APIs become available, migrate away from internal APIs:
+
+```python
+# Version 1.0 - Using internal API
+def get_box_build_template(api, part_number, revision):
+    # ⚠️ Internal API - will change
+    return api.product_internal.get_box_build(part_number, revision)
+
+# Version 2.0 - Migrated to public API (when available)
+def get_box_build_template(api, part_number, revision):
+    # ✅ Public API - stable
+    return api.product.get_box_build(part_number, revision)
+```
+
+**Migration Checklist:**
+
+- ✅ Monitor pyWATS release notes for new public endpoints
+- ✅ Test your code with each new pyWATS version
+- ✅ Keep internal API usage isolated and documented
+- ✅ Have fallback strategies for critical workflows
 
 ---
 

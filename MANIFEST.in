@@ -54,11 +54,19 @@ prune docs/archive
 
 # Exclude specific files
 exclude .env
+exclude .env.*
 exclude .env.template
 exclude .flake8
 exclude pytest.ini
 exclude .coverage
 exclude pywats.log
+exclude *.log
+
+# Exclude any credential/token files (safety net)
+global-exclude *token*
+global-exclude *secret*
+global-exclude *credential*
+global-exclude *password*
 
 # Exclude internal root-level documentation
 exclude DIALOG_BUGS_FIXED.md

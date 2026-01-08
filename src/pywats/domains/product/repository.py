@@ -220,73 +220,11 @@ class ProductRepository:
         return []
 
     # =========================================================================
-    # Bill of Materials - Delegated to Internal Repository
+    # Bill of Materials - Use Internal API
     # =========================================================================
-
-    def get_bom(
-        self,
-        part_number: str,
-        revision: str
-    ) -> Optional[str]:
-        """
-        Get BOM (Bill of Materials) for a product revision as WSBF XML.
-
-        ⚠️ INTERNAL API - Delegated to ProductRepositoryInternal.
-        
-        Note: This method is deprecated. Use ProductServiceInternal.get_bom() instead.
-        
-        Returns the BOM in WSBF (WATS Standard BOM Format) XML format.
-        Example response:
-            <BOM xmlns="http://wats.virinco.com/schemas/WATS/wsbf" 
-                 Partnumber="100100" Revision="1.0" Desc="Product Description">
-                <Component Number="100200" Rev="1.0" Qty="2" Desc="Description" Ref="R1;R2"/>
-            </BOM>
-
-        Args:
-            part_number: Product part number
-            revision: Product revision
-
-        Returns:
-            WSBF XML string or None if not found
-        """
-        # The internal repo returns parsed BomItem objects, not raw XML
-        # This method is here for backwards compatibility
-        # The raw XML format is only available through direct internal API call
-        logger.debug(f"Fetching BOM for {part_number} rev {revision}")
-        response = self._http_client.get(
-            "/api/internal/Product/Bom",
-            params={"partNumber": part_number, "revision": revision}
-        )
-        if response.is_success and response.data:
-            # Response may be XML string or object
-            if isinstance(response.data, str):
-                return response.data
-            # If JSON response, convert back to string
-            return str(response.data)
-        return None
-
-    def get_bom_items(
-        self,
-        part_number: str,
-        revision: str
-    ) -> List[BomItem]:
-        """
-        Get BOM items as parsed objects.
-
-        Fetches the WSBF XML and parses it into BomItem objects.
-
-        Args:
-            part_number: Product part number
-            revision: Product revision
-
-        Returns:
-            List of BomItem objects
-        """
-        wsbf_xml = self.get_bom(part_number, revision)
-        if not wsbf_xml:
-            return []
-        
-        return self._parse_wsbf_xml(wsbf_xml)
+    # Note: BOM functionality requires internal API access.
+    # Use api.product_internal.get_bom() instead.
+    # No public BOM endpoints are currently available.
 
     def _parse_wsbf_xml(self, xml_content: str) -> List[BomItem]:
         """

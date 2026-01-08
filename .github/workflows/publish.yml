@@ -41,12 +41,13 @@ jobs:
           echo "ERROR: Test config files found in package!"
           exit 1
         fi
-        # Verify dev-only folders are not packaged (tests, docs, etc.)
+        # Verify dev-only folders are not packaged (tests, converters, scripts, .github, etc.)
+        # Note: docs/ and examples/ are intentionally published as user documentation
         # sdist files are prefixed with the top-level directory (e.g. pywats_api-0.1.0b2/)
-        if grep -Eq "^[^/]+/(tests|docs|converters|examples|scripts|\.github)/" /tmp/files.txt; then
+        if grep -Eq "^[^/]+/(tests|api-tests|converters|scripts|\.github|build)/" /tmp/files.txt; then
           echo "ERROR: Dev-only folder found in sdist!"
           echo "Offending entries:"
-          grep -nE "^[^/]+/(tests|docs|converters|examples|scripts|\.github)/" /tmp/files.txt | head -n 50
+          grep -nE "^[^/]+/(tests|api-tests|converters|scripts|\.github|build)/" /tmp/files.txt | head -n 50
           exit 1
         fi
         echo "Checking wheel contents for dev-only folders..."
@@ -55,8 +56,9 @@ jobs:
         import sys
         import zipfile
 
+        # Note: docs/ and examples/ are intentionally published as official user documentation
         bad_prefixes = (
-            'tests/', 'docs/', 'converters/', 'examples/', 'scripts/', '.github/',
+            'tests/', 'api-tests/', 'converters/', 'scripts/', '.github/', 'build/',
         )
         wheels = glob.glob('dist/*.whl')
         if not wheels:
