@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b27] - 2026-01-08
+
+### Added
+- **End-user installation guide** - Comprehensive documentation for pyWATS Client installation and setup:
+  - Platform-specific file locations (Windows, Linux, Mac)
+  - GUI vs headless installation modes
+  - First-time setup instructions
+  - Configuration management
+  - Running as Windows service or Linux systemd service
+  - Troubleshooting guide
+
+### Fixed
+- **Linting warnings** - Cleaned up development tooling:
+  - Suppressed markdown line length warnings in VS Code
+  - Fixed PowerShell linting issues in bump script
+
 ### Added
 
 - **Analytics GET parameters** - Additional filtering options for analytics endpoints:
