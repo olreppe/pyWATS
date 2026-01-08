@@ -45,7 +45,7 @@ def print_assembly_tree(serial_number: str, level: int = 0):
     
     indent = "  " * level
     prefix = "├─ " if level > 0 else ""
-    print(f"{indent}{prefix}{assembly.serialNumber} ({assembly.partNumber})")
+    print(f"{indent}{prefix}{assembly.serial_number} ({assembly.part_number})")
     
     for child in assembly.children or []:
         print_assembly_tree(child.serialNumber, level + 1)

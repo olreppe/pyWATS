@@ -27,7 +27,7 @@ headers = api.report.query_uut_headers()
 
 print(f"Found {len(headers)} reports")
 for header in headers[:5]:
-    print(f"  {header.serialNumber}: {header.result} ({header.start})")
+    print(f"  {header.serial_number}: {header.result} ({header.start})")
 
 
 # =============================================================================
@@ -77,7 +77,7 @@ headers = api.report.query_uut_headers(filter_data)
 print(f"\nFailed reports (last 7 days): {len(headers)}")
 
 for header in headers[:5]:
-    print(f"  {header.serialNumber}: {header.partNumber}")
+    print(f"  {header.serial_number}: {header.part_number}")
 
 
 # =============================================================================

@@ -49,7 +49,7 @@ new_unit = Unit(
 )
 
 result = api.production.create_unit(new_unit)
-print(f"Created unit: {result.serialNumber}")
+print(f"Created unit: {result.serial_number}")
 
 
 # =============================================================================
@@ -89,11 +89,11 @@ def verify_unit(serial_number: str, expected_part: str = None):
     
     print(f"✓ Unit found: {serial_number}")
     
-    if expected_part and unit.partNumber != expected_part:
-        print(f"✗ Part mismatch: expected {expected_part}, got {unit.partNumber}")
+    if expected_part and unit.part_number != expected_part:
+        print(f"✗ Part mismatch: expected {expected_part}, got {unit.part_number}")
         return False
     
-    print(f"✓ Part number: {unit.partNumber}")
+    print(f"✓ Part number: {unit.part_number}")
     return True
 
 

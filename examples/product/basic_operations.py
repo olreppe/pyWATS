@@ -25,7 +25,7 @@ products = api.product.get_products()
 print(f"Found {len(products)} products")
 
 for product in products[:5]:  # First 5
-    print(f"  {product.partNumber}: {product.productName}")
+    print(f"  {product.part_number}: {product.name}")
 
 
 # =============================================================================
@@ -36,10 +36,9 @@ for product in products[:5]:  # First 5
 product = api.product.get_product("WIDGET-001")
 
 if product:
-    print(f"Product: {product.partNumber}")
-    print(f"  Name: {product.productName}")
+    print(f"Product: {product.part_number}")
+    print(f"  Name: {product.name}")
     print(f"  Description: {product.description}")
-    print(f"  Revision: {product.revision}")
 
 
 # =============================================================================
@@ -59,14 +58,13 @@ from pywats.domains.product import Product
 
 # Create a new product
 new_product = Product(
-    partNumber="NEW-PRODUCT-001",
-    productName="New Test Product",
-    description="A product created via the API",
-    revision="A"
+    part_number="NEW-PRODUCT-001",
+    name="New Test Product",
+    description="A product created via the API"
 )
 
-result = api.product.create_product(new_product)
-print(f"Created product: {result.partNumber}")
+result = api.product.save(new_product)
+print(f"Created product: {result.part_number}")
 
 
 # =============================================================================
@@ -81,8 +79,8 @@ if product:
     product.description = "Updated description"
     
     # Save changes
-    api.product.update_product(product)
-    print(f"Updated product: {product.partNumber}")
+    api.product.save(product)
+    print(f"Updated product: {product.part_number}")
 
 
 # =============================================================================

@@ -59,7 +59,7 @@ units = api.production.find_serial_numbers_in_range(
 
 print(f"\nUnits in range:")
 for unit in units[:10]:
-    print(f"  {unit.serialNumber}: {unit.status}")
+    print(f"  {unit.serial_number}: {unit.status}")
 
 
 # =============================================================================

@@ -38,11 +38,12 @@ include docs/PROCESS.md
 # Include usage guides (detailed module documentation)
 recursive-include docs/usage *.md
 
-# Include docs examples (code snippets in documentation)
-recursive-include docs/examples *.py
-recursive-include docs/examples *.md
+# Include comprehensive domain examples
+include examples/README.md
+recursive-include examples *.py
+recursive-include examples *.md
 
-# Exclude all internal documentation (architecture, design, internal notes)
+# Exclude internal documentation (architecture, design, internal notes)
 prune tests
 prune api-tests
 prune converters

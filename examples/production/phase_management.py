@@ -48,8 +48,8 @@ for phase in phases:
 unit = api.production.get_unit("SN-2024-001234")
 
 if unit:
-    print(f"\nUnit {unit.serialNumber}:")
-    print(f"  Current Phase: {unit.currentPhase}")
+    print(f"\nUnit {unit.serial_number}:")
+    print(f"  Current Phase: {unit.current_phase}")
     print(f"  Status: {unit.status}")
 
 
@@ -69,7 +69,7 @@ print("Set unit to phase: FCT")
 from pywats.domains.report import WATSFilter
 
 filter_data = WATSFilter(
-    partNumber="WIDGET-001",
+    part_number="WIDGET-001",
     phase="ICT"
 )
 
@@ -77,7 +77,7 @@ units = api.production.search_units(filter_data)
 
 print(f"\nUnits in ICT phase: {len(units)}")
 for unit in units[:5]:
-    print(f"  {unit.serialNumber}")
+    print(f"  {unit.serial_number}")
 
 
 # =============================================================================
@@ -91,11 +91,11 @@ def advance_phase(serial_number: str):
         print(f"Unit '{serial_number}' not found")
         return
     
-    phases = api.production.get_phases(part_number=unit.partNumber)
+    phases = api.production.get_phases(part_number=unit.part_number)
     phase_names = [p.name for p in phases]
     
     try:
-        current_idx = phase_names.index(unit.currentPhase)
+        current_idx = phase_names.index(unit.current_phase)
         if current_idx < len(phases) - 1:
             next_phase = phases[current_idx + 1].name
             api.production.set_unit_phase(serial_number, next_phase)
