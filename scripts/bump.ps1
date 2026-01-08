@@ -59,11 +59,6 @@ $ErrorActionPreference = "Stop"
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
-$VersionTargets = @(
-    @{ Kind = "pyproject"; Path = "$RepoRoot\pyproject.toml" },
-    @{ Kind = "pywats";     Path = "$RepoRoot\src\pywats\__init__.py" }
-)
-
 # ============================================================================
 # Helpers
 # ============================================================================
@@ -112,7 +107,7 @@ function Get-PyprojectVersion {
     throw "Could not find version in $PyprojectPath"
 }
 
-function Parse-Version {
+function ConvertFrom-Version {
     param([string]$Version)
 
     # Accept: X.Y.Z or X.Y.ZbN
@@ -149,7 +144,7 @@ function Get-BumpedVersion {
         [string]$BumpType
     )
 
-    $v = Parse-Version -Version $CurrentVersion
+    $v = ConvertFrom-Version -Version $CurrentVersion
 
     $major = $v.Major
     $minor = $v.Minor
