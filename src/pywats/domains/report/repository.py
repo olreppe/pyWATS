@@ -145,10 +145,15 @@ class ReportRepository:
             params["$skip"] = skip
             
         response = self._http_client.get("/api/Report/Query/Header", params=params)
-        if response.is_success and response.data:
+        data = self._error_handler.handle_response(
+            response, 
+            operation="query_headers",
+            allow_empty=True
+        )
+        if data:
             return [
                 ReportHeader.model_validate(item)
-                for item in response.data
+                for item in data
             ]
         return []
 
@@ -180,10 +185,15 @@ class ReportRepository:
         response = self._http_client.get(
             "/api/Report/Query/HeaderByMiscInfo", params=params
         )
-        if response.is_success and response.data:
+        data = self._error_handler.handle_response(
+            response,
+            operation="query_headers_by_misc_info",
+            allow_empty=True
+        )
+        if data:
             return [
                 ReportHeader.model_validate(item)
-                for item in response.data
+                for item in data
             ]
         return []
 
@@ -321,10 +331,14 @@ class ReportRepository:
             f"/api/Report/Wsjf/{report_id}",
             params=params if params else None
         )
-        if response.is_success and response.data:
-            if response.data.get("uur"):
-                return UURReport.model_validate(response.data)
-            return UUTReport.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response,
+            operation="get_wsjf"
+        )
+        if data:
+            if data.get("uur"):
+                return UURReport.model_validate(data)
+            return UUTReport.model_validate(data)
         return None
 
     # =========================================================================
@@ -390,9 +404,14 @@ class ReportRepository:
             f"/api/Report/Wsxf/{report_id}",
             params=params if params else None
         )
-        if response.is_success:
-            return response.raw
-        return None
+        # For binary responses, we need to check success and handle errors
+        if not response.is_success:
+            self._error_handler.handle_response(
+                response,
+                operation="get_wsxf"
+            )
+            return None
+        return response.raw
 
     # =========================================================================
     # Attachments
@@ -421,9 +440,14 @@ class ReportRepository:
         if step_id:
             params["stepId"] = step_id
         response = self._http_client.get("/api/Report/Attachment", params=params)
-        if response.is_success:
-            return response.raw
-        return None
+        # For binary responses, we need to check success and handle errors
+        if not response.is_success:
+            self._error_handler.handle_response(
+                response,
+                operation="get_attachment"
+            )
+            return None
+        return response.raw
 
     def get_attachments_as_zip(self, report_id: str) -> Optional[bytes]:
         """
@@ -438,9 +462,14 @@ class ReportRepository:
             Zip file content as bytes or None
         """
         response = self._http_client.get(f"/api/Report/Attachments/{report_id}")
-        if response.is_success:
-            return response.raw
-        return None
+        # For binary responses, we need to check success and handle errors
+        if not response.is_success:
+            self._error_handler.handle_response(
+                response,
+                operation="get_attachments_as_zip"
+            )
+            return None
+        return response.raw
 
     # =========================================================================
     # Certificate
@@ -459,6 +488,11 @@ class ReportRepository:
             Certificate content as bytes or None
         """
         response = self._http_client.get(f"/api/Report/Certificate/{report_id}")
-        if response.is_success:
-            return response.raw
-        return None
+        # For binary responses, we need to check success and handle errors
+        if not response.is_success:
+            self._error_handler.handle_response(
+                response,
+                operation="get_certificate"
+            )
+            return None
+        return response.raw

@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Propagation continues recursively until flag is False or root is reached
   - `propagate_failure()` method on Step for manual propagation
 
+### Fixed
+- **Report repository error handling** - Fixed ErrorHandler usage for STRICT/LENIENT mode support:
+  - All repository methods now properly use ErrorHandler for consistent error handling
+  - STRICT mode raises appropriate exceptions (NotFoundError, ValidationError, etc.)
+  - LENIENT mode returns None/empty results gracefully on 404 errors
+  - Affected methods: `query_headers()`, `query_headers_by_misc_info()`, `get_wsjf()`, `get_wsxf()`, `get_attachment()`, `get_attachments_as_zip()`, `get_certificate()`
+
 ## [0.1.0b27] - 2026-01-08
 
 ### Added
