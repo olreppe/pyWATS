@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 from .models import WATSFilter, ReportHeader
 from .report_models import UUTReport, UURReport
+from .enums import ImportMode
 
 
 class ReportRepository:
@@ -39,6 +40,36 @@ class ReportRepository:
         # Import here to avoid circular imports
         from ...core.exceptions import ErrorHandler, ErrorMode
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
+        
+        # ImportMode setting - controls automatic behaviors for UUT report creation
+        self._import_mode: ImportMode = ImportMode.Import
+
+    @property
+    def import_mode(self) -> ImportMode:
+        """
+        Get the current import mode.
+        
+        Returns:
+            ImportMode: Current import mode (Import or Active)
+        """
+        return self._import_mode
+    
+    @import_mode.setter
+    def import_mode(self, value: ImportMode) -> None:
+        """
+        Set the import mode.
+        
+        Also updates the context variable for use by step methods.
+        
+        Args:
+            value: ImportMode.Import (passive) or ImportMode.Active (automatic behaviors)
+        """
+        if not isinstance(value, ImportMode):
+            raise TypeError(f"import_mode must be ImportMode, not {type(value).__name__}")
+        self._import_mode = value
+        # Sync with context variable for step-level access
+        from .import_mode import set_import_mode
+        set_import_mode(value)
 
     # =========================================================================
     # Query Operations

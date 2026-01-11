@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 class CompOp(Enum):
     # None limit compOp
@@ -75,3 +75,90 @@ class CompOp(Enum):
                 return False  # Both limits are required but not properly provided
 
         return True  # Default to true if other conditions are not met
+
+    # -----------------------------------------------------------
+    # Evaluate measurement against limits
+    def evaluate(
+        self, 
+        value: Union[float, int], 
+        low_limit: Optional[Union[float, int]] = None, 
+        high_limit: Optional[Union[float, int]] = None
+    ) -> bool:
+        """
+        Evaluate whether a measurement value passes the comparison.
+        
+        Used by ImportMode.Active for automatic status calculation.
+        
+        Args:
+            value: The measured value to evaluate
+            low_limit: The low limit (used by all comparisons except LOG)
+            high_limit: The high limit (used by dual-limit comparisons)
+            
+        Returns:
+            True if the measurement passes, False if it fails
+            
+        Note:
+            - LOG always returns True (no comparison)
+            - String comparisons (CASESENSIT, IGNORECASE, EQT) are not supported
+              and will return True
+        """
+        # LOG: No comparison - always passes
+        if self == CompOp.LOG:
+            return True
+        
+        # String comparisons not supported for auto-calculation
+        if self in {CompOp.CASESENSIT, CompOp.IGNORECASE, CompOp.EQT}:
+            return True
+        
+        # Single-limit comparisons (use low_limit)
+        if self == CompOp.EQ:
+            return value == low_limit if low_limit is not None else True
+        elif self == CompOp.NE:
+            return value != low_limit if low_limit is not None else True
+        elif self == CompOp.GT:
+            return value > low_limit if low_limit is not None else True
+        elif self == CompOp.LT:
+            return value < low_limit if low_limit is not None else True
+        elif self == CompOp.GE:
+            return value >= low_limit if low_limit is not None else True
+        elif self == CompOp.LE:
+            return value <= low_limit if low_limit is not None else True
+        
+        # Dual-limit comparisons (AND - value must be within range)
+        elif self == CompOp.GTLT:  # value > low AND value < high
+            if low_limit is None or high_limit is None:
+                return True
+            return value > low_limit and value < high_limit
+        elif self == CompOp.GELE:  # value >= low AND value <= high
+            if low_limit is None or high_limit is None:
+                return True
+            return value >= low_limit and value <= high_limit
+        elif self == CompOp.GELT:  # value >= low AND value < high
+            if low_limit is None or high_limit is None:
+                return True
+            return value >= low_limit and value < high_limit
+        elif self == CompOp.GTLE:  # value > low AND value <= high
+            if low_limit is None or high_limit is None:
+                return True
+            return value > low_limit and value <= high_limit
+        
+        # Dual-limit comparisons (OR - value must be outside range)
+        elif self == CompOp.LTGT:  # value < low OR value > high
+            if low_limit is None or high_limit is None:
+                return True
+            return value < low_limit or value > high_limit
+        elif self == CompOp.LEGE:  # value <= low OR value >= high
+            if low_limit is None or high_limit is None:
+                return True
+            return value <= low_limit or value >= high_limit
+        elif self == CompOp.LEGT:  # value <= low OR value > high
+            if low_limit is None or high_limit is None:
+                return True
+            return value <= low_limit or value > high_limit
+        elif self == CompOp.LTGE:  # value < low OR value >= high
+            if low_limit is None or high_limit is None:
+                return True
+            return value < low_limit or value >= high_limit
+        
+        # Unknown comparison - default to pass
+        return True

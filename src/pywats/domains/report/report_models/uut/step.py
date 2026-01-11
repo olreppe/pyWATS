@@ -40,6 +40,10 @@ class StepStatus(Enum):
 class Step(WATSBase, ABC):  
     # Parent Step - For internal use only - does not seriallize
     parent: Optional['Step'] = Field(default=None, exclude=True)
+    
+    # ImportMode propagation control - does not serialize
+    # When True and status is Failed in Active mode, failure propagates to parent
+    fail_parent_on_failure: bool = Field(default=True, exclude=True)
 
     # Required - Base step_type is str to allow subclasses to override with specific Literals
     # This enables Pydantic's discriminated union to work properly
@@ -76,7 +80,23 @@ class Step(WATSBase, ABC):
     chart: Optional[Chart] = Field(default=None)
     attachment: Optional[Attachment] = Field(default=None)  
 
-
+    # -----------------------------------------------------------------------
+    # Failure propagation for ImportMode.Active
+    # -----------------------------------------------------------------------
+    def propagate_failure(self) -> None:
+        """
+        Propagate failure status up the step hierarchy.
+        
+        When called, sets this step's status to Failed and recursively
+        propagates to parent steps if fail_parent_on_failure is True.
+        
+        This method is called automatically in Active mode when a step
+        fails and fail_parent_on_failure=True.
+        """
+        self.status = StepStatus.Failed
+        
+        if self.fail_parent_on_failure and self.parent is not None:
+            self.parent.propagate_failure()
 
     # validate - all step types
     @abstractmethod

@@ -46,6 +46,62 @@ class LimitMeasurement(BooleanMeasurement):
         "allow_inf_nan": True,
         "ser_json_inf_nan": 'strings'
     }
+
+    def calculate_status(self) -> str:
+        """
+        Calculate status based on comparison operator and limits.
+        
+        Used by ImportMode.Active for automatic status determination.
+        
+        Returns:
+            "P" if measurement passes, "F" if it fails
+            
+        Note:
+            - Returns "P" for LOG (no comparison)
+            - Returns "P" if value is not numeric
+            - Returns "P" if required limits are missing
+        """
+        # Get the comp_op - handle both enum and string forms
+        comp_op = self.comp_op
+        if isinstance(comp_op, str):
+            try:
+                comp_op = CompOp[comp_op]
+            except (KeyError, ValueError):
+                return "P"  # Unknown comp_op - default to pass
+        
+        if comp_op is None:
+            return "P"
+        
+        # LOG always passes
+        if comp_op == CompOp.LOG:
+            return "P"
+        
+        # Try to convert value to float for comparison
+        try:
+            numeric_value = float(self.value)
+        except (TypeError, ValueError):
+            return "P"  # Non-numeric value - default to pass
+        
+        # Convert limits to float if present
+        low = None
+        high = None
+        try:
+            if self.low_limit is not None:
+                low = float(self.low_limit)
+        except (TypeError, ValueError):
+            pass
+        try:
+            if self.high_limit is not None:
+                high = float(self.high_limit)
+        except (TypeError, ValueError):
+            pass
+        
+        # Evaluate using CompOp's evaluate method
+        if comp_op.evaluate(numeric_value, low, high):
+            return "P"
+        else:
+            return "F"
+
     # Validate limits and comOp
     # @model_validator(mode="after")
     # def check_comp_op_limits(self):  

@@ -154,22 +154,56 @@ class SequenceCall(Step):
                          comp_op: CompOp = CompOp.LOG,
                          low_limit: float = None,
                          high_limit: float = None,
-                         status: str = "P", 
+                         status: str = None,  # None = auto-calculate in Active mode
                          id: Optional[Union[int, str]] = None, 
                          group: str = "M", 
                          error_code: Optional[Union[int, str]] = None, 
                          error_message: Optional[str] = None, 
                          reportText: Optional[str] = None, 
                          start: Optional[str] = None, 
-                         tot_time: Optional[Union[float, str]] = None):
+                         tot_time: Optional[Union[float, str]] = None,
+                         fail_parent_on_failure: bool = True):
+        """
+        Add a numeric measurement step.
+        
+        In ImportMode.Active:
+        - If status is None, it will be auto-calculated from comp_op and limits
+        - If the calculated/set status is Failed and fail_parent_on_failure=True,
+          failure will propagate up the hierarchy
+          
+        In ImportMode.Import:
+        - Status defaults to "P" if not provided
+        - No auto-calculation or propagation occurs
+        """
+        from ....import_mode import is_active_mode, apply_failure_propagation
+        
+        # Handle skipped status
         if status == "S":
             value = "NaN"
             comp_op = CompOp.LOG
             unit = ""
-        ns = NumericStep(name=name, value=value, unit=unit, status=status, id=id, group=group, errorCode=error_code, error_message=error_message, reportText=reportText, start=start, totTime=tot_time, parent=self)
-        nm = NumericMeasurement(value=value, unit=unit, status=status, comp_op=comp_op, low_limit=low_limit, high_limit=high_limit)
+            final_status = "S"
+        elif status is not None:
+            # Explicit status provided
+            final_status = status
+        elif is_active_mode():
+            # Active mode: auto-calculate status
+            nm_temp = NumericMeasurement(value=value, unit=unit, status="P", comp_op=comp_op, low_limit=low_limit, high_limit=high_limit)
+            final_status = nm_temp.calculate_status()
+        else:
+            # Import mode: default to Passed
+            final_status = "P"
+        
+        ns = NumericStep(name=name, value=value, unit=unit, status=final_status, id=id, group=group, errorCode=error_code, error_message=error_message, reportText=reportText, start=start, totTime=tot_time, parent=self)
+        nm = NumericMeasurement(value=value, unit=unit, status=final_status, comp_op=comp_op, low_limit=low_limit, high_limit=high_limit)
         ns.measurement = nm
+        ns.fail_parent_on_failure = fail_parent_on_failure
         self.steps.append(ns)
+        
+        # Apply failure propagation in Active mode
+        if is_active_mode() and final_status == "F":
+            apply_failure_propagation(ns)
+        
         return ns
     
         # --------------------------------------------

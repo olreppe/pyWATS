@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **ImportMode for UUT reports** - New mode setting to control automatic status calculation and failure propagation:
+  - `ImportMode.Import` (default): Passive mode - data stored exactly as provided
+  - `ImportMode.Active`: Enables automatic behaviors for test report creation
+  - Access via `api.report.import_mode = ImportMode.Active`
+  
+- **Automatic status calculation** - In Active mode, numeric measurements auto-calculate status:
+  - Based on `comp_op` (comparison operator) and limits (`low_limit`, `high_limit`)
+  - Supports all 15 CompOp types: EQ, NE, GT, LT, GE, LE, GTLT, GELE, GELT, GTLE, LTGT, LEGE, LEGT, LTGE, LOG
+  - LOG comparison always passes (no limit check)
+  - Status only auto-calculated when not explicitly provided
+  
+- **Failure propagation** - In Active mode, step failures propagate up hierarchy:
+  - New `fail_parent_on_failure` property on Step class (default: `True`)
+  - When step status is Failed and flag is True, parent SequenceCall also fails
+  - Propagation continues recursively until flag is False or root is reached
+  - `propagate_failure()` method on Step for manual propagation
+
 ## [0.1.0b27] - 2026-01-08
 
 ### Added

@@ -29,7 +29,7 @@ from .report_models import (
 from .report_models.uut.steps.sequence_call import SequenceCall, StepList
 
 # Import query-related models
-from .enums import DateGrouping
+from .enums import DateGrouping, ImportMode
 from .models import WATSFilter, ReportHeader, Attachment
 
 # Import service and repository
@@ -64,6 +64,7 @@ __all__ = [
     "Attachment",
     # Enums
     "DateGrouping",
+    "ImportMode",
     # Service & Repository
     "ReportService",
     "ReportRepository",
