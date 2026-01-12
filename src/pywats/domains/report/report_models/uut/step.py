@@ -3,7 +3,7 @@ from abc import ABC
 import base64
 from enum import Enum
 import os
-from typing import Any, Optional, Union, Literal, Annotated
+from typing import Any, ClassVar, Optional, Union, Literal, Annotated
 
 try:
     # Python 3.11+
@@ -37,7 +37,12 @@ class StepStatus(Enum):
 
 # -----------------------------------------------------------------------
 # Step: Abstract base step for all steps
-class Step(WATSBase, ABC):  
+class Step(WATSBase, ABC):
+    """Abstract base class for all WATS test steps."""
+    
+    # WATS API limits for step names
+    MAX_NAME_LENGTH: ClassVar[int] = 100
+    
     # Parent Step - For internal use only - does not seriallize
     parent: Optional['Step'] = Field(default=None, exclude=True)
     

@@ -54,11 +54,14 @@ class ProductRepository:
         """
         logger.debug("Fetching all products")
         response = self._http_client.get("/api/Product/Query")
-        if response.is_success and response.data:
-            products = [Product.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_all", allow_empty=True
+        )
+        if data:
+            products = [Product.model_validate(item) for item in data]
             logger.info(f"Retrieved {len(products)} products")
             return products
-        logger.warning("No products found or empty response")
+        logger.debug("No products found")
         return []
 
     def get_by_part_number(self, part_number: str) -> Optional[Product]:
@@ -105,12 +108,15 @@ class ProductRepository:
         """
         if isinstance(product, Product):
             # mode='json' ensures UUIDs are serialized as strings
-            data = product.model_dump(by_alias=True, exclude_none=True, mode='json')
+            payload = product.model_dump(by_alias=True, exclude_none=True, mode='json')
         else:
-            data = product
-        response = self._http_client.put("/api/Product", data=data)
-        if response.is_success and response.data:
-            return Product.model_validate(response.data)
+            payload = product
+        response = self._http_client.put("/api/Product", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="save", allow_empty=False
+        )
+        if data:
+            return Product.model_validate(data)
         return None
 
     def save_bulk(
@@ -127,14 +133,17 @@ class ProductRepository:
         Returns:
             List of created/updated Product objects
         """
-        data = [
+        payload = [
             p.model_dump(by_alias=True, exclude_none=True, mode='json')
             if isinstance(p, Product) else p
             for p in products
         ]
-        response = self._http_client.put("/api/Product/Products", data=data)
-        if response.is_success and response.data:
-            return [Product.model_validate(item) for item in response.data]
+        response = self._http_client.put("/api/Product/Products", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="save_bulk", allow_empty=True
+        )
+        if data:
+            return [Product.model_validate(item) for item in data]
         return []
 
     # =========================================================================
@@ -165,8 +174,11 @@ class ProductRepository:
             "/api/Product", 
             params={"partNumber": part_number, "revision": revision}
         )
-        if response.is_success and response.data:
-            return ProductRevision.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_revision", allow_empty=True
+        )
+        if data:
+            return ProductRevision.model_validate(data)
         return None
 
     def save_revision(
@@ -187,12 +199,15 @@ class ProductRepository:
             Created/updated ProductRevision object
         """
         if isinstance(revision, ProductRevision):
-            data = revision.model_dump(mode="json", by_alias=True, exclude_none=True)
+            payload = revision.model_dump(mode="json", by_alias=True, exclude_none=True)
         else:
-            data = revision
-        response = self._http_client.put("/api/Product/Revision", data=data)
-        if response.is_success and response.data:
-            return ProductRevision.model_validate(response.data)
+            payload = revision
+        response = self._http_client.put("/api/Product/Revision", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="save_revision", allow_empty=False
+        )
+        if data:
+            return ProductRevision.model_validate(data)
         return None
 
     def save_revisions_bulk(
@@ -209,14 +224,17 @@ class ProductRepository:
         Returns:
             List of created/updated ProductRevision objects
         """
-        data = [
+        payload = [
             r.model_dump(by_alias=True, exclude_none=True, mode='json')
             if isinstance(r, ProductRevision) else r
             for r in revisions
         ]
-        response = self._http_client.put("/api/Product/Revisions", data=data)
-        if response.is_success and response.data:
-            return [ProductRevision.model_validate(item) for item in response.data]
+        response = self._http_client.put("/api/Product/Revisions", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="save_revisions_bulk", allow_empty=True
+        )
+        if data:
+            return [ProductRevision.model_validate(item) for item in data]
         return []
 
     # =========================================================================
@@ -299,6 +317,9 @@ class ProductRepository:
             data=xml_content,
             headers={"Content-Type": "application/xml"}
         )
+        self._error_handler.handle_response(
+            response, operation="update_bom", allow_empty=True
+        )
         return response.is_success
     
     def _generate_wsbf_xml(
@@ -373,7 +394,7 @@ class ProductRepository:
         """
         Get product groups with OData filtering.
 
-        POST /api/Product/GroupFilter
+        GET /api/Product/Groups
 
         Args:
             filter_str: OData filter string
@@ -394,9 +415,12 @@ class ProductRepository:
         if skip:
             params["$skip"] = skip
 
-        response = self._http_client.post("/api/Product/GroupFilter", params=params)
-        if response.is_success and response.data:
-            return [ProductGroup.model_validate(item) for item in response.data]
+        response = self._http_client.get("/api/Product/Groups", params=params)
+        data = self._error_handler.handle_response(
+            response, operation="get_groups", allow_empty=True
+        )
+        if data:
+            return [ProductGroup.model_validate(item) for item in data]
         return []
 
     def get_groups_for_product(
@@ -417,8 +441,11 @@ class ProductRepository:
         response = self._http_client.get(
             f"/api/Product/Groups/{part_number}/{revision}"
         )
-        if response.is_success and response.data:
-            return [ProductGroup.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_groups_for_product", allow_empty=True
+        )
+        if data:
+            return [ProductGroup.model_validate(item) for item in data]
         return []
 
     # =========================================================================
@@ -435,8 +462,11 @@ class ProductRepository:
             List of vendor dictionaries
         """
         response = self._http_client.get("/api/Product/Vendors")
-        if response.is_success and response.data:
-            return cast(List[Dict[str, Any]], response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_vendors", allow_empty=True
+        )
+        if data:
+            return cast(List[Dict[str, Any]], data)
         return []
 
     def save_vendor(
@@ -454,8 +484,11 @@ class ProductRepository:
             Created/updated vendor data
         """
         response = self._http_client.put("/api/Product/Vendors", data=vendor_data)
-        if response.is_success and response.data:
-            return cast(Dict[str, Any], response.data)
+        data = self._error_handler.handle_response(
+            response, operation="save_vendor", allow_empty=False
+        )
+        if data:
+            return cast(Dict[str, Any], data)
         return None
 
     def delete_vendor(self, vendor_id: str) -> bool:
@@ -471,4 +504,7 @@ class ProductRepository:
             True if successful
         """
         response = self._http_client.delete(f"/api/Product/Vendors/{vendor_id}")
+        self._error_handler.handle_response(
+            response, operation="delete_vendor", allow_empty=True
+        )
         return response.is_success

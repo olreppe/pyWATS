@@ -61,8 +61,11 @@ class ProductionRepository:
         response = self._http_client.get(
             f"/api/Production/Unit/{serial_number}/{part_number}"
         )
-        if response.is_success and response.data:
-            return Unit.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_unit", allow_empty=True
+        )
+        if data:
+            return Unit.model_validate(data)
         return None
 
     def save_units(
@@ -79,25 +82,28 @@ class ProductionRepository:
         Returns:
             List of created/updated Unit objects
         """
-        data = [
+        payload = [
             u.model_dump(by_alias=True, exclude_none=True)
             if isinstance(u, Unit) else u
             for u in units
         ]
-        response = self._http_client.put("/api/Production/Units", data=data)
-        if response.is_success and response.data:
+        response = self._http_client.put("/api/Production/Units", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="save_units", allow_empty=True
+        )
+        if data:
             # Check if response is a list (success) or dict (batch result)
-            if isinstance(response.data, list):
-                return [Unit.model_validate(item) for item in response.data]
-            elif isinstance(response.data, dict):
+            if isinstance(data, list):
+                return [Unit.model_validate(item) for item in data]
+            elif isinstance(data, dict):
                 # Batch operation result - check if successful
-                if response.data.get('errorCount', 0) == 0:
+                if data.get('errorCount', 0) == 0:
                     # Success - return the units we sent (can't get them back from API)
                     return [u if isinstance(u, Unit) else Unit.model_validate(u) for u in units]
                 else:
                     # Has errors
                     from ...core.exceptions import PyWATSError
-                    raise PyWATSError(f"Failed to save units: {response.data}")
+                    raise PyWATSError(f"Failed to save units: {data}")
         return []
 
     # =========================================================================
@@ -132,8 +138,11 @@ class ProductionRepository:
         response = self._http_client.get(
             "/api/Production/UnitVerification", params=params
         )
-        if response.is_success and response.data:
-            return UnitVerification.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_unit_verification", allow_empty=True
+        )
+        if data:
+            return UnitVerification.model_validate(data)
         return None
 
     def get_unit_verification_grade(
@@ -164,8 +173,11 @@ class ProductionRepository:
         response = self._http_client.get(
             "/api/Production/UnitVerification", params=params
         )
-        if response.is_success and response.data:
-            return UnitVerificationGrade.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_unit_verification_grade", allow_empty=True
+        )
+        if data:
+            return UnitVerificationGrade.model_validate(data)
         return None
 
     # =========================================================================
@@ -203,6 +215,9 @@ class ProductionRepository:
         response = self._http_client.put(
             "/api/Production/SetUnitPhase", params=params
         )
+        self._error_handler.handle_response(
+            response, operation="set_unit_phase", allow_empty=True
+        )
         return response.is_success
 
     def set_unit_process(
@@ -236,6 +251,9 @@ class ProductionRepository:
             params["comment"] = comment
         response = self._http_client.put(
             "/api/Production/SetUnitProcess", params=params
+        )
+        self._error_handler.handle_response(
+            response, operation="set_unit_process", allow_empty=True
         )
         return response.is_success
 
@@ -277,8 +295,11 @@ class ProductionRepository:
             "/api/Production/Units/Changes",
             params=params if params else None
         )
-        if response.is_success and response.data:
-            return [UnitChange.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_unit_changes", allow_empty=True
+        )
+        if data:
+            return [UnitChange.model_validate(item) for item in data]
         return []
 
     def delete_unit_change(self, change_id: str) -> bool:
@@ -295,6 +316,9 @@ class ProductionRepository:
         """
         response = self._http_client.delete(
             f"/api/Production/Units/Changes/{change_id}"
+        )
+        self._error_handler.handle_response(
+            response, operation="delete_unit_change", allow_empty=True
         )
         return response.is_success
 
@@ -332,6 +356,9 @@ class ProductionRepository:
         response = self._http_client.post(
             "/api/Production/AddChildUnit", params=params
         )
+        self._error_handler.handle_response(
+            response, operation="add_child_unit", allow_empty=True
+        )
         return response.is_success
 
     def remove_child_unit(
@@ -364,6 +391,9 @@ class ProductionRepository:
         response = self._http_client.post(
             "/api/Production/RemoveChildUnit", params=params
         )
+        self._error_handler.handle_response(
+            response, operation="remove_child_unit", allow_empty=True
+        )
         return response.is_success
 
     def check_child_units(
@@ -393,8 +423,11 @@ class ProductionRepository:
         response = self._http_client.get(
             "/api/Production/CheckChildUnits", params=params
         )
-        if response.is_success and response.data:
-            return cast(Dict[str, Any], response.data)
+        data = self._error_handler.handle_response(
+            response, operation="check_child_units", allow_empty=True
+        )
+        if data:
+            return cast(Dict[str, Any], data)
         return None
 
     # =========================================================================
@@ -411,10 +444,13 @@ class ProductionRepository:
             List of SerialNumberType objects
         """
         response = self._http_client.get("/api/Production/SerialNumbers/Types")
-        if response.is_success and response.data:
+        data = self._error_handler.handle_response(
+            response, operation="get_serial_number_types", allow_empty=True
+        )
+        if data:
             return [
                 SerialNumberType.model_validate(item)
-                for item in response.data
+                for item in data
             ]
         return []
 
@@ -456,8 +492,10 @@ class ProductionRepository:
         response = self._http_client.post(
             "/api/Production/SerialNumbers/Take", params=params
         )
-        if response.is_success and response.data:
-            data = response.data
+        data = self._error_handler.handle_response(
+            response, operation="take_serial_numbers", allow_empty=True
+        )
+        if data:
             # Handle XML response - extract serial numbers from <SN id="..."/> tags
             if isinstance(data, str) and "<SerialNumbers" in data:
                 # Parse XML to extract serial number IDs
@@ -496,9 +534,12 @@ class ProductionRepository:
         response = self._http_client.get(
             "/api/Production/SerialNumbers/ByRange", params=params
         )
-        if response.is_success and response.data:
+        data = self._error_handler.handle_response(
+            response, operation="get_serial_numbers_by_range", allow_empty=True
+        )
+        if data:
             return (
-                response.data if isinstance(response.data, list) else []
+                data if isinstance(data, list) else []
             )
         return []
 
@@ -529,9 +570,12 @@ class ProductionRepository:
         response = self._http_client.get(
             "/api/Production/SerialNumbers/ByReference", params=params
         )
-        if response.is_success and response.data:
+        data = self._error_handler.handle_response(
+            response, operation="get_serial_numbers_by_reference", allow_empty=True
+        )
+        if data:
             return (
-                response.data if isinstance(response.data, list) else []
+                data if isinstance(data, list) else []
             )
         return []
 
@@ -557,6 +601,9 @@ class ProductionRepository:
             "/api/Production/SerialNumbers",
             data=file_content,
             headers=headers
+        )
+        self._error_handler.handle_response(
+            response, operation="upload_serial_numbers", allow_empty=True
         )
         return response.is_success
 
@@ -587,6 +634,9 @@ class ProductionRepository:
         response = self._http_client.get(
             "/api/Production/SerialNumbers", params=params
         )
+        self._error_handler.handle_response(
+            response, operation="export_serial_numbers", allow_empty=True
+        )
         if response.is_success:
             return response.raw
         return None
@@ -609,16 +659,19 @@ class ProductionRepository:
         Returns:
             List of saved ProductionBatch objects
         """
-        data = [
+        payload = [
             b.model_dump(by_alias=True, exclude_none=True)
             if isinstance(b, ProductionBatch) else b
             for b in batches
         ]
-        response = self._http_client.put("/api/Production/Batches", data=data)
-        if response.is_success and response.data:
+        response = self._http_client.put("/api/Production/Batches", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="save_batches", allow_empty=True
+        )
+        if data:
             return [
                 ProductionBatch.model_validate(item)
-                for item in response.data
+                for item in data
             ]
         return []
 
@@ -642,5 +695,7 @@ class ProductionRepository:
         """
         # Delegate to internal repository for proper separation
         from .repository_internal import ProductionRepositoryInternal
-        internal_repo = ProductionRepositoryInternal(self._http_client, base_url)
+        internal_repo = ProductionRepositoryInternal(
+            self._http_client, base_url, self._error_handler
+        )
         return internal_repo.get_unit_phases()

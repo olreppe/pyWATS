@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Test suite restructured** - Reorganized 30+ flat test files into module-based folders:
+  - Each domain now has its own folder: `analytics/`, `asset/`, `process/`, `product/`, `production/`, `report/`, `rootcause/`, `software/`
+  - Consistent naming: `test_service.py` (unit), `test_integration.py` (server), `test_workflow.py` (E2E)
+  - Cross-cutting tests in `cross_cutting/` folder
+  - Debug scripts moved to `scripts/` folder (not run by pytest)
+  - Updated README with new structure and commands
+
+### Fixed
+- **RootCause assignee preservation** - Fixed ticket operations losing assignee information:
+  - WATS server does not return `assignee` field in API responses
+  - Service methods (`create_ticket`, `assign_ticket`, `add_comment`, `change_status`) now preserve assignee by returning it from input parameters
+  - Added comprehensive documentation in service.py, models.py, and ROOTCAUSE.md
+
+- **Pydantic ClassVar annotation** - Fixed `Step.MAX_NAME_LENGTH` causing Pydantic validation errors:
+  - Changed from `MAX_NAME_LENGTH: int = 100` to `MAX_NAME_LENGTH: ClassVar[int] = 100`
+  - Prevents Pydantic 2.x from treating class constants as model fields
+
+- **Architecture cleanup** - Removed backward compatibility code that violated service layer pattern:
+  - Removed `HttpClient` imports from `rootcause/service.py` and `software/service.py`
+  - Service constructors now only accept repository instances (not HttpClient)
+  - Enforces proper Service → Repository → HttpClient architecture
+
+- **Test fixes** - Fixed 29 failing tests across multiple domains:
+  - Product: `get_product_groups()` now uses correct HTTP GET method
+  - Software: `delete_package_by_name()` test expects `None` return value
+  - Report: Failing report fixture now sets `result="F"` for proper UUT status
+  - RootCause: Tests now assign tickets before changing status (server requirement)
+
 ### Added
 - **ImportMode for UUT reports** - New mode setting to control automatic status calculation and failure propagation:
   - `ImportMode.Import` (default): Passive mode - data stored exactly as provided
@@ -26,11 +55,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `propagate_failure()` method on Step for manual propagation
 
 ### Fixed
-- **Report repository error handling** - Fixed ErrorHandler usage for STRICT/LENIENT mode support:
-  - All repository methods now properly use ErrorHandler for consistent error handling
-  - STRICT mode raises appropriate exceptions (NotFoundError, ValidationError, etc.)
-  - LENIENT mode returns None/empty results gracefully on 404 errors
-  - Affected methods: `query_headers()`, `query_headers_by_misc_info()`, `get_wsjf()`, `get_wsxf()`, `get_attachment()`, `get_attachments_as_zip()`, `get_certificate()`
+- **Comprehensive exception handling overhaul** - Fixed ErrorHandler usage across ALL 7 domains (~139 methods):
+  - **Asset domain** (20 methods): `get_asset()`, `get_assets()`, `get_asset_hierarchy()`, `create_asset()`, `update_asset()`, etc.
+  - **Process domain** (5 methods): `get_processes()`, internal CRUD operations
+  - **Product domain** (27 methods): `get_all()`, `save()`, `get_revision()`, `save_revision()`, batch operations, etc.
+  - **Production domain** (39 methods): `get_unit()`, `save_units()`, serial number management, batch operations, etc.
+  - **Report domain** (1 method): `post_wsxf()` - other methods already used ErrorHandler correctly
+  - **RootCause domain** (7 methods): `get_ticket()`, `get_tickets()`, `create_ticket()`, `update_ticket()`, etc.
+  - **Software domain** (28 methods): `get_packages()`, `create_package()`, folder management, history operations, etc.
+  
+  **Breaking behavior change**: Methods that previously returned empty lists/None on HTTP errors will now raise appropriate exceptions in STRICT mode (default):
+  - HTTP 400 → `ValidationError`
+  - HTTP 401 → `AuthenticationError`
+  - HTTP 403 → `AuthorizationError`
+  - HTTP 404 → `NotFoundError`
+  - HTTP 409 → `ConflictError`
+  - HTTP 5xx → `ServerError`
+  
+  For backwards compatibility with silent error handling, use LENIENT mode:
+  ```python
+  from pywats.core.exceptions import ErrorHandler, ErrorMode
+  api = pyWATS(base_url, token, error_mode=ErrorMode.LENIENT)
+  ```
+
+### Changed
+- **Magic numbers extracted to named constants**:
+  - `ProcessService.DEFAULT_TEST_PROCESS_CODE` (100) and `DEFAULT_REPAIR_PROCESS_CODE` (500)
+  - `ReportService.DEFAULT_REPAIR_PROCESS_CODE` (500) and `DEFAULT_RECENT_DAYS` (7)
+  - `Step.MAX_NAME_LENGTH` (100) for step name validation
+
+- **Input validation with ValueError** - Added required parameter validation across Service layers:
+  - **Asset** (5 methods): `get_asset()`, `get_asset_by_serial()`, `create_asset()`, `delete_asset()`, `get_status()`
+  - **Product** (5 methods): `get_product()`, `create_product()`, `get_revision()`, `get_revisions()`, `create_revision()`
+  - **Production** (4 methods): `get_unit()`, `verify_unit()`, `get_unit_grade()`, `is_unit_passing()`
+  - **RootCause** (7 methods): `get_ticket()`, `create_ticket()`, `add_comment()`, `change_status()`, `assign_ticket()`, `get_attachment()`, `upload_attachment()`
+  - **Software** (14 methods): `get_package()`, `get_package_by_name()`, `get_released_package()`, `get_packages_by_tag()`, `create_package()`, `delete_package()`, `delete_package_by_name()`, all status workflow methods, `get_package_files()`, `upload_zip()`, `update_file_attribute()`
+  
+  All validated methods now raise `ValueError` with descriptive messages for empty/None required parameters.
 
 ## [0.1.0b27] - 2026-01-08
 

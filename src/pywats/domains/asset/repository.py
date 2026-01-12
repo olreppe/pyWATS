@@ -79,11 +79,14 @@ class AssetRepository:
             "/api/Asset",
             params=params if params else None
         )
-        if response.is_success and response.data:
-            assets = [Asset.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_all", allow_empty=True
+        )
+        if data:
+            assets = [Asset.model_validate(item) for item in data]
             logger.info(f"Retrieved {len(assets)} assets")
             return assets
-        logger.warning("No assets found or empty response")
+        logger.debug("No assets found")
         return []
 
     def get_by_id(self, asset_id: str) -> Optional[Asset]:
@@ -100,11 +103,14 @@ class AssetRepository:
         """
         logger.debug(f"Fetching asset: {asset_id}")
         response = self._http_client.get(f"/api/Asset/{asset_id}")
-        if response.is_success and response.data:
-            asset = Asset.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_by_id", allow_empty=True
+        )
+        if data:
+            asset = Asset.model_validate(data)
             logger.info(f"Retrieved asset: {asset_id}")
             return asset
-        logger.info(f"Asset not found: {asset_id}")
+        logger.debug(f"Asset not found: {asset_id}")
         return None
 
     def get_by_serial_number(self, serial_number: str) -> Optional[Asset]:
@@ -120,8 +126,11 @@ class AssetRepository:
             Asset object or None if not found
         """
         response = self._http_client.get(f"/api/Asset/{serial_number}")
-        if response.is_success and response.data:
-            return Asset.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_by_serial_number", allow_empty=True
+        )
+        if data:
+            return Asset.model_validate(data)
         return None
 
     def save(self, asset: Union[Asset, Dict[str, Any]]) -> Optional[Asset]:
@@ -137,12 +146,15 @@ class AssetRepository:
             Created/updated Asset object, or None on failure
         """
         if isinstance(asset, Asset):
-            data = asset.model_dump(mode="json", by_alias=True, exclude_none=True)
+            payload = asset.model_dump(mode="json", by_alias=True, exclude_none=True)
         else:
-            data = asset
-        response = self._http_client.put("/api/Asset", data=data)
-        if response.is_success and response.data:
-            return Asset.model_validate(response.data)
+            payload = asset
+        response = self._http_client.put("/api/Asset", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="save", allow_empty=False
+        )
+        if data:
+            return Asset.model_validate(data)
         return None
 
     def delete(self, asset_id: str, serial_number: Optional[str] = None) -> bool:
@@ -164,6 +176,9 @@ class AssetRepository:
         if serial_number:
             params["serialNumber"] = serial_number
         response = self._http_client.delete("/api/Asset", params=params)
+        self._error_handler.handle_response(
+            response, operation="delete", allow_empty=True
+        )
         return response.is_success
 
     # =========================================================================
@@ -208,8 +223,11 @@ class AssetRepository:
             params["cultureCode"] = culture_code
             
         response = self._http_client.get("/api/Asset/Status", params=params)
-        if response.is_success and response.data:
-            return cast(Dict[str, Any], response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_status", allow_empty=True
+        )
+        if data:
+            return cast(Dict[str, Any], data)
         return None
 
     def set_state(
@@ -238,6 +256,9 @@ class AssetRepository:
         if serial_number:
             params["serialNumber"] = serial_number
         response = self._http_client.put("/api/Asset/State", params=params)
+        self._error_handler.handle_response(
+            response, operation="set_state", allow_empty=True
+        )
         return response.is_success
 
     # =========================================================================
@@ -279,6 +300,9 @@ class AssetRepository:
         if increment_children:
             params["incrementChildren"] = "true"
         response = self._http_client.put("/api/Asset/Count", params=params)
+        self._error_handler.handle_response(
+            response, operation="update_count", allow_empty=True
+        )
         return response.is_success
 
     def reset_running_count(
@@ -310,6 +334,9 @@ class AssetRepository:
         response = self._http_client.post(
             "/api/Asset/ResetRunningCount",
             params=params
+        )
+        self._error_handler.handle_response(
+            response, operation="reset_running_count", allow_empty=True
         )
         return response.is_success
 
@@ -350,6 +377,9 @@ class AssetRepository:
         if comment:
             params["comment"] = comment
         response = self._http_client.post("/api/Asset/Calibration", params=params)
+        self._error_handler.handle_response(
+            response, operation="post_calibration", allow_empty=True
+        )
         return response.is_success
 
     # =========================================================================
@@ -387,6 +417,9 @@ class AssetRepository:
         if comment:
             params["comment"] = comment
         response = self._http_client.post("/api/Asset/Maintenance", params=params)
+        self._error_handler.handle_response(
+            response, operation="post_maintenance", allow_empty=True
+        )
         return response.is_success
 
     # =========================================================================
@@ -427,8 +460,11 @@ class AssetRepository:
             "/api/Asset/Log",
             params=params if params else None
         )
-        if response.is_success and response.data:
-            return [AssetLog.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_log", allow_empty=True
+        )
+        if data:
+            return [AssetLog.model_validate(item) for item in data]
         return []
 
     def post_message(
@@ -450,10 +486,13 @@ class AssetRepository:
         Returns:
             True if message was posted successfully, False otherwise
         """
-        data: Dict[str, Any] = {"assetId": asset_id, "comment": message}
+        payload: Dict[str, Any] = {"assetId": asset_id, "comment": message}
         if user:
-            data["user"] = user
-        response = self._http_client.post("/api/Asset/Message", data=data)
+            payload["user"] = user
+        response = self._http_client.post("/api/Asset/Message", data=payload)
+        self._error_handler.handle_response(
+            response, operation="post_message", allow_empty=True
+        )
         return response.is_success
 
     # =========================================================================
@@ -486,8 +525,11 @@ class AssetRepository:
             "/api/Asset/Types",
             params=params if params else None
         )
-        if response.is_success and response.data:
-            return [AssetType.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_types", allow_empty=True
+        )
+        if data:
+            return [AssetType.model_validate(item) for item in data]
         return []
 
     def save_type(
@@ -506,12 +548,15 @@ class AssetRepository:
             Created/updated AssetType object, or None on failure
         """
         if isinstance(asset_type, AssetType):
-            data = asset_type.model_dump(by_alias=True, exclude_none=True)
+            payload = asset_type.model_dump(by_alias=True, exclude_none=True)
         else:
-            data = asset_type
-        response = self._http_client.put("/api/Asset/Types", data=data)
-        if response.is_success and response.data:
-            return AssetType.model_validate(response.data)
+            payload = asset_type
+        response = self._http_client.put("/api/Asset/Types", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="save_type", allow_empty=False
+        )
+        if data:
+            return AssetType.model_validate(data)
         return None
 
     # =========================================================================
@@ -545,8 +590,11 @@ class AssetRepository:
         if level is not None:
             params["level"] = level
         response = self._http_client.get("/api/Asset/SubAssets", params=params)
-        if response.is_success and response.data:
-            return [Asset.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_sub_assets", allow_empty=True
+        )
+        if data:
+            return [Asset.model_validate(item) for item in data]
         return []
 
     # =========================================================================
@@ -577,7 +625,9 @@ class AssetRepository:
             True if file was uploaded successfully, False otherwise
         """
         from .repository_internal import AssetRepositoryInternal
-        internal_repo = AssetRepositoryInternal(self._http_client, base_url)
+        internal_repo = AssetRepositoryInternal(
+            self._http_client, base_url, self._error_handler
+        )
         return internal_repo.upload_file(asset_id, filename, content)
 
     def download_file(
@@ -602,7 +652,9 @@ class AssetRepository:
             File content as bytes, or None if not found
         """
         from .repository_internal import AssetRepositoryInternal
-        internal_repo = AssetRepositoryInternal(self._http_client, base_url)
+        internal_repo = AssetRepositoryInternal(
+            self._http_client, base_url, self._error_handler
+        )
         return internal_repo.download_file(asset_id, filename)
 
     def list_files(self, asset_id: str, base_url: str) -> List[str]:
@@ -621,7 +673,9 @@ class AssetRepository:
             List of filenames
         """
         from .repository_internal import AssetRepositoryInternal
-        internal_repo = AssetRepositoryInternal(self._http_client, base_url)
+        internal_repo = AssetRepositoryInternal(
+            self._http_client, base_url, self._error_handler
+        )
         return internal_repo.list_files(asset_id)
 
     def delete_files(
@@ -646,5 +700,7 @@ class AssetRepository:
             True if files were deleted successfully, False otherwise
         """
         from .repository_internal import AssetRepositoryInternal
-        internal_repo = AssetRepositoryInternal(self._http_client, base_url)
+        internal_repo = AssetRepositoryInternal(
+            self._http_client, base_url, self._error_handler
+        )
         return internal_repo.delete_files(asset_id, filenames)

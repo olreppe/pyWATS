@@ -72,13 +72,27 @@ class Ticket(PyWATSModel):
 
     Used for tracking issues, collaborating on solutions, and managing
     the resolution workflow.
+    
+    IMPORTANT - Server Behavior Note:
+        The WATS server does NOT return the `assignee` field in API responses.
+        After fetching a ticket via the API, `assignee` will always be `None`
+        even if the ticket is actually assigned to someone.
+        
+        This causes issues because WATS enforces the rule:
+        "Unassigned tickets must have status 'new'"
+        
+        When updating tickets, always preserve the assignee from the original
+        source (e.g., fixture, create_ticket result) or pass it explicitly to
+        service methods like `add_comment()` and `change_status()`.
+        
+        See `rootcause.service` module docstring for detailed workarounds.
 
     Attributes:
         ticket_id: Unique identifier for the ticket
         ticket_number: Human-readable ticket number
         progress: Progress information/notes
         owner: Username of the ticket owner
-        assignee: Username of the assigned user
+        assignee: Username of the assigned user (WARNING: Not returned by server!)
         subject: Ticket subject/title
         status: Current status (Open, In Progress, etc.)
         priority: Priority level (Low, Medium, High)
@@ -104,6 +118,9 @@ class Ticket(PyWATSModel):
     )
     progress: Optional[str] = Field(default=None)
     owner: Optional[str] = Field(default=None)
+    # WARNING: Server does NOT return assignee in API responses!
+    # This field will be None after get_ticket() even if ticket is assigned.
+    # See class docstring and service module for workarounds.
     assignee: Optional[str] = Field(default=None)
     subject: Optional[str] = Field(default=None)
     status: Optional[TicketStatus] = Field(default=None)

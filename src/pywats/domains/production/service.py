@@ -61,7 +61,14 @@ class ProductionService:
 
         Returns:
             Unit if found, None otherwise
+            
+        Raises:
+            ValueError: If serial_number or part_number is empty or None
         """
+        if not serial_number or not serial_number.strip():
+            raise ValueError("serial_number is required")
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
         return self._repository.get_unit(serial_number, part_number)
 
     def create_units(self, units: Sequence[Unit]) -> List[Unit]:
@@ -114,7 +121,14 @@ class ProductionService:
 
         Returns:
             UnitVerification result
+            
+        Raises:
+            ValueError: If serial_number or part_number is empty or None
         """
+        if not serial_number or not serial_number.strip():
+            raise ValueError("serial_number is required")
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
         return self._repository.get_unit_verification(
             serial_number, part_number, revision
         )
@@ -135,7 +149,14 @@ class ProductionService:
 
         Returns:
             UnitVerificationGrade result
+            
+        Raises:
+            ValueError: If serial_number or part_number is empty or None
         """
+        if not serial_number or not serial_number.strip():
+            raise ValueError("serial_number is required")
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
         return self._repository.get_unit_verification_grade(
             serial_number, part_number, revision
         )
@@ -154,7 +175,14 @@ class ProductionService:
 
         Returns:
             True if unit is passing
+            
+        Raises:
+            ValueError: If serial_number or part_number is empty or None
         """
+        if not serial_number or not serial_number.strip():
+            raise ValueError("serial_number is required")
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
         grade = self._repository.get_unit_verification_grade(
             serial_number, part_number
         )

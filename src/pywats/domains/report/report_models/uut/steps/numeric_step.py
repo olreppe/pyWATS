@@ -149,13 +149,14 @@ class MultiNumericStep(Step):
 
     def check_for_duplicates(self, name):
         """
-        Check for duplicate measurement names
+        Check for duplicate measurement names and truncate if needed.
         """
         # Validate if a measurement with the same name already exists
         if any(measurement.name == name for measurement in self.measurements):
             base_name = name
-            if len(name) >= 100:
-                base_name = name[:97]
+            # Leave room for suffix like " #99" (max 4 chars)
+            if len(name) >= Step.MAX_NAME_LENGTH:
+                base_name = name[:Step.MAX_NAME_LENGTH - 3]
             suffix = 2
             new_name = f"{base_name} #{suffix}"
 

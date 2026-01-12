@@ -72,7 +72,12 @@ class ProductService:
 
         Returns:
             Product if found, None otherwise
+            
+        Raises:
+            ValueError: If part_number is empty or None
         """
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
         return self._repository.get_by_part_number(part_number)
 
     def create_product(
@@ -101,6 +106,9 @@ class ProductService:
         Returns:
             Created Product object, or None on failure
             
+        Raises:
+            ValueError: If part_number is empty or None
+            
         Example:
             >>> product = service.create_product(
             ...     part_number="WIDGET-001",
@@ -109,6 +117,8 @@ class ProductService:
             ...     state=ProductState.ACTIVE
             ... )
         """
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
         product = Product(
             part_number=part_number,
             name=name,
@@ -192,7 +202,14 @@ class ProductService:
 
         Returns:
             ProductRevision if found, None otherwise
+            
+        Raises:
+            ValueError: If part_number or revision is empty or None
         """
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
+        if not revision or not revision.strip():
+            raise ValueError("revision is required")
         return self._repository.get_revision(part_number, revision)
 
     def get_revisions(self, part_number: str) -> List[ProductRevision]:
@@ -204,7 +221,12 @@ class ProductService:
 
         Returns:
             List of ProductRevision objects
+            
+        Raises:
+            ValueError: If part_number is empty or None
         """
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
         product = self._repository.get_by_part_number(part_number)
         return product.revisions if product else []
 
@@ -232,6 +254,9 @@ class ProductService:
         Returns:
             Created ProductRevision object, or None if product not found
             
+        Raises:
+            ValueError: If part_number or revision is empty or None
+            
         Example:
             >>> rev = service.create_revision(
             ...     part_number="WIDGET-001",
@@ -240,6 +265,10 @@ class ProductService:
             ...     state=ProductState.ACTIVE
             ... )
         """
+        if not part_number or not part_number.strip():
+            raise ValueError("part_number is required")
+        if not revision or not revision.strip():
+            raise ValueError("revision is required")
         # Get product to link revision
         product = self._repository.get_by_part_number(part_number)
         if not product:

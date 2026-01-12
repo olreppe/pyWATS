@@ -1,6 +1,42 @@
 """RootCause service - business logic layer.
 
 All business operations for the RootCause ticketing system.
+
+IMPORTANT - Server Behavior Note:
+------------------------------------
+The WATS server does NOT return the `assignee` field in ticket API responses.
+This means that after any ticket operation (create, update, get), the returned
+Ticket object will have `assignee=None` even if the ticket is actually assigned.
+
+This causes issues because WATS enforces the business rule:
+    "Unassigned tickets must have status 'new'"
+
+If you fetch a ticket via `get_ticket()` and then try to change its status,
+the update will fail with a 400 error because the server sees no assignee.
+
+Workaround implemented in this service:
+- Methods that modify tickets (`create_ticket`, `assign_ticket`, `add_comment`,
+  `change_status`) preserve the assignee in the returned Ticket object.
+- `add_comment` and `change_status` accept an optional `assignee` parameter
+  to ensure the assignee is included when updating tickets.
+
+When writing code that updates tickets:
+1. Always preserve the assignee from the original ticket or fixture
+2. Pass the assignee explicitly to `add_comment()` and `change_status()`
+3. Don't rely on `get_ticket()` to return the current assignee
+
+Example:
+    # BAD - will fail if ticket has non-new status
+    ticket = client.rootcause.get_ticket(ticket_id)
+    ticket.status = TicketStatus.SOLVED
+    client.rootcause.update_ticket(ticket)  # 400 error!
+    
+    # GOOD - use change_status with assignee
+    client.rootcause.change_status(
+        ticket_id, 
+        TicketStatus.SOLVED,
+        assignee="user@example.com"
+    )
 """
 from typing import Optional, List, Union
 from uuid import UUID
@@ -11,7 +47,6 @@ from .repository import RootCauseRepository
 logger = logging.getLogger(__name__)
 from .models import Ticket, TicketUpdate
 from .enums import TicketStatus, TicketPriority, TicketView
-from ...core import HttpClient
 
 
 class RootCauseService:
@@ -19,20 +54,20 @@ class RootCauseService:
     RootCause (Ticketing) business logic layer.
 
     Provides high-level operations for issue tracking and resolution.
+    
+    Architecture Note:
+        This service should only receive a RootCauseRepository instance.
+        HTTP operations are handled by the repository layer, not the service.
     """
 
-    def __init__(self, repository_or_client: Union[RootCauseRepository, HttpClient]):
+    def __init__(self, repository: RootCauseRepository):
         """
-        Initialize with RootCauseRepository or HttpClient.
+        Initialize with RootCauseRepository.
 
         Args:
-            repository_or_client: RootCauseRepository instance or HttpClient (for backward compatibility)
+            repository: RootCauseRepository instance for data access
         """
-        if isinstance(repository_or_client, RootCauseRepository):
-            self._repository = repository_or_client
-        else:
-            # Backward compatibility: create repository from HttpClient
-            self._repository = RootCauseRepository(repository_or_client)
+        self._repository = repository
 
     # =========================================================================
     # Ticket Operations
@@ -41,13 +76,22 @@ class RootCauseService:
     def get_ticket(self, ticket_id: Union[str, UUID]) -> Optional[Ticket]:
         """
         Get a ticket by ID.
+        
+        WARNING: The returned ticket will have `assignee=None` even if the
+        ticket is assigned. This is a server limitation. See module docstring
+        for details and workarounds.
 
         Args:
             ticket_id: The ticket ID (GUID)
 
         Returns:
             Ticket object or None if not found
+            
+        Raises:
+            ValueError: If ticket_id is empty or None
         """
+        if not ticket_id:
+            raise ValueError("ticket_id is required")
         return self._repository.get_ticket(ticket_id)
 
     def get_tickets(
@@ -120,7 +164,12 @@ class RootCauseService:
 
         Returns:
             Created Ticket object or None
+            
+        Raises:
+            ValueError: If subject is empty or None
         """
+        if not subject or not subject.strip():
+            raise ValueError("subject is required")
         ticket = Ticket(
             subject=subject,
             priority=priority,
@@ -138,15 +187,25 @@ class RootCauseService:
 
         result = self._repository.create_ticket(ticket)
         if result:
+            # Preserve assignee in result since server doesn't return it
+            if assignee and not result.assignee:
+                result.assignee = assignee
             logger.info(f"TICKET_CREATED: {result.ticket_id} (subject={subject}, priority={priority.name})")
         return result
 
     def update_ticket(self, ticket: Ticket) -> Optional[Ticket]:
         """
         Update an existing ticket.
+        
+        WARNING: If you fetch a ticket via `get_ticket()` and then update it,
+        the assignee field will be None (server limitation). This will cause
+        a 400 error if the ticket has a non-new status. Use `change_status()`
+        or `add_comment()` with the `assignee` parameter instead.
+        
+        See module docstring for full details on the assignee workaround.
 
         Args:
-            ticket: Ticket object with updated data
+            ticket: Ticket object with updated data (ensure assignee is set!)
 
         Returns:
             Updated Ticket object or None
@@ -157,50 +216,96 @@ class RootCauseService:
         return result
 
     def add_comment(
-        self, ticket_id: Union[str, UUID], comment: str
+        self, ticket_id: Union[str, UUID], comment: str,
+        assignee: Optional[str] = None
     ) -> Optional[Ticket]:
         """
         Add a comment to a ticket.
+        
+        Note: The `assignee` parameter is important! The WATS server doesn't
+        return the assignee field in responses, so if you don't provide it,
+        the ticket update will fail with "Unassigned tickets must have status new"
+        for any ticket that has been assigned and has a non-new status.
 
         Args:
             ticket_id: Ticket ID
             comment: Comment text
+            assignee: Current assignee username. IMPORTANT: Always provide this
+                      if the ticket is assigned, otherwise the update may fail.
+                      See module docstring for details.
 
         Returns:
             Updated Ticket object or None
+            
+        Raises:
+            ValueError: If ticket_id or comment is empty or None
         """
-        ticket = Ticket(
-            ticket_id=(
-                UUID(ticket_id) if isinstance(ticket_id, str) else ticket_id
-            ),
-            update=TicketUpdate(content=comment),
-        )
+        if not ticket_id:
+            raise ValueError("ticket_id is required")
+        if not comment or not comment.strip():
+            raise ValueError("comment is required")
+        
+        # Fetch full ticket first to ensure all required fields are present
+        ticket = self.get_ticket(ticket_id)
+        if not ticket:
+            return None
+        
+        # Preserve assignee if provided (server may not return assignee in response)
+        if assignee:
+            ticket.assignee = assignee
+        
+        ticket.update = TicketUpdate(content=comment)
         result = self._repository.update_ticket(ticket)
         if result:
+            # Preserve assignee in result since server doesn't return it
+            if assignee and not result.assignee:
+                result.assignee = assignee
             logger.info(f"TICKET_COMMENT_ADDED: {ticket_id}")
         return result
 
     def change_status(
-        self, ticket_id: Union[str, UUID], status: TicketStatus
+        self, ticket_id: Union[str, UUID], status: TicketStatus,
+        assignee: Optional[str] = None
     ) -> Optional[Ticket]:
         """
         Change the status of a ticket.
+        
+        Note: The `assignee` parameter is important! The WATS server doesn't
+        return the assignee field in responses, so if you don't provide it,
+        the status change will fail with "Unassigned tickets must have status new"
+        for any ticket that has been assigned.
 
         Args:
             ticket_id: Ticket ID
             status: New status
+            assignee: Current assignee username. IMPORTANT: Always provide this
+                      if the ticket is assigned, otherwise the update may fail.
+                      See module docstring for details.
 
         Returns:
             Updated Ticket object or None
+            
+        Raises:
+            ValueError: If ticket_id is empty or None
         """
-        ticket = Ticket(
-            ticket_id=(
-                UUID(ticket_id) if isinstance(ticket_id, str) else ticket_id
-            ),
-            status=status,
-        )
+        if not ticket_id:
+            raise ValueError("ticket_id is required")
+        
+        # Fetch full ticket first to ensure all required fields are present
+        ticket = self.get_ticket(ticket_id)
+        if not ticket:
+            return None
+        
+        # Preserve assignee if provided (server may not return assignee in response)
+        if assignee:
+            ticket.assignee = assignee
+        
+        ticket.status = status
         result = self._repository.update_ticket(ticket)
         if result:
+            # Preserve assignee in result since server doesn't return it
+            if assignee and not result.assignee:
+                result.assignee = assignee
             logger.info(f"TICKET_STATUS_CHANGED: {ticket_id} (status={status.name})")
         return result
 
@@ -216,15 +321,26 @@ class RootCauseService:
 
         Returns:
             Updated Ticket object or None
+            
+        Raises:
+            ValueError: If ticket_id or assignee is empty or None
         """
-        ticket = Ticket(
-            ticket_id=(
-                UUID(ticket_id) if isinstance(ticket_id, str) else ticket_id
-            ),
-            assignee=assignee,
-        )
+        if not ticket_id:
+            raise ValueError("ticket_id is required")
+        if not assignee or not assignee.strip():
+            raise ValueError("assignee is required")
+        
+        # Fetch full ticket first to ensure all required fields are present
+        ticket = self.get_ticket(ticket_id)
+        if not ticket:
+            return None
+        
+        ticket.assignee = assignee
         result = self._repository.update_ticket(ticket)
         if result:
+            # Preserve assignee in result since server doesn't return it
+            if not result.assignee:
+                result.assignee = assignee
             logger.info(f"TICKET_ASSIGNED: {ticket_id} (assignee={assignee})")
         return result
 
@@ -263,7 +379,12 @@ class RootCauseService:
 
         Returns:
             Attachment content as bytes, or None
+            
+        Raises:
+            ValueError: If attachment_id is empty or None
         """
+        if not attachment_id:
+            raise ValueError("attachment_id is required")
         return self._repository.get_attachment(attachment_id, filename)
 
     def upload_attachment(
@@ -278,5 +399,12 @@ class RootCauseService:
 
         Returns:
             UUID of the created attachment, or None
+            
+        Raises:
+            ValueError: If file_content is empty or filename is empty or None
         """
+        if not file_content:
+            raise ValueError("file_content is required")
+        if not filename or not filename.strip():
+            raise ValueError("filename is required")
         return self._repository.upload_attachment(file_content, filename)

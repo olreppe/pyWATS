@@ -363,10 +363,13 @@ class ReportRepository:
             data=xml_content,
             headers=headers
         )
-        if response.is_success and response.data:
-            if isinstance(response.data, dict):
-                return response.data.get("id")
-            return str(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="post_wsxf", allow_empty=True
+        )
+        if data:
+            if isinstance(data, dict):
+                return data.get("id")
+            return str(data)
         return None
 
     def get_wsxf(

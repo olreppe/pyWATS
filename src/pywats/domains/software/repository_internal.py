@@ -8,12 +8,15 @@ replaced with public API endpoints as soon as they become available.
 
 The internal API requires the Referer header to be set to the base URL.
 """
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any, Union, TYPE_CHECKING
 from uuid import UUID
 
 from ...core import HttpClient
 from .models import Package
 from .enums import PackageStatus
+
+if TYPE_CHECKING:
+    from ...core.exceptions import ErrorHandler
 
 
 class SoftwareRepositoryInternal:
@@ -43,18 +46,32 @@ class SoftwareRepositoryInternal:
     The internal API requires the Referer header.
     """
     
-    def __init__(self, http_client: HttpClient, base_url: str):
+    def __init__(
+        self, 
+        http_client: HttpClient, 
+        base_url: str,
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize repository with HTTP client and base URL.
         
         Args:
             http_client: The HTTP client for API calls
             base_url: The base URL (needed for Referer header)
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = http_client
         self._base_url = base_url.rstrip('/')
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
     
-    def _internal_get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _internal_get(
+        self, 
+        endpoint: str, 
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_get"
+    ) -> Any:
         """
         Make an internal API GET request with Referer header.
         
@@ -65,15 +82,16 @@ class SoftwareRepositoryInternal:
             params=params,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
     def _internal_post(
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        data: Optional[Any] = None
+        data: Optional[Any] = None,
+        operation: str = "internal_post"
     ) -> Any:
         """
         Make an internal API POST request with Referer header.
@@ -86,9 +104,9 @@ class SoftwareRepositoryInternal:
             data=data,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
     # =========================================================================
     # Connection Check
@@ -105,7 +123,10 @@ class SoftwareRepositoryInternal:
         Returns:
             True if connected
         """
-        result = self._internal_get("/api/internal/Software/isConnected")
+        result = self._internal_get(
+            "/api/internal/Software/isConnected",
+            operation="is_connected"
+        )
         return result is not None
     
     # =========================================================================
@@ -126,7 +147,10 @@ class SoftwareRepositoryInternal:
         Returns:
             File metadata dictionary or None
         """
-        return self._internal_get(f"/api/internal/Software/File/{file_id}")
+        return self._internal_get(
+            f"/api/internal/Software/File/{file_id}",
+            operation="get_file"
+        )
     
     def check_file(
         self,
@@ -162,7 +186,11 @@ class SoftwareRepositoryInternal:
             "checksum": checksum,
             "fileDateEpoch": file_date_epoch
         }
-        return self._internal_get("/api/internal/Software/CheckFile", params)
+        return self._internal_get(
+            "/api/internal/Software/CheckFile", 
+            params,
+            operation="check_file"
+        )
     
     # =========================================================================
     # Folder Operations
@@ -190,7 +218,8 @@ class SoftwareRepositoryInternal:
         return self._internal_post(
             "/api/internal/Software/PostPackageFolder",
             params={"packageId": str(package_id)},
-            data=folder_data
+            data=folder_data,
+            operation="create_package_folder"
         )
     
     def update_package_folder(
@@ -212,7 +241,8 @@ class SoftwareRepositoryInternal:
         """
         return self._internal_post(
             "/api/internal/Software/UpdatePackageFolder",
-            data=folder_data
+            data=folder_data,
+            operation="update_package_folder"
         )
     
     def delete_package_folder(
@@ -234,7 +264,8 @@ class SoftwareRepositoryInternal:
         """
         return self._internal_post(
             "/api/internal/Software/DeletePackageFolder",
-            params={"packageFolderId": str(package_folder_id)}
+            params={"packageFolderId": str(package_folder_id)},
+            operation="delete_package_folder"
         )
     
     def delete_package_folder_files(
@@ -257,7 +288,8 @@ class SoftwareRepositoryInternal:
         ids_str = ",".join(str(fid) for fid in file_ids)
         return self._internal_post(
             "/api/internal/Software/DeletePackageFolderFiles",
-            params={"packageFolderFileIds": ids_str}
+            params={"packageFolderFileIds": ids_str},
+            operation="delete_package_folder_files"
         )
     
     # =========================================================================
@@ -290,7 +322,11 @@ class SoftwareRepositoryInternal:
             params["status"] = status
         if all_versions is not None:
             params["allVersions"] = all_versions
-        data = self._internal_get("/api/internal/Software/GetPackageHistory", params)
+        data = self._internal_get(
+            "/api/internal/Software/GetPackageHistory", 
+            params,
+            operation="get_package_history"
+        )
         if data and isinstance(data, list):
             return [Package.model_validate(item) for item in data]
         return []
@@ -313,7 +349,11 @@ class SoftwareRepositoryInternal:
             List of download records
         """
         params = {"clientId": client_id}
-        data = self._internal_get("/api/internal/Software/GetPackageDownloadHistory", params)
+        data = self._internal_get(
+            "/api/internal/Software/GetPackageDownloadHistory", 
+            params,
+            operation="get_package_download_history"
+        )
         if data and isinstance(data, list):
             return data
         return []
@@ -342,7 +382,11 @@ class SoftwareRepositoryInternal:
         }
         if include_revoked_only is not None:
             params["includeRevokedOnly"] = include_revoked_only
-        data = self._internal_get("/api/internal/Software/GetRevokedPackages", params)
+        data = self._internal_get(
+            "/api/internal/Software/GetRevokedPackages", 
+            params,
+            operation="get_revoked_packages"
+        )
         if data and isinstance(data, list):
             return data
         return []
@@ -367,7 +411,11 @@ class SoftwareRepositoryInternal:
         params = {
             "installedPackages": ",".join(str(p) for p in installed_packages)
         }
-        data = self._internal_get("/api/internal/Software/GetAvailablePackages", params)
+        data = self._internal_get(
+            "/api/internal/Software/GetAvailablePackages", 
+            params,
+            operation="get_available_packages"
+        )
         if data and isinstance(data, list):
             return [Package.model_validate(item) for item in data]
         return []
@@ -390,7 +438,11 @@ class SoftwareRepositoryInternal:
             Detailed entity data or None
         """
         params = {"packageId": str(package_id)}
-        return self._internal_get("/api/internal/Software/GetSoftwareEntityDetails", params)
+        return self._internal_get(
+            "/api/internal/Software/GetSoftwareEntityDetails", 
+            params,
+            operation="get_software_entity_details"
+        )
     
     # =========================================================================
     # Logging
@@ -419,4 +471,8 @@ class SoftwareRepositoryInternal:
             "packageId": str(package_id),
             "downloadSize": download_size
         }
-        return self._internal_get("/api/internal/Software/Log", params)
+        return self._internal_get(
+            "/api/internal/Software/Log", 
+            params,
+            operation="log_download"
+        )

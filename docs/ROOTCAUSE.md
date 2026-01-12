@@ -11,6 +11,7 @@ The RootCause domain provides issue tracking and defect management capabilities.
 - [Priority Management](#priority-management)
 - [View Filtering](#view-filtering)
 - [Search and Query](#search-and-query)
+- [⚠️ Known Issues & Workarounds](#️-known-issues--workarounds)
 - [Advanced Usage](#advanced-usage)
 - [API Reference](#api-reference)
 
@@ -373,6 +374,67 @@ def find_tickets_for_part(part_number):
 
 # Use it
 find_tickets_for_part("WIDGET-001")
+```
+
+---
+
+## ⚠️ Known Issues & Workarounds
+
+### Server Does Not Return Assignee Field
+
+**Problem**: The WATS server does NOT return the `assignee` field in ticket API responses. After fetching a ticket via `get_ticket()`, the `assignee` field will always be `None`, even if the ticket is actually assigned to someone.
+
+This causes issues because WATS enforces the business rule:
+> "Unassigned tickets must have status 'new'"
+
+If you fetch a ticket and try to update it (e.g., change status to SOLVED), the update will fail with a 400 error because the server sees no assignee in your request.
+
+**Workaround**: Always preserve and pass the assignee explicitly when modifying tickets.
+
+```python
+# ❌ BAD - This will fail for assigned tickets with non-new status
+ticket = api.rootcause.get_ticket(ticket_id)
+ticket.status = TicketStatus.SOLVED
+api.rootcause.update_ticket(ticket)  # 400 Error: "Unassigned tickets must have status new"
+
+# ✅ GOOD - Use change_status() with explicit assignee
+api.rootcause.change_status(
+    ticket_id=ticket_id,
+    status=TicketStatus.SOLVED,
+    assignee="user@example.com"  # Must provide the current assignee!
+)
+
+# ✅ GOOD - Use add_comment() with explicit assignee
+api.rootcause.add_comment(
+    ticket_id=ticket_id,
+    comment="This is a comment",
+    assignee="user@example.com"  # Must provide the current assignee!
+)
+```
+
+**Best Practices**:
+1. When creating workflows, store the assignee from `create_ticket()` or `assign_ticket()` results
+2. Pass the assignee to all subsequent `add_comment()` and `change_status()` calls
+3. Don't rely on `get_ticket()` to tell you who a ticket is assigned to
+4. If using fixtures in tests, include the assignee in the fixture data
+
+```python
+# Example: Store assignee when creating a ticket
+ticket = api.rootcause.create_ticket(
+    subject="Issue investigation",
+    priority=TicketPriority.HIGH,
+    assignee="user@example.com"
+)
+
+# The service preserves assignee in the result
+stored_assignee = ticket.assignee  # "user@example.com"
+
+# Later, when updating the ticket, pass the stored assignee
+api.rootcause.change_status(
+    ticket_id=ticket.ticket_id,
+    status=TicketStatus.SOLVED,
+    assignee=stored_assignee
+)
 ```
 
 ---

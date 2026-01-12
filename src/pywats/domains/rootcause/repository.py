@@ -57,8 +57,11 @@ class RootCauseRepository:
         response = self._http_client.get(
             "/api/RootCause/Ticket", params={"ticketId": str(ticket_id)}
         )
-        if response.is_success and response.data:
-            return Ticket.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_ticket", allow_empty=True
+        )
+        if data:
+            return Ticket.model_validate(data)
         return None
 
     def get_tickets(
@@ -85,8 +88,11 @@ class RootCauseRepository:
             params["searchString"] = search_string
 
         response = self._http_client.get("/api/RootCause/Tickets", params=params)
-        if response.is_success and response.data:
-            return [Ticket.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_tickets", allow_empty=True
+        )
+        if data:
+            return [Ticket.model_validate(item) for item in data]
         return []
 
     def create_ticket(self, ticket: Ticket) -> Optional[Ticket]:
@@ -105,8 +111,11 @@ class RootCauseRepository:
             "/api/RootCause/Ticket",
             data=ticket.model_dump(mode="json", by_alias=True, exclude_none=True),
         )
-        if response.is_success and response.data:
-            return Ticket.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="create_ticket", allow_empty=False
+        )
+        if data:
+            return Ticket.model_validate(data)
         return None
 
     def update_ticket(self, ticket: Ticket) -> Optional[Ticket]:
@@ -125,8 +134,11 @@ class RootCauseRepository:
             "/api/RootCause/Ticket",
             data=ticket.model_dump(mode="json", by_alias=True, exclude_none=True),
         )
-        if response.is_success and response.data:
-            return Ticket.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="update_ticket", allow_empty=False
+        )
+        if data:
+            return Ticket.model_validate(data)
         return None
 
     def archive_tickets(
@@ -147,8 +159,11 @@ class RootCauseRepository:
         """
         ids = [str(tid) for tid in ticket_ids]
         response = self._http_client.post("/api/RootCause/ArchiveTickets", data=ids)
-        if response.is_success and response.data:
-            return Ticket.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="archive_tickets", allow_empty=True
+        )
+        if data:
+            return Ticket.model_validate(data)
         return None
 
     # =========================================================================
@@ -177,9 +192,13 @@ class RootCauseRepository:
             params["fileName"] = filename
 
         response = self._http_client.get("/api/RootCause/Attachment", params=params)
-        if response.is_success:
-            return response.raw
-        return None
+        # For binary responses, check success and handle errors
+        if not response.is_success:
+            self._error_handler.handle_response(
+                response, operation="get_attachment"
+            )
+            return None
+        return response.raw
 
     def upload_attachment(
         self, file_content: bytes, filename: str
@@ -198,8 +217,11 @@ class RootCauseRepository:
         """
         files = {"file": (filename, file_content)}
         response = self._http_client.post("/api/RootCause/Attachment", files=files)
-        if response.is_success and response.data:
+        data = self._error_handler.handle_response(
+            response, operation="upload_attachment", allow_empty=False
+        )
+        if data:
             return (
-                UUID(response.data) if isinstance(response.data, str) else None
+                UUID(data) if isinstance(data, str) else None
             )
         return None

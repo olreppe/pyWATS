@@ -8,11 +8,14 @@ replaced with public API endpoints as soon as they become available.
 
 The internal API requires the Referer header to be set to the base URL.
 """
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 
 from ...core import HttpClient
 from .models import ProcessInfo, RepairOperationConfig
+
+if TYPE_CHECKING:
+    from ...core.exceptions import ErrorHandler
 
 
 class ProcessRepositoryInternal:
@@ -30,18 +33,27 @@ class ProcessRepositoryInternal:
     The internal API requires the Referer header.
     """
     
-    def __init__(self, http_client: HttpClient, base_url: str):
+    def __init__(
+        self, 
+        http_client: HttpClient, 
+        base_url: str,
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize repository with HTTP client and base URL.
         
         Args:
             http_client: The HTTP client for API calls
             base_url: The base URL (needed for Referer header)
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = http_client
         self._base_url = base_url.rstrip('/')
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
     
-    def _internal_get(self, endpoint: str) -> Any:
+    def _internal_get(self, endpoint: str, operation: str = "internal_get") -> Any:
         """
         Make an internal API GET request with Referer header.
         
@@ -51,9 +63,9 @@ class ProcessRepositoryInternal:
             endpoint,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
     # =========================================================================
     # Process Operations
@@ -68,7 +80,10 @@ class ProcessRepositoryInternal:
         Returns:
             List of ProcessInfo objects with full details
         """
-        data = self._internal_get("/api/internal/Process/GetProcesses")
+        data = self._internal_get(
+            "/api/internal/Process/GetProcesses",
+            operation="get_processes_internal"
+        )
         if data and isinstance(data, list):
             # Internal API uses PascalCase - need to map fields
             result = []
@@ -102,7 +117,10 @@ class ProcessRepositoryInternal:
         Returns:
             ProcessInfo or None if not found
         """
-        data = self._internal_get(f"/api/internal/Process/GetProcess/{process_id}")
+        data = self._internal_get(
+            f"/api/internal/Process/GetProcess/{process_id}",
+            operation="get_process_internal"
+        )
         if data:
             mapped = {
                 "code": data.get("Code"),
@@ -134,7 +152,10 @@ class ProcessRepositoryInternal:
         Returns:
             Dict mapping process code to RepairOperationConfig
         """
-        data = self._internal_get("/api/internal/Process/GetRepairOperations")
+        data = self._internal_get(
+            "/api/internal/Process/GetRepairOperations",
+            operation="get_repair_operations"
+        )
         if data and isinstance(data, dict):
             result = {}
             for code_str, config in data.items():
@@ -166,4 +187,4 @@ class ProcessRepositoryInternal:
         endpoint = f"/api/internal/Process/GetRepairOperation/{process_id}"
         if process_code is not None:
             endpoint += f"?processCode={process_code}"
-        return self._internal_get(endpoint)
+        return self._internal_get(endpoint, operation="get_repair_operation")

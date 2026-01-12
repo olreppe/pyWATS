@@ -11,7 +11,6 @@ from .repository import SoftwareRepository
 logger = logging.getLogger(__name__)
 from .models import Package, PackageFile, PackageTag, VirtualFolder
 from .enums import PackageStatus
-from ...core import HttpClient
 
 
 class SoftwareService:
@@ -19,20 +18,20 @@ class SoftwareService:
     Software distribution business logic layer.
 
     Provides high-level operations for managing software packages.
+    
+    Architecture Note:
+        This service should only receive a SoftwareRepository instance.
+        HTTP operations are handled by the repository layer, not the service.
     """
 
-    def __init__(self, repository_or_client: Union[SoftwareRepository, HttpClient]):
+    def __init__(self, repository: SoftwareRepository):
         """
-        Initialize with SoftwareRepository or HttpClient.
+        Initialize with SoftwareRepository.
 
         Args:
-            repository_or_client: SoftwareRepository instance or HttpClient (for backward compatibility)
+            repository: SoftwareRepository instance for data access
         """
-        if isinstance(repository_or_client, SoftwareRepository):
-            self._repository = repository_or_client
-        else:
-            # Backward compatibility: create repository from HttpClient
-            self._repository = SoftwareRepository(repository_or_client)
+        self._repository = repository
 
     # =========================================================================
     # Query Packages
@@ -56,7 +55,12 @@ class SoftwareService:
 
         Returns:
             Package object or None if not found
+            
+        Raises:
+            ValueError: If package_id is empty or None
         """
+        if not package_id:
+            raise ValueError("package_id is required")
         return self._repository.get_package(package_id)
 
     def get_package_by_name(
@@ -75,7 +79,12 @@ class SoftwareService:
 
         Returns:
             Package object or None if not found
+            
+        Raises:
+            ValueError: If name is empty or None
         """
+        if not name or not name.strip():
+            raise ValueError("name is required")
         return self._repository.get_package_by_name(name, status, version)
 
     def get_released_package(self, name: str) -> Optional[Package]:
@@ -87,7 +96,12 @@ class SoftwareService:
 
         Returns:
             Released Package object or None
+            
+        Raises:
+            ValueError: If name is empty or None
         """
+        if not name or not name.strip():
+            raise ValueError("name is required")
         return self._repository.get_package_by_name(
             name, status=PackageStatus.RELEASED
         )
@@ -108,7 +122,14 @@ class SoftwareService:
 
         Returns:
             List of matching Package objects
+            
+        Raises:
+            ValueError: If tag or value is empty or None
         """
+        if not tag or not tag.strip():
+            raise ValueError("tag is required")
+        if not value or not value.strip():
+            raise ValueError("value is required")
         return self._repository.get_packages_by_tag(tag, value, status)
 
     # =========================================================================
@@ -139,7 +160,12 @@ class SoftwareService:
 
         Returns:
             Created Package object or None
+            
+        Raises:
+            ValueError: If name is empty or None
         """
+        if not name or not name.strip():
+            raise ValueError("name is required")
         package = Package(
             name=name,
             description=description,
@@ -185,7 +211,12 @@ class SoftwareService:
 
         Returns:
             True if deleted successfully
+            
+        Raises:
+            ValueError: If package_id is empty or None
         """
+        if not package_id:
+            raise ValueError("package_id is required")
         result = self._repository.delete_package(package_id)
         if result:
             logger.info(f"PACKAGE_DELETED: id={package_id}")
@@ -205,7 +236,12 @@ class SoftwareService:
 
         Returns:
             True if deleted successfully
+            
+        Raises:
+            ValueError: If name is empty or None
         """
+        if not name or not name.strip():
+            raise ValueError("name is required")
         result = self._repository.delete_package_by_name(name, version)
         if result:
             logger.info(f"PACKAGE_DELETED: {name} (version={version})")
@@ -224,7 +260,12 @@ class SoftwareService:
 
         Returns:
             True if successful
+            
+        Raises:
+            ValueError: If package_id is empty or None
         """
+        if not package_id:
+            raise ValueError("package_id is required")
         result = self._repository.update_package_status(
             package_id, PackageStatus.PENDING
         )
@@ -241,7 +282,12 @@ class SoftwareService:
 
         Returns:
             True if successful
+            
+        Raises:
+            ValueError: If package_id is empty or None
         """
+        if not package_id:
+            raise ValueError("package_id is required")
         result = self._repository.update_package_status(
             package_id, PackageStatus.DRAFT
         )
@@ -258,7 +304,12 @@ class SoftwareService:
 
         Returns:
             True if successful
+            
+        Raises:
+            ValueError: If package_id is empty or None
         """
+        if not package_id:
+            raise ValueError("package_id is required")
         result = self._repository.update_package_status(
             package_id, PackageStatus.RELEASED
         )
@@ -275,7 +326,12 @@ class SoftwareService:
 
         Returns:
             True if successful
+            
+        Raises:
+            ValueError: If package_id is empty or None
         """
+        if not package_id:
+            raise ValueError("package_id is required")
         result = self._repository.update_package_status(
             package_id, PackageStatus.REVOKED
         )
@@ -298,7 +354,12 @@ class SoftwareService:
 
         Returns:
             List of PackageFile objects
+            
+        Raises:
+            ValueError: If package_id is empty or None
         """
+        if not package_id:
+            raise ValueError("package_id is required")
         return self._repository.get_package_files(package_id)
 
     def upload_zip(
@@ -323,7 +384,14 @@ class SoftwareService:
 
         Returns:
             True if upload successful
+            
+        Raises:
+            ValueError: If package_id or zip_content is empty or None
         """
+        if not package_id:
+            raise ValueError("package_id is required")
+        if not zip_content:
+            raise ValueError("zip_content is required")
         result = self._repository.upload_package_zip(
             package_id, zip_content, clean_install
         )
@@ -345,7 +413,14 @@ class SoftwareService:
 
         Returns:
             True if update successful
+            
+        Raises:
+            ValueError: If file_id or attributes is empty or None
         """
+        if not file_id:
+            raise ValueError("file_id is required")
+        if not attributes or not attributes.strip():
+            raise ValueError("attributes is required")
         return self._repository.update_file_attribute(file_id, attributes)
 
     # =========================================================================

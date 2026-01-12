@@ -35,6 +35,10 @@ class ProcessService:
     # Default cache refresh interval (5 minutes)
     DEFAULT_REFRESH_INTERVAL = 300
     
+    # Default process codes (WATS convention)
+    DEFAULT_TEST_PROCESS_CODE = 100
+    DEFAULT_REPAIR_PROCESS_CODE = 500
+    
     def __init__(
         self, 
         repository: ProcessRepository,
@@ -274,22 +278,22 @@ class ProcessService:
         Get the default test process code.
         
         Returns:
-            The first available test process code, or 100 as fallback
+            The first available test process code, or DEFAULT_TEST_PROCESS_CODE as fallback
         """
         test_ops = self.get_test_operations()
         if test_ops and test_ops[0].code is not None:
             return test_ops[0].code
-        return 100
+        return self.DEFAULT_TEST_PROCESS_CODE
     
     def get_default_repair_code(self) -> int:
         """
         Get the default repair process code.
         
         Returns:
-            The first available repair process code, or 500 as fallback
+            The first available repair process code, or DEFAULT_REPAIR_PROCESS_CODE as fallback
         """
         repair_ops = self.get_repair_operations()
         if repair_ops and repair_ops[0].code is not None:
             return repair_ops[0].code
-        return 500
+        return self.DEFAULT_REPAIR_PROCESS_CODE
 

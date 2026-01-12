@@ -8,10 +8,13 @@ replaced with public API endpoints as soon as they become available.
 
 The internal API requires the Referer header to be set to the base URL.
 """
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
 import base64
 
 from ...core import HttpClient
+
+if TYPE_CHECKING:
+    from ...core.exceptions import ErrorHandler
 
 
 class AssetRepositoryInternal:
@@ -29,18 +32,27 @@ class AssetRepositoryInternal:
     The internal API requires the Referer header.
     """
     
-    def __init__(self, http_client: HttpClient, base_url: str):
+    def __init__(
+        self, 
+        http_client: HttpClient, 
+        base_url: str,
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize repository with HTTP client and base URL.
         
         Args:
             http_client: The HTTP client for API calls
             base_url: The base URL (needed for Referer header)
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = http_client
         self._base_url = base_url.rstrip('/')
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
     
-    def _internal_get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _internal_get(self, endpoint: str, params: Optional[Dict[str, Any]] = None, operation: str = "internal_get") -> Any:
         """
         Make an internal API GET request with Referer header.
         
@@ -51,16 +63,17 @@ class AssetRepositoryInternal:
             params=params,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
     def _internal_post(
         self,
         endpoint: str,
         data: Any = None,
         params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None
+        headers: Optional[Dict[str, str]] = None,
+        operation: str = "internal_post"
     ) -> Any:
         """
         Make an internal API POST request with Referer header.
@@ -76,13 +89,17 @@ class AssetRepositoryInternal:
             params=params,
             headers=all_headers
         )
+        self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
         return response
     
     def _internal_delete(
         self,
         endpoint: str,
         data: Any = None,
-        params: Optional[Dict[str, Any]] = None
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_delete"
     ) -> bool:
         """
         Make an internal API DELETE request with Referer header.
@@ -94,6 +111,9 @@ class AssetRepositoryInternal:
             data=data,
             params=params,
             headers={"Referer": self._base_url}
+        )
+        self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
         )
         return response.is_success
     
@@ -127,7 +147,8 @@ class AssetRepositoryInternal:
             "/api/internal/Blob/Asset",
             params=params,
             data=content,
-            headers={"Content-Type": "application/octet-stream"}
+            headers={"Content-Type": "application/octet-stream"},
+            operation="upload_file"
         )
         return response.is_success if response else False
     
@@ -156,13 +177,16 @@ class AssetRepositoryInternal:
             params=params,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
+        data = self._error_handler.handle_response(
+            response, operation="download_file", allow_empty=True
+        )
+        if data:
             # Response might be raw bytes or JSON with base64 content
-            if isinstance(response.data, bytes):
-                return response.data
+            if isinstance(data, bytes):
+                return data
             # If it's a dict, it might contain base64 encoded content
-            if isinstance(response.data, dict):
-                content = response.data.get("content") or response.data.get("Content")
+            if isinstance(data, dict):
+                content = data.get("content") or data.get("Content")
                 if content:
                     return base64.b64decode(content)
         return None
@@ -181,7 +205,10 @@ class AssetRepositoryInternal:
         Returns:
             List of filenames
         """
-        data = self._internal_get(f"/api/internal/Blob/Asset/List/{asset_id}")
+        data = self._internal_get(
+            f"/api/internal/Blob/Asset/List/{asset_id}",
+            operation="list_files"
+        )
         if data:
             return list(data) if isinstance(data, list) else []
         return []
@@ -208,5 +235,6 @@ class AssetRepositoryInternal:
         return self._internal_delete(
             "/api/internal/Blob/Assets",
             params={"assetId": asset_id},
-            data=filenames
+            data=filenames,
+            operation="delete_files"
         )

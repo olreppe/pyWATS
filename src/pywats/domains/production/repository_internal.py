@@ -8,11 +8,14 @@ replaced with public API endpoints as soon as they become available.
 
 The internal API requires the Referer header to be set to the base URL.
 """
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from datetime import datetime
 
 from ...core import HttpClient
 from .models import UnitPhase
+
+if TYPE_CHECKING:
+    from ...core.exceptions import ErrorHandler
 
 
 class ProductionRepositoryInternal:
@@ -47,18 +50,32 @@ class ProductionRepositoryInternal:
     The internal API requires the Referer header.
     """
     
-    def __init__(self, http_client: HttpClient, base_url: str):
+    def __init__(
+        self, 
+        http_client: HttpClient, 
+        base_url: str,
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize repository with HTTP client and base URL.
         
         Args:
             http_client: The HTTP client for API calls
             base_url: The base URL (needed for Referer header)
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = http_client
         self._base_url = base_url.rstrip('/')
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
     
-    def _internal_get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _internal_get(
+        self, 
+        endpoint: str, 
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_get"
+    ) -> Any:
         """
         Make an internal API GET request with Referer header.
         
@@ -69,15 +86,16 @@ class ProductionRepositoryInternal:
             params=params,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
     def _internal_post(
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        data: Optional[Any] = None
+        data: Optional[Any] = None,
+        operation: str = "internal_post"
     ) -> Any:
         """
         Make an internal API POST request with Referer header.
@@ -90,15 +108,16 @@ class ProductionRepositoryInternal:
             data=data,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
     def _internal_put(
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        data: Optional[Any] = None
+        data: Optional[Any] = None,
+        operation: str = "internal_put"
     ) -> Any:
         """
         Make an internal API PUT request with Referer header.
@@ -111,15 +130,16 @@ class ProductionRepositoryInternal:
             data=data,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
     def _internal_delete(
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        data: Optional[Any] = None
+        data: Optional[Any] = None,
+        operation: str = "internal_delete"
     ) -> bool:
         """
         Make an internal API DELETE request with Referer header.
@@ -131,6 +151,9 @@ class ProductionRepositoryInternal:
             params=params,
             data=data,
             headers={"Referer": self._base_url}
+        )
+        self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
         )
         return response.is_success
     
@@ -149,7 +172,10 @@ class ProductionRepositoryInternal:
         Returns:
             True if connected
         """
-        result = self._internal_get("/api/internal/Production/isConnected")
+        result = self._internal_get(
+            "/api/internal/Production/isConnected",
+            operation="is_connected"
+        )
         return result is not None
     
     # =========================================================================
@@ -170,7 +196,10 @@ class ProductionRepositoryInternal:
         Returns:
             List of UnitPhase objects
         """
-        data = self._internal_get("/api/internal/Mes/GetUnitPhases")
+        data = self._internal_get(
+            "/api/internal/Mes/GetUnitPhases",
+            operation="get_unit_phases"
+        )
         if data:
             return [UnitPhase.model_validate(item) for item in data]
         return []
@@ -190,7 +219,10 @@ class ProductionRepositoryInternal:
         Returns:
             List of site dictionaries
         """
-        data = self._internal_get("/api/internal/Production/GetSites")
+        data = self._internal_get(
+            "/api/internal/Production/GetSites",
+            operation="get_sites"
+        )
         if data and isinstance(data, list):
             return data
         return []
@@ -221,7 +253,11 @@ class ProductionRepositoryInternal:
         params: Dict[str, Any] = {"serialNumber": serial_number}
         if part_number:
             params["partNumber"] = part_number
-        return self._internal_get("/api/internal/Production/GetUnit", params)
+        return self._internal_get(
+            "/api/internal/Production/GetUnit", 
+            params,
+            operation="get_unit_internal"
+        )
     
     def get_unit_info(
         self,
@@ -243,7 +279,11 @@ class ProductionRepositoryInternal:
             Unit info dictionary or None
         """
         params = {"serialNumber": serial_number, "partNumber": part_number}
-        return self._internal_get("/api/internal/Production/GetUnitInfo", params)
+        return self._internal_get(
+            "/api/internal/Production/GetUnitInfo", 
+            params,
+            operation="get_unit_info"
+        )
     
     def get_unit_hierarchy(
         self,
@@ -265,7 +305,11 @@ class ProductionRepositoryInternal:
             Hierarchy data dictionary or None
         """
         params = {"serialNumber": serial_number, "partNumber": part_number}
-        return self._internal_get("/api/internal/Production/GetUnitHierarchy", params)
+        return self._internal_get(
+            "/api/internal/Production/GetUnitHierarchy", 
+            params,
+            operation="get_unit_hierarchy"
+        )
     
     def get_unit_state_history(
         self,
@@ -287,7 +331,11 @@ class ProductionRepositoryInternal:
             List of state change records
         """
         params = {"serialNumber": serial_number, "partNumber": part_number}
-        data = self._internal_get("/api/internal/Production/GetUnitStateHistory", params)
+        data = self._internal_get(
+            "/api/internal/Production/GetUnitStateHistory", 
+            params,
+            operation="get_unit_state_history"
+        )
         if data and isinstance(data, list):
             return data
         return []
@@ -312,7 +360,11 @@ class ProductionRepositoryInternal:
             Phase data dictionary or None
         """
         params = {"serialNumber": serial_number, "partNumber": part_number}
-        return self._internal_get("/api/internal/Production/GetUnitPhase", params)
+        return self._internal_get(
+            "/api/internal/Production/GetUnitPhase", 
+            params,
+            operation="get_unit_phase"
+        )
     
     def get_unit_process(
         self,
@@ -334,7 +386,11 @@ class ProductionRepositoryInternal:
             Process data dictionary or None
         """
         params = {"serialNumber": serial_number, "partNumber": part_number}
-        return self._internal_get("/api/internal/Production/GetUnitProcess", params)
+        return self._internal_get(
+            "/api/internal/Production/GetUnitProcess", 
+            params,
+            operation="get_unit_process"
+        )
     
     def get_unit_contents(
         self,
@@ -362,7 +418,11 @@ class ProductionRepositoryInternal:
             "partNumber": part_number,
             "revision": revision
         }
-        return self._internal_get("/api/internal/Production/GetUnitContents", params)
+        return self._internal_get(
+            "/api/internal/Production/GetUnitContents", 
+            params,
+            operation="get_unit_contents"
+        )
     
     def create_unit(
         self,
@@ -398,7 +458,11 @@ class ProductionRepositoryInternal:
             params["batchNumber"] = batch_number
         if unit_phase is not None:
             params["unitPhase"] = unit_phase
-        return self._internal_post("/api/internal/Production/CreateUnit", params=params)
+        return self._internal_post(
+            "/api/internal/Production/CreateUnit", 
+            params=params,
+            operation="create_unit"
+        )
     
     # =========================================================================
     # Child Unit Operations
@@ -446,7 +510,11 @@ class ProductionRepositoryInternal:
         }
         if check_phase is not None:
             params["checkPhase"] = check_phase
-        return self._internal_post("/api/internal/Production/AddChildUnit", params=params)
+        return self._internal_post(
+            "/api/internal/Production/AddChildUnit", 
+            params=params,
+            operation="add_child_unit_internal"
+        )
     
     def remove_child_unit(
         self,
@@ -481,7 +549,11 @@ class ProductionRepositoryInternal:
         }
         if culture_code:
             params["cultureCode"] = culture_code
-        return self._internal_post("/api/internal/Production/RemoveChildUnit", params=params)
+        return self._internal_post(
+            "/api/internal/Production/RemoveChildUnit", 
+            params=params,
+            operation="remove_child_unit_internal"
+        )
     
     def remove_all_child_units(
         self,
@@ -510,7 +582,11 @@ class ProductionRepositoryInternal:
         }
         if culture_code:
             params["cultureCode"] = culture_code
-        return self._internal_post("/api/internal/Production/RemoveAllChildUnits", params=params)
+        return self._internal_post(
+            "/api/internal/Production/RemoveAllChildUnits", 
+            params=params,
+            operation="remove_all_child_units"
+        )
     
     def check_child_units(
         self,
@@ -538,7 +614,11 @@ class ProductionRepositoryInternal:
             "ParentPartNumber": parent_part_number,
             "CultureCode": culture_code
         }
-        return self._internal_get("/api/internal/Production/CheckChildUnits", params)
+        return self._internal_get(
+            "/api/internal/Production/CheckChildUnits", 
+            params,
+            operation="check_child_units_internal"
+        )
     
     # =========================================================================
     # Serial Number Management
@@ -578,7 +658,11 @@ class ProductionRepositoryInternal:
             params["startDate"] = start_date.isoformat()
         if end_date:
             params["endDate"] = end_date.isoformat()
-        data = self._internal_get("/api/internal/Production/SerialNumbers", params)
+        data = self._internal_get(
+            "/api/internal/Production/SerialNumbers", 
+            params,
+            operation="find_serial_numbers"
+        )
         if data and isinstance(data, list):
             return data
         return []
@@ -617,7 +701,11 @@ class ProductionRepositoryInternal:
             params["fromDate"] = from_date.isoformat()
         if to_date:
             params["toDate"] = to_date.isoformat()
-        return self._internal_get("/api/internal/Production/SerialNumbers/Count", params)
+        return self._internal_get(
+            "/api/internal/Production/SerialNumbers/Count", 
+            params,
+            operation="get_serial_number_count"
+        )
     
     def free_serial_numbers(
         self,
@@ -640,7 +728,8 @@ class ProductionRepositoryInternal:
         """
         return self._internal_put(
             "/api/internal/Production/SerialNumbers/Free",
-            data=ranges
+            data=ranges,
+            operation="free_serial_numbers"
         )
     
     def delete_free_serial_numbers(
@@ -664,7 +753,8 @@ class ProductionRepositoryInternal:
         """
         return self._internal_delete(
             "/api/internal/Production/SerialNumbers/Free",
-            data=ranges
+            data=ranges,
+            operation="delete_free_serial_numbers"
         )
     
     def get_serial_number_ranges(
@@ -689,7 +779,8 @@ class ProductionRepositoryInternal:
             params["serialNumberType"] = serial_number_type
         data = self._internal_get(
             "/api/internal/Production/SerialNumbers/Ranges",
-            params if params else None
+            params if params else None,
+            operation="get_serial_number_ranges"
         )
         if data and isinstance(data, list):
             return data
@@ -717,5 +808,6 @@ class ProductionRepositoryInternal:
             params["serialNumberType"] = serial_number_type
         return self._internal_get(
             "/api/internal/Production/SerialNumbers/Statistics",
-            params if params else None
+            params if params else None,
+            operation="get_serial_number_statistics"
         )

@@ -52,9 +52,12 @@ class SoftwareRepository:
             List of Package objects
         """
         response = self._http_client.get("/api/Software/Packages")
-        if response.is_success and response.data:
-            if isinstance(response.data, list):
-                return [Package.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_packages", allow_empty=True
+        )
+        if data:
+            if isinstance(data, list):
+                return [Package.model_validate(item) for item in data]
         return []
 
     def get_package(self, package_id: Union[str, UUID]) -> Optional[Package]:
@@ -70,8 +73,11 @@ class SoftwareRepository:
             Package object or None if not found
         """
         response = self._http_client.get(f"/api/Software/Package/{package_id}")
-        if response.is_success and response.data:
-            return Package.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_package", allow_empty=True
+        )
+        if data:
+            return Package.model_validate(data)
         return None
 
     def get_package_by_name(
@@ -100,8 +106,11 @@ class SoftwareRepository:
         if version is not None:
             params["version"] = version
         response = self._http_client.get("/api/Software/PackageByName", params=params)
-        if response.is_success and response.data:
-            return Package.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="get_package_by_name", allow_empty=True
+        )
+        if data:
+            return Package.model_validate(data)
         return None
 
     def get_packages_by_tag(
@@ -128,9 +137,12 @@ class SoftwareRepository:
             # Handle both enum and string
             params["status"] = status.value if hasattr(status, 'value') else status
         response = self._http_client.get("/api/Software/PackagesByTag", params=params)
-        if response.is_success and response.data:
-            if isinstance(response.data, list):
-                return [Package.model_validate(item) for item in response.data]
+        data = self._error_handler.handle_response(
+            response, operation="get_packages_by_tag", allow_empty=True
+        )
+        if data:
+            if isinstance(data, list):
+                return [Package.model_validate(item) for item in data]
         return []
 
     # =========================================================================
@@ -151,10 +163,13 @@ class SoftwareRepository:
         Returns:
             Created Package object or None
         """
-        data = package.model_dump(by_alias=True, exclude_none=True)
-        response = self._http_client.post("/api/Software/Package", data=data)
-        if response.is_success and response.data:
-            return Package.model_validate(response.data)
+        payload = package.model_dump(by_alias=True, exclude_none=True)
+        response = self._http_client.post("/api/Software/Package", data=payload)
+        data = self._error_handler.handle_response(
+            response, operation="create_package", allow_empty=False
+        )
+        if data:
+            return Package.model_validate(data)
         return None
 
     def update_package(
@@ -177,12 +192,15 @@ class SoftwareRepository:
             Updated Package object or None
         """
         # Use mode="json" to properly serialize UUIDs, datetimes, and enums
-        data = package.model_dump(mode="json", by_alias=True, exclude_none=True)
+        payload = package.model_dump(mode="json", by_alias=True, exclude_none=True)
         response = self._http_client.put(
-            f"/api/Software/Package/{package_id}", data=data
+            f"/api/Software/Package/{package_id}", data=payload
         )
-        if response.is_success and response.data:
-            return Package.model_validate(response.data)
+        data = self._error_handler.handle_response(
+            response, operation="update_package", allow_empty=False
+        )
+        if data:
+            return Package.model_validate(data)
         return None
 
     def delete_package(self, package_id: Union[str, UUID]) -> bool:
@@ -200,6 +218,9 @@ class SoftwareRepository:
             True if successful
         """
         response = self._http_client.delete(f"/api/Software/Package/{package_id}")
+        self._error_handler.handle_response(
+            response, operation="delete_package", allow_empty=True
+        )
         return response.is_success
 
     def delete_package_by_name(
@@ -224,6 +245,9 @@ class SoftwareRepository:
             params["version"] = version
         response = self._http_client.delete(
             "/api/Software/PackageByName", params=params
+        )
+        self._error_handler.handle_response(
+            response, operation="delete_package_by_name", allow_empty=True
         )
         return response.is_success
 
@@ -255,6 +279,9 @@ class SoftwareRepository:
             f"/api/Software/PackageStatus/{package_id}",
             params={"status": status.value},
         )
+        self._error_handler.handle_response(
+            response, operation="update_package_status", allow_empty=True
+        )
         return response.is_success
 
     # =========================================================================
@@ -276,10 +303,13 @@ class SoftwareRepository:
             List of PackageFile objects
         """
         response = self._http_client.get(f"/api/Software/PackageFiles/{package_id}")
-        if response.is_success and response.data:
-            if isinstance(response.data, list):
+        data = self._error_handler.handle_response(
+            response, operation="get_package_files", allow_empty=True
+        )
+        if data:
+            if isinstance(data, list):
                 return [
-                    PackageFile.model_validate(item) for item in response.data
+                    PackageFile.model_validate(item) for item in data
                 ]
         return []
 
@@ -316,6 +346,9 @@ class SoftwareRepository:
             params=params,
             headers=headers,
         )
+        self._error_handler.handle_response(
+            response, operation="upload_package_zip", allow_empty=True
+        )
         return response.is_success
 
     def update_file_attribute(
@@ -339,6 +372,9 @@ class SoftwareRepository:
             f"/api/Software/Package/FileAttribute/{file_id}",
             data={"attributes": attributes},
         )
+        self._error_handler.handle_response(
+            response, operation="update_file_attribute", allow_empty=True
+        )
         return response.is_success
 
     # =========================================================================
@@ -355,9 +391,12 @@ class SoftwareRepository:
             List of VirtualFolder objects
         """
         response = self._http_client.get("/api/Software/VirtualFolders")
-        if response.is_success and response.data:
-            if isinstance(response.data, list):
+        data = self._error_handler.handle_response(
+            response, operation="get_virtual_folders", allow_empty=True
+        )
+        if data:
+            if isinstance(data, list):
                 return [
-                    VirtualFolder.model_validate(item) for item in response.data
+                    VirtualFolder.model_validate(item) for item in data
                 ]
         return []

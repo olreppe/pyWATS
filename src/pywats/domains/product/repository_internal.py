@@ -8,11 +8,14 @@ replaced with public API endpoints as soon as they become available.
 
 The internal API requires the Referer header to be set to the base URL.
 """
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 
 from ...core import HttpClient
 from .models import Product, BomItem, ProductRevisionRelation
+
+if TYPE_CHECKING:
+    from ...core.exceptions import ErrorHandler
 
 
 class ProductRepositoryInternal:
@@ -32,18 +35,32 @@ class ProductRepositoryInternal:
     The internal API requires the Referer header.
     """
     
-    def __init__(self, http_client: HttpClient, base_url: str):
+    def __init__(
+        self, 
+        http_client: HttpClient, 
+        base_url: str,
+        error_handler: Optional["ErrorHandler"] = None
+    ):
         """
         Initialize repository with HTTP client and base URL.
         
         Args:
             http_client: The HTTP client for API calls
             base_url: The base URL (needed for Referer header)
+            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http = http_client
         self._base_url = base_url.rstrip('/')
+        # Import here to avoid circular imports
+        from ...core.exceptions import ErrorHandler, ErrorMode
+        self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
     
-    def _internal_get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _internal_get(
+        self, 
+        endpoint: str, 
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_get"
+    ) -> Any:
         """
         Make an internal API GET request with Referer header.
         
@@ -54,11 +71,17 @@ class ProductRepositoryInternal:
             params=params,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
-    def _internal_post(self, endpoint: str, data: Any = None, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _internal_post(
+        self, 
+        endpoint: str, 
+        data: Any = None, 
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_post"
+    ) -> Any:
         """
         Make an internal API POST request with Referer header.
         
@@ -70,11 +93,17 @@ class ProductRepositoryInternal:
             params=params,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
-    def _internal_put(self, endpoint: str, data: Any = None, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _internal_put(
+        self, 
+        endpoint: str, 
+        data: Any = None, 
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_put"
+    ) -> Any:
         """
         Make an internal API PUT request with Referer header.
         
@@ -86,11 +115,16 @@ class ProductRepositoryInternal:
             params=params,
             headers={"Referer": self._base_url}
         )
-        if response.is_success:
-            return response.data
-        return None
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
     
-    def _internal_delete(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> bool:
+    def _internal_delete(
+        self, 
+        endpoint: str, 
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_delete"
+    ) -> bool:
         """
         Make an internal API DELETE request with Referer header.
         
@@ -100,6 +134,9 @@ class ProductRepositoryInternal:
             endpoint,
             params=params,
             headers={"Referer": self._base_url}
+        )
+        self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
         )
         return response.is_success
     
@@ -122,7 +159,8 @@ class ProductRepositoryInternal:
         """
         data = self._internal_get(
             "/api/internal/Product/Bom",
-            params={"partNumber": part_number, "revision": revision}
+            params={"partNumber": part_number, "revision": revision},
+            operation="get_bom"
         )
         if data and isinstance(data, list):
             return [BomItem.model_validate(item) for item in data]
@@ -156,7 +194,8 @@ class ProductRepositoryInternal:
                 "partNumber": part_number,
                 "revision": revision,
                 "format": format
-            }
+            },
+            operation="upload_bom"
         )
         return result is not None
     
@@ -186,7 +225,8 @@ class ProductRepositoryInternal:
         """
         data = self._internal_get(
             "/api/internal/Product/GetProductByPN",
-            params={"PN": part_number}
+            params={"PN": part_number},
+            operation="get_product_with_relations"
         )
         return data
     
@@ -217,7 +257,8 @@ class ProductRepositoryInternal:
         """
         data = self._internal_get(
             "/api/internal/Product/GetProductInfo",
-            params={"partNumber": part_number, "revision": revision}
+            params={"partNumber": part_number, "revision": revision},
+            operation="get_product_hierarchy"
         )
         return data if isinstance(data, list) else []
     
@@ -258,7 +299,8 @@ class ProductRepositoryInternal:
             
         result = self._internal_post(
             "/api/internal/Product/PostProductRevisionRelation",
-            data=data
+            data=data,
+            operation="create_revision_relation"
         )
         
         # API returns the full hierarchy as a list, find the newly created relation
@@ -292,10 +334,11 @@ class ProductRepositoryInternal:
             Updated ProductRevisionRelation or None
         """
         # Use mode='json' to convert UUIDs to strings for JSON serialization
-        data = relation.model_dump(by_alias=True, exclude_none=True, mode='json')
+        payload = relation.model_dump(by_alias=True, exclude_none=True, mode='json')
         result = self._internal_put(
             "/api/internal/Product/PutProductRevisionRelation",
-            data=data
+            data=payload,
+            operation="update_revision_relation"
         )
         if result:
             return ProductRevisionRelation.model_validate(result)
@@ -315,7 +358,8 @@ class ProductRepositoryInternal:
         """
         return self._internal_delete(
             "/api/internal/Product/DeleteProductRevisionRelation",
-            params={"productRevisionRelationId": str(relation_id)}
+            params={"productRevisionRelationId": str(relation_id)},
+            operation="delete_revision_relation"
         )
     
     # =========================================================================
@@ -331,7 +375,10 @@ class ProductRepositoryInternal:
         Returns:
             List of category dictionaries
         """
-        data = self._internal_get("/api/internal/Product/GetProductCategories")
+        data = self._internal_get(
+            "/api/internal/Product/GetProductCategories",
+            operation="get_categories"
+        )
         if data and isinstance(data, list):
             return data
         return []
@@ -350,6 +397,7 @@ class ProductRepositoryInternal:
         """
         result = self._internal_put(
             "/api/internal/Product/PutProductCategories",
-            data=categories
+            data=categories,
+            operation="save_categories"
         )
         return result is not None

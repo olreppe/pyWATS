@@ -64,7 +64,12 @@ class AssetService:
 
         Returns:
             Asset if found, None otherwise
+            
+        Raises:
+            ValueError: If identifier is empty or None
         """
+        if not identifier or not str(identifier).strip():
+            raise ValueError("identifier is required")
         return self._repository.get_by_id(identifier)
 
     def get_asset_by_serial(self, serial_number: str) -> Optional[Asset]:
@@ -76,7 +81,12 @@ class AssetService:
 
         Returns:
             Asset if found, None otherwise
+            
+        Raises:
+            ValueError: If serial_number is empty or None
         """
+        if not serial_number or not serial_number.strip():
+            raise ValueError("serial_number is required")
         return self._repository.get_by_serial_number(serial_number)
 
     def create_asset(
@@ -129,6 +139,9 @@ class AssetService:
         Returns:
             Created Asset object, or None on failure
             
+        Raises:
+            ValueError: If serial_number or type_id is empty/None
+            
         Example:
             >>> asset = service.create_asset(
             ...     serial_number="SN-001",
@@ -138,6 +151,10 @@ class AssetService:
             ...     state=AssetState.OK
             ... )
         """
+        if not serial_number or not serial_number.strip():
+            raise ValueError("serial_number is required")
+        if not type_id:
+            raise ValueError("type_id is required")
         asset = Asset(
             serial_number=serial_number,
             type_id=type_id,
@@ -193,7 +210,12 @@ class AssetService:
 
         Returns:
             True if successful
+            
+        Raises:
+            ValueError: If neither asset_id nor serial_number is provided
         """
+        if not asset_id and not serial_number:
+            raise ValueError("Either asset_id or serial_number is required")
         # Repository requires asset_id as first arg, but we handle both
         if asset_id:
             result = self._repository.delete(asset_id=asset_id, serial_number=serial_number)
@@ -235,7 +257,12 @@ class AssetService:
 
         Returns:
             Status dictionary with alarm info or None
+            
+        Raises:
+            ValueError: If neither asset_id nor serial_number is provided
         """
+        if not asset_id and not serial_number:
+            raise ValueError("Either asset_id or serial_number is required")
         return self._repository.get_status(
             asset_id=asset_id,
             serial_number=serial_number,

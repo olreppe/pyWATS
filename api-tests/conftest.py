@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 @pytest.fixture(scope="session")
 def test_instance_manager():
     """Get the test instance manager for managing test configurations."""
-    from test_instances import get_test_instance_manager
+    from cross_cutting.test_instances import get_test_instance_manager
     return get_test_instance_manager()
 
 
@@ -74,7 +74,7 @@ def wats_config() -> Dict[str, str]:
     This is the primary test configuration used by most tests.
     Configuration is stored in api-tests/instances/client_a_config.json
     """
-    from test_instances import get_test_instance_manager
+    from cross_cutting.test_instances import get_test_instance_manager
     manager = get_test_instance_manager()
     config = manager.get_test_instance_config("A")
     return {
@@ -153,7 +153,7 @@ def wats_config_b() -> Dict[str, str]:
     This is the secondary test configuration for comparison testing.
     Configuration is stored in api-tests/instances/client_b_config.json
     """
-    from test_instances import get_test_instance_manager
+    from cross_cutting.test_instances import get_test_instance_manager
     manager = get_test_instance_manager()
     config = manager.get_test_instance_config("B")
     return {

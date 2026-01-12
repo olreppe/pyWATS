@@ -31,6 +31,12 @@ class ReportService:
     - Legacy station_name/location/purpose parameters
     - Default station from pyWATS API instance
     """
+    
+    # Default process codes (WATS convention)
+    DEFAULT_REPAIR_PROCESS_CODE = 500
+    
+    # Default time windows for convenience methods
+    DEFAULT_RECENT_DAYS = 7
 
     def __init__(
         self, 
@@ -747,7 +753,7 @@ class ReportService:
 
     def get_recent_headers(
         self,
-        days: int = 7,
+        days: int = DEFAULT_RECENT_DAYS,
         report_type: str = "uut",
         top: Optional[int] = None
     ) -> List[ReportHeader]:
@@ -755,7 +761,7 @@ class ReportService:
         Get headers from the last N days.
 
         Args:
-            days: Number of days back
+            days: Number of days back (default: DEFAULT_RECENT_DAYS = 7)
             report_type: "uut" or "uur"
             top: Number of records to return
 
