@@ -5,6 +5,21 @@ All notable changes to PyWATS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Window size** - Increased default startup window size from 900x650 to 1000x750
+- **Default tab visibility** - Asset, RootCause, Production, and Product tabs now hidden by default
+
+### Fixed
+- **System tray icon** - Fixed missing tray icon on Windows
+  - Added icon validation and logging for troubleshooting
+  - Added package-data config in pyproject.toml for resource files
+- **Application exit** - Fixed app sometimes getting stuck on exit
+  - Added status timer stop in quit handler
+- **Settings dialog layout** - Fixed buttons taking up half the screen
+  - Buttons now stay at bottom with fixed height
+
 ## [0.1.0b28] - 2026-01-12
 
 ### Changed

@@ -124,7 +124,7 @@ class MainWindow(QMainWindow):
         """Configure window properties"""
         self.setWindowTitle(f"WATS Client - {self.config.instance_name}")
         self.setMinimumSize(800, 600)
-        self.resize(900, 650)
+        self.resize(1000, 750)
         
         # Set window icon for taskbar
         from PySide6.QtGui import QIcon
