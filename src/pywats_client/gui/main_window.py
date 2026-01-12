@@ -128,7 +128,7 @@ class MainWindow(QMainWindow):
         
         # Set window icon for taskbar
         from PySide6.QtGui import QIcon
-        icon_path = Path(__file__).parent / "resources" / "favicon2.ico"
+        icon_path = Path(__file__).parent / "resources" / "favicon.ico"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
     
@@ -199,10 +199,10 @@ class MainWindow(QMainWindow):
         logo_layout = QHBoxLayout(logo_frame)
         logo_layout.setContentsMargins(15, 15, 15, 15)
         
-        # Logo icon - use bee favicon
+        # Logo icon - use favicon
         from PySide6.QtGui import QPixmap
         self._logo_icon = QLabel()
-        icon_path = Path(__file__).parent / "resources" / "favicon2.ico"
+        icon_path = Path(__file__).parent / "resources" / "favicon.ico"
         if icon_path.exists():
             pixmap = QPixmap(str(icon_path)).scaled(
                 28, 28, Qt.AspectRatioMode.KeepAspectRatio, 

@@ -1104,7 +1104,7 @@ class SettingsDialog(QDialog):
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         
-        layout.addWidget(splitter)
+        layout.addWidget(splitter, 1)  # Give splitter stretch factor of 1
         
         # Button bar
         button_layout = QHBoxLayout()
@@ -1134,9 +1134,10 @@ class SettingsDialog(QDialog):
         ok_btn.setDefault(True)
         button_layout.addWidget(ok_btn)
         
-        # Button container
+        # Button container - fixed height at bottom
         button_container = QWidget()
         button_container.setLayout(button_layout)
+        button_container.setFixedHeight(50)
         button_container.setStyleSheet("""
             QWidget {
                 background-color: #252526;
