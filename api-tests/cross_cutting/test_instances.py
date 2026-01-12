@@ -30,9 +30,9 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
-# Base paths
-TESTS_DIR = Path(__file__).parent
-INSTANCES_DIR = TESTS_DIR / "instances"
+# Base paths - go up from cross_cutting/ to api-tests/
+API_TESTS_DIR = Path(__file__).parent.parent
+INSTANCES_DIR = API_TESTS_DIR / "instances"
 DATA_DIR = INSTANCES_DIR / "data"
 
 # Test instance identifiers
