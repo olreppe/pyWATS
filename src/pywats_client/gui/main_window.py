@@ -676,8 +676,16 @@ class MainWindow(QMainWindow):
     
     def _quit_application(self) -> None:
         """Quit the application"""
-        # Stop application services
-        asyncio.create_task(self.app.stop())
+        # Stop status timer first
+        if self._status_timer:
+            self._status_timer.stop()
+        
+        # Stop application services (fire and forget - app cleanup is async)
+        try:
+            asyncio.create_task(self.app.stop())
+        except RuntimeError:
+            # No running event loop - that's fine, we're quitting anyway
+            pass
         
         # Hide tray icon
         if self._tray_icon:
