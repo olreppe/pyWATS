@@ -282,10 +282,10 @@ class ClientConfig:
     show_converters_tab: bool = True
     show_location_tab: bool = True
     show_proxy_tab: bool = True
-    show_asset_tab: bool = True
-    show_rootcause_tab: bool = True
-    show_production_tab: bool = True
-    show_product_tab: bool = True
+    show_asset_tab: bool = False
+    show_rootcause_tab: bool = False
+    show_production_tab: bool = False
+    show_product_tab: bool = False
     
     # Connection state - persist connected state
     auto_connect: bool = True  # Always try to connect on startup

@@ -139,6 +139,12 @@ class MainWindow(QMainWindow):
         
         tray_icon = QSystemTrayIcon(self)
         
+        # Set tray icon
+        from PySide6.QtGui import QIcon
+        icon_path = Path(__file__).parent / "resources" / "favicon.ico"
+        if icon_path.exists():
+            tray_icon.setIcon(QIcon(str(icon_path)))
+        
         # Create tray menu
         tray_menu = QMenu()
         
