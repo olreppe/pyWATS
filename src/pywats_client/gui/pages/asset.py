@@ -169,7 +169,6 @@ class AssetPage(BasePage):
         *,
         facade: Optional['AppFacade'] = None
     ):
-        self._main_window = main_window  # Keep for backwards compatibility
         self._assets: List[Dict[str, Any]] = []
         self._asset_types: List[Dict[str, Any]] = []
         super().__init__(config, parent, facade=facade)
@@ -182,17 +181,13 @@ class AssetPage(BasePage):
     
     def _get_api_client(self):
         """
-        Get API client - prefer facade, fallback to main_window.
+        Get API client via facade.
         
         Returns:
             pyWATS client or None if not available
         """
-        # Prefer facade access
         if self._facade and self._facade.has_api:
             return self._facade.api
-        # Fallback to legacy access
-        if self._main_window and self._main_window.app.wats_client:
-            return self._main_window.app.wats_client
         return None
     
     def _setup_ui(self) -> None:

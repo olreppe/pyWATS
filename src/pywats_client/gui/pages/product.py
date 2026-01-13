@@ -205,7 +205,6 @@ class ProductPage(BasePage):
         *,
         facade: Optional['AppFacade'] = None
     ):
-        self._main_window = main_window  # Keep for backwards compatibility
         self._products: List[Dict[str, Any]] = []
         self._selected_product: Optional[Dict[str, Any]] = None
         self._selected_revision: Optional[str] = None
@@ -219,17 +218,13 @@ class ProductPage(BasePage):
     
     def _get_api_client(self):
         """
-        Get API client - prefer facade, fallback to main_window.
+        Get API client via facade.
         
         Returns:
             pyWATS client or None if not available
         """
-        # Prefer facade access
         if self._facade and self._facade.has_api:
             return self._facade.api
-        # Fallback to legacy access
-        if self._main_window and self._main_window.app.wats_client:
-            return self._main_window.app.wats_client
         return None
     
     def _setup_ui(self) -> None:

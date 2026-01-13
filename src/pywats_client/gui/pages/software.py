@@ -32,6 +32,7 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+    from ...core.app_facade import AppFacade
 
 
 class PackageDialog(QDialog):
@@ -123,18 +124,30 @@ class SoftwarePage(BasePage):
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
+        *,
+        facade: Optional['AppFacade'] = None
     ):
-        self._main_window = main_window
         self._packages: List[Dict[str, Any]] = []
         self._selected_package: Optional[Any] = None
-        super().__init__(config, parent)
+        super().__init__(config, parent, facade=facade)
         self._setup_ui()
         self.load_config()
     
     @property
     def page_title(self) -> str:
         return "Software"
+    
+    def _get_api_client(self):
+        """
+        Get API client via facade.
+        
+        Returns:
+            pyWATS client or None if not available
+        """
+        if self._facade and self._facade.has_api:
+            return self._facade.api
+        return None
     
     def _setup_ui(self) -> None:
         """Setup page UI for Software Distribution"""
@@ -323,7 +336,7 @@ class SoftwarePage(BasePage):
         self._packages_tree.itemSelectionChanged.connect(self._on_selection_changed)
         
         # Auto-load packages if connected
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             print("[Software] Auto-loading packages on initialization")
             self._load_packages()
     
@@ -394,7 +407,8 @@ class SoftwarePage(BasePage):
     
     def _on_create_package(self) -> None:
         """Show dialog to create new package"""
-        if not self._main_window or not self._main_window.app.wats_client:
+        client = self._get_api_client()
+        if not client:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
             return
         
@@ -402,7 +416,6 @@ class SoftwarePage(BasePage):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_data()
-                client = self._main_window.app.wats_client
                 
                 # Create package
                 result = client.software.create_package(
@@ -436,7 +449,7 @@ class SoftwarePage(BasePage):
                 import tempfile
                 from pathlib import Path
                 
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
                 pkg_id = self._selected_package.package_id
                 
                 file_path_obj = Path(file_path)
@@ -486,7 +499,7 @@ class SoftwarePage(BasePage):
         
         if reply == QMessageBox.StandardButton.Yes:
             try:
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
                 result = client.software.release_package(self._selected_package.package_id)
                 
                 if result:
@@ -510,7 +523,7 @@ class SoftwarePage(BasePage):
         
         if reply == QMessageBox.StandardButton.Yes:
             try:
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
                 result = client.software.revoke_package(self._selected_package.package_id)
                 
                 if result:
@@ -534,7 +547,7 @@ class SoftwarePage(BasePage):
         
         if reply == QMessageBox.StandardButton.Yes:
             try:
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
                 result = client.software.delete_package(self._selected_package.package_id)
                 
                 if result:
@@ -546,7 +559,7 @@ class SoftwarePage(BasePage):
                 QMessageBox.critical(self, "Error", f"Failed to delete package: {e}")
     def _on_refresh_packages(self) -> None:
         """Refresh packages from server"""
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_packages()
         else:
             QMessageBox.warning(
@@ -566,8 +579,8 @@ class SoftwarePage(BasePage):
             self._progress_bar.setRange(0, 0)  # Indeterminate
             print("[Software] Starting to load packages...")
             
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if client:
                 print(f"[Software] WATS client available: {client}")
                 # Get software packages from API
                 packages = client.software.get_packages()
@@ -578,7 +591,7 @@ class SoftwarePage(BasePage):
                 else:
                     self._packages = []
             else:
-                print(f"[Software] No client - main_window: {self._main_window}, wats_client: {self._main_window.app.wats_client if self._main_window else None}")
+                print("[Software] No client available")
                 self._packages = []
             
             print(f"[Software] Populating tree with {len(self._packages)} packages")

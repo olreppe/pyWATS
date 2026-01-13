@@ -27,6 +27,7 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+    from ...core.app_facade import AppFacade
 
 
 class UnitLookupDialog(QDialog):
@@ -172,19 +173,31 @@ class ProductionPage(BasePage):
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
+        *,
+        facade: Optional['AppFacade'] = None
     ):
-        self._main_window = main_window
         self._units: List[Dict[str, Any]] = []
         self._phases: List[Dict[str, Any]] = []
         self._current_unit: Optional[Dict[str, Any]] = None
-        super().__init__(config, parent)
+        super().__init__(config, parent, facade=facade)
         self._setup_ui()
         self.load_config()
     
     @property
     def page_title(self) -> str:
         return "Production Units"
+    
+    def _get_api_client(self):
+        """
+        Get API client via facade.
+        
+        Returns:
+            pyWATS client or None if not available
+        """
+        if self._facade and self._facade.has_api:
+            return self._facade.api
+        return None
     
     def _setup_ui(self) -> None:
         """Setup page UI for Production Units"""
@@ -332,14 +345,14 @@ class ProductionPage(BasePage):
         self._layout.addWidget(self._status_label)
         
         # Load phases if connected
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_phases()
     
     def _load_phases(self) -> None:
         """Load unit phases from server"""
         try:
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if client:
                 phases = client.production.get_phases()
                 self._phases = [self._phase_to_dict(p) for p in phases] if phases else []
         except Exception as e:
@@ -383,14 +396,14 @@ class ProductionPage(BasePage):
     
     def _lookup_unit(self, serial_number: str, part_number: str) -> None:
         """Look up a unit and display details"""
-        if not self._main_window or not self._main_window.app.wats_client:
+        client = self._get_api_client()
+        if not client:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
             return
         
         try:
             self._status_label.setText(f"Looking up unit {serial_number}...")
             
-            client = self._main_window.app.wats_client
             unit = client.production.get_unit(serial_number, part_number)
             
             if unit:
@@ -470,7 +483,10 @@ class ProductionPage(BasePage):
     def _load_verification(self, serial: str, part: str) -> None:
         """Load verification status for unit"""
         try:
-            client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if not client:
+                self._verify_info.setText("Not connected to server")
+                return
             verification = client.production.verify_unit(serial, part)
             
             if verification:
@@ -512,7 +528,8 @@ class ProductionPage(BasePage):
     
     def _on_create_unit(self) -> None:
         """Show dialog to create new unit"""
-        if not self._main_window or not self._main_window.app.wats_client:
+        client = self._get_api_client()
+        if not client:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
             return
         
@@ -520,7 +537,6 @@ class ProductionPage(BasePage):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_data()
-                client = self._main_window.app.wats_client
                 
                 # Create unit using the production service
                 from pywats.domains.production.models import Unit

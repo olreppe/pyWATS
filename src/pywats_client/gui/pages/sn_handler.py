@@ -33,6 +33,7 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+    from ...core.app_facade import AppFacade
 
 
 class TakeSerialNumbersDialog(QDialog):
@@ -142,18 +143,30 @@ class SNHandlerPage(BasePage):
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
+        *,
+        facade: Optional['AppFacade'] = None
     ):
-        self._main_window = main_window
         self._sn_types: List = []
         self._taken_serials: List[dict] = []  # History of taken serials
-        super().__init__(config, parent)
+        super().__init__(config, parent, facade=facade)
         self._setup_ui()
         self.load_config()
     
     @property
     def page_title(self) -> str:
         return "SN Handler"
+    
+    def _get_api_client(self):
+        """
+        Get API client via facade.
+        
+        Returns:
+            pyWATS client or None if not available
+        """
+        if self._facade and self._facade.has_api:
+            return self._facade.api
+        return None
     
     def _setup_ui(self) -> None:
         """Setup page UI for Serial Number handling"""
@@ -288,7 +301,7 @@ class SNHandlerPage(BasePage):
         self._results_table.itemSelectionChanged.connect(self._on_result_selection_changed)
         
         # Auto-load types if connected
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             print("[SN Handler] Auto-loading types on initialization")
             self._load_sn_types()
     
@@ -304,7 +317,7 @@ class SNHandlerPage(BasePage):
     
     def _on_refresh_types(self) -> None:
         """Refresh serial number types from server"""
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_sn_types()
         else:
             QMessageBox.warning(
@@ -351,11 +364,10 @@ class SNHandlerPage(BasePage):
         try:
             self._status_label.setText(f"Taking {count} serial number(s)...")
             
-            if not self._main_window or not self._main_window.app.wats_client:
+            client = self._get_api_client()
+            if not client:
                 QMessageBox.warning(self, "Error", "Not connected to WATS server")
                 return
-            
-            client = self._main_window.app.wats_client
             
             # Call the API to allocate/take serial numbers
             serials = client.production.allocate_serial_numbers(
@@ -463,8 +475,8 @@ class SNHandlerPage(BasePage):
             self._status_label.setText("Loading serial number types...")
             print("[SN Handler] Starting to load serial number types...")
             
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if client:
                 print(f"[SN Handler] WATS client available: {client}")
                 # Get serial number types from production API
                 types = client.production.get_serial_number_types()
@@ -475,7 +487,7 @@ class SNHandlerPage(BasePage):
                 else:
                     self._sn_types = []
             else:
-                print(f"[SN Handler] No client - main_window: {self._main_window}")
+                print("[SN Handler] No client available")
                 self._sn_types = []
                 self._status_label.setText("Not connected to WATS server")
                 return
