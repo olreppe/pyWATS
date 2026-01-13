@@ -546,17 +546,27 @@ class MeasurementData(PyWATSModel):
     
     Returned from POST /api/App/Measurements (PREVIEW API).
     
+    The API returns a nested structure where measurements are grouped by path:
+    [{measurementPath: "...", measurements: [{id, value, limit1, limit2, ...}]}]
+    
+    Field mappings from API response:
+    - id → report_id
+    - limit1 → limit_low
+    - limit2 → limit_high
+    - startUtc → timestamp
+    
     Attributes:
         serial_number: Unit serial number
         part_number: Product part number
         step_name: Measurement step name
         step_path: Full step path
         value: Measured value
-        limit_low: Low limit
-        limit_high: High limit
+        limit_low: Low limit (mapped from limit1)
+        limit_high: High limit (mapped from limit2)
         unit: Unit of measurement
         status: Measurement status (Pass/Fail)
-        timestamp: Measurement timestamp
+        timestamp: Measurement timestamp (mapped from startUtc)
+        report_id: Report ID (mapped from id)
         
     Example:
         >>> data = MeasurementData(step_name="Voltage", value=5.02, limit_low=4.5, limit_high=5.5)
@@ -581,9 +591,9 @@ class MeasurementData(PyWATSModel):
     )
     report_id: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("reportId", "report_id"),
+        validation_alias=AliasChoices("reportId", "report_id", "id"),
         serialization_alias="reportId",
-        description="Report ID"
+        description="Report ID (maps from 'id' in API response)"
     )
     step_name: Optional[str] = Field(
         default=None,
@@ -605,13 +615,13 @@ class MeasurementData(PyWATSModel):
         default=None,
         validation_alias=AliasChoices("limitLow", "limit_low", "limit1"),
         serialization_alias="limitLow",
-        description="Low limit"
+        description="Low limit (maps from 'limit1' in API response)"
     )
     limit_high: Optional[float] = Field(
         default=None,
         validation_alias=AliasChoices("limitHigh", "limit_high", "limit2"),
         serialization_alias="limitHigh",
-        description="High limit"
+        description="High limit (maps from 'limit2' in API response)"
     )
     unit: Optional[str] = Field(
         default=None,
@@ -623,7 +633,9 @@ class MeasurementData(PyWATSModel):
     )
     timestamp: Optional[datetime] = Field(
         default=None,
-        description="Measurement timestamp"
+        validation_alias=AliasChoices("timestamp", "startUtc", "start_utc"),
+        serialization_alias="startUtc",
+        description="Measurement timestamp (maps from 'startUtc' in API response)"
     )
 
 
@@ -1891,6 +1903,8 @@ class StepStatusItem(PyWATSModel):
     )
     timestamp: Optional[datetime] = Field(
         default=None,
+        validation_alias=AliasChoices("timestamp", "startUtc", "start_utc"),
+        serialization_alias="startUtc",
         description="Last execution timestamp"
     )
     serial_number: Optional[str] = Field(
@@ -1901,7 +1915,7 @@ class StepStatusItem(PyWATSModel):
     )
     report_id: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("reportId", "report_id"),
+        validation_alias=AliasChoices("reportId", "report_id", "id"),
         serialization_alias="reportId",
         description="Report ID"
     )
@@ -1957,7 +1971,7 @@ class MeasurementListItem(PyWATSModel):
     )
     report_id: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("reportId", "report_id"),
+        validation_alias=AliasChoices("reportId", "report_id", "id"),
         serialization_alias="reportId",
         description="Report ID"
     )
@@ -2005,6 +2019,8 @@ class MeasurementListItem(PyWATSModel):
     )
     timestamp: Optional[datetime] = Field(
         default=None,
+        validation_alias=AliasChoices("timestamp", "startUtc", "start_utc"),
+        serialization_alias="startUtc",
         description="Measurement timestamp"
     )
     station_name: Optional[str] = Field(

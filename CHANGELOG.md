@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b30] - 2025-01-13
+
+### Fixed
+- **MeasurementData API response parsing** - Fixed `analytics.get_measurements()` returning all `None` values:
+  - The API returns a nested structure: `[{measurementPath, measurements: [...]}]`
+  - Added `id` → `report_id` alias mapping
+  - Added `startUtc` → `timestamp` alias mapping  
+  - Already had `limit1` → `limit_low` and `limit2` → `limit_high` aliases
+  - Updated docstring with field mapping documentation
+
+- **StepStatusItem and MeasurementListItem aliases** - Added consistent field aliases for API compatibility:
+  - Added `id` → `report_id` alias mapping
+  - Added `startUtc` → `timestamp` alias mapping
+
 ## [0.1.0b29] - 2025-01-22
 
 ### Added
