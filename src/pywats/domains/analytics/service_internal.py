@@ -44,6 +44,17 @@ Example:
     units_result = api.analytics_internal.trace_serial_numbers(
         ["SN001", "SN002", "SN003"]
     )
+
+STEP/MEASUREMENT FILTER ENDPOINTS
+=================================
+
+These endpoints provide access to step and measurement data with XML-based
+filters for precise step/sequence selection.
+
+Key Concepts:
+- stepFilters: XML string defining which steps to include/exclude
+- sequenceFilters: XML string defining sequence-level filters
+- These filters are typically obtained from TopFailed endpoint results
 """
 import logging
 from datetime import datetime
@@ -58,6 +69,9 @@ from .models import (
     UnitFlowUnit,
     UnitFlowFilter,
     UnitFlowResult,
+    AggregatedMeasurement,
+    MeasurementListItem,
+    StepStatusItem,
 )
 
 
@@ -514,3 +528,260 @@ class AnalyticsServiceInternal:
             "min_yield": min_yield,
             "max_yield": max_yield,
         }
+    # =========================================================================
+    # Step/Measurement Filter Endpoints
+    # =========================================================================
+    
+    def get_aggregated_measurements(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str,
+        measurement_name: Optional[str] = None
+    ) -> List[AggregatedMeasurement]:
+        """
+        Get aggregated measurement statistics with step/sequence filters.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns aggregated statistics (count, min, max, avg, stdev, cpk, etc.)
+        for measurements matching the specified step and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters dict including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters (required).
+                Typically obtained from TopFailed endpoint results.
+            sequence_filters: XML string defining sequence filters (required).
+                Typically obtained from TopFailed endpoint results.
+            measurement_name: Optional name of the measurement to filter by.
+            
+        Returns:
+            List of AggregatedMeasurement objects with statistics.
+            
+        Example:
+            >>> # Get aggregated measurements for a specific step
+            >>> results = api.analytics_internal.get_aggregated_measurements(
+            ...     filter_data={"partNumber": "WIDGET-001", "periodCount": 30},
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>",
+            ...     measurement_name="Voltage"
+            ... )
+            >>> for m in results:
+            ...     print(f"{m.step_name}: avg={m.avg:.3f}, cpk={m.cpk:.2f}")
+        """
+        logger.debug(
+            "get_aggregated_measurements: measurement=%s",
+            measurement_name or "(all)"
+        )
+        return self._repo_internal.get_aggregated_measurements(
+            filter_data=filter_data,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters,
+            measurement_name=measurement_name
+        )
+    
+    def get_measurement_list(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[MeasurementListItem]:
+        """
+        Get measurement list with full filter support.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns individual measurement values with limits and status
+        for measurements matching the specified step and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters dict including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters (required).
+                Typically obtained from TopFailed endpoint results.
+            sequence_filters: XML string defining sequence filters (required).
+                Typically obtained from TopFailed endpoint results.
+            
+        Returns:
+            List of MeasurementListItem objects with measurement details.
+            
+        Example:
+            >>> # Get measurements for a specific step
+            >>> results = api.analytics_internal.get_measurement_list(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "dateFrom": "2024-01-01T00:00:00",
+            ...         "dateTo": "2024-01-31T23:59:59"
+            ...     },
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> for m in results:
+            ...     status = "✓" if m.status == "Pass" else "✗"
+            ...     print(f"{m.serial_number}: {m.step_name} = {m.value} {status}")
+        """
+        logger.debug("get_measurement_list with filter")
+        return self._repo_internal.get_measurement_list(
+            filter_data=filter_data,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters
+        )
+    
+    def get_measurement_list_by_product(
+        self,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[MeasurementListItem]:
+        """
+        Get measurement list using simple query parameters.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simplified version that queries measurements by product group, level,
+        and time range with step/sequence filters.
+        
+        Args:
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            step_filters: XML string defining step filters (required)
+            sequence_filters: XML string defining sequence filters (required)
+            
+        Returns:
+            List of MeasurementListItem objects.
+            
+        Example:
+            >>> # Get measurements for last 7 days
+            >>> results = api.analytics_internal.get_measurement_list_by_product(
+            ...     product_group_id="pg-123",
+            ...     level_id="level-456",
+            ...     days=7,
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> print(f"Found {len(results)} measurements")
+        """
+        logger.debug(
+            "get_measurement_list_by_product: pg=%s, level=%s, days=%d",
+            product_group_id, level_id, days
+        )
+        return self._repo_internal.get_measurement_list_simple(
+            product_group_id=product_group_id,
+            level_id=level_id,
+            days=days,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters
+        )
+    
+    def get_step_status_list(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[StepStatusItem]:
+        """
+        Get step status list with full filter support.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns status information for steps including pass/fail counts
+        matching the specified step and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters dict including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters (required).
+                Typically obtained from TopFailed endpoint results.
+            sequence_filters: XML string defining sequence filters (required).
+                Typically obtained from TopFailed endpoint results.
+            
+        Returns:
+            List of StepStatusItem objects with step status details.
+            
+        Example:
+            >>> # Get step statuses with custom filters
+            >>> results = api.analytics_internal.get_step_status_list(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "status": "Failed",
+            ...         "periodCount": 30
+            ...     },
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> for step in results:
+            ...     fail_rate = step.fail_count / step.total_count * 100
+            ...     print(f"{step.step_name}: {fail_rate:.1f}% failure rate")
+        """
+        logger.debug("get_step_status_list with filter")
+        return self._repo_internal.get_step_status_list(
+            filter_data=filter_data,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters
+        )
+    
+    def get_step_status_list_by_product(
+        self,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[StepStatusItem]:
+        """
+        Get step status list using simple query parameters.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simplified version that queries step statuses by product group, level,
+        and time range with step/sequence filters.
+        
+        Args:
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            step_filters: XML string defining step filters (required)
+            sequence_filters: XML string defining sequence filters (required)
+            
+        Returns:
+            List of StepStatusItem objects.
+            
+        Example:
+            >>> # Get step statuses for last 30 days
+            >>> results = api.analytics_internal.get_step_status_list_by_product(
+            ...     product_group_id="pg-123",
+            ...     level_id="level-456",
+            ...     days=30,
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> for step in results:
+            ...     print(f"{step.step_name}: {step.pass_count}/{step.total_count}")
+        """
+        logger.debug(
+            "get_step_status_list_by_product: pg=%s, level=%s, days=%d",
+            product_group_id, level_id, days
+        )
+        return self._repo_internal.get_step_status_list_simple(
+            product_group_id=product_group_id,
+            level_id=level_id,
+            days=days,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters
+        )

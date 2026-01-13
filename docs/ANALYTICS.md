@@ -457,6 +457,13 @@ measurement_report("WIDGET-001", steps, days=30)
 - `get_bottlenecks(filter)` → `List[Bottleneck]` - Identify bottlenecks
 - `trace_serial_numbers(filter)` → `UnitFlowResult` - Trace specific units
 
+#### Step/Measurement Filter Operations (⚠️ Subject to change)
+- `get_aggregated_measurements(filter_data, step_filters, sequence_filters, measurement_name)` → `List[AggregatedMeasurement]` - Aggregated stats with XML filters
+- `get_measurement_list(filter_data, step_filters, sequence_filters)` → `List[MeasurementListItem]` - Measurement values with XML filters
+- `get_measurement_list_by_product(product_group_id, level_id, days, step_filters, sequence_filters)` → `List[MeasurementListItem]` - Simple query
+- `get_step_status_list(filter_data, step_filters, sequence_filters)` → `List[StepStatusItem]` - Step statuses with XML filters
+- `get_step_status_list_by_product(product_group_id, level_id, days, step_filters, sequence_filters)` → `List[StepStatusItem]` - Simple query
+
 ### Models
 
 #### YieldResult
@@ -479,15 +486,19 @@ measurement_report("WIDGET-001", steps, days=30)
 - `days`: int (shortcut for last N days)
 - `serial_numbers`: List[str] (optional filter)
 
----
+#### StepStatusItem (⚠️ Internal API)
+- `step_name`, `step_path`, `step_type`: str - Step identification
+- `pass_count`, `fail_count`, `total_count`: int - Status counts
+- `status`: str - Current status
+- `serial_number`, `report_id`: str - Associated unit info
 
-## Best Practices
-
-1. **Use appropriate time windows** - Balance detail with performance
-2. **Filter by relevant criteria** - Part number, station, date range
-3. **Monitor Cpk trends** - Watch for process degradation
-4. **Track yield daily** - Catch issues early
-5. **Compare stations** - Identify equipment issues
+#### MeasurementListItem (⚠️ Internal API)
+- `serial_number`, `part_number`, `revision`: str - Unit identification
+- `step_name`, `step_path`: str - Step identification
+- `value`: float - Measured value
+- `limit_low`, `limit_high`: float - Limits
+- `status`: str - Pass/Fail status
+- `unit`: str - Unit of measurement
 6. **Investigate anomalies** - Low Cpk or sudden yield drops
 7. **Use Unit Flow for bottlenecks** - Visualize production flow
 

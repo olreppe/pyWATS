@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Asset module manages test equipment, stations, fixtures, and other manufacturing assets in WATS. Assets can be hierarchical (e.g., stations containing instruments) and track calibration, maintenance, and usage history.
+The Asset module manages test fixtures, and other manufacturing assets in WATS. Assets can be hierarchical (e.g., stations containing instruments) and track calibration, maintenance, and usage history.
 
 ## Quick Start
 

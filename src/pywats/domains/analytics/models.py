@@ -1799,3 +1799,219 @@ class UnitFlowResult(PyWATSModel):
     )
     # Forward-compatible: allow extra fields from backend
     model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
+
+# =============================================================================
+# Internal API Analytics Models (Step/Measurement Filters)
+# =============================================================================
+
+class StepStatusItem(PyWATSModel):
+    """
+    Represents step status data from the StepStatusList endpoint.
+    
+    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    
+    Returned from GET/POST /api/internal/App/StepStatusList.
+    
+    Contains status information for a test step including pass/fail counts
+    and associated metadata.
+    
+    Attributes:
+        step_name: Name of the step
+        step_path: Full path to the step
+        step_type: Type of step
+        step_group: Step group
+        part_number: Product part number
+        revision: Product revision
+        pass_count: Number of passed executions
+        fail_count: Number of failed executions
+        total_count: Total executions
+        status: Step status
+        timestamp: Last execution timestamp
+        
+    Example:
+        >>> item = StepStatusItem(step_name="Power On", pass_count=950, fail_count=50)
+        >>> print(f"Pass rate: {item.pass_count / item.total_count * 100:.1f}%")
+    """
+    
+    step_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepName", "step_name"),
+        serialization_alias="stepName",
+        description="Name of the step"
+    )
+    step_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepPath", "step_path"),
+        serialization_alias="stepPath",
+        description="Full path to the step"
+    )
+    step_type: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepType", "step_type"),
+        serialization_alias="stepType",
+        description="Type of step"
+    )
+    step_group: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepGroup", "step_group"),
+        serialization_alias="stepGroup",
+        description="Step group"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    pass_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("passCount", "pass_count"),
+        serialization_alias="passCount",
+        description="Number of passed executions"
+    )
+    fail_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("failCount", "fail_count"),
+        serialization_alias="failCount",
+        description="Number of failed executions"
+    )
+    total_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("totalCount", "total_count"),
+        serialization_alias="totalCount",
+        description="Total executions"
+    )
+    status: Optional[str] = Field(
+        default=None,
+        description="Step status"
+    )
+    timestamp: Optional[datetime] = Field(
+        default=None,
+        description="Last execution timestamp"
+    )
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber",
+        description="Unit serial number"
+    )
+    report_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("reportId", "report_id"),
+        serialization_alias="reportId",
+        description="Report ID"
+    )
+    # Forward-compatible: allow extra fields from backend
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
+
+
+class MeasurementListItem(PyWATSModel):
+    """
+    Represents measurement list data from the MeasurementList endpoint.
+    
+    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    
+    Returned from GET/POST /api/internal/App/MeasurementList.
+    
+    Contains measurement values with limits and status for a specific step.
+    
+    Attributes:
+        serial_number: Unit serial number
+        part_number: Product part number
+        revision: Product revision
+        report_id: Report ID
+        step_name: Measurement step name
+        step_path: Full step path
+        value: Measured value
+        limit_low: Low limit
+        limit_high: High limit
+        unit: Unit of measurement
+        status: Measurement status (Pass/Fail)
+        timestamp: Measurement timestamp
+        
+    Example:
+        >>> item = MeasurementListItem(step_name="Voltage", value=5.02, limit_low=4.5, limit_high=5.5)
+        >>> in_spec = item.limit_low <= item.value <= item.limit_high
+        >>> print(f"{item.step_name}: {item.value} {'✓' if in_spec else '✗'}")
+    """
+    
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber",
+        description="Unit serial number"
+    )
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    report_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("reportId", "report_id"),
+        serialization_alias="reportId",
+        description="Report ID"
+    )
+    step_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepName", "step_name"),
+        serialization_alias="stepName",
+        description="Measurement step name"
+    )
+    step_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stepPath", "step_path"),
+        serialization_alias="stepPath",
+        description="Full step path"
+    )
+    value: Optional[float] = Field(
+        default=None,
+        description="Measured value"
+    )
+    string_value: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stringValue", "string_value"),
+        serialization_alias="stringValue",
+        description="String value (for string measurements)"
+    )
+    limit_low: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("limitLow", "limit_low", "limit1"),
+        serialization_alias="limitLow",
+        description="Low limit"
+    )
+    limit_high: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("limitHigh", "limit_high", "limit2"),
+        serialization_alias="limitHigh",
+        description="High limit"
+    )
+    unit: Optional[str] = Field(
+        default=None,
+        description="Unit of measurement"
+    )
+    status: Optional[str] = Field(
+        default=None,
+        description="Measurement status (Pass/Fail)"
+    )
+    timestamp: Optional[datetime] = Field(
+        default=None,
+        description="Measurement timestamp"
+    )
+    station_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stationName", "station_name"),
+        serialization_alias="stationName",
+        description="Test station name"
+    )
+    # Forward-compatible: allow extra fields from backend
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")

@@ -15,6 +15,11 @@ Unit Flow endpoints for production flow visualization:
 - POST /api/internal/UnitFlow/UnitOrder - Set unit ordering
 - GET /api/internal/UnitFlow/Units - Get individual units
 
+Step/Measurement filter endpoints:
+- POST /api/internal/App/AggregatedMeasurements - Aggregated measurements with step filters
+- GET/POST /api/internal/App/MeasurementList - Measurement list with step filters
+- GET/POST /api/internal/App/StepStatusList - Step status list with filters
+
 The internal API requires the Referer header to be set to the base URL.
 """
 from typing import List, Optional, Dict, Any, Union
@@ -26,6 +31,9 @@ from .models import (
     UnitFlowUnit,
     UnitFlowFilter,
     UnitFlowResult,
+    AggregatedMeasurement,
+    MeasurementListItem,
+    StepStatusItem,
 )
 
 
@@ -328,3 +336,290 @@ class AnalyticsRepositoryInternal:
         data["expandOperations"] = expand
         
         return self._internal_post("/api/internal/UnitFlow", data=data)
+    # =========================================================================
+    # Step/Measurement Filter Endpoints (Internal API)
+    # =========================================================================
+    
+    def get_aggregated_measurements(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str,
+        measurement_name: Optional[str] = None
+    ) -> List[AggregatedMeasurement]:
+        """
+        Get aggregated measurement data with step/sequence filters.
+        
+        POST /api/internal/App/AggregatedMeasurements
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns aggregated statistics (count, min, max, avg, stdev, cpk, etc.)
+        for measurements matching the specified step and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters (required).
+                Get from TopFailed endpoint results.
+            sequence_filters: XML string defining sequence filters (required).
+                Get from TopFailed endpoint results.
+            measurement_name: Optional name of the measurement to filter by.
+            
+        Returns:
+            List of AggregatedMeasurement objects with statistics.
+            
+        Example:
+            >>> # Get aggregated measurements with step filters
+            >>> results = repo.get_aggregated_measurements(
+            ...     filter_data={"partNumber": "WIDGET-001", "periodCount": 30},
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>",
+            ...     measurement_name="Voltage"
+            ... )
+            >>> for m in results:
+            ...     print(f"{m.step_name}: avg={m.avg}, cpk={m.cpk}")
+        """
+        params = {
+            "stepFilters": step_filters,
+            "sequenceFilters": sequence_filters,
+        }
+        if measurement_name:
+            params["measurementName"] = measurement_name
+            
+        data = self._internal_post(
+            "/api/internal/App/AggregatedMeasurements",
+            data=filter_data,
+            params=params
+        )
+        
+        if data and isinstance(data, list):
+            return [AggregatedMeasurement.model_validate(item) for item in data]
+        return []
+    
+    def get_measurement_list_simple(
+        self,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[MeasurementListItem]:
+        """
+        Get measurement list using simple query parameters.
+        
+        GET /api/internal/App/MeasurementList
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simple version that queries measurements by product group, level,
+        and time range with step/sequence filters.
+        
+        Args:
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            step_filters: XML string defining step filters (required)
+            sequence_filters: XML string defining sequence filters (required)
+            
+        Returns:
+            List of MeasurementListItem objects.
+            
+        Example:
+            >>> # Get measurements for last 7 days
+            >>> results = repo.get_measurement_list_simple(
+            ...     product_group_id="pg-123",
+            ...     level_id="level-456",
+            ...     days=7,
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+        """
+        params = {
+            "productGroupId": product_group_id,
+            "levelId": level_id,
+            "days": days,
+            "stepFilters": step_filters,
+            "sequenceFilters": sequence_filters,
+        }
+        
+        data = self._internal_get("/api/internal/App/MeasurementList", params=params)
+        
+        if data and isinstance(data, list):
+            return [MeasurementListItem.model_validate(item) for item in data]
+        return []
+    
+    def get_measurement_list(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[MeasurementListItem]:
+        """
+        Get measurement list with full filter support.
+        
+        POST /api/internal/App/MeasurementList
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Advanced version that allows full filter customization with
+        step and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters (required)
+            sequence_filters: XML string defining sequence filters (required)
+            
+        Returns:
+            List of MeasurementListItem objects with measurement details.
+            
+        Example:
+            >>> # Get measurements with custom filters
+            >>> results = repo.get_measurement_list(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "dateFrom": "2024-01-01T00:00:00",
+            ...         "dateTo": "2024-01-31T23:59:59"
+            ...     },
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> for m in results:
+            ...     print(f"{m.serial_number}: {m.step_name} = {m.value}")
+        """
+        params = {
+            "stepFilters": step_filters,
+            "sequenceFilters": sequence_filters,
+        }
+        
+        data = self._internal_post(
+            "/api/internal/App/MeasurementList",
+            data=filter_data,
+            params=params
+        )
+        
+        if data and isinstance(data, list):
+            return [MeasurementListItem.model_validate(item) for item in data]
+        return []
+    
+    def get_step_status_list_simple(
+        self,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[StepStatusItem]:
+        """
+        Get step status list using simple query parameters.
+        
+        GET /api/internal/App/StepStatusList
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simple version that queries step statuses by product group, level,
+        and time range with step/sequence filters.
+        
+        Args:
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            step_filters: XML string defining step filters (required)
+            sequence_filters: XML string defining sequence filters (required)
+            
+        Returns:
+            List of StepStatusItem objects.
+            
+        Example:
+            >>> # Get step statuses for last 30 days
+            >>> results = repo.get_step_status_list_simple(
+            ...     product_group_id="pg-123",
+            ...     level_id="level-456",
+            ...     days=30,
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> for step in results:
+            ...     print(f"{step.step_name}: {step.pass_count}/{step.total_count}")
+        """
+        params = {
+            "productGroupId": product_group_id,
+            "levelId": level_id,
+            "days": days,
+            "stepFilters": step_filters,
+            "sequenceFilters": sequence_filters,
+        }
+        
+        data = self._internal_get("/api/internal/App/StepStatusList", params=params)
+        
+        if data and isinstance(data, list):
+            return [StepStatusItem.model_validate(item) for item in data]
+        return []
+    
+    def get_step_status_list(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[StepStatusItem]:
+        """
+        Get step status list with full filter support.
+        
+        POST /api/internal/App/StepStatusList
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Advanced version that allows full filter customization with
+        step and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters (required)
+            sequence_filters: XML string defining sequence filters (required)
+            
+        Returns:
+            List of StepStatusItem objects with step status details.
+            
+        Example:
+            >>> # Get step statuses with custom filters
+            >>> results = repo.get_step_status_list(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "status": "Failed",
+            ...         "periodCount": 30
+            ...     },
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> for step in results:
+            ...     fail_rate = step.fail_count / step.total_count * 100
+            ...     print(f"{step.step_name}: {fail_rate:.1f}% failure rate")
+        """
+        params = {
+            "stepFilters": step_filters,
+            "sequenceFilters": sequence_filters,
+        }
+        
+        data = self._internal_post(
+            "/api/internal/App/StepStatusList",
+            data=filter_data,
+            params=params
+        )
+        
+        if data and isinstance(data, list):
+            return [StepStatusItem.model_validate(item) for item in data]
+        return []

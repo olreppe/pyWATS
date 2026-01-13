@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Internal Analytics Endpoints** - New step/measurement filter endpoints (⚠️ internal API):
+  - `StepStatusItem` model for step status data
+  - `MeasurementListItem` model for measurement list data
+  - `get_aggregated_measurements()` - Aggregated stats with step/sequence filters
+  - `get_measurement_list()` - Measurement values with step/sequence filters
+  - `get_step_status_list()` - Step statuses with step/sequence filters
+  - Simple variants: `get_measurement_list_by_product()`, `get_step_status_list_by_product()`
+  - All methods accept XML step/sequence filters (obtained from TopFailed endpoint)
+
 ### Changed
 - **Window size** - Increased default startup window size from 900x650 to 1000x750
 - **Default tab visibility** - Asset, RootCause, Production, and Product tabs now hidden by default

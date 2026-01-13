@@ -24,6 +24,9 @@ Internal API endpoints (⚠️ subject to change):
 - POST /api/internal/UnitFlow/SplitBy
 - POST /api/internal/UnitFlow/UnitOrder
 - GET /api/internal/UnitFlow/Units
+- POST /api/internal/App/AggregatedMeasurements
+- GET/POST /api/internal/App/MeasurementList
+- GET/POST /api/internal/App/StepStatusList
 
 This is purely a naming choice for better developer experience.
 """
@@ -47,6 +50,9 @@ from .models import (
     UnitFlowUnit,
     UnitFlowFilter,
     UnitFlowResult,
+    # Step/Measurement filter models (internal API)
+    StepStatusItem,
+    MeasurementListItem,
 )
 from .repository import AnalyticsRepository
 from .service import AnalyticsService
@@ -82,11 +88,12 @@ __all__ = [
     "UnitFlowUnit",
     "UnitFlowFilter",
     "UnitFlowResult",
-    # Repository & Service
+    # Step/Measurement filter models (internal API)
+    "StepStatusItem",
+    "MeasurementListItem",    # Repository & Service
     "AnalyticsRepository",
     "AnalyticsService",
     # Internal API (⚠️ subject to change)
     "AnalyticsRepositoryInternal",
     "AnalyticsServiceInternal",
 ]
-

@@ -56,6 +56,8 @@ from .domains.analytics import (
     MeasurementData, AggregatedMeasurement, OeeAnalysisResult,
     # Unit Flow models (internal API)
     UnitFlowNode, UnitFlowLink, UnitFlowUnit, UnitFlowFilter, UnitFlowResult,
+    # Step/Measurement filter models (internal API)
+    StepStatusItem, MeasurementListItem,
 )
 
 # Common models from shared
@@ -142,6 +144,9 @@ __all__ = [
     "UnitFlowUnit",
     "UnitFlowFilter",
     "UnitFlowResult",
+    # Step/Measurement filter models (internal API)
+    "StepStatusItem",
+    "MeasurementListItem",
     # Common models
     "Setting",
     "PyWATSModel",
