@@ -26,6 +26,10 @@ Complete documentation for each WATS domain with examples and API reference:
 - **[RootCause Domain](ROOTCAUSE.md)** - Issue tracking, defect management, status workflows, priorities
 - **[Process Domain](PROCESS.md)** - Operation types, test/repair processes, caching
 
+### Identity & Administration
+
+- **[SCIM Domain](SCIM.md)** - User provisioning from Azure AD, SCIM protocol support
+
 ### Detailed Module Guides
 
 Legacy usage guides with comprehensive examples and patterns:

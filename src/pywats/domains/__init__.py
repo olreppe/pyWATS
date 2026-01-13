@@ -25,6 +25,7 @@ from . import product
 from . import production
 from . import report
 from . import rootcause
+from . import scim
 from . import software
 
 __all__ = [
@@ -35,5 +36,6 @@ __all__ = [
     "production",
     "report",
     "rootcause",
+    "scim",  # Maps to backend /api/SCIM/v2/* endpoints
     "software",
 ]

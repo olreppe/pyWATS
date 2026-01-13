@@ -37,6 +37,7 @@ from .domains.analytics import (
     AnalyticsRepositoryInternal,
 )
 from .domains.rootcause import RootCauseService, RootCauseRepository
+from .domains.scim import ScimService, ScimRepository
 from .domains.process import (
     ProcessService, 
     ProcessRepository,
@@ -160,6 +161,7 @@ class pyWATS:
         self._analytics: Optional[AnalyticsService] = None
         self._analytics_internal: Optional[AnalyticsServiceInternal] = None
         self._rootcause: Optional[RootCauseService] = None
+        self._scim: Optional[ScimService] = None
         self._process: Optional[ProcessService] = None
         self._process_internal: Optional[ProcessServiceInternal] = None
     
@@ -403,6 +405,40 @@ class pyWATS:
             repo = RootCauseRepository(self._http_client, self._error_handler)
             self._rootcause = RootCauseService(repo)
         return self._rootcause
+    
+    @property
+    def scim(self) -> ScimService:
+        """
+        Access SCIM user provisioning operations.
+        
+        SCIM (System for Cross-domain Identity Management) provides
+        automatic user provisioning from Azure Active Directory to WATS.
+        
+        Use this for:
+        - Generating provisioning tokens for Azure AD configuration
+        - Managing SCIM users (create, read, update, delete)
+        - Querying users by ID or username
+        
+        Example:
+            >>> # Get a provisioning token for Azure AD
+            >>> token = api.scim.get_token(duration_days=90)
+            >>> print(f"Configure Azure with token: {token.token[:50]}...")
+            
+            >>> # List all SCIM users
+            >>> users = api.scim.get_users()
+            >>> for user in users.resources:
+            ...     print(f"{user.user_name}: {user.display_name}")
+            
+            >>> # Deactivate a user
+            >>> api.scim.deactivate_user("user-guid")
+        
+        Returns:
+            ScimService instance
+        """
+        if self._scim is None:
+            repo = ScimRepository(self._http_client, self._error_handler)
+            self._scim = ScimService(repo)
+        return self._scim
     
     @property
     def process(self) -> ProcessService:

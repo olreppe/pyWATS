@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b29] - 2025-01-22
+
 ### Added
+- **SCIM Domain** - New domain for System for Cross-domain Identity Management (user provisioning):
+  - `ScimToken` model - JWT token response for Azure AD provisioning
+  - `ScimUser` model - SCIM user resource with name, emails, active status
+  - `ScimUserName`, `ScimUserEmail` - User name/email components
+  - `ScimPatchRequest`, `ScimPatchOperation` - SCIM RFC 7644 patch format
+  - `ScimListResponse` - Paginated user list response
+  - Service methods via `api.scim`:
+    - `get_token(duration_days)` - Generate provisioning token for Azure AD
+    - `get_users()` - List all SCIM users
+    - `create_user(user)` - Create a new user
+    - `get_user(id)` - Get user by ID
+    - `delete_user(id)` - Delete user by ID
+    - `update_user(id, patch)` - Update user with SCIM patch operations
+    - `get_user_by_username(username)` - Get user by username
+    - `deactivate_user(id)` - Convenience method to deactivate user
+    - `set_user_active(id, active)` - Set user active/inactive
+    - `update_display_name(id, name)` - Update user display name
+  - Complete documentation in `docs/SCIM.md`
+  - Example scripts in `examples/scim/`
+
 - **Internal Analytics Endpoints** - New step/measurement filter endpoints (⚠️ internal API):
   - `StepStatusItem` model for step status data
   - `MeasurementListItem` model for measurement list data
@@ -30,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings dialog layout** - Fixed buttons taking up half the screen
   - Buttons now stay at bottom with fixed height
 
-## [0.1.0b28] - 2026-01-12
+## [0.1.0b28] - 2025-01-12
 
 ### Changed
 - **Test suite restructured** - Reorganized 30+ flat test files into module-based folders:

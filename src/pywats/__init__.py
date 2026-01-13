@@ -48,6 +48,10 @@ from .domains.rootcause import (
     Ticket, TicketStatus, TicketPriority, TicketView,
     TicketUpdate, TicketUpdateType, TicketAttachment
 )
+from .domains.scim import (
+    ScimToken, ScimUser, ScimUserName, ScimUserEmail,
+    ScimPatchRequest, ScimPatchOperation, ScimListResponse
+)
 from .domains.report import WATSFilter, ReportHeader, Attachment
 from .domains.analytics import (
     YieldData, ProcessInfo, LevelInfo,
@@ -75,7 +79,7 @@ from .domains.report.report_models.uut.steps.comp_operator import CompOp
 # UUT/UUR Report models (import separately to avoid name conflicts)
 # from pywats.models import UUTReport, UURReport, Step, etc.
 
-__version__ = "0.1.0b27"
+__version__ = "0.1.0b29"
 __wats_server_version__ = "2025.3.9.824"  # Minimum required WATS server version
 __all__ = [
     # Main class
@@ -147,6 +151,14 @@ __all__ = [
     # Step/Measurement filter models (internal API)
     "StepStatusItem",
     "MeasurementListItem",
+    # SCIM models (user provisioning)
+    "ScimToken",
+    "ScimUser",
+    "ScimUserName",
+    "ScimUserEmail",
+    "ScimPatchRequest",
+    "ScimPatchOperation",
+    "ScimListResponse",
     # Common models
     "Setting",
     "PyWATSModel",
