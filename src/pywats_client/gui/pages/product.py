@@ -28,6 +28,7 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+    from ...core.app_facade import AppFacade
 
 
 class ProductDialog(QDialog):
@@ -200,19 +201,36 @@ class ProductPage(BasePage):
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
+        *,
+        facade: Optional['AppFacade'] = None
     ):
-        self._main_window = main_window
+        self._main_window = main_window  # Keep for backwards compatibility
         self._products: List[Dict[str, Any]] = []
         self._selected_product: Optional[Dict[str, Any]] = None
         self._selected_revision: Optional[str] = None
-        super().__init__(config, parent)
+        super().__init__(config, parent, facade=facade)
         self._setup_ui()
         self.load_config()
     
     @property
     def page_title(self) -> str:
         return "Products"
+    
+    def _get_api_client(self):
+        """
+        Get API client - prefer facade, fallback to main_window.
+        
+        Returns:
+            pyWATS client or None if not available
+        """
+        # Prefer facade access
+        if self._facade and self._facade.has_api:
+            return self._facade.api
+        # Fallback to legacy access
+        if self._main_window and self._main_window.app.wats_client:
+            return self._main_window.app.wats_client
+        return None
     
     def _setup_ui(self) -> None:
         """Setup page UI for Product Management"""
@@ -432,7 +450,7 @@ class ProductPage(BasePage):
         self._layout.addWidget(self._status_label)
         
         # Auto-load if connected
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_products()
     
     def _get_tree_style(self) -> str:
@@ -609,8 +627,8 @@ BOM and Box Build tabs are now available for this revision.
         parent_item.takeChildren()
         
         try:
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if client:
                 product = client.product.get_product(part_number)
                 
                 if product and hasattr(product, 'revisions') and product.revisions:
@@ -649,8 +667,8 @@ BOM and Box Build tabs are now available for this revision.
         self._bom_tree.clear()
         
         try:
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if client:
                 part_number = product.get('partNumber', '')
                 
                 # Get revision - either specified or first available
@@ -694,8 +712,8 @@ BOM and Box Build tabs are now available for this revision.
         self._remove_subunit_btn.setEnabled(False)
         
         try:
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if client:
                 part_number = product.get('partNumber', '')
                 
                 # Get revision - either specified or first available
@@ -746,7 +764,7 @@ BOM and Box Build tabs are now available for this revision.
     
     def _on_refresh(self) -> None:
         """Refresh products from server"""
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_products()
         else:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
@@ -756,9 +774,8 @@ BOM and Box Build tabs are now available for this revision.
         try:
             self._status_label.setText("Loading products...")
             
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
-                
+            client = self._get_api_client()
+            if client:
                 # Get products
                 products = client.product.get_products()
                 self._products = [self._product_to_dict(p) for p in products] if products else []
@@ -833,7 +850,8 @@ BOM and Box Build tabs are now available for this revision.
     
     def _on_add_product(self) -> None:
         """Show dialog to add new product"""
-        if not self._main_window or not self._main_window.app.wats_client:
+        client = self._get_api_client()
+        if not client:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
             return
         
@@ -841,7 +859,6 @@ BOM and Box Build tabs are now available for this revision.
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_data()
-                client = self._main_window.app.wats_client
                 
                 # Map state string to enum
                 state_map = {
@@ -878,7 +895,10 @@ BOM and Box Build tabs are now available for this revision.
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_data()
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
+                if not client:
+                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                    return
                 
                 # Update product
                 result = client.product.update_product(
@@ -911,7 +931,10 @@ BOM and Box Build tabs are now available for this revision.
         
         if ok and revision:
             try:
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
+                if not client:
+                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                    return
                 result = client.product.create_revision(
                     part_number=part_number,
                     revision=revision,
@@ -940,7 +963,10 @@ BOM and Box Build tabs are now available for this revision.
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_data()
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
+                if not client:
+                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                    return
                 
                 template = client.product_internal.get_box_build(part_number, revision)
                 template.add_subunit(
@@ -984,7 +1010,10 @@ BOM and Box Build tabs are now available for this revision.
         
         if reply == QMessageBox.StandardButton.Yes:
             try:
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
+                if not client:
+                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                    return
                 template = client.product_internal.get_box_build(part_number, revision)
                 template.remove_subunit(child_part, child_rev)
                 template.save()

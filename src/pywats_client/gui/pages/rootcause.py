@@ -28,6 +28,7 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+    from ...core.app_facade import AppFacade
 
 
 class TicketDialog(QDialog):
@@ -161,18 +162,35 @@ class RootCausePage(BasePage):
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
+        *,
+        facade: Optional['AppFacade'] = None
     ):
-        self._main_window = main_window
+        self._main_window = main_window  # Keep for backwards compatibility
         self._tickets: List[Dict[str, Any]] = []
         self._teams: List[str] = []
-        super().__init__(config, parent)
+        super().__init__(config, parent, facade=facade)
         self._setup_ui()
         self.load_config()
     
     @property
     def page_title(self) -> str:
         return "RootCause Tickets"
+    
+    def _get_api_client(self):
+        """
+        Get API client - prefer facade, fallback to main_window.
+        
+        Returns:
+            pyWATS client or None if not available
+        """
+        # Prefer facade access
+        if self._facade and self._facade.has_api:
+            return self._facade.api
+        # Fallback to legacy access
+        if self._main_window and self._main_window.app.wats_client:
+            return self._main_window.app.wats_client
+        return None
     
     def _setup_ui(self) -> None:
         """Setup page UI for RootCause Tickets"""
@@ -333,7 +351,7 @@ class RootCausePage(BasePage):
         self._layout.addWidget(self._status_label)
         
         # Auto-load if connected
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_tickets()
     
     def _on_selection_changed(self) -> None:
@@ -387,12 +405,12 @@ class RootCausePage(BasePage):
     
     def _on_filter_changed(self) -> None:
         """Handle filter changes - reload tickets"""
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_tickets()
     
     def _on_refresh(self) -> None:
         """Refresh tickets from server"""
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_tickets()
         else:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
@@ -402,9 +420,8 @@ class RootCausePage(BasePage):
         try:
             self._status_label.setText("Loading tickets...")
             
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
-                
+            client = self._get_api_client()
+            if client:
                 # Get view and status filters
                 view_text = self._view_combo.currentText()
                 status_text = self._status_filter.currentText()
@@ -500,7 +517,8 @@ class RootCausePage(BasePage):
     
     def _on_add_ticket(self) -> None:
         """Show dialog to create new ticket"""
-        if not self._main_window or not self._main_window.app.wats_client:
+        client = self._get_api_client()
+        if not client:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
             return
         
@@ -508,7 +526,6 @@ class RootCausePage(BasePage):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_ticket_data()
-                client = self._main_window.app.wats_client
                 
                 # Map priority string to enum value
                 priority_map = {
@@ -546,7 +563,10 @@ class RootCausePage(BasePage):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_ticket_data()
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
+                if not client:
+                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                    return
                 
                 # Update via add_comment if there's a comment, otherwise update directly
                 if data.get('comment'):
@@ -575,7 +595,10 @@ class RootCausePage(BasePage):
         ticket = self._tickets[row]
         
         try:
-            client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if not client:
+                QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                return
             result = client.rootcause.add_comment(
                 ticket_id=ticket['ticketId'],
                 comment=comment
@@ -598,7 +621,10 @@ class RootCausePage(BasePage):
         ticket = self._tickets[row]
         
         try:
-            client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if not client:
+                QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                return
             # Use change_status method
             result = client.rootcause.change_status(
                 ticket_id=ticket['ticketId'],
@@ -627,7 +653,10 @@ class RootCausePage(BasePage):
         
         if reply == QMessageBox.StandardButton.Yes:
             try:
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
+                if not client:
+                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                    return
                 result = client.rootcause.change_status(
                     ticket_id=ticket['ticketId'],
                     status=8  # Closed
