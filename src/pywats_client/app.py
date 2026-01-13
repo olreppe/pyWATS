@@ -26,6 +26,7 @@ from pywats.core.exceptions import NotFoundError, PyWATSError
 
 from .core.config import ClientConfig
 from .core.instance_manager import InstanceLock
+from .core.event_bus import event_bus, AppEvent
 from .services.connection import ConnectionService, ConnectionStatus
 from .services.process_sync import ProcessSyncService
 from .services.report_queue import ReportQueueService
@@ -167,6 +168,10 @@ class pyWATSApplication:
             old_status = self._status
             self._status = status
             logger.info(f"Application status changed: {old_status.value} -> {status.value}")
+            
+            # Emit event via EventBus for GUI components
+            event_bus.emit_status_changed(old_status.value, status.value)
+            
             for callback in self._status_callbacks:
                 try:
                     callback(status)
@@ -231,6 +236,9 @@ class pyWATSApplication:
                 token=self.config.api_token
             )
             
+            # Notify GUI that API client is ready
+            event_bus.emit_api_ready(True)
+            
             # Initialize services
             logger.info("Initializing services...")
             self._connection = ConnectionService(
@@ -266,6 +274,7 @@ class pyWATSApplication:
         except Exception as e:
             logger.error(f"Failed to start services: {e}")
             self._set_status(ApplicationStatus.ERROR)
+            event_bus.emit_api_ready(False)
             raise ServiceError(f"Service startup failed: {e}") from e
     
     async def stop(self) -> None:
@@ -280,6 +289,9 @@ class pyWATSApplication:
         
         self._set_status(ApplicationStatus.STOPPING)
         self._running = False
+        
+        # Notify GUI that API client is no longer available
+        event_bus.emit_api_ready(False)
         
         try:
             logger.info("Stopping services...")

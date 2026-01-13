@@ -29,6 +29,7 @@ from .pages import (
     AssetPage, RootCausePage, ProductionPage, ProductPage
 )
 from ..core.config import ClientConfig
+from ..core.app_facade import AppFacade
 from ..app import pyWATSApplication, ApplicationStatus
 
 
@@ -68,6 +69,7 @@ class MainWindow(QMainWindow):
         
         self.config = config
         self.app = app if app else pyWATSApplication(config)  # pyWATSApplication instance
+        self._facade = AppFacade(self.app)  # Create facade for GUI components
         self._tray_icon: Optional[QSystemTrayIcon] = None
         self._is_connected = False
         
@@ -88,6 +90,16 @@ class MainWindow(QMainWindow):
         
         # Auto-start application if previously connected or auto_connect is enabled
         QTimer.singleShot(500, self._auto_start_on_startup)
+    
+    @property
+    def facade(self) -> AppFacade:
+        """
+        Get the application facade for GUI components.
+        
+        Returns:
+            AppFacade instance for accessing application services
+        """
+        return self._facade
     
     def _auto_start_on_startup(self) -> None:
         """Auto-start application on startup if configured"""
@@ -406,28 +418,29 @@ class MainWindow(QMainWindow):
         # Build page dict dynamically based on config visibility settings
         # Note: SetupPage is now shown as "General" in navigation
         # Note: Location and Proxy Settings are now in Settings dialog only
+        # Note: All pages receive the facade for event-driven updates
         self._pages: Dict[str, BasePage] = {
-            "General": SetupPage(self.config, self),
-            "Connection": ConnectionPage(self.config, self),
-            "Log": LogPage(self.config, self),
+            "General": SetupPage(self.config, self, facade=self._facade),
+            "Connection": ConnectionPage(self.config, self, facade=self._facade),
+            "Log": LogPage(self.config, self, facade=self._facade),
         }
         
         # Add optional operational pages based on configuration
         if self.config.show_converters_tab:
             # Use new unified converters page (V2) with system/user distinction
-            self._pages["Converters"] = ConvertersPageV2(self.config, self)
+            self._pages["Converters"] = ConvertersPageV2(self.config, self, facade=self._facade)
         if self.config.show_sn_handler_tab:
-            self._pages["SN Handler"] = SNHandlerPage(self.config, self)
+            self._pages["SN Handler"] = SNHandlerPage(self.config, self, facade=self._facade)
         if self.config.show_software_tab:
-            self._pages["Software"] = SoftwarePage(self.config, self)
+            self._pages["Software"] = SoftwarePage(self.config, self, facade=self._facade)
         if self.config.show_asset_tab:
-            self._pages["Assets"] = AssetPage(self.config, self)
+            self._pages["Assets"] = AssetPage(self.config, self, facade=self._facade)
         if self.config.show_rootcause_tab:
-            self._pages["RootCause"] = RootCausePage(self.config, self)
+            self._pages["RootCause"] = RootCausePage(self.config, self, facade=self._facade)
         if self.config.show_production_tab:
-            self._pages["Production"] = ProductionPage(self.config, self)
+            self._pages["Production"] = ProductionPage(self.config, self, facade=self._facade)
         if self.config.show_product_tab:
-            self._pages["Products"] = ProductPage(self.config, self)
+            self._pages["Products"] = ProductPage(self.config, self, facade=self._facade)
         
         for page in self._pages.values():
             self._page_stack.addWidget(page)

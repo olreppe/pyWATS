@@ -29,6 +29,7 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+    from ...core.app_facade import AppFacade
 
 
 class AssetDialog(QDialog):
@@ -164,18 +165,35 @@ class AssetPage(BasePage):
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
+        *,
+        facade: Optional['AppFacade'] = None
     ):
-        self._main_window = main_window
+        self._main_window = main_window  # Keep for backwards compatibility
         self._assets: List[Dict[str, Any]] = []
         self._asset_types: List[Dict[str, Any]] = []
-        super().__init__(config, parent)
+        super().__init__(config, parent, facade=facade)
         self._setup_ui()
         self.load_config()
     
     @property
     def page_title(self) -> str:
         return "Assets"
+    
+    def _get_api_client(self):
+        """
+        Get API client - prefer facade, fallback to main_window.
+        
+        Returns:
+            pyWATS client or None if not available
+        """
+        # Prefer facade access
+        if self._facade and self._facade.has_api:
+            return self._facade.api
+        # Fallback to legacy access
+        if self._main_window and self._main_window.app.wats_client:
+            return self._main_window.app.wats_client
+        return None
     
     def _setup_ui(self) -> None:
         """Setup page UI for Asset Management"""
@@ -297,7 +315,7 @@ class AssetPage(BasePage):
         self._layout.addWidget(self._status_label)
         
         # Auto-load if connected
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_assets()
     
     def _on_selection_changed(self) -> None:
@@ -335,7 +353,7 @@ class AssetPage(BasePage):
     
     def _on_refresh(self) -> None:
         """Refresh assets from server"""
-        if self._main_window and self._main_window.app.wats_client:
+        if self._get_api_client():
             self._load_assets()
         else:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
@@ -345,9 +363,8 @@ class AssetPage(BasePage):
         try:
             self._status_label.setText("Loading assets...")
             
-            if self._main_window and self._main_window.app.wats_client:
-                client = self._main_window.app.wats_client
-                
+            client = self._get_api_client()
+            if client:
                 # Load asset types first
                 try:
                     self._asset_types = client.asset.get_asset_types() or []
@@ -439,7 +456,8 @@ class AssetPage(BasePage):
     
     def _on_add_asset(self) -> None:
         """Show dialog to add new asset"""
-        if not self._main_window or not self._main_window.app.wats_client:
+        client = self._get_api_client()
+        if not client:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
             return
         
@@ -447,7 +465,6 @@ class AssetPage(BasePage):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_asset_data()
-                client = self._main_window.app.wats_client
                 
                 result = client.asset.create_asset(
                     serial_number=data['serialNumber'],
@@ -477,7 +494,10 @@ class AssetPage(BasePage):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 data = dialog.get_asset_data()
-                client = self._main_window.app.wats_client
+                client = self._get_api_client()
+                if not client:
+                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                    return
                 
                 # First get the full asset object
                 full_asset = client.asset.get_asset(serial_number=data['serialNumber'])
@@ -511,7 +531,11 @@ class AssetPage(BasePage):
         serial = asset.get('serialNumber')
         
         try:
-            client = self._main_window.app.wats_client
+            client = self._get_api_client()
+            if not client:
+                QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                return
+                
             status = client.asset.get_status(serial_number=serial)
             
             if status:
