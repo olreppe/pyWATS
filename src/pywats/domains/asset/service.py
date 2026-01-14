@@ -1,12 +1,18 @@
 """Asset service - business logic layer.
 
 Provides high-level operations for asset management.
+
+Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
+that may change without notice. Use with caution.
 """
-from typing import Optional, List, Dict, Union, Any
+from typing import Optional, List, Dict, Union, Any, TYPE_CHECKING
 from datetime import datetime
 from uuid import UUID
 from pathlib import Path
 import logging
+
+if TYPE_CHECKING:
+    from .service_internal import AssetServiceInternal
 
 from .models import Asset, AssetType, AssetLog
 
@@ -23,16 +29,23 @@ class AssetService:
     validation, state management, and business rules.
     """
 
-    def __init__(self, repository: AssetRepository, base_url: Optional[str] = None):
+    def __init__(
+        self, 
+        repository: AssetRepository, 
+        base_url: Optional[str] = None,
+        internal_service: Optional["AssetServiceInternal"] = None
+    ):
         """
         Initialize with repository.
 
         Args:
             repository: AssetRepository for data access
             base_url: Base URL for internal API file operations
+            internal_service: Optional internal service for internal API methods
         """
         self._repository = repository
         self._base_url = base_url or ""
+        self._internal = internal_service
 
     # =========================================================================
     # Asset Operations
@@ -908,3 +921,121 @@ class AssetService:
             filenames=filenames,
             base_url=self._base_url
         )
+
+    # =========================================================================
+    # Internal API Methods
+    # =========================================================================
+    # Extended Methods (from internal service)
+    # =========================================================================
+
+    def _ensure_internal(self) -> "AssetServiceInternal":
+        """Ensure internal service is available."""
+        if self._internal is None:
+            raise RuntimeError(
+                "Internal asset methods are not available. "
+                "This pyWATS client was not configured with internal API support."
+            )
+        return self._internal
+
+    # -------------------------------------------------------------------------
+    # Blob Storage Operations (Extended)
+    # -------------------------------------------------------------------------
+
+    def upload_blob(
+        self,
+        asset_id: str,
+        filename: str,
+        content: bytes
+    ) -> bool:
+        """
+        Upload a file to an asset's blob storage.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Files are stored in blob storage and associated with the asset ID.
+        Use this to attach configuration files, documentation, images, etc.
+        
+        Args:
+            asset_id: Asset ID (GUID)
+            filename: Unique filename for the file
+            content: File content as bytes
+
+        Returns:
+            True if file was uploaded successfully, False otherwise
+            
+        Example:
+            content = b'{"setting": "value"}'
+            success = api.asset.upload_blob(
+                asset_id="abc-123",
+                filename="config.json",
+                content=content
+            )
+        """
+        return self._ensure_internal().upload_file(asset_id, filename, content)
+
+    def download_blob(
+        self,
+        asset_id: str,
+        filename: str
+    ) -> Optional[bytes]:
+        """
+        Download a file from an asset's blob storage.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            asset_id: Asset ID (GUID)
+            filename: Filename to download
+            
+        Returns:
+            File content as bytes, or None if not found
+        """
+        return self._ensure_internal().download_file(asset_id, filename)
+
+    def list_blobs(self, asset_id: str) -> List[str]:
+        """
+        List all files attached to an asset in blob storage.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            asset_id: Asset ID (GUID)
+            
+        Returns:
+            List of filenames
+        """
+        return self._ensure_internal().list_files(asset_id)
+
+    def delete_blobs(
+        self,
+        asset_id: str,
+        filenames: List[str]
+    ) -> bool:
+        """
+        Delete files from an asset's blob storage.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            asset_id: Asset ID (GUID)
+            filenames: List of filenames to delete
+
+        Returns:
+            True if files were deleted successfully, False otherwise
+        """
+        return self._ensure_internal().delete_files(asset_id, filenames)
+
+    def blob_exists(self, asset_id: str, filename: str) -> bool:
+        """
+        Check if a file exists in an asset's blob storage.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+
+        Args:
+            asset_id: Asset ID (GUID)
+            filename: Filename to check
+            
+        Returns:
+            True if file exists, False otherwise
+        """
+        return self._ensure_internal().file_exists(asset_id, filename)

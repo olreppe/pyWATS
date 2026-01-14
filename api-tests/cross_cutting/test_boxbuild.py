@@ -9,7 +9,7 @@ Box build involves TWO domains working together:
 
 1. PRODUCT DOMAIN (Design-time templates):
    - Defines WHAT subunits are REQUIRED to build a product
-   - Uses: api.product_internal.get_box_build()
+   - Uses: api.product.get_box_build_template()
    - Example: "Controller Module requires 1x Power Supply"
 
 2. PRODUCTION DOMAIN (Runtime unit assembly):
@@ -459,9 +459,9 @@ class TestBoxBuildCompleteWorkflow:
         print(f"  Child:  {self.sub_pn} rev {self.sub_rev}")
         
         try:
-            # Use the internal API to set up box build template
+            # Use the product API to set up box build template
             # This creates the ProductRevisionRelation linking module -> sub-part
-            with self.api.product_internal.get_box_build(self.module_pn, self.module_rev_a) as bb:
+            with self.api.product.get_box_build_template(self.module_pn, self.module_rev_a) as bb:
                 # Add the sub-part as a subunit in the box build
                 bb.add_subunit(
                     part_number=self.sub_pn,
@@ -472,7 +472,7 @@ class TestBoxBuildCompleteWorkflow:
                 print(f"  [OK] Added subunit {self.sub_pn} rev {self.sub_rev} to box build template")
             
             # Verify the box build was created
-            subunits = self.api.product_internal.get_box_build_subunits(self.module_pn, self.module_rev_a)
+            subunits = self.api.product.get_box_build_subunits(self.module_pn, self.module_rev_a)
             print(f"  [OK] Box build template now has {len(subunits)} subunit(s)")
             for su in subunits:
                 print(f"       - {su.child_part_number} rev {su.child_revision} (qty: {su.quantity})")
@@ -484,7 +484,7 @@ class TestBoxBuildCompleteWorkflow:
         # Also set up box build for revision B
         print(f"\n  Setting up box build for {self.module_pn} rev {self.module_rev_b}...")
         try:
-            with self.api.product_internal.get_box_build(self.module_pn, self.module_rev_b) as bb:
+            with self.api.product.get_box_build_template(self.module_pn, self.module_rev_b) as bb:
                 bb.add_subunit(
                     part_number=self.sub_pn,
                     revision=self.sub_rev,

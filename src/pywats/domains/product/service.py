@@ -1,14 +1,18 @@
 """Product service - business logic layer.
 
 High-level operations for product management.
+
+Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
+that may change without notice. Use with caution.
 """
 from typing import Optional, List, Dict, TYPE_CHECKING, Any
 import logging
 
 if TYPE_CHECKING:
-    from .models import BomItem
+    from .service_internal import ProductServiceInternal
 
-from .models import Product, ProductRevision, ProductGroup, ProductView
+from .models import Product, ProductRevision, ProductGroup, ProductView, BomItem, ProductRevisionRelation
+from .box_build import BoxBuildTemplate
 
 logger = logging.getLogger(__name__)
 from .enums import ProductState
@@ -23,14 +27,20 @@ class ProductService:
     groups, and vendors.
     """
 
-    def __init__(self, repository: ProductRepository):
+    def __init__(
+        self, 
+        repository: ProductRepository,
+        internal_service: Optional["ProductServiceInternal"] = None
+    ):
         """
         Initialize with repository.
 
         Args:
             repository: ProductRepository for data access
+            internal_service: Optional internal service for internal API methods
         """
         self._repository = repository
+        self._internal = internal_service
 
     # =========================================================================
     # Product Operations
@@ -624,3 +634,91 @@ class ProductService:
             True if successful
         """
         return self._repository.delete_vendor(vendor_id)
+
+    # =========================================================================
+    # Extended Methods (from internal service)
+    # =========================================================================
+
+    def _ensure_internal(self) -> "ProductServiceInternal":
+        """Ensure internal service is available."""
+        if self._internal is None:
+            raise RuntimeError(
+                "Extended product methods are not available. "
+                "This pyWATS client was not configured with extended API support."
+            )
+        return self._internal
+
+    # -------------------------------------------------------------------------
+    # Box Build Templates
+    # -------------------------------------------------------------------------
+
+    def get_box_build_template(self, part_number: str, revision: str) -> BoxBuildTemplate:
+        """
+        Get or create a box build template for a product revision.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        A box build template defines WHAT subunits are required to build a product.
+        This is a PRODUCT-LEVEL definition - it does not create production units.
+        
+        Args:
+            part_number: Parent product part number
+            revision: Parent product revision
+            
+        Returns:
+            BoxBuildTemplate for managing subunits
+            
+        Example:
+            template = api.product.get_box_build_template("MAIN-BOARD", "A")
+            template.add_subunit("PCBA-001", "A", quantity=2)
+            template.save()
+        """
+        return self._ensure_internal().get_box_build(part_number, revision)
+
+    def get_box_build_subunits(
+        self, 
+        part_number: str, 
+        revision: str
+    ) -> List[ProductRevisionRelation]:
+        """
+        Get subunits for a box build (read-only).
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            part_number: Parent product part number
+            revision: Parent product revision
+            
+        Returns:
+            List of ProductRevisionRelation representing subunits
+        """
+        return self._ensure_internal().get_box_build_subunits(part_number, revision)
+
+    # -------------------------------------------------------------------------
+    # Product Categories
+    # -------------------------------------------------------------------------
+
+    def get_product_categories(self) -> List[Dict[str, Any]]:
+        """
+        Get all product categories.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns:
+            List of category dictionaries
+        """
+        return self._ensure_internal().get_categories()
+
+    def save_product_categories(self, categories: List[Dict[str, Any]]) -> bool:
+        """
+        Save product categories.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            categories: List of category dictionaries
+            
+        Returns:
+            True if successful
+        """
+        return self._ensure_internal().save_categories(categories)

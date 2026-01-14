@@ -45,13 +45,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Example scripts in `examples/scim/`
 
 - **Internal Analytics Endpoints** - New step/measurement filter endpoints (⚠️ internal API):
+  - All internal methods now accessible via `api.analytics` (unified API surface)
   - `StepStatusItem` model for step status data
   - `MeasurementListItem` model for measurement list data
   - `get_aggregated_measurements()` - Aggregated stats with step/sequence filters
   - `get_measurement_list()` - Measurement values with step/sequence filters
   - `get_step_status_list()` - Step statuses with step/sequence filters
+  - `get_top_failed_internal()` - Top failed steps using internal API
+  - `get_top_failed_by_product()` - Top failed steps with simple parameters
   - Simple variants: `get_measurement_list_by_product()`, `get_step_status_list_by_product()`
   - All methods accept XML step/sequence filters (obtained from TopFailed endpoint)
+  - Unit Flow methods (`get_unit_flow()`, `get_bottlenecks()`, etc.) now on `api.analytics`
+  - Unified API: All internal methods now accessed via main domain accessor (e.g., `api.product.get_box_build_template()` instead of `api.product_internal.get_box_build()`)
+  - Removed separate `api.analytics_internal`, `api.product_internal`, `api.asset_internal`, `api.production_internal`, `api.process_internal` accessors
+  - Internal API methods marked with `⚠️ INTERNAL API` in docstrings
 
 ### Changed
 - **Window size** - Increased default startup window size from 900x650 to 1000x750
@@ -456,8 +463,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `AssetRepositoryInternal` and `AssetServiceInternal` for file operations
   - New `ProductionRepositoryInternal` and `ProductionServiceInternal` for MES operations
   - Public repositories delegate to internal repositories for internal endpoints
-  - Added `api.asset_internal` for asset file operations (upload, download, list, delete)
-  - Added `api.production_internal` for MES unit phases
+  - Internal methods accessible via main domain accessor (e.g., `api.asset.upload_blob()`)
+  - Note: Later unified so all domains use `api.{domain}.{method}()` pattern
 
 ### Fixed
 

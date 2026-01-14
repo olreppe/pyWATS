@@ -456,7 +456,7 @@ if verification:
 
 ```python
 # 1. Define what subunits are required (Product domain)
-template = api.product_internal.get_box_build("MAIN-MODULE", "A")
+template = api.product.get_box_build_template("MAIN-MODULE", "A")
 template.add_subunit("PCBA-BOARD", "A", quantity=1)
 template.add_subunit("POWER-SUPPLY", "B", quantity=1)
 template.add_subunit("CABLE-ASSY", "A", quantity=2)
@@ -616,9 +616,9 @@ Get unit phase definitions from internal API.
 
 ```python
 # Get all unit phases from internal API
-phases = api.production_internal.get_unit_phases()
+phases = api.production.get_all_unit_phases()
 
-print("Unit Phases (Internal API):")
+print("Unit Phases (Internal API):"))
 for phase in phases:
     print(f"  {phase.name} (ID: {phase.unit_phase_id})")
     print(f"    Code: {phase.code}")
@@ -1133,7 +1133,7 @@ if not api.production.is_unit_passing("WIDGET-12345", "WIDGET-001"):
 api.production.set_unit_phase(child_sn, child_pn, "Finalized")
 
 # 2. Child not in box build template
-template = api.product_internal.get_box_build(parent_pn, parent_rev)
+template = api.product.get_box_build_template(parent_pn, parent_rev)
 template.add_subunit(child_pn, child_rev).save()
 
 # 3. Child already has a parent

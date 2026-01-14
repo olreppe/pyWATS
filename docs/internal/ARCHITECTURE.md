@@ -360,17 +360,19 @@ def test_product_roundtrip(wats_client):
 
 ### Adding Internal APIs
 
-Some domains have `_internal` variants for undocumented APIs:
+Some domains have `_internal` files for undocumented APIs. These are accessed
+through the main domain accessor (unified API pattern):
 
 ```python
 # Public API
 api.product.get_product("PART-001")
 
-# Internal API (subject to change)
-api.product_internal.get_box_build_template("PART-001")
+# Internal API (accessed same way, marked in docstring)
+api.product.get_box_build_template("PART-001")  # ⚠️ INTERNAL API warning in docstring
 ```
 
-Create `service_internal.py` and `repository_internal.py` for these.
+Create `service_internal.py` and `repository_internal.py` for implementation.
+Main service wraps internal service methods - see `docs/internal/API_DESIGN_CONVENTIONS.md`.
 
 ### Custom Validation
 

@@ -30,7 +30,7 @@ class TestUnitFlowBasic:
         
         print(f"Filter: {filter_obj.model_dump(by_alias=True, exclude_none=True)}")
         
-        result = wats_client.analytics_internal.get_unit_flow(filter_obj)
+        result = wats_client.analytics.get_unit_flow(filter_obj)
         
         print(f"Result type: {type(result)}")
         print(f"Nodes: {len(result.nodes or [])}")
@@ -63,7 +63,7 @@ class TestUnitFlowBasic:
         
         filter_obj = UnitFlowFilter(part_number="758877.874")
         
-        result = wats_client.analytics_internal.get_unit_flow(filter_obj)
+        result = wats_client.analytics.get_unit_flow(filter_obj)
         
         print(f"Nodes: {len(result.nodes or [])}")
         print(f"Links: {len(result.links or [])}")
@@ -83,10 +83,10 @@ class TestUnitFlowNodes:
         
         # First establish flow context
         filter_obj = UnitFlowFilter(part_number="758877.874")
-        wats_client.analytics_internal.get_unit_flow(filter_obj)
+        wats_client.analytics.get_unit_flow(filter_obj)
         
         # Now get nodes
-        nodes = wats_client.analytics_internal.get_flow_nodes()
+        nodes = wats_client.analytics.get_flow_nodes()
         
         print(f"Retrieved {len(nodes)} nodes")
         for node in nodes[:5]:
@@ -107,10 +107,10 @@ class TestUnitFlowLinks:
         
         # First establish flow context
         filter_obj = UnitFlowFilter(part_number="758877.874")
-        wats_client.analytics_internal.get_unit_flow(filter_obj)
+        wats_client.analytics.get_unit_flow(filter_obj)
         
         # Now get links
-        links = wats_client.analytics_internal.get_flow_links()
+        links = wats_client.analytics.get_flow_links()
         
         print(f"Retrieved {len(links)} links")
         for link in links[:5]:
@@ -131,10 +131,10 @@ class TestUnitFlowUnits:
         
         # First establish flow context
         filter_obj = UnitFlowFilter(part_number="758877.874")
-        wats_client.analytics_internal.get_unit_flow(filter_obj)
+        wats_client.analytics.get_unit_flow(filter_obj)
         
         # Now get units
-        units = wats_client.analytics_internal.get_flow_units()
+        units = wats_client.analytics.get_flow_units()
         
         print(f"Retrieved {len(units)} units")
         for unit in units[:5]:
@@ -155,10 +155,10 @@ class TestUnitFlowTracing:
         
         # First get some units to find serial numbers
         filter_obj = UnitFlowFilter(part_number="758877.874")
-        initial_result = wats_client.analytics_internal.get_unit_flow(filter_obj)
+        initial_result = wats_client.analytics.get_unit_flow(filter_obj)
         
         # Get units to find serial numbers
-        units = wats_client.analytics_internal.get_flow_units()
+        units = wats_client.analytics.get_flow_units()
         
         if units and len(units) > 0:
             # Take up to 3 serial numbers
@@ -167,7 +167,7 @@ class TestUnitFlowTracing:
             if serial_numbers:
                 print(f"Tracing serial numbers: {serial_numbers}")
                 
-                result = wats_client.analytics_internal.trace_serial_numbers(serial_numbers)
+                result = wats_client.analytics.trace_serial_numbers(serial_numbers)
                 
                 print(f"Trace result - Nodes: {len(result.nodes or [])}, Links: {len(result.links or [])}")
                 
@@ -203,7 +203,7 @@ class TestUnitFlowBottlenecks:
             date_from=datetime.now() - timedelta(days=7)
         )
         
-        bottlenecks = wats_client.analytics_internal.get_bottlenecks(
+        bottlenecks = wats_client.analytics.get_bottlenecks(
             filter_data=filter_obj,
             min_yield_threshold=95.0
         )
@@ -231,7 +231,7 @@ class TestUnitFlowBottlenecks:
         
         filter_obj = UnitFlowFilter(part_number="758877.874")
         
-        bottlenecks = wats_client.analytics_internal.get_bottlenecks(
+        bottlenecks = wats_client.analytics.get_bottlenecks(
             filter_data=filter_obj,
             min_yield_threshold=99.0
         )
@@ -259,7 +259,7 @@ class TestUnitFlowSummary:
             date_from=datetime.now() - timedelta(days=7)
         )
         
-        summary = wats_client.analytics_internal.get_flow_summary(filter_obj)
+        summary = wats_client.analytics.get_flow_summary(filter_obj)
         
         print(f"\nFlow Statistics:")
         print(f"  Total nodes: {summary['total_nodes']}")
@@ -289,7 +289,7 @@ class TestUnitFlowSplitBy:
         
         filter_obj = UnitFlowFilter(part_number="758877.874")
         
-        result = wats_client.analytics_internal.split_flow_by("stationName", filter_obj)
+        result = wats_client.analytics.split_flow_by("stationName", filter_obj)
         
         print(f"Split result - Nodes: {len(result.nodes or [])}")
         
@@ -311,7 +311,7 @@ class TestUnitFlowSplitBy:
         
         filter_obj = UnitFlowFilter(part_number="758877.874")
         
-        result = wats_client.analytics_internal.split_flow_by("location", filter_obj)
+        result = wats_client.analytics.split_flow_by("location", filter_obj)
         
         print(f"Split by location - Nodes: {len(result.nodes or [])}")
         print("==============================\n")
@@ -330,7 +330,7 @@ class TestUnitFlowOrdering:
         
         filter_obj = UnitFlowFilter(part_number="758877.874")
         
-        result = wats_client.analytics_internal.set_unit_order("startTime", filter_obj)
+        result = wats_client.analytics.set_unit_order("startTime", filter_obj)
         
         print(f"Ordered result - Nodes: {len(result.nodes or [])}")
         print("===========================\n")
@@ -349,7 +349,7 @@ class TestUnitFlowVisibility:
         
         filter_obj = UnitFlowFilter(part_number="758877.874")
         
-        result = wats_client.analytics_internal.expand_operations(True, filter_obj)
+        result = wats_client.analytics.expand_operations(True, filter_obj)
         
         print(f"Expanded view - Nodes: {len(result.nodes or [])}")
         
@@ -371,7 +371,7 @@ class TestUnitFlowVisibility:
         
         filter_obj = UnitFlowFilter(part_number="758877.874")
         
-        result = wats_client.analytics_internal.expand_operations(False, filter_obj)
+        result = wats_client.analytics.expand_operations(False, filter_obj)
         
         print(f"Collapsed view - Nodes: {len(result.nodes or [])}")
         print("===========================\n")
@@ -394,7 +394,7 @@ class TestUnitFlowDateRange:
             date_to=datetime.now()
         )
         
-        result = wats_client.analytics_internal.get_unit_flow(filter_obj)
+        result = wats_client.analytics.get_unit_flow(filter_obj)
         
         print(f"Last 24 hours - Nodes: {len(result.nodes or [])}, Links: {len(result.links or [])}")
         print("==========================\n")
@@ -413,12 +413,12 @@ class TestUnitFlowDateRange:
             date_to=datetime.now()
         )
         
-        result = wats_client.analytics_internal.get_unit_flow(filter_obj)
+        result = wats_client.analytics.get_unit_flow(filter_obj)
         
         print(f"Last 30 days - Nodes: {len(result.nodes or [])}, Links: {len(result.links or [])}")
         
         # Get summary for this period
-        summary = wats_client.analytics_internal.get_flow_summary(filter_obj)
+        summary = wats_client.analytics.get_flow_summary(filter_obj)
         print(f"Summary: {summary['total_units']} units, {summary['avg_yield']:.1f}% avg yield")
         
         print("=========================\n")
@@ -441,7 +441,7 @@ class TestUnitFlowStatusFilter:
             include_failed=False
         )
         
-        result = wats_client.analytics_internal.get_unit_flow(filter_obj)
+        result = wats_client.analytics.get_unit_flow(filter_obj)
         
         print(f"Passed only - Nodes: {len(result.nodes or [])}")
         print("========================\n")
@@ -460,7 +460,7 @@ class TestUnitFlowStatusFilter:
             include_failed=True
         )
         
-        result = wats_client.analytics_internal.get_unit_flow(filter_obj)
+        result = wats_client.analytics.get_unit_flow(filter_obj)
         
         print(f"Failed only - Nodes: {len(result.nodes or [])}")
         print("========================\n")

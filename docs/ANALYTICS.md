@@ -295,7 +295,7 @@ flow_filter = UnitFlowFilter(
 )
 
 # Get flow data
-flow = api.analytics_internal.get_unit_flow(flow_filter)
+flow = api.analytics.get_unit_flow(flow_filter)
 
 print(f"=== UNIT FLOW ===")
 print(f"Nodes: {len(flow.nodes)}")
@@ -322,7 +322,7 @@ flow_filter = UnitFlowFilter(
     days=7
 )
 
-bottlenecks = api.analytics_internal.get_bottlenecks(flow_filter)
+bottlenecks = api.analytics.get_bottlenecks(flow_filter)
 
 print("=== BOTTLENECKS ===")
 for bottleneck in bottlenecks:
@@ -341,7 +341,7 @@ flow_filter = UnitFlowFilter(
     days=30
 )
 
-trace_result = api.analytics_internal.trace_serial_numbers(flow_filter)
+trace_result = api.analytics.trace_serial_numbers(flow_filter)
 
 for unit in trace_result.units:
     print(f"\n{unit.serial_number}:")
@@ -444,25 +444,29 @@ measurement_report("WIDGET-001", steps, days=30)
 
 ### AnalyticsService Methods
 
+All methods are accessed via `api.analytics`. Methods marked with ⚠️ use internal WATS endpoints that may change without notice.
+
 #### Yield Operations
 - `get_yield(filter)` → `YieldResult` - Calculate yield statistics
 
 #### Measurement Operations
 - `get_aggregated_measurements(filter, measurement_paths)` → `List[AggregatedMeasurement]` - Get measurement statistics
 
-### AnalyticsServiceInternal Methods (⚠️ Subject to change)
-
-#### Unit Flow Operations
+#### Unit Flow Operations (⚠️ Internal API)
 - `get_unit_flow(filter)` → `UnitFlowResult` - Get complete flow data
-- `get_bottlenecks(filter)` → `List[Bottleneck]` - Identify bottlenecks
-- `trace_serial_numbers(filter)` → `UnitFlowResult` - Trace specific units
+- `get_flow_nodes()` → `List[UnitFlowNode]` - Get flow nodes
+- `get_flow_links()` → `List[UnitFlowLink]` - Get flow links
+- `get_flow_units()` → `List[UnitFlowUnit]` - Get flow units
+- `get_bottlenecks(filter, min_yield_threshold)` → `List[UnitFlowNode]` - Identify bottlenecks
+- `trace_serial_numbers(serial_numbers, filter)` → `UnitFlowResult` - Trace specific units
 
-#### Step/Measurement Filter Operations (⚠️ Subject to change)
-- `get_aggregated_measurements(filter_data, step_filters, sequence_filters, measurement_name)` → `List[AggregatedMeasurement]` - Aggregated stats with XML filters
+#### Step/Measurement Filter Operations (⚠️ Internal API)
 - `get_measurement_list(filter_data, step_filters, sequence_filters)` → `List[MeasurementListItem]` - Measurement values with XML filters
 - `get_measurement_list_by_product(product_group_id, level_id, days, step_filters, sequence_filters)` → `List[MeasurementListItem]` - Simple query
 - `get_step_status_list(filter_data, step_filters, sequence_filters)` → `List[StepStatusItem]` - Step statuses with XML filters
 - `get_step_status_list_by_product(product_group_id, level_id, days, step_filters, sequence_filters)` → `List[StepStatusItem]` - Simple query
+- `get_top_failed_internal(filter_data, top_count)` → `List[TopFailedStep]` - Top failed steps (internal API)
+- `get_top_failed_by_product(part_number, process_code, product_group_id, level_id, days, count)` → `List[TopFailedStep]` - Simple query
 
 ### Models
 

@@ -12,16 +12,16 @@ Usage:
     api = pyWATS(url, username, password)
     
     # Upload file
-    api.asset_internal.upload_file(asset_id, "config.json", content)
+    api.asset.upload_blob(asset_id, "config.json", content)
     
     # List files
-    files = api.asset_internal.list_files(asset_id)
+    files = api.asset.list_blobs(asset_id)
     
     # Download file
-    content = api.asset_internal.download_file(asset_id, "config.json")
+    content = api.asset.download_blob(asset_id, "config.json")
     
     # Delete files
-    api.asset_internal.delete_files(asset_id, ["old.txt"])
+    api.asset.delete_blobs(asset_id, ["old.txt"])
 """
 from typing import List, Optional
 import logging

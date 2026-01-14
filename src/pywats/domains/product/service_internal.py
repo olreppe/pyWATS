@@ -17,7 +17,7 @@ Key Distinction:
 
 Example:
     # Define the template (Product domain)
-    template = api.product_internal.get_box_build("CONTROLLER", "A")
+    template = api.product.get_box_build_template("CONTROLLER", "A")
     template.add_subunit("POWER-SUPPLY", "A", quantity=1)
     template.add_subunit("SENSOR-BOARD", "A", quantity=2)
     template.save()

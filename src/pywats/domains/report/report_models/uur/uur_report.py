@@ -576,9 +576,9 @@ class UURReport(Report):
             return
         
         try:
-            # Use internal API to get fail codes for this repair process
-            if hasattr(self._api, 'process_internal'):
-                fail_code_list = self._api.process_internal.get_fail_codes(self.process_code)
+            # Use process API to get fail codes for this repair process
+            if hasattr(self._api, 'process') and hasattr(self._api.process, 'get_fail_codes'):
+                fail_code_list = self._api.process.get_fail_codes(self.process_code)
                 # Store as dictionary keyed by GUID for quick lookup
                 self._fail_codes = {fc['guid']: fc for fc in fail_code_list}
         except Exception as e:

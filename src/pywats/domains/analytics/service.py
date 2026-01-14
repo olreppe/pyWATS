@@ -2,9 +2,13 @@
 
 All business operations for statistics, KPIs, yield analysis, and dashboard data.
 Note: Maps to the WATS /api/App/* endpoints (backend naming).
+
+Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
+that may change without notice. Use with caution.
 """
+import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
 from .repository import AnalyticsRepository
 from .models import (
@@ -19,8 +23,21 @@ from .models import (
     MeasurementData,
     AggregatedMeasurement,
     OeeAnalysisResult,
+    # Internal models
+    UnitFlowNode,
+    UnitFlowLink,
+    UnitFlowUnit,
+    UnitFlowFilter,
+    UnitFlowResult,
+    MeasurementListItem,
+    StepStatusItem,
 )
 from ..report.models import WATSFilter, ReportHeader
+
+if TYPE_CHECKING:
+    from .service_internal import AnalyticsServiceInternal
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyticsService:
@@ -40,14 +57,20 @@ class AnalyticsService:
         >>> failures = api.analytics.get_top_failed(part_number="WIDGET-001")
     """
 
-    def __init__(self, repository: AnalyticsRepository):
+    def __init__(
+        self, 
+        repository: AnalyticsRepository,
+        internal_service: Optional["AnalyticsServiceInternal"] = None
+    ):
         """
         Initialize with AnalyticsRepository.
 
         Args:
             repository: AnalyticsRepository instance for data access
+            internal_service: Optional internal service for internal API methods
         """
         self._repository = repository
+        self._internal = internal_service
 
     # =========================================================================
     # System Info
@@ -826,3 +849,472 @@ class AnalyticsService:
             dimensions="stationName;period",
         )
         return self.get_dynamic_yield(filter_data)
+
+    # =========================================================================
+    # Internal API Methods
+    # =========================================================================
+    # ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    # These methods use undocumented WATS API endpoints that may change
+    # without notice. Use with caution.
+    # =========================================================================
+
+    def _ensure_internal(self) -> "AnalyticsServiceInternal":
+        """Ensure internal service is available."""
+        if self._internal is None:
+            raise RuntimeError(
+                "Internal analytics methods are not available. "
+                "This pyWATS client was not configured with internal API support."
+            )
+        return self._internal
+
+    # -------------------------------------------------------------------------
+    # Unit Flow Methods (Internal)
+    # -------------------------------------------------------------------------
+
+    def get_unit_flow(
+        self, 
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> UnitFlowResult:
+        """
+        Get complete unit flow data with nodes and links.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        This is the main method for unit flow analysis. Returns a complete
+        flow diagram showing how units traverse through production operations.
+        
+        Args:
+            filter_data: UnitFlowFilter or dict with filter criteria.
+                Common filters:
+                - part_number: Product part number
+                - date_from/date_to: Date range
+                - station_name: Filter by station
+                - include_passed/include_failed: Filter by status
+                
+        Returns:
+            UnitFlowResult with nodes, links, and metadata
+            
+        Example:
+            >>> from pywats import UnitFlowFilter
+            >>> from datetime import datetime, timedelta
+            >>> 
+            >>> filter = UnitFlowFilter(
+            ...     part_number="WIDGET-001",
+            ...     date_from=datetime.now() - timedelta(days=7)
+            ... )
+            >>> result = api.analytics.get_unit_flow(filter)
+            >>> 
+            >>> for node in result.nodes:
+            ...     print(f"{node.name}: {node.unit_count} units")
+        """
+        return self._ensure_internal().get_unit_flow(filter_data)
+
+    def get_flow_nodes(self) -> List[UnitFlowNode]:
+        """
+        Get all nodes from the current unit flow state.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns:
+            List of UnitFlowNode objects
+        """
+        return self._ensure_internal().get_flow_nodes()
+
+    def get_flow_links(self) -> List[UnitFlowLink]:
+        """
+        Get all links from the current unit flow state.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns:
+            List of UnitFlowLink objects
+        """
+        return self._ensure_internal().get_flow_links()
+
+    def get_flow_units(self) -> List[UnitFlowUnit]:
+        """
+        Get all individual units from the unit flow.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns:
+            List of UnitFlowUnit objects
+        """
+        return self._ensure_internal().get_flow_units()
+
+    def trace_serial_numbers(
+        self,
+        serial_numbers: List[str],
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> UnitFlowResult:
+        """
+        Trace specific serial numbers through the production flow.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            serial_numbers: List of serial numbers to trace
+            filter_data: Additional filter parameters
+            
+        Returns:
+            UnitFlowResult showing paths for the specified units
+        """
+        return self._ensure_internal().trace_serial_numbers(serial_numbers, filter_data)
+
+    def get_bottlenecks(
+        self,
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None,
+        min_yield_threshold: float = 95.0
+    ) -> List[UnitFlowNode]:
+        """
+        Find production bottlenecks (nodes with yield below threshold).
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            filter_data: Filter criteria for the flow
+            min_yield_threshold: Minimum acceptable yield (default 95%)
+            
+        Returns:
+            List of UnitFlowNode objects with yield below threshold
+        """
+        return self._ensure_internal().get_bottlenecks(filter_data, min_yield_threshold)
+
+    # -------------------------------------------------------------------------
+    # Measurement List Methods (Internal)
+    # -------------------------------------------------------------------------
+
+    def get_measurement_list(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[MeasurementListItem]:
+        """
+        Get measurement list with full filter support.
+        
+        POST /api/internal/App/MeasurementList
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns individual measurement values matching the specified step
+        and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters.
+                Typically obtained from TopFailed endpoint results.
+            sequence_filters: XML string defining sequence filters.
+                Typically obtained from TopFailed endpoint results.
+            
+        Returns:
+            List of MeasurementListItem objects with measurement details.
+            
+        Example:
+            >>> results = api.analytics.get_measurement_list(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "dateFrom": "2024-01-01T00:00:00",
+            ...         "dateTo": "2024-01-31T23:59:59"
+            ...     },
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> for m in results:
+            ...     print(f"{m.serial_number}: {m.step_name} = {m.value}")
+        """
+        return self._ensure_internal().get_measurement_list(
+            filter_data=filter_data,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters
+        )
+
+    def get_measurement_list_by_product(
+        self,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[MeasurementListItem]:
+        """
+        Get measurement list using simple query parameters.
+        
+        GET /api/internal/App/MeasurementList
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simplified version that queries measurements by product group, level,
+        and time range with step/sequence filters.
+        
+        Args:
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            step_filters: XML string defining step filters (required)
+            sequence_filters: XML string defining sequence filters (required)
+            
+        Returns:
+            List of MeasurementListItem objects.
+        """
+        return self._ensure_internal().get_measurement_list_by_product(
+            product_group_id=product_group_id,
+            level_id=level_id,
+            days=days,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters
+        )
+
+    # -------------------------------------------------------------------------
+    # Step Status Methods (Internal)
+    # -------------------------------------------------------------------------
+
+    def get_step_status_list(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[StepStatusItem]:
+        """
+        Get step status list with full filter support.
+        
+        POST /api/internal/App/StepStatusList
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns step pass/fail counts matching the specified step
+        and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters.
+                Typically obtained from TopFailed endpoint results.
+            sequence_filters: XML string defining sequence filters.
+                Typically obtained from TopFailed endpoint results.
+            
+        Returns:
+            List of StepStatusItem objects with step status details.
+            
+        Example:
+            >>> results = api.analytics.get_step_status_list(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "status": "Failed",
+            ...         "periodCount": 30
+            ...     },
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>"
+            ... )
+            >>> for step in results:
+            ...     fail_rate = step.fail_count / step.total_count * 100
+            ...     print(f"{step.step_name}: {fail_rate:.1f}% failure rate")
+        """
+        return self._ensure_internal().get_step_status_list(
+            filter_data=filter_data,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters
+        )
+
+    def get_step_status_list_by_product(
+        self,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        step_filters: str,
+        sequence_filters: str
+    ) -> List[StepStatusItem]:
+        """
+        Get step status list using simple query parameters.
+        
+        GET /api/internal/App/StepStatusList
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simplified version that queries step statuses by product group, level,
+        and time range with step/sequence filters.
+        
+        Args:
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            step_filters: XML string defining step filters (required)
+            sequence_filters: XML string defining sequence filters (required)
+            
+        Returns:
+            List of StepStatusItem objects.
+        """
+        return self._ensure_internal().get_step_status_list_by_product(
+            product_group_id=product_group_id,
+            level_id=level_id,
+            days=days,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters
+        )
+
+    # -------------------------------------------------------------------------
+    # Top Failed Steps (Internal)
+    # -------------------------------------------------------------------------
+
+    def get_top_failed_internal(
+        self,
+        filter_data: Dict[str, Any],
+        top_count: Optional[int] = None
+    ) -> List[TopFailedStep]:
+        """
+        Get top failed steps using internal API with full filter support.
+        
+        POST /api/internal/App/TopFailed
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns the most frequently failing steps. Unlike the public
+        get_top_failed() method, this uses the internal API which may
+        provide different filtering options.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - partNumber: Product part number
+                - testOperation: Test operation name
+                - yield: Yield threshold
+                - productGroup: Product group name
+                - level: Production level
+                - periodCount: Number of periods to include
+                - grouping: Time grouping (Day, Week, Month, etc.)
+                - includeCurrentPeriod: Include current period in results
+                - topCount: Maximum number of failed steps to return
+            top_count: Optional override for topCount (convenience parameter)
+            
+        Returns:
+            List of TopFailedStep objects with failure statistics.
+            
+        Example:
+            >>> results = api.analytics.get_top_failed_internal(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "productGroup": "Widgets",
+            ...         "periodCount": 30
+            ...     },
+            ...     top_count=20
+            ... )
+            >>> for step in results:
+            ...     print(f"{step.step_name}: {step.fail_count} failures")
+        """
+        return self._ensure_internal().get_top_failed(
+            filter_data=filter_data,
+            top_count=top_count
+        )
+
+    def get_top_failed_by_product(
+        self,
+        part_number: str,
+        process_code: str,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        count: int = 10
+    ) -> List[TopFailedStep]:
+        """
+        Get top failed steps using simple query parameters.
+        
+        GET /api/internal/App/TopFailed
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simplified version that queries top failed steps by product and time
+        range. Useful for quick analysis without building complex filter objects.
+        
+        Args:
+            part_number: Part number of reports (required)
+            process_code: Process code of reports (required)
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            count: Number of top failed steps to return (default 10)
+            
+        Returns:
+            List of TopFailedStep objects with failure statistics.
+            
+        Example:
+            >>> results = api.analytics.get_top_failed_by_product(
+            ...     part_number="WIDGET-001",
+            ...     process_code="TEST",
+            ...     product_group_id="pg-123",
+            ...     level_id="level-456",
+            ...     days=30,
+            ...     count=10
+            ... )
+            >>> for step in results:
+            ...     print(f"{step.step_name}: {step.fail_count} failures")
+        """
+        return self._ensure_internal().get_top_failed_by_product(
+            part_number=part_number,
+            process_code=process_code,
+            product_group_id=product_group_id,
+            level_id=level_id,
+            days=days,
+            count=count
+        )
+
+    # -------------------------------------------------------------------------
+    # Aggregated Measurements (Internal)
+    # -------------------------------------------------------------------------
+
+    def get_aggregated_measurements(
+        self,
+        filter_data: Dict[str, Any],
+        step_filters: str,
+        sequence_filters: str,
+        measurement_name: Optional[str] = None
+    ) -> List[AggregatedMeasurement]:
+        """
+        Get aggregated measurement statistics with step/sequence filters.
+        
+        POST /api/internal/App/AggregatedMeasurements
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns aggregated statistics (count, min, max, avg, stdev, cpk, etc.)
+        for measurements matching the specified step and sequence filters.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - serialNumber, partNumber, revision, batchNumber
+                - stationName, testOperation, status, yield
+                - productGroup, level, swFilename, swVersion
+                - dateFrom, dateTo, dateGrouping, periodCount
+                - includeCurrentPeriod, maxCount, minCount, topCount
+            step_filters: XML string defining step filters.
+                Typically obtained from TopFailed endpoint results.
+            sequence_filters: XML string defining sequence filters.
+                Typically obtained from TopFailed endpoint results.
+            measurement_name: Optional name of the measurement to filter by.
+            
+        Returns:
+            List of AggregatedMeasurement objects with statistics.
+            
+        Example:
+            >>> results = api.analytics.get_aggregated_measurements(
+            ...     filter_data={"partNumber": "WIDGET-001", "periodCount": 30},
+            ...     step_filters="<filters>...</filters>",
+            ...     sequence_filters="<filters>...</filters>",
+            ...     measurement_name="Voltage"
+            ... )
+            >>> for m in results:
+            ...     print(f"{m.step_name}: avg={m.avg}, cpk={m.cpk}")
+        """
+        return self._ensure_internal().get_aggregated_measurements(
+            filter_data=filter_data,
+            step_filters=step_filters,
+            sequence_filters=sequence_filters,
+            measurement_name=measurement_name
+        )

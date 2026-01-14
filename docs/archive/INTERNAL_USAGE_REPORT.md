@@ -4,6 +4,19 @@
 **Scope:** Complete audit of all `/api/internal` endpoint usage in PyWATS  
 **Purpose:** Documentation for compliance, maintenance, and migration planning
 
+> **⚠️ ARCHIVED - API Pattern Updated (2026-01-14)**
+> 
+> This document describes the original internal API architecture. The access pattern has been
+> updated to use a unified API approach:
+> 
+> - **OLD:** `api.product_internal.get_box_build()`, `api.asset_internal.upload_file()`
+> - **NEW:** `api.product.get_box_build_template()`, `api.asset.upload_blob()`
+> 
+> Internal methods are now accessed via the main domain accessor. Methods using internal
+> endpoints are marked with `⚠️ INTERNAL API` warnings in their docstrings.
+> 
+> See [API_DESIGN_CONVENTIONS.md](../internal/API_DESIGN_CONVENTIONS.md) for current patterns.
+
 ---
 
 ## Table of Contents

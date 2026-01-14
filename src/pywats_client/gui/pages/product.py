@@ -718,9 +718,9 @@ BOM and Box Build tabs are now available for this revision.
                         revision = full_product.revisions[0].revision
                 
                 if revision:
-                    # Try to load box build template (uses internal API)
+                    # Try to load box build template
                     try:
-                        template = client.product_internal.get_box_build(part_number, revision)
+                        template = client.product.get_box_build_template(part_number, revision)
                         subunits = template.get_subunits() if template else []
                         
                         if subunits:
@@ -963,7 +963,7 @@ BOM and Box Build tabs are now available for this revision.
                     QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
                     return
                 
-                template = client.product_internal.get_box_build(part_number, revision)
+                template = client.product.get_box_build_template(part_number, revision)
                 template.add_subunit(
                     child_part_number=data['part_number'],
                     child_revision=data['revision'],
@@ -1009,7 +1009,7 @@ BOM and Box Build tabs are now available for this revision.
                 if not client:
                     QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
                     return
-                template = client.product_internal.get_box_build(part_number, revision)
+                template = client.product.get_box_build_template(part_number, revision)
                 template.remove_subunit(child_part, child_rev)
                 template.save()
                 

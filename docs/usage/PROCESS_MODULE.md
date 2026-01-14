@@ -242,25 +242,24 @@ def get_appropriate_process(api, operation_type):
 
 ## Internal API (Advanced)
 
-The internal API provides additional functionality not available in the public API:
+The process service provides additional internal API functionality:
 
 ```python
-# Check if internal service is available
-if hasattr(api, 'process_internal'):
-    # Get processes with full details (ProcessID, etc.)
-    processes = api.process_internal.get_processes()
-    
-    # Get repair operation configurations
-    configs = api.process_internal.get_repair_operation_configs()
-    
-    # Get repair categories (fail codes)
-    categories = api.process_internal.get_repair_categories(500)
-    
-    # Get flattened fail codes
-    fail_codes = api.process_internal.get_fail_codes(500)
+# Get processes with full details (ProcessID, etc.)
+processes = api.process.get_all_processes()
+
+# Get repair operation configurations
+configs = api.process.get_repair_operation_configs()
+
+# Get repair categories (fail codes)
+categories = api.process.get_repair_categories(500)
+
+# Get flattened fail codes
+fail_codes = api.process.get_fail_codes(500)
 ```
 
-⚠️ **Warning:** Internal API endpoints may change without notice.
+⚠️ **Warning:** These methods use internal API endpoints that may change without notice.
+Check the docstrings for `⚠️ INTERNAL API` warnings.
 
 ## Model Reference
 

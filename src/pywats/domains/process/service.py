@@ -1,13 +1,20 @@
 """Process service - public API business logic layer.
 
 Uses the public WATS API for process operations with in-memory caching.
+
+Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
+that may change without notice. Use with caution.
 """
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any, TYPE_CHECKING
 from datetime import datetime, timedelta
+from uuid import UUID
 import threading
 
+if TYPE_CHECKING:
+    from .service_internal import ProcessServiceInternal
+
 from .repository import ProcessRepository
-from .models import ProcessInfo
+from .models import ProcessInfo, RepairOperationConfig, RepairCategory
 
 
 class ProcessService:
@@ -42,7 +49,8 @@ class ProcessService:
     def __init__(
         self, 
         repository: ProcessRepository,
-        refresh_interval: int = DEFAULT_REFRESH_INTERVAL
+        refresh_interval: int = DEFAULT_REFRESH_INTERVAL,
+        internal_service: Optional["ProcessServiceInternal"] = None
     ):
         """
         Initialize service with repository and caching.
@@ -50,9 +58,11 @@ class ProcessService:
         Args:
             repository: ProcessRepository instance
             refresh_interval: Cache refresh interval in seconds (default: 300)
+            internal_service: Optional internal service for internal API methods
         """
         self._repository = repository
         self._refresh_interval = refresh_interval
+        self._internal = internal_service
         
         # Cache state
         self._cache: List[ProcessInfo] = []
@@ -296,4 +306,137 @@ class ProcessService:
         if repair_ops and repair_ops[0].code is not None:
             return repair_ops[0].code
         return self.DEFAULT_REPAIR_PROCESS_CODE
+
+    # =========================================================================
+    # Extended Methods (from internal service)
+    # =========================================================================
+    # ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    # These methods use undocumented WATS API endpoints.
+    # =========================================================================
+
+    def _ensure_internal(self) -> "ProcessServiceInternal":
+        """Ensure internal service is available."""
+        if self._internal is None:
+            raise RuntimeError(
+                "Internal process methods are not available. "
+                "This pyWATS client was not configured with internal API support."
+            )
+        return self._internal
+
+    # -------------------------------------------------------------------------
+    # Process Operations (Internal)
+    # -------------------------------------------------------------------------
+
+    def get_all_processes(self) -> List[ProcessInfo]:
+        """
+        Get all processes with full details.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns:
+            List of ProcessInfo objects with full details
+        """
+        return self._ensure_internal().get_processes()
+
+    def get_process_by_id(self, process_id: UUID) -> Optional[ProcessInfo]:
+        """
+        Get a specific process by ID.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            process_id: The process GUID
+            
+        Returns:
+            ProcessInfo or None if not found
+        """
+        return self._ensure_internal().get_process(process_id)
+
+    def get_all_test_operations(self) -> List[ProcessInfo]:
+        """
+        Get all test operations with full details.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns:
+            List of test operation ProcessInfo objects
+        """
+        return self._ensure_internal().get_test_operations()
+
+    def get_all_repair_processes(self) -> List[ProcessInfo]:
+        """
+        Get all repair processes with full details.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns:
+            List of repair ProcessInfo objects
+        """
+        return self._ensure_internal().get_repair_processes()
+
+    def get_process_by_code(self, code: int) -> Optional[ProcessInfo]:
+        """
+        Get a process by its code.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            code: The process code (e.g., 100, 500)
+            
+        Returns:
+            ProcessInfo or None if not found
+        """
+        return self._ensure_internal().get_process_by_code(code)
+
+    # -------------------------------------------------------------------------
+    # Repair Operations (Internal)
+    # -------------------------------------------------------------------------
+
+    def get_repair_operation_configs(self) -> Dict[int, RepairOperationConfig]:
+        """
+        Get all repair operation configurations.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns a dictionary keyed by process code (e.g., 500, 510)
+        containing repair categories and fail codes.
+        
+        Returns:
+            Dict mapping process code to RepairOperationConfig
+        """
+        return self._ensure_internal().get_repair_operation_configs()
+
+    def get_repair_categories(self, repair_code: int = 500) -> List[RepairCategory]:
+        """
+        Get repair categories (fail code categories) for a repair process.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            repair_code: The repair process code (default 500)
+            
+        Returns:
+            List of RepairCategory objects
+        """
+        return self._ensure_internal().get_repair_categories(repair_code)
+
+    def get_fail_codes(self, repair_code: int = 500) -> List[Dict[str, Any]]:
+        """
+        Get flattened fail codes for a repair process.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            repair_code: The repair process code (default 500)
+            
+        Returns:
+            List of fail code dicts with category info
+        """
+        return self._ensure_internal().get_fail_codes(repair_code)
+
+    # -------------------------------------------------------------------------
+    # Validation Helpers (Internal)
+    # -------------------------------------------------------------------------
+
+
 

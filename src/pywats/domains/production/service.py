@@ -1,9 +1,15 @@
 """Production service - business logic layer.
 
 High-level operations for production unit management.
+
+Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
+that may change without notice. Use with caution.
 """
-from typing import Optional, List, Dict, Any, Sequence, Union
+from typing import Optional, List, Dict, Any, Sequence, Union, TYPE_CHECKING
 import logging
+
+if TYPE_CHECKING:
+    from .service_internal import ProductionServiceInternal
 
 from .models import (
     Unit, UnitChange, ProductionBatch, SerialNumberType,
@@ -28,16 +34,23 @@ class ProductionService:
         look up a specific phase by ID, code, or name.
     """
 
-    def __init__(self, repository: ProductionRepository, base_url: str = ""):
+    def __init__(
+        self, 
+        repository: ProductionRepository, 
+        base_url: str = "",
+        internal_service: Optional["ProductionServiceInternal"] = None
+    ):
         """
         Initialize with repository.
 
         Args:
             repository: ProductionRepository for data access
             base_url: Base URL for internal API calls
+            internal_service: Optional internal service for internal API methods
         """
         self._repository = repository
         self._base_url = base_url.rstrip("/") if base_url else ""
+        self._internal = internal_service
         
         # Phase cache (loaded on first access)
         self._phases: Optional[List[UnitPhase]] = None
@@ -407,7 +420,7 @@ class ProductionService:
     # 
     # Box Build Template (Product Domain):
     #   - Defines WHAT subunits are REQUIRED (design-time)
-    #   - Managed via api.product_internal.get_box_build()
+    #   - Managed via api.product.get_box_build_template()
     #   - Example: "Controller Module requires 1x Power Supply, 2x Sensor"
     #
     # Unit Assembly (Production Domain - THIS SECTION):
@@ -461,7 +474,7 @@ class ProductionService:
             
         Example:
             # 1. First, ensure box build template is defined (Product domain)
-            # template = api.product_internal.get_box_build("MODULE", "A")
+            # template = api.product.get_box_build_template("MODULE", "A")
             # template.add_subunit("PCBA", "A").save()
             
             # 2. Finalize the child unit
@@ -671,3 +684,60 @@ class ProductionService:
             List of saved ProductionBatch objects
         """
         return self._repository.save_batches(batches)
+
+    # =========================================================================
+    # Internal API Methods
+    # =========================================================================
+    # Extended Methods (from internal service)
+    # =========================================================================
+
+    def _ensure_internal(self) -> "ProductionServiceInternal":
+        """Ensure internal service is available."""
+        if self._internal is None:
+            raise RuntimeError(
+                "Internal production methods are not available. "
+                "This pyWATS client was not configured with internal API support."
+            )
+        return self._internal
+
+    # -------------------------------------------------------------------------
+    # Unit Phases (Extended)
+    # -------------------------------------------------------------------------
+
+    def get_all_unit_phases(self) -> List[UnitPhase]:
+        """
+        Get all available unit phases with full details.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Unit phases define production workflow states:
+        - "In Test" - Unit is being tested
+        - "Passed" - Unit passed testing
+        - "Failed" - Unit failed testing
+        - "In Repair" - Unit is being repaired
+        - "Scrapped" - Unit has been scrapped
+        - etc.
+
+        Returns:
+            List of UnitPhase objects containing phase configuration
+            
+        Example:
+            phases = api.production.get_all_unit_phases()
+            for phase in phases:
+                print(f"{phase.name}: {phase.description}")
+        """
+        return self._ensure_internal().get_unit_phases()
+
+    def get_phase_by_name(self, name: str) -> Optional[UnitPhase]:
+        """
+        Get a specific unit phase by name.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+
+        Args:
+            name: The name of the phase to find
+            
+        Returns:
+            UnitPhase if found, None otherwise
+        """
+        return self._ensure_internal().get_phase_by_name(name)

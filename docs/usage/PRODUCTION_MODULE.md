@@ -527,7 +527,7 @@ if not unit:
 
 ```python
 # Check template definition
-template = api.product_internal.get_box_build_template("MODULE-100", "A")
+template = api.product.get_box_build_template("MODULE-100", "A")
 print(f"Required subunits: {len(template.subunits)}")
 
 # Verify each subunit

@@ -501,20 +501,20 @@ class TestProcessInternalAPI:
     def test_internal_get_fail_codes(self, wats_client):
         """Test getting flattened fail codes"""
         try:
-            if not hasattr(wats_client, 'process_internal'):
-                pytest.skip("Internal process service not available")
+            if not hasattr(wats_client.process, 'get_fail_codes'):
+                pytest.skip("get_fail_codes method not available")
             
             # Try default repair code (500)
-            fail_codes = wats_client.process_internal.get_fail_codes(500)
+            fail_codes = wats_client.process.get_fail_codes(500)
             
             assert isinstance(fail_codes, list)
-            print(f"[OK] Internal API: {len(fail_codes)} fail codes for repair 500")
+            print(f"[OK] Process API: {len(fail_codes)} fail codes for repair 500")
             
             for fc in fail_codes[:5]:
                 print(f"  - {fc['description']} ({fc['category']})")
                 
         except Exception as e:
-            pytest.skip(f"Internal API not accessible: {e}")
+            pytest.skip(f"API not accessible: {e}")
 
 
 # =============================================================================

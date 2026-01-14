@@ -29,7 +29,7 @@ ProductionService --> ProductionRepository --> HttpClient
 ProductionService --> Unit / UnitPhase / UnitVerification models
 ```
 
-- **Refactor Ideas:** The assembly helpers (adding/removing child units, checking child units) logically belong with production templates in `product_internal`, so consider exposing a dedicated `ProductionAssemblyService` that keeps unit-level helpers inside a smaller core service.
+- **Refactor Ideas:** The assembly helpers (adding/removing child units, checking child units) logically belong with production templates, so consider exposing a dedicated `ProductionAssemblyService` that keeps unit-level helpers inside a smaller core service.
 
 ## 4. Inline Documentation
 - **Domain Knowledge Additions:** The large comment block in `ProductionService` clearly distinguishes between box build templates and runtime assemblies. Highlighting those flows is helpful, but the next step is to document expected failure modes (e.g., when `add_child_unit` is rejected) so testers know when to check logs versus repository returns.

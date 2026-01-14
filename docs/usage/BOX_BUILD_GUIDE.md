@@ -15,13 +15,13 @@ Understanding the distinction between these two concepts is crucial:
 
 **What it is:** A DESIGN-TIME definition of what subunits are required to build a product.
 
-**Where it lives:** Product domain (`api.product_internal`)
+**Where it lives:** Product domain (`api.product`)
 
 **Example use case:** "A Controller Module (CTRL-100) requires 1x Power Supply and 2x Sensor Board"
 
 ```python
 # This defines the REQUIREMENTS (what's needed)
-template = api.product_internal.get_box_build("CTRL-100", "A")
+template = api.product.get_box_build_template("CTRL-100", "A")
 template.add_subunit("PSU-200", "A", quantity=1)
 template.add_subunit("SENSOR-300", "A", quantity=2)
 template.save()
@@ -88,7 +88,7 @@ Define what subunits the parent product requires:
 
 ```python
 # Get or create box build template
-template = api.product_internal.get_box_build("CTRL-100", "A")
+template = api.product.get_box_build_template("CTRL-100", "A")
 
 # Add required subunits
 template.add_subunit(
@@ -101,7 +101,7 @@ template.add_subunit(
 template.save()
 
 # Or use context manager (auto-saves)
-with api.product_internal.get_box_build("CTRL-100", "A") as bb:
+with api.product.get_box_build_template("CTRL-100", "A") as bb:
     bb.add_subunit("PSU-200", "A", quantity=1)
     bb.add_subunit("SENSOR-300", "A", quantity=2)
 # Automatically saved when exiting context
@@ -184,12 +184,12 @@ print(f"Verification result: {verification}")
 
 ### Product Domain (Templates)
 
-#### `api.product_internal.get_box_build(part_number, revision)`
+#### `api.product.get_box_build_template(part_number, revision)`
 
 Get or create a box build template.
 
 ```python
-template = api.product_internal.get_box_build("CTRL-100", "A")
+template = api.product.get_box_build_template("CTRL-100", "A")
 ```
 
 #### `BoxBuildTemplate.add_subunit(part_number, revision, quantity=1)`
@@ -340,7 +340,7 @@ bom_items = [
 api.product.update_bom("PCBA-100", "A", bom_items)
 
 # Box Build: Subassemblies for final product
-template = api.product_internal.get_box_build("MODULE-100", "A")
+template = api.product.get_box_build_template("MODULE-100", "A")
 template.add_subunit("PCBA-100", "A", quantity=1)  # The assembled PCB
 template.add_subunit("PSU-200", "A", quantity=1)   # Power supply
 template.save()

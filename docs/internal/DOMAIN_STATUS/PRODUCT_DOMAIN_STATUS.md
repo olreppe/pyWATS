@@ -31,7 +31,7 @@ ProductService --> Product / ProductRevision / ProductGroup models
 ProductRevisionRelation --> ProductRevision (mask helpers)
 ```
 
-- **Refactor Ideas:** The `ProductRepository` currently contains XML generation/parsing helpers. Moving them into a `BomXmlService` (shared with `product_internal`) would make BOM updates easier to test and allow the public repository to focus on request shaping.
+- **Refactor Ideas:** The `ProductRepository` currently contains XML generation/parsing helpers. Moving them into a `BomXmlService` (shared with internal service) would make BOM updates easier to test and allow the public repository to focus on request shaping.
 
 ## 4. Inline Documentation
 - **Domain Knowledge Additions:** The repository cautions about dot-containing revisions and WSBF expectations, which should be mirrored in service docstrings so callers know why `get_revision` uses query params.

@@ -33,7 +33,7 @@ Example: "Unit CTRL-SN-001 now contains:
 WORKFLOW:
 =========
 1. Define box build template (Product Domain):
-   api.product_internal.get_box_build("CTRL-100", "A").add_subunit("PSU-200", "A").save()
+   api.product.get_box_build_template("CTRL-100", "A").add_subunit("PSU-200", "A").save()
 
 2. Create production units (Production Domain):
    api.production.create_units([parent_unit, child_units...])
@@ -72,7 +72,7 @@ class BoxBuildTemplate:
     
     Example:
         # Get or create a box build template
-        template = api.product_internal.get_box_build("MAIN-BOARD", "A")
+        template = api.product.get_box_build_template("MAIN-BOARD", "A")
         
         # Add subunits (defines what's needed)
         template.add_subunit("PCBA-001", "A", quantity=2)
@@ -85,7 +85,7 @@ class BoxBuildTemplate:
         template.save()
         
         # Or use context manager for auto-save
-        with api.product_internal.get_box_build("MAIN-BOARD", "A") as template:
+        with api.product.get_box_build_template("MAIN-BOARD", "A") as template:
             template.add_subunit("PCBA-001", "A", quantity=2)
         # Changes saved automatically
         

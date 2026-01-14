@@ -232,7 +232,7 @@ Box build templates define assemblies with sub-units (e.g., PCBAs in modules).
 
 ```python
 # Get template showing required subunits
-template = api.product_internal.get_box_build_template("MODULE-100", "A")
+template = api.product.get_box_build_template("MODULE-100", "A")
 
 print(f"Main part: {template.part_number}")
 print("Required subunits:")
@@ -245,7 +245,7 @@ for subunit in template.subunits:
 
 ```python
 # Get list of parts needed for assembly
-parts = api.product_internal.get_required_parts("MODULE-100", "A")
+parts = api.product.get_box_build_subunits("MODULE-100", "A")
 
 for part in parts:
     print(f"{part.part_number} - {part.description}")
@@ -254,34 +254,33 @@ for part in parts:
 ### 3. Add Subunit to Box Build
 
 ```python
-# Define subunit in assembly
-api.product_internal.add_subunit_to_box_build(
-    parent_part="MODULE-100",
-    parent_revision="A",
+# Get template, add subunit, and save
+template = api.product.get_box_build_template("MODULE-100", "A")
+template.add_subunit(
     child_part="PCBA-200",
-    child_revision_mask="*",  # Accept any revision
+    child_revision="A",
+    revision_mask="*",  # Accept any revision
     index=0  # Position in assembly
 )
+template.save()
 ```
 
 ### 4. Remove Subunit
 
 ```python
-# Remove subunit from template
-api.product_internal.remove_subunit_from_box_build(
-    parent_part="MODULE-100",
-    parent_revision="A",
-    index=0  # Position to remove
-)
+# Get template, remove subunit, and save
+template = api.product.get_box_build_template("MODULE-100", "A")
+template.remove_subunit("PCBA-200", "A")  # Remove by part and revision
+template.save()
 ```
 
 ### 5. Box Build Context Manager
 
 ```python
 # Convenient way to define box build
-with api.product_internal.box_build_context("MODULE-100", "A") as builder:
-    builder.add_subunit("PCBA-200", "*", index=0)
-    builder.add_subunit("PCBA-201", "*", index=1)
+with api.product.get_box_build_template("MODULE-100", "A") as builder:
+    builder.add_subunit("PCBA-200", "A")
+    builder.add_subunit("PCBA-201", "A")
     # Auto-saved when context exits
 ```
 
@@ -382,10 +381,10 @@ api.product.create_product(MAIN_MODULE, "500W Power Module", ProductState.ACTIVE
 api.product.create_revision(MAIN_MODULE, MAIN_REV, ProductState.ACTIVE)
 
 # Define subunits
-with api.product_internal.box_build_context(MAIN_MODULE, MAIN_REV) as builder:
-    builder.add_subunit("PCBA-CONTROL", "*", index=0)
-    builder.add_subunit("PCBA-POWER", "*", index=1)
-    builder.add_subunit("FAN-ASSEMBLY", "*", index=2)
+with api.product.get_box_build_template(MAIN_MODULE, MAIN_REV) as builder:
+    builder.add_subunit("PCBA-CONTROL", "A")
+    builder.add_subunit("PCBA-POWER", "A")
+    builder.add_subunit("FAN-ASSEMBLY", "A")
 
 # Upload BOM for mechanical parts
 mechanical_bom = [

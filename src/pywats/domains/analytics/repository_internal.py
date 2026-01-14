@@ -19,6 +19,7 @@ Step/Measurement filter endpoints:
 - POST /api/internal/App/AggregatedMeasurements - Aggregated measurements with step filters
 - GET/POST /api/internal/App/MeasurementList - Measurement list with step filters
 - GET/POST /api/internal/App/StepStatusList - Step status list with filters
+- GET/POST /api/internal/App/TopFailed - Top failed steps with filters
 
 The internal API requires the Referer header to be set to the base URL.
 """
@@ -34,6 +35,7 @@ from .models import (
     AggregatedMeasurement,
     MeasurementListItem,
     StepStatusItem,
+    TopFailedStep,
 )
 
 
@@ -622,4 +624,123 @@ class AnalyticsRepositoryInternal:
         
         if data and isinstance(data, list):
             return [StepStatusItem.model_validate(item) for item in data]
+        return []
+    
+    def get_top_failed_simple(
+        self,
+        part_number: str,
+        process_code: str,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        count: int = 10
+    ) -> List[TopFailedStep]:
+        """
+        Get top failed steps using simple query parameters.
+        
+        GET /api/internal/App/TopFailed
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simple version that queries top failed steps by part number, process code,
+        product group, level, and time range.
+        
+        Args:
+            part_number: Part number of reports to get failed steps from (required)
+            process_code: Process code of reports to get failed steps from (required)
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            count: Number of items to return (default 10)
+            
+        Returns:
+            List of TopFailedStep objects with failure statistics.
+            
+        Example:
+            >>> # Get top 10 failed steps for last 30 days
+            >>> results = repo.get_top_failed_simple(
+            ...     part_number="WIDGET-001",
+            ...     process_code="TEST",
+            ...     product_group_id="pg-123",
+            ...     level_id="level-456",
+            ...     days=30,
+            ...     count=10
+            ... )
+            >>> for step in results:
+            ...     print(f"{step.step_name}: {step.fail_count} failures ({step.fail_rate}%)")
+        """
+        params = {
+            "partNumber": part_number,
+            "processCode": process_code,
+            "productGroupId": product_group_id,
+            "levelId": level_id,
+            "days": days,
+            "count": count,
+        }
+        
+        data = self._internal_get("/api/internal/App/TopFailed", params=params)
+        
+        if data and isinstance(data, list):
+            return [TopFailedStep.model_validate(item) for item in data]
+        return []
+    
+    def get_top_failed(
+        self,
+        filter_data: Dict[str, Any],
+        top_count: Optional[int] = None
+    ) -> List[TopFailedStep]:
+        """
+        Get top failed steps with full filter support.
+        
+        POST /api/internal/App/TopFailed
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Advanced version that allows full filter customization.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - partNumber: Product part number
+                - testOperation: Test operation name
+                - yield: Yield threshold
+                - productGroup: Product group name
+                - level: Production level
+                - periodCount: Number of periods to include
+                - grouping: Time grouping (Day, Week, Month, etc.)
+                - includeCurrentPeriod: Include current period in results
+                - topCount: Maximum number of failed steps to return
+            top_count: Optional override for topCount (convenience parameter)
+            
+        Returns:
+            List of TopFailedStep objects with failure statistics.
+            
+        Note:
+            The returned TopFailedStep objects contain step_filters and
+            sequence_filters XML strings that can be used with 
+            get_measurement_list() and get_step_status_list() to drill down
+            into specific step failures.
+            
+        Example:
+            >>> # Get top 20 failed steps for a product
+            >>> results = repo.get_top_failed(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "productGroup": "Widgets",
+            ...         "periodCount": 30,
+            ...         "topCount": 20
+            ...     }
+            ... )
+            >>> for step in results:
+            ...     print(f"{step.step_name}: {step.fail_count} failures")
+            ...     # Use step.step_path for drilling down to measurements
+        """
+        # Allow top_count parameter to override filter_data
+        if top_count is not None:
+            filter_data = dict(filter_data)
+            filter_data["topCount"] = top_count
+        
+        data = self._internal_post("/api/internal/App/TopFailed", data=filter_data)
+        
+        if data and isinstance(data, list):
+            return [TopFailedStep.model_validate(item) for item in data]
         return []

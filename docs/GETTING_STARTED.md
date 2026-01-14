@@ -869,7 +869,8 @@ pyWATS provides access to both **public** and **internal** WATS API endpoints:
 
 **Internal APIs** (Unstable):
 - Undocumented endpoints used by WATS frontend (e.g., `/api/internal/UnitFlow`)
-- Accessed through `*_internal` modules: `api.product_internal`, `api.analytics_internal`, etc.
+- Accessed through the same domain accessor: `api.product`, `api.analytics`, etc.
+- Methods are marked with `⚠️ INTERNAL API` in docstrings
 - **⚠️ MAY CHANGE WITHOUT NOTICE** - Subject to breaking changes
 - **Use with caution** - Only when public APIs don't provide needed functionality
 
@@ -877,13 +878,13 @@ pyWATS provides access to both **public** and **internal** WATS API endpoints:
 
 Internal APIs fill gaps where public endpoints don't yet exist:
 
-| Feature | Module | Why Internal? |
+| Feature | Method | Why Internal? |
 |---------|--------|---------------|
-| Unit Flow Analysis | `analytics_internal` | No public Unit Flow endpoints yet |
-| Box Build Templates | `product_internal` | No public box build management |
-| Asset File Operations | `asset_internal` | No public file upload/download |
-| Unit Phases (MES) | `production_internal` | MES integration not in public API |
-| Process Details | `process_internal` | Full process info not in public API |
+| Unit Flow Analysis | `api.analytics.get_unit_flow()` | No public Unit Flow endpoints yet |
+| Box Build Templates | `api.product.get_box_build_template()` | No public box build management |
+| Asset File Operations | `api.asset.upload_blob()` | No public file upload/download |
+| Unit Phases (MES) | `api.production.get_all_unit_phases()` | MES integration not in public API |
+| Process Details | `api.process.get_all_processes()` | Full process info not in public API |
 
 ### Using Internal APIs Safely
 
@@ -896,8 +897,8 @@ api = pyWATS(base_url="...", token="...")
 products = api.product.get_products()
 
 # ⚠️ Internal API - Use only when necessary
-# This uses internal endpoints that may change
-box_build = api.product_internal.get_box_build("WIDGET-001", "A")
+# This uses internal endpoints that may change (see docstring for warning)
+box_build = api.product.get_box_build_template("WIDGET-001", "A")
 ```
 
 **Best Practices:**
@@ -928,7 +929,7 @@ def get_unit_flow_safely(api, part_number, date_from, date_to):
         )
         
         # Internal API call - wrapped for safety
-        result = api.analytics_internal.get_unit_flow(filter_data)
+        result = api.analytics.get_unit_flow(filter_data)
         return result
         
     except AttributeError:
@@ -956,8 +957,8 @@ Some internal API methods will emit deprecation warnings:
 bom_xml = api.product.repository.get_bom("WIDGET-001", "A")
 # DeprecationWarning: ProductRepository.get_bom() uses an internal API endpoint...
 
-# Use the internal module instead
-bom_items = api.product_internal.get_bom_items("WIDGET-001", "A")
+# Use the unified API method instead
+bom_items = api.product.get_bom_items("WIDGET-001", "A")
 ```
 
 To suppress these warnings during testing (not recommended for production):
@@ -975,15 +976,13 @@ with warnings.catch_warnings():
 As public APIs become available, migrate away from internal APIs:
 
 ```python
-# Version 1.0 - Using internal API
+# Current unified API - Internal methods are marked in docstrings
 def get_box_build_template(api, part_number, revision):
-    # ⚠️ Internal API - will change
-    return api.product_internal.get_box_build(part_number, revision)
+    # ⚠️ INTERNAL API (see docstring) - may change
+    return api.product.get_box_build_template(part_number, revision)
 
-# Version 2.0 - Migrated to public API (when available)
-def get_box_build_template(api, part_number, revision):
-    # ✅ Public API - stable
-    return api.product.get_box_build(part_number, revision)
+# When endpoint becomes public, docstring warning will be removed
+# Your code continues to work with no changes required
 ```
 
 **Migration Checklist:**

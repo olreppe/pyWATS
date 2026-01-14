@@ -151,19 +151,14 @@ class pyWATS:
         
         # Service instances (lazy initialization)
         self._product: Optional[ProductService] = None
-        self._product_internal: Optional[ProductServiceInternal] = None
         self._asset: Optional[AssetService] = None
-        self._asset_internal: Optional[AssetServiceInternal] = None
         self._production: Optional[ProductionService] = None
-        self._production_internal: Optional[ProductionServiceInternal] = None
         self._report: Optional[ReportService] = None
         self._software: Optional[SoftwareService] = None
         self._analytics: Optional[AnalyticsService] = None
-        self._analytics_internal: Optional[AnalyticsServiceInternal] = None
         self._rootcause: Optional[RootCauseService] = None
         self._scim: Optional[ScimService] = None
         self._process: Optional[ProcessService] = None
-        self._process_internal: Optional[ProcessServiceInternal] = None
     
     # -------------------------------------------------------------------------
     # Module Properties
@@ -179,39 +174,11 @@ class pyWATS:
         """
         if self._product is None:
             repo = ProductRepository(self._http_client, self._error_handler)
-            self._product = ProductService(repo)
-        return self._product
-    
-    @property
-    def product_internal(self) -> ProductServiceInternal:
-        """
-        Access internal product operations.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        This service uses internal WATS API endpoints that are not publicly
-        documented. Methods may change or be removed without notice.
-        
-        Use this for:
-        - Box build template management (subunit definitions)
-        - BOM operations
-        - Product categories
-        
-        Example:
-            # Get a box build template
-            with api.product_internal.get_box_build("MAIN-BOARD", "A") as bb:
-                bb.add_subunit("PCBA-001", "A", quantity=2)
-                bb.add_subunit("PSU-100", "B")
-            # Changes saved automatically
-        
-        Returns:
-            ProductServiceInternal instance
-        """
-        if self._product_internal is None:
-            repo = ProductRepository(self._http_client)
+            # Also create internal service for extended methods
             repo_internal = ProductRepositoryInternal(self._http_client, self._base_url)
-            self._product_internal = ProductServiceInternal(repo, repo_internal)
-        return self._product_internal
+            internal_service = ProductServiceInternal(repo, repo_internal)
+            self._product = ProductService(repo, internal_service)
+        return self._product
     
     @property
     def asset(self) -> AssetService:
@@ -223,32 +190,11 @@ class pyWATS:
         """
         if self._asset is None:
             repo = AssetRepository(self._http_client, self._error_handler)
-            self._asset = AssetService(repo)
+            # Also create internal service for extended methods
+            repo_internal = AssetRepositoryInternal(self._http_client, self._base_url)
+            internal_service = AssetServiceInternal(repo_internal)
+            self._asset = AssetService(repo, self._base_url, internal_service)
         return self._asset
-    
-    @property
-    def asset_internal(self) -> AssetServiceInternal:
-        """
-        Access internal asset operations (file operations).
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        This service uses internal WATS API endpoints that are not publicly
-        documented. Methods may change or be removed without notice.
-        
-        Use this for:
-        - Uploading files to assets
-        - Downloading files from assets
-        - Listing files attached to assets
-        - Deleting files from assets
-        
-        Returns:
-            AssetServiceInternal instance
-        """
-        if self._asset_internal is None:
-            repo = AssetRepositoryInternal(self._http_client, self._base_url)
-            self._asset_internal = AssetServiceInternal(repo)
-        return self._asset_internal
     
     @property
     def production(self) -> ProductionService:
@@ -268,30 +214,11 @@ class pyWATS:
         """
         if self._production is None:
             repo = ProductionRepository(self._http_client, self._error_handler)
-            self._production = ProductionService(repo, base_url=self._base_url)
+            # Also create internal service for extended methods
+            repo_internal = ProductionRepositoryInternal(self._http_client, self._base_url)
+            internal_service = ProductionServiceInternal(repo_internal)
+            self._production = ProductionService(repo, base_url=self._base_url, internal_service=internal_service)
         return self._production
-    
-    @property
-    def production_internal(self) -> ProductionServiceInternal:
-        """
-        Access internal production operations (MES operations).
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        This service uses internal WATS API endpoints that are not publicly
-        documented. Methods may change or be removed without notice.
-        
-        Use this for:
-        - Getting unit phases from WATS MES
-        - Getting detailed phase information
-        
-        Returns:
-            ProductionServiceInternal instance
-        """
-        if self._production_internal is None:
-            repo = ProductionRepositoryInternal(self._http_client, self._base_url)
-            self._production_internal = ProductionServiceInternal(repo)
-        return self._production_internal
     
     @property
     def report(self) -> ReportService:
@@ -329,6 +256,8 @@ class pyWATS:
         - Failure analysis (top failed steps, test step analysis)
         - Production metrics (OEE, measurements)
         - Report queries (serial number history, UUT/UUR reports)
+        - Unit flow analysis (⚠️ internal API)
+        - Measurement/step drill-down (⚠️ internal API)
         
         Example:
             >>> # Get yield for a product
@@ -343,52 +272,11 @@ class pyWATS:
         """
         if self._analytics is None:
             repo = AnalyticsRepository(self._http_client, self._error_handler)
-            self._analytics = AnalyticsService(repo)
-        return self._analytics
-    
-    @property
-    def analytics_internal(self) -> AnalyticsServiceInternal:
-        """
-        Access internal analytics operations (Unit Flow analysis).
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        This service uses internal WATS API endpoints that are not publicly
-        documented. Methods may change or be removed without notice.
-        
-        Provides Unit Flow functionality for:
-        - Production flow visualization
-        - Bottleneck identification
-        - Unit tracing through operations
-        - Flow analysis and statistics
-        
-        Example:
-            >>> from pywats import UnitFlowFilter
-            >>> from datetime import datetime, timedelta
-            >>> 
-            >>> # Get unit flow for a product
-            >>> filter = UnitFlowFilter(
-            ...     part_number="WIDGET-001",
-            ...     date_from=datetime.now() - timedelta(days=7)
-            ... )
-            >>> result = api.analytics_internal.get_unit_flow(filter)
-            >>> 
-            >>> for node in result.nodes:
-            ...     print(f"{node.name}: {node.unit_count} units, {node.yield_percent}% yield")
-            >>> 
-            >>> # Find bottlenecks (operations with low yield)
-            >>> bottlenecks = api.analytics_internal.get_bottlenecks(
-            ...     filter_data=filter,
-            ...     min_yield_threshold=95.0
-            ... )
-        
-        Returns:
-            AnalyticsServiceInternal instance
-        """
-        if self._analytics_internal is None:
+            # Also create internal service for internal API methods
             repo_internal = AnalyticsRepositoryInternal(self._http_client, self._base_url)
-            self._analytics_internal = AnalyticsServiceInternal(repo_internal)
-        return self._analytics_internal
+            internal_service = AnalyticsServiceInternal(repo_internal)
+            self._analytics = AnalyticsService(repo, internal_service)
+        return self._analytics
     
     @property
     def rootcause(self) -> RootCauseService:
@@ -468,31 +356,11 @@ class pyWATS:
         """
         if self._process is None:
             repo = ProcessRepository(self._http_client, self._error_handler)
-            self._process = ProcessService(repo, self._process_refresh_interval)
+            # Also create internal service for extended methods
+            repo_internal = ProcessRepositoryInternal(self._http_client, self._base_url)
+            internal_service = ProcessServiceInternal(repo_internal)
+            self._process = ProcessService(repo, self._process_refresh_interval, internal_service)
         return self._process
-    
-    @property
-    def process_internal(self) -> ProcessServiceInternal:
-        """
-        Access internal process operations.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        This service uses internal WATS API endpoints that are not publicly
-        documented. Methods may change or be removed without notice.
-        
-        Use this for:
-        - Getting detailed process information with ProcessID
-        - Getting repair categories and fail codes
-        - Extended validation of process codes
-        
-        Returns:
-            ProcessServiceInternal instance
-        """
-        if self._process_internal is None:
-            repo = ProcessRepositoryInternal(self._http_client, self._base_url)
-            self._process_internal = ProcessServiceInternal(repo)
-        return self._process_internal
     
     # -------------------------------------------------------------------------
     # Configuration

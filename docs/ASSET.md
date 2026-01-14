@@ -724,7 +724,7 @@ with open("calibration_cert.pdf", "rb") as f:
 # Upload to asset
 asset = api.asset.get_asset_by_serial("DMM-001")
 
-success = api.asset_internal.upload_file(
+success = api.asset.upload_blob(
     asset_id=str(asset.asset_id),
     filename="Calibration_Certificate_2024-06-15.pdf",
     content=content
@@ -738,7 +738,7 @@ if success:
 
 ```python
 # List all files for an asset
-files = api.asset_internal.list_files(asset_id=str(asset.asset_id))
+files = api.asset.list_blobs(asset_id=str(asset.asset_id))
 
 print(f"Files for {asset.asset_name}:")
 for file_info in files:
@@ -750,7 +750,7 @@ for file_info in files:
 
 ```python
 # Download a file
-content = api.asset_internal.download_file(
+content = api.asset.download_blob(
     asset_id=str(asset.asset_id),
     filename="Calibration_Certificate_2024-06-15.pdf"
 )
@@ -766,7 +766,7 @@ if content:
 
 ```python
 # Delete one or more files
-success = api.asset_internal.delete_files(
+success = api.asset.delete_blobs(
     asset_id=str(asset.asset_id),
     filenames=["old_manual.pdf", "outdated_config.json"]
 )
@@ -855,7 +855,7 @@ fixture_config = {
 }
 
 import json
-api.asset_internal.upload_file(
+api.asset.upload_blob(
     asset_id=str(fixture.asset_id),
     filename="config.json",
     content=json.dumps(fixture_config, indent=2).encode()

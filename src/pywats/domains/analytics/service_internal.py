@@ -72,6 +72,7 @@ from .models import (
     AggregatedMeasurement,
     MeasurementListItem,
     StepStatusItem,
+    TopFailedStep,
 )
 
 
@@ -784,4 +785,129 @@ class AnalyticsServiceInternal:
             days=days,
             step_filters=step_filters,
             sequence_filters=sequence_filters
+        )
+    
+    # =========================================================================
+    # Top Failed Steps (Internal API)
+    # =========================================================================
+    
+    def get_top_failed(
+        self,
+        filter_data: Dict[str, Any],
+        top_count: Optional[int] = None
+    ) -> List[TopFailedStep]:
+        """
+        Get top failed steps with full filter support.
+        
+        POST /api/internal/App/TopFailed
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Returns the most frequently failing steps for the specified filter
+        criteria. Use this to identify quality issues and focus improvement
+        efforts on the highest-impact failures.
+        
+        Args:
+            filter_data: Filter parameters including:
+                - partNumber: Product part number
+                - testOperation: Test operation name
+                - yield: Yield threshold
+                - productGroup: Product group name
+                - level: Production level
+                - periodCount: Number of periods to include
+                - grouping: Time grouping (Day, Week, Month, etc.)
+                - includeCurrentPeriod: Include current period in results
+                - topCount: Maximum number of failed steps to return
+            top_count: Optional override for topCount (convenience parameter)
+            
+        Returns:
+            List of TopFailedStep objects with failure statistics including:
+            - step_name: Name of the failing step
+            - step_path: Full path to the step (for drilling down)
+            - fail_count: Total number of failures
+            - total_count: Total number of executions
+            - fail_rate: Failure rate percentage
+            - first_fail_date: Date of first failure
+            - last_fail_date: Date of most recent failure
+            
+        Note:
+            The returned TopFailedStep objects can be used to drill down
+            into specific step failures using get_measurement_list() and
+            get_step_status_list() with the step path information.
+            
+        Example:
+            >>> # Get top 20 failed steps for a product
+            >>> results = api.analytics_internal.get_top_failed(
+            ...     filter_data={
+            ...         "partNumber": "WIDGET-001",
+            ...         "productGroup": "Widgets",
+            ...         "periodCount": 30
+            ...     },
+            ...     top_count=20
+            ... )
+            >>> for step in results:
+            ...     print(f"{step.step_name}: {step.fail_count} failures ({step.fail_rate:.1f}%)")
+            ...     
+            >>> # Use step.step_path for further analysis with measurement endpoints
+        """
+        logger.debug("get_top_failed with filter, top_count=%s", top_count)
+        return self._repo_internal.get_top_failed(
+            filter_data=filter_data,
+            top_count=top_count
+        )
+    
+    def get_top_failed_by_product(
+        self,
+        part_number: str,
+        process_code: str,
+        product_group_id: str,
+        level_id: str,
+        days: int,
+        count: int = 10
+    ) -> List[TopFailedStep]:
+        """
+        Get top failed steps using simple query parameters.
+        
+        GET /api/internal/App/TopFailed
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Simplified version that queries top failed steps by product and time
+        range. Useful for quick analysis without building complex filter objects.
+        
+        Args:
+            part_number: Part number of reports to get failed steps from (required)
+            process_code: Process code of reports to get failed steps from (required)
+            product_group_id: Product group ID (required)
+            level_id: Level ID (required)
+            days: Number of days to query (required)
+            count: Number of top failed steps to return (default 10)
+            
+        Returns:
+            List of TopFailedStep objects with failure statistics.
+            
+        Example:
+            >>> # Get top 10 failed steps for last 30 days
+            >>> results = api.analytics_internal.get_top_failed_by_product(
+            ...     part_number="WIDGET-001",
+            ...     process_code="TEST",
+            ...     product_group_id="pg-123",
+            ...     level_id="level-456",
+            ...     days=30,
+            ...     count=10
+            ... )
+            >>> for step in results:
+            ...     print(f"{step.step_name}: {step.fail_count} failures ({step.fail_rate:.1f}%)")
+        """
+        logger.debug(
+            "get_top_failed_by_product: pn=%s, pc=%s, pg=%s, level=%s, days=%d, count=%d",
+            part_number, process_code, product_group_id, level_id, days, count
+        )
+        return self._repo_internal.get_top_failed_simple(
+            part_number=part_number,
+            process_code=process_code,
+            product_group_id=product_group_id,
+            level_id=level_id,
+            days=days,
+            count=count
         )

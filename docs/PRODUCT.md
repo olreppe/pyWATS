@@ -392,7 +392,7 @@ Box build templates define PRODUCT-LEVEL relationships - what subunits are REQUI
 
 ```python
 # Get or create a box build template
-template = api.product_internal.get_box_build("MAIN-ASSEMBLY", "A")
+template = api.product.get_box_build_template("MAIN-ASSEMBLY", "A")
 
 print(f"Box Build Template for {template.part_number} Rev {template.revision}")
 print(f"Current subunits: {len(template.subunits)}")
@@ -402,7 +402,7 @@ print(f"Current subunits: {len(template.subunits)}")
 
 ```python
 # Get the template
-template = api.product_internal.get_box_build("MAIN-ASSEMBLY", "A")
+template = api.product.get_box_build_template("MAIN-ASSEMBLY", "A")
 
 # Add subunits (components that make up this product)
 template.add_subunit("PCBA-001", "A", quantity=1)
@@ -418,7 +418,7 @@ print(f"Template updated with {len(template.subunits)} subunits")
 ### List Template Subunits
 
 ```python
-template = api.product_internal.get_box_build("MAIN-ASSEMBLY", "A")
+template = api.product.get_box_build_template("MAIN-ASSEMBLY", "A")
 
 print("Required subunits:")
 for subunit in template.subunits:
@@ -429,7 +429,7 @@ for subunit in template.subunits:
 ### Update Subunit Quantity
 
 ```python
-template = api.product_internal.get_box_build("MAIN-ASSEMBLY", "A")
+template = api.product.get_box_build_template("MAIN-ASSEMBLY", "A")
 
 # Update quantity for a subunit
 template.update_subunit("CABLE-ASSY", "C", quantity=5)  # Changed from 3 to 5
@@ -441,7 +441,7 @@ template.save()
 ### Remove Subunit from Template
 
 ```python
-template = api.product_internal.get_box_build("MAIN-ASSEMBLY", "A")
+template = api.product.get_box_build_template("MAIN-ASSEMBLY", "A")
 
 # Remove a subunit
 template.remove_subunit("CABLE-ASSY", "C")
@@ -454,7 +454,7 @@ template.save()
 
 ```python
 # Define a complete product structure
-template = api.product_internal.get_box_build("LAPTOP-X1", "A")
+template = api.product.get_box_build_template("LAPTOP-X1", "A")
 
 # Add all required components
 template.add_subunit("MOTHERBOARD", "A", quantity=1)
@@ -635,7 +635,7 @@ Categories provide another way to classify products.
 
 ```python
 # Get all categories
-categories = api.product_internal.get_product_categories()
+categories = api.product.get_product_categories()
 
 print("Product Categories:")
 for category in categories:
@@ -653,7 +653,7 @@ category_ids = [
     "cat-id-3"
 ]
 
-api.product_internal.set_product_categories("WIDGET-001", category_ids)
+api.product.save_product_categories("WIDGET-001", category_ids)
 print("Categories assigned to product")
 ```
 
