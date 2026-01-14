@@ -1293,56 +1293,7 @@ class AnalyticsService:
             count=count
         )
 
-    # -------------------------------------------------------------------------
-    # Aggregated Measurements (Internal)
-    # -------------------------------------------------------------------------
-
-    def get_aggregated_measurements(
-        self,
-        filter_data: Dict[str, Any],
-        step_filters: str,
-        sequence_filters: str,
-        measurement_name: Optional[str] = None
-    ) -> List[AggregatedMeasurement]:
-        """
-        Get aggregated measurement statistics with step/sequence filters.
-        
-        POST /api/internal/App/AggregatedMeasurements
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns aggregated statistics (count, min, max, avg, stdev, cpk, etc.)
-        for measurements matching the specified step and sequence filters.
-        
-        Args:
-            filter_data: Filter parameters including:
-                - serialNumber, partNumber, revision, batchNumber
-                - stationName, testOperation, status, yield
-                - productGroup, level, swFilename, swVersion
-                - dateFrom, dateTo, dateGrouping, periodCount
-                - includeCurrentPeriod, maxCount, minCount, topCount
-            step_filters: XML string defining step filters.
-                Typically obtained from TopFailed endpoint results.
-            sequence_filters: XML string defining sequence filters.
-                Typically obtained from TopFailed endpoint results.
-            measurement_name: Optional name of the measurement to filter by.
-            
-        Returns:
-            List of AggregatedMeasurement objects with statistics.
-            
-        Example:
-            >>> results = api.analytics.get_aggregated_measurements(
-            ...     filter_data={"partNumber": "WIDGET-001", "periodCount": 30},
-            ...     step_filters="<filters>...</filters>",
-            ...     sequence_filters="<filters>...</filters>",
-            ...     measurement_name="Voltage"
-            ... )
-            >>> for m in results:
-            ...     print(f"{m.step_name}: avg={m.avg}, cpk={m.cpk}")
-        """
-        return self._ensure_internal().get_aggregated_measurements(
-            filter_data=filter_data,
-            step_filters=step_filters,
-            sequence_filters=sequence_filters,
-            measurement_name=measurement_name
-        )
+    # NOTE: get_aggregated_measurements_internal is available via:
+    #   api.analytics._ensure_internal().get_aggregated_measurements(...)
+    # The main get_aggregated_measurements() at line ~561 uses the simpler
+    # measurement_paths parameter instead of XML step_filters.
