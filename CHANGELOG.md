@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0b31] - 2025-01-14
+## [0.1.0b32] - 2025-01-14
 
 ### Changed
 - **BREAKING: Unified API pattern** - Removed `api.*_internal` accessors:
@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **API Design Conventions** - New documentation for unified API pattern (`docs/internal/API_DESIGN_CONVENTIONS.md`)
 - **Internal Analytics Tests** - Test suite for internal analytics endpoints
+
+## [0.1.0b31] - 2025-01-14
+
+_Note: Version b31 was released manually, b32 is the GitHub Actions release._
 
 ## [0.1.0b30] - 2025-01-13
 
