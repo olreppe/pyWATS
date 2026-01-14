@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b31] - 2025-01-14
+
+### Changed
+- **BREAKING: Unified API pattern** - Removed `api.*_internal` accessors:
+  - All internal methods now accessed via main domain accessor
+  - `api.product.get_box_build_template()` (was `api.product_internal.get_box_build()`)
+  - `api.asset.upload_blob()` (was `api.asset_internal.upload_file()`)
+  - `api.analytics.get_unit_flow()` (was `api.analytics_internal.get_unit_flow()`)
+  - `api.production.get_all_unit_phases()` (was `api.production_internal.get_unit_phases()`)
+  - `api.process.get_fail_codes()` (was `api.process_internal.get_fail_codes()`)
+  - Internal methods marked with `⚠️ INTERNAL API` warnings in docstrings
+  - See `docs/internal/API_DESIGN_CONVENTIONS.md` for migration guide
+
+### Added
+- **API Design Conventions** - New documentation for unified API pattern (`docs/internal/API_DESIGN_CONVENTIONS.md`)
+- **Internal Analytics Tests** - Test suite for internal analytics endpoints
+
 ## [0.1.0b30] - 2025-01-13
 
 ### Fixed
