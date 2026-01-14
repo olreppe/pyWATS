@@ -301,11 +301,13 @@ class SetupPage(BasePage):
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
+        *,
+        facade = None
     ):
         self._main_window = main_window
         self._is_connected = False
-        super().__init__(config, parent)
+        super().__init__(config, parent, facade=facade)
         self._setup_ui()
         self.load_config()
     
