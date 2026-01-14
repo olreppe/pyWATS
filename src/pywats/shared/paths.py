@@ -1,7 +1,7 @@
 """Path utilities for step and measurement paths.
 
 WATS uses the pilcrow character (¶) as a path separator internally,
-but users are familiar with forward slash (/) from the GUI.
+but users are familiar with and some endpoints return forward slash (/).
 These utilities provide seamless conversion between formats.
 
 Usage:
