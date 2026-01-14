@@ -13,12 +13,20 @@ FIELD NAMING CONVENTION:
 All fields use Python snake_case naming (e.g., part_number, station_name).
 Backend API aliases (camelCase) are handled automatically.
 Always use the Python field names when creating or accessing these models.
+
+TYPE-SAFE ENUMS:
+----------------
+Fields like step_type, status, and comp_operator accept enum values for
+type safety, but also accept strings for backward compatibility.
+Use enums for IDE autocomplete and compile-time checking.
 """
 from datetime import datetime
 from typing import List, Optional, Union
-from pydantic import Field, AliasChoices, ConfigDict, field_serializer
+from pydantic import Field, AliasChoices, ConfigDict, field_serializer, field_validator
 
 from ...shared.base_model import PyWATSModel
+from ...shared.enums import StatusFilter, StepType, CompOperator
+from ...shared.paths import StepPath, display_path
 
 
 # =============================================================================
@@ -33,8 +41,8 @@ class TopFailedStep(PyWATSModel):
     
     Attributes:
         step_name: Name of the failed step
-        step_path: Full path to the step
-        step_type: Type of step
+        step_path: Full path to the step (use step_path_display for user-friendly format)
+        step_type: Type of step (StepType enum or string)
         part_number: Product part number
         revision: Product revision
         product_group: Product group
@@ -47,6 +55,7 @@ class TopFailedStep(PyWATSModel):
     Example:
         >>> step = TopFailedStep(step_name="Voltage Test", fail_count=15, total_count=100)
         >>> print(f"Failure rate: {step.fail_rate}%")
+        >>> print(f"Path: {step.step_path_display}")  # User-friendly with /
     """
 
     step_name: Optional[str] = Field(
@@ -59,13 +68,13 @@ class TopFailedStep(PyWATSModel):
         default=None,
         validation_alias=AliasChoices("stepPath", "step_path"),
         serialization_alias="stepPath",
-        description="Full path to the step"
+        description="Full path to the step (API format with ¶)"
     )
-    step_type: Optional[str] = Field(
+    step_type: Optional[Union[StepType, str]] = Field(
         default=None,
         validation_alias=AliasChoices("stepType", "step_type"),
         serialization_alias="stepType",
-        description="Type of step"
+        description="Type of step (StepType enum)"
     )
     step_group: Optional[str] = Field(
         default=None,
@@ -119,6 +128,11 @@ class TopFailedStep(PyWATSModel):
         serialization_alias="lastFailDate",
         description="Date of most recent failure"
     )
+    
+    @property
+    def step_path_display(self) -> Optional[str]:
+        """Step path in user-friendly display format (with / separators)."""
+        return display_path(self.step_path) if self.step_path else None
 
 
 # =============================================================================
@@ -637,6 +651,11 @@ class MeasurementData(PyWATSModel):
         serialization_alias="startUtc",
         description="Measurement timestamp (maps from 'startUtc' in API response)"
     )
+    
+    @property
+    def step_path_display(self) -> Optional[str]:
+        """Step path in user-friendly display format (with / separators)."""
+        return display_path(self.step_path) if self.step_path else None
 
 
 class AggregatedMeasurement(PyWATSModel):
@@ -1096,43 +1115,52 @@ class StepAnalysisRow(PyWATSModel):
     IMPORTANT: Use Python field names (snake_case), not camelCase aliases.
     
     Attributes:
-        step_name: Name of the test step (use this, not 'stepName')
-        step_path: Full path to the step (use this, not 'stepPath')
-        step_type: Type of step (use this, not 'stepType')
-        step_group: Step group (use this, not 'stepGroup')
-        step_count: Total step executions (use this, not 'stepCount')
+        step_name: Name of the test step
+        step_path: Full path to the step (use step_path_display for user-friendly format)
+        step_type: Type of step (StepType enum or string)
+        comp_operator: Comparison operator (CompOperator enum or string)
+        step_group: Step group
+        step_count: Total step executions
         ... and many more statistical fields
         
     Example:
         >>> row = StepAnalysisRow(step_name="Voltage Test", step_count=100)
         >>> print(row.step_name)  # Access with Python field name
+        >>> print(row.step_path_display)  # User-friendly path with /
+        >>> if row.step_type == StepType.NUMERIC_LIMIT:
+        ...     print(f"Limits: {row.limit1} to {row.limit2}")
     """
 
     step_name: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("stepName", "step_name"),
-        serialization_alias="stepName"
+        serialization_alias="stepName",
+        description="Name of the test step"
     )
     step_path: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("stepPath", "step_path"),
-        serialization_alias="stepPath"
+        serialization_alias="stepPath",
+        description="Full path to the step (API format)"
     )
-    step_type: Optional[str] = Field(
+    step_type: Optional[Union[StepType, str]] = Field(
         default=None,
         validation_alias=AliasChoices("stepType", "step_type"),
-        serialization_alias="stepType"
+        serialization_alias="stepType",
+        description="Type of step (StepType enum)"
     )
     step_group: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("stepGroup", "step_group"),
-        serialization_alias="stepGroup"
+        serialization_alias="stepGroup",
+        description="Step group"
     )
 
     step_count: Optional[int] = Field(
         default=None,
         validation_alias=AliasChoices("stepCount", "step_count"),
-        serialization_alias="stepCount"
+        serialization_alias="stepCount",
+        description="Total step executions"
     )
     step_passed_count: Optional[int] = Field(
         default=None,
@@ -1208,11 +1236,17 @@ class StepAnalysisRow(PyWATSModel):
         validation_alias=AliasChoices("limit2Wof", "limit2_wof"),
         serialization_alias="limit2Wof"
     )
-    comp_operator: Optional[str] = Field(
+    comp_operator: Optional[Union[CompOperator, str]] = Field(
         default=None,
         validation_alias=AliasChoices("compOperator", "comp_operator"),
-        serialization_alias="compOperator"
+        serialization_alias="compOperator",
+        description="Comparison operator (CompOperator enum)"
     )
+    
+    @property
+    def step_path_display(self) -> Optional[str]:
+        """Step path in user-friendly display format (with / separators)."""
+        return display_path(self.step_path) if self.step_path else None
 
     step_time_avg: Optional[float] = Field(
         default=None,

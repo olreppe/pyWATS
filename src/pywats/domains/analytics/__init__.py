@@ -28,9 +28,26 @@ Internal API endpoints (⚠️ subject to change):
 - GET/POST /api/internal/App/MeasurementList
 - GET/POST /api/internal/App/StepStatusList
 
+Type-Safe Enums:
+----------------
+- Dimension: Grouping dimensions for dynamic queries (PART_NUMBER, STATION_NAME, etc.)
+- KPI: Key Performance Indicators (UNIT_COUNT, FPY, etc.)
+- RepairDimension: Repair-specific dimensions (REPAIR_CODE, COMPONENT_REF, etc.)
+- RepairKPI: Repair-specific KPIs (REPAIR_COUNT, REPAIR_REPORT_COUNT)
+- DimensionBuilder: Fluent builder for constructing dimension queries
+
 This is purely a naming choice for better developer experience.
 """
-from .enums import YieldDataType, ProcessType
+from .enums import (
+    YieldDataType, 
+    ProcessType,
+    # Dimension query enums
+    Dimension,
+    RepairDimension,
+    KPI,
+    RepairKPI,
+    DimensionBuilder,
+)
 from .models import (
     YieldData,
     ProcessInfo,
@@ -69,6 +86,12 @@ __all__ = [
     # Enums
     "YieldDataType",
     "ProcessType",
+    # Dimension query enums and builder
+    "Dimension",
+    "RepairDimension",
+    "KPI",
+    "RepairKPI",
+    "DimensionBuilder",
     # Models
     "YieldData",
     "ProcessInfo",

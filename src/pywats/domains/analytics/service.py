@@ -5,6 +5,14 @@ Note: Maps to the WATS /api/App/* endpoints (backend naming).
 
 Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
 that may change without notice. Use with caution.
+
+Type-Safe Enums:
+----------------
+This module supports type-safe enums for better IDE autocomplete and error prevention:
+- Use StatusFilter for status filters (PASSED, FAILED, ERROR)
+- Use RunFilter for run selection (FIRST, LAST, ALL)
+- Use DimensionBuilder with Dimension/KPI enums for dynamic queries
+- Use StepPath/MeasurementPath for path inputs (handles / to ¶ conversion)
 """
 import logging
 from datetime import datetime, timedelta
@@ -33,6 +41,7 @@ from .models import (
     StepStatusItem,
 )
 from ..report.models import WATSFilter, ReportHeader
+from ...shared.paths import normalize_path, normalize_paths, StepPath
 
 if TYPE_CHECKING:
     from .service_internal import AnalyticsServiceInternal
@@ -553,7 +562,7 @@ class AnalyticsService:
         self, 
         filter_data: WATSFilter,
         *,
-        measurement_paths: Optional[str] = None,
+        measurement_paths: Optional[Union[str, StepPath, List[str], List[StepPath]]] = None,
     ) -> List[AggregatedMeasurement]:
         """
         Get aggregated measurement statistics.
@@ -565,34 +574,47 @@ class AnalyticsService:
         Args:
             filter_data: WATSFilter with measurement filters.
                 REQUIRED: part_number to avoid timeout.
-            measurement_paths: Measurement path(s) as query parameter.
-                Format: "Step Group¶Step Name¶¶MeasurementName"
-                Can use "/" which will be converted to "¶"
-                Multiple paths separated by semicolon (;)
+            measurement_paths: Measurement path(s). Accepts:
+                - String with / separators: "Main/Voltage Test/Output"
+                - StepPath or MeasurementPath object
+                - List of paths (separated by ; internally)
+                The / characters are automatically converted to ¶ for the API.
 
         Returns:
             List of AggregatedMeasurement objects with statistics (min, max, avg, cpk, etc.)
             
         Example:
-            >>> from pywats import WATSFilter
+            >>> from pywats import WATSFilter, StepPath
             >>> filter_obj = WATSFilter(part_number="WIDGET-001")
+            >>> # Using string path (/ is converted automatically)
             >>> measurements = api.analytics.get_aggregated_measurements(
             ...     filter_obj,
             ...     measurement_paths="Main/Voltage Test/Output Voltage"
             ... )
+            >>> # Or using StepPath for type safety
+            >>> path = StepPath("Main/Voltage Test/Output Voltage")
+            >>> measurements = api.analytics.get_aggregated_measurements(
+            ...     filter_obj,
+            ...     measurement_paths=path
+            ... )
             >>> for m in measurements:
             ...     print(f"{m.step_name}: avg={m.avg}, cpk={m.cpk}")
         """
+        # Normalize paths to API format (/ → ¶)
+        normalized_paths = None
+        if measurement_paths is not None:
+            normalized_paths = normalize_paths(measurement_paths)
+        
         return self._repository.get_aggregated_measurements(
             filter_data, 
-            measurement_paths=measurement_paths
+            measurement_paths=normalized_paths
         )
 
     def get_measurements(
         self, 
         filter_data: WATSFilter,
         *,
-        measurement_paths: Optional[str] = None,
+        measurement_paths: Optional[Union[str, StepPath, List[str], List[StepPath]]] = None,
     ) -> List[MeasurementData]:
         """
         Get individual measurement data points (PREVIEW).
@@ -604,10 +626,11 @@ class AnalyticsService:
         Args:
             filter_data: WATSFilter with measurement filters.
                 REQUIRED: part_number to avoid timeout.
-            measurement_paths: Measurement path(s) as query parameter.
-                Format: "Step Group¶Step Name¶¶MeasurementName"
-                Can use "/" which will be converted to "¶"
-                Multiple paths separated by semicolon (;)
+            measurement_paths: Measurement path(s). Accepts:
+                - String with / separators: "Main/Voltage Test/Output"
+                - StepPath or MeasurementPath object
+                - List of paths (separated by ; internally)
+                The / characters are automatically converted to ¶ for the API.
 
         Returns:
             List of MeasurementData objects with individual measurement values
@@ -622,9 +645,14 @@ class AnalyticsService:
             >>> for m in data:
             ...     print(f"SN {m.serial_number}: {m.value}")
         """
+        # Normalize paths to API format (/ → ¶)
+        normalized_paths = None
+        if measurement_paths is not None:
+            normalized_paths = normalize_paths(measurement_paths)
+        
         return self._repository.get_measurements(
             filter_data,
-            measurement_paths=measurement_paths
+            measurement_paths=normalized_paths
         )
 
     # =========================================================================

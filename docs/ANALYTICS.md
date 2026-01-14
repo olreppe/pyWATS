@@ -5,6 +5,7 @@ The Analytics domain provides data analysis and visualization capabilities for t
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Type-Safe Enums](#type-safe-enums)
 - [Core Concepts](#core-concepts)
 - [Yield Analysis](#yield-analysis)
 - [Measurement Aggregation](#measurement-aggregation)
@@ -17,8 +18,7 @@ The Analytics domain provides data analysis and visualization capabilities for t
 ## Quick Start
 
 ```python
-from pywats import pyWATS
-from pywats.domains.report import WATSFilter
+from pywats import pyWATS, WATSFilter, StatusFilter, MeasurementPath
 from datetime import datetime, timedelta
 
 # Initialize
@@ -27,9 +27,10 @@ api = pyWATS(
     token="your-api-token"
 )
 
-# Get yield for last 7 days
+# Get yield for last 7 days (using type-safe enum)
 filter_obj = WATSFilter(
     part_number="WIDGET-001",
+    status=StatusFilter.ALL,  # Type-safe enum
     days=7
 )
 
@@ -39,16 +40,149 @@ print(f"Passed: {yield_result.passed}")
 print(f"Failed: {yield_result.failed}")
 print(f"Total: {yield_result.total}")
 
-# Get measurements for a step
+# Get measurements for a step (using friendly path format)
+path = MeasurementPath("Numeric Limit Tests/3.3V Rail")
 measurements = api.analytics.get_aggregated_measurements(
     filter_obj,
-    measurement_paths="Numeric Limit Tests>>3.3V Rail"
+    measurement_paths=path
 )
 
 for meas in measurements:
     print(f"{meas.step_name}:")
     print(f"  Avg: {meas.avg:.3f}")
     print(f"  Cpk: {meas.cpk:.2f}")
+```
+
+---
+
+## Type-Safe Enums
+
+The Analytics domain provides type-safe enums for building queries with IDE autocomplete and compile-time validation.
+
+### Query Enums
+
+```python
+from pywats import StatusFilter, RunFilter, StepType, CompOperator
+
+# Status filter - filter by test result status
+StatusFilter.PASSED      # "P" - Passed tests only
+StatusFilter.FAILED      # "F" - Failed tests only
+StatusFilter.ERROR       # "E" - Error/terminated tests
+StatusFilter.TERMINATED  # "T" - Terminated tests
+StatusFilter.ALL         # "*" - All statuses
+
+# Run filter - filter by test run sequence
+RunFilter.FIRST           # 1 - First run only
+RunFilter.LAST            # -1 - Last run only
+RunFilter.ALL             # 0 - All runs
+RunFilter.ALL_EXCEPT_FIRST # 2 - All except first run
+
+# Step types returned in analytics results
+StepType.NUMERIC_LIMIT    # Numeric measurement with limits
+StepType.STRING_VALUE     # String comparison
+StepType.PASS_FAIL        # Binary pass/fail
+StepType.SEQUENCECALL     # Sequence call step
+
+# Comparison operators in step results
+CompOperator.GELE   # Greater/Equal and Less/Equal (within range)
+CompOperator.GT     # Greater than
+CompOperator.LT     # Less than
+CompOperator.EQ     # Equal
+CompOperator.NE     # Not equal
+CompOperator.LOG    # Logged value (no comparison)
+```
+
+### Dimension and KPI Enums
+
+```python
+from pywats import Dimension, KPI, RepairDimension, RepairKPI
+
+# Grouping dimensions for dynamic queries
+Dimension.PART_NUMBER     # Group by part number
+Dimension.STATION_NAME    # Group by test station
+Dimension.PERIOD          # Group by time period
+Dimension.PROCESS_CODE    # Group by process code
+Dimension.REVISION        # Group by product revision
+Dimension.OPERATOR        # Group by operator
+Dimension.FIXTURE_ID      # Group by fixture
+# ... and 15+ more dimensions
+
+# KPIs for yield/performance queries
+KPI.UNIT_COUNT     # Number of units tested
+KPI.FPY            # First Pass Yield
+KPI.RTY            # Rolled Throughput Yield
+KPI.PPM_FPY        # Parts per million (FPY based)
+KPI.AVG_TEST_TIME  # Average test time
+KPI.RETEST_COUNT   # Number of retests
+# ... and 15+ more KPIs
+
+# Repair-specific dimensions and KPIs
+RepairDimension.REPAIR_CODE       # Repair code
+RepairDimension.COMPONENT_REF     # Component reference
+RepairKPI.REPAIR_COUNT            # Number of repairs
+RepairKPI.REPAIR_REPORT_COUNT     # Repair reports
+```
+
+### DimensionBuilder - Fluent API
+
+Build dimension queries with type safety and IDE autocomplete:
+
+```python
+from pywats import DimensionBuilder, Dimension, KPI, WATSFilter
+
+# Build custom dimension query
+dims = DimensionBuilder()\
+    .add(KPI.UNIT_COUNT, desc=True)\
+    .add(KPI.FPY)\
+    .add(Dimension.PART_NUMBER)\
+    .add(Dimension.PERIOD)\
+    .build()
+# Result: "unitCount desc;fpy;partNumber;period"
+
+# Use with WATSFilter
+filter_obj = WATSFilter(
+    part_number="WIDGET-001",
+    dimensions=dims,
+    period_count=30
+)
+
+# Use presets for common patterns
+dims = DimensionBuilder.yield_by_product().build()
+dims = DimensionBuilder.yield_by_station().build()
+dims = DimensionBuilder.repair_analysis().build()
+dims = DimensionBuilder.oee_analysis().build()
+```
+
+### Path Utilities
+
+Work with measurement paths using a user-friendly format:
+
+```python
+from pywats import MeasurementPath, StepPath
+
+# Create paths with forward slashes (user-friendly format)
+path = MeasurementPath("Functional Test/Power Supply/3.3V Rail")
+print(path.display)     # Functional Test/Power Supply/3.3V Rail
+print(path.api_format)  # Functional Test¶Power Supply¶3.3V Rail (internal)
+print(path.parts)       # ['Functional Test', 'Power Supply', '3.3V Rail']
+
+# Build paths with concatenation
+parent = StepPath("Functional Test")
+full_path = parent / "Power Supply" / "3.3V Rail"
+print(full_path.display)  # Functional Test/Power Supply/3.3V Rail
+
+# Use from_parts for programmatic construction
+path = MeasurementPath.from_parts(["Main", "SubTest", "Measurement"])
+
+# Paths work directly in API calls
+measurements = api.analytics.get_aggregated_measurements(
+    filter_obj,
+    measurement_paths=path  # Automatic conversion to API format
+)
+
+# Access display format from results
+for meas in measurements:
+    print(f"Path: {meas.step_path_display}")  # Friendly format
 ```
 
 ---
@@ -83,11 +217,12 @@ for meas in measurements:
 ### Get Overall Yield
 
 ```python
-from pywats.domains.report import WATSFilter
+from pywats import WATSFilter, StatusFilter
 
 # Yield for last 30 days
 filter_obj = WATSFilter(
     part_number="WIDGET-001",
+    status=StatusFilter.ALL,  # Include all statuses
     days=30
 )
 
@@ -184,7 +319,7 @@ for trend in reversed(trends):
 ### Get Measurement Statistics
 
 ```python
-from pywats.domains.report import WATSFilter
+from pywats import WATSFilter, MeasurementPath
 
 # Get measurements for a specific test step
 filter_obj = WATSFilter(
@@ -192,9 +327,11 @@ filter_obj = WATSFilter(
     days=7
 )
 
+# Use user-friendly path format (slashes)
+path = MeasurementPath("Power Supply Tests/3.3V Rail")
 measurements = api.analytics.get_aggregated_measurements(
     filter_obj,
-    measurement_paths="Power Supply Tests>>3.3V Rail"
+    measurement_paths=path
 )
 
 if measurements:
@@ -211,11 +348,13 @@ if measurements:
 ### Multiple Measurements
 
 ```python
-# Get multiple measurements at once
+from pywats import MeasurementPath
+
+# Get multiple measurements at once using path objects
 step_paths = [
-    "Power Supply Tests>>3.3V Rail",
-    "Power Supply Tests>>5V Rail",
-    "Power Supply Tests>>12V Rail"
+    MeasurementPath("Power Supply Tests/3.3V Rail"),
+    MeasurementPath("Power Supply Tests/5V Rail"),
+    MeasurementPath("Power Supply Tests/12V Rail")
 ]
 
 measurements = api.analytics.get_aggregated_measurements(
@@ -226,6 +365,7 @@ measurements = api.analytics.get_aggregated_measurements(
 print("=== POWER RAIL MEASUREMENTS ===")
 for meas in measurements:
     print(f"\n{meas.step_name}:")
+    print(f"  Path: {meas.step_path_display}")  # User-friendly format
     print(f"  Avg: {meas.avg:.3f} (σ={meas.std_dev:.3f})")
     print(f"  Range: {meas.min:.3f} to {meas.max:.3f}")
     print(f"  Cpk: {meas.cpk:.2f}")
@@ -234,6 +374,8 @@ for meas in measurements:
 ### Cpk Analysis
 
 ```python
+from pywats import MeasurementPath
+
 def analyze_process_capability(part_number, step_path, days=30):
     """Analyze process capability (Cpk) for a measurement"""
     
@@ -242,9 +384,12 @@ def analyze_process_capability(part_number, step_path, days=30):
         days=days
     )
     
+    # Accept string or MeasurementPath
+    path = MeasurementPath(step_path) if isinstance(step_path, str) else step_path
+    
     measurements = api.analytics.get_aggregated_measurements(
         filter_obj,
-        measurement_paths=step_path
+        measurement_paths=path
     )
     
     if not measurements:
@@ -269,8 +414,8 @@ def analyze_process_capability(part_number, step_path, days=30):
     print(f"  Range: {meas.min:.3f} to {meas.max:.3f}")
     print(f"  Samples: {meas.count}")
 
-# Use it
-analyze_process_capability("WIDGET-001", "3.3V Rail", days=90)
+# Use it with user-friendly path
+analyze_process_capability("WIDGET-001", "Power Supply/3.3V Rail", days=90)
 ```
 
 ---
@@ -357,9 +502,10 @@ for unit in trace_result.units:
 ### Yield Dashboard
 
 ```python
+from pywats import WATSFilter
+
 def yield_dashboard(part_numbers, days=7):
     """Generate yield dashboard for multiple products"""
-    from pywats.domains.report import WATSFilter
     
     print("=" * 70)
     print(f"YIELD DASHBOARD ({days} days)")
@@ -405,15 +551,19 @@ yield_dashboard(products, days=30)
 ### Measurement Report
 
 ```python
+from pywats import WATSFilter, MeasurementPath
+
 def measurement_report(part_number, step_paths, days=7):
     """Generate measurement report for multiple steps"""
-    from pywats.domains.report import WATSFilter
     
     filter_obj = WATSFilter(part_number=part_number, days=days)
     
+    # Convert string paths to MeasurementPath objects
+    paths = [MeasurementPath(p) if isinstance(p, str) else p for p in step_paths]
+    
     measurements = api.analytics.get_aggregated_measurements(
         filter_obj,
-        measurement_paths=step_paths
+        measurement_paths=paths
     )
     
     print(f"\n=== MEASUREMENT REPORT: {part_number} ({days} days) ===\n")
@@ -426,13 +576,13 @@ def measurement_report(part_number, step_paths, days=7):
     
     print("=" * 80)
 
-# Use it
+# Use it with user-friendly paths
 steps = [
-    "Power Supply Tests>>3.3V Rail",
-    "Power Supply Tests>>5V Rail",
-    "Power Supply Tests>>12V Rail",
-    "Temperature Tests>>Idle Temp",
-    "Temperature Tests>>Load Temp"
+    "Power Supply Tests/3.3V Rail",
+    "Power Supply Tests/5V Rail",
+    "Power Supply Tests/12V Rail",
+    "Temperature Tests/Idle Temp",
+    "Temperature Tests/Load Temp"
 ]
 
 measurement_report("WIDGET-001", steps, days=30)
@@ -468,6 +618,51 @@ All methods are accessed via `api.analytics`. Methods marked with ⚠️ use int
 - `get_top_failed_internal(filter_data, top_count)` → `List[TopFailedStep]` - Top failed steps (internal API)
 - `get_top_failed_by_product(part_number, process_code, product_group_id, level_id, days, count)` → `List[TopFailedStep]` - Simple query
 
+### Enums
+
+#### Query Enums (from `pywats`)
+
+| Enum | Values | Description |
+|------|--------|-------------|
+| `StatusFilter` | `PASSED`, `FAILED`, `ERROR`, `TERMINATED`, `ALL` | Filter by test status |
+| `RunFilter` | `FIRST`, `LAST`, `ALL`, `ALL_EXCEPT_FIRST` | Filter by run sequence |
+| `StepType` | `NUMERIC_LIMIT`, `STRING_VALUE`, `PASS_FAIL`, `SEQUENCECALL`, etc. | Step type classification |
+| `CompOperator` | `GELE`, `GT`, `LT`, `EQ`, `NE`, `LOG`, etc. | Comparison operators |
+| `SortDirection` | `ASC`, `DESC` | Sort direction for dimension queries |
+
+#### Dimension/KPI Enums (from `pywats` or `pywats.domains.analytics`)
+
+| Enum | Count | Description |
+|------|-------|-------------|
+| `Dimension` | 23+ | Grouping dimensions (PART_NUMBER, STATION_NAME, PERIOD, etc.) |
+| `RepairDimension` | 15 | Repair-specific dimensions |
+| `KPI` | 21+ | Key Performance Indicators (FPY, RTY, PPM_FPY, etc.) |
+| `RepairKPI` | 2 | Repair KPIs |
+
+#### DimensionBuilder Class Methods
+
+| Method | Description |
+|--------|-------------|
+| `add(dimension, direction=None, asc=False, desc=False)` | Add dimension with optional sort |
+| `add_all(*dimensions)` | Add multiple dimensions |
+| `build()` | Build semicolon-separated string |
+| `clear()` | Clear all dimensions |
+| `yield_by_product()` | Preset for product yield analysis |
+| `yield_by_station()` | Preset for station yield analysis |
+| `repair_analysis()` | Preset for repair statistics |
+| `oee_analysis()` | Preset for OEE metrics |
+
+### Path Utilities (from `pywats`)
+
+| Class | Description |
+|-------|-------------|
+| `StepPath` | Step path with `/` ↔ `¶` conversion |
+| `MeasurementPath` | Measurement path with `/` ↔ `¶` conversion |
+
+**Properties**: `.display` (user-friendly), `.api_format` (internal), `.parts` (list)
+
+**Methods**: `from_parts(parts)`, concatenation with `/` operator
+
 ### Models
 
 #### YieldResult
@@ -478,11 +673,27 @@ All methods are accessed via `api.analytics`. Methods marked with ⚠️ use int
 
 #### AggregatedMeasurement
 - `step_name`: str
+- `step_path`: str (API format with `¶`)
+- `step_path_display`: str (user-friendly with `/`)
 - `count`: int
 - `avg`: float
 - `min`, `max`: float
 - `std_dev`: float
 - `cpk`: float (process capability index)
+
+#### TopFailedStep
+- `step_name`, `step_path`: str
+- `step_path_display`: str (user-friendly)
+- `step_type`: `Union[StepType, str]`
+- `fail_count`, `total_count`: int
+- `step_filter`, `sequence_filter`: str (XML for drill-down)
+
+#### StepAnalysisRow
+- `step_name`, `step_path`: str
+- `step_path_display`: str (user-friendly)
+- `step_type`: `Union[StepType, str]`
+- `comp_operator`: `Union[CompOperator, str]`
+- Statistical fields: `avg`, `std_dev`, `cpk`, etc.
 
 #### UnitFlowFilter
 - `part_number`: str
@@ -503,6 +714,16 @@ All methods are accessed via `api.analytics`. Methods marked with ⚠️ use int
 - `limit_low`, `limit_high`: float - Limits
 - `status`: str - Pass/Fail status
 - `unit`: str - Unit of measurement
+
+---
+
+## Best Practices
+
+1. **Use type-safe enums** - Leverage `StatusFilter`, `RunFilter`, `Dimension`, `KPI` for IDE autocomplete
+2. **Use path utilities** - `MeasurementPath("Main/SubTest/Meas")` handles format conversion automatically
+3. **Use DimensionBuilder presets** - Start with `DimensionBuilder.yield_by_product()` and customize
+4. **Start with simple queries** - Use default parameters, add filters as needed
+5. **Monitor Cpk trends** - Cpk < 1.0 indicates process capability issues
 6. **Investigate anomalies** - Low Cpk or sudden yield drops
 7. **Use Unit Flow for bottlenecks** - Visualize production flow
 

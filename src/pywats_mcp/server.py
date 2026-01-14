@@ -507,11 +507,10 @@ async def _tool_query_reports(api: pyWATS, args: dict) -> list[TextContent]:
     from pywats import WATSFilter
     
     filter_obj = WATSFilter(
-        start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
+        date_from=datetime.utcnow() - timedelta(days=days),
         part_number=pn,
         serial_number=sn,
         station_name=station,
-        operator=operator
     )
     
     reports = api.report.query_uut_headers(filter_obj, top=limit)
@@ -617,13 +616,13 @@ async def _tool_get_failures(api: pyWATS, args: dict) -> list[TextContent]:
     pn = args.get("part_number")
     station = args.get("station")
     
-    from pywats import WATSFilter
+    from pywats import WATSFilter, StatusFilter
     
     filter_obj = WATSFilter(
-        start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
+        date_from=datetime.utcnow() - timedelta(days=days),
         part_number=pn,
         station_name=station,
-        status="F"
+        status=StatusFilter.FAILED
     )
     
     reports = api.report.query_uut_headers(filter_obj, top=limit)
@@ -682,7 +681,7 @@ async def _tool_get_yield(api: pyWATS, args: dict) -> list[TextContent]:
     
     from pywats import WATSFilter
     filter_obj = WATSFilter(
-        start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
+        date_from=datetime.utcnow() - timedelta(days=days),
         part_number=pn,
         station_name=station
     )
@@ -722,7 +721,7 @@ async def _tool_get_yield_by_station(api: pyWATS, args: dict) -> list[TextConten
     
     from pywats import WATSFilter
     filter_obj = WATSFilter(
-        start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
+        date_from=datetime.utcnow() - timedelta(days=days),
         part_number=pn
     )
     
@@ -764,7 +763,7 @@ async def _tool_get_yield_trend(api: pyWATS, args: dict) -> list[TextContent]:
     
     from pywats import WATSFilter
     filter_obj = WATSFilter(
-        start=(datetime.utcnow() - timedelta(days=days)).isoformat() + "Z",
+        date_from=datetime.utcnow() - timedelta(days=days),
         part_number=pn
     )
     

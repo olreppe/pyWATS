@@ -62,6 +62,8 @@ from .domains.analytics import (
     UnitFlowNode, UnitFlowLink, UnitFlowUnit, UnitFlowFilter, UnitFlowResult,
     # Step/Measurement filter models (internal API)
     StepStatusItem, MeasurementListItem,
+    # Dimension query enums and builder
+    Dimension, RepairDimension, KPI, RepairKPI, DimensionBuilder,
 )
 
 # Common models from shared
@@ -69,6 +71,13 @@ from .shared import Setting, PyWATSModel
 
 # Result types for structured error handling (LLM/Agent-friendly)
 from .shared import Result, Success, Failure, ErrorCode, failure_from_exception
+
+# Type-safe enums and path utilities for query building
+from .shared import (
+    StatusFilter, RunFilter, StepType, CompOperator, SortDirection,
+    StepPath, MeasurementPath, normalize_path, display_path, normalize_paths,
+)
+from .domains.report.enums import DateGrouping
 
 # Discovery helpers for API exploration (LLM/Agent-friendly)
 from .shared import discover
@@ -151,6 +160,12 @@ __all__ = [
     # Step/Measurement filter models (internal API)
     "StepStatusItem",
     "MeasurementListItem",
+    # Analytics dimension/KPI enums
+    "Dimension",
+    "RepairDimension",
+    "KPI",
+    "RepairKPI",
+    "DimensionBuilder",
     # SCIM models (user provisioning)
     "ScimToken",
     "ScimUser",
@@ -168,6 +183,19 @@ __all__ = [
     "Failure",
     "ErrorCode",
     "failure_from_exception",
+    # Type-safe query enums
+    "StatusFilter",
+    "RunFilter",
+    "StepType",
+    "CompOperator",
+    "SortDirection",
+    "DateGrouping",
+    # Path utilities (seamless / <-> ¶ conversion)
+    "StepPath",
+    "MeasurementPath",
+    "normalize_path",
+    "display_path",
+    "normalize_paths",
     # Discovery helpers
     "discover",
     # Comparison operator for limits

@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Type-Safe Query Enums** - New enums for query parameter type safety:
+  - `StatusFilter`: Filter by test status (`PASSED`, `FAILED`, `ERROR`, `TERMINATED`, `ALL`)
+  - `RunFilter`: Filter by test run (`FIRST`, `LAST`, `ALL`, `ALL_EXCEPT_FIRST`)
+  - `StepType`: Step types (`NUMERIC_LIMIT`, `STRING_VALUE`, `PASS_FAIL`, `SEQUENCECALL`, etc.)
+  - `CompOperator`: Comparison operators (`GELE`, `GT`, `LT`, `EQ`, `NE`, `LOG`, etc.)
+  - `SortDirection`: Sort direction (`ASC`, `DESC`)
+  - All enums available at top level: `from pywats import StatusFilter, RunFilter`
+
+- **Analytics Dimension/KPI Enums** - Type-safe dimension query building:
+  - `Dimension`: 23+ grouping dimensions (`PART_NUMBER`, `STATION_NAME`, `PERIOD`, etc.)
+  - `RepairDimension`: 15 repair-specific dimensions (`REPAIR_CODE`, `COMPONENT_REF`, etc.)
+  - `KPI`: 21+ KPIs (`FPY`, `RTY`, `PPM_FPY`, `UNIT_COUNT`, `AVG_TEST_TIME`, etc.)
+  - `RepairKPI`: Repair KPIs (`REPAIR_COUNT`, `REPAIR_REPORT_COUNT`)
+  - `DimensionBuilder`: Fluent API for building dimension queries with presets
+
+- **Path Utilities** - Seamless measurement path handling:
+  - `StepPath` / `MeasurementPath`: Classes for working with step/measurement paths
+  - Automatic conversion between user-friendly format (`/`) and API format (`¶`)
+  - Path concatenation with `/` operator: `parent / "child" / "measurement"`
+  - Properties: `.display` (user-friendly), `.api_format` (API), `.parts` (list)
+  - All available at top level: `from pywats import MeasurementPath, StepPath`
+
+- **DimensionBuilder Presets** - Common dimension query patterns:
+  - `DimensionBuilder.yield_by_product()` - Yield analysis by product
+  - `DimensionBuilder.yield_by_station()` - Yield analysis by station
+  - `DimensionBuilder.repair_analysis()` - Repair statistics
+  - `DimensionBuilder.oee_analysis()` - OEE metrics
+  - Fluent API: `.add(Dimension.PART_NUMBER)`, `.add(KPI.FPY, desc=True)`
+
+### Changed
+- **WATSFilter Enum Support** - `status` and `run` parameters now accept enums:
+  - `status=StatusFilter.FAILED` (or string `"F"` for backward compatibility)
+  - `run=RunFilter.FIRST` (or integer `1` for backward compatibility)
+  - Added `measurement_paths` field with automatic path normalization
+
+- **Analytics Models Enhanced** - Type-safe fields and display properties:
+  - `TopFailedStep.step_type` → `Union[StepType, str]`
+  - `StepAnalysisRow.step_type` → `Union[StepType, str]`
+  - `StepAnalysisRow.comp_operator` → `Union[CompOperator, str]`
+  - Added `step_path_display` property on measurement/step models (returns `/`-separated paths)
+
+- **Analytics Service Path Handling** - Automatic path normalization:
+  - `get_aggregated_measurements(measurement_paths=...)` accepts `StepPath` or list
+  - `get_measurements(measurement_paths=...)` accepts `StepPath` or list
+  - Paths automatically converted to API format before server calls
+
+### Fixed
+- **MCP Server Critical Bug** - Fixed invalid `WATSFilter` field names in AI tooling:
+  - Changed `start=` to `date_from=` in 5 MCP tools (was causing Pydantic validation errors)
+  - Fixed `status="F"` to use `StatusFilter.FAILED` enum for type safety
+  - Affected tools: `query_reports`, `get_failures`, `get_yield`, `get_yield_by_station`, `get_yield_trend`
+  - This resolves "'WATSFilter' object is not a mapping" errors reported by AI tool users
+
 ## [0.1.0b32] - 2025-01-14
 
 ### Changed

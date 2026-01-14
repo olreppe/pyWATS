@@ -6,12 +6,15 @@ All fields use Python snake_case naming (e.g., part_number, station_name).
 Backend API aliases (camelCase) are handled automatically.
 Always use the Python field names when creating or accessing these models.
 """
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 from uuid import UUID
+from enum import Enum
 from pydantic import Field, AliasChoices, field_serializer, field_validator
 
 from ...shared import PyWATSModel
+from ...shared.enums import StatusFilter, RunFilter
+from ...shared.paths import StepPath, normalize_path
 from .enums import DateGrouping
 
 
@@ -51,8 +54,8 @@ class WATSFilter(PyWATSModel):
         level (str): Filter by production level (e.g., "PCBA", "Module")
         
     Status Filters:
-        status (str): Filter by result status. Values: "Passed", "Failed", "Error", 
-                      or None/empty for all. Note: "all" is treated as unset.
+        status (StatusFilter | str): Filter by result status. Use StatusFilter enum 
+                      (PASSED, FAILED, ERROR) or string. None/empty for all.
         yield_value (int): Filter by yield percentage (0-100)
         
     Product Filters:
@@ -84,27 +87,37 @@ class WATSFilter(PyWATSModel):
         
     Advanced Options:
         dimensions (str): Custom dimensions string for dynamic queries.
-            Comma-separated list: "partNumber,stationName,period"
+            Use DimensionBuilder for type-safe construction, or semicolon-separated 
+            string: "unitCount desc;partNumber;period"
             Valid dimensions: partNumber, productName, stationName, location,
             purpose, revision, testOperation, processCode, swFilename, swVersion,
             productGroup, level, period, batchNumber, operator, fixtureId
-        run (int): Run filter for step analysis.
-            Values: 1=first run, 2=second, 3=third, -1=last run, -2=all runs
+        run (RunFilter | int): Run filter for step analysis.
+            Use RunFilter enum: FIRST, SECOND, THIRD, LAST, ALL
+        measurement_paths (str): Measurement path filter for analytics.
+            Use StepPath or 'Group/Step/Measurement' format (/ is converted automatically).
     
     Example:
-        >>> # Filter reports from last 7 days for a specific part
+        >>> # Filter reports with enum for type safety
+        >>> from pywats import WATSFilter, StatusFilter, RunFilter
         >>> from datetime import datetime, timedelta
         >>> filter = WATSFilter(
         ...     part_number="WIDGET-001",
         ...     date_from=datetime.now() - timedelta(days=7),
-        ...     status="Failed",
+        ...     status=StatusFilter.FAILED,  # Type-safe enum
         ...     max_count=100
         ... )
         >>> 
-        >>> # Get yield by station for a product group
+        >>> # Use DimensionBuilder for dynamic queries
+        >>> from pywats import DimensionBuilder, Dimension, KPI, DateGrouping
+        >>> dims = DimensionBuilder()\\
+        ...     .add(KPI.UNIT_COUNT, desc=True)\\
+        ...     .add(Dimension.STATION_NAME)\\
+        ...     .add(Dimension.PERIOD)\\
+        ...     .build()
         >>> filter = WATSFilter(
         ...     product_group="Electronics",
-        ...     dimensions="stationName,period",
+        ...     dimensions=dims,
         ...     date_grouping=DateGrouping.DAY,
         ...     period_count=30
         ... )
@@ -143,9 +156,9 @@ class WATSFilter(PyWATSModel):
         serialization_alias="testOperation",
         description="Filter by test operation name"
     )
-    status: Optional[str] = Field(
+    status: Optional[Union[StatusFilter, str]] = Field(
         default=None,
-        description="Filter by result status: 'Passed', 'Failed', 'Error', or None for all"
+        description="Filter by result status. Use StatusFilter enum or string: 'Passed', 'Failed', 'Error'"
     )
     yield_value: Optional[int] = Field(
         default=None,
@@ -271,27 +284,73 @@ class WATSFilter(PyWATSModel):
     )
     dimensions: Optional[str] = Field(
         default=None,
-        description="Comma-separated dimension list for dynamic queries"
+        description="Semicolon-separated dimension list for dynamic queries. Use DimensionBuilder for type safety."
     )
 
     # Used by some analytics endpoints (e.g. App/TestStepAnalysis)
-    run: Optional[int] = Field(
+    run: Optional[Union[RunFilter, int]] = Field(
         default=None,
-        description="Run filter: 1=first, 2=second, 3=third, -1=last, -2=all"
+        description="Run filter. Use RunFilter enum: FIRST, SECOND, THIRD, LAST, ALL"
+    )
+    
+    # Measurement path filters (used by some analytics endpoints)
+    measurement_paths: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("measurementPaths", "measurement_paths"),
+        serialization_alias="measurementPaths",
+        description="Measurement path(s) filter. Use StepPath or 'Group/Step/Measurement' format."
     )
 
     @field_validator("status", mode="before")
     @classmethod
-    def normalize_status_all(cls, v: object) -> object:
-        """Treat status='all' as unset.
+    def normalize_status(cls, v: object) -> object:
+        """Normalize status to string value.
 
-        Some WATS servers interpret the literal string 'all' as an actual status
-        value and return empty result sets.
+        Accepts:
+        - StatusFilter enum values
+        - String values: 'Passed', 'Failed', 'Error', etc.
+        - 'all' is treated as None (unset)
         """
         if v is None:
             return None
+        # Handle enum
+        if isinstance(v, StatusFilter):
+            return v.value
+        # Handle 'all' as unset
         if isinstance(v, str) and v.strip().lower() == "all":
             return None
+        return v
+    
+    @field_validator("run", mode="before")
+    @classmethod
+    def normalize_run(cls, v: object) -> object:
+        """Normalize run filter to int value.
+
+        Accepts:
+        - RunFilter enum values
+        - Integer values: 1, 2, 3, -1, -2
+        """
+        if v is None:
+            return None
+        if isinstance(v, RunFilter):
+            return v.value
+        return v
+    
+    @field_validator("measurement_paths", mode="before")
+    @classmethod
+    def normalize_measurement_paths(cls, v: object) -> object:
+        """Normalize measurement paths to API format.
+        
+        Converts forward slashes (/) to pilcrows (¶) for API compatibility.
+        Users can input paths in display format (Main/Step/Measurement).
+        """
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return normalize_path(v)
+        # Handle StepPath or list
+        if hasattr(v, 'api_format'):
+            return v.api_format
         return v
 
     @field_validator("date_grouping", mode="before")
