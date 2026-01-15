@@ -8,6 +8,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Batch Operations** - Execute multiple API calls concurrently with `batch_execute`:
+  - `batch_execute(keys, operation)` - Run operations in parallel using ThreadPoolExecutor
+  - `batch_execute_with_retry(keys, operation, max_retries)` - Batch with automatic retry on failures
+  - Configurable concurrency via `max_workers` (default: 10)
+  - Order-preserving results with `Result[T]` return type per item
+  - Progress callbacks for tracking completion
+  - Helper functions: `collect_successes()`, `collect_failures()`, `partition_results()`
+  - New `BatchConfig` class for advanced configuration:
+    ```python
+    from pywats.core import batch_execute, collect_successes
+    
+    # Fetch multiple products concurrently
+    results = batch_execute(
+        keys=["PN-001", "PN-002", "PN-003"],
+        operation=lambda pn: api.product.get_product(pn),
+        max_workers=5
+    )
+    products = collect_successes(results)  # Get successful results only
+    ```
+  - Domain-specific batch methods:
+    - `ProductService.get_products_batch(part_numbers)` - Fetch multiple products
+    - `ProductService.get_revisions_batch(pairs)` - Fetch multiple revisions
+
+- **Pagination Utilities** - Memory-efficient iteration over large datasets:
+  - `paginate(fetch_page, get_items, ...)` - Generator-based pagination
+  - `paginate_all(...)` - Fetch all pages into a list
+  - `Paginator` class - Reusable paginator with `iterate()`, `all()`, `count()` methods
+  - `PaginationConfig` for default settings
+  - Early termination support (break from iteration)
+  - Progress callbacks for page fetching
+  - SCIM domain integration:
+    ```python
+    # Iterate over all SCIM users efficiently
+    for user in api.scim.iter_users(page_size=100):
+        print(user.userName)
+    
+    # With progress tracking
+    for user in api.scim.iter_users(on_page=lambda p, n, t: print(f"Page {p}")):
+        process(user)
+    ```
+
 - **Automatic Retry for Transient Failures** - HTTP requests now automatically retry on transient errors:
   - Retries on `ConnectionError`, `TimeoutError`, and HTTP 429/500/502/503/504
   - Exponential backoff with jitter (default: 3 attempts, 1s base delay)

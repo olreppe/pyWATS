@@ -11,6 +11,7 @@ Complete guide to installing, configuring, and initializing pyWATS.
 - [Exception Handling](#exception-handling)
 - [Internal API Usage](#internal-api-usage)
 - [Client Installation](#client-installation)
+- [Batch Operations & Pagination](#batch-operations--pagination)
 
 ---
 
@@ -1044,6 +1045,86 @@ def get_box_build_template(api, part_number, revision):
 - ✅ Test your code with each new pyWATS version
 - ✅ Keep internal API usage isolated and documented
 - ✅ Have fallback strategies for critical workflows
+
+---
+
+## Batch Operations & Pagination
+
+### Batch Operations
+
+Execute multiple API calls concurrently for better performance:
+
+```python
+from pywats.core import batch_execute, collect_successes, collect_failures
+
+# Fetch multiple products in parallel
+part_numbers = ["PN-001", "PN-002", "PN-003", "PN-004", "PN-005"]
+
+results = batch_execute(
+    keys=part_numbers,
+    operation=lambda pn: api.product.get_product(pn),
+    max_workers=5  # Concurrent threads (default: 10)
+)
+
+# Extract successful results
+products = collect_successes(results)
+print(f"Fetched {len(products)} products successfully")
+
+# Check for failures
+failures = collect_failures(results)
+for key, error in failures:
+    print(f"Failed to fetch {key}: {error}")
+```
+
+Domain-specific batch methods are also available:
+
+```python
+# Product domain batch methods
+product_results = api.product.get_products_batch(["PN-001", "PN-002", "PN-003"])
+
+# Fetch multiple revisions
+revision_pairs = [("PN-001", "A"), ("PN-001", "B"), ("PN-002", "A")]
+revision_results = api.product.get_revisions_batch(revision_pairs)
+```
+
+### Pagination
+
+Iterate over large datasets efficiently without loading everything into memory:
+
+```python
+# SCIM: Iterate over all users
+for user in api.scim.iter_users(page_size=100):
+    print(f"{user.user_name}: {user.display_name}")
+
+# With a limit
+for user in api.scim.iter_users(page_size=50, max_users=200):
+    process_user(user)
+
+# With progress tracking
+def on_page(page_num, items_so_far, total):
+    print(f"Page {page_num}: {items_so_far}/{total} users")
+
+for user in api.scim.iter_users(on_page=on_page):
+    sync_to_external_system(user)
+```
+
+For custom pagination needs, use the core utilities directly:
+
+```python
+from pywats.core import paginate, Paginator
+
+# Custom pagination with any API
+def fetch_page(start_index, count):
+    return api.some_api.get_items(start=start_index, count=count)
+
+for item in paginate(
+    fetch_page=fetch_page,
+    get_items=lambda r: r.items,
+    get_total=lambda r: r.total_count,
+    page_size=50
+):
+    process(item)
+```
 
 ---
 

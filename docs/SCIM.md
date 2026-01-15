@@ -48,12 +48,31 @@ if token:
 ### User Listing
 
 ```python
-# Get all SCIM users
+# Get all SCIM users (single page)
 response = api.scim.get_users()
 print(f"Total users: {response.total_results}")
 
 for user in response.resources or []:
     print(f"  {user.id}: {user.user_name}")
+```
+
+### Paginated User Iteration
+
+```python
+# Iterate over ALL users efficiently (automatic pagination)
+for user in api.scim.iter_users(page_size=100):
+    print(f"{user.user_name}: {user.display_name}")
+
+# With max limit
+for user in api.scim.iter_users(page_size=50, max_users=200):
+    process_user(user)
+
+# With progress callback
+def on_page(page_num, items_so_far, total):
+    print(f"Fetched page {page_num}, {items_so_far}/{total} users")
+
+for user in api.scim.iter_users(on_page=on_page):
+    sync_user(user)
 ```
 
 ### User Creation
@@ -204,7 +223,7 @@ Paginated list response.
 | Method | Endpoint | Service Method |
 |--------|----------|----------------|
 | GET | `/api/SCIM/v2/Token` | `get_token()` |
-| GET | `/api/SCIM/v2/Users` | `get_users()` |
+| GET | `/api/SCIM/v2/Users` | `get_users()`, `iter_users()` |
 | POST | `/api/SCIM/v2/Users` | `create_user()` |
 | GET | `/api/SCIM/v2/Users/{id}` | `get_user()` |
 | DELETE | `/api/SCIM/v2/Users/{id}` | `delete_user()` |

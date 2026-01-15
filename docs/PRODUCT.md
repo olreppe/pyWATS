@@ -783,6 +783,7 @@ print(f"Imported {len(imported)} products")
 - `get_products()` → `List[ProductView]` - Get all products as simplified views
 - `get_products_full()` → `List[Product]` - Get all products with full details
 - `get_product(part_number)` → `Optional[Product]` - Get specific product
+- `get_products_batch(part_numbers, max_workers=10)` → `List[Result[Product]]` - Fetch multiple products concurrently
 - `create_product(...)` → `Optional[Product]` - Create new product
 - `update_product(product)` → `Optional[Product]` - Update existing product
 - `bulk_save_products(products)` → `List[Product]` - Bulk create/update
@@ -792,6 +793,7 @@ print(f"Imported {len(imported)} products")
 #### Revision Operations
 - `get_revision(part_number, revision)` → `Optional[ProductRevision]` - Get specific revision
 - `get_revisions(part_number)` → `List[ProductRevision]` - Get all revisions for product
+- `get_revisions_batch(pairs, max_workers=10)` → `List[Result[ProductRevision]]` - Fetch multiple revisions concurrently (pairs = list of (part_number, revision) tuples)
 - `create_revision(...)` → `Optional[ProductRevision]` - Create new revision
 - `update_revision(revision)` → `Optional[ProductRevision]` - Update existing revision
 - `bulk_save_revisions(revisions)` → `List[ProductRevision]` - Bulk create/update

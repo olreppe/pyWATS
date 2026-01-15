@@ -9,6 +9,7 @@ PUBLIC API
 Available via `client.scim`:
 - get_token()           - Get JWT token for Azure provisioning
 - get_users()           - Get all SCIM users
+- iter_users()          - Iterate over users with automatic pagination
 - create_user()         - Create a new user
 - get_user()            - Get user by ID
 - delete_user()         - Delete user by ID
@@ -28,6 +29,10 @@ USAGE EXAMPLES
 >>> for user in users.resources:
 ...     print(f"{user.user_name}: {user.display_name}")
 
+>>> # Iterate over users with automatic pagination (memory efficient)
+>>> for user in api.scim.iter_users(page_size=50):
+...     print(f"{user.user_name}: {user.display_name}")
+
 >>> # Create a new user
 >>> from pywats.domains.scim import ScimUser, ScimUserName
 >>> user = ScimUser(
@@ -41,7 +46,7 @@ USAGE EXAMPLES
 >>> # Deactivate a user
 >>> api.scim.deactivate_user(user.id)
 """
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Iterator, Callable
 
 from .repository import ScimRepository
 from .models import (
@@ -106,12 +111,20 @@ class ScimService:
         """
         return self._repository.get_token(duration_days=duration_days)
 
-    def get_users(self) -> ScimListResponse:
+    def get_users(
+        self,
+        start_index: Optional[int] = None,
+        count: Optional[int] = None,
+    ) -> ScimListResponse:
         """
-        Get all SCIM users.
+        Get SCIM users with optional pagination.
         
-        Returns a list of all users provisioned via SCIM.
+        Returns a list of users provisioned via SCIM.
         
+        Args:
+            start_index: 1-based starting index for pagination (SCIM spec)
+            count: Maximum number of users to return per page
+            
         Returns:
             ScimListResponse containing user resources (may be empty)
             
@@ -119,13 +132,78 @@ class ScimService:
             PyWATSError: If the request fails
             
         Example:
+            >>> # Get all users (single page)
             >>> response = api.scim.get_users()
             >>> print(f"Total users: {response.total_results}")
             >>> for user in response.resources or []:
             ...     status = "active" if user.active else "inactive"
             ...     print(f"  {user.user_name}: {status}")
+            
+            >>> # Get paginated results
+            >>> page1 = api.scim.get_users(start_index=1, count=50)
+            >>> page2 = api.scim.get_users(start_index=51, count=50)
         """
-        return self._repository.get_users()
+        return self._repository.get_users(start_index=start_index, count=count)
+
+    def iter_users(
+        self,
+        page_size: int = 100,
+        max_users: Optional[int] = None,
+        on_page: Optional[Callable[[int, int, Optional[int]], None]] = None,
+    ) -> Iterator[ScimUser]:
+        """
+        Iterate over all SCIM users with automatic pagination.
+        
+        Memory-efficient iterator that fetches users page by page.
+        Supports early termination (break) without loading remaining pages.
+        
+        Args:
+            page_size: Number of users per page (default: 100)
+            max_users: Maximum users to retrieve (default: all)
+            on_page: Optional callback (page_num, users_so_far, total)
+            
+        Yields:
+            ScimUser objects one at a time
+            
+        Example:
+            >>> # Iterate over all users
+            >>> for user in api.scim.iter_users():
+            ...     print(f"{user.user_name}: {user.display_name}")
+            
+            >>> # Process with progress tracking
+            >>> def on_progress(page, count, total):
+            ...     print(f"Page {page}: {count}/{total or '?'} users")
+            >>> for user in api.scim.iter_users(page_size=50, on_page=on_progress):
+            ...     process(user)
+            
+            >>> # Early termination - only fetches needed pages
+            >>> for user in api.scim.iter_users():
+            ...     if user.user_name == "target@example.com":
+            ...         print(f"Found: {user.id}")
+            ...         break
+            
+            >>> # Limit total users
+            >>> first_100 = list(api.scim.iter_users(max_users=100))
+            
+        Note:
+            - Uses SCIM pagination (1-based indexing)
+            - Memory-efficient: only one page loaded at a time
+            - Server determines total_results
+        """
+        from ...core.pagination import paginate
+        
+        return paginate(
+            fetch_page=lambda start, count: self._repository.get_users(
+                start_index=start, 
+                count=count
+            ),
+            get_items=lambda response: response.resources or [],
+            get_total=lambda response: response.total_results,
+            page_size=page_size,
+            start_index=1,  # SCIM uses 1-based indexing
+            max_items=max_users,
+            on_page=on_page,
+        )
 
     def create_user(self, user: ScimUser) -> Optional[ScimUser]:
         """

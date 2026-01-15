@@ -105,14 +105,23 @@ class ScimRepository:
             return ScimToken.model_validate(data)
         return None
 
-    def get_users(self) -> ScimListResponse:
+    def get_users(
+        self,
+        start_index: Optional[int] = None,
+        count: Optional[int] = None,
+    ) -> ScimListResponse:
         """
-        Get all SCIM users.
+        Get SCIM users with optional pagination.
         
-        Returns a list of all users provisioned via SCIM.
+        Returns a list of users provisioned via SCIM, with optional
+        pagination support per SCIM specification.
         
-        Maps to: GET /api/SCIM/v2/Users
+        Maps to: GET /api/SCIM/v2/Users?startIndex={start}&count={count}
         
+        Args:
+            start_index: 1-based starting index for pagination (SCIM spec)
+            count: Maximum number of users to return
+            
         Returns:
             ScimListResponse containing user resources (may be empty)
             
@@ -120,11 +129,22 @@ class ScimRepository:
             PyWATSError: If the request fails or server returns an error
             
         Example:
+            >>> # Get all users
             >>> response = repo.get_users()
             >>> for user in response.resources or []:
             ...     print(f"{user.user_name}: {user.active}")
+            
+            >>> # Get first 10 users
+            >>> response = repo.get_users(start_index=1, count=10)
+            >>> print(f"Got {len(response.resources)} of {response.total_results}")
         """
-        response = self._http_client.get("/api/SCIM/v2/Users")
+        params = {}
+        if start_index is not None:
+            params["startIndex"] = start_index
+        if count is not None:
+            params["count"] = count
+            
+        response = self._http_client.get("/api/SCIM/v2/Users", params=params or None)
         data = self._error_handler.handle_response(
             response, operation="get_users", allow_empty=True
         )

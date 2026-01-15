@@ -52,6 +52,20 @@ from .retry import (
     RETRYABLE_STATUS_CODES,
     IDEMPOTENT_METHODS,
 )
+from .batch import (
+    batch_execute,
+    batch_execute_with_retry,
+    BatchConfig,
+    collect_successes,
+    collect_failures,
+    partition_results,
+)
+from .pagination import (
+    paginate,
+    paginate_all,
+    Paginator,
+    PaginationConfig,
+)
 
 __all__ = [
     # Client
@@ -86,6 +100,18 @@ __all__ = [
     "RetryExhaustedError",
     "RETRYABLE_STATUS_CODES",
     "IDEMPOTENT_METHODS",
+    # Batch operations
+    "batch_execute",
+    "batch_execute_with_retry",
+    "BatchConfig",
+    "collect_successes",
+    "collect_failures",
+    "partition_results",
+    # Pagination
+    "paginate",
+    "paginate_all",
+    "Paginator",
+    "PaginationConfig",
     # Error handling
     "ErrorMode",
     "ErrorHandler",

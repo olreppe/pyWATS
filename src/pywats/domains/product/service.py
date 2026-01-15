@@ -5,7 +5,7 @@ High-level operations for product management.
 Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
 that may change without notice. Use with caution.
 """
-from typing import Optional, List, Dict, TYPE_CHECKING, Any
+from typing import Optional, List, Dict, TYPE_CHECKING, Any, Callable
 import logging
 
 if TYPE_CHECKING:
@@ -17,6 +17,7 @@ from .box_build import BoxBuildTemplate
 logger = logging.getLogger(__name__)
 from .enums import ProductState
 from .repository import ProductRepository
+from ...shared.result import Result, Success, Failure
 
 
 class ProductService:
@@ -726,3 +727,123 @@ class ProductService:
             True if successful
         """
         return self._ensure_internal().save_categories(categories)
+
+    # =========================================================================
+    # Batch Operations
+    # =========================================================================
+
+    def get_products_batch(
+        self,
+        part_numbers: List[str],
+        max_workers: int = 10,
+        on_progress: Optional[Callable[[int, int], None]] = None,
+    ) -> List[Result[Product]]:
+        """
+        Get multiple products concurrently by part number.
+        
+        Fetches multiple products in parallel using a thread pool for improved
+        performance. Results are returned in the same order as input part numbers.
+        
+        Args:
+            part_numbers: List of part numbers to fetch
+            max_workers: Maximum concurrent requests (default: 10)
+            on_progress: Optional callback (completed, total) for progress tracking
+            
+        Returns:
+            List of Result[Product] in same order as input.
+            Each result is either Success(product) or Failure(error_code, message).
+            
+        Example:
+            >>> # Fetch multiple products
+            >>> results = api.product.get_products_batch(
+            ...     ["PN-001", "PN-002", "PN-003"],
+            ...     max_workers=5,
+            ... )
+            >>> 
+            >>> # Process results
+            >>> for pn, result in zip(part_numbers, results):
+            ...     if result.is_success:
+            ...         print(f"{pn}: {result.value.name}")
+            ...     else:
+            ...         print(f"{pn}: NOT FOUND - {result.message}")
+            
+            >>> # Get only successful results
+            >>> from pywats.core.batch import collect_successes
+            >>> products = collect_successes(results)
+            >>> print(f"Found {len(products)} of {len(part_numbers)} products")
+            
+            >>> # With progress tracking
+            >>> def on_progress(done, total):
+            ...     print(f"Progress: {done}/{total}")
+            >>> results = api.product.get_products_batch(
+            ...     part_numbers,
+            ...     on_progress=on_progress,
+            ... )
+            
+        Note:
+            - Results preserve input order
+            - Individual failures don't stop other requests
+            - Products not found return Failure with error_code="NOT_FOUND"
+        """
+        from ...core.batch import batch_execute
+        
+        return batch_execute(
+            keys=part_numbers,
+            operation=self.get_product,
+            max_workers=max_workers,
+            on_progress=on_progress,
+        )
+
+    def get_revisions_batch(
+        self,
+        part_number_revision_pairs: List[tuple[str, str]],
+        max_workers: int = 10,
+        on_progress: Optional[Callable[[int, int], None]] = None,
+    ) -> List[Result[ProductRevision]]:
+        """
+        Get multiple product revisions concurrently.
+        
+        Fetches multiple revisions in parallel using a thread pool.
+        Results are returned in the same order as input pairs.
+        
+        Args:
+            part_number_revision_pairs: List of (part_number, revision) tuples
+            max_workers: Maximum concurrent requests (default: 10)
+            on_progress: Optional callback (completed, total) for progress tracking
+            
+        Returns:
+            List of Result[ProductRevision] in same order as input.
+            Each result is either Success(revision) or Failure(error_code, message).
+            
+        Example:
+            >>> # Fetch multiple revisions
+            >>> pairs = [
+            ...     ("PN-001", "A"),
+            ...     ("PN-001", "B"),
+            ...     ("PN-002", "A"),
+            ... ]
+            >>> results = api.product.get_revisions_batch(pairs)
+            >>> 
+            >>> # Process results
+            >>> for (pn, rev), result in zip(pairs, results):
+            ...     if result.is_success:
+            ...         print(f"{pn} Rev {rev}: {result.value.name}")
+            ...     else:
+            ...         print(f"{pn} Rev {rev}: {result.error_code}")
+            
+        Note:
+            - Results preserve input order
+            - Use tuple of (part_number, revision) as input
+        """
+        from ...core.batch import batch_execute
+        
+        def fetch_revision(pair: tuple[str, str]) -> Optional[ProductRevision]:
+            part_number, revision = pair
+            return self.get_revision(part_number, revision)
+        
+        return batch_execute(
+            keys=part_number_revision_pairs,
+            operation=fetch_revision,
+            max_workers=max_workers,
+            on_progress=on_progress,
+        )

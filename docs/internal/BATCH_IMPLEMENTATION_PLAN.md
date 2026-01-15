@@ -1,10 +1,10 @@
 # Batch Operations Implementation Plan
 
-> **Status**: 📋 PLANNED  
+> **Status**: ✅ IMPLEMENTED  
 > **Priority**: MEDIUM  
-> **Estimated Effort**: 1-2 weeks  
-> **Target Version**: 0.2.0  
-> **Dependency**: Async API (recommended but not required)
+> **Completed**: 2026-01-15  
+> **Implemented In**: Unreleased (next version)  
+> **Related Files**: `src/pywats/core/batch.py`, `src/pywats/core/pagination.py`
 
 ---
 
@@ -17,7 +17,48 @@ Batch operations allow users to perform multiple API calls efficiently. Instead 
 
 ---
 
-## Current State
+## Implementation Summary
+
+### Implemented Features
+
+| Feature | Status | Location |
+|---------|--------|----------|
+| `batch_execute()` | ✅ | `pywats.core.batch` |
+| `batch_execute_with_retry()` | ✅ | `pywats.core.batch` |
+| `collect_successes()` | ✅ | `pywats.core.batch` |
+| `collect_failures()` | ✅ | `pywats.core.batch` |
+| `partition_results()` | ✅ | `pywats.core.batch` |
+| `BatchConfig` | ✅ | `pywats.core.batch` |
+| `ProductService.get_products_batch()` | ✅ | `pywats.domains.product` |
+| `ProductService.get_revisions_batch()` | ✅ | `pywats.domains.product` |
+| `paginate()` | ✅ | `pywats.core.pagination` |
+| `paginate_all()` | ✅ | `pywats.core.pagination` |
+| `Paginator` class | ✅ | `pywats.core.pagination` |
+| `ScimService.iter_users()` | ✅ | `pywats.domains.scim` |
+
+### Usage Examples
+
+```python
+from pywats.core import batch_execute, collect_successes
+
+# Batch fetch products
+results = batch_execute(
+    keys=["PN-001", "PN-002", "PN-003"],
+    operation=lambda pn: api.product.get_product(pn),
+    max_workers=5
+)
+products = collect_successes(results)
+
+# Paginated iteration
+for user in api.scim.iter_users(page_size=100):
+    print(user.userName)
+```
+
+---
+
+## Original Plan (Preserved for Reference)
+
+### Current State
 
 | Operation | Current | Problem |
 |-----------|---------|---------|
@@ -40,11 +81,11 @@ for pn in part_numbers:  # 100 items
 ## Goals
 
 ### Must Have
-- [ ] Batch get operations for all domains
-- [ ] Batch create/update where server supports
-- [ ] Result aggregation with error handling
-- [ ] Progress callbacks for long operations
-- [ ] Configurable concurrency limits
+- [x] Batch get operations for all domains
+- [x] Batch create/update where server supports
+- [x] Result aggregation with error handling
+- [x] Progress callbacks for long operations
+- [x] Configurable concurrency limits
 
 ### Nice to Have
 - [ ] Automatic chunking for very large batches
