@@ -1,0 +1,17 @@
+/* Custom CSS for pyWATS documentation */
+
+/* Improve code block readability */
+.highlight {
+    background: #f8f8f8;
+}
+
+/* Better table styling */
+table.docutils {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.docutils td, table.docutils th {
+    padding: 8px;
+    border: 1px solid #ddd;
+}
