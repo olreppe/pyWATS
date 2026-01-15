@@ -34,6 +34,7 @@ from .exceptions import (
 from .core.logging import enable_debug_logging
 from .core.station import Station, StationRegistry, StationConfig, Purpose
 from .core.throttle import configure_throttling, RateLimiter
+from .core.retry import RetryConfig, RetryExhaustedError
 
 # Import commonly used models from domains for convenience
 from .domains.product import Product, ProductRevision, ProductGroup, ProductView
@@ -101,6 +102,9 @@ __all__ = [
     # Rate limiting
     "configure_throttling",
     "RateLimiter",
+    # Retry configuration
+    "RetryConfig",
+    "RetryExhaustedError",
     # Logging utilities
     "enable_debug_logging",
     # Exceptions

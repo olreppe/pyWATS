@@ -168,6 +168,59 @@ from pywats.core.throttle import configure_throttling
 configure_throttling(max_requests=500, window_seconds=60, enabled=True)
 ```
 
+#### Retry Configuration (`core/retry.py`)
+
+Automatic retry with exponential backoff for transient failures:
+
+```
+┌─────────────────────────────────────────────┐
+│              RetryConfig                    │
+├─────────────────────────────────────────────┤
+│ Configuration:                              │
+│ - enabled: bool (default: True)             │
+│ - max_attempts: int (default: 3)            │
+│ - base_delay: float (default: 1.0)          │
+│ - max_delay: float (default: 30.0)          │
+│ - jitter: bool (default: True)              │
+│ - retry_methods: Set[str] (GET,PUT,DELETE)  │
+│ - retry_status_codes: Set[int] (429,5xx)    │
+├─────────────────────────────────────────────┤
+│ Methods:                                    │
+│ - should_retry_method(method) → bool        │
+│ - should_retry_status(status) → bool        │
+│ - calculate_delay(attempt) → float          │
+│ - get_retry_after(response) → Optional[float]│
+├─────────────────────────────────────────────┤
+│ Statistics:                                 │
+│ - total_retries                             │
+│ - total_retry_time                          │
+└─────────────────────────────────────────────┘
+```
+
+**Retries on:**
+- `ConnectionError`, `TimeoutError` (network issues)
+- HTTP 429 (Too Many Requests - respects Retry-After header)
+- HTTP 500, 502, 503, 504 (server errors)
+
+**Does NOT retry:**
+- HTTP 400, 401, 403, 404, 409 (client errors)
+- POST requests (not idempotent)
+
+**Usage:**
+```python
+from pywats import pyWATS, RetryConfig
+
+# Disable retry
+api = pyWATS(..., retry_enabled=False)
+
+# Custom configuration
+config = RetryConfig(max_attempts=5, base_delay=2.0)
+api = pyWATS(..., retry_config=config)
+
+# Check statistics
+print(api.retry_config.stats)
+```
+
 #### Station Concept (`core/station.py`)
 
 Manages test station identity for reports:

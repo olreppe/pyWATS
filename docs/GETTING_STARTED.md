@@ -113,7 +113,7 @@ api = pyWATS()
 ### Configuration Options
 
 ```python
-from pywats import pyWATS
+from pywats import pyWATS, RetryConfig
 from pywats.core.exceptions import ErrorMode
 
 api = pyWATS(
@@ -127,8 +127,61 @@ api = pyWATS(
     process_refresh_interval=600,
     
     # Optional: Error handling mode (default: STRICT)
-    error_mode=ErrorMode.STRICT  # or ErrorMode.LENIENT
+    error_mode=ErrorMode.STRICT,  # or ErrorMode.LENIENT
+    
+    # Optional: Retry configuration (default: enabled with 3 attempts)
+    retry_enabled=True,  # Set to False to disable
+    # Or for advanced configuration:
+    # retry_config=RetryConfig(max_attempts=5, base_delay=2.0)
 )
+```
+
+### Automatic Retry
+
+The library automatically retries requests that fail due to transient errors:
+
+- **Connection errors** - Network unavailable, DNS failures
+- **Timeout errors** - Server took too long to respond
+- **HTTP 429** - Too Many Requests (respects `Retry-After` header)
+- **HTTP 500/502/503/504** - Server errors, often transient during deployments
+
+Retry uses **exponential backoff with jitter** to avoid thundering herd:
+
+| Attempt | Delay (approx) |
+|---------|----------------|
+| 1 | 0-1 second |
+| 2 | 0-2 seconds |
+| 3 | 0-4 seconds |
+| (fail) | Exception raised |
+
+**Important:** Only idempotent methods (GET, PUT, DELETE) are retried. POST is never retried automatically to prevent duplicate creates.
+
+```python
+from pywats import pyWATS, RetryConfig
+
+# Disable retry entirely
+api = pyWATS(
+    base_url="https://...",
+    token="...",
+    retry_enabled=False
+)
+
+# Custom retry configuration
+config = RetryConfig(
+    max_attempts=5,      # Try up to 5 times
+    base_delay=2.0,      # Start with 2 second delay
+    max_delay=60.0,      # Cap delay at 60 seconds
+    jitter=True,         # Add randomness to avoid thundering herd
+)
+api = pyWATS(
+    base_url="https://...",
+    token="...",
+    retry_config=config
+)
+
+# Check retry statistics
+print(api.retry_config.stats)
+# {'total_retries': 3, 'total_retry_time': 4.5}
 ```
 
 ### Error Handling Modes

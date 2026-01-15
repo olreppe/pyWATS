@@ -14,6 +14,15 @@ Rate Limiting:
     
     >>> from pywats.core.throttle import configure_throttling
     >>> configure_throttling(max_requests=500, window_seconds=60, enabled=True)
+
+Retry Logic:
+    The client includes automatic retry for transient failures (network errors,
+    timeouts, 5xx errors). Retry is enabled by default for idempotent methods
+    (GET, PUT, DELETE) and uses exponential backoff with jitter.
+    
+    >>> from pywats import pyWATS, RetryConfig
+    >>> config = RetryConfig(max_attempts=5, base_delay=2.0)
+    >>> api = pyWATS(base_url="...", token="...", retry_config=config)
 """
 from typing import Optional, Dict, Any, Iterator
 from contextlib import contextmanager
@@ -21,6 +30,7 @@ import time
 from pydantic import BaseModel, Field, ConfigDict, computed_field
 import httpx
 import json
+import logging
 
 from .exceptions import (
     ConnectionError,
@@ -28,6 +38,9 @@ from .exceptions import (
     PyWATSError
 )
 from .throttle import RateLimiter, get_default_limiter
+from .retry import RetryConfig, should_retry
+
+logger = logging.getLogger(__name__)
 
 
 class Response(BaseModel):
@@ -106,10 +119,14 @@ class HttpClient:
     Rate limiting is enabled by default to comply with WATS API limits
     (500 requests per minute). This can be disabled or customized.
     
+    Automatic retry is enabled by default for idempotent methods (GET, PUT, DELETE)
+    with exponential backoff for transient failures (network errors, timeouts, 5xx).
+    
     Example:
         >>> client = HttpClient(base_url="https://wats.example.com", token="...")
         >>> response = client.get("/api/Product/ABC123")
         >>> print(client.rate_limiter.stats)  # Check throttling statistics
+        >>> print(client.retry_config.stats)  # Check retry statistics
     """
 
     def __init__(
@@ -119,7 +136,8 @@ class HttpClient:
         timeout: float = 30.0,
         verify_ssl: bool = True,
         rate_limiter: Optional[RateLimiter] = None,
-        enable_throttling: bool = True
+        enable_throttling: bool = True,
+        retry_config: Optional[RetryConfig] = None,
     ):
         """
         Initialize the HTTP client.
@@ -131,6 +149,7 @@ class HttpClient:
             verify_ssl: Whether to verify SSL certificates (default: True)
             rate_limiter: Custom RateLimiter instance (default: global limiter)
             enable_throttling: Enable/disable rate limiting (default: True)
+            retry_config: Retry configuration (default: RetryConfig())
         """
         # Clean up base URL - remove trailing slashes and /api suffixes
         self.base_url = base_url.rstrip("/")
@@ -148,6 +167,9 @@ class HttpClient:
             self._rate_limiter = get_default_limiter()
         else:
             self._rate_limiter = RateLimiter(enabled=False)
+        
+        # Retry configuration
+        self._retry_config = retry_config if retry_config is not None else RetryConfig()
 
         # Default headers
         self._headers = {
@@ -240,6 +262,16 @@ class HttpClient:
         return self._rate_limiter
 
     @property
+    def retry_config(self) -> RetryConfig:
+        """Get the retry configuration instance."""
+        return self._retry_config
+    
+    @retry_config.setter
+    def retry_config(self, value: RetryConfig) -> None:
+        """Set the retry configuration instance."""
+        self._retry_config = value
+
+    @property
     def client(self) -> httpx.Client:
         """Get or create the httpx client."""
         if self._client is None:
@@ -305,10 +337,11 @@ class HttpClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         data: Any = None,
-        headers: Optional[Dict[str, str]] = None
+        headers: Optional[Dict[str, str]] = None,
+        retry: Optional[bool] = None
     ) -> Response:
         """
-        Make an HTTP request.
+        Make an HTTP request with automatic retry for transient failures.
 
         Args:
             method: HTTP method (GET, POST, PUT, DELETE)
@@ -316,16 +349,19 @@ class HttpClient:
             params: Query parameters
             data: Request body data (will be JSON encoded)
             headers: Additional headers to merge with defaults
+            retry: Override retry behavior (True/False/None for default)
 
         Returns:
             Response object
             
         Note:
-            This method respects rate limiting. If the rate limit is reached,
-            the call will block until a slot becomes available.
+            This method respects rate limiting and retry configuration.
+            Retry is enabled by default for idempotent methods (GET, PUT, DELETE)
+            when transient failures occur (network errors, timeouts, 5xx).
         """
-        # Acquire rate limiter slot (blocks if limit reached)
-        self._rate_limiter.acquire()
+        # Determine if retry is enabled for this request
+        retry_enabled = retry if retry is not None else self._retry_config.enabled
+        max_attempts = self._retry_config.max_attempts if retry_enabled else 1
         
         # Ensure endpoint starts with /
         if not endpoint.startswith("/"):
@@ -357,29 +393,101 @@ class HttpClient:
 
         # Build a full URL string for debugging (no auth headers included)
         full_url = f"{self.base_url}{endpoint}"
-        started = time.perf_counter()
-        try:
-            response = self.client.request(**kwargs)
-            duration_ms = (time.perf_counter() - started) * 1000.0
-            self._emit_trace(
-                {
-                    "method": method,
-                    "url": full_url,
-                    "params": self._bounded_json(kwargs.get("params")),
-                    "json": self._bounded_json(kwargs.get("json")),
-                    "content": self._bounded_json(kwargs.get("content")),
-                    "status_code": response.status_code,
-                    "duration_ms": duration_ms,
-                    "response_bytes": len(response.content or b""),
-                }
-            )
-            return self._handle_response(response)
-        except httpx.ConnectError as e:
-            raise ConnectionError(f"Failed to connect to {self.base_url}: {e}")
-        except httpx.TimeoutException as e:
-            raise TimeoutError(f"Request timed out: {e}")
-        except Exception as e:
-            raise PyWATSError(f"HTTP request failed: {e}")
+        
+        last_exception: Optional[Exception] = None
+        last_response: Optional[Response] = None
+        
+        for attempt in range(max_attempts):
+            # Acquire rate limiter slot (blocks if limit reached)
+            self._rate_limiter.acquire()
+            
+            started = time.perf_counter()
+            try:
+                response = self.client.request(**kwargs)
+                duration_ms = (time.perf_counter() - started) * 1000.0
+                self._emit_trace(
+                    {
+                        "method": method,
+                        "url": full_url,
+                        "params": self._bounded_json(kwargs.get("params")),
+                        "json": self._bounded_json(kwargs.get("json")),
+                        "content": self._bounded_json(kwargs.get("content")),
+                        "status_code": response.status_code,
+                        "duration_ms": duration_ms,
+                        "response_bytes": len(response.content or b""),
+                        "attempt": attempt + 1,
+                    }
+                )
+                
+                # Convert to our Response object
+                parsed_response = self._handle_response(response)
+                
+                # Check if we should retry this status code
+                if retry_enabled and self._retry_config.should_retry_status(response.status_code):
+                    should_retry_flag, delay = should_retry(
+                        self._retry_config, method, attempt, response=parsed_response
+                    )
+                    if should_retry_flag:
+                        self._retry_config._total_retries += 1
+                        self._retry_config._total_retry_time += delay
+                        logger.info(
+                            f"Retry {attempt + 1}/{max_attempts} for {method} {endpoint} "
+                            f"after {delay:.2f}s (HTTP {response.status_code})"
+                        )
+                        time.sleep(delay)
+                        last_response = parsed_response
+                        continue
+                
+                return parsed_response
+                
+            except httpx.ConnectError as e:
+                last_exception = ConnectionError(f"Failed to connect to {self.base_url}: {e}")
+                
+                if retry_enabled:
+                    should_retry_flag, delay = should_retry(
+                        self._retry_config, method, attempt, exception=last_exception
+                    )
+                    if should_retry_flag:
+                        self._retry_config._total_retries += 1
+                        self._retry_config._total_retry_time += delay
+                        logger.info(
+                            f"Retry {attempt + 1}/{max_attempts} for {method} {endpoint} "
+                            f"after {delay:.2f}s (ConnectionError)"
+                        )
+                        time.sleep(delay)
+                        continue
+                
+                raise last_exception
+                
+            except httpx.TimeoutException as e:
+                last_exception = TimeoutError(f"Request timed out: {e}")
+                
+                if retry_enabled:
+                    should_retry_flag, delay = should_retry(
+                        self._retry_config, method, attempt, exception=last_exception
+                    )
+                    if should_retry_flag:
+                        self._retry_config._total_retries += 1
+                        self._retry_config._total_retry_time += delay
+                        logger.info(
+                            f"Retry {attempt + 1}/{max_attempts} for {method} {endpoint} "
+                            f"after {delay:.2f}s (TimeoutError)"
+                        )
+                        time.sleep(delay)
+                        continue
+                
+                raise last_exception
+                
+            except Exception as e:
+                raise PyWATSError(f"HTTP request failed: {e}")
+        
+        # If we get here, all retries exhausted
+        if last_exception:
+            raise last_exception
+        if last_response:
+            return last_response
+        
+        raise PyWATSError("Unexpected state: no response or exception after retries")
 
     # Convenience methods
     def get(

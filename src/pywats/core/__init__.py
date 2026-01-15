@@ -46,6 +46,12 @@ from .throttle import (
     configure_throttling,
     get_default_limiter,
 )
+from .retry import (
+    RetryConfig,
+    RetryExhaustedError,
+    RETRYABLE_STATUS_CODES,
+    IDEMPOTENT_METHODS,
+)
 
 __all__ = [
     # Client
@@ -75,6 +81,11 @@ __all__ = [
     "RateLimiter",
     "configure_throttling",
     "get_default_limiter",
+    # Retry
+    "RetryConfig",
+    "RetryExhaustedError",
+    "RETRYABLE_STATUS_CODES",
+    "IDEMPOTENT_METHODS",
     # Error handling
     "ErrorMode",
     "ErrorHandler",

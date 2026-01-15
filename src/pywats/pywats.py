@@ -7,6 +7,7 @@ from typing import Optional, Union
 
 from .core.client import HttpClient
 from .core.station import Station, StationRegistry
+from .core.retry import RetryConfig
 
 logger = logging.getLogger(__name__)
 from .core.exceptions import ErrorMode, ErrorHandler
@@ -112,7 +113,9 @@ class pyWATS:
         station: Optional[Station] = None,
         timeout: int = 30,
         process_refresh_interval: int = DEFAULT_PROCESS_REFRESH_INTERVAL,
-        error_mode: ErrorMode = ErrorMode.STRICT
+        error_mode: ErrorMode = ErrorMode.STRICT,
+        retry_config: Optional[RetryConfig] = None,
+        retry_enabled: bool = True,
     ):
         """
         Initialize the pyWATS API.
@@ -128,6 +131,9 @@ class pyWATS:
             error_mode: Error handling mode (STRICT or LENIENT). Default is STRICT.
                 - STRICT: Raises exceptions for 404/empty responses
                 - LENIENT: Returns None for 404/empty responses
+            retry_config: Custom retry configuration. If None, uses defaults.
+            retry_enabled: Enable/disable retry (default: True). 
+                Shorthand for RetryConfig(enabled=False).
         """
         self._base_url = base_url.rstrip("/")
         self._token = token
@@ -135,6 +141,14 @@ class pyWATS:
         self._process_refresh_interval = process_refresh_interval
         self._error_mode = error_mode
         self._error_handler = ErrorHandler(error_mode)
+        
+        # Retry configuration
+        if retry_config is not None:
+            self._retry_config = retry_config
+        elif not retry_enabled:
+            self._retry_config = RetryConfig(enabled=False)
+        else:
+            self._retry_config = RetryConfig()
         
         # Station configuration
         self._station: Optional[Station] = station
@@ -146,7 +160,8 @@ class pyWATS:
         self._http_client = HttpClient(
             base_url=self._base_url,
             token=self._token,
-            timeout=self._timeout
+            timeout=self._timeout,
+            retry_config=self._retry_config,
         )
         
         # Service instances (lazy initialization)
@@ -386,6 +401,17 @@ class pyWATS:
     def error_mode(self) -> ErrorMode:
         """Get the configured error handling mode."""
         return self._error_mode
+    
+    @property
+    def retry_config(self) -> RetryConfig:
+        """Get the retry configuration."""
+        return self._retry_config
+    
+    @retry_config.setter
+    def retry_config(self, value: RetryConfig) -> None:
+        """Set the retry configuration."""
+        self._retry_config = value
+        self._http_client.retry_config = value
     
     # -------------------------------------------------------------------------
     # Station Configuration

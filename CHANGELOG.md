@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Automatic Retry for Transient Failures** - HTTP requests now automatically retry on transient errors:
+  - Retries on `ConnectionError`, `TimeoutError`, and HTTP 429/500/502/503/504
+  - Exponential backoff with jitter (default: 3 attempts, 1s base delay)
+  - Only idempotent methods (GET, PUT, DELETE) are retried (POST is not retried)
+  - Respects `Retry-After` header from server for rate limiting (429)
+  - New `RetryConfig` class for customization:
+    ```python
+    from pywats import pyWATS, RetryConfig
+    
+    # Custom retry configuration
+    config = RetryConfig(max_attempts=5, base_delay=2.0)
+    api = pyWATS(base_url="...", token="...", retry_config=config)
+    
+    # Disable retry entirely
+    api = pyWATS(base_url="...", token="...", retry_enabled=False)
+    ```
+  - Retry statistics available via `api.retry_config.stats`
+  - `RetryExhaustedError` exception when all attempts fail
+  - Top-level exports: `from pywats import RetryConfig, RetryExhaustedError`
+
 ## [0.1.0b33] - 2025-01-15
 
 ### Added
