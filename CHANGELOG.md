@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b34] - 2026-01-15
+
 ### Added
 - **Batch Operations** - Execute multiple API calls concurrently with `batch_execute`:
   - `batch_execute(keys, operation)` - Run operations in parallel using ThreadPoolExecutor
