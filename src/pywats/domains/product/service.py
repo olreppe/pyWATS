@@ -340,26 +340,11 @@ class ProductService:
         self,
         part_number: str,
         revision: str
-    ) -> Optional[str]:
-        """
-        Get BOM (Bill of Materials) as WSBF XML string.
-
-        Args:
-            part_number: Product part number
-            revision: Product revision
-
-        Returns:
-            WSBF XML string or None if not found
-        """
-        return self._repository.get_bom(part_number, revision)
-
-    def get_bom_items(
-        self,
-        part_number: str,
-        revision: str
     ) -> List["BomItem"]:
         """
-        Get BOM items as parsed BomItem objects.
+        Get BOM (Bill of Materials) for a product revision.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
 
         Args:
             part_number: Product part number
@@ -368,7 +353,26 @@ class ProductService:
         Returns:
             List of BomItem objects
         """
-        return self._repository.get_bom_items(part_number, revision)
+        return self._ensure_internal().get_bom(part_number, revision)
+
+    def get_bom_items(
+        self,
+        part_number: str,
+        revision: str
+    ) -> List["BomItem"]:
+        """
+        Get BOM items as parsed BomItem objects.
+        
+        This is an alias for get_bom() for backward compatibility.
+
+        Args:
+            part_number: Product part number
+            revision: Product revision
+
+        Returns:
+            List of BomItem objects
+        """
+        return self.get_bom(part_number, revision)
 
     def update_bom(
         self,

@@ -1008,6 +1008,99 @@ class AnalyticsService:
         """
         return self._ensure_internal().get_bottlenecks(filter_data, min_yield_threshold)
 
+    def get_flow_summary(
+        self,
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
+        """
+        Get a summary of the unit flow statistics.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Provides high-level metrics about the production flow.
+        
+        Args:
+            filter_data: Filter criteria for the flow query
+            
+        Returns:
+            Dictionary with summary statistics including:
+            - total_nodes, total_links, total_units
+            - passed_units, failed_units
+            - avg_yield, min_yield, max_yield
+        """
+        return self._ensure_internal().get_flow_summary(filter_data)
+
+    def split_flow_by(
+        self, 
+        dimension: str,
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> UnitFlowResult:
+        """
+        Split the unit flow by a specific dimension.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Splits the flow diagram to show parallel paths based on the
+        specified dimension (e.g., by station, location, or purpose).
+        
+        Args:
+            dimension: Dimension to split by. Common values:
+                - "stationName": Split by test station
+                - "location": Split by physical location
+                - "purpose": Split by station purpose
+                - "processCode": Split by process type
+            filter_data: Additional filter parameters
+            
+        Returns:
+            UnitFlowResult with split flow view
+        """
+        return self._ensure_internal().split_flow_by(dimension, filter_data)
+
+    def set_unit_order(
+        self, 
+        order_by: str,
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> UnitFlowResult:
+        """
+        Set how units are ordered in the flow visualization.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        Args:
+            order_by: Order specification. Common values:
+                - "startTime": Order by when units entered
+                - "endTime": Order by when units exited
+                - "serialNumber": Order alphabetically by serial
+                - "status": Order by pass/fail status
+            filter_data: Additional filter parameters
+            
+        Returns:
+            UnitFlowResult with reordered units
+        """
+        return self._ensure_internal().set_unit_order(order_by, filter_data)
+
+    def expand_operations(
+        self,
+        expand: bool = True,
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> UnitFlowResult:
+        """
+        Expand or collapse operations in the unit flow.
+        
+        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+        
+        When expanded, shows detailed sub-operations within each process.
+        When collapsed, shows an aggregated view.
+        
+        Args:
+            expand: True to expand operations, False to collapse
+            filter_data: Additional filter parameters
+            
+        Returns:
+            UnitFlowResult with updated expansion state
+        """
+        return self._ensure_internal().expand_operations(expand, filter_data)
+
     # -------------------------------------------------------------------------
     # Measurement List Methods (Internal)
     # -------------------------------------------------------------------------
@@ -1293,7 +1386,3 @@ class AnalyticsService:
             count=count
         )
 
-    # NOTE: get_aggregated_measurements_internal is available via:
-    #   api.analytics._ensure_internal().get_aggregated_measurements(...)
-    # The main get_aggregated_measurements() at line ~561 uses the simpler
-    # measurement_paths parameter instead of XML step_filters.

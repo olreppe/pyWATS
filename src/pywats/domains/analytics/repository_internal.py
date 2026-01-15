@@ -16,7 +16,6 @@ Unit Flow endpoints for production flow visualization:
 - GET /api/internal/UnitFlow/Units - Get individual units
 
 Step/Measurement filter endpoints:
-- POST /api/internal/App/AggregatedMeasurements - Aggregated measurements with step filters
 - GET/POST /api/internal/App/MeasurementList - Measurement list with step filters
 - GET/POST /api/internal/App/StepStatusList - Step status list with filters
 - GET/POST /api/internal/App/TopFailed - Top failed steps with filters
@@ -32,7 +31,6 @@ from .models import (
     UnitFlowUnit,
     UnitFlowFilter,
     UnitFlowResult,
-    AggregatedMeasurement,
     MeasurementListItem,
     StepStatusItem,
     TopFailedStep,
@@ -341,68 +339,7 @@ class AnalyticsRepositoryInternal:
     # =========================================================================
     # Step/Measurement Filter Endpoints (Internal API)
     # =========================================================================
-    
-    def get_aggregated_measurements(
-        self,
-        filter_data: Dict[str, Any],
-        step_filters: str,
-        sequence_filters: str,
-        measurement_name: Optional[str] = None
-    ) -> List[AggregatedMeasurement]:
-        """
-        Get aggregated measurement data with step/sequence filters.
-        
-        POST /api/internal/App/AggregatedMeasurements
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns aggregated statistics (count, min, max, avg, stdev, cpk, etc.)
-        for measurements matching the specified step and sequence filters.
-        
-        Args:
-            filter_data: Filter parameters including:
-                - serialNumber, partNumber, revision, batchNumber
-                - stationName, testOperation, status, yield
-                - productGroup, level, swFilename, swVersion
-                - dateFrom, dateTo, dateGrouping, periodCount
-                - includeCurrentPeriod, maxCount, minCount, topCount
-            step_filters: XML string defining step filters (required).
-                Get from TopFailed endpoint results.
-            sequence_filters: XML string defining sequence filters (required).
-                Get from TopFailed endpoint results.
-            measurement_name: Optional name of the measurement to filter by.
-            
-        Returns:
-            List of AggregatedMeasurement objects with statistics.
-            
-        Example:
-            >>> # Get aggregated measurements with step filters
-            >>> results = repo.get_aggregated_measurements(
-            ...     filter_data={"partNumber": "WIDGET-001", "periodCount": 30},
-            ...     step_filters="<filters>...</filters>",
-            ...     sequence_filters="<filters>...</filters>",
-            ...     measurement_name="Voltage"
-            ... )
-            >>> for m in results:
-            ...     print(f"{m.step_name}: avg={m.avg}, cpk={m.cpk}")
-        """
-        params = {
-            "stepFilters": step_filters,
-            "sequenceFilters": sequence_filters,
-        }
-        if measurement_name:
-            params["measurementName"] = measurement_name
-            
-        data = self._internal_post(
-            "/api/internal/App/AggregatedMeasurements",
-            data=filter_data,
-            params=params
-        )
-        
-        if data and isinstance(data, list):
-            return [AggregatedMeasurement.model_validate(item) for item in data]
-        return []
-    
+
     def get_measurement_list_simple(
         self,
         product_group_id: str,

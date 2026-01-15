@@ -331,7 +331,7 @@ class TestBomOperations:
         """Test getting BOM for a product revision"""
         print("\n=== GET BOM ===")
         
-        bom = wats_client.product_internal.get_bom(test_product_pn, "1.0")
+        bom = wats_client.product.get_bom(test_product_pn, "1.0")
         
         print(f"BOM for {test_product_pn}/1.0 ({len(bom)} items):")
         for item in bom[:10]:
@@ -478,7 +478,7 @@ class TestBoxBuildTemplate:
         """Test getting a box build template"""
         print("\n=== GET BOX BUILD TEMPLATE ===")
         
-        template = wats_client.product_internal.get_box_build(parent_product_pn, "1.0")
+        template = wats_client.product.get_box_build_template(parent_product_pn, "1.0")
         
         print(f"Box Build Template: {template.parent_part_number}/{template.parent_revision}")
         print(f"Parent Revision ID: {template.parent_revision_id}")
@@ -498,7 +498,7 @@ class TestBoxBuildTemplate:
         """Test getting required parts summary"""
         print("\n=== GET REQUIRED PARTS ===")
         
-        template = wats_client.product_internal.get_box_build(parent_product_pn, "1.0")
+        template = wats_client.product.get_box_build_template(parent_product_pn, "1.0")
         parts = template.get_required_parts()
         
         print(f"Required parts for {parent_product_pn}/1.0:")
@@ -519,7 +519,7 @@ class TestBoxBuildTemplate:
         """Test adding a subunit to box build template"""
         print("\n=== ADD SUBUNIT TO BOX BUILD ===")
         
-        template = wats_client.product_internal.get_box_build(parent_product_pn, "1.0")
+        template = wats_client.product.get_box_build_template(parent_product_pn, "1.0")
         initial_count = len(template.subunits)
         
         print(f"Initial subunits: {initial_count}")
@@ -557,7 +557,7 @@ class TestBoxBuildTemplate:
         print("\n=== VALIDATE SUBUNIT REVISION ===")
         
         # First add a subunit with a revision mask
-        template = wats_client.product_internal.get_box_build(parent_product_pn, "1.0")
+        template = wats_client.product.get_box_build_template(parent_product_pn, "1.0")
         
         # Try to add a subunit with mask (may already exist)
         try:
@@ -596,7 +596,7 @@ class TestBoxBuildTemplate:
         timestamp = datetime.now().astimezone().strftime('%H%M%S')
         
         # Use context manager for auto-save
-        with wats_client.product_internal.get_box_build(parent_product_pn, "1.0") as bb:
+        with wats_client.product.get_box_build_template(parent_product_pn, "1.0") as bb:
             print(f"Inside context: {bb.parent_part_number}/{bb.parent_revision}")
             print(f"Current subunits: {len(bb.subunits)}")
             
@@ -621,7 +621,7 @@ class TestBoxBuildTemplate:
         """Test removing a subunit from box build template"""
         print("\n=== REMOVE SUBUNIT FROM BOX BUILD ===")
         
-        template = wats_client.product_internal.get_box_build(parent_product_pn, "1.0")
+        template = wats_client.product.get_box_build_template(parent_product_pn, "1.0")
         
         print(f"Current subunits: {len(template.subunits)}")
         

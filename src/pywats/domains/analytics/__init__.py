@@ -24,7 +24,6 @@ Internal API endpoints (⚠️ subject to change):
 - POST /api/internal/UnitFlow/SplitBy
 - POST /api/internal/UnitFlow/UnitOrder
 - GET /api/internal/UnitFlow/Units
-- POST /api/internal/App/AggregatedMeasurements
 - GET/POST /api/internal/App/MeasurementList
 - GET/POST /api/internal/App/StepStatusList
 

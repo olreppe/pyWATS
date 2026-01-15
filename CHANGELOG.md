@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b33] - 2025-01-15
+
 ### Added
 - **Type-Safe Query Enums** - New enums for query parameter type safety:
   - `StatusFilter`: Filter by test status (`PASSED`, `FAILED`, `ERROR`, `TERMINATED`, `ALL`)
@@ -55,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Paths automatically converted to API format before server calls
 
 ### Fixed
+- Restored the public analytics `get_aggregated_measurements()` helper and removed the internal XML-only variant to keep the simple measurement path workflow intact.
 - **MCP Server Critical Bug** - Fixed invalid `WATSFilter` field names in AI tooling:
   - Changed `start=` to `date_from=` in 5 MCP tools (was causing Pydantic validation errors)
   - Fixed `status="F"` to use `StatusFilter.FAILED` enum for type safety
