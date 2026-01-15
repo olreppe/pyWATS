@@ -86,6 +86,7 @@ where = ["src"]
 "" = "src"
 
 [tool.setuptools.package-data]
+pywats = ["py.typed"]
 pywats_client = ["gui/resources/*.ico", "gui/resources/*.png", "gui/resources/*.svg"]
 
 [tool.black]
