@@ -377,6 +377,30 @@ uur_root.add_string_step(
 api.report.submit_report(uur)
 ```
 
+### Failure Logging in UUR (Repair Reports)
+
+In UUR reports, failures are logged against a *unit hierarchy* (main unit + optional sub-units). WATS uses this hierarchy to understand **where** a failure occurred and to power repair analytics.
+
+**Sub-units and `idx`**
+
+- A UUR report contains `subUnits` (exposed as `UURReport.sub_units`), where each element is a `UURSubUnit`.
+- Every `UURSubUnit` must have an integer `idx` that is **unique within the report**.
+- `idx = 0` is reserved for the **main unit** (root). The library ensures a main unit exists.
+- Additional sub-units typically use `idx = 1..N`.
+- `parentIdx` links a sub-unit to its parent by referencing the parent’s `idx`.
+    - Most users keep a single-level hierarchy where all sub-units have `parentIdx = 0`.
+
+**Failures and fail codes**
+
+- A failure is associated with a specific unit via the unit’s `idx` (conceptually “part index”).
+- In the WSJF-style serialization used by the client formats, failures are stored under the owning `UURSubUnit.failures`. That means the failure is *implicitly* tied to that sub-unit’s `idx`.
+- The **repair fail code** comes from the repair type’s fail-code tree (categories + selectable leaf failcodes). In the full WRML representation, WATS stores:
+    - `Failcode`: the GUID of the selected leaf failcode
+    - `PartIdx`: which unit/sub-unit the failure belongs to (matches the sub-unit `idx`)
+    - `Idx`: an internal failure counter (separate from the sub-unit `idx`)
+
+Practical rule of thumb: treat `idx` as a per-report “primary key” for each sub-unit, and make sure every failure is attached to the correct sub-unit so WATS can resolve `PartIdx` correctly.
+
 ---
 
 ## Test Steps
