@@ -49,6 +49,15 @@ Legacy usage guides with comprehensive examples and patterns:
 - **[Docker Deployment](DOCKER.md)** - Container deployment guide for production and development
 - **[Quick Reference](QUICK_REFERENCE.md)** - Common patterns and code snippets
 
+## Project Management & Development
+
+Internal project tracking and review documents:
+
+- **[Project Documents](project/)** - Development tracking and technical reviews
+  - [Project Review](project/PROJECT_REVIEW.md) - Comprehensive technical assessment (⭐⭐⭐⭐ 8.5/10)
+  - [Improvements Plan](project/IMPROVEMENTS_PLAN.md) - Top 3 priorities tracking (✅ 100% complete)
+  - [Test Suite Summary](project/TEST_SUITE_SUMMARY.md) - Client test suite details (71 tests)
+
 ## Client Documentation
 
 Documentation for the pyWATS Client application:
