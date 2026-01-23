@@ -46,6 +46,7 @@ Legacy usage guides with comprehensive examples and patterns:
 ## Reference & Troubleshooting
 
 - **[Error Catalog](ERROR_CATALOG.md)** - Comprehensive error reference with causes, examples, and remediation
+- **[Docker Deployment](DOCKER.md)** - Container deployment guide for production and development
 - **[Quick Reference](QUICK_REFERENCE.md)** - Common patterns and code snippets
 
 ## Client Documentation

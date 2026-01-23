@@ -1,0 +1,165 @@
+# Docker Compose for pyWATS
+# Provides development, testing, and production environments
+
+version: '3.8'
+
+# ============================================================================
+# Services
+# ============================================================================
+services:
+  
+  # --------------------------------------------------------------------------
+  # Headless client - Production mode
+  # --------------------------------------------------------------------------
+  client:
+    build:
+      context: .
+      target: client-headless
+    container_name: pywats-client
+    restart: unless-stopped
+    
+    environment:
+      # WATS API Configuration (set in .env file)
+      WATS_BASE_URL: ${WATS_BASE_URL}
+      WATS_TOKEN: ${WATS_TOKEN}
+      
+      # Client Configuration
+      PYWATS_HEADLESS: "1"
+      PYWATS_CONFIG_DIR: /app/config
+      PYWATS_DATA_DIR: /app/data
+      PYWATS_LOG_DIR: /app/logs
+      PYWATS_LOG_LEVEL: ${PYWATS_LOG_LEVEL:-INFO}
+      
+      # Converter Configuration
+      PYWATS_WATCH_DIR: /app/watch
+      PYWATS_OUTPUT_DIR: /app/output
+      PYWATS_ARCHIVE_DIR: /app/archive
+      
+    volumes:
+      # Configuration files (read-only recommended for production)
+      - ./config:/app/config:ro
+      
+      # Watch directory for incoming test data
+      - ${WATCH_DIR:-./watch}:/app/watch
+      
+      # Output directory for converted files
+      - ${OUTPUT_DIR:-./output}:/app/output
+      
+      # Archive directory for processed files
+      - ${ARCHIVE_DIR:-./archive}:/app/archive
+      
+      # Logs (persistent)
+      - client-logs:/app/logs
+      
+      # Data (queue, state, etc.)
+      - client-data:/app/data
+    
+    networks:
+      - pywats-network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "from pywats_client.core import ServiceManager; print('OK')"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+  
+  # --------------------------------------------------------------------------
+  # MCP Server - AI Assistant Integration
+  # --------------------------------------------------------------------------
+  mcp:
+    build:
+      context: .
+      target: mcp
+    container_name: pywats-mcp
+    restart: unless-stopped
+    
+    environment:
+      WATS_BASE_URL: ${WATS_BASE_URL}
+      WATS_TOKEN: ${WATS_TOKEN}
+      MCP_PORT: ${MCP_PORT:-3000}
+    
+    ports:
+      - "${MCP_PORT:-3000}:3000"
+    
+    networks:
+      - pywats-network
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pywats_mcp; print('OK')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+  
+  # --------------------------------------------------------------------------
+  # Development environment
+  # --------------------------------------------------------------------------
+  dev:
+    build:
+      context: .
+      target: dev
+    container_name: pywats-dev
+    
+    environment:
+      WATS_BASE_URL: ${WATS_BASE_URL}
+      WATS_TOKEN: ${WATS_TOKEN}
+      PYTHONPATH: /app/src
+    
+    volumes:
+      # Mount source code for live development
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./examples:/app/examples
+      - ./docs:/app/docs
+      
+      # Persistent development data
+      - dev-data:/app/.pytest_cache
+      - dev-data:/app/.mypy_cache
+    
+    networks:
+      - pywats-network
+    
+    # Keep container running for interactive use
+    command: tail -f /dev/null
+    
+    profiles:
+      - dev
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  pywats-network:
+    driver: bridge
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  client-logs:
+    driver: local
+  client-data:
+    driver: local
+  dev-data:
+    driver: local
