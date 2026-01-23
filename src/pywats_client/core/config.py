@@ -276,6 +276,25 @@ class ClientConfig:
     # Software Distribution settings
     software_auto_update: bool = False
     
+    # HTTP API settings
+    api_enabled: bool = False
+    api_host: str = "127.0.0.1"
+    api_port: int = 8080
+    api_base_path: str = "/api/v1"
+    api_cors_enabled: bool = False
+    api_cors_origins: str = "*"
+    api_auth_type: str = "None"  # "None", "API Key", "Bearer Token", "Basic Auth"
+    api_rate_limit_enabled: bool = False
+    api_rate_limit_requests: int = 100
+    api_rate_limit_window: int = 60  # seconds
+    
+    # Webhook settings
+    webhook_converter_url: str = ""
+    webhook_report_url: str = ""
+    webhook_service_url: str = ""
+    webhook_auth_header: str = ""
+    webhook_auth_value: str = ""
+    
     # GUI tab visibility settings - control which tabs are shown
     show_software_tab: bool = True
     show_sn_handler_tab: bool = True

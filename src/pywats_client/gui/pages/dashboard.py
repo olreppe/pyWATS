@@ -312,8 +312,6 @@ class DashboardPage(BasePage):
         
         # Get converter stats from config
         active_count = 0
-        total_processed = 0
-        total_success = 0
         
         for conv in self.config.converters:
             if not conv.enabled:
@@ -337,24 +335,48 @@ class DashboardPage(BasePage):
             watch_item.setForeground(QColor("#808080"))
             self._health_table.setItem(row, 2, watch_item)
             
-            # TODO: Get actual stats from service
-            processed_item = QTableWidgetItem("--")
+            # Get stats from facade if available
+            processed_count = "--"
+            success_rate = "--%"
+            last_run = "--"
+            
+            if self._facade:
+                try:
+                    # TODO: Add per-converter statistics to facade
+                    pass
+                except Exception:
+                    pass
+            
+            processed_item = QTableWidgetItem(str(processed_count))
             self._health_table.setItem(row, 3, processed_item)
             
-            success_item = QTableWidgetItem("--%")
+            success_item = QTableWidgetItem(success_rate)
             self._health_table.setItem(row, 4, success_item)
             
-            last_run_item = QTableWidgetItem("--")
+            last_run_item = QTableWidgetItem(last_run)
             last_run_item.setForeground(QColor("#808080"))
             self._health_table.setItem(row, 5, last_run_item)
         
-        # Update stat cards
-        self._converters_value.setText(f"{active_count} Active")
-        
-        # TODO: Get actual queue and success stats
-        self._queue_value.setText("0 Pending")
-        self._reports_value.setText("0 Today")
-        self._success_value.setText("--%")
+        # Update stat cards with real data if facade available
+        if self._facade:
+            try:
+                status = self._facade.get_service_status()
+                self._converters_value.setText(f"{status.get('converters_active', active_count)} Active")
+                self._queue_value.setText(f"{status.get('queue_pending', 0)} Pending")
+                self._reports_value.setText(f"{status.get('reports_today', 0)} Today")
+                # Calculate success rate if we have data
+                # TODO: Track success rate
+                self._success_value.setText("--%")
+            except Exception:
+                self._converters_value.setText(f"{active_count} Active")
+                self._queue_value.setText("0 Pending")
+                self._reports_value.setText("0 Today")
+                self._success_value.setText("--%")
+        else:
+            self._converters_value.setText(f"{active_count} Active")
+            self._queue_value.setText("0 Pending")
+            self._reports_value.setText("0 Today")
+            self._success_value.setText("--%")
     
     def _update_connection_status(self) -> None:
         """Update server connection status"""

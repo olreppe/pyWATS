@@ -343,11 +343,45 @@ class APISettingsPage(BasePage):
     
     def save_config(self) -> None:
         """Save API settings to config"""
-        # TODO: Add API settings fields to ClientConfig
-        # For now, just acknowledge the save
-        pass
+        self.config.api_enabled = self._api_enabled.isChecked()
+        self.config.api_port = self._api_port.value()
+        self.config.api_host = self._api_host.text()
+        self.config.api_base_path = self._api_base_path.text()
+        self.config.api_cors_enabled = self._api_cors_enabled.isChecked()
+        self.config.api_cors_origins = self._api_cors_origins.text()
+        self.config.api_auth_type = self._auth_type.currentText()
+        self.config.api_rate_limit_enabled = self._rate_limit_enabled.isChecked()
+        self.config.api_rate_limit_requests = self._rate_limit_requests.value()
+        self.config.api_rate_limit_window = self._rate_limit_window.value()
+        
+        # Webhook settings
+        self.config.webhook_converter_url = self._webhook_converter_url.text()
+        self.config.webhook_report_url = self._webhook_report_url.text()
+        self.config.webhook_service_url = self._webhook_service_url.text()
+        self.config.webhook_auth_header = self._webhook_auth_header.text()
+        self.config.webhook_auth_value = self._webhook_auth_value.text()
     
     def load_config(self) -> None:
         """Load API settings from config"""
-        # TODO: Load from config when fields are added to ClientConfig
-        pass
+        self._api_enabled.setChecked(self.config.api_enabled)
+        self._api_port.setValue(self.config.api_port)
+        self._api_host.setText(self.config.api_host)
+        self._api_base_path.setText(self.config.api_base_path)
+        self._api_cors_enabled.setChecked(self.config.api_cors_enabled)
+        self._api_cors_origins.setText(self.config.api_cors_origins)
+        
+        # Set auth type
+        index = self._auth_type.findText(self.config.api_auth_type)
+        if index >= 0:
+            self._auth_type.setCurrentIndex(index)
+        
+        self._rate_limit_enabled.setChecked(self.config.api_rate_limit_enabled)
+        self._rate_limit_requests.setValue(self.config.api_rate_limit_requests)
+        self._rate_limit_window.setValue(self.config.api_rate_limit_window)
+        
+        # Webhook settings
+        self._webhook_converter_url.setText(self.config.webhook_converter_url)
+        self._webhook_report_url.setText(self.config.webhook_report_url)
+        self._webhook_service_url.setText(self.config.webhook_service_url)
+        self._webhook_auth_header.setText(self.config.webhook_auth_header)
+        self._webhook_auth_value.setText(self.config.webhook_auth_value)

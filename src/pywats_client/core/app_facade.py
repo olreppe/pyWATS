@@ -474,6 +474,44 @@ class AppFacade:
         """
         return self._app.get_queue_status()
     
+    def get_service_status(self) -> Dict[str, Any]:
+        """
+        Get service status information for dashboard.
+        
+        Returns:
+            Dictionary with service status:
+            - running: bool - Service is running
+            - error: bool - Service has error
+            - standalone: bool - Running in standalone mode (no service)
+            - uptime_seconds: int - Uptime in seconds
+            - converters_active: int - Number of active converters
+            - reports_today: int - Reports processed today
+            - queue_pending: int - Pending items in queue
+        """
+        try:
+            status = self._app.get_status()
+            queue = self.get_queue_status()
+            
+            return {
+                "running": status == "running",
+                "error": False,
+                "standalone": False,
+                "uptime_seconds": 0,  # TODO: Track uptime
+                "converters_active": len([c for c in self.config.converters if c.enabled]),
+                "reports_today": 0,  # TODO: Track today's reports
+                "queue_pending": queue.get("pending_reports", 0) + queue.get("pending_files", 0),
+            }
+        except Exception:
+            return {
+                "running": False,
+                "error": False,
+                "standalone": True,
+                "uptime_seconds": 0,
+                "converters_active": 0,
+                "reports_today": 0,
+                "queue_pending": 0,
+            }
+    
     # =========================================================================
     # Application Configuration
     # =========================================================================

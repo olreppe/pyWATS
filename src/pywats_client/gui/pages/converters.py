@@ -113,7 +113,7 @@ def get_system_converters() -> List[ConverterInfo]:
 
 
 def create_default_converter_configs(data_path: Path) -> List[ConverterConfig]:
-    """
+    r"""
     Create default converter configurations for standard converters.
     
     Sets up watch folders in ProgramData/Virinco/pyWATS/<format> with Done/ subdirectories.
