@@ -28,9 +28,11 @@ from .pages import (
     ConvertersPage, ConvertersPageV2, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
     AssetPage, RootCausePage, ProductionPage, ProductPage
 )
+from .widgets.instance_selector import InstanceSelector
 from ..core.config import ClientConfig
 from ..core.app_facade import AppFacade
 from ..app import pyWATSApplication, ApplicationStatus
+from ..services.ipc import ServiceIPCClient
 
 
 class SidebarMode(Enum):
@@ -72,6 +74,10 @@ class MainWindow(QMainWindow):
         self._facade = AppFacade(self.app)  # Create facade for GUI components
         self._tray_icon: Optional[QSystemTrayIcon] = None
         self._is_connected = False
+        
+        # IPC client for communicating with service
+        self._ipc_client: Optional[ServiceIPCClient] = None
+        self._current_instance_id: Optional[str] = None
         
         # Setup UI
         self._setup_window()
@@ -226,6 +232,11 @@ class MainWindow(QMainWindow):
         logo_layout.addStretch()
         
         sidebar_layout.addWidget(logo_frame)
+        
+        # Instance selector
+        self._instance_selector = InstanceSelector()
+        self._instance_selector.instance_selected.connect(self._on_instance_selected)
+        sidebar_layout.addWidget(self._instance_selector)
         
         # Navigation list
         self._nav_list = QListWidget()
@@ -648,18 +659,66 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
     
     def _update_status(self) -> None:
-        """Periodic status update"""
-        # Update connection status
-        if self.app.is_online():
-            self.connection_status_changed.emit("Online")
-        elif self.app.status == ApplicationStatus.RUNNING:
-            self.connection_status_changed.emit("Offline (Queuing)")
+        """Periodic status update via IPC"""
+        if not self._ipc_client or not self._current_instance_id:
+            # No service connected
+            self.connection_status_changed.emit("No service running")
+            self.application_status_changed.emit("Stopped")
+            return
         
-        # Update queue status
-        queue_status = self.app.get_queue_status()
-        if queue_status.get("pending_reports", 0) > 0:
-            pending = queue_status["pending_reports"]
-            self._status_label.setToolTip(f"{pending} reports queued")
+        try:
+            # Get status from service via IPC
+            status_data = self._ipc_client.get_status()
+            
+            if status_data:
+                # Update application status
+                app_status = status_data.get("status", "unknown")
+                self.application_status_changed.emit(app_status)
+                
+                # Update connection status
+                connection_state = status_data.get("connection_state", "unknown")
+                if connection_state.lower() == "connected":
+                    self.connection_status_changed.emit("Online")
+                elif app_status.lower() == "running":
+                    self.connection_status_changed.emit("Offline (Queuing)")
+                else:
+                    self.connection_status_changed.emit(connection_state)
+                
+                # Update queue status if available
+                queue_size = status_data.get("stats", {}).get("queue_size", 0)
+                if queue_size > 0:
+                    self._status_label.setToolTip(f"{queue_size} reports queued")
+            else:
+                # Service not responding
+                self.connection_status_changed.emit("Service unavailable")
+                self.application_status_changed.emit("Error")
+        
+        except Exception as e:
+            logger.error(f"Error updating status via IPC: {e}")
+            self.connection_status_changed.emit("IPC error")
+    
+    def _on_instance_selected(self, instance_id: str) -> None:
+        """Handle instance selection from selector widget"""
+        logger.info(f"Instance selected: {instance_id}")
+        
+        # Disconnect from previous instance
+        if self._ipc_client:
+            self._ipc_client.disconnect_from_service()
+            self._ipc_client = None
+        
+        # Connect to new instance
+        self._current_instance_id = instance_id
+        self._ipc_client = ServiceIPCClient(instance_id)
+        
+        if self._ipc_client.connect_to_service():
+            logger.info(f"Connected to service instance: {instance_id}")
+            # Trigger immediate status update
+            self._update_status()
+        else:
+            logger.warning(f"Failed to connect to instance: {instance_id}")
+            self.connection_status_changed.emit("Connection failed")
+            self._ipc_client = None
+
     
     # Window events
     
