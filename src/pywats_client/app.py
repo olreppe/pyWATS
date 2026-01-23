@@ -31,6 +31,7 @@ from .services.connection import ConnectionService, ConnectionStatus
 from .services.process_sync import ProcessSyncService
 from .services.report_queue import ReportQueueService
 from .services.converter_manager import ConverterManager
+from .services.ipc import ServiceIPCServer
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,7 @@ class pyWATSApplication:
         self._process_sync: Optional[ProcessSyncService] = None
         self._report_queue: Optional[ReportQueueService] = None
         self._converter_manager: Optional[ConverterManager] = None
+        self._ipc_server: Optional[ServiceIPCServer] = None
         
         # Async runtime
         self._loop: Optional[asyncio.AbstractEventLoop] = None
@@ -261,6 +263,16 @@ class pyWATSApplication:
                 report_queue=self._report_queue
             )
             
+            # Start IPC server for GUI communication
+            logger.info("Starting IPC server...")
+            self._ipc_server = ServiceIPCServer(
+                instance_id=self.config.instance_id,
+                app=self
+            )
+            if not self._ipc_server.start():
+                logger.warning("Failed to start IPC server - GUI communication unavailable")
+                self._ipc_server = None
+            
             # Start services
             logger.info("Starting services...")
             await self._connection.start()
@@ -294,6 +306,11 @@ class pyWATSApplication:
         
         try:
             logger.info("Stopping services...")
+            
+            # Stop IPC server first
+            if self._ipc_server:
+                self._ipc_server.stop()
+                self._ipc_server = None
             
             # Stop services in reverse order
             if self._converter_manager:
