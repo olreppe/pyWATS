@@ -243,27 +243,6 @@ class MainWindow(QMainWindow):
         logo_layout.addWidget(self._title_label)
         logo_layout.addStretch()
         
-        # Mode toggle button
-        self._mode_btn = QPushButton("◀")
-        self._mode_btn.setObjectName("modeButton")
-        self._mode_btn.setToolTip("Toggle sidebar mode (Advanced/Compact/Minimized)")
-        self._mode_btn.setFixedSize(24, 24)
-        self._mode_btn.setStyleSheet("""
-            QPushButton#modeButton {
-                background-color: transparent;
-                border: none;
-                color: #808080;
-                font-size: 12px;
-            }
-            QPushButton#modeButton:hover {
-                color: #ffffff;
-                background-color: #3c3c3c;
-                border-radius: 4px;
-            }
-        """)
-        self._mode_btn.clicked.connect(self._toggle_sidebar_mode)
-        logo_layout.addWidget(self._mode_btn)
-        
         sidebar_layout.addWidget(logo_frame)
         
         # Navigation list
@@ -313,6 +292,29 @@ class MainWindow(QMainWindow):
         self._footer_label = QLabel(f"pyWATS Client | v{__version__}")
         self._footer_label.setObjectName("footerLabel")
         footer_layout.addWidget(self._footer_label)
+        
+        # Mode toggle button at bottom of footer
+        self._mode_btn = QPushButton("◀")
+        self._mode_btn.setObjectName("modeButton")
+        self._mode_btn.setToolTip("Toggle sidebar mode (Advanced/Compact/Minimized)")
+        self._mode_btn.setFixedHeight(32)
+        self._mode_btn.setStyleSheet("""
+            QPushButton#modeButton {
+                background-color: #2a2d2e;
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                color: #808080;
+                font-size: 14px;
+                padding: 4px;
+            }
+            QPushButton#modeButton:hover {
+                color: #ffffff;
+                background-color: #3c3c3c;
+                border-color: #4c4c4c;
+            }
+        """)
+        self._mode_btn.clicked.connect(self._toggle_sidebar_mode)
+        footer_layout.addWidget(self._mode_btn)
         
         sidebar_layout.addWidget(self._footer_frame)
         
@@ -392,14 +394,21 @@ class MainWindow(QMainWindow):
         """Apply current sidebar mode styling and layout"""
         if self._sidebar_mode == SidebarMode.MINIMIZED:
             self._sidebar.setFixedWidth(60)
+            self._logo_icon.hide()
             self._title_label.hide()
             self._settings_btn.setText("⚙")
             self._footer_label.hide()
+            self._mode_btn.setText("▶")
         else:
             self._sidebar.setFixedWidth(200)
+            self._logo_icon.show()
             self._title_label.show()
             self._settings_btn.setText("⚙  Settings")
             self._footer_label.show()
+            if self._sidebar_mode == SidebarMode.ADVANCED:
+                self._mode_btn.setText("◀")
+            else:  # COMPACT
+                self._mode_btn.setText("◀")
         
         self._update_nav_list()
     
