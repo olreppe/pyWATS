@@ -451,6 +451,7 @@ Advanced pages (rarely used, already hidden ✅):
    - Token management
    - Webhook settings
    - Consider integrating SN Handler here
+   - **Note**: Settings dialog already exists - can extend existing dialog or create dedicated API page
 
 ### Sprint 3: Architectural Cleanup (3-5 days)
 6. Rename sidebar modes for clarity
