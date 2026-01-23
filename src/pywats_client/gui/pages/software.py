@@ -339,7 +339,7 @@ class SoftwarePage(BasePage):
         # Auto-load packages if connected
         if self._get_api_client():
             print("[Software] Auto-loading packages on initialization")
-            self._load_packages()
+            self._fetch_packages()
     
     def _on_selection_changed(self) -> None:
         """Handle package selection change"""
