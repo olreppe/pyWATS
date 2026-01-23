@@ -105,7 +105,17 @@ class MainWindow(QMainWindow):
         """Auto-start application on startup if configured"""
         # User has logged in successfully, start services automatically
         if self.config.service_address and self.config.api_token:
-            asyncio.create_task(self.start_services())
+            # Use asyncio in a thread
+            import threading
+            def start_in_thread():
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(self.start_services())
+                loop.close()
+            
+            thread = threading.Thread(target=start_in_thread, daemon=True)
+            thread.start()
     
     def _do_auto_start(self) -> None:
         """Perform auto-start of application services"""

@@ -12,6 +12,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QIcon
+from PySide6.QtNetwork import QLocalSocket, QLocalServer
 
 from .main_window import MainWindow
 from .login_window import LoginWindow
@@ -25,10 +26,11 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     Run the pyWATS Client GUI application.
     
     Flow:
-    1. Load configuration
-    2. Check connection state
-    3. Show login if not authenticated
-    4. Launch main window if authenticated
+    1. Check for existing instance (single-instance support)
+    2. Load configuration
+    3. Check connection state
+    4. Show login if not authenticated
+    5. Launch main window if authenticated
     
     Args:
         config: ClientConfig instance (optional)
@@ -45,6 +47,26 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     
     # Create Qt application
     qt_app = QApplication(sys.argv)
+    
+    # Check for existing instance and try to activate it
+    server_name = f"pyWATS_Client_{instance_id or 'default'}"
+    socket = QLocalSocket()
+    socket.connectToServer(server_name)
+    
+    if socket.waitForConnected(500):
+        # Another instance is running - send activation signal and exit
+        socket.write(b"ACTIVATE")
+        socket.waitForBytesWritten(1000)
+        socket.disconnectFromServer()
+        return 0
+    
+    # No existing instance - create local server to listen for activation requests
+    server = QLocalServer()
+    QLocalServer.removeServer(server_name)  # Clean up any stale server
+    
+    if not server.listen(server_name):
+        # Failed to create server, but continue anyway
+        server = None
     
     # Set Windows taskbar icon (AppUserModelID)
     if sys.platform == 'win32':
@@ -97,6 +119,25 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     
     # Create and show main window (UI layer)
     window = MainWindow(config, pywats_app, None)  # config, app, parent
+    
+    # Connect server to handle activation requests from other instances
+    if server:
+        def on_new_connection():
+            client_socket = server.nextPendingConnection()
+            if client_socket:
+                client_socket.waitForReadyRead(1000)
+                data = client_socket.readAll().data()
+                if data == b"ACTIVATE":
+                    # Show and activate the window
+                    window.show()
+                    window.raise_()
+                    window.activateWindow()
+                    if window.isMinimized():
+                        window.showNormal()
+                client_socket.disconnectFromServer()
+        
+        server.newConnection.connect(on_new_connection)
+    
     window.show()
     
     # Run event loop
