@@ -8,6 +8,7 @@ from .base import BasePage
 from .dashboard import DashboardPage
 from .setup import SetupPage
 from .connection import ConnectionPage
+from .api_settings import APISettingsPage
 from .proxy_settings import ProxySettingsPage
 from .converters import ConvertersPageV2 as ConvertersPage  # AI-enabled unified converters page
 from .location import LocationPage
@@ -25,6 +26,7 @@ __all__ = [
     "DashboardPage",
     "SetupPage",
     "ConnectionPage",
+    "APISettingsPage",
     "ProxySettingsPage",
     "ConvertersPage",
     "LocationPage",

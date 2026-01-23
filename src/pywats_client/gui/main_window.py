@@ -24,7 +24,7 @@ from PySide6.QtGui import QAction, QCloseEvent
 from .styles import DARK_STYLESHEET
 from .settings_dialog import SettingsDialog
 from .pages import (
-    BasePage, DashboardPage, SetupPage, ConnectionPage,
+    BasePage, DashboardPage, SetupPage, ConnectionPage, APISettingsPage,
     ConvertersPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
     AssetPage, RootCausePage, ProductionPage, ProductPage
 )
@@ -425,6 +425,7 @@ class MainWindow(QMainWindow):
             "Dashboard": DashboardPage(self.config, self, facade=self._facade),
             "General": SetupPage(self.config, self, facade=self._facade),
             "Connection": ConnectionPage(self.config, self, facade=self._facade),
+            "API Settings": APISettingsPage(self.config, self, facade=self._facade),
             "Log": LogPage(self.config, self, facade=self._facade),
         }
         
