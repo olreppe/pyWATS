@@ -7,7 +7,7 @@ import os
 import sys
 
 # Add source directory to path for autodoc
-sys.path.insert(0, os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 project = 'pyWATS'
