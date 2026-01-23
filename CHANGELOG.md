@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0b35] - 2026-01-23
+
 ### Added
 
 - **Comprehensive Client Test Suite** - 71 passing tests for pyWATS Client:
@@ -15,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Connection tests (7) - Service lifecycle, authentication, monitoring
   - Converter tests (10) - Base classes, validation, results
   - Integration tests (10) - End-to-end workflows, error recovery
-  - Full documentation in `TEST_SUITE_SUMMARY.md` and `api-tests/client/README.md`
+  - Full documentation in `docs/project/TEST_SUITE_SUMMARY.md` and `api-tests/client/README.md`
   - Shared fixtures in `conftest.py` for temp dirs, mocks, sample data
 
 - **Docker Containerization** - Official container support for headless deployment:
@@ -23,16 +25,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Docker Compose with 3 service profiles for different deployment scenarios
   - Multi-architecture support (AMD64, ARM64) for Raspberry Pi/embedded systems
   - Health checks, volume mounts for persistence, security best practices
-  - Comprehensive deployment guide in `DOCKER.md` with Kubernetes/Swarm examples
+  - Comprehensive deployment guide in `docs/DOCKER.md` with Kubernetes/Swarm examples
 
 - **Enhanced Error Catalog** - Complete error reference documentation:
-  - 814-line `ERROR_CATALOG.md` covering all error types and codes
+  - 814-line `docs/ERROR_CATALOG.md` covering all error types and codes
   - Detailed remediation steps for every error scenario
   - Code examples for STRICT/LENIENT error modes
   - HTTP status code mappings and retry behavior
   - Quick reference tables organized by module and category
 
-- **Centralized Routes Class** - All API endpoints defined in one place:
+### Changed
+
+- **Documentation Organization** - Reorganized project management documents:
+  - Created `docs/project/` for internal tracking and review documents
+  - Moved PROJECT_REVIEW.md, IMPROVEMENTS_PLAN.md, TEST_SUITE_SUMMARY.md to docs/project/
+  - Added docs/project/README.md with overview and links
+  - Updated docs/INDEX.md with Project Management & Development section
+  - Cleaner root directory structure
+
+## [0.1.0b34] - 2025-01-XX
+
+### Added
   - `Routes` class in `pywats.core.routes` with 170 endpoints
   - Domain-specific nested classes: `Routes.Production`, `Routes.Product`, etc.
   - Internal API routes via `Routes.Domain.Internal` nested classes
