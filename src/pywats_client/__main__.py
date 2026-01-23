@@ -64,9 +64,83 @@ def _run_headless_mode(config):
 
 def main():
     """Main entry point"""
-    # Check if this is a CLI subcommand
-    # CLI commands: config, status, test-connection, converters, start, stop, version
+    # Check if this is a CLI subcommand or service mode
+    # CLI commands: config, status, test-connection, converters, start, stop, service
     cli_commands = ["config", "status", "test-connection", "converters", "start", "stop"]
+    
+    # Handle 'service' subcommand separately (runs headless service)
+    if len(sys.argv) > 1 and sys.argv[1] == "service":
+        from .control.service import HeadlessService, ServiceConfig
+        from .core.config import ClientConfig
+        
+        # Parse service-specific arguments
+        parser = argparse.ArgumentParser(
+            prog="pywats-client service",
+            description="Run pyWATS Client in service mode (background daemon)"
+        )
+        parser.add_argument(
+            "--config", "-c",
+            type=str,
+            help="Path to configuration file"
+        )
+        parser.add_argument(
+            "--instance-id",
+            type=str,
+            help="Instance ID for multi-station mode"
+        )
+        parser.add_argument(
+            "--daemon", "-d",
+            action="store_true",
+            help="Run as daemon (Unix only)"
+        )
+        parser.add_argument(
+            "--api",
+            action="store_true",
+            help="Enable HTTP control API"
+        )
+        parser.add_argument(
+            "--api-port",
+            type=int,
+            default=8765,
+            help="HTTP API port (default: 8765)"
+        )
+        parser.add_argument(
+            "--api-host",
+            default="127.0.0.1",
+            help="HTTP API host (default: 127.0.0.1)"
+        )
+        
+        args = parser.parse_args(sys.argv[2:])  # Skip 'service' subcommand
+        
+        # Load config
+        if args.config:
+            config_path = Path(args.config)
+            config = ClientConfig.load_or_create(config_path)
+        else:
+            config_dir = Path.home() / ".pywats_client"
+            if args.instance_id:
+                config_path = config_dir / f"config_{args.instance_id}.json"
+            else:
+                config_path = config_dir / "config.json"
+            config = ClientConfig.load_or_create(config_path)
+        
+        # Apply instance ID override
+        if args.instance_id:
+            config.instance_id = args.instance_id
+        
+        # Create service config
+        service_config = ServiceConfig(
+            enable_api=args.api,
+            api_host=args.api_host,
+            api_port=args.api_port,
+            daemon=args.daemon
+        )
+        
+        # Run service
+        print(f"Starting pyWATS Client Service (instance: {config.instance_id})")
+        service = HeadlessService(config, service_config)
+        service.run()
+        sys.exit(0)
     
     if len(sys.argv) > 1 and sys.argv[1] in cli_commands:
         # Route to CLI handler
@@ -78,6 +152,7 @@ def main():
         description="pyWATS Client - WATS Test Report Management",
         epilog="""
 CLI Commands (use 'pywats-client <command> --help' for details):
+  service      Run in service mode (background daemon)
   config       Configuration management
   status       Show service status
   start        Start the service (with --daemon or --api options)
