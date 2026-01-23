@@ -450,13 +450,21 @@ class ClientConfig:
         """Get the base data path for this instance.
         
         This is the directory containing config, reports, logs, etc.
+        Matches Virinco WATS Client folder structure.
         """
         if self._config_path:
             return self._config_path.parent
-        # Fallback to default location
+        
+        # Fallback to default location matching Virinco/WATS structure
         if os.name == 'nt':
-            return Path(os.environ.get('APPDATA', '')) / 'pyWATS_Client'
-        return Path.home() / '.config' / 'pywats_client'
+            # Windows: Use ProgramData/Virinco/pyWATS
+            programdata = os.environ.get('PROGRAMDATA', 'C:\\ProgramData')
+            return Path(programdata) / 'Virinco' / 'pyWATS'
+        else:
+            # Linux/Mac: Use /var/lib/pywats or ~/.config/pywats_client
+            if os.geteuid() == 0:  # Running as root
+                return Path('/var/lib/pywats')
+            return Path.home() / '.config' / 'pywats_client'
     
     def get_reports_path(self) -> Path:
         """Get absolute path to reports folder"""

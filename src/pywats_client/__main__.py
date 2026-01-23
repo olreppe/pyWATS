@@ -12,6 +12,10 @@ Or use CLI commands:
     pywats-client start --daemon     # Run as daemon
     pywats-client start --api        # Run with HTTP control API
 
+Windows Service commands:
+    pywats-client install-service    # Install Windows Service (requires admin)
+    pywats-client uninstall-service  # Uninstall Windows Service (requires admin)
+
 Or use the installed command:
     pywats-client
 """
@@ -68,7 +72,88 @@ def main():
     # CLI commands: config, status, test-connection, converters, start, stop, service
     cli_commands = ["config", "status", "test-connection", "converters", "start", "stop"]
     
+    # Handle Windows Service installation commands
+    if len(sys.argv) > 1 and sys.argv[1] == "install-service":
+        if sys.platform != "win32":
+            print("ERROR: install-service is only available on Windows")
+            sys.exit(1)
+        
+        from .control.windows_service import WindowsServiceInstaller
+        
+        parser = argparse.ArgumentParser(
+            prog="pywats-client install-service",
+            description="Install pyWATS Client as a Windows Service"
+        )
+        parser.add_argument(
+            "--instance-id",
+            type=str,
+            default="default",
+            help="Instance ID for the service (default: default)"
+        )
+        parser.add_argument(
+            "--config",
+            type=str,
+            help="Path to configuration file"
+        )
+        parser.add_argument(
+            "--use-sc",
+            action="store_true",
+            help="Use sc.exe instead of NSSM (not recommended)"
+        )
+        
+        args = parser.parse_args(sys.argv[2:])
+        
+        if args.use_sc:
+            success = WindowsServiceInstaller.install_with_sc(
+                instance_id=args.instance_id,
+                config_path=args.config
+            )
+        else:
+            success = WindowsServiceInstaller.install_with_nssm(
+                instance_id=args.instance_id,
+                config_path=args.config
+            )
+        
+        sys.exit(0 if success else 1)
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "uninstall-service":
+        if sys.platform != "win32":
+            print("ERROR: uninstall-service is only available on Windows")
+            sys.exit(1)
+        
+        from .control.windows_service import WindowsServiceInstaller
+        
+        parser = argparse.ArgumentParser(
+            prog="pywats-client uninstall-service",
+            description="Uninstall pyWATS Client Windows Service"
+        )
+        parser.add_argument(
+            "--instance-id",
+            type=str,
+            default="default",
+            help="Instance ID of the service to remove (default: default)"
+        )
+        parser.add_argument(
+            "--use-sc",
+            action="store_true",
+            help="Use sc.exe instead of NSSM (not recommended)"
+        )
+        
+        args = parser.parse_args(sys.argv[2:])
+        
+        if args.use_sc:
+            success = WindowsServiceInstaller.uninstall_with_sc(
+                instance_id=args.instance_id
+            )
+        else:
+            success = WindowsServiceInstaller.uninstall_with_nssm(
+                instance_id=args.instance_id
+            )
+        
+        sys.exit(0 if success else 1)
+    
     # Handle 'service' subcommand separately (runs headless service)
+    if len(sys.argv) > 1 and sys.argv[1] == "service":
     if len(sys.argv) > 1 and sys.argv[1] == "service":
         from .control.service import HeadlessService, ServiceConfig
         from .core.config import ClientConfig
