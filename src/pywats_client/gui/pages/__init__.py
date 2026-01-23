@@ -8,7 +8,7 @@ from .base import BasePage
 from .setup import SetupPage
 from .connection import ConnectionPage
 from .proxy_settings import ProxySettingsPage
-from .converters import ConvertersPage  # AI-enabled unified converters page
+from .converters import ConvertersPageV2 as ConvertersPage  # AI-enabled unified converters page
 from .location import LocationPage
 from .sn_handler import SNHandlerPage
 from .software import SoftwarePage

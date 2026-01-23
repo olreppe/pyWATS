@@ -112,6 +112,68 @@ def get_system_converters() -> List[ConverterInfo]:
     return converters
 
 
+def create_default_converter_configs(data_path: Path) -> List[ConverterConfig]:
+    """
+    Create default converter configurations for standard converters.
+    
+    Sets up watch folders in ProgramData/Virinco/pyWATS/<format> with Done/ subdirectories.
+    All converters are enabled by default.
+    
+    Args:
+        data_path: Base data path (e.g., C:\ProgramData\Virinco\pyWATS)
+    
+    Returns:
+        List of pre-configured ConverterConfig objects
+    """
+    default_configs = []
+    
+    # Define default converters with their folder names
+    converters_data = [
+        ("WATS Standard XML", "pywats_client.converters.standard.wats_standard_xml_converter.WATSStandardXMLConverter",
+         "WSXF", ["*.xml"], "WATS Standard XML Format (WSXF/WRML)"),
+        ("WATS Standard JSON", "pywats_client.converters.standard.wats_standard_json_converter.WATSStandardJsonConverter",
+         "WSJF", ["*.json"], "WATS Standard JSON Format (WSJF)"),
+        ("WATS Standard Text", "pywats_client.converters.standard.wats_standard_text_converter.WATSStandardTextConverter",
+         "WSTF", ["*.txt"], "WATS Standard Text Format (tab-delimited)"),
+        ("Teradyne ICT", "pywats_client.converters.standard.teradyne_ict_converter.TeradyneICTConverter",
+         "TeradyneICT", ["*.txt", "*.log"], "Teradyne i3070 ICT format"),
+        ("Teradyne Spectrum ICT", "pywats_client.converters.standard.teradyne_spectrum_ict_converter.TerradyneSpectrumICTConverter",
+         "TeradyneSpectrum", ["*.txt", "*.log"], "Teradyne Spectrum ICT format"),
+        ("Kitron/Seica XML", "pywats_client.converters.standard.kitron_seica_xml_converter.KitronSeicaXMLConverter",
+         "KitronSeica", ["*.xml"], "Kitron/Seica Flying Probe XML format"),
+    ]
+    
+    for name, module_path, folder_name, patterns, description in converters_data:
+        watch_folder = data_path / folder_name
+        done_folder = watch_folder / "Done"
+        error_folder = watch_folder / "Error"
+        pending_folder = watch_folder / "Pending"
+        
+        # Create folders
+        watch_folder.mkdir(parents=True, exist_ok=True)
+        done_folder.mkdir(exist_ok=True)
+        error_folder.mkdir(exist_ok=True)
+        pending_folder.mkdir(exist_ok=True)
+        
+        config = ConverterConfig(
+            name=name,
+            module_path=module_path,
+            watch_folder=str(watch_folder),
+            done_folder=str(done_folder),
+            error_folder=str(error_folder),
+            pending_folder=str(pending_folder),
+            converter_type="file",
+            enabled=True,
+            file_patterns=patterns,
+            description=description,
+            post_action="move",  # Move to Done folder by default
+            version="1.0.0"
+        )
+        default_configs.append(config)
+    
+    return default_configs
+
+
 def get_user_converters(user_folder: Path) -> List[ConverterInfo]:
     """Get list of user converters from the converters folder"""
     converters = []
@@ -970,6 +1032,11 @@ class ConvertersPageV2(BasePage):
         self._new_btn.clicked.connect(self._on_new_converter)
         btn_layout.addWidget(self._new_btn)
         
+        self._init_defaults_btn = QPushButton("Setup Defaults...")
+        self._init_defaults_btn.setToolTip("Initialize standard converters with default watch folders")
+        self._init_defaults_btn.clicked.connect(self._on_setup_defaults)
+        btn_layout.addWidget(self._init_defaults_btn)
+        
         self._refresh_btn = QPushButton("Refresh")
         self._refresh_btn.clicked.connect(self._refresh_list)
         btn_layout.addWidget(self._refresh_btn)
@@ -987,6 +1054,59 @@ class ConvertersPageV2(BasePage):
     def load_config(self) -> None:
         """Load configuration"""
         self._folder_edit.setText(self.config.converters_folder)
+        
+        # Auto-initialize default converters on first run if none exist
+        if not self.config.converters:
+            self._initialize_default_converters()
+        
+        self._refresh_list()
+    
+    def _initialize_default_converters(self) -> None:
+        """Initialize default standard converters with ProgramData folders"""
+        try:
+            # Get data path from config
+            data_path = self.config.data_path
+            
+            # Create default configurations
+            default_configs = create_default_converter_configs(data_path)
+            
+            # Add to config
+            self.config.converters = default_configs
+            
+            # Emit changed signal to save
+            self._emit_changed()
+            
+            # Show info message
+            if self._main_window:
+                QMessageBox.information(
+                    self,
+                    "Default Converters Initialized",
+                    f"Created {len(default_configs)} default converter configurations.\n\n"
+                    f"Watch folders created in:\n{data_path}\n\n"
+                    "Files will be automatically moved to Done/ subdirectories after processing."
+                )
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                "Initialization Failed",
+                f"Could not initialize default converters:\n{e}"
+            )
+    
+    def _on_setup_defaults(self) -> None:
+        """Handle setup defaults button click"""
+        if self.config.converters:
+            reply = QMessageBox.question(
+                self,
+                "Setup Default Converters",
+                "This will replace your existing converter configurations with defaults.\\n\\n"
+                "Do you want to continue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+        
+        self._initialize_default_converters()
         self._refresh_list()
     
     def _on_browse_folder(self) -> None:
