@@ -48,8 +48,10 @@ pip install pywats-api[client]
 - Display/monitor
 - 200 MB disk space
 
-**For Windows Production Installations:**
-See [WINDOWS_SERVICE.md](WINDOWS_SERVICE.md) for installing as a Windows Service that auto-starts on boot.
+**For Production Installations:**
+- **Windows**: [WINDOWS_SERVICE.md](WINDOWS_SERVICE.md) - Install as Windows Service (auto-start on boot)
+- **Linux**: [LINUX_SERVICE.md](LINUX_SERVICE.md) - Install as systemd service (Ubuntu, RHEL, Debian)
+- **macOS**: [MACOS_SERVICE.md](MACOS_SERVICE.md) - Install as launchd daemon (auto-start on boot)
 
 ### Option 2: Headless (Servers, Raspberry Pi)
 

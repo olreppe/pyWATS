@@ -7,6 +7,8 @@ Official documentation for pyWATS - Python API library for WATS (Web-based Autom
 - **[Getting Started Guide](GETTING_STARTED.md)** - Complete installation, configuration, and initialization guide
 - **[Client Installation](CLIENT_INSTALLATION.md)** - End-user client installation for test stations
 - **[Windows Service Setup](WINDOWS_SERVICE.md)** - Install client as Windows Service (auto-start on boot)
+- **[Linux Service Setup](LINUX_SERVICE.md)** - Install client as systemd service (Ubuntu, RHEL, Debian)
+- **[macOS Service Setup](MACOS_SERVICE.md)** - Install client as launchd daemon (auto-start on boot)
 - **[README](../README.md)** - Package overview and quick start
 - **[CHANGELOG](../CHANGELOG.md)** - Version history and release notes
 

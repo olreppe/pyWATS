@@ -72,17 +72,24 @@ def main():
     # CLI commands: config, status, test-connection, converters, start, stop, service
     cli_commands = ["config", "status", "test-connection", "converters", "start", "stop"]
     
-    # Handle Windows Service installation commands
+    # Handle Service installation commands (Windows/Linux/macOS)
     if len(sys.argv) > 1 and sys.argv[1] == "install-service":
-        if sys.platform != "win32":
-            print("ERROR: install-service is only available on Windows")
+        if sys.platform == "win32":
+            from .control.windows_service import WindowsServiceInstaller as ServiceInstaller
+            installer_type = "windows"
+        elif sys.platform == "darwin":
+            from .control.unix_service import MacOSServiceInstaller as ServiceInstaller
+            installer_type = "macos"
+        elif sys.platform.startswith("linux"):
+            from .control.unix_service import LinuxServiceInstaller as ServiceInstaller
+            installer_type = "linux"
+        else:
+            print(f"ERROR: Unsupported platform: {sys.platform}")
             sys.exit(1)
-        
-        from .control.windows_service import WindowsServiceInstaller
         
         parser = argparse.ArgumentParser(
             prog="pywats-client install-service",
-            description="Install pyWATS Client as a Windows Service"
+            description="Install pyWATS Client as a system service"
         )
         parser.add_argument(
             "--instance-id",
@@ -95,37 +102,71 @@ def main():
             type=str,
             help="Path to configuration file"
         )
-        parser.add_argument(
-            "--use-sc",
-            action="store_true",
-            help="Use sc.exe instead of NSSM (not recommended)"
-        )
+        
+        if installer_type == "windows":
+            parser.add_argument(
+                "--use-sc",
+                action="store_true",
+                help="Use sc.exe instead of NSSM (not recommended)"
+            )
+        elif installer_type == "linux":
+            parser.add_argument(
+                "--user",
+                type=str,
+                help="User to run service as (default: current user)"
+            )
+        elif installer_type == "macos":
+            parser.add_argument(
+                "--user-agent",
+                action="store_true",
+                help="Install as Launch Agent instead of Daemon (no root required)"
+            )
         
         args = parser.parse_args(sys.argv[2:])
         
-        if args.use_sc:
-            success = WindowsServiceInstaller.install_with_sc(
+        if installer_type == "windows":
+            if args.use_sc:
+                success = ServiceInstaller.install_with_sc(
+                    instance_id=args.instance_id,
+                    config_path=args.config
+                )
+            else:
+                success = ServiceInstaller.install_with_nssm(
+                    instance_id=args.instance_id,
+                    config_path=args.config
+                )
+        elif installer_type == "linux":
+            success = ServiceInstaller.install(
                 instance_id=args.instance_id,
-                config_path=args.config
+                config_path=args.config,
+                user=getattr(args, 'user', None)
             )
-        else:
-            success = WindowsServiceInstaller.install_with_nssm(
+        elif installer_type == "macos":
+            success = ServiceInstaller.install(
                 instance_id=args.instance_id,
-                config_path=args.config
+                config_path=args.config,
+                user_agent=getattr(args, 'user_agent', False)
             )
         
         sys.exit(0 if success else 1)
     
     if len(sys.argv) > 1 and sys.argv[1] == "uninstall-service":
-        if sys.platform != "win32":
-            print("ERROR: uninstall-service is only available on Windows")
+        if sys.platform == "win32":
+            from .control.windows_service import WindowsServiceInstaller as ServiceInstaller
+            installer_type = "windows"
+        elif sys.platform == "darwin":
+            from .control.unix_service import MacOSServiceInstaller as ServiceInstaller
+            installer_type = "macos"
+        elif sys.platform.startswith("linux"):
+            from .control.unix_service import LinuxServiceInstaller as ServiceInstaller
+            installer_type = "linux"
+        else:
+            print(f"ERROR: Unsupported platform: {sys.platform}")
             sys.exit(1)
-        
-        from .control.windows_service import WindowsServiceInstaller
         
         parser = argparse.ArgumentParser(
             prog="pywats-client uninstall-service",
-            description="Uninstall pyWATS Client Windows Service"
+            description="Uninstall pyWATS Client system service"
         )
         parser.add_argument(
             "--instance-id",
@@ -133,21 +174,39 @@ def main():
             default="default",
             help="Instance ID of the service to remove (default: default)"
         )
-        parser.add_argument(
-            "--use-sc",
-            action="store_true",
-            help="Use sc.exe instead of NSSM (not recommended)"
-        )
+        
+        if installer_type == "windows":
+            parser.add_argument(
+                "--use-sc",
+                action="store_true",
+                help="Use sc.exe instead of NSSM (not recommended)"
+            )
+        elif installer_type == "macos":
+            parser.add_argument(
+                "--user-agent",
+                action="store_true",
+                help="Uninstall Launch Agent instead of Daemon"
+            )
         
         args = parser.parse_args(sys.argv[2:])
         
-        if args.use_sc:
-            success = WindowsServiceInstaller.uninstall_with_sc(
+        if installer_type == "windows":
+            if args.use_sc:
+                success = ServiceInstaller.uninstall_with_sc(
+                    instance_id=args.instance_id
+                )
+            else:
+                success = ServiceInstaller.uninstall_with_nssm(
+                    instance_id=args.instance_id
+                )
+        elif installer_type == "linux":
+            success = ServiceInstaller.uninstall(
                 instance_id=args.instance_id
             )
-        else:
-            success = WindowsServiceInstaller.uninstall_with_nssm(
-                instance_id=args.instance_id
+        elif installer_type == "macos":
+            success = ServiceInstaller.uninstall(
+                instance_id=args.instance_id,
+                user_agent=getattr(args, 'user_agent', False)
             )
         
         sys.exit(0 if success else 1)
