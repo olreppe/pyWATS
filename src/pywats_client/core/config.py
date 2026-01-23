@@ -199,9 +199,13 @@ class ClientConfig:
     
     By default, these can be the same. However, a single client can
     represent multiple stations (hub mode) by using station_presets.
+    
+    Note: 99% of deployments use a single instance with instance_id="default".
+    Multiple instances are an advanced feature for special use cases.
     """
     # Instance identification (the client installation)
-    instance_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    # Default to "default" for single-instance deployments (99% of use cases)
+    instance_id: str = "default"
     instance_name: str = "WATS Client"
     
     # Server connection

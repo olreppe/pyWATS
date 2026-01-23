@@ -43,9 +43,8 @@ async def test_discovery():
     
     print(f"   Found {len(instances)} service instance(s)")
     for inst in instances:
-        print(f"   - Instance: {inst['instance_id']}")
-        print(f"     Status: {inst['status']}")
-        print(f"     IPC Name: {inst['ipc_name']}")
+        print(f"   - Instance: {inst.instance_id}")
+        print(f"     Status: {inst.status}")
     
     # Stop service
     print("\n3. Stopping service...")
