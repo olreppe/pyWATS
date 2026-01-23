@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Service Dashboard Page** - New home page for real-time monitoring:
+  - Service status indicator (running/stopped/error/standalone)
+  - Service control buttons (start/stop)
+  - Uptime tracking
+  - Converter health grid showing all active converters
+  - Statistics cards: active converters, queue status, reports today, success rate
+  - Server connection status display
+  - Auto-refresh every 2 seconds
+  - Set as first page in navigation
+
+- **API Settings Page** - Comprehensive HTTP API configuration:
+  - HTTP API server settings (host, port, base path)
+  - CORS configuration for web browser access
+  - Authentication methods: None, API Key, Bearer Token, Basic Auth
+  - Secure API token generation and management
+  - Rate limiting configuration (requests per time window)
+  - Webhook configuration for converter, report, and service events
+  - Webhook authentication settings (custom headers)
+  - API documentation references
+  - Full configuration persistence to client.json
+
+- **Default Converter Setup** - Automatic configuration for standard converters:
+  - 6 pre-configured standard converters (WSXF, WSJF, WSTF, TeradyneICT, TeradyneSpectrum, KitronSeica)
+  - Watch folders in `C:\ProgramData\Virinco\pyWATS\<format>`
+  - Auto-created subdirectories: `Done/`, `Error/`, `Pending/`
+  - Files automatically moved to `Done/` folder after processing
+  - "Setup Defaults..." button in Converters page
+  - Auto-initialization on first run if no converters configured
+  - All converters enabled by default
+
+- **Consolidated Converter Architecture** - AI-enabled unified converter management:
+  - Removed legacy converters.py (v1 - 934 lines without AI features)
+  - Renamed converters_v2.py → converters.py (AI-enabled - 1291 lines)
+  - Single list showing both system and user converters
+  - System converters read-only but can be customized (forked)
+  - Versioning support for converters
+  - Auto-detection architecture foundation for LLM integration
+  - Updated all imports to use unified ConvertersPage
+
 - **Cross-Platform Service Installation** - Auto-start on boot for all platforms:
   - **Windows Service Support** - Install as Windows Service with NSSM or sc.exe
     - Service name: `pyWATS_Service` (matches WATS Client pattern)
