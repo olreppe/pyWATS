@@ -232,7 +232,7 @@ class pyWATSApplication:
             
             # Initialize WATS client
             self._wats_client = pyWATS(
-                base_url=self.config.server_url,
+                base_url=self.config.service_address,
                 token=self.config.api_token
             )
             
@@ -242,24 +242,23 @@ class pyWATSApplication:
             # Initialize services
             logger.info("Initializing services...")
             self._connection = ConnectionService(
-                service_address=self.config.server_url,
-                api_token=self.config.api_token,
-                proxy_config=self.config.proxy,
-                check_interval=self.config.connection_check_interval
+                connection_config=self.config.connection,
+                proxy_config=getattr(self.config, 'proxy', None)
             )
             
             self._process_sync = ProcessSyncService(
-                wats_client=self._wats_client,
-                data_path=self.config.get_data_path()
+                connection=self._connection,
+                cache_path=self.config.data_path / "cache"
             )
             
             self._report_queue = ReportQueueService(
-                wats_client=self._wats_client,
-                queue_path=self.config.get_queue_path()
+                connection=self._connection,
+                reports_folder=self.config.get_reports_path()
             )
             
             self._converter_manager = ConverterManager(
-                converters_path=self.config.get_converters_path()
+                converters=self.config.converters,
+                report_queue=self._report_queue
             )
             
             # Start services

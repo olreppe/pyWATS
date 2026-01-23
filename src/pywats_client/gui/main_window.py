@@ -105,17 +105,50 @@ class MainWindow(QMainWindow):
         """Auto-start application on startup if configured"""
         # User has logged in successfully, start services automatically
         if self.config.service_address and self.config.api_token:
-            # Use asyncio in a thread
-            import threading
-            def start_in_thread():
-                import asyncio
+            # Use QTimer to delay startup slightly
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(100, self._do_auto_start_async)
+    
+    def _do_auto_start_async(self) -> None:
+        """Perform auto-start of application services in background thread"""
+        import threading
+        import asyncio
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        def start_in_thread():
+            try:
+                logger.info("Auto-starting services...")
+                self.application_status_changed.emit("Starting")
+                
+                # Create new event loop for this thread
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-                loop.run_until_complete(self.start_services())
+                
+                # Run the async start
+                loop.run_until_complete(self.app.start())
+                
+                self._is_connected = True
+                
+                # Update connection status based on actual connection
+                if self.app.is_online():
+                    self.connection_status_changed.emit("Online")
+                else:
+                    self.connection_status_changed.emit("Offline (Queuing)")
+                
+                self.application_status_changed.emit("Running")
+                logger.info("Services started successfully")
+                
+            except Exception as e:
+                logger.error(f"Failed to auto-start services: {e}")
+                self.connection_status_changed.emit(f"Error: {str(e)[:20]}")
+                self.application_status_changed.emit("Error")
+            finally:
                 loop.close()
-            
-            thread = threading.Thread(target=start_in_thread, daemon=True)
-            thread.start()
+        
+        thread = threading.Thread(target=start_in_thread, daemon=True)
+        thread.start()
     
     def _do_auto_start(self) -> None:
         """Perform auto-start of application services"""

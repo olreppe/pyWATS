@@ -247,6 +247,11 @@ class EventBus(QObject):
         """Convenience method to emit connection changed event."""
         self.publish(AppEvent.CONNECTION_CHANGED, status=status)
     
+    def emit_status_changed(self, old_status: str, new_status: str) -> None:
+        """Convenience method to emit application status change."""
+        self.app_status_changed.emit(new_status)
+        self.publish(AppEvent.APP_STATUS_CHANGED, status=new_status)
+    
     def emit_api_ready(self, client: Any) -> None:
         """Convenience method to emit API client ready event."""
         self.publish(AppEvent.API_CLIENT_READY, client=client)
