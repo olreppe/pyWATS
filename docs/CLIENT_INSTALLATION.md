@@ -48,6 +48,9 @@ pip install pywats-api[client]
 - Display/monitor
 - 200 MB disk space
 
+**For Windows Production Installations:**
+See [WINDOWS_SERVICE.md](WINDOWS_SERVICE.md) for installing as a Windows Service that auto-starts on boot.
+
 ### Option 2: Headless (Servers, Raspberry Pi)
 
 For automated systems without a display:
@@ -73,7 +76,23 @@ pip install pywats-api[client-headless]
 
 The client creates a dedicated folder for all its data:
 
-#### Windows
+#### Windows (Production)
+```
+C:\ProgramData\Virinco\pyWATS\
+├── config.json              # Main configuration
+├── logs\                    # Application and service logs
+├── queue\                   # Report queue (pending uploads)
+├── converters\              # Your custom converters
+├── data\                    # Downloaded software packages
+└── reports\                 # Report archive (optional)
+```
+
+**Location:** `C:\ProgramData\Virinco\pyWATS\`  
+**Used by:** Windows Service installations (recommended for production)
+
+**Install Location:** `C:\Program Files\Virinco\pyWATS\` (binaries)
+
+#### Windows (User)
 ```
 C:\Users\<YourName>\AppData\Roaming\pyWATS_Client\
 ├── config.json              # Main configuration
@@ -84,7 +103,8 @@ C:\Users\<YourName>\AppData\Roaming\pyWATS_Client\
 └── reports\                 # Report archive (optional)
 ```
 
-**Location:** `%APPDATA%\pyWATS_Client\`
+**Location:** `%APPDATA%\pyWATS_Client\`  
+**Used by:** Development/testing installations
 
 #### Linux / Mac
 ```
@@ -97,7 +117,7 @@ C:\Users\<YourName>\AppData\Roaming\pyWATS_Client\
 └── reports/                 # Report archive
 ```
 
-**Location:** `~/.config/pywats_client/`
+**Location:** `~/.config/pywats_client/` (user) or `/var/lib/pywats/` (system)
 
 ### What Each Folder Contains
 
