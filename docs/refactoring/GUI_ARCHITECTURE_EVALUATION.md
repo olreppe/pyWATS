@@ -60,19 +60,21 @@ These components directly support the configuration tool mission:
 
 ---
 
-### ⚠️ BORDERLINE - Questionable Fit
+### ✅ API CONFIGURATION - Essential for Custom Integrations
 
-These components may have limited value for a configuration tool:
+These components configure how the API behaves for custom integrations:
 
 #### 7. **SN Handler Page** (`sn_handler.py`)
-- **Purpose**: Serial number generation/validation
-- **Status**: ⚠️ QUESTIONABLE
+- **Purpose**: Configure serial number reservation and pooling strategy
+- **Status**: ✅ ESSENTIAL - API behavior configuration
 - **Analysis**:
-  - Useful for test station integration
-  - But not related to service/converter configuration
-  - Could be converter-specific configuration instead
-- **Verdict**: **KEEP BUT RECONSIDER** - May belong in converter settings
-- **Config**: `show_sn_handler_tab: bool = True` (default ON)
+  - Configures reserve pool size and depletion limits
+  - Manages offline/online serial number sync behavior
+  - Critical for test station API usage patterns
+  - **This IS API configuration** - exactly what the tool should provide
+- **Verdict**: **KEEP** - Core API configuration feature
+- **Config**: `show_sn_handler_tab: bool = True` (default ON ✅)
+- **Recommendation**: Possibly rename to "Serial Number Settings" or "API - Serial Numbers"
 
 ---
 
@@ -81,15 +83,20 @@ These components may have limited value for a configuration tool:
 These components belong in a full WATS client, not a config tool:
 
 #### 8. **Software Page** (`software.py`)
-- **Purpose**: Package management, distribution, download
-- **Status**: ❌ SCOPE CREEP
+- **Purpose**: Configure automatic software download and distribution
+- **Status**: ✅ ESSENTIAL - Test station configuration
 - **Analysis**:
-  - Full package browser with search, download, delete
-  - This is test station management, not service configuration
-  - Belongs in WATS Client proper, not config tool
-- **Verdict**: **HIDE BY DEFAULT** or **REMOVE**
-- **Config**: `show_software_tab: bool = True` (default ON ❌)
-- **Recommendation**: Set to `False` by default
+  - Configures which software packages to auto-download
+  - Sets up distribution rules for test stations
+  - Manages software update policies
+  - **Not just browsing** - actively configures auto-update behavior
+  - Critical for test station fleet management
+- **Verdict**: **KEEP** - Test station configuration
+- **Config**: `show_software_tab: bool = True` (default ON ✅)
+- **Recommendation**: 
+  - Rename to "Software Distribution" or "Auto-Update Settings"
+  - Emphasize configuration aspect in UI (not just browsing)
+  - Keep enabled by default
 
 #### 9. **Asset Page** (`asset.py`)
 - **Purpose**: Asset tracking, calibration, maintenance
@@ -143,21 +150,32 @@ These components belong in a full WATS client, not a config tool:
 - **Issue**: Both `converters.py` AND `converters_v2.py` exist
 - **Impact**: Code duplication, confusion about which is canonical
 - **Root Cause**: Incomplete refactoring
+- **Context**: 
+  - `converters_v2.py` has AI/auto-detection architecture
+  - Auto-detects file types and applies correct converter
+  - Foundation for future LLM-assisted converter creation/modification
+  - This is the FUTURE direction
 - **Recommendation**: 
-  - Choose ONE implementation
-  - Delete the other
-  - Complete the refactor
+  - **Keep `converters_v2.py`** - This is the AI-enabled architecture
+  - **Delete `converters.py`** - Legacy implementation
+  - **Rename** `converters_v2.py` → `converters.py` after deletion
+  - **Verify** all AI/auto-detection features are preserved
+  - **Test** auto-detection and type inference thoroughly
 
-### 2. **Feature Bloat** 🔴 CRITICAL
-- **Issue**: 5 full pages (Software, Assets, Products, Production, RootCause) that don't serve core purpose
+### 2. **Feature Bloat** � MODERATE (Revised Assessment)
+- **Issue**: 4 pages (Assets, Products, Production, RootCause) don't serve core purpose
 - **Impact**: 
-  - Increased maintenance burden
-  - Confusion about app purpose
-  - Diluted focus from core features
+  - Increased maintenance burden for rarely used features
+  - Potential confusion about app purpose
+  - But less critical than initially assessed
+- **Revised Analysis**:
+  - **Software** and **SN Handler** are JUSTIFIED (configuration features)
+  - Only 4 pages are truly scope creep (Assets, Products, Production, RootCause)
+  - These 4 are already hidden by default ✅
 - **Recommendation**:
-  - **Option A (Aggressive)**: Delete all 5 pages
-  - **Option B (Conservative)**: Keep code but hide by default
-  - **Option C (Compromise)**: Move to "Advanced" submenu
+  - **Keep** Software and SN Handler enabled (they're API config)
+  - **Leave hidden** Assets, Products, Production, RootCause
+  - **Consider removing** the 4 hidden pages in future cleanup (low priority)
 
 ### 3. **Configuration Complexity** 🟡 MODERATE
 - **Issue**: 9 separate `show_*_tab` config flags
@@ -181,21 +199,38 @@ These components belong in a full WATS client, not a config tool:
 ### 5. **No Clear Service Focus** 🔴 CRITICAL
 - **Issue**: Service management is buried in instance selector widget
 - **Impact**: Users don't understand this is primarily a service config tool
+- **What's Missing**:
+  - Prominent service status display (Running/Stopped/Error)
+  - Active converter count and status
+  - Queue depth and sync status
+  - Service control buttons (Start/Stop/Restart)
+  - **Converter health dashboard** - Show which converters are working/failing
 - **Recommendation**:
-  - Add dedicated **Service Status** page or persistent panel
-  - Show service state prominently (Running/Stopped/Error)
-  - Show converter status summary
-  - Add service control buttons (Start/Stop/Restart)
+  - Add dedicated **Service Dashboard** page (as first/home page)
+  - Show:
+    - Service state with prominent visual indicator
+    - Converter status grid (name, enabled, last run, success rate)
+    - Queue depth and pending reports
+    - Last server sync time
+    - Quick action buttons
+  - Make this the **default landing page**
 
 ### 6. **Missing API Configuration** 🔴 CRITICAL
-- **Issue**: App claims to provide "API for custom integrations" but has no API config UI
-- **Impact**: Missing core feature
-- **Recommendation**:
-  - Add **API Settings** section
-  - HTTP API port configuration
-  - API token generation
+- **Issue**: App claims to provide "API for custom integrations" but lacks comprehensive API config
+- **What's Missing**:
+  - HTTP API enable/disable and port configuration
+  - API token generation and management
   - Webhook configuration
-  - REST endpoint documentation link
+  - REST endpoint documentation
+  - **Serial number strategy is already covered** by SN Handler ✅
+- **Recommendation**:
+  - Add **API Settings** page or section
+  - Group API-related settings:
+    - HTTP API configuration (port, host, enable/disable)
+    - Authentication tokens
+    - Webhook endpoints
+    - Link to API documentation
+  - Consider integrating with existing SN Handler (both are API config)
 
 ---
 
@@ -208,11 +243,11 @@ These components belong in a full WATS client, not a config tool:
 # src/pywats_client/core/config.py
 
 # CORE features (always visible)
-show_converters_tab: bool = True      # ✅ KEEP ON
-show_sn_handler_tab: bool = True      # ✅ KEEP ON (borderline)
+show_converters_tab: bool = True      # ✅ KEEP ON - Primary feature
+show_sn_handler_tab: bool = True      # ✅ KEEP ON - API configuration
+show_software_tab: bool = True        # ✅ KEEP ON - Auto-update config
 
-# SCOPE CREEP features (hide by default)
-show_software_tab: bool = False       # ❌ CHANGE TO FALSE
+# SCOPE CREEP features (already hidden by default ✅)
 show_asset_tab: bool = False          # ✅ ALREADY OFF
 show_rootcause_tab: bool = False      # ✅ ALREADY OFF
 show_production_tab: bool = False     # ✅ ALREADY OFF
@@ -223,10 +258,19 @@ show_location_tab: bool = False       # Move to Settings
 show_proxy_tab: bool = False          # Move to Settings
 ```
 
+**Status**: ✅ Current defaults are actually CORRECT
+**Action**: No changes needed to defaults
+
 #### 1.2 Consolidate Converter Pages 🔴
-- **Action**: Choose between `converters.py` and `converters_v2.py`
-- **Delete**: The unused version
-- **Test**: Ensure chosen version has full functionality
+- **Action**: Migrate to AI-enabled converter architecture
+- **Steps**:
+  1. **Verify** `converters_v2.py` has all features from `converters.py`
+  2. **Test** auto-detection and type inference
+  3. **Update** main_window.py to use only ConvertersPageV2
+  4. **Delete** `converters.py` (legacy implementation)
+  5. **Rename** `converters_v2.py` → `converters.py`
+  6. **Update** imports in `pages/__init__.py`
+- **Priority**: HIGH - Foundation for AI/LLM converter architecture
 
 #### 1.3 Update Sidebar Mode Default 🟡
 ```python
@@ -236,26 +280,35 @@ self._sidebar_mode = SidebarMode.COMPACT  # Not ADVANCED
 
 ### Phase 2: Add Missing Core Features (High Priority)
 
-#### 2.1 Service Status Panel ✅
-Add prominent service status display:
-- Service state (Running/Stopped/Error)
-- Active converter count
-- Queue depth
-- Last sync time
-- Quick actions (Start/Stop/Restart service)
+#### 2.1 Service Dashboard Page ✅
+Add prominent service status and converter health monitoring:
+- **Service State**: Running/Stopped/Error with visual indicator
+- **Converter Grid**: 
+  - Name, enabled status, last run time
+  - Success rate (e.g., "127/130 successful, 3 failed")
+  - Auto-detection status (if AI-enabled)
+  - Quick enable/disable toggle per converter
+- **Queue Status**: Pending reports count, oldest pending
+- **Sync Status**: Last server sync, next scheduled sync
+- **Quick Actions**: Start/Stop/Restart service buttons
+- **Health Alerts**: Show converter errors/warnings prominently
 
-**Location**: Either:
-- Dedicated page (recommended)
-- Persistent status bar
-- Dashboard as first page
+**Location**: Make this the **default landing page** (first page user sees)
 
-#### 2.2 API Configuration Page ✅
-Add API settings for custom integrations:
-- Enable/disable HTTP API
-- Configure port
-- Generate API tokens
-- Webhook URLs
-- Link to API documentation
+#### 2.2 API Settings Page ✅
+Add comprehensive API configuration:
+- **HTTP API**: 
+  - Enable/disable toggle
+  - Port and host configuration
+  - API endpoint list with documentation links
+- **Authentication**:
+  - Token generation and management
+  - Token expiration settings
+- **Webhooks**: Configure webhook endpoints
+- **Serial Numbers**: Link to SN Handler or integrate settings here
+- **Documentation**: Links to API docs and examples
+
+**Consider**: Merging with SN Handler into unified "API Configuration" section
 
 ### Phase 3: Architectural Cleanup (Medium Priority)
 
@@ -308,24 +361,26 @@ For each scope creep page, decide:
 ### Default View (Standard Mode)
 ```
 pyWATS Client Configuration Tool
-├── 🏠 Service Status      [NEW - Shows service health]
-├── 🔗 Connection          [KEEP - Server settings]
-├── 🔄 Converters          [KEEP - Primary feature]
-├── ⚙️  API Settings       [NEW - HTTP API config]
-├── 📋 Logs                [KEEP - Monitoring]
-└── ⚙️  Settings           [KEEP - Global config]
+├── 🏠 Service Dashboard    [NEW - Service health, converter status grid]
+├── 🔗 Connection           [KEEP - Server settings]
+├── 🔄 Converters           [KEEP - Primary feature, AI-enabled]
+├── 🔢 Serial Numbers       [KEEP - API serial number config]
+├── 💻 Software             [KEEP - Auto-update configuration]
+├── ⚙️  API Settings        [NEW - HTTP API, tokens, webhooks]
+├── 📋 Logs                 [KEEP - Monitoring]
+└── ⚙️  Settings            [KEEP - Global config]
 ```
+**Total**: 8 core pages (was 12, removed 4 scope creep pages)
 
-### Advanced Mode (Optional)
+### Advanced Mode (Hidden by Default)
 ```
-Additional pages (hidden by default):
-├── 🔢 SN Handler          [Borderline]
-├── 💻 Software            [Scope creep]
-├── 🔧 Assets              [Scope creep]
-├── 📦 Products            [Scope creep]
-├── 🏭 Production          [Scope creep]
-└── 🎫 RootCause           [Scope creep]
+Advanced pages (rarely used, already hidden ✅):
+├── 🔧 Assets              [Scope creep - OFF by default]
+├── 📦 Products            [Scope creep - OFF by default]
+├── 🏭 Production          [Scope creep - OFF by default]
+└── 🎫 RootCause           [Scope creep - OFF by default]
 ```
+**Total**: 4 advanced pages (keep for compatibility, consider removing later)
 
 ---
 
@@ -361,60 +416,83 @@ Additional pages (hidden by default):
 | Feature | Keep | Hide Default | Remove | Reasoning |
 |---------|------|--------------|--------|-----------|
 | Connection | ✅ | - | - | Core config |
-| Converters | ✅ | - | - | Primary purpose |
+| Converters (V2) | ✅ | - | - | Primary purpose + AI architecture |
+| Converters (V1) | - | - | ✅ | Legacy, replaced by V2 |
 | Logs | ✅ | - | - | Essential monitoring |
-| Service Status | ➕ NEW | - | - | Missing core feature |
+| Service Dashboard | ➕ NEW | - | - | Missing core feature |
 | API Settings | ➕ NEW | - | - | Missing core feature |
-| SN Handler | ✅ | ⚠️ Consider | - | Borderline useful |
-| Software | - | ✅ | ⚠️ Consider | Scope creep |
-| Assets | - | ✅ | ⚠️ Consider | Scope creep |
-| Products | - | ✅ | ⚠️ Consider | Scope creep |
-| Production | - | ✅ | ⚠️ Consider | Scope creep |
-| RootCause | - | ✅ | ⚠️ Consider | Scope creep |
+| SN Handler | ✅ | - | - | API configuration (reserve pool, sync) |
+| Software | ✅ | - | - | Auto-update configuration |
+| Assets | ✅ | ✅ | - | Scope creep, keep for compatibility |
+| Products | ✅ | ✅ | - | Scope creep, keep for compatibility |
+| Production | ✅ | ✅ | - | Scope creep, keep for compatibility |
+| RootCause | ✅ | ✅ | - | Scope creep, keep for compatibility |
 
 ---
 
 ## Recommended Implementation Order
 
 ### Sprint 1: Quick Wins (1-2 days)
-1. Change `show_software_tab` default to `False`
-2. Set default sidebar mode to `COMPACT`
-3. Delete one of the converter pages (converters.py or converters_v2.py)
+1. ✅ **Defaults are already correct** - No config changes needed
+2. Set default sidebar mode to `COMPACT` (if not already)
+3. **Consolidate converter pages**: Migrate to `converters_v2.py` (AI architecture)
+   - Verify all features from v1 are in v2
+   - Delete `converters.py`
+   - Rename `converters_v2.py` → `converters.py`
 
 ### Sprint 2: Add Core Features (3-5 days)
-4. Create Service Status page/panel
-5. Create API Settings page
-6. Update main window to show service health prominently
+4. Create **Service Dashboard** page (new home page)
+   - Service status indicator
+   - Converter health grid with success rates
+   - Queue and sync status
+   - Quick action buttons
+5. Create **API Settings** page
+   - HTTP API configuration
+   - Token management
+   - Webhook settings
+   - Consider integrating SN Handler here
 
 ### Sprint 3: Architectural Cleanup (3-5 days)
-7. Rename sidebar modes for clarity
-8. Simplify page visibility configuration
-9. Add category labels to navigation
-10. Update documentation
+6. Rename sidebar modes for clarity
+7. Update page labels/grouping (Core vs Advanced)
+8. Enhance converter auto-detection UI (foundation for LLM features)
+9. Update documentation
 
-### Sprint 4: Code Removal (Optional, 1-2 days)
-11. Archive or delete scope creep pages
-12. Remove unused configuration flags
-13. Clean up imports and dependencies
+### Sprint 4: Future Work (Optional)
+10. Consider removing 4 hidden pages (Assets, Products, Production, RootCause)
+11. Consider renaming pages for clarity:
+    - "SN Handler" → "Serial Number Configuration"
+    - "Software" → "Software Distribution"
+12. LLM-assisted converter creation (future enhancement)
 
 ---
 
 ## Conclusion
 
-The GUI architecture has **significant scope creep**. The application has evolved into a feature-rich WATS client rather than remaining focused on its core purpose: **configuring and monitoring the service and converter layer**.
+The GUI architecture assessment reveals a **more focused application than initially thought**, with important clarifications from stakeholder feedback:
 
-### Primary Issues:
-1. **5 full pages** that don't support the core mission
-2. **Dual converter implementations** indicating incomplete refactoring
-3. **Missing critical features** (Service Status, API Settings)
-4. **Confusing sidebar modes** that obscure the intended simplicity
+### Revised Assessment:
+- **Software** and **SN Handler** pages are JUSTIFIED - they configure API behavior and test station automation
+- Only **4 pages** (Assets, Products, Production, RootCause) are true scope creep - already hidden ✅
+- Current defaults are mostly **correct** ✅
+
+### Primary Issues (Revised):
+1. **Dual converter implementations** - Need to consolidate to AI-enabled `converters_v2.py`
+2. **Missing Service Dashboard** - No prominent service/converter health monitoring
+3. **Missing API Settings** - HTTP API configuration not exposed in UI
+4. **Converter architecture** - Need to preserve auto-detection for future LLM integration
 
 ### Recommended Path Forward:
-1. **Hide scope creep features by default** (immediate)
-2. **Add missing service management features** (high priority)
-3. **Clean up architecture** (medium priority)
-4. **Consider removing unused code** (low priority)
+1. **Consolidate converters** to AI-enabled architecture (high priority)
+2. **Add Service Dashboard** as home page (high priority)
+3. **Add API Settings** page (medium priority)
+4. **Keep** Software and SN Handler - they're configuration tools
+5. **Keep hidden** the 4 scope creep pages (low priority to remove)
 
-The refactor will result in a **focused, maintainable, purpose-built tool** that clearly serves its role as a configuration interface for the pyWATS service and converter infrastructure.
+The refactor will result in a **focused, well-architected tool** that serves its role as:
+- Service and converter configuration interface
+- API behavior configuration (serial numbers, software distribution)
+- Test station automation setup
+- Foundation for AI/LLM-assisted converter development
 
-**Status**: ⚠️ Needs architectural refactoring to align with core purpose
+**Status**: ⚠️ Needs targeted improvements (not complete overhaul)
