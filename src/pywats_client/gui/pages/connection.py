@@ -205,6 +205,14 @@ class ConnectionPage(BasePage):
             self._client_status_label.setStyleSheet("font-weight: bold; color: #dcdcaa;")
             self._service_status_label.setText("Starting")
             self._service_status_label.setStyleSheet("font-weight: bold; color: #dcdcaa;")
+        elif "Error" in status or "already running" in status.lower():
+            self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
+            if "already running" in status.lower():
+                self._service_status_label.setText("Already Running")
+                self._service_status_label.setStyleSheet("font-weight: bold; color: #ce9178;")
+            else:
+                self._service_status_label.setText("Error")
+                self._service_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
         else:
             self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
             self._service_status_label.setText("Stopped")

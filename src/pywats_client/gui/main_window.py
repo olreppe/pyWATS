@@ -141,8 +141,15 @@ class MainWindow(QMainWindow):
                 logger.info("Services started successfully")
                 
             except Exception as e:
-                logger.error(f"Failed to auto-start services: {e}")
-                self.connection_status_changed.emit(f"Error: {str(e)[:20]}")
+                error_msg = str(e)
+                logger.error(f"Failed to auto-start services: {error_msg}")
+                
+                # Show user-friendly error message
+                if "already running" in error_msg.lower():
+                    self.connection_status_changed.emit("Error: Another instance already running")
+                else:
+                    self.connection_status_changed.emit(f"Error: {error_msg[:30]}")
+                    
                 self.application_status_changed.emit("Error")
             finally:
                 loop.close()
