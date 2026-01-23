@@ -5,6 +5,7 @@ Contains all page widgets for the main window.
 """
 
 from .base import BasePage
+from .dashboard import DashboardPage
 from .setup import SetupPage
 from .connection import ConnectionPage
 from .proxy_settings import ProxySettingsPage
@@ -21,6 +22,7 @@ from .product import ProductPage
 
 __all__ = [
     "BasePage",
+    "DashboardPage",
     "SetupPage",
     "ConnectionPage",
     "ProxySettingsPage",

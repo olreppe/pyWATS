@@ -24,7 +24,7 @@ from PySide6.QtGui import QAction, QCloseEvent
 from .styles import DARK_STYLESHEET
 from .settings_dialog import SettingsDialog
 from .pages import (
-    BasePage, SetupPage, ConnectionPage,
+    BasePage, DashboardPage, SetupPage, ConnectionPage,
     ConvertersPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
     AssetPage, RootCausePage, ProductionPage, ProductPage
 )
@@ -422,6 +422,7 @@ class MainWindow(QMainWindow):
         # Note: Location and Proxy Settings are now in Settings dialog only
         # Note: All pages receive the facade for event-driven updates
         self._pages: Dict[str, BasePage] = {
+            "Dashboard": DashboardPage(self.config, self, facade=self._facade),
             "General": SetupPage(self.config, self, facade=self._facade),
             "Connection": ConnectionPage(self.config, self, facade=self._facade),
             "Log": LogPage(self.config, self, facade=self._facade),
