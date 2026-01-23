@@ -43,6 +43,11 @@ Legacy usage guides with comprehensive examples and patterns:
 - **[Process Module Guide](usage/PROCESS_MODULE.md)** - Process operations
 - **[Box Build Guide](usage/BOX_BUILD_GUIDE.md)** - Assembly and box build workflows
 
+## Reference & Troubleshooting
+
+- **[Error Catalog](ERROR_CATALOG.md)** - Comprehensive error reference with causes, examples, and remediation
+- **[Quick Reference](QUICK_REFERENCE.md)** - Common patterns and code snippets
+
 ## Client Documentation
 
 Documentation for the pyWATS Client application:
