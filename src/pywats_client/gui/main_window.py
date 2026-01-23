@@ -103,9 +103,9 @@ class MainWindow(QMainWindow):
     
     def _auto_start_on_startup(self) -> None:
         """Auto-start application on startup if configured"""
-        # Auto-start disabled - connection established at login
-        # User is already connected when main window opens
-        pass
+        # User has logged in successfully, start services automatically
+        if self.config.service_address and self.config.api_token:
+            asyncio.create_task(self.start_services())
     
     def _do_auto_start(self) -> None:
         """Perform auto-start of application services"""

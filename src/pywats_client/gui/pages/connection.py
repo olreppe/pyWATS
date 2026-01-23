@@ -181,6 +181,17 @@ class ConnectionPage(BasePage):
         self._token_edit.setText(self.config.api_token)
         self._sync_interval_edit.setText(str(self.config.sync_interval_seconds))
         self._identifier_label.setText(self.config.formatted_identifier)
+        
+        # Update initial status from main window if available
+        if self._main_window and hasattr(self._main_window, 'app'):
+            if self._main_window.app.is_online():
+                self.update_status("Online")
+            elif hasattr(self._main_window.app, 'status'):
+                from ...app import ApplicationStatus
+                if self._main_window.app.status == ApplicationStatus.RUNNING:
+                    self.update_status("Offline (Queuing)")
+                else:
+                    self.update_status("Offline")
     
     def update_status(self, status: str) -> None:
         """Update connection status display"""
