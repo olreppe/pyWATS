@@ -169,6 +169,38 @@ See [LOGGING_STRATEGY.md](LOGGING_STRATEGY.md) for comprehensive logging documen
 python -m pywats_client
 ```
 
+### Service Installation (Production)
+
+For production deployments, install pyWATS as a system service that auto-starts on boot:
+
+**Windows:**
+```bash
+# Install as Windows Service (requires admin)
+python -m pywats_client install-service
+net start pyWATS_Service
+```
+
+**Linux (systemd):**
+```bash
+# Install as systemd service (requires sudo)
+sudo python3 -m pywats_client install-service
+sudo systemctl start pywats-service
+```
+
+**macOS:**
+```bash
+# Install as Launch Daemon (requires sudo)
+sudo python3 -m pywats_client install-service
+
+# Or as user-level Launch Agent (no sudo)
+python3 -m pywats_client install-service --user-agent
+```
+
+See platform-specific guides:
+- [Windows Service Setup](docs/WINDOWS_SERVICE.md) - NSSM/sc.exe installation
+- [Linux Service Setup](docs/LINUX_SERVICE.md) - systemd for Ubuntu/Debian/RHEL
+- [macOS Service Setup](docs/MACOS_SERVICE.md) - launchd daemon/agent
+
 ### GUI Configuration
 
 The GUI supports modular tab configuration and logging control:
@@ -176,6 +208,7 @@ The GUI supports modular tab configuration and logging control:
 - **Tab Visibility**: Show/hide tabs (Software, SN Handler, etc.) based on your needs
 - **Logging Integration**: Automatic PyWATS library logging when debug mode is enabled
 - **Multiple Instances**: Run multiple client instances with separate configurations
+- **Service Discovery**: Automatically discovers and connects to running service instances
 
 See [GUI Configuration Guide](src/pywats_client/GUI_CONFIGURATION.md) for detailed setup instructions.
 
@@ -190,11 +223,14 @@ pywats-client config init
 # Test connection
 pywats-client test-connection
 
-# Run service with HTTP control API
-pywats-client start --api --api-port 8765
+# Run service in foreground
+python -m pywats_client service
 
-# Run as daemon (Linux)
-pywats-client start --daemon
+# Run with HTTP control API
+python -m pywats_client service --api --api-port 8765
+
+# Install as system service (auto-start on boot)
+sudo python3 -m pywats_client install-service
 ```
 
 ### CLI Commands
