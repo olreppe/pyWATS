@@ -25,7 +25,7 @@ from .styles import DARK_STYLESHEET
 from .settings_dialog import SettingsDialog
 from .pages import (
     BasePage, SetupPage, ConnectionPage,
-    ConvertersPage, ConvertersPageV2, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
+    ConvertersPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
     AssetPage, RootCausePage, ProductionPage, ProductPage
 )
 from .widgets.instance_selector import InstanceSelector
@@ -430,7 +430,7 @@ class MainWindow(QMainWindow):
         # Add optional operational pages based on configuration
         if self.config.show_converters_tab:
             # Use new unified converters page (V2) with system/user distinction
-            self._pages["Converters"] = ConvertersPageV2(self.config, self, facade=self._facade)
+            self._pages["Converters"] = ConvertersPage(self.config, self, facade=self._facade)
         if self.config.show_sn_handler_tab:
             self._pages["SN Handler"] = SNHandlerPage(self.config, self, facade=self._facade)
         if self.config.show_software_tab:
