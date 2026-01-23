@@ -7,6 +7,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Centralized Routes Class** - All API endpoints defined in one place:
+  - `Routes` class in `pywats.core.routes` with 170 endpoints
+  - Domain-specific nested classes: `Routes.Production`, `Routes.Product`, etc.
+  - Internal API routes via `Routes.Domain.Internal` nested classes
+  - Static methods for dynamic route generation (e.g., `Routes.Production.unit("SN", "PN")`)
+  - Eliminates hardcoded endpoint strings throughout codebase
+
+- **Complete Sync Service Layer** - All 9 domains now have sync services:
+  - `AnalyticsService` - 42 methods wrapping async operations
+  - `AssetService` - 26 methods for asset management
+  - `ProcessService` - ~30 methods for process/operation lookup
+  - `ProductService` - ~40 methods for product management
+  - `ProductionService` - ~55 methods for unit tracking
+  - `ReportService` - ~35 methods for test reports
+  - `SoftwareService` - ~27 methods for package distribution
+  - `RootCauseService` - ~12 methods for ticketing
+  - `ScimService` - ~11 methods for user provisioning
+  - All use `run_sync()` to delegate to async counterparts
+
+- **Async-First Architecture** - Business logic centralized in async services:
+  - `AsyncAnalyticsService`, `AsyncAssetService`, etc. are source of truth
+  - Sync services are thin wrappers using `run_sync()` utility
+  - Single point of maintenance for business logic
+  - `run_sync()` utility in `pywats.core.sync_runner` for sync/async bridging
+
+- **Async GUI Infrastructure** - Non-blocking UI for all API operations in pyWATS Client:
+  - `AsyncTaskRunner` - Bridge between async operations and Qt GUI thread
+  - `TaskResult` - Container for async task results with success/error state
+  - `TaskState` - Enum for task lifecycle states (PENDING, RUNNING, COMPLETED, FAILED, CANCELLED)
+  - `BasePage.run_async()` - Easy async execution with automatic loading indicators
+  - Automatic loading state management with visual feedback
+
+- **ErrorHandlingMixin** - Standardized error handling for GUI pages:
+  - `handle_error(exception, context)` - Intelligent error dialog routing
+  - `show_error(message)`, `show_warning(message)`, `show_info(message)`
+  - Automatic handling of `AuthenticationError`, `ValidationError`, `ServerError`
+  - Integrated into `BasePage` - all pages inherit error handling
+
+- **Async Page Operations** - All GUI pages now use async patterns for API calls:
+  - **AssetPage** - Async load, create, edit, and status check operations
+  - **ProductPage** - Async load products, create, edit, and add revisions
+  - **SoftwarePage** - Async load packages, create, release, revoke, delete
+  - **RootCausePage** - Async load tickets, create, edit, add comments, status changes
+
+- **ReportType Enum** - New enum for unified UUT/UUR report queries:
+  - `ReportType.UUT` ("U") - Unit Under Test reports
+  - `ReportType.UUR` ("R") - Unit Under Repair reports
+  - Available at top level: `from pywats.domains.report import ReportType`
+
+- **Unified Report Query Endpoint** - Query both UUT and UUR headers with a single method:
+  - `query_headers(report_type, odata_filter, top, skip, orderby, expand)` - Unified query
+  - Supports OData filter syntax for flexible querying
+  - Example: `api.report.query_headers(report_type=ReportType.UUT, odata_filter="serialNumber eq 'W12345'")`
+
+- **Report Query Helper Methods** - Convenient methods for common query patterns:
+  - `get_headers_by_serial(serial_number)` - Get headers by serial number
+  - `get_headers_by_part_number(part_number)` - Get headers by part number
+  - `get_headers_by_date_range(start_date, end_date)` - Get headers by date range
+  - `get_recent_headers(count)` - Get most recent headers (default: 100)
+  - `get_todays_headers()` - Get today's headers
+
+### Changed
+- **All Repositories Use Routes Class** - No more hardcoded endpoint strings:
+  - 9/9 async_repository.py files migrated to use `Routes`
+  - Improves maintainability and reduces typo errors
+  - Example: `Routes.Production.UNIT` instead of `"/api/Production/Unit"`
+
+- **GUI Pages Use Async Execution** - API operations no longer block the UI:
+  - Loading indicators display during data fetch operations
+  - Error handling with user-friendly dialogs
+  - Task cancellation support for long-running operations
+
+- **Report Query API now uses OData** - The report query endpoints now use OData filter syntax instead of WATSFilter:
+  - `query_uut_headers(odata_filter, top, skip, orderby, expand)` - Updated signature
+  - `query_uur_headers(odata_filter, top, skip, orderby, expand)` - Updated signature
+  - OData filter examples:
+    - `"serialNumber eq 'W12345'"` - Filter by serial number
+    - `"partNumber eq 'WIDGET-001'"` - Filter by part number
+    - `"result eq 'Failed'"` - Filter by result
+    - `"partNumber eq 'WIDGET-001' and result eq 'Failed'"` - Combined filters
+  - **Note**: WATSFilter is still used for Analytics API endpoints
+
+### Deprecated
+- **repository_internal.py files** - Internal APIs now in main async_repository.py:
+  - `production/repository_internal.py` - Use `AsyncProductionRepository` instead
+  - `process/repository_internal.py` - Use `AsyncProcessRepository` instead
+  - Deprecation warnings added; will be removed in future version
+
+### Breaking Changes
+- `query_uut_headers()` and `query_uur_headers()` no longer accept `WATSFilter` parameter
+- Use OData filter syntax or helper methods instead
+- Migration example:
+  ```python
+  # Before (WATSFilter - no longer works for report queries)
+  from pywats.domains.report import WATSFilter
+  filter_data = WATSFilter(serialNumber="W12345")
+  headers = api.report.query_uut_headers(filter_data)
+  
+  # After (OData filter)
+  headers = api.report.query_uut_headers(odata_filter="serialNumber eq 'W12345'")
+  
+  # Or using helper method
+  headers = api.report.get_headers_by_serial("W12345")
+  ```
+
 ## [0.1.0b34] - 2026-01-15
 
 ### Added
@@ -193,14 +299,14 @@ _Note: Version b31 was released manually, b32 is the GitHub Actions release._
   - `get_aggregated_measurements()` - Aggregated stats with step/sequence filters
   - `get_measurement_list()` - Measurement values with step/sequence filters
   - `get_step_status_list()` - Step statuses with step/sequence filters
-  - `get_top_failed_internal()` - Top failed steps using internal API
+  - `get_top_failed_advanced()` - Top failed steps with advanced filters (internal API)
   - `get_top_failed_by_product()` - Top failed steps with simple parameters
   - Simple variants: `get_measurement_list_by_product()`, `get_step_status_list_by_product()`
   - All methods accept XML step/sequence filters (obtained from TopFailed endpoint)
   - Unit Flow methods (`get_unit_flow()`, `get_bottlenecks()`, etc.) now on `api.analytics`
   - Unified API: All internal methods now accessed via main domain accessor (e.g., `api.product.get_box_build_template()` instead of `api.product_internal.get_box_build()`)
   - Removed separate `api.analytics_internal`, `api.product_internal`, `api.asset_internal`, `api.production_internal`, `api.process_internal` accessors
-  - Internal API methods marked with `⚠️ INTERNAL API` in docstrings
+  - Internal API methods marked with "Note: Uses internal API endpoint" in docstrings
 
 ### Changed
 - **Window size** - Increased default startup window size from 900x650 to 1000x750

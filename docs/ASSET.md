@@ -22,6 +22,8 @@ The Asset domain manages test equipment, stations, fixtures, instruments, and to
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS
 
@@ -57,6 +59,31 @@ new_asset = api.asset.create_asset(
     location="Lab A",
     state=AssetState.OK
 )
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def manage_assets():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        # Fetch asset types and assets concurrently
+        asset_types, assets = await asyncio.gather(
+            api.asset.get_asset_types(),
+            api.asset.get_assets(top=100)
+        )
+        
+        print(f"Types: {len(asset_types)}, Assets: {len(assets)}")
+
+asyncio.run(manage_assets())
+```
 
 # Record calibration
 api.asset.record_calibration(

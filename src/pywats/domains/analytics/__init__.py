@@ -16,7 +16,7 @@ All API calls in this module target /api/App/* endpoints:
 - GET/POST /api/App/TestStepAnalysis
 - etc.
 
-Internal API endpoints (⚠️ subject to change):
+Internal API endpoints (uses internal APIs which may change):
 - POST /api/internal/UnitFlow
 - GET /api/internal/UnitFlow/Links
 - GET /api/internal/UnitFlow/Nodes
@@ -34,8 +34,6 @@ Type-Safe Enums:
 - RepairDimension: Repair-specific dimensions (REPAIR_CODE, COMPONENT_REF, etc.)
 - RepairKPI: Repair-specific KPIs (REPAIR_COUNT, REPAIR_REPORT_COUNT)
 - DimensionBuilder: Fluent builder for constructing dimension queries
-
-This is purely a naming choice for better developer experience.
 """
 from .enums import (
     YieldDataType, 
@@ -70,16 +68,14 @@ from .models import (
     StepStatusItem,
     MeasurementListItem,
 )
-from .repository import AnalyticsRepository
-from .service import AnalyticsService
 
-# Internal API (⚠️ subject to change)
-from .repository_internal import AnalyticsRepositoryInternal
-from .service_internal import AnalyticsServiceInternal
+# Async implementations (primary API)
+from .async_repository import AsyncAnalyticsRepository
+from .async_service import AsyncAnalyticsService
 
-# Backward compatibility aliases (deprecated)
-AppRepository = AnalyticsRepository
-AppService = AnalyticsService
+# Backward-compatible aliases
+AnalyticsRepository = AsyncAnalyticsRepository
+AnalyticsService = AsyncAnalyticsService
 
 __all__ = [
     # Enums
@@ -97,7 +93,7 @@ __all__ = [
     "LevelInfo",
     "ProductGroup",
     "StepAnalysisRow",
-    # New typed models
+    # Typed models
     "TopFailedStep",
     "RepairStatistics",
     "RepairHistoryRecord",
@@ -112,10 +108,11 @@ __all__ = [
     "UnitFlowResult",
     # Step/Measurement filter models (internal API)
     "StepStatusItem",
-    "MeasurementListItem",    # Repository & Service
+    "MeasurementListItem",
+    # Async implementations (primary API)
+    "AsyncAnalyticsRepository",
+    "AsyncAnalyticsService",
+    # Backward-compatible aliases
     "AnalyticsRepository",
     "AnalyticsService",
-    # Internal API (⚠️ subject to change)
-    "AnalyticsRepositoryInternal",
-    "AnalyticsServiceInternal",
 ]

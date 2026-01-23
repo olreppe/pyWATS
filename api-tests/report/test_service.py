@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import pytest
 
-from pywats.domains.report.service import ReportService
+from pywats.domains.report import ReportService
 from pywats.domains.report.models import WATSFilter, ReportHeader
 from pywats.domains.report.report_models import UUTReport, UURReport
 
@@ -16,18 +16,20 @@ class DummyStation:
 
 
 class DummyReportRepository:
+    """Mock repository for testing ReportService."""
+    
     def __init__(self):
         self.wsjf_calls: List[Any] = []
         self.latest_parameters: Dict[str, Any] = {}
 
-    def query_headers(
+    async def query_headers(
         self,
         report_type: str = "uut",
         filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None
     ) -> List[ReportHeader]:
         return []
 
-    def query_headers_by_misc_info(
+    async def query_headers_by_misc_info(
         self,
         description: str,
         string_value: str,
@@ -35,33 +37,33 @@ class DummyReportRepository:
     ) -> List[ReportHeader]:
         return []
 
-    def post_wsjf(
+    async def post_wsjf(
         self,
         report: Union[UUTReport, UURReport, Dict[str, Any]]
     ) -> Optional[str]:
         self.wsjf_calls.append(report)
         return "FAKE-ID"
 
-    def get_wsjf(self, report_id: str) -> Optional[Union[UUTReport, UURReport]]:
+    async def get_wsjf(self, report_id: str) -> Optional[Union[UUTReport, UURReport]]:
         return None
 
-    def post_wsxf(self, xml_content: str) -> Optional[str]:
+    async def post_wsxf(self, xml_content: str) -> Optional[str]:
         return None
 
-    def get_wsxf(self, report_id: str) -> Optional[bytes]:
+    async def get_wsxf(self, report_id: str) -> Optional[bytes]:
         return None
 
-    def get_attachment(
+    async def get_attachment(
         self,
         attachment_id: Optional[str] = None,
         step_id: Optional[str] = None
     ) -> Optional[bytes]:
         return None
 
-    def get_attachments_as_zip(self, report_id: str) -> Optional[bytes]:
+    async def get_attachments_as_zip(self, report_id: str) -> Optional[bytes]:
         return None
 
-    def get_certificate(self, report_id: str) -> Optional[bytes]:
+    async def get_certificate(self, report_id: str) -> Optional[bytes]:
         return None
 
 
@@ -73,6 +75,7 @@ def report_service() -> ReportService:
 
 
 def test_create_uut_report_resolves_station(report_service: ReportService):
+    """Create report is sync since it doesn't call repository."""
     report = report_service.create_uut_report(
         operator="TestOp",
         part_number="PN-123",
@@ -89,6 +92,7 @@ def test_create_uut_report_resolves_station(report_service: ReportService):
 
 
 def test_create_uur_report_from_uut_copies_sub_units(report_service: ReportService):
+    """Create report is sync since it doesn't call repository."""
     uut = report_service.create_uut_report(
         operator="Operator",
         part_number="PN-123",
@@ -106,7 +110,8 @@ def test_create_uur_report_from_uut_copies_sub_units(report_service: ReportServi
     assert any(sub.sn == "SUBSN" for sub in uur.sub_units)
 
 
-def test_submit_report_uses_repository(report_service: ReportService):
+@pytest.mark.asyncio
+async def test_submit_report_uses_repository(report_service: ReportService):
     uut = report_service.create_uut_report(
         operator="TestOp",
         part_number="PN-321",
@@ -115,7 +120,7 @@ def test_submit_report_uses_repository(report_service: ReportService):
         operation_type=200
     )
 
-    report_id = report_service.submit_report(uut)
+    report_id = await report_service.submit_report(uut)
 
     assert report_id == "FAKE-ID"
     repo = report_service._repository

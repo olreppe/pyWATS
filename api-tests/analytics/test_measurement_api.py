@@ -19,30 +19,30 @@ class TestMeasurementPathNormalization:
     
     def test_normalize_path_with_slashes(self):
         """Test "/" is converted to paragraph mark."""
-        from pywats.domains.analytics.repository import AnalyticsRepository
+        from pywats.domains.analytics.async_repository import AsyncAnalyticsRepository
         
-        result = AnalyticsRepository._normalize_measurement_path("Main/Step/Test")
+        result = AsyncAnalyticsRepository._normalize_measurement_path("Main/Step/Test")
         assert result == "Main¶Step¶Test"
     
     def test_normalize_path_with_measurement_name(self):
         """Test measurement name separator (::) is converted to ¶¶."""
-        from pywats.domains.analytics.repository import AnalyticsRepository
+        from pywats.domains.analytics.async_repository import AsyncAnalyticsRepository
         
-        result = AnalyticsRepository._normalize_measurement_path("Main/Step/Test::Measurement0")
+        result = AsyncAnalyticsRepository._normalize_measurement_path("Main/Step/Test::Measurement0")
         assert result == "Main¶Step¶Test¶¶Measurement0"
     
     def test_normalize_path_already_correct(self):
         """Test path already using ¶ is unchanged."""
-        from pywats.domains.analytics.repository import AnalyticsRepository
+        from pywats.domains.analytics.async_repository import AsyncAnalyticsRepository
         
-        result = AnalyticsRepository._normalize_measurement_path("Main¶Step¶Test")
+        result = AsyncAnalyticsRepository._normalize_measurement_path("Main¶Step¶Test")
         assert result == "Main¶Step¶Test"
     
     def test_normalize_empty_path(self):
         """Test empty path returns empty."""
-        from pywats.domains.analytics.repository import AnalyticsRepository
+        from pywats.domains.analytics.async_repository import AsyncAnalyticsRepository
         
-        result = AnalyticsRepository._normalize_measurement_path("")
+        result = AsyncAnalyticsRepository._normalize_measurement_path("")
         assert result == ""
 
 
@@ -271,11 +271,8 @@ class TestMeasurementWithProductAndProcess:
         """
         print("\n=== MEASUREMENTS WITH REAL REPORT DATA ===")
         
-        # Get recent report headers
-        from pywats.domains.report import WATSFilter
-        
-        filter_obj = WATSFilter(top_count=10)
-        headers = wats_client.report.query_uut_headers(filter_obj)
+        # Get recent report headers (using OData parameters, not WATSFilter)
+        headers = wats_client.report.query_uut_headers(top=10)
         
         if not headers:
             pytest.skip("No report headers available")
@@ -298,6 +295,8 @@ class TestMeasurementWithProductAndProcess:
         print(f"Using step path: {step_path}")
         
         # Query measurements with proper filters including testOperation
+        # WATSFilter is used here for analytics API (not report API)
+        from pywats.domains.report import WATSFilter
         measurement_filter = WATSFilter(
             part_number=header.part_number,
             serial_number=header.serial_number,  # Filter to this unit

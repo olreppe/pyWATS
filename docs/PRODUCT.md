@@ -21,6 +21,8 @@ The Product domain manages product catalog data including product definitions, r
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS
 
@@ -54,6 +56,31 @@ revision = api.product.create_revision(
     name="Initial Release",
     description="First production version"
 )
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def manage_products():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        # Get product and its revisions concurrently
+        product, revisions = await asyncio.gather(
+            api.product.get_product("WIDGET-001"),
+            api.product.get_revisions("WIDGET-001")
+        )
+        
+        print(f"Product: {product.name}")
+        print(f"Revisions: {len(revisions)}")
+
+asyncio.run(manage_products())
 ```
 
 ---

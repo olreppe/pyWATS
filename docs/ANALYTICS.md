@@ -17,6 +17,8 @@ The Analytics domain provides data analysis and visualization capabilities for t
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS, WATSFilter, StatusFilter, MeasurementPath
 from datetime import datetime, timedelta
@@ -51,6 +53,32 @@ for meas in measurements:
     print(f"{meas.step_name}:")
     print(f"  Avg: {meas.avg:.3f}")
     print(f"  Cpk: {meas.cpk:.2f}")
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS, WATSFilter, StatusFilter
+
+async def analyze_yield():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        filter_obj = WATSFilter(part_number="WIDGET-001", days=7)
+        
+        # Concurrent queries - much faster!
+        yield_result, measurements = await asyncio.gather(
+            api.analytics.get_yield(filter_obj),
+            api.analytics.get_aggregated_measurements(filter_obj)
+        )
+        
+        print(f"Yield: {yield_result.yield_pct:.1f}%")
+
+asyncio.run(analyze_yield())
 ```
 
 ---
@@ -615,7 +643,7 @@ All methods are accessed via `api.analytics`. Methods marked with ⚠️ use int
 - `get_measurement_list_by_product(product_group_id, level_id, days, step_filters, sequence_filters)` → `List[MeasurementListItem]` - Simple query
 - `get_step_status_list(filter_data, step_filters, sequence_filters)` → `List[StepStatusItem]` - Step statuses with XML filters
 - `get_step_status_list_by_product(product_group_id, level_id, days, step_filters, sequence_filters)` → `List[StepStatusItem]` - Simple query
-- `get_top_failed_internal(filter_data, top_count)` → `List[TopFailedStep]` - Top failed steps (internal API)
+- `get_top_failed_advanced(filter_data, top_count)` → `List[TopFailedStep]` - Top failed steps with advanced filters
 - `get_top_failed_by_product(part_number, process_code, product_group_id, level_id, days, count)` → `List[TopFailedStep]` - Simple query
 
 ### Enums

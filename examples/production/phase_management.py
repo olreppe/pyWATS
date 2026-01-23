@@ -66,17 +66,22 @@ print("Set unit to phase: FCT")
 # Get Units in Phase
 # =============================================================================
 
-from pywats.domains.report import WATSFilter
+# Note: The production service doesn't have a search_units method.
+# To find units in a specific phase, you can query report headers and 
+# then check the unit phase via the production API.
 
-filter_data = WATSFilter(
-    part_number="WIDGET-001",
-    phase="ICT"
-)
+# Get units by querying reports for a part number
+headers = api.report.get_headers_by_part_number("WIDGET-001")
 
-units = api.production.search_units(filter_data)
+# Filter by checking unit phase
+units_in_ict = []
+for header in headers[:100]:  # Check first 100
+    unit = api.production.get_unit(header.serial_number)
+    if unit and unit.current_phase == "ICT":
+        units_in_ict.append(unit)
 
-print(f"\nUnits in ICT phase: {len(units)}")
-for unit in units[:5]:
+print(f"\nUnits in ICT phase: {len(units_in_ict)}")
+for unit in units_in_ict[:5]:
     print(f"  {unit.serial_number}")
 
 

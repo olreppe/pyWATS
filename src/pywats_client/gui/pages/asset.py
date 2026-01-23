@@ -11,6 +11,8 @@ Based on the WATS Asset Management API:
 - DELETE /api/Asset - Delete asset
 - GET /api/Asset/Status - Get asset status/alarms
 - GET /api/Asset/Types - Get asset types
+
+This page uses async operations for all API calls to keep the UI responsive.
 """
 
 from typing import Optional, List, Dict, Any, TYPE_CHECKING
@@ -26,6 +28,7 @@ from PySide6.QtGui import QColor
 
 from .base import BasePage
 from ...core.config import ClientConfig
+from ...core.async_runner import TaskResult
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -349,34 +352,74 @@ class AssetPage(BasePage):
     def _on_refresh(self) -> None:
         """Refresh assets from server"""
         if self._get_api_client():
-            self._load_assets()
+            self._load_assets_async()
         else:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
     
     def _load_assets(self) -> None:
-        """Load assets from WATS server"""
+        """Load assets from WATS server (sync - for backward compatibility)"""
+        self._load_assets_async()
+    
+    def _load_assets_async(self) -> None:
+        """Load assets from WATS server asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            self._status_label.setText("Not connected to WATS server")
+            return
+        
+        self._status_label.setText("Loading assets...")
+        
+        # Run the async load operation
+        self.run_async(
+            self._fetch_assets(),
+            name="Loading assets...",
+            on_complete=self._on_assets_loaded,
+            on_error=self._on_assets_error
+        )
+    
+    async def _fetch_assets(self) -> Dict[str, Any]:
+        """Fetch assets and asset types from server (async)"""
+        client = self._get_api_client()
+        if not client:
+            return {"assets": [], "types": []}
+        
+        # Fetch asset types and assets in parallel
+        # The pyWATS client handles async internally
+        asset_types = []
+        assets = []
+        
         try:
-            self._status_label.setText("Loading assets...")
-            
-            client = self._get_api_client()
-            if client:
-                # Load asset types first
-                try:
-                    self._asset_types = client.asset.get_asset_types() or []
-                except Exception:
-                    self._asset_types = []
-                
-                # Load assets
-                assets = client.asset.get_assets()
-                self._assets = [self._asset_to_dict(a) for a in assets] if assets else []
-                
-                self._populate_table()
-                self._status_label.setText(f"Loaded {len(self._assets)} assets")
-            else:
-                self._status_label.setText("Not connected to WATS server")
+            asset_types = client.asset.get_asset_types() or []
+        except Exception:
+            asset_types = []
+        
+        try:
+            assets = client.asset.get_assets() or []
         except Exception as e:
-            self._status_label.setText(f"Error: {str(e)[:50]}")
-            QMessageBox.warning(self, "Error", f"Failed to load assets: {e}")
+            raise e
+        
+        return {
+            "assets": assets,
+            "types": asset_types
+        }
+    
+    def _on_assets_loaded(self, result: TaskResult) -> None:
+        """Handle successful asset load"""
+        if result.is_success and result.result:
+            data = result.result
+            self._asset_types = data.get("types", [])
+            raw_assets = data.get("assets", [])
+            self._assets = [self._asset_to_dict(a) for a in raw_assets]
+            self._populate_table()
+            self._status_label.setText(f"Loaded {len(self._assets)} assets")
+        else:
+            self._status_label.setText("No assets loaded")
+    
+    def _on_assets_error(self, result: TaskResult) -> None:
+        """Handle asset load error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        self._status_label.setText(f"Error: {error_msg[:50]}")
+        QMessageBox.warning(self, "Error", f"Failed to load assets: {error_msg}")
     
     def _asset_to_dict(self, asset: Any) -> Dict[str, Any]:
         """Convert Asset model to dictionary"""
@@ -458,24 +501,42 @@ class AssetPage(BasePage):
         
         dialog = AssetDialog(self._asset_types, parent=self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                data = dialog.get_asset_data()
-                
-                result = client.asset.create_asset(
-                    serial_number=data['serialNumber'],
-                    type_id=data['typeId'],
-                    asset_name=data.get('assetName'),
-                    description=data.get('description'),
-                    location=data.get('location'),
-                )
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Asset created successfully")
-                    self._load_assets()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to create asset")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to create asset: {e}")
+            data = dialog.get_asset_data()
+            
+            # Run create operation async
+            self.run_async(
+                self._create_asset(data),
+                name="Creating asset...",
+                on_complete=self._on_asset_created,
+                on_error=self._on_asset_create_error
+            )
+    
+    async def _create_asset(self, data: Dict[str, Any]) -> Any:
+        """Create asset asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        return client.asset.create_asset(
+            serial_number=data['serialNumber'],
+            type_id=data['typeId'],
+            asset_name=data.get('assetName'),
+            description=data.get('description'),
+            location=data.get('location'),
+        )
+    
+    def _on_asset_created(self, result: TaskResult) -> None:
+        """Handle successful asset creation"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", "Asset created successfully")
+            self._load_assets_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to create asset")
+    
+    def _on_asset_create_error(self, result: TaskResult) -> None:
+        """Handle asset creation error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to create asset: {error_msg}")
     
     def _on_edit_asset(self) -> None:
         """Edit selected asset"""
@@ -487,34 +548,48 @@ class AssetPage(BasePage):
         dialog = AssetDialog(self._asset_types, asset=asset, parent=self)
         
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                data = dialog.get_asset_data()
-                client = self._get_api_client()
-                if not client:
-                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-                    return
-                
-                # First get the full asset object
-                full_asset = client.asset.get_asset(serial_number=data['serialNumber'])
-                
-                if full_asset:
-                    # Update the fields
-                    full_asset.asset_name = data.get('assetName') or full_asset.asset_name
-                    full_asset.description = data.get('description') or full_asset.description
-                    full_asset.location = data.get('location') or full_asset.location
-                    
-                    # Update via API
-                    result = client.asset.update_asset(full_asset)
-                    
-                    if result:
-                        QMessageBox.information(self, "Success", "Asset updated successfully")
-                        self._load_assets()
-                    else:
-                        QMessageBox.warning(self, "Error", "Failed to update asset - no result returned")
-                else:
-                    QMessageBox.warning(self, "Error", f"Could not find asset with serial number: {data['serialNumber']}")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to update asset: {e}")
+            data = dialog.get_asset_data()
+            
+            # Run update operation async
+            self.run_async(
+                self._update_asset(data),
+                name="Updating asset...",
+                on_complete=self._on_asset_updated,
+                on_error=self._on_asset_update_error
+            )
+    
+    async def _update_asset(self, data: Dict[str, Any]) -> Any:
+        """Update asset asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        # First get the full asset object
+        full_asset = client.asset.get_asset(serial_number=data['serialNumber'])
+        
+        if not full_asset:
+            raise RuntimeError(f"Could not find asset with serial number: {data['serialNumber']}")
+        
+        # Update the fields
+        full_asset.asset_name = data.get('assetName') or full_asset.asset_name
+        full_asset.description = data.get('description') or full_asset.description
+        full_asset.location = data.get('location') or full_asset.location
+        
+        # Update via API
+        return client.asset.update_asset(full_asset)
+    
+    def _on_asset_updated(self, result: TaskResult) -> None:
+        """Handle successful asset update"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", "Asset updated successfully")
+            self._load_assets_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to update asset - no result returned")
+    
+    def _on_asset_update_error(self, result: TaskResult) -> None:
+        """Handle asset update error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to update asset: {error_msg}")
     
     def _on_check_status(self) -> None:
         """Check status of selected asset"""
@@ -525,13 +600,34 @@ class AssetPage(BasePage):
         asset = self._assets[row]
         serial = asset.get('serialNumber')
         
-        try:
-            client = self._get_api_client()
-            if not client:
-                QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-                return
-                
-            status = client.asset.get_status(serial_number=serial)
+        client = self._get_api_client()
+        if not client:
+            QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+            return
+        
+        # Run status check async
+        self.run_async(
+            self._fetch_status(serial),
+            name="Checking status...",
+            on_complete=self._on_status_fetched,
+            on_error=self._on_status_error
+        )
+    
+    async def _fetch_status(self, serial: str) -> Dict[str, Any]:
+        """Fetch asset status asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        status = client.asset.get_status(serial_number=serial)
+        return {"serial": serial, "status": status}
+    
+    def _on_status_fetched(self, result: TaskResult) -> None:
+        """Handle successful status fetch"""
+        if result.is_success and result.result:
+            data = result.result
+            serial = data["serial"]
+            status = data["status"]
             
             if status:
                 msg = f"Asset: {serial}\n\n"
@@ -547,8 +643,13 @@ class AssetPage(BasePage):
                 QMessageBox.information(self, "Asset Status", msg)
             else:
                 QMessageBox.information(self, "Asset Status", f"No status available for {serial}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to get status: {e}")
+        else:
+            QMessageBox.warning(self, "Error", "Failed to get asset status")
+    
+    def _on_status_error(self, result: TaskResult) -> None:
+        """Handle status fetch error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to get status: {error_msg}")
     
     def save_config(self) -> None:
         """Save configuration"""

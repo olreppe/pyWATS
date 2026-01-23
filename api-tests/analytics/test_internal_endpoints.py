@@ -186,12 +186,12 @@ class TestTopFailedInternalEndpoints:
         
         print("==================================\n")
 
-    def test_get_top_failed_internal_with_filter(self, wats_client: Any) -> None:
+    def test_get_top_failed_advanced_with_filter(self, wats_client: Any) -> None:
         """Test POST /api/internal/App/TopFailed with filter"""
-        print("\n=== GET TOP FAILED INTERNAL WITH FILTER ===")
+        print("\n=== GET TOP FAILED ADVANCED WITH FILTER ===")
         
         try:
-            results = wats_client.analytics.get_top_failed_internal(
+            results = wats_client.analytics.get_top_failed_advanced(
                 filter_data={
                     "periodCount": 30,
                     "includeCurrentPeriod": True,

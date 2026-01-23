@@ -17,6 +17,8 @@ The Software domain manages software packages and their distribution. Use this t
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS
 
@@ -49,6 +51,31 @@ if package:
 
 # Get latest released version
 latest = api.software.get_released_package("FirmwareUpdate")
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+from pywats.domains.software.models import PackageStatus
+
+async def manage_software():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        # Fetch multiple package statuses concurrently
+        released, development = await asyncio.gather(
+            api.software.get_packages(status=PackageStatus.RELEASED),
+            api.software.get_packages(status=PackageStatus.DEVELOPMENT)
+        )
+        
+        print(f"Released: {len(released)}, In Development: {len(development)}")
+
+asyncio.run(manage_software())
 ```
 
 ---

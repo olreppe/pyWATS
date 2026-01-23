@@ -1,12 +1,13 @@
 """
 Report Domain: Query Reports
 
-This example demonstrates querying and filtering reports.
+This example demonstrates querying and filtering reports using OData filters.
+The report query API uses OData syntax for filtering, not WATSFilter.
 """
 import os
 from datetime import datetime, timedelta
 from pywats import pyWATS
-from pywats.domains.report import WATSFilter
+from pywats.domains.report import ReportType
 
 # =============================================================================
 # Setup
@@ -22,8 +23,8 @@ api = pyWATS(
 # Get Report Headers (List)
 # =============================================================================
 
-# Get recent report headers
-headers = api.report.query_uut_headers()
+# Get recent report headers using helper method
+headers = api.report.get_recent_headers(count=10)
 
 print(f"Found {len(headers)} reports")
 for header in headers[:5]:
@@ -34,12 +35,14 @@ for header in headers[:5]:
 # Filter by Date Range
 # =============================================================================
 
-filter_data = WATSFilter(
-    dateStart=datetime.now() - timedelta(days=7),
-    dateStop=datetime.now()
-)
+# Using helper method
+start_date = datetime.now() - timedelta(days=7)
+end_date = datetime.now()
 
-headers = api.report.query_uut_headers(filter_data)
+headers = api.report.get_headers_by_date_range(
+    start_date=start_date,
+    end_date=end_date
+)
 print(f"\nReports from last 7 days: {len(headers)}")
 
 
@@ -47,34 +50,40 @@ print(f"\nReports from last 7 days: {len(headers)}")
 # Filter by Part Number
 # =============================================================================
 
-filter_data = WATSFilter(partNumber="WIDGET-001")
-
-headers = api.report.query_uut_headers(filter_data)
+# Using helper method
+headers = api.report.get_headers_by_part_number("WIDGET-001")
 print(f"\nReports for WIDGET-001: {len(headers)}")
+
+# Or using OData filter directly
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001'"
+)
 
 
 # =============================================================================
 # Filter by Serial Number
 # =============================================================================
 
-filter_data = WATSFilter(serialNumber="SN-2024-001234")
-
-headers = api.report.query_uut_headers(filter_data)
+# Using helper method
+headers = api.report.get_headers_by_serial("SN-2024-001234")
 print(f"\nReports for serial SN-2024-001234: {len(headers)}")
+
+# Or using OData filter directly
+headers = api.report.query_uut_headers(
+    odata_filter="serialNumber eq 'SN-2024-001234'"
+)
 
 
 # =============================================================================
 # Filter by Result
 # =============================================================================
 
-# Get failed reports only
-filter_data = WATSFilter(
-    dateStart=datetime.now() - timedelta(days=7),
-    status="Failed"
+# Get failed reports only using OData filter
+headers = api.report.query_uut_headers(
+    odata_filter="result eq 'Failed'",
+    top=100
 )
-
-headers = api.report.query_uut_headers(filter_data)
-print(f"\nFailed reports (last 7 days): {len(headers)}")
+print(f"\nFailed reports: {len(headers)}")
 
 for header in headers[:5]:
     print(f"  {header.serial_number}: {header.part_number}")
@@ -100,7 +109,7 @@ if report:
 # Get Serial Number History
 # =============================================================================
 
-# Get all reports for a serial number
+# Get all reports for a serial number (Analytics API - still uses WATSFilter)
 history = api.analytics.get_sn_history("SN-2024-001234")
 
 print(f"\nHistory for SN-2024-001234:")
@@ -109,37 +118,32 @@ for report in history:
 
 
 # =============================================================================
-# Combined Filters
+# Combined OData Filters
 # =============================================================================
 
-filter_data = WATSFilter(
-    partNumber="WIDGET-001",
-    dateStart=datetime.now() - timedelta(days=30),
-    dateStop=datetime.now(),
-    status="Failed",
+# Combine multiple conditions with 'and'
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001' and result eq 'Failed'",
+    top=100
 )
-
-headers = api.report.query_uut_headers(filter_data)
-print(f"\nFailed WIDGET-001 reports (last 30 days): {len(headers)}")
+print(f"\nFailed WIDGET-001 reports: {len(headers)}")
 
 
 # =============================================================================
 # Report Query with Pagination
 # =============================================================================
 
-# Get reports in batches
+# Get reports in batches using skip and top
 all_headers = []
 page = 0
 page_size = 100
 
 while True:
-    filter_data = WATSFilter(
-        dateStart=datetime.now() - timedelta(days=7),
+    headers = api.report.query_uut_headers(
+        top=page_size,
         skip=page * page_size,
-        top=page_size
+        orderby="start desc"
     )
-    
-    headers = api.report.query_uut_headers(filter_data)
     
     if not headers:
         break
@@ -151,3 +155,39 @@ while True:
         break
 
 print(f"\nTotal reports (paginated): {len(all_headers)}")
+
+
+# =============================================================================
+# Query with Expanded Fields
+# =============================================================================
+
+# Expand sub-units
+headers = api.report.query_uut_headers(
+    odata_filter="serialNumber eq 'W12345'",
+    expand=["subUnits"]
+)
+
+for header in headers:
+    if header.sub_units:
+        for sub in header.sub_units:
+            print(f"  Sub-unit: {sub.serial_number}")
+
+
+# =============================================================================
+# Unified Query for UUT/UUR
+# =============================================================================
+
+# Query UUT headers
+uut_headers = api.report.query_headers(
+    report_type=ReportType.UUT,
+    odata_filter="serialNumber eq 'W12345'"
+)
+
+# Query UUR (repair) headers
+uur_headers = api.report.query_headers(
+    report_type=ReportType.UUR,
+    odata_filter="serialNumber eq 'W12345'"
+)
+
+print(f"\nUUT reports: {len(uut_headers)}")
+print(f"UUR reports: {len(uur_headers)}")

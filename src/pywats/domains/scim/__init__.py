@@ -16,16 +16,11 @@ Models:
     ScimPatchOperation  - Single patch operation
     ScimListResponse    - List response with user resources
 
-Classes:
-    ScimRepository      - Data access layer (low-level API access)
-    ScimService         - Business logic layer (recommended interface)
-
 USAGE
 -----
 >>> # Access via the main client
->>> from pywats import Wats
->>> api = Wats()
->>> api.connect("https://myserver/api")
+>>> from pywats import pyWATS
+>>> api = pyWATS(base_url="https://myserver", token="...")
 
 >>> # Get provisioning token for Azure AD
 >>> token = api.scim.get_token(duration_days=90)
@@ -55,9 +50,13 @@ from .models import (
     ScimListResponse,
 )
 
-# Repository and Service
-from .repository import ScimRepository
-from .service import ScimService
+# Async implementations (primary API)
+from .async_repository import AsyncScimRepository
+from .async_service import AsyncScimService
+
+# Backward-compatible aliases
+ScimRepository = AsyncScimRepository
+ScimService = AsyncScimService
 
 __all__ = [
     # Models
@@ -68,7 +67,10 @@ __all__ = [
     "ScimPatchRequest",
     "ScimPatchOperation",
     "ScimListResponse",
-    # Repository and Service
+    # Async implementations (primary API)
+    "AsyncScimRepository",
+    "AsyncScimService",
+    # Backward-compatible aliases
     "ScimRepository",
     "ScimService",
 ]

@@ -13,6 +13,8 @@ SCIM is an industry standard protocol (RFC 7644) for managing user identities ac
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS
 
@@ -31,6 +33,31 @@ users = api.scim.get_users()
 for user in users.resources or []:
     status = "active" if user.active else "inactive"
     print(f"{user.user_name}: {user.display_name} ({status})")
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def provision_users():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        # Get token and users concurrently
+        token, users = await asyncio.gather(
+            api.scim.get_token(duration_days=90),
+            api.scim.get_users()
+        )
+        
+        print(f"Token valid until: {token.expires_utc if token else 'N/A'}")
+        print(f"Total users: {users.total_results}")
+
+asyncio.run(provision_users())
 ```
 
 ## Service Methods

@@ -27,6 +27,8 @@ The Production domain manages units (individual physical products) throughout th
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS
 
@@ -58,6 +60,33 @@ if api.production.is_unit_passing("WIDGET-12345", "WIDGET-001"):
         part_number="WIDGET-001",
         phase="Finalized"
     )
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def check_units():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        # Check multiple units concurrently
+        serials = ["SN-001", "SN-002", "SN-003"]
+        units = await asyncio.gather(*[
+            api.production.get_unit(sn, "WIDGET-001") 
+            for sn in serials
+        ])
+        
+        for unit in units:
+            print(f"{unit.serial_number}: {unit.status}")
+
+asyncio.run(check_units())
+```
 else:
     print("✗ Unit has test failures")
 

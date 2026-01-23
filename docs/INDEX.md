@@ -52,6 +52,9 @@ Documentation for the pyWATS Client application:
 
 ## Quick Reference by Task
 
+### Async vs Sync Usage
+See [Getting Started - Async Usage](GETTING_STARTED.md#async-usage) - Use `AsyncWATS` for concurrent requests or `pyWATS` for simple blocking calls
+
 ### Creating Test Reports
 Start with [Report Domain](REPORT.md) - Learn how to create UUT reports with all step types
 

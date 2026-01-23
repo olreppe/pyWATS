@@ -4,8 +4,14 @@ Provides software distribution package services and models.
 """
 from .enums import PackageStatus
 from .models import Package, PackageFile, PackageTag, VirtualFolder
-from .repository import SoftwareRepository
-from .service import SoftwareService
+
+# Async implementations (primary API)
+from .async_repository import AsyncSoftwareRepository
+from .async_service import AsyncSoftwareService
+
+# Backward-compatible aliases
+SoftwareRepository = AsyncSoftwareRepository
+SoftwareService = AsyncSoftwareService
 
 __all__ = [
     # Enums
@@ -15,7 +21,10 @@ __all__ = [
     "PackageFile",
     "PackageTag",
     "VirtualFolder",
-    # Repository & Service
+    # Async implementations (primary API)
+    "AsyncSoftwareRepository",
+    "AsyncSoftwareService",
+    # Backward-compatible aliases
     "SoftwareRepository",
     "SoftwareService",
 ]

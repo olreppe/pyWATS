@@ -25,6 +25,7 @@ from PySide6.QtGui import QColor
 
 from .base import BasePage
 from ...core.config import ClientConfig
+from ...core import TaskResult
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -401,52 +402,61 @@ class RootCausePage(BasePage):
     def _on_filter_changed(self) -> None:
         """Handle filter changes - reload tickets"""
         if self._get_api_client():
-            self._load_tickets()
+            self._load_tickets_async()
     
     def _on_refresh(self) -> None:
         """Refresh tickets from server"""
         if self._get_api_client():
-            self._load_tickets()
+            self._load_tickets_async()
         else:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
     
-    def _load_tickets(self) -> None:
-        """Load tickets from WATS server"""
-        try:
-            self._status_label.setText("Loading tickets...")
-            
-            client = self._get_api_client()
-            if client:
-                # Get view and status filters
-                view_text = self._view_combo.currentText()
-                status_text = self._status_filter.currentText()
-                search = self._search_edit.text().strip() or None
-                
-                # Map view text to TicketView enum values
-                view_map = {
-                    "Assigned to Me": "ASSIGNED",
-                    "Following": "FOLLOWING",
-                    "All": "ALL"
-                }
-                view = view_map.get(view_text, "ASSIGNED")
-                
-                # Load tickets based on status filter
-                if status_text == "Open":
-                    tickets = client.rootcause.get_open_tickets()
-                elif status_text == "Active (Open + In Progress)":
-                    tickets = client.rootcause.get_active_tickets()
-                else:
-                    tickets = client.rootcause.get_tickets(search_string=search)
-                
-                self._tickets = [self._ticket_to_dict(t) for t in tickets] if tickets else []
-                
-                self._populate_table()
-                self._status_label.setText(f"Loaded {len(self._tickets)} tickets")
-            else:
-                self._status_label.setText("Not connected to WATS server")
-        except Exception as e:
-            self._status_label.setText(f"Error: {str(e)[:50]}")
-            QMessageBox.warning(self, "Error", f"Failed to load tickets: {e}")
+    def _load_tickets_async(self) -> None:
+        """Load tickets from WATS server asynchronously"""
+        self._status_label.setText("Loading tickets...")
+        
+        # Get view and status filters
+        view_text = self._view_combo.currentText()
+        status_text = self._status_filter.currentText()
+        search = self._search_edit.text().strip() or None
+        
+        self.run_async(
+            self._fetch_tickets(view_text, status_text, search),
+            name="Loading tickets...",
+            on_complete=self._on_tickets_loaded,
+            on_error=self._on_tickets_error
+        )
+    
+    async def _fetch_tickets(self, view_text: str, status_text: str, search: Optional[str]) -> List[Dict[str, Any]]:
+        """Fetch tickets asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        # Load tickets based on status filter
+        if status_text == "Open":
+            tickets = client.rootcause.get_open_tickets()
+        elif status_text == "Active (Open + In Progress)":
+            tickets = client.rootcause.get_active_tickets()
+        else:
+            tickets = client.rootcause.get_tickets(search_string=search)
+        
+        return [self._ticket_to_dict(t) for t in tickets] if tickets else []
+    
+    def _on_tickets_loaded(self, result: TaskResult) -> None:
+        """Handle successful tickets load"""
+        if result.is_success:
+            self._tickets = result.result or []
+            self._populate_table()
+            self._status_label.setText(f"Loaded {len(self._tickets)} tickets")
+        else:
+            self._status_label.setText("Failed to load tickets")
+    
+    def _on_tickets_error(self, result: TaskResult) -> None:
+        """Handle tickets load error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        self._status_label.setText(f"Error: {error_msg[:50]}")
+        QMessageBox.warning(self, "Error", f"Failed to load tickets: {error_msg}")
     
     def _ticket_to_dict(self, ticket: Any) -> Dict[str, Any]:
         """Convert Ticket model to dictionary"""
@@ -519,32 +529,50 @@ class RootCausePage(BasePage):
         
         dialog = TicketDialog(self._teams, parent=self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                data = dialog.get_ticket_data()
-                
-                # Map priority string to enum value
-                priority_map = {
-                    "Low": 1,
-                    "Medium": 2,
-                    "High": 3,
-                    "Critical": 4
-                }
-                
-                result = client.rootcause.create_ticket(
-                    subject=data['subject'],
-                    priority=priority_map.get(data['priority'], 2),
-                    assignee=data.get('assignee'),
-                    team=data.get('team'),
-                    initial_comment=data.get('comment'),
-                )
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Ticket created successfully")
-                    self._load_tickets()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to create ticket")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to create ticket: {e}")
+            data = dialog.get_ticket_data()
+            
+            # Run create operation async
+            self.run_async(
+                self._create_ticket(data),
+                name="Creating ticket...",
+                on_complete=self._on_ticket_created,
+                on_error=self._on_ticket_create_error
+            )
+    
+    async def _create_ticket(self, data: Dict[str, Any]) -> Any:
+        """Create ticket asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        # Map priority string to enum value
+        priority_map = {
+            "Low": 1,
+            "Medium": 2,
+            "High": 3,
+            "Critical": 4
+        }
+        
+        return client.rootcause.create_ticket(
+            subject=data['subject'],
+            priority=priority_map.get(data['priority'], 2),
+            assignee=data.get('assignee'),
+            team=data.get('team'),
+            initial_comment=data.get('comment'),
+        )
+    
+    def _on_ticket_created(self, result: TaskResult) -> None:
+        """Handle successful ticket creation"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", "Ticket created successfully")
+            self._load_tickets_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to create ticket")
+    
+    def _on_ticket_create_error(self, result: TaskResult) -> None:
+        """Handle ticket creation error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to create ticket: {error_msg}")
     
     def _on_edit_ticket(self) -> None:
         """Edit selected ticket"""
@@ -556,26 +584,43 @@ class RootCausePage(BasePage):
         dialog = TicketDialog(self._teams, ticket=ticket, parent=self)
         
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                data = dialog.get_ticket_data()
-                client = self._get_api_client()
-                if not client:
-                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-                    return
-                
-                # Update via add_comment if there's a comment, otherwise update directly
-                if data.get('comment'):
-                    result = client.rootcause.add_comment(
-                        ticket_id=ticket['ticketId'],
-                        comment=data['comment']
-                    )
-                
+            data = dialog.get_ticket_data()
+            
+            # Update via add_comment if there's a comment
+            if data.get('comment'):
+                self.run_async(
+                    self._update_ticket_comment(ticket['ticketId'], data['comment']),
+                    name="Updating ticket...",
+                    on_complete=self._on_ticket_updated,
+                    on_error=self._on_ticket_update_error
+                )
+            else:
                 # TODO: Add proper update_ticket call when available
-                
-                QMessageBox.information(self, "Success", "Ticket updated successfully")
-                self._load_tickets()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to update ticket: {e}")
+                QMessageBox.information(self, "Success", "No changes to apply")
+    
+    async def _update_ticket_comment(self, ticket_id: str, comment: str) -> Any:
+        """Add comment to ticket asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        return client.rootcause.add_comment(
+            ticket_id=ticket_id,
+            comment=comment
+        )
+    
+    def _on_ticket_updated(self, result: TaskResult) -> None:
+        """Handle successful ticket update"""
+        if result.is_success:
+            QMessageBox.information(self, "Success", "Ticket updated successfully")
+            self._load_tickets_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to update ticket")
+    
+    def _on_ticket_update_error(self, result: TaskResult) -> None:
+        """Handle ticket update error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to update ticket: {error_msg}")
     
     def _on_add_comment(self) -> None:
         """Add comment to selected ticket"""
@@ -589,23 +634,45 @@ class RootCausePage(BasePage):
         
         ticket = self._tickets[row]
         
-        try:
-            client = self._get_api_client()
-            if not client:
-                QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-                return
-            result = client.rootcause.add_comment(
-                ticket_id=ticket['ticketId'],
-                comment=comment
-            )
-            
-            if result:
-                self._comment_input.clear()
-                self._load_tickets()
-                # Re-select the same ticket
-                self._tickets_table.selectRow(row)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to add comment: {e}")
+        client = self._get_api_client()
+        if not client:
+            QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+            return
+        
+        # Store row for re-selection after load
+        self._pending_row = row
+        
+        self.run_async(
+            self._add_ticket_comment(ticket['ticketId'], comment),
+            name="Adding comment...",
+            on_complete=self._on_comment_added,
+            on_error=self._on_comment_error
+        )
+    
+    async def _add_ticket_comment(self, ticket_id: str, comment: str) -> Any:
+        """Add comment asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        return client.rootcause.add_comment(
+            ticket_id=ticket_id,
+            comment=comment
+        )
+    
+    def _on_comment_added(self, result: TaskResult) -> None:
+        """Handle successful comment addition"""
+        if result.is_success and result.result:
+            self._comment_input.clear()
+            self._load_tickets_async()
+            # Re-select the same ticket after reload
+            if hasattr(self, '_pending_row'):
+                self._tickets_table.selectRow(self._pending_row)
+    
+    def _on_comment_error(self, result: TaskResult) -> None:
+        """Handle comment error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to add comment: {error_msg}")
     
     def _on_resolve_ticket(self) -> None:
         """Mark ticket as resolved"""
@@ -615,22 +682,17 @@ class RootCausePage(BasePage):
         
         ticket = self._tickets[row]
         
-        try:
-            client = self._get_api_client()
-            if not client:
-                QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-                return
-            # Use change_status method
-            result = client.rootcause.change_status(
-                ticket_id=ticket['ticketId'],
-                status=4  # Resolved
-            )
-            
-            if result:
-                QMessageBox.information(self, "Success", "Ticket marked as resolved")
-                self._load_tickets()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to resolve ticket: {e}")
+        client = self._get_api_client()
+        if not client:
+            QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+            return
+        
+        self.run_async(
+            self._change_ticket_status(ticket['ticketId'], 4),  # 4 = Resolved
+            name="Resolving ticket...",
+            on_complete=lambda r: self._on_status_changed(r, "resolved"),
+            on_error=lambda r: self._on_status_change_error(r, "resolve")
+        )
     
     def _on_close_ticket(self) -> None:
         """Close the ticket"""
@@ -647,21 +709,41 @@ class RootCausePage(BasePage):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            try:
-                client = self._get_api_client()
-                if not client:
-                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-                    return
-                result = client.rootcause.change_status(
-                    ticket_id=ticket['ticketId'],
-                    status=8  # Closed
-                )
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Ticket closed")
-                    self._load_tickets()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to close ticket: {e}")
+            client = self._get_api_client()
+            if not client:
+                QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                return
+            
+            self.run_async(
+                self._change_ticket_status(ticket['ticketId'], 8),  # 8 = Closed
+                name="Closing ticket...",
+                on_complete=lambda r: self._on_status_changed(r, "closed"),
+                on_error=lambda r: self._on_status_change_error(r, "close")
+            )
+    
+    async def _change_ticket_status(self, ticket_id: str, status: int) -> Any:
+        """Change ticket status asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        return client.rootcause.change_status(
+            ticket_id=ticket_id,
+            status=status
+        )
+    
+    def _on_status_changed(self, result: TaskResult, action: str) -> None:
+        """Handle successful status change"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", f"Ticket {action}")
+            self._load_tickets_async()
+        else:
+            QMessageBox.warning(self, "Error", f"Failed to {action} ticket")
+    
+    def _on_status_change_error(self, result: TaskResult, action: str) -> None:
+        """Handle status change error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to {action} ticket: {error_msg}")
     
     def save_config(self) -> None:
         """Save configuration"""

@@ -3,7 +3,7 @@ pyWATS - Python API for WATS (Web-based Automatic Test System)
 
 A clean, object-oriented Python library for interacting with the WATS server.
 
-Usage:
+Usage (Synchronous - for scripts):
     from pywats import pyWATS
     
     api = pyWATS(base_url="https://your-wats-server.com", token="your-token")
@@ -20,9 +20,22 @@ Usage:
     # Use report models (WSJF format)
     from pywats.models import UUTReport, UURReport
     report = UUTReport(pn="PART-001", sn="SN-12345", rev="A", ...)
+
+Usage (Asynchronous - for GUI/async applications):
+    import asyncio
+    from pywats import AsyncWATS
+    
+    async def main():
+        async with AsyncWATS(base_url="...", token="...") as api:
+            products = await api.product.get_products()
+            print(products)
+    
+    asyncio.run(main())
 """
 
 from .pywats import pyWATS
+from .async_wats import AsyncWATS
+from .sync import SyncWATS
 from .exceptions import (
     PyWATSError,
     AuthenticationError,
@@ -92,8 +105,10 @@ from .domains.report.report_models.uut.steps.comp_operator import CompOp
 __version__ = "0.1.0b30"
 __wats_server_version__ = "2025.3.9.824"  # Minimum required WATS server version
 __all__ = [
-    # Main class
+    # Main classes
     "pyWATS",
+    "AsyncWATS",
+    "SyncWATS",
     # Station concept
     "Station",
     "StationRegistry",

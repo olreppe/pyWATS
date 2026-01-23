@@ -6,16 +6,24 @@ This module provides the AppFacade class that:
 2. Provides safe access to API client and services
 3. Integrates with EventBus for event-driven updates
 4. Reduces coupling between GUI pages and pyWATSApplication
+5. Provides async execution utilities for non-blocking GUI operations
 
 Usage:
     # In MainWindow
     facade = AppFacade(app)
     page = SomePage(facade)
     
-    # In Page
+    # In Page (sync pattern - still works)
     self.facade.subscribe(AppEvent.CONNECTION_CHANGED, self._on_connection)
     if api := self.facade.api:
         api.asset.get("asset-001")
+    
+    # In Page (async pattern - recommended for large operations)
+    self.facade.run_async(
+        self.facade.api.asset.get_assets(),
+        name="load_assets",
+        on_complete=lambda r: self._update_table(r.result)
+    )
 
 Author: pyWATS Team
 """
@@ -23,9 +31,10 @@ Author: pyWATS Team
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional, TypeVar
 
 from .event_bus import AppEvent, event_bus
+from .async_runner import AsyncTaskRunner, TaskResult
 
 if TYPE_CHECKING:
     from pywats import pyWATS
@@ -36,6 +45,8 @@ if TYPE_CHECKING:
     from pywats_client.app import pyWATSApplication, ApplicationStatus
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
 
 
 class AppFacade:
@@ -48,10 +59,12 @@ class AppFacade:
     - Event subscription shortcuts
     - Domain service shortcuts (asset, product, etc.)
     - Status and connection information
+    - Async execution utilities for non-blocking operations
     
     Thread Safety:
         The facade itself is thread-safe for read operations.
         Event callbacks use Qt's signal mechanism for thread-safe delivery.
+        Async operations run in a background thread with safe signal delivery.
     
     Example:
         ```python
@@ -63,9 +76,22 @@ class AppFacade:
                 self.facade.subscribe(AppEvent.API_CLIENT_READY, self._on_api_ready)
                 
             def _on_api_ready(self, data: dict):
-                # Safe API access
+                # Async API access (recommended for non-blocking UI)
+                self.facade.run_async(
+                    self._load_products(),
+                    name="load_products",
+                    on_complete=self._on_products_loaded
+                )
+            
+            async def _load_products(self):
                 if api := self.facade.api:
-                    products = api.product.get_all()
+                    return await api.product.get_all_async()
+                return []
+            
+            def _on_products_loaded(self, result: TaskResult):
+                if result.is_success:
+                    self._products = result.result
+                    self._update_table()
         ```
     """
     
@@ -77,7 +103,95 @@ class AppFacade:
             app: The pyWATSApplication instance to wrap
         """
         self._app = app
+        self._async_runner: Optional[AsyncTaskRunner] = None
         logger.debug("AppFacade initialized")
+    
+    # =========================================================================
+    # Async Execution Support
+    # =========================================================================
+    
+    @property
+    def async_runner(self) -> AsyncTaskRunner:
+        """
+        Get the async task runner for executing async operations.
+        
+        Creates the runner lazily on first access.
+        
+        Returns:
+            AsyncTaskRunner instance
+        """
+        if self._async_runner is None:
+            self._async_runner = AsyncTaskRunner()
+        return self._async_runner
+    
+    def run_async(
+        self,
+        coro: Awaitable[T],
+        name: str = "task",
+        on_complete: Optional[Callable[["TaskResult[T]"], None]] = None,
+        on_error: Optional[Callable[["TaskResult[T]"], None]] = None
+    ) -> str:
+        """
+        Run an async coroutine in the background without blocking the GUI.
+        
+        This is the recommended way to execute API calls from GUI pages.
+        Results are delivered via callbacks or signals.
+        
+        Args:
+            coro: The async coroutine to execute
+            name: Human-readable task name for logging/tracking
+            on_complete: Callback function for successful completion
+            on_error: Callback function for errors
+        
+        Returns:
+            Task ID that can be used to cancel or track the task
+        
+        Example:
+            # Simple usage with callback
+            self.facade.run_async(
+                self.facade.api.asset.get_assets(),
+                name="load_assets",
+                on_complete=lambda r: self._update_table(r.result),
+                on_error=lambda r: self._show_error(str(r.error))
+            )
+            
+            # Signal-based usage
+            self.facade.async_runner.task_completed.connect(self._on_task_done)
+            self.facade.run_async(api.asset.get_assets(), name="load_assets")
+        """
+        return self.async_runner.run(coro, name, on_complete, on_error)
+    
+    def cancel_async(self, task_id: str) -> bool:
+        """
+        Cancel a running async task.
+        
+        Args:
+            task_id: ID of the task to cancel
+        
+        Returns:
+            True if cancellation was requested
+        """
+        if self._async_runner:
+            return self._async_runner.cancel(task_id)
+        return False
+    
+    def cancel_all_async(self) -> int:
+        """
+        Cancel all running async tasks.
+        
+        Returns:
+            Number of tasks cancelled
+        """
+        if self._async_runner:
+            return self._async_runner.cancel_all()
+        return 0
+    
+    @property
+    def has_running_tasks(self) -> bool:
+        """Check if there are any running async tasks"""
+        if self._async_runner:
+            return self._async_runner.has_running_tasks()
+        return False
     
     # =========================================================================
     # Event Bus Integration

@@ -1,49 +1,120 @@
-"""Asset repository - data access layer.
+"""Async Asset repository - data access layer.
 
-Handles all API calls for asset management.
+Async version of the asset repository for non-blocking API calls.
+Includes both public and internal API methods.
+Uses Routes class for centralized endpoint management.
+
+⚠️ INTERNAL API methods are marked and may change without notice.
 """
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
 from datetime import datetime
+import base64
 import logging
 
 if TYPE_CHECKING:
-    from ...core.client import HttpClient
+    from ...core.async_client import AsyncHttpClient
     from ...core.exceptions import ErrorHandler
 
+from ...core.routes import Routes
 from .models import Asset, AssetType, AssetLog
 from .enums import AssetState
 
 logger = logging.getLogger(__name__)
 
 
-class AssetRepository:
+class AsyncAssetRepository:
     """
-    Asset data access layer.
+    Async Asset data access layer.
 
-    Handles all HTTP API calls for asset CRUD operations.
+    Handles all async WATS API interactions for asset management.
+    Includes both public API methods and internal API methods (marked with ⚠️).
     """
 
     def __init__(
         self, 
-        http_client: "HttpClient",
+        http_client: "AsyncHttpClient",
+        base_url: str = "",
         error_handler: Optional["ErrorHandler"] = None
     ):
         """
-        Initialize with HTTP client.
+        Initialize with async HTTP client.
 
-        Args:`n            http_client: HttpClient instance for making requests
+        Args:
+            http_client: AsyncHttpClient for making async HTTP requests
+            base_url: Base URL (needed for internal API Referer header)
             error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
         """
         self._http_client = http_client
-        # Import here to avoid circular imports
+        self._base_url = base_url.rstrip('/') if base_url else ""
         from ...core.exceptions import ErrorHandler, ErrorMode
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
+
+    # =========================================================================
+    # Internal API Helpers
+    # =========================================================================
+
+    async def _internal_get(
+        self, 
+        endpoint: str, 
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_get"
+    ) -> Any:
+        """⚠️ INTERNAL: Make an internal API GET request with Referer header."""
+        response = await self._http_client.get(
+            endpoint,
+            params=params,
+            headers={"Referer": self._base_url}
+        )
+        return self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
+
+    async def _internal_post(
+        self,
+        endpoint: str,
+        data: Any = None,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        operation: str = "internal_post"
+    ) -> Any:
+        """⚠️ INTERNAL: Make an internal API POST request with Referer header."""
+        all_headers = {"Referer": self._base_url}
+        if headers:
+            all_headers.update(headers)
+        response = await self._http_client.post(
+            endpoint,
+            data=data,
+            params=params,
+            headers=all_headers
+        )
+        self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
+        return response
+
+    async def _internal_delete(
+        self,
+        endpoint: str,
+        data: Any = None,
+        params: Optional[Dict[str, Any]] = None,
+        operation: str = "internal_delete"
+    ) -> bool:
+        """⚠️ INTERNAL: Make an internal API DELETE request with Referer header."""
+        response = await self._http_client.delete(
+            endpoint,
+            params=params,
+            headers={"Referer": self._base_url}
+        )
+        self._error_handler.handle_response(
+            response, operation=operation, allow_empty=True
+        )
+        return response.is_success
 
     # =========================================================================
     # Asset CRUD
     # =========================================================================
 
-    def get_all(
+    async def get_all(
         self,
         filter_str: Optional[str] = None,
         orderby: Optional[str] = None,
@@ -54,15 +125,6 @@ class AssetRepository:
         Get all assets with optional OData filtering.
 
         GET /api/Asset
-
-        Args:
-            filter_str: OData filter string (e.g., "assetType eq 'Station'")
-            orderby: OData order by string (e.g., "name asc")
-            top: Maximum number of assets to return
-            skip: Number of assets to skip (for pagination)
-
-        Returns:
-            List of Asset objects, empty list if none found
         """
         logger.debug(f"Fetching assets (filter={filter_str}, top={top})")
         params: Dict[str, Any] = {}
@@ -75,8 +137,8 @@ class AssetRepository:
         if skip:
             params["$skip"] = skip
 
-        response = self._http_client.get(
-            "/api/Asset",
+        response = await self._http_client.get(
+            Routes.Asset.BASE,
             params=params if params else None
         )
         data = self._error_handler.handle_response(
@@ -86,23 +148,16 @@ class AssetRepository:
             assets = [Asset.model_validate(item) for item in data]
             logger.info(f"Retrieved {len(assets)} assets")
             return assets
-        logger.debug("No assets found")
         return []
 
-    def get_by_id(self, asset_id: str) -> Optional[Asset]:
+    async def get_by_id(self, asset_id: str) -> Optional[Asset]:
         """
         Get an asset by its ID.
 
         GET /api/Asset/{assetId}
-
-        Args:
-            asset_id: Asset UUID
-
-        Returns:
-            Asset object or None if not found
         """
         logger.debug(f"Fetching asset: {asset_id}")
-        response = self._http_client.get(f"/api/Asset/{asset_id}")
+        response = await self._http_client.get(Routes.Asset.asset(str(asset_id)))
         data = self._error_handler.handle_response(
             response, operation="get_by_id", allow_empty=True
         )
@@ -110,22 +165,15 @@ class AssetRepository:
             asset = Asset.model_validate(data)
             logger.info(f"Retrieved asset: {asset_id}")
             return asset
-        logger.debug(f"Asset not found: {asset_id}")
         return None
 
-    def get_by_serial_number(self, serial_number: str) -> Optional[Asset]:
+    async def get_by_serial_number(self, serial_number: str) -> Optional[Asset]:
         """
         Get an asset by its serial number.
 
         GET /api/Asset/{serialNumber}
-
-        Args:
-            serial_number: Asset serial number
-
-        Returns:
-            Asset object or None if not found
         """
-        response = self._http_client.get(f"/api/Asset/{serial_number}")
+        response = await self._http_client.get(Routes.Asset.asset(serial_number))
         data = self._error_handler.handle_response(
             response, operation="get_by_serial_number", allow_empty=True
         )
@@ -133,23 +181,17 @@ class AssetRepository:
             return Asset.model_validate(data)
         return None
 
-    def save(self, asset: Union[Asset, Dict[str, Any]]) -> Optional[Asset]:
+    async def save(self, asset: Union[Asset, Dict[str, Any]]) -> Optional[Asset]:
         """
         Create a new asset or update an existing one.
 
         PUT /api/Asset
-
-        Args:
-            asset: Asset object or dict with asset data
-
-        Returns:
-            Created/updated Asset object, or None on failure
         """
         if isinstance(asset, Asset):
             payload = asset.model_dump(mode="json", by_alias=True, exclude_none=True)
         else:
             payload = asset
-        response = self._http_client.put("/api/Asset", data=payload)
+        response = await self._http_client.put(Routes.Asset.BASE, data=payload)
         data = self._error_handler.handle_response(
             response, operation="save", allow_empty=False
         )
@@ -157,25 +199,18 @@ class AssetRepository:
             return Asset.model_validate(data)
         return None
 
-    def delete(self, asset_id: str, serial_number: Optional[str] = None) -> bool:
+    async def delete(self, asset_id: str, serial_number: Optional[str] = None) -> bool:
         """
         Delete an asset by ID or serial number.
 
         DELETE /api/Asset
-        
-        Args:
-            asset_id: Asset ID (GUID)
-            serial_number: Asset serial number (alternative to asset_id)
-
-        Returns:
-            True if deleted successfully, False otherwise
         """
         params: Dict[str, Any] = {}
         if asset_id:
             params["id"] = asset_id
         if serial_number:
             params["serialNumber"] = serial_number
-        response = self._http_client.delete("/api/Asset", params=params)
+        response = await self._http_client.delete(Routes.Asset.BASE, params=params)
         self._error_handler.handle_response(
             response, operation="delete", allow_empty=True
         )
@@ -185,7 +220,7 @@ class AssetRepository:
     # Asset Status and State
     # =========================================================================
 
-    def get_status(
+    async def get_status(
         self,
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None,
@@ -196,21 +231,6 @@ class AssetRepository:
         Get the current status of an asset including alarm state.
 
         GET /api/Asset/Status
-        
-        The status includes:
-        - state: Current asset state (AssetState)
-        - alarmState: 0=OK, 1=Warning, 2=Alarm
-        - message: Human-readable status message
-        - runningCount, totalCount, etc.
-        
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number (alternative)
-            translate: Whether to translate messages
-            culture_code: Culture for translations (e.g., 'zh-CN')
-
-        Returns:
-            Dict with status information, or None if not found
         """
         params: Dict[str, Any] = {}
         if asset_id:
@@ -222,7 +242,7 @@ class AssetRepository:
         if culture_code:
             params["cultureCode"] = culture_code
             
-        response = self._http_client.get("/api/Asset/Status", params=params)
+        response = await self._http_client.get(Routes.Asset.STATUS, params=params)
         data = self._error_handler.handle_response(
             response, operation="get_status", allow_empty=True
         )
@@ -230,7 +250,7 @@ class AssetRepository:
             return cast(Dict[str, Any], data)
         return None
 
-    def set_state(
+    async def set_state(
         self,
         state: Union[AssetState, int],
         asset_id: Optional[str] = None,
@@ -240,14 +260,6 @@ class AssetRepository:
         Set the state of an asset.
 
         PUT /api/Asset/State
-        
-        Args:
-            state: New state (0-6)
-            asset_id: Asset ID
-            serial_number: Asset serial number (alternative)
-
-        Returns:
-            True if state was set successfully, False otherwise
         """
         state_value = state.value if isinstance(state, AssetState) else state
         params: Dict[str, Any] = {"state": state_value}
@@ -255,7 +267,7 @@ class AssetRepository:
             params["id"] = asset_id
         if serial_number:
             params["serialNumber"] = serial_number
-        response = self._http_client.put("/api/Asset/State", params=params)
+        response = await self._http_client.put(Routes.Asset.STATE, params=params)
         self._error_handler.handle_response(
             response, operation="set_state", allow_empty=True
         )
@@ -265,7 +277,7 @@ class AssetRepository:
     # Asset Count
     # =========================================================================
 
-    def update_count(
+    async def update_count(
         self,
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None,
@@ -277,16 +289,6 @@ class AssetRepository:
         Increment the running and total count on an asset.
 
         PUT /api/Asset/Count
-        
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number (alternative)
-            total_count: New total count (calculates increment)
-            increment_by: Direct increment value
-            increment_children: Also increment child assets
-
-        Returns:
-            True if count was updated successfully, False otherwise
         """
         params: Dict[str, Any] = {}
         if asset_id:
@@ -299,13 +301,13 @@ class AssetRepository:
             params["incrementBy"] = increment_by
         if increment_children:
             params["incrementChildren"] = "true"
-        response = self._http_client.put("/api/Asset/Count", params=params)
+        response = await self._http_client.put(Routes.Asset.COUNT, params=params)
         self._error_handler.handle_response(
             response, operation="update_count", allow_empty=True
         )
         return response.is_success
 
-    def reset_running_count(
+    async def reset_running_count(
         self,
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None,
@@ -315,14 +317,6 @@ class AssetRepository:
         Reset the running count to 0.
 
         POST /api/Asset/ResetRunningCount
-        
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number (alternative)
-            comment: Log message
-
-        Returns:
-            True if running count was reset successfully, False otherwise
         """
         params: Dict[str, Any] = {}
         if asset_id:
@@ -331,8 +325,8 @@ class AssetRepository:
             params["serialNumber"] = serial_number
         if comment:
             params["comment"] = comment
-        response = self._http_client.post(
-            "/api/Asset/ResetRunningCount",
+        response = await self._http_client.post(
+            Routes.Asset.RESET_RUNNING_COUNT,
             params=params
         )
         self._error_handler.handle_response(
@@ -341,10 +335,10 @@ class AssetRepository:
         return response.is_success
 
     # =========================================================================
-    # Calibration
+    # Calibration and Maintenance
     # =========================================================================
 
-    def post_calibration(
+    async def post_calibration(
         self,
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None,
@@ -355,17 +349,6 @@ class AssetRepository:
         Inform that an asset has been calibrated.
 
         POST /api/Asset/Calibration
-        
-        This resets the running count and updates the calibration dates.
-        
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number (alternative)
-            date_time: Calibration date (default: now)
-            comment: Log message
-
-        Returns:
-            True if calibration was recorded successfully, False otherwise
         """
         params: Dict[str, Any] = {}
         if asset_id:
@@ -376,17 +359,13 @@ class AssetRepository:
             params["dateTime"] = date_time.isoformat()
         if comment:
             params["comment"] = comment
-        response = self._http_client.post("/api/Asset/Calibration", params=params)
+        response = await self._http_client.post(Routes.Asset.CALIBRATION, params=params)
         self._error_handler.handle_response(
             response, operation="post_calibration", allow_empty=True
         )
         return response.is_success
 
-    # =========================================================================
-    # Maintenance
-    # =========================================================================
-
-    def post_maintenance(
+    async def post_maintenance(
         self,
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None,
@@ -397,15 +376,6 @@ class AssetRepository:
         Inform that an asset has had maintenance.
 
         POST /api/Asset/Maintenance
-        
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number (alternative)
-            date_time: Maintenance date (default: now)
-            comment: Log message
-
-        Returns:
-            True if maintenance was recorded successfully, False otherwise
         """
         params: Dict[str, Any] = {}
         if asset_id:
@@ -416,7 +386,7 @@ class AssetRepository:
             params["dateTime"] = date_time.isoformat()
         if comment:
             params["comment"] = comment
-        response = self._http_client.post("/api/Asset/Maintenance", params=params)
+        response = await self._http_client.post(Routes.Asset.MAINTENANCE, params=params)
         self._error_handler.handle_response(
             response, operation="post_maintenance", allow_empty=True
         )
@@ -426,7 +396,7 @@ class AssetRepository:
     # Asset Log
     # =========================================================================
 
-    def get_log(
+    async def get_log(
         self,
         filter_str: Optional[str] = None,
         orderby: Optional[str] = None,
@@ -437,15 +407,6 @@ class AssetRepository:
         Get asset log records.
 
         GET /api/Asset/Log
-
-        Args:
-            filter_str: OData filter string
-            orderby: OData order by string
-            top: Maximum number of log entries to return
-            skip: Number of entries to skip (for pagination)
-
-        Returns:
-            List of AssetLog objects, empty list if none found
         """
         params: Dict[str, Any] = {}
         if filter_str:
@@ -456,8 +417,8 @@ class AssetRepository:
             params["$top"] = top
         if skip:
             params["$skip"] = skip
-        response = self._http_client.get(
-            "/api/Asset/Log",
+        response = await self._http_client.get(
+            Routes.Asset.LOG,
             params=params if params else None
         )
         data = self._error_handler.handle_response(
@@ -467,7 +428,7 @@ class AssetRepository:
             return [AssetLog.model_validate(item) for item in data]
         return []
 
-    def post_message(
+    async def post_message(
         self,
         asset_id: str,
         message: str,
@@ -477,19 +438,11 @@ class AssetRepository:
         Post a message to the asset log.
 
         POST /api/Asset/Message
-
-        Args:
-            asset_id: Asset ID
-            message: Log message to post
-            user: User who posted the message (optional)
-
-        Returns:
-            True if message was posted successfully, False otherwise
         """
         payload: Dict[str, Any] = {"assetId": asset_id, "comment": message}
         if user:
             payload["user"] = user
-        response = self._http_client.post("/api/Asset/Message", data=payload)
+        response = await self._http_client.post(Routes.Asset.MESSAGE, data=payload)
         self._error_handler.handle_response(
             response, operation="post_message", allow_empty=True
         )
@@ -499,7 +452,7 @@ class AssetRepository:
     # Asset Types
     # =========================================================================
 
-    def get_types(
+    async def get_types(
         self,
         filter_str: Optional[str] = None,
         top: Optional[int] = None
@@ -508,21 +461,14 @@ class AssetRepository:
         Get all asset types.
 
         GET /api/Asset/Types
-
-        Args:
-            filter_str: OData filter string
-            top: Maximum number of types to return
-
-        Returns:
-            List of AssetType objects, empty list if none found
         """
         params: Dict[str, Any] = {}
         if filter_str:
             params["$filter"] = filter_str
         if top:
             params["$top"] = top
-        response = self._http_client.get(
-            "/api/Asset/Types",
+        response = await self._http_client.get(
+            Routes.Asset.TYPES,
             params=params if params else None
         )
         data = self._error_handler.handle_response(
@@ -532,7 +478,7 @@ class AssetRepository:
             return [AssetType.model_validate(item) for item in data]
         return []
 
-    def save_type(
+    async def save_type(
         self,
         asset_type: Union[AssetType, Dict[str, Any]]
     ) -> Optional[AssetType]:
@@ -540,18 +486,12 @@ class AssetRepository:
         Create or update an asset type.
 
         PUT /api/Asset/Types
-
-        Args:
-            asset_type: AssetType object or dict with type data
-
-        Returns:
-            Created/updated AssetType object, or None on failure
         """
         if isinstance(asset_type, AssetType):
             payload = asset_type.model_dump(by_alias=True, exclude_none=True)
         else:
             payload = asset_type
-        response = self._http_client.put("/api/Asset/Types", data=payload)
+        response = await self._http_client.put(Routes.Asset.TYPES, data=payload)
         data = self._error_handler.handle_response(
             response, operation="save_type", allow_empty=False
         )
@@ -563,7 +503,7 @@ class AssetRepository:
     # Sub-Assets
     # =========================================================================
 
-    def get_sub_assets(
+    async def get_sub_assets(
         self,
         parent_id: Optional[str] = None,
         parent_serial: Optional[str] = None,
@@ -573,14 +513,6 @@ class AssetRepository:
         Get child assets of a parent asset.
 
         GET /api/Asset/SubAssets
-        
-        Args:
-            parent_id: Parent asset ID
-            parent_serial: Parent asset serial number (alternative)
-            level: How many levels deep (0=all, 1=direct children)
-
-        Returns:
-            List of child Asset objects, empty list if none found
         """
         params: Dict[str, Any] = {}
         if parent_id:
@@ -589,7 +521,7 @@ class AssetRepository:
             params["serialNumber"] = parent_serial
         if level is not None:
             params["level"] = level
-        response = self._http_client.get("/api/Asset/SubAssets", params=params)
+        response = await self._http_client.get(Routes.Asset.SUB_ASSETS, params=params)
         data = self._error_handler.handle_response(
             response, operation="get_sub_assets", allow_empty=True
         )
@@ -598,109 +530,85 @@ class AssetRepository:
         return []
 
     # =========================================================================
-    # File Operations - Delegated to Internal Repository
+    # ⚠️ INTERNAL API - File Operations (Blob)
     # =========================================================================
 
-    def upload_file(
+    async def upload_file(
         self,
         asset_id: str,
         filename: str,
-        content: bytes,
-        base_url: str
+        content: bytes
     ) -> bool:
         """
-        Upload a file to an asset.
+        ⚠️ INTERNAL: Upload a file to an asset.
 
-        ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
-        
-        Note: This method is deprecated. Use AssetServiceInternal instead.
-        
-        Args:
-            asset_id: Asset ID
-            filename: Unique filename
-            content: File content as bytes
-            base_url: Base URL for Referer header
-
-        Returns:
-            True if file was uploaded successfully, False otherwise
+        POST /api/internal/Blob/Asset
         """
-        from .repository_internal import AssetRepositoryInternal
-        internal_repo = AssetRepositoryInternal(
-            self._http_client, base_url, self._error_handler
+        params = {"assetId": asset_id, "filename": filename}
+        response = await self._internal_post(
+            Routes.Asset.Internal.BLOB_BASE,
+            params=params,
+            data=content,
+            headers={"Content-Type": "application/octet-stream"},
+            operation="upload_file"
         )
-        return internal_repo.upload_file(asset_id, filename, content)
+        return response.is_success if response else False
 
-    def download_file(
+    async def download_file(
         self,
         asset_id: str,
-        filename: str,
-        base_url: str
+        filename: str
     ) -> Optional[bytes]:
         """
-        Download a file from an asset.
+        ⚠️ INTERNAL: Download a file from an asset.
 
-        ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
-        
-        Note: This method is deprecated. Use AssetServiceInternal instead.
-        
-        Args:
-            asset_id: Asset ID
-            filename: Filename to download
-            base_url: Base URL for Referer header
-            
-        Returns:
-            File content as bytes, or None if not found
+        GET /api/internal/Blob/Asset
         """
-        from .repository_internal import AssetRepositoryInternal
-        internal_repo = AssetRepositoryInternal(
-            self._http_client, base_url, self._error_handler
+        params = {"assetId": asset_id, "filename": filename}
+        response = await self._http_client.get(
+            Routes.Asset.Internal.BLOB_BASE,
+            params=params,
+            headers={"Referer": self._base_url}
         )
-        return internal_repo.download_file(asset_id, filename)
-
-    def list_files(self, asset_id: str, base_url: str) -> List[str]:
-        """
-        List all files attached to an asset.
-
-        ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
-        
-        Note: This method is deprecated. Use AssetServiceInternal instead.
-        
-        Args:
-            asset_id: Asset ID
-            base_url: Base URL for Referer header
-            
-        Returns:
-            List of filenames
-        """
-        from .repository_internal import AssetRepositoryInternal
-        internal_repo = AssetRepositoryInternal(
-            self._http_client, base_url, self._error_handler
+        data = self._error_handler.handle_response(
+            response, operation="download_file", allow_empty=True
         )
-        return internal_repo.list_files(asset_id)
+        if data:
+            if isinstance(data, bytes):
+                return data
+            if isinstance(data, dict):
+                content = data.get("content") or data.get("Content")
+                if content:
+                    return base64.b64decode(content)
+        return None
 
-    def delete_files(
+    async def list_files(self, asset_id: str) -> List[str]:
+        """
+        ⚠️ INTERNAL: List all files attached to an asset.
+
+        GET /api/internal/Blob/Asset/List/{assetId}
+        """
+        data = await self._internal_get(
+            Routes.Asset.Internal.list_files(str(asset_id)),
+            operation="list_files"
+        )
+        if data:
+            return list(data) if isinstance(data, list) else []
+        return []
+
+    async def delete_files(
         self,
         asset_id: str,
-        filenames: List[str],
-        base_url: str
+        filenames: List[str]
     ) -> bool:
         """
-        Delete files from an asset.
+        ⚠️ INTERNAL: Delete files from an asset.
 
-        ⚠️ INTERNAL API - Delegated to AssetRepositoryInternal.
-        
-        Note: This method is deprecated. Use AssetServiceInternal instead.
-        
-        Args:
-            asset_id: Asset ID
-            filenames: List of filenames to delete
-            base_url: Base URL for Referer header
-
-        Returns:
-            True if files were deleted successfully, False otherwise
+        DELETE /api/internal/Blob/Assets
         """
-        from .repository_internal import AssetRepositoryInternal
-        internal_repo = AssetRepositoryInternal(
-            self._http_client, base_url, self._error_handler
+        return await self._internal_delete(
+            Routes.Asset.Internal.DELETE_FILES,
+            params={"assetId": asset_id},
+            data=filenames,
+            operation="delete_files"
         )
-        return internal_repo.delete_files(asset_id, filenames)

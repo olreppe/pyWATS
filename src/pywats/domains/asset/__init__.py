@@ -4,10 +4,14 @@ Provides models, services, and repository for asset management.
 """
 from .models import Asset, AssetType, AssetLog
 from .enums import AssetState, AssetLogType, AssetAlarmState
-from .service import AssetService
-from .repository import AssetRepository
-from .service_internal import AssetServiceInternal
-from .repository_internal import AssetRepositoryInternal
+
+# Async implementations (primary API)
+from .async_repository import AsyncAssetRepository
+from .async_service import AsyncAssetService
+
+# Backward-compatible aliases
+AssetRepository = AsyncAssetRepository
+AssetService = AsyncAssetService
 
 __all__ = [
     # Models
@@ -18,10 +22,10 @@ __all__ = [
     "AssetState",
     "AssetLogType",
     "AssetAlarmState",
-    # Service & Repository
-    "AssetService",
+    # Async implementations (primary API)
+    "AsyncAssetRepository",
+    "AsyncAssetService",
+    # Backward-compatible aliases
     "AssetRepository",
-    # Internal Service & Repository
-    "AssetServiceInternal",
-    "AssetRepositoryInternal",
+    "AssetService",
 ]

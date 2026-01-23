@@ -1,51 +1,50 @@
-"""Asset service - business logic layer.
+"""Asset service - thin sync wrapper around AsyncAssetService.
 
-Provides high-level operations for asset management.
-
-Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
-that may change without notice. Use with caution.
+This module provides synchronous access to AsyncAssetService methods.
+All business logic is maintained in async_service.py (source of truth).
 """
-from typing import Optional, List, Dict, Union, Any, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 from uuid import UUID
-from pathlib import Path
-import logging
 
-if TYPE_CHECKING:
-    from .service_internal import AssetServiceInternal
-
+from .async_service import AsyncAssetService
+from .async_repository import AsyncAssetRepository
 from .models import Asset, AssetType, AssetLog
-
-logger = logging.getLogger(__name__)
-from .enums import AssetState, AssetAlarmState
-from .repository import AssetRepository
+from .enums import AssetState
+from ...core.sync_runner import run_sync
 
 
 class AssetService:
     """
-    Asset business logic.
+    Synchronous wrapper for AsyncAssetService.
 
-    Provides high-level operations for managing assets including
-    validation, state management, and business rules.
+    Provides sync access to all async asset service operations.
+    All business logic is in AsyncAssetService.
     """
 
-    def __init__(
-        self, 
-        repository: AssetRepository, 
-        base_url: Optional[str] = None,
-        internal_service: Optional["AssetServiceInternal"] = None
-    ):
+    def __init__(self, async_service: AsyncAssetService = None, *, repository=None):
         """
-        Initialize with repository.
+        Initialize with AsyncAssetService or repository.
 
         Args:
-            repository: AssetRepository for data access
-            base_url: Base URL for internal API file operations
-            internal_service: Optional internal service for internal API methods
+            async_service: AsyncAssetService instance to wrap
+            repository: (Deprecated) Repository instance for backward compatibility
         """
-        self._repository = repository
-        self._base_url = base_url or ""
-        self._internal = internal_service
+        if repository is not None:
+            # Backward compatibility: create async service from repository
+            self._async_service = AsyncAssetService(repository)
+            self._repository = repository
+        elif async_service is not None:
+            self._async_service = async_service
+            self._repository = async_service._repository
+        else:
+            raise ValueError("Either async_service or repository must be provided")
+
+    @classmethod
+    def from_repository(cls, repository: AsyncAssetRepository) -> "AssetService":
+        """Create AssetService from an AsyncAssetRepository."""
+        async_service = AsyncAssetService(repository)
+        return cls(async_service)
 
     # =========================================================================
     # Asset Operations
@@ -54,53 +53,24 @@ class AssetService:
     def get_assets(
         self,
         filter_str: Optional[str] = None,
-        top: Optional[int] = None
+        orderby: Optional[str] = None,
+        top: Optional[int] = None,
+        skip: Optional[int] = None
     ) -> List[Asset]:
-        """
-        Get all assets.
+        """Get all assets with optional filtering."""
+        return run_sync(self._async_service.get_assets(filter_str, orderby, top, skip))
 
-        Args:
-            filter_str: Optional OData filter string
-            top: Optional max number of results
-
-        Returns:
-            List of Asset objects
-        """
-        return self._repository.get_all(filter_str=filter_str, top=top)
-
-    def get_asset(self, identifier: str) -> Optional[Asset]:
-        """
-        Get an asset by ID or serial number.
-
-        Args:
-            identifier: Asset ID (GUID) or serial number
-
-        Returns:
-            Asset if found, None otherwise
-            
-        Raises:
-            ValueError: If identifier is empty or None
-        """
-        if not identifier or not str(identifier).strip():
-            raise ValueError("identifier is required")
-        return self._repository.get_by_id(identifier)
+    def get_asset(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
+    ) -> Optional[Asset]:
+        """Get an asset by ID or serial number."""
+        return run_sync(self._async_service.get_asset(asset_id, serial_number))
 
     def get_asset_by_serial(self, serial_number: str) -> Optional[Asset]:
-        """
-        Get an asset by serial number.
-
-        Args:
-            serial_number: Asset serial number
-
-        Returns:
-            Asset if found, None otherwise
-            
-        Raises:
-            ValueError: If serial_number is empty or None
-        """
-        if not serial_number or not serial_number.strip():
-            raise ValueError("serial_number is required")
-        return self._repository.get_by_serial_number(serial_number)
+        """Get an asset by its serial number."""
+        return run_sync(self._async_service.get_asset_by_serial(serial_number))
 
     def create_asset(
         self,
@@ -125,50 +95,8 @@ class AssetService:
         total_count: Optional[int] = None,
         running_count: Optional[int] = None,
     ) -> Optional[Asset]:
-        """
-        Create a new asset.
-
-        Args:
-            serial_number: Unique serial number (required)
-            type_id: Asset type UUID (required)
-            asset_name: Optional display name
-            description: Optional description text
-            location: Optional physical location
-            parent_asset_id: Parent asset ID for hierarchical assets
-            parent_serial_number: Parent asset serial number for hierarchy
-            part_number: Asset part number
-            revision: Asset revision string
-            state: Asset state (default: AssetState.OK). Values: OK, Warning, Alarm, etc.
-            client_id: Client identifier
-            first_seen_date: Date asset was first seen
-            last_seen_date: Date asset was last seen
-            last_maintenance_date: Date of last maintenance
-            next_maintenance_date: Date of next scheduled maintenance
-            last_calibration_date: Date of last calibration
-            next_calibration_date: Date of next scheduled calibration
-            total_count: Total usage count
-            running_count: Running count since last calibration
-
-        Returns:
-            Created Asset object, or None on failure
-            
-        Raises:
-            ValueError: If serial_number or type_id is empty/None
-            
-        Example:
-            >>> asset = service.create_asset(
-            ...     serial_number="SN-001",
-            ...     type_id=my_type_id,
-            ...     asset_name="Test Station 1",
-            ...     location="Lab A",
-            ...     state=AssetState.OK
-            ... )
-        """
-        if not serial_number or not serial_number.strip():
-            raise ValueError("serial_number is required")
-        if not type_id:
-            raise ValueError("type_id is required")
-        asset = Asset(
+        """Create a new asset."""
+        return run_sync(self._async_service.create_asset(
             serial_number=serial_number,
             type_id=type_id,
             asset_name=asset_name,
@@ -188,289 +116,71 @@ class AssetService:
             next_calibration_date=next_calibration_date,
             total_count=total_count,
             running_count=running_count,
-        )
-        result = self._repository.save(asset)
-        if result:
-            logger.info(f"ASSET_CREATED: {result.serial_number} (type_id={type_id}, name={asset_name})")
-        return result
+        ))
 
     def update_asset(self, asset: Asset) -> Optional[Asset]:
-        """
-        Update an existing asset.
-
-        Args:
-            asset: Asset object with updated fields
-
-        Returns:
-            Updated Asset object
-        """
-        result = self._repository.save(asset)
-        if result:
-            logger.info(f"ASSET_UPDATED: {result.serial_number} (id={result.asset_id})")
-        return result
+        """Update an existing asset."""
+        return run_sync(self._async_service.update_asset(asset))
 
     def delete_asset(
         self,
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None
     ) -> bool:
-        """
-        Delete an asset by ID or serial number.
-
-        Args:
-            asset_id: Asset ID to delete
-            serial_number: Asset serial number to delete
-
-        Returns:
-            True if successful
-            
-        Raises:
-            ValueError: If neither asset_id nor serial_number is provided
-        """
-        if not asset_id and not serial_number:
-            raise ValueError("Either asset_id or serial_number is required")
-        # Repository requires asset_id as first arg, but we handle both
-        if asset_id:
-            result = self._repository.delete(asset_id=asset_id, serial_number=serial_number)
-            if result:
-                logger.info(f"ASSET_DELETED: id={asset_id} (sn={serial_number})")
-            return result
-        elif serial_number:
-            # Get asset by serial to get ID
-            asset = self._repository.get_by_serial_number(serial_number)
-            if asset and asset.asset_id:
-                result = self._repository.delete(asset_id=asset.asset_id)
-                if result:
-                    logger.info(f"ASSET_DELETED: {serial_number} (id={asset.asset_id})")
-                return result
-        return False
+        """Delete an asset."""
+        return run_sync(self._async_service.delete_asset(asset_id, serial_number))
 
     # =========================================================================
-    # Status Operations
+    # Asset Status and State
     # =========================================================================
 
     def get_status(
         self,
         asset_id: Optional[str] = None,
-        serial_number: Optional[str] = None,
-        translate: bool = True,
-        culture_code: Optional[str] = None
+        serial_number: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
-        """
-        Get asset status including alarm information.
-
-        This is the primary way to check if an asset is in alarm
-        (needs calibration, maintenance, or has exceeded counts).
-
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number
-            translate: Whether to translate status messages
-            culture_code: Culture for translations (e.g., 'en-US')
-
-        Returns:
-            Status dictionary with alarm info or None
-            
-        Raises:
-            ValueError: If neither asset_id nor serial_number is provided
-        """
-        if not asset_id and not serial_number:
-            raise ValueError("Either asset_id or serial_number is required")
-        return self._repository.get_status(
-            asset_id=asset_id,
-            serial_number=serial_number,
-            translate=translate,
-            culture_code=culture_code
-        )
-
-    # =========================================================================
-    # State Management
-    # =========================================================================
+        """Get the current status of an asset."""
+        return run_sync(self._async_service.get_status(asset_id, serial_number))
 
     def get_asset_state(self, asset_id: str) -> Optional[AssetState]:
-        """
-        Get the current state of an asset.
-
-        Args:
-            asset_id: Asset ID
-
-        Returns:
-            Current AssetState or None if not found
-        """
-        asset = self._repository.get_by_id(asset_id)
-        return asset.state if asset else None
+        """Get the current state of an asset."""
+        return run_sync(self._async_service.get_asset_state(asset_id))
 
     def set_asset_state(
         self,
-        state: AssetState,
+        state: Union[AssetState, int],
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None
     ) -> bool:
-        """
-        Set the state of an asset.
-
-        Args:
-            state: New state
-            asset_id: Asset ID
-            serial_number: Asset serial number
-
-        Returns:
-            True if successful
-        """
-        result = self._repository.set_state(
-            state=state,
-            asset_id=asset_id,
-            serial_number=serial_number
-        )
-        if result:
-            identifier = serial_number or asset_id
-            logger.info(f"ASSET_STATE_CHANGED: {identifier} (state={state.name})")
-        return result
+        """Set the state of an asset."""
+        return run_sync(self._async_service.set_asset_state(state, asset_id, serial_number))
 
     def is_in_alarm(self, asset: Asset) -> bool:
-        """
-        Check if an asset is in alarm state.
-
-        Uses get_status to determine alarm state.
-        Consider using get_status directly for more detail.
-
-        Args:
-            asset: Asset to check
-
-        Returns:
-            True if asset is in alarm
-        """
-        status = self.get_status(
-            asset_id=asset.asset_id,
-            serial_number=asset.serial_number
-        )
-        if status:
-            # Support both snake_case (preferred) and camelCase (backend) keys
-            alarm_state = status.get("alarm_state") or status.get("alarmState", 0)
-            return bool(alarm_state == AssetAlarmState.ALARM.value)
-        return False
+        """Check if an asset is in alarm state."""
+        return self._async_service.is_in_alarm(asset)  # Sync method, no await
 
     def is_in_warning(self, asset: Asset) -> bool:
-        """
-        Check if an asset is in warning state.
+        """Check if an asset is in warning state."""
+        return self._async_service.is_in_warning(asset)  # Sync method, no await
 
-        Args:
-            asset: Asset to check
+    def get_assets_in_alarm(self, top: Optional[int] = None) -> List[Asset]:
+        """Get all assets currently in alarm state."""
+        return run_sync(self._async_service.get_assets_in_alarm(top))
 
-        Returns:
-            True if asset is in warning
-        """
-        status = self.get_status(
-            asset_id=asset.asset_id,
-            serial_number=asset.serial_number
-        )
-        if status:
-            # Support both snake_case (preferred) and camelCase (backend) keys
-            alarm_state = status.get("alarm_state") or status.get("alarmState", 0)
-            return bool(alarm_state == AssetAlarmState.WARNING.value)
-        return False
-
-    def get_assets_in_alarm(
-        self,
-        top: Optional[int] = None
-    ) -> List[Asset]:
-        """
-        Get all assets that are currently in alarm state.
-
-        ⚠️ PERFORMANCE NOTE: This method requires checking status for each asset
-        individually (N+1 API calls). For large datasets, consider:
-        - Using `top` parameter to limit results
-        - Pre-filtering with `get_assets(filter_str=...)` before calling
-        - Using the internal API via AssetRepositoryInternal (if available)
-
-        Args:
-            top: Maximum number of assets to check (default: all)
-                 Recommended for large asset databases.
-
-        Returns:
-            List of assets in alarm state
-        """
-        assets = self._repository.get_all(top=top)
-        result = []
-        for asset in assets:
-            status = self.get_status(
-                asset_id=asset.asset_id,
-                serial_number=asset.serial_number
-            )
-            # Support both snake_case (preferred) and camelCase (backend) keys
-            alarm_state = status.get("alarm_state") or status.get("alarmState") if status else None
-            if alarm_state == AssetAlarmState.ALARM.value:
-                result.append(asset)
-        return result
-
-    def get_assets_in_warning(
-        self,
-        top: Optional[int] = None
-    ) -> List[Asset]:
-        """
-        Get all assets that are currently in warning state.
-
-        ⚠️ PERFORMANCE NOTE: This method requires checking status for each asset
-        individually (N+1 API calls). For large datasets, consider:
-        - Using `top` parameter to limit results
-        - Pre-filtering with `get_assets(filter_str=...)` before calling
-        - Using the internal API via AssetRepositoryInternal (if available)
-
-        Args:
-            top: Maximum number of assets to check (default: all)
-                 Recommended for large asset databases.
-
-        Returns:
-            List of assets in warning state
-        """
-        assets = self._repository.get_all(top=top)
-        result = []
-        for asset in assets:
-            status = self.get_status(
-                asset_id=asset.asset_id,
-                serial_number=asset.serial_number
-            )
-            # Support both snake_case (preferred) and camelCase (backend) keys
-            alarm_state = status.get("alarm_state") or status.get("alarmState") if status else None
-            if alarm_state == AssetAlarmState.WARNING.value:
-                result.append(asset)
-        return result
+    def get_assets_in_warning(self, top: Optional[int] = None) -> List[Asset]:
+        """Get all assets currently in warning state."""
+        return run_sync(self._async_service.get_assets_in_warning(top))
 
     def get_assets_by_alarm_state(
         self,
-        alarm_states: List[AssetAlarmState],
+        state: Union[AssetState, int],
         top: Optional[int] = None
     ) -> List[Asset]:
-        """
-        Get assets filtered by multiple alarm states.
-
-        ⚠️ PERFORMANCE NOTE: This method requires checking status for each asset
-        individually (N+1 API calls). For large datasets, consider:
-        - Using `top` parameter to limit results
-        - Pre-filtering with `get_assets(filter_str=...)` before calling
-        
-        Args:
-            alarm_states: List of alarm states to include (OK, WARNING, ALARM)
-            top: Maximum number of assets to check (default: all)
-
-        Returns:
-            List of assets matching any of the specified alarm states
-        """
-        assets = self._repository.get_all(top=top)
-        result = []
-        state_values = [s.value for s in alarm_states]
-        for asset in assets:
-            status = self.get_status(
-                asset_id=asset.asset_id,
-                serial_number=asset.serial_number
-            )
-            alarm_state = status.get("alarm_state") or status.get("alarmState") if status else None
-            if alarm_state in state_values:
-                result.append(asset)
-        return result
+        """Get assets by their alarm state."""
+        return run_sync(self._async_service.get_assets_by_alarm_state(state, top))
 
     # =========================================================================
-    # Count Operations
+    # Asset Count Operations
     # =========================================================================
 
     def increment_count(
@@ -480,24 +190,10 @@ class AssetService:
         amount: int = 1,
         increment_children: bool = False
     ) -> bool:
-        """
-        Increment the usage count of an asset.
-
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number
-            amount: Amount to increment by (default 1)
-            increment_children: Also increment child asset counts
-
-        Returns:
-            True if successful
-        """
-        return self._repository.update_count(
-            asset_id=asset_id,
-            serial_number=serial_number,
-            increment_by=amount,
-            increment_children=increment_children
-        )
+        """Increment the usage count of an asset."""
+        return run_sync(self._async_service.increment_count(
+            asset_id, serial_number, amount, increment_children
+        ))
 
     def reset_running_count(
         self,
@@ -505,115 +201,49 @@ class AssetService:
         serial_number: Optional[str] = None,
         comment: Optional[str] = None
     ) -> bool:
-        """
-        Reset the running count of an asset.
-
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number
-            comment: Optional comment explaining reset
-
-        Returns:
-            True if successful
-        """
-        result = self._repository.reset_running_count(
-            asset_id=asset_id,
-            serial_number=serial_number,
-            comment=comment
-        )
-        if result:
-            identifier = serial_number or asset_id
-            logger.info(f"ASSET_RUNNING_COUNT_RESET: {identifier}")
-        return result
+        """Reset the running count to 0."""
+        return run_sync(self._async_service.reset_running_count(asset_id, serial_number, comment))
 
     # =========================================================================
-    # Calibration & Maintenance
+    # Calibration and Maintenance
     # =========================================================================
 
     def record_calibration(
         self,
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None,
-        comment: Optional[str] = None,
-        calibration_date: Optional[datetime] = None
+        date_time: Optional[datetime] = None,
+        comment: Optional[str] = None
     ) -> bool:
-        """
-        Record a calibration event for an asset.
-
-        This resets the calibration interval timer and logs the event.
-
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number
-            comment: Optional comment
-            calibration_date: Date of calibration (default: now)
-
-        Returns:
-            True if successful
-        """
-        result = self._repository.post_calibration(
-            asset_id=asset_id,
-            serial_number=serial_number,
-            date_time=calibration_date,
-            comment=comment
-        )
-        if result:
-            identifier = serial_number or asset_id
-            logger.info(f"ASSET_CALIBRATED: {identifier}")
-        return result
+        """Record that an asset has been calibrated."""
+        return run_sync(self._async_service.record_calibration(
+            asset_id, serial_number, date_time, comment
+        ))
 
     def record_maintenance(
         self,
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None,
-        comment: Optional[str] = None,
-        maintenance_date: Optional[datetime] = None
+        date_time: Optional[datetime] = None,
+        comment: Optional[str] = None
     ) -> bool:
-        """
-        Record a maintenance event for an asset.
-
-        This resets the maintenance interval timer and logs the event.
-
-        Args:
-            asset_id: Asset ID
-            serial_number: Asset serial number
-            comment: Optional comment
-            maintenance_date: Date of maintenance (default: now)
-
-        Returns:
-            True if successful
-        """
-        result = self._repository.post_maintenance(
-            asset_id=asset_id,
-            serial_number=serial_number,
-            date_time=maintenance_date,
-            comment=comment
-        )
-        if result:
-            identifier = serial_number or asset_id
-            logger.info(f"ASSET_MAINTENANCE_RECORDED: {identifier}")
-        return result
+        """Record that an asset has had maintenance."""
+        return run_sync(self._async_service.record_maintenance(
+            asset_id, serial_number, date_time, comment
+        ))
 
     # =========================================================================
-    # Log Operations
+    # Asset Log
     # =========================================================================
 
     def get_asset_log(
         self,
         filter_str: Optional[str] = None,
+        orderby: Optional[str] = None,
         top: Optional[int] = None
     ) -> List[AssetLog]:
-        """
-        Get asset log entries.
-
-        Args:
-            filter_str: Optional OData filter
-            top: Max number of entries
-
-        Returns:
-            List of AssetLog entries
-        """
-        return self._repository.get_log(filter_str=filter_str, top=top)
+        """Get asset log records."""
+        return run_sync(self._async_service.get_asset_log(filter_str, orderby, top))
 
     def add_log_message(
         self,
@@ -621,34 +251,16 @@ class AssetService:
         message: str,
         user: Optional[str] = None
     ) -> bool:
-        """
-        Add a message to the asset log.
-
-        Args:
-            asset_id: Asset ID
-            message: Message text
-            user: Optional user name
-
-        Returns:
-            True if successful
-        """
-        result = self._repository.post_message(asset_id, message, user)
-        if result:
-            logger.info(f"ASSET_LOG_MESSAGE_ADDED: id={asset_id}")
-        return result
+        """Post a message to the asset log."""
+        return run_sync(self._async_service.add_log_message(asset_id, message, user))
 
     # =========================================================================
     # Asset Types
     # =========================================================================
 
     def get_asset_types(self) -> List[AssetType]:
-        """
-        Get all asset types.
-
-        Returns:
-            List of AssetType objects
-        """
-        return self._repository.get_types()
+        """Get all asset types."""
+        return run_sync(self._async_service.get_asset_types())
 
     def create_asset_type(
         self,
@@ -662,31 +274,8 @@ class AssetService:
         *,
         icon: Optional[str] = None,
     ) -> Optional[AssetType]:
-        """
-        Create a new asset type.
-
-        Args:
-            type_name: Name of the asset type (required)
-            running_count_limit: Max running count before alarm triggers
-            total_count_limit: Maximum total usage count
-            calibration_interval: Days between calibrations (float)
-            maintenance_interval: Days between maintenance (float)
-            warning_threshold: Warning threshold percentage (0-100)
-            alarm_threshold: Alarm threshold percentage (0-100)
-            icon: Icon identifier string for UI display
-
-        Returns:
-            Created AssetType object, or None on failure
-            
-        Example:
-            >>> asset_type = service.create_asset_type(
-            ...     type_name="Test Station",
-            ...     calibration_interval=365.0,
-            ...     warning_threshold=80.0,
-            ...     alarm_threshold=90.0
-            ... )
-        """
-        asset_type = AssetType(
+        """Create a new asset type."""
+        return run_sync(self._async_service.create_asset_type(
             type_name=type_name,
             running_count_limit=running_count_limit,
             total_count_limit=total_count_limit,
@@ -695,11 +284,7 @@ class AssetService:
             warning_threshold=warning_threshold,
             alarm_threshold=alarm_threshold,
             icon=icon,
-        )
-        result = self._repository.save_type(asset_type)
-        if result:
-            logger.info(f"ASSET_TYPE_CREATED: {result.type_name} (id={result.type_id})")
-        return result
+        ))
 
     # =========================================================================
     # Sub-Assets
@@ -711,331 +296,29 @@ class AssetService:
         parent_serial: Optional[str] = None,
         level: Optional[int] = None
     ) -> List[Asset]:
-        """
-        Get child assets of a parent.
+        """Get child assets of a parent asset."""
+        return run_sync(self._async_service.get_child_assets(parent_id, parent_serial, level))
 
-        Args:
-            parent_id: Parent asset ID
-            parent_serial: Parent asset serial number
-            level: Optional depth level (None = all levels)
-
-        Returns:
-            List of child Asset objects
-        """
-        return self._repository.get_sub_assets(
-            parent_id=parent_id,
-            parent_serial=parent_serial,
-            level=level
-        )
-
-    def add_child_asset(
-        self,
-        parent_serial: str,
-        child_serial: str,
-        child_type_id: UUID,
-        child_name: Optional[str] = None,
-        *,
-        description: Optional[str] = None,
-        location: Optional[str] = None,
-        part_number: Optional[str] = None,
-        revision: Optional[str] = None,
-        state: AssetState = AssetState.OK,
-    ) -> Optional[Asset]:
-        """
-        Create a new child asset under a parent.
-
-        Args:
-            parent_serial: Parent asset serial number (required)
-            child_serial: New child asset serial number (required)
-            child_type_id: Asset type UUID for child (required)
-            child_name: Optional display name for child
-            description: Optional description text
-            location: Optional physical location
-            part_number: Child asset part number
-            revision: Child asset revision string
-            state: Asset state (default: AssetState.OK)
-
-        Returns:
-            Created child Asset object, or None on failure
-            
-        Example:
-            >>> child = service.add_child_asset(
-            ...     parent_serial="PARENT-001",
-            ...     child_serial="CHILD-001",
-            ...     child_type_id=probe_type_id,
-            ...     child_name="Probe A"
-            ... )
-        """
-        child = Asset(
-            serial_number=child_serial,
-            type_id=child_type_id,
-            asset_name=child_name,
-            parent_serial_number=parent_serial,
-            description=description,
-            location=location,
-            part_number=part_number,
-            revision=revision,
-            state=state,
-        )
-        result = self._repository.save(child)
-        if result:
-            logger.info(f"ASSET_CHILD_ADDED: {child_serial} (parent={parent_serial})")
-        return result
+    def add_child_asset(self, parent_id: str, child_id: str) -> bool:
+        """Add a child asset to a parent asset."""
+        return run_sync(self._async_service.add_child_asset(parent_id, child_id))
 
     # =========================================================================
-    # File Operations
+    # ⚠️ INTERNAL API - File Operations
     # =========================================================================
 
-    def upload_file(
-        self,
-        asset_id: str,
-        filename: str,
-        content: bytes
-    ) -> bool:
-        """
-        Upload a file attachment to an asset.
+    def upload_file(self, asset_id: str, filename: str, content: bytes) -> bool:
+        """⚠️ INTERNAL: Upload a file to an asset."""
+        return run_sync(self._async_service.upload_file(asset_id, filename, content))
 
-        ⚠️ Uses internal API - requires base_url to be set.
-
-        Args:
-            asset_id: Asset ID
-            filename: Unique filename
-            content: File content as bytes
-
-        Returns:
-            True if successful
-        """
-        result = self._repository.upload_file(
-            asset_id=asset_id,
-            filename=filename,
-            content=content,
-            base_url=self._base_url
-        )
-        if result:
-            logger.info(f"ASSET_FILE_UPLOADED: id={asset_id} (filename={filename}, size={len(content)})")
-        return result
-
-    def upload_file_from_path(
-        self,
-        asset_id: str,
-        file_path: Union[str, Path],
-        filename: Optional[str] = None
-    ) -> bool:
-        """
-        Upload a file from disk to an asset.
-
-        Args:
-            asset_id: Asset ID
-            file_path: Path to the file to upload
-            filename: Optional custom filename (defaults to original)
-
-        Returns:
-            True if successful
-        """
-        path = Path(file_path)
-        with open(path, "rb") as f:
-            content = f.read()
-        return self.upload_file(
-            asset_id=asset_id,
-            filename=filename or path.name,
-            content=content
-        )
-
-    def download_file(
-        self,
-        asset_id: str,
-        filename: str
-    ) -> Optional[bytes]:
-        """
-        Download a file attachment from an asset.
-
-        Args:
-            asset_id: Asset ID
-            filename: Filename to download
-
-        Returns:
-            File content as bytes, or None if not found
-        """
-        return self._repository.download_file(
-            asset_id=asset_id,
-            filename=filename,
-            base_url=self._base_url
-        )
-
-    def download_file_to_path(
-        self,
-        asset_id: str,
-        filename: str,
-        destination: Union[str, Path]
-    ) -> bool:
-        """
-        Download a file from an asset to disk.
-
-        Args:
-            asset_id: Asset ID
-            filename: Filename to download
-            destination: Path to save the file
-
-        Returns:
-            True if successful
-        """
-        content = self.download_file(asset_id=asset_id, filename=filename)
-        if content:
-            with open(destination, "wb") as f:
-                f.write(content)
-            return True
-        return False
+    def download_file(self, asset_id: str, filename: str) -> Optional[bytes]:
+        """⚠️ INTERNAL: Download a file from an asset."""
+        return run_sync(self._async_service.download_file(asset_id, filename))
 
     def list_files(self, asset_id: str) -> List[str]:
-        """
-        List all file attachments for an asset.
+        """⚠️ INTERNAL: List all files attached to an asset."""
+        return run_sync(self._async_service.list_files(asset_id))
 
-        Args:
-            asset_id: Asset ID
-
-        Returns:
-            List of filenames
-        """
-        return self._repository.list_files(
-            asset_id=asset_id,
-            base_url=self._base_url
-        )
-
-    def delete_files(
-        self,
-        asset_id: str,
-        filenames: List[str]
-    ) -> bool:
-        """
-        Delete file attachments from an asset.
-
-        Args:
-            asset_id: Asset ID
-            filenames: List of filenames to delete
-
-        Returns:
-            True if successful
-        """
-        return self._repository.delete_files(
-            asset_id=asset_id,
-            filenames=filenames,
-            base_url=self._base_url
-        )
-
-    # =========================================================================
-    # Internal API Methods
-    # =========================================================================
-    # Extended Methods (from internal service)
-    # =========================================================================
-
-    def _ensure_internal(self) -> "AssetServiceInternal":
-        """Ensure internal service is available."""
-        if self._internal is None:
-            raise RuntimeError(
-                "Internal asset methods are not available. "
-                "This pyWATS client was not configured with internal API support."
-            )
-        return self._internal
-
-    # -------------------------------------------------------------------------
-    # Blob Storage Operations (Extended)
-    # -------------------------------------------------------------------------
-
-    def upload_blob(
-        self,
-        asset_id: str,
-        filename: str,
-        content: bytes
-    ) -> bool:
-        """
-        Upload a file to an asset's blob storage.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Files are stored in blob storage and associated with the asset ID.
-        Use this to attach configuration files, documentation, images, etc.
-        
-        Args:
-            asset_id: Asset ID (GUID)
-            filename: Unique filename for the file
-            content: File content as bytes
-
-        Returns:
-            True if file was uploaded successfully, False otherwise
-            
-        Example:
-            content = b'{"setting": "value"}'
-            success = api.asset.upload_blob(
-                asset_id="abc-123",
-                filename="config.json",
-                content=content
-            )
-        """
-        return self._ensure_internal().upload_file(asset_id, filename, content)
-
-    def download_blob(
-        self,
-        asset_id: str,
-        filename: str
-    ) -> Optional[bytes]:
-        """
-        Download a file from an asset's blob storage.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Args:
-            asset_id: Asset ID (GUID)
-            filename: Filename to download
-            
-        Returns:
-            File content as bytes, or None if not found
-        """
-        return self._ensure_internal().download_file(asset_id, filename)
-
-    def list_blobs(self, asset_id: str) -> List[str]:
-        """
-        List all files attached to an asset in blob storage.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Args:
-            asset_id: Asset ID (GUID)
-            
-        Returns:
-            List of filenames
-        """
-        return self._ensure_internal().list_files(asset_id)
-
-    def delete_blobs(
-        self,
-        asset_id: str,
-        filenames: List[str]
-    ) -> bool:
-        """
-        Delete files from an asset's blob storage.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Args:
-            asset_id: Asset ID (GUID)
-            filenames: List of filenames to delete
-
-        Returns:
-            True if files were deleted successfully, False otherwise
-        """
-        return self._ensure_internal().delete_files(asset_id, filenames)
-
-    def blob_exists(self, asset_id: str, filename: str) -> bool:
-        """
-        Check if a file exists in an asset's blob storage.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-
-        Args:
-            asset_id: Asset ID (GUID)
-            filename: Filename to check
-            
-        Returns:
-            True if file exists, False otherwise
-        """
-        return self._ensure_internal().file_exists(asset_id, filename)
+    def delete_files(self, asset_id: str, filenames: List[str]) -> bool:
+        """⚠️ INTERNAL: Delete files from an asset."""
+        return run_sync(self._async_service.delete_files(asset_id, filenames))

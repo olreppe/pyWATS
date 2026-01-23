@@ -29,6 +29,7 @@ from PySide6.QtGui import QIcon, QColor
 
 from .base import BasePage
 from ...core.config import ClientConfig
+from ...core import TaskResult
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -414,24 +415,41 @@ class SoftwarePage(BasePage):
         
         dialog = PackageDialog(parent=self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                data = dialog.get_data()
-                
-                # Create package
-                result = client.software.create_package(
-                    name=data['name'],
-                    description=data.get('description'),
-                    root_directory=data.get('rootDirectory'),
-                    install_on_root=data.get('installOnRoot', False),
-                )
-                
-                if result:
-                    QMessageBox.information(self, "Success", f"Package '{data['name']}' created successfully in Draft status")
-                    self._load_packages()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to create package")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to create package: {e}")
+            data = dialog.get_data()
+            
+            # Run create operation async
+            self.run_async(
+                self._create_package(data),
+                name="Creating package...",
+                on_complete=lambda r: self._on_package_created(r, data['name']),
+                on_error=self._on_package_create_error
+            )
+    
+    async def _create_package(self, data: Dict[str, Any]) -> Any:
+        """Create package asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        return client.software.create_package(
+            name=data['name'],
+            description=data.get('description'),
+            root_directory=data.get('rootDirectory'),
+            install_on_root=data.get('installOnRoot', False),
+        )
+    
+    def _on_package_created(self, result: TaskResult, name: str) -> None:
+        """Handle successful package creation"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", f"Package '{name}' created successfully in Draft status")
+            self._load_packages_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to create package")
+    
+    def _on_package_create_error(self, result: TaskResult) -> None:
+        """Handle package creation error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to create package: {error_msg}")
     
     def _on_upload_file(self) -> None:
         """Upload file to selected package as a zip"""
@@ -498,17 +516,33 @@ class SoftwarePage(BasePage):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            try:
-                client = self._get_api_client()
-                result = client.software.release_package(self._selected_package.package_id)
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Package released successfully")
-                    self._load_packages()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to release package")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to release package: {e}")
+            # Run release async
+            self.run_async(
+                self._release_package(self._selected_package.package_id),
+                name="Releasing package...",
+                on_complete=self._on_package_released,
+                on_error=self._on_release_error
+            )
+    
+    async def _release_package(self, package_id: str) -> Any:
+        """Release package asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        return client.software.release_package(package_id)
+    
+    def _on_package_released(self, result: TaskResult) -> None:
+        """Handle successful package release"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", "Package released successfully")
+            self._load_packages_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to release package")
+    
+    def _on_release_error(self, result: TaskResult) -> None:
+        """Handle release error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to release package: {error_msg}")
     
     def _on_revoke_package(self) -> None:
         """Revoke the selected package"""
@@ -522,17 +556,33 @@ class SoftwarePage(BasePage):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            try:
-                client = self._get_api_client()
-                result = client.software.revoke_package(self._selected_package.package_id)
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Package revoked successfully")
-                    self._load_packages()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to revoke package")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to revoke package: {e}")
+            # Run revoke async
+            self.run_async(
+                self._revoke_package(self._selected_package.package_id),
+                name="Revoking package...",
+                on_complete=self._on_package_revoked,
+                on_error=self._on_revoke_error
+            )
+    
+    async def _revoke_package(self, package_id: str) -> Any:
+        """Revoke package asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        return client.software.revoke_package(package_id)
+    
+    def _on_package_revoked(self, result: TaskResult) -> None:
+        """Handle successful package revoke"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", "Package revoked successfully")
+            self._load_packages_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to revoke package")
+    
+    def _on_revoke_error(self, result: TaskResult) -> None:
+        """Handle revoke error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to revoke package: {error_msg}")
     
     def _on_delete_package(self) -> None:
         """Delete the selected package"""
@@ -546,21 +596,38 @@ class SoftwarePage(BasePage):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            try:
-                client = self._get_api_client()
-                result = client.software.delete_package(self._selected_package.package_id)
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Package deleted successfully")
-                    self._load_packages()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to delete package")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete package: {e}")
+            # Run delete async
+            self.run_async(
+                self._delete_package(self._selected_package.package_id),
+                name="Deleting package...",
+                on_complete=self._on_package_deleted,
+                on_error=self._on_delete_error
+            )
+    
+    async def _delete_package(self, package_id: str) -> Any:
+        """Delete package asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        return client.software.delete_package(package_id)
+    
+    def _on_package_deleted(self, result: TaskResult) -> None:
+        """Handle successful package delete"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", "Package deleted successfully")
+            self._load_packages_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to delete package")
+    
+    def _on_delete_error(self, result: TaskResult) -> None:
+        """Handle delete error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to delete package: {error_msg}")
+
     def _on_refresh_packages(self) -> None:
         """Refresh packages from server"""
         if self._get_api_client():
-            self._load_packages()
+            self._load_packages_async()
         else:
             QMessageBox.warning(
                 self, "Not Connected",
@@ -571,40 +638,44 @@ class SoftwarePage(BasePage):
     
 
     
-    def _load_packages(self) -> None:
-        """Load packages from WATS server"""
-        try:
-            self._status_label.setText("Loading packages...")
-            self._progress_bar.setVisible(True)
-            self._progress_bar.setRange(0, 0)  # Indeterminate
-            print("[Software] Starting to load packages...")
-            
-            client = self._get_api_client()
-            if client:
-                print(f"[Software] WATS client available: {client}")
-                # Get software packages from API
-                packages = client.software.get_packages()
-                print(f"[Software] Received {len(packages) if packages else 0} packages from API")
-                if packages:
-                    self._packages = packages
-                    print(f"[Software] First package: {packages[0].name if packages else 'N/A'}")
-                else:
-                    self._packages = []
-            else:
-                print("[Software] No client available")
-                self._packages = []
-            
-            print(f"[Software] Populating tree with {len(self._packages)} packages")
+    def _load_packages_async(self) -> None:
+        """Load packages from WATS server asynchronously"""
+        self._status_label.setText("Loading packages...")
+        self._progress_bar.setVisible(True)
+        self._progress_bar.setRange(0, 0)  # Indeterminate
+        
+        self.run_async(
+            self._fetch_packages(),
+            name="Loading packages...",
+            on_complete=self._on_packages_loaded,
+            on_error=self._on_packages_error
+        )
+    
+    async def _fetch_packages(self) -> List[Any]:
+        """Fetch packages asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        packages = client.software.get_packages()
+        return packages if packages else []
+    
+    def _on_packages_loaded(self, result: TaskResult) -> None:
+        """Handle successful packages load"""
+        self._progress_bar.setVisible(False)
+        
+        if result.is_success:
+            self._packages = result.result or []
             self._populate_packages_tree()
-            self._progress_bar.setVisible(False)
             self._status_label.setText(f"Found {len(self._packages)} packages")
-            
-        except Exception as e:
-            print(f"[Software] Error: {e}")
-            import traceback
-            traceback.print_exc()
-            self._progress_bar.setVisible(False)
-            self._status_label.setText(f"Error loading packages: {str(e)}")
+        else:
+            self._status_label.setText("Failed to load packages")
+    
+    def _on_packages_error(self, result: TaskResult) -> None:
+        """Handle packages load error"""
+        self._progress_bar.setVisible(False)
+        error_msg = str(result.error) if result.error else "Unknown error"
+        self._status_label.setText(f"Error loading packages: {error_msg}")
     
     def _populate_packages_tree(self) -> None:
         """Populate packages tree with folders and filtered results"""

@@ -1,50 +1,125 @@
 """pyWATS - Main API Class
 
 The main entry point for the pyWATS library.
+Provides a synchronous interface by wrapping async services.
 """
+import asyncio
 import logging
-from typing import Optional, Union
+import inspect
+import threading
+from typing import Optional, Any, TypeVar, Coroutine
+from functools import wraps
 
-from .core.client import HttpClient
+from .core.async_client import AsyncHttpClient
 from .core.station import Station, StationRegistry
 from .core.retry import RetryConfig
+from .core.exceptions import ErrorMode, ErrorHandler
 
 logger = logging.getLogger(__name__)
-from .core.exceptions import ErrorMode, ErrorHandler
-from .domains.product import (
-    ProductService, 
-    ProductRepository,
-    ProductServiceInternal,
-    ProductRepositoryInternal,
-)
-from .domains.asset import (
-    AssetService,
-    AssetRepository,
-    AssetServiceInternal,
-    AssetRepositoryInternal,
-)
-from .domains.production import (
-    ProductionService,
-    ProductionRepository,
-    ProductionServiceInternal,
-    ProductionRepositoryInternal,
-)
-from .domains.report import ReportService, ReportRepository
-from .domains.software import SoftwareService, SoftwareRepository
-from .domains.analytics import (
-    AnalyticsService, 
-    AnalyticsRepository,
-    AnalyticsServiceInternal,
-    AnalyticsRepositoryInternal,
-)
-from .domains.rootcause import RootCauseService, RootCauseRepository
-from .domains.scim import ScimService, ScimRepository
-from .domains.process import (
-    ProcessService, 
-    ProcessRepository,
-    ProcessServiceInternal,
-    ProcessRepositoryInternal,
-)
+
+T = TypeVar('T')
+
+# Thread-local storage for persistent event loops
+_thread_local = threading.local()
+
+
+def _get_or_create_event_loop() -> asyncio.AbstractEventLoop:
+    """Get or create a persistent event loop for the current thread."""
+    loop = getattr(_thread_local, 'loop', None)
+    if loop is None or loop.is_closed():
+        loop = asyncio.new_event_loop()
+        _thread_local.loop = loop
+    return loop
+
+
+def _run_sync(coro: Coroutine[Any, Any, T]) -> T:
+    """Run a coroutine synchronously using a persistent event loop."""
+    try:
+        asyncio.get_running_loop()
+        # If there's already a running loop, we can't use run_until_complete
+        raise RuntimeError(
+            "Cannot use pyWATS from within an async context. "
+            "Use AsyncWATS instead."
+        )
+    except RuntimeError:
+        # No running loop - this is the normal case for sync usage
+        pass
+    
+    # Use a persistent event loop for this thread
+    loop = _get_or_create_event_loop()
+    return loop.run_until_complete(coro)
+
+
+class SyncServiceWrapper:
+    """
+    Generic synchronous wrapper for async services.
+    
+    Automatically wraps all async methods of the underlying service
+    to run synchronously.
+    """
+    
+    def __init__(self, async_service: Any):
+        """
+        Initialize with an async service instance.
+        
+        Args:
+            async_service: Any async service with async methods
+        """
+        self._async = async_service
+    
+    def __getattr__(self, name: str) -> Any:
+        """
+        Dynamically wrap async methods as sync methods.
+        
+        Args:
+            name: Attribute name to access
+            
+        Returns:
+            Wrapped sync method or original attribute
+        """
+        attr = getattr(self._async, name)
+        
+        # If it's a coroutine function (async method), wrap it
+        if inspect.iscoroutinefunction(attr):
+            @wraps(attr)
+            def sync_wrapper(*args, **kwargs):
+                return _run_sync(attr(*args, **kwargs))
+            return sync_wrapper
+        
+        # Otherwise return as-is (properties, regular methods, etc.)
+        return attr
+
+
+class SyncProductServiceWrapper(SyncServiceWrapper):
+    """
+    Specialized sync wrapper for AsyncProductService.
+    
+    Handles special cases like BoxBuildTemplate that need additional wrapping.
+    """
+    
+    def __getattr__(self, name: str) -> Any:
+        """Wrap async methods, with special handling for box build."""
+        attr = getattr(self._async, name)
+        
+        # Special handling for box build methods
+        if name in ('get_box_build_template', 'get_box_build'):
+            @wraps(attr)
+            def box_build_wrapper(*args, **kwargs):
+                # Run async method
+                async_template = _run_sync(attr(*args, **kwargs))
+                # Wrap result in sync wrapper
+                from .domains.product.sync_box_build import SyncBoxBuildTemplate
+                return SyncBoxBuildTemplate(async_template)
+            return box_build_wrapper
+        
+        # Default handling
+        if inspect.iscoroutinefunction(attr):
+            @wraps(attr)
+            def sync_wrapper(*args, **kwargs):
+                return _run_sync(attr(*args, **kwargs))
+            return sync_wrapper
+        
+        return attr
 
 
 class pyWATS:
@@ -59,6 +134,8 @@ class pyWATS:
     - software: Software distribution
     - analytics: Yield statistics, KPIs, and failure analysis (also available as 'app')
     - rootcause: Ticketing system for issue collaboration
+    - scim: SCIM user provisioning
+    - process: Process/operation management
     
     Station Configuration:
         pyWATS supports a Station concept for managing test station identity.
@@ -103,16 +180,13 @@ class pyWATS:
         be sent as: "Basic <token>"
     """
     
-    # Default process cache refresh interval (5 minutes)
-    DEFAULT_PROCESS_REFRESH_INTERVAL = 300
-    
     def __init__(
         self,
         base_url: str,
         token: str,
         station: Optional[Station] = None,
         timeout: int = 30,
-        process_refresh_interval: int = DEFAULT_PROCESS_REFRESH_INTERVAL,
+        verify_ssl: bool = True,
         error_mode: ErrorMode = ErrorMode.STRICT,
         retry_config: Optional[RetryConfig] = None,
         retry_enabled: bool = True,
@@ -127,7 +201,7 @@ class pyWATS:
                      this station's name, location, and purpose will be used
                      when creating reports (unless overridden).
             timeout: Request timeout in seconds (default: 30)
-            process_refresh_interval: Process cache refresh interval in seconds (default: 300)
+            verify_ssl: Whether to verify SSL certificates (default: True)
             error_mode: Error handling mode (STRICT or LENIENT). Default is STRICT.
                 - STRICT: Raises exceptions for 404/empty responses
                 - LENIENT: Returns None for 404/empty responses
@@ -138,7 +212,7 @@ class pyWATS:
         self._base_url = base_url.rstrip("/")
         self._token = token
         self._timeout = timeout
-        self._process_refresh_interval = process_refresh_interval
+        self._verify_ssl = verify_ssl
         self._error_mode = error_mode
         self._error_handler = ErrorHandler(error_mode)
         
@@ -156,113 +230,129 @@ class pyWATS:
         if station:
             self._station_registry.set_default(station)
         
-        # Initialize HTTP client
-        self._http_client = HttpClient(
+        # Initialize async HTTP client (used by all services)
+        self._http_client = AsyncHttpClient(
             base_url=self._base_url,
             token=self._token,
             timeout=self._timeout,
+            verify_ssl=self._verify_ssl,
             retry_config=self._retry_config,
         )
         
         # Service instances (lazy initialization)
-        self._product: Optional[ProductService] = None
-        self._asset: Optional[AssetService] = None
-        self._production: Optional[ProductionService] = None
-        self._report: Optional[ReportService] = None
-        self._software: Optional[SoftwareService] = None
-        self._analytics: Optional[AnalyticsService] = None
-        self._rootcause: Optional[RootCauseService] = None
-        self._scim: Optional[ScimService] = None
-        self._process: Optional[ProcessService] = None
+        self._product: Optional[SyncServiceWrapper] = None
+        self._asset: Optional[SyncServiceWrapper] = None
+        self._production: Optional[SyncServiceWrapper] = None
+        self._report: Optional[SyncServiceWrapper] = None
+        self._software: Optional[SyncServiceWrapper] = None
+        self._analytics: Optional[SyncServiceWrapper] = None
+        self._rootcause: Optional[SyncServiceWrapper] = None
+        self._scim: Optional[SyncServiceWrapper] = None
+        self._process: Optional[SyncServiceWrapper] = None
     
     # -------------------------------------------------------------------------
     # Module Properties
     # -------------------------------------------------------------------------
     
     @property
-    def product(self) -> ProductService:
+    def product(self) -> SyncProductServiceWrapper:
         """
         Access product management operations.
         
         Returns:
-            ProductService instance
+            SyncProductServiceWrapper around AsyncProductService
         """
         if self._product is None:
-            repo = ProductRepository(self._http_client, self._error_handler)
-            # Also create internal service for extended methods
-            repo_internal = ProductRepositoryInternal(self._http_client, self._base_url)
-            internal_service = ProductServiceInternal(repo, repo_internal)
-            self._product = ProductService(repo, internal_service)
+            from .domains.product import AsyncProductRepository, AsyncProductService
+            repo = AsyncProductRepository(
+                http_client=self._http_client, 
+                base_url=self._base_url,
+                error_handler=self._error_handler
+            )
+            async_service = AsyncProductService(repo, self._base_url)
+            self._product = SyncProductServiceWrapper(async_service)
         return self._product
     
     @property
-    def asset(self) -> AssetService:
+    def asset(self) -> SyncServiceWrapper:
         """
         Access asset management operations.
         
         Returns:
-            AssetService instance
+            SyncServiceWrapper around AsyncAssetService
         """
         if self._asset is None:
-            repo = AssetRepository(self._http_client, self._error_handler)
-            # Also create internal service for extended methods
-            repo_internal = AssetRepositoryInternal(self._http_client, self._base_url)
-            internal_service = AssetServiceInternal(repo_internal)
-            self._asset = AssetService(repo, self._base_url, internal_service)
+            from .domains.asset import AsyncAssetRepository, AsyncAssetService
+            repo = AsyncAssetRepository(
+                http_client=self._http_client, 
+                base_url=self._base_url,
+                error_handler=self._error_handler
+            )
+            async_service = AsyncAssetService(repo, self._base_url)
+            self._asset = SyncServiceWrapper(async_service)
         return self._asset
     
     @property
-    def production(self) -> ProductionService:
+    def production(self) -> SyncServiceWrapper:
         """
         Access production/unit management operations.
         
-        Includes sub-modules:
-        - serial_number: Serial number operations
-        - verification: Unit verification operations
-        
-        Unit phases are cached and accessible via:
-        - get_phases(): Get all available phases
-        - get_phase(id_or_name): Get a specific phase
+        Includes operations for:
+        - Unit management (get, create, update)
+        - Serial number operations
+        - Unit verification
+        - Child unit management
         
         Returns:
-            ProductionService instance
+            SyncServiceWrapper around AsyncProductionService
         """
         if self._production is None:
-            repo = ProductionRepository(self._http_client, self._error_handler)
-            # Also create internal service for extended methods
-            repo_internal = ProductionRepositoryInternal(self._http_client, self._base_url)
-            internal_service = ProductionServiceInternal(repo_internal)
-            self._production = ProductionService(repo, base_url=self._base_url, internal_service=internal_service)
+            from .domains.production import AsyncProductionRepository, AsyncProductionService
+            repo = AsyncProductionRepository(
+                http_client=self._http_client, 
+                base_url=self._base_url,
+                error_handler=self._error_handler
+            )
+            async_service = AsyncProductionService(repo, self._base_url)
+            self._production = SyncServiceWrapper(async_service)
         return self._production
     
     @property
-    def report(self) -> ReportService:
+    def report(self) -> SyncServiceWrapper:
         """
         Access report operations.
         
         Returns:
-            ReportService instance
+            SyncServiceWrapper around AsyncReportService
         """
         if self._report is None:
-            repo = ReportRepository(self._http_client, self._error_handler)
-            self._report = ReportService(repo, station_provider=self._get_station)
+            from .domains.report import AsyncReportRepository, AsyncReportService
+            repo = AsyncReportRepository(self._http_client, self._error_handler)
+            async_service = AsyncReportService(repo)
+            self._report = SyncServiceWrapper(async_service)
         return self._report
     
     @property
-    def software(self) -> SoftwareService:
+    def software(self) -> SyncServiceWrapper:
         """
         Access software distribution operations.
         
         Returns:
-            SoftwareService instance
+            SyncServiceWrapper around AsyncSoftwareService
         """
         if self._software is None:
-            repo = SoftwareRepository(self._http_client, self._error_handler)
-            self._software = SoftwareService(repo)
+            from .domains.software import AsyncSoftwareRepository, AsyncSoftwareService
+            repo = AsyncSoftwareRepository(
+                self._http_client, 
+                base_url=self._base_url,
+                error_handler=self._error_handler
+            )
+            async_service = AsyncSoftwareService(repo)
+            self._software = SyncServiceWrapper(async_service)
         return self._software
     
     @property
-    def analytics(self) -> AnalyticsService:
+    def analytics(self) -> SyncServiceWrapper:
         """
         Access yield statistics, KPIs, and failure analysis.
         
@@ -271,8 +361,8 @@ class pyWATS:
         - Failure analysis (top failed steps, test step analysis)
         - Production metrics (OEE, measurements)
         - Report queries (serial number history, UUT/UUR reports)
-        - Unit flow analysis (⚠️ internal API)
-        - Measurement/step drill-down (⚠️ internal API)
+        - Unit flow analysis (internal API)
+        - Measurement/step drill-down (internal API)
         
         Example:
             >>> # Get yield for a product
@@ -283,18 +373,21 @@ class pyWATS:
             >>> failures = api.analytics.get_top_failed(part_number="WIDGET-001")
         
         Returns:
-            AnalyticsService instance
+            SyncServiceWrapper around AsyncAnalyticsService
         """
         if self._analytics is None:
-            repo = AnalyticsRepository(self._http_client, self._error_handler)
-            # Also create internal service for internal API methods
-            repo_internal = AnalyticsRepositoryInternal(self._http_client, self._base_url)
-            internal_service = AnalyticsServiceInternal(repo_internal)
-            self._analytics = AnalyticsService(repo, internal_service)
+            from .domains.analytics import AsyncAnalyticsRepository, AsyncAnalyticsService
+            repo = AsyncAnalyticsRepository(
+                http_client=self._http_client, 
+                error_handler=self._error_handler,
+                base_url=self._base_url
+            )
+            async_service = AsyncAnalyticsService(repo)
+            self._analytics = SyncServiceWrapper(async_service)
         return self._analytics
     
     @property
-    def rootcause(self) -> RootCauseService:
+    def rootcause(self) -> SyncServiceWrapper:
         """
         Access RootCause ticketing operations.
         
@@ -302,15 +395,17 @@ class pyWATS:
         collaboration on issue tracking and resolution.
         
         Returns:
-            RootCauseService instance
+            SyncServiceWrapper around AsyncRootCauseService
         """
         if self._rootcause is None:
-            repo = RootCauseRepository(self._http_client, self._error_handler)
-            self._rootcause = RootCauseService(repo)
+            from .domains.rootcause import AsyncRootCauseRepository, AsyncRootCauseService
+            repo = AsyncRootCauseRepository(self._http_client, self._error_handler)
+            async_service = AsyncRootCauseService(repo)
+            self._rootcause = SyncServiceWrapper(async_service)
         return self._rootcause
     
     @property
-    def scim(self) -> ScimService:
+    def scim(self) -> SyncServiceWrapper:
         """
         Access SCIM user provisioning operations.
         
@@ -322,59 +417,45 @@ class pyWATS:
         - Managing SCIM users (create, read, update, delete)
         - Querying users by ID or username
         
-        Example:
-            >>> # Get a provisioning token for Azure AD
-            >>> token = api.scim.get_token(duration_days=90)
-            >>> print(f"Configure Azure with token: {token.token[:50]}...")
-            
-            >>> # List all SCIM users
-            >>> users = api.scim.get_users()
-            >>> for user in users.resources:
-            ...     print(f"{user.user_name}: {user.display_name}")
-            
-            >>> # Deactivate a user
-            >>> api.scim.deactivate_user("user-guid")
-        
         Returns:
-            ScimService instance
+            SyncServiceWrapper around AsyncScimService
         """
         if self._scim is None:
-            repo = ScimRepository(self._http_client, self._error_handler)
-            self._scim = ScimService(repo)
+            from .domains.scim import AsyncScimRepository, AsyncScimService
+            repo = AsyncScimRepository(self._http_client, self._error_handler)
+            async_service = AsyncScimService(repo)
+            self._scim = SyncServiceWrapper(async_service)
         return self._scim
     
     @property
-    def process(self) -> ProcessService:
+    def process(self) -> SyncServiceWrapper:
         """
-        Access process/operation management (cached).
+        Access process/operation management.
         
         Processes define the types of operations:
         - Test operations (e.g., End of line test, PCBA test)
         - Repair operations (e.g., Repair, RMA repair)
         - WIP operations (e.g., Assembly)
         
-        The process list is cached in memory and refreshes at the configured
-        interval (default: 5 minutes). Use api.process.refresh() to force refresh.
-        
         Example:
-            # Get by code
-            test_op = api.process.get_test_operation(100)
+            # Get all processes
+            processes = api.process.get_processes()
             
-            # Get by name
-            repair_op = api.process.get_repair_operation("Repair")
-            
-            # Force refresh
-            api.process.refresh()
+            # Get detailed process info
+            detailed = api.process.get_processes_detailed()
         
         Returns:
-            ProcessService instance
+            SyncServiceWrapper around AsyncProcessService
         """
         if self._process is None:
-            repo = ProcessRepository(self._http_client, self._error_handler)
-            # Also create internal service for extended methods
-            repo_internal = ProcessRepositoryInternal(self._http_client, self._base_url)
-            internal_service = ProcessServiceInternal(repo_internal)
-            self._process = ProcessService(repo, self._process_refresh_interval, internal_service)
+            from .domains.process import AsyncProcessRepository, AsyncProcessService
+            repo = AsyncProcessRepository(
+                http_client=self._http_client, 
+                error_handler=self._error_handler,
+                base_url=self._base_url
+            )
+            async_service = AsyncProcessService(repo)
+            self._process = SyncServiceWrapper(async_service)
         return self._process
     
     # -------------------------------------------------------------------------
@@ -506,6 +587,18 @@ class pyWATS:
             Version information dictionary
         """
         return self.analytics.get_version()
+    
+    def close(self) -> None:
+        """Close the HTTP client and release resources."""
+        _run_sync(self._http_client.close())
+    
+    def __enter__(self) -> "pyWATS":
+        """Context manager entry."""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit."""
+        self.close()
     
     def __repr__(self) -> str:
         """String representation of the pyWATS instance."""

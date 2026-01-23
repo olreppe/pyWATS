@@ -90,9 +90,34 @@ class PyWATSError(Exception):
         )
 
 
-class AuthenticationError(PyWATSError):
+class WatsApiError(PyWATSError):
+    """
+    Base for errors returned by the WATS API (HTTP 4xx/5xx).
+    
+    Provides status_code attribute for HTTP-level error handling.
+    """
+    def __init__(
+        self,
+        message: str,
+        status_code: int,
+        operation: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        cause: Optional[Exception] = None
+    ):
+        self.status_code = status_code
+        super().__init__(message, operation=operation, details=details, cause=cause)
+
+
+class AuthenticationError(WatsApiError):
     """Raised when authentication fails (401/403)."""
-    pass
+    def __init__(
+        self,
+        message: str = "Authentication failed",
+        status_code: int = 401,
+        operation: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None
+    ):
+        super().__init__(message, status_code, operation=operation, details=details)
 
 
 class AuthorizationError(PyWATSError):

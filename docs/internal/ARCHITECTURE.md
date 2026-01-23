@@ -300,7 +300,8 @@ from pywats import Product, Asset, Unit
 from pywats.models import UUTReport, UURReport
 
 # ✓ Good - domain-specific
-from pywats.domains.report import WATSFilter
+from pywats.domains.report import ReportType  # For UUT/UUR queries
+from pywats.domains.report import WATSFilter  # For analytics API (not report queries)
 ```
 
 ### 3. Use Service Methods, Not Direct API
@@ -432,9 +433,13 @@ units = [api.production.get_unit(sn) for sn in [sn1, sn2, sn3]]
 ### 3. Filtering Server-Side
 
 ```python
-# ✓ Good - filter on server
-filter = WATSFilter(part_number="PART-001", date_from=start)
-headers = api.report.query_uut_headers(filter)
+# ✓ Good - filter on server using OData
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'PART-001'"
+)
+
+# ✓ Good - use helper methods
+headers = api.report.get_headers_by_part_number("PART-001")
 
 # ✗ Avoid - fetch all, filter locally
 headers = api.report.query_uut_headers()

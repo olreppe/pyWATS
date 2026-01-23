@@ -1,6 +1,6 @@
-"""Product service - internal API business logic layer.
+﻿"""Product service - internal API business logic layer.
 
-⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+ΓÜá∩╕Å INTERNAL API - SUBJECT TO CHANGE ΓÜá∩╕Å
 
 Uses internal WATS API endpoints that are not publicly documented.
 These methods may change or be removed without notice.
@@ -50,7 +50,7 @@ class ProductServiceInternal:
     """
     Product business logic layer using internal API.
     
-    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    ΓÜá∩╕Å INTERNAL API - SUBJECT TO CHANGE ΓÜá∩╕Å
     
     Provides extended operations including:
     - Box build template management
@@ -130,7 +130,7 @@ class ProductServiceInternal:
         """
         Get or create a box build template for a product revision.
         
-        ⚠️ INTERNAL API
+        ΓÜá∩╕Å INTERNAL API
         
         A box build template defines WHAT subunits are required to build a product.
         This is a PRODUCT-LEVEL definition - it does not create production units.
@@ -182,7 +182,7 @@ class ProductServiceInternal:
         """
         Load existing box build relations from server.
         
-        ⚠️ INTERNAL API
+        ΓÜá∩╕Å INTERNAL API
         
         Uses GetProductInfo which returns the full hierarchy including
         all child relations with their ProductRevisionRelationId.
@@ -229,7 +229,7 @@ class ProductServiceInternal:
         """
         Get subunits for a box build (read-only).
         
-        ⚠️ INTERNAL API
+        ΓÜá∩╕Å INTERNAL API
         
         Args:
             part_number: Parent product part number
@@ -248,7 +248,7 @@ class ProductServiceInternal:
         """
         Get BOM (Bill of Materials) for a product revision.
         
-        ⚠️ INTERNAL API
+        ΓÜá∩╕Å INTERNAL API
         
         Args:
             part_number: Product part number
@@ -268,7 +268,7 @@ class ProductServiceInternal:
         """
         Upload/update BOM for a product revision.
         
-        ⚠️ INTERNAL API
+        ΓÜá∩╕Å INTERNAL API
         
         Args:
             part_number: Product part number
@@ -301,7 +301,7 @@ class ProductServiceInternal:
         """
         Upload BOM from dictionary data.
         
-        ⚠️ INTERNAL API
+        ΓÜá∩╕Å INTERNAL API
         
         Args:
             part_number: Product part number
@@ -330,7 +330,7 @@ class ProductServiceInternal:
         """
         Get all product categories.
         
-        ⚠️ INTERNAL API
+        ΓÜá∩╕Å INTERNAL API
         
         Returns:
             List of category dictionaries
@@ -341,7 +341,7 @@ class ProductServiceInternal:
         """
         Save product categories.
         
-        ⚠️ INTERNAL API
+        ΓÜá∩╕Å INTERNAL API
         
         Args:
             categories: List of category dictionaries

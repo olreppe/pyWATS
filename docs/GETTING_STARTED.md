@@ -6,6 +6,7 @@ Complete guide to installing, configuring, and initializing pyWATS.
 
 - [Installation](#installation)
 - [API Initialization](#api-initialization)
+- [Async Usage](#async-usage)
 - [Authentication](#authentication)
 - [Logging Configuration](#logging-configuration)
 - [Exception Handling](#exception-handling)
@@ -338,6 +339,85 @@ uut = TestUUT(
     purpose=Purpose.TEST  # or 10
 )
 # Station info automatically filled from api.station
+```
+
+---
+
+## Async Usage
+
+pyWATS supports both synchronous and asynchronous usage patterns. The library is designed 
+with an **async-first architecture** where all business logic lives in async services, 
+and sync services are thin wrappers.
+
+### Synchronous Usage (Default)
+
+The standard synchronous API is the easiest way to use pyWATS:
+
+```python
+from pywats import pyWATS
+
+api = pyWATS(base_url="https://...", token="...")
+
+# Synchronous calls - simple and blocking
+products = api.product.get_products()
+unit = api.production.get_unit("SN-12345", "WIDGET-001")
+```
+
+### Asynchronous Usage
+
+For high-performance applications, use the async API directly:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def main():
+    # Create async client
+    async with AsyncWATS(base_url="https://...", token="...") as api:
+        # Async calls - non-blocking
+        products = await api.product.get_products()
+        unit = await api.production.get_unit("SN-12345", "WIDGET-001")
+        
+        # Concurrent requests
+        product, unit, assets = await asyncio.gather(
+            api.product.get_product("WIDGET-001"),
+            api.production.get_unit("SN-12345", "WIDGET-001"),
+            api.asset.get_assets(top=10)
+        )
+
+asyncio.run(main())
+```
+
+### Using run_sync() for Mixed Code
+
+When you have async code but need to call it from sync context:
+
+```python
+from pywats.core.sync_runner import run_sync
+from pywats import AsyncWATS
+
+async def fetch_data():
+    async with AsyncWATS(base_url="https://...", token="...") as api:
+        return await api.product.get_products()
+
+# Call async code from sync context
+products = run_sync(fetch_data())
+```
+
+### Service Architecture
+
+All domains follow the same pattern:
+
+| Component | Description |
+|-----------|-------------|
+| `AsyncXxxService` | Source of truth - all business logic |
+| `XxxService` | Thin sync wrapper using `run_sync()` |
+| `AsyncXxxRepository` | Async data access layer |
+
+```python
+# Both use the same underlying logic
+from pywats.domains.product.service import ProductService           # Sync
+from pywats.domains.product.async_service import AsyncProductService  # Async
 ```
 
 ---

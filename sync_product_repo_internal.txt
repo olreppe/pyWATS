@@ -1,6 +1,6 @@
-"""Product repository - internal API data access layer.
+﻿"""Product repository - internal API data access layer.
 
-⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+ΓÜá∩╕Å INTERNAL API - SUBJECT TO CHANGE ΓÜá∩╕Å
 
 Uses internal WATS API endpoints that are not publicly documented.
 These endpoints may change without notice. This module should be
@@ -22,7 +22,7 @@ class ProductRepositoryInternal:
     """
     Product data access layer using internal API.
     
-    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    ΓÜá∩╕Å INTERNAL API - SUBJECT TO CHANGE ΓÜá∩╕Å
     
     Uses:
     - GET /api/internal/Product/Bom
@@ -64,7 +64,7 @@ class ProductRepositoryInternal:
         """
         Make an internal API GET request with Referer header.
         
-        ⚠️ INTERNAL: Adds Referer header required by internal API.
+        ΓÜá∩╕Å INTERNAL: Adds Referer header required by internal API.
         """
         response = self._http.get(
             endpoint,
@@ -85,7 +85,7 @@ class ProductRepositoryInternal:
         """
         Make an internal API POST request with Referer header.
         
-        ⚠️ INTERNAL: Adds Referer header required by internal API.
+        ΓÜá∩╕Å INTERNAL: Adds Referer header required by internal API.
         """
         response = self._http.post(
             endpoint,
@@ -107,7 +107,7 @@ class ProductRepositoryInternal:
         """
         Make an internal API PUT request with Referer header.
         
-        ⚠️ INTERNAL: Adds Referer header required by internal API.
+        ΓÜá∩╕Å INTERNAL: Adds Referer header required by internal API.
         """
         response = self._http.put(
             endpoint,
@@ -128,7 +128,7 @@ class ProductRepositoryInternal:
         """
         Make an internal API DELETE request with Referer header.
         
-        ⚠️ INTERNAL: Adds Referer header required by internal API.
+        ΓÜá∩╕Å INTERNAL: Adds Referer header required by internal API.
         """
         response = self._http.delete(
             endpoint,
@@ -148,7 +148,7 @@ class ProductRepositoryInternal:
         """
         Get BOM (Bill of Materials) for a product revision.
         
-        ⚠️ INTERNAL API - uses /api/internal/Product/Bom
+        ΓÜá∩╕Å INTERNAL API - uses /api/internal/Product/Bom
         
         Args:
             part_number: Product part number
@@ -176,7 +176,7 @@ class ProductRepositoryInternal:
         """
         Upload/update BOM items.
         
-        ⚠️ INTERNAL API - uses PUT /api/internal/Product/BOM
+        ΓÜá∩╕Å INTERNAL API - uses PUT /api/internal/Product/BOM
         
         Args:
             part_number: Product part number
@@ -211,7 +211,7 @@ class ProductRepositoryInternal:
         """
         Get product with revision relations (box build template).
         
-        ⚠️ INTERNAL API - uses /api/internal/Product/GetProductByPN
+        ΓÜá∩╕Å INTERNAL API - uses /api/internal/Product/GetProductByPN
         
         NOTE: This endpoint does NOT return ChildProductRevisionRelations.
         Use get_product_hierarchy() instead for box build relations.
@@ -238,7 +238,7 @@ class ProductRepositoryInternal:
         """
         Get product hierarchy including all child revision relations.
         
-        ⚠️ INTERNAL API - uses /api/internal/Product/GetProductInfo
+        ΓÜá∩╕Å INTERNAL API - uses /api/internal/Product/GetProductInfo
         
         This returns the full product tree including:
         - The parent product at hlevel=0
@@ -273,7 +273,7 @@ class ProductRepositoryInternal:
         """
         Create a product revision relation (add subunit to box build).
         
-        ⚠️ INTERNAL API - uses POST /api/internal/Product/PostProductRevisionRelation
+        ΓÜá∩╕Å INTERNAL API - uses POST /api/internal/Product/PostProductRevisionRelation
         
         Args:
             parent_revision_id: Parent product revision ID
@@ -325,7 +325,7 @@ class ProductRepositoryInternal:
         """
         Update a product revision relation.
         
-        ⚠️ INTERNAL API - uses PUT /api/internal/Product/PutProductRevisionRelation
+        ΓÜá∩╕Å INTERNAL API - uses PUT /api/internal/Product/PutProductRevisionRelation
         
         Args:
             relation: ProductRevisionRelation with updated data
@@ -348,7 +348,7 @@ class ProductRepositoryInternal:
         """
         Delete a product revision relation.
         
-        ⚠️ INTERNAL API - uses DELETE /api/internal/Product/DeleteProductRevisionRelation
+        ΓÜá∩╕Å INTERNAL API - uses DELETE /api/internal/Product/DeleteProductRevisionRelation
         
         Args:
             relation_id: The relation ID to delete
@@ -370,7 +370,7 @@ class ProductRepositoryInternal:
         """
         Get all product categories.
         
-        ⚠️ INTERNAL API - uses /api/internal/Product/GetProductCategories
+        ΓÜá∩╕Å INTERNAL API - uses /api/internal/Product/GetProductCategories
         
         Returns:
             List of category dictionaries
@@ -387,7 +387,7 @@ class ProductRepositoryInternal:
         """
         Save product categories.
         
-        ⚠️ INTERNAL API - uses PUT /api/internal/Product/PutProductCategories
+        ΓÜá∩╕Å INTERNAL API - uses PUT /api/internal/Product/PutProductCategories
         
         Args:
             categories: List of category dictionaries

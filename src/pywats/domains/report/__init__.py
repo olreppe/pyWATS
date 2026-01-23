@@ -29,12 +29,16 @@ from .report_models import (
 from .report_models.uut.steps.sequence_call import SequenceCall, StepList
 
 # Import query-related models
-from .enums import DateGrouping, ImportMode
+from .enums import DateGrouping, ImportMode, ReportType
 from .models import WATSFilter, ReportHeader, Attachment
 
-# Import service and repository
-from .service import ReportService
-from .repository import ReportRepository
+# Async implementations (primary API)
+from .async_repository import AsyncReportRepository
+from .async_service import AsyncReportService
+
+# Backward-compatible aliases
+ReportRepository = AsyncReportRepository
+ReportService = AsyncReportService
 
 __all__ = [
     # Report Models (UUT/UUR)
@@ -58,14 +62,18 @@ __all__ = [
     "SubUnit",
     "ReportAttachment",
     "DeserializationContext",
-    # Query Models
-    "WATSFilter",
-    "ReportHeader",
-    "Attachment",
     # Enums
     "DateGrouping",
     "ImportMode",
-    # Service & Repository
-    "ReportService",
+    "ReportType",
+    # Query models
+    "WATSFilter",
+    "ReportHeader",
+    "Attachment",
+    # Async implementations (primary API)
+    "AsyncReportRepository",
+    "AsyncReportService",
+    # Backward-compatible aliases
     "ReportRepository",
+    "ReportService",
 ]

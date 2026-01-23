@@ -12,13 +12,15 @@ from .models import (
     BomItem,
 )
 from .enums import ProductState
-from .service import ProductService
-from .repository import ProductRepository
 from .box_build import BoxBuildTemplate
 
-# Internal API (⚠️ subject to change)
-from .repository_internal import ProductRepositoryInternal
-from .service_internal import ProductServiceInternal
+# Async implementations (primary API)
+from .async_repository import AsyncProductRepository
+from .async_service import AsyncProductService
+
+# Backward-compatible aliases
+ProductRepository = AsyncProductRepository
+ProductService = AsyncProductService
 
 __all__ = [
     # Models
@@ -33,10 +35,10 @@ __all__ = [
     "BoxBuildTemplate",
     # Enums
     "ProductState",
-    # Service & Repository (Public)
-    "ProductService",
+    # Async implementations (primary API)
+    "AsyncProductRepository",
+    "AsyncProductService",
+    # Backward-compatible aliases
     "ProductRepository",
-    # Internal API (⚠️ subject to change)
-    "ProductRepositoryInternal",
-    "ProductServiceInternal",
+    "ProductService",
 ]

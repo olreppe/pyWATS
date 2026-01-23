@@ -16,6 +16,8 @@ The Process domain provides access to process and operation type definitions. Pr
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS
 
@@ -44,6 +46,32 @@ api.process.refresh()
 
 print(f"Cache last refreshed: {api.process.last_refresh}")
 print(f"Refresh interval: {api.process.refresh_interval} seconds")
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def get_processes():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        # Get multiple operations concurrently
+        ict, fct, repair = await asyncio.gather(
+            api.process.get_test_operation("ICT"),
+            api.process.get_test_operation("FCT"),
+            api.process.get_repair_operation("Rework")
+        )
+        
+        print(f"ICT code: {ict.code if ict else 'N/A'}")
+        print(f"FCT code: {fct.code if fct else 'N/A'}")
+
+asyncio.run(get_processes())
 ```
 
 ---
@@ -406,8 +434,6 @@ find_operations_by_prefix("R")  # All repair operations
 ```python
 def track_operation_usage(operation_code, days=7):
     """Track how often an operation is used in reports"""
-    
-    from pywats.domains.report import WATSFilter
     from datetime import datetime, timedelta
     
     # Verify operation exists
@@ -417,22 +443,20 @@ def track_operation_usage(operation_code, days=7):
         print(f"Operation '{operation_code}' not found")
         return
     
-    # Query reports with this operation
-    filter_obj = WATSFilter(
-        operation_type_code=operation_code,
-        days=days
+    # Query reports with this operation using OData
+    headers = api.report.query_uut_headers(
+        odata_filter=f"processCode eq {operation_code}",
+        top=1000
     )
-    
-    reports = api.report.get_uut_reports(filter_obj)
     
     print(f"=== USAGE: {operation.name} ({operation.code}) ===")
     print(f"Period: Last {days} days")
-    print(f"Reports: {len(reports)}")
+    print(f"Reports: {len(headers)}")
     
     # Breakdown by station
     by_station = {}
-    for report in reports:
-        station = report.station
+    for header in headers:
+        station = header.station_name
         by_station[station] = by_station.get(station, 0) + 1
     
     print("\nBy Station:")

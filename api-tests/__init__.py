@@ -1,3 +1,0 @@
-"""
-pyWATS test suite
-"""

@@ -25,6 +25,7 @@ from PySide6.QtGui import QColor
 
 from .base import BasePage
 from ...core.config import ClientConfig
+from ...core import TaskResult
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -760,28 +761,44 @@ BOM and Box Build tabs are now available for this revision.
     def _on_refresh(self) -> None:
         """Refresh products from server"""
         if self._get_api_client():
-            self._load_products()
+            self._load_products_async()
         else:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
     
-    def _load_products(self) -> None:
-        """Load products from WATS server"""
-        try:
-            self._status_label.setText("Loading products...")
-            
-            client = self._get_api_client()
-            if client:
-                # Get products
-                products = client.product.get_products()
-                self._products = [self._product_to_dict(p) for p in products] if products else []
-                
-                self._populate_tree()
-                self._status_label.setText(f"Loaded {len(self._products)} products")
-            else:
-                self._status_label.setText("Not connected to WATS server")
-        except Exception as e:
-            self._status_label.setText(f"Error: {str(e)[:50]}")
-            QMessageBox.warning(self, "Error", f"Failed to load products: {e}")
+    def _load_products_async(self) -> None:
+        """Load products from WATS server asynchronously"""
+        self._status_label.setText("Loading products...")
+        
+        self.run_async(
+            self._fetch_products(),
+            name="Loading products...",
+            on_complete=self._on_products_loaded,
+            on_error=self._on_products_error
+        )
+    
+    async def _fetch_products(self) -> List[Dict[str, Any]]:
+        """Fetch products asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        products = client.product.get_products()
+        return [self._product_to_dict(p) for p in products] if products else []
+    
+    def _on_products_loaded(self, result: TaskResult) -> None:
+        """Handle successful products load"""
+        if result.is_success:
+            self._products = result.result or []
+            self._populate_tree()
+            self._status_label.setText(f"Loaded {len(self._products)} products")
+        else:
+            self._status_label.setText("Failed to load products")
+    
+    def _on_products_error(self, result: TaskResult) -> None:
+        """Handle products load error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        self._status_label.setText(f"Error: {error_msg[:50]}")
+        QMessageBox.warning(self, "Error", f"Failed to load products: {error_msg}")
     
     def _product_to_dict(self, product: Any) -> Dict[str, Any]:
         """Convert Product model to dictionary"""
@@ -852,33 +869,51 @@ BOM and Box Build tabs are now available for this revision.
         
         dialog = ProductDialog(parent=self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                data = dialog.get_data()
-                
-                # Map state string to enum
-                state_map = {
-                    "Active": 1,
-                    "New": 0,
-                    "Engineering": 2,
-                    "Deprecated": 3,
-                    "Obsolete": 4
-                }
-                
-                result = client.product.create_product(
-                    part_number=data['partNumber'],
-                    name=data.get('name'),
-                    description=data.get('description'),
-                    non_serial=data.get('nonSerial', False),
-                    state=state_map.get(data.get('state', 'Active'), 1),
-                )
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Product created successfully")
-                    self._load_products()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to create product")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to create product: {e}")
+            data = dialog.get_data()
+            
+            # Run create operation async
+            self.run_async(
+                self._create_product(data),
+                name="Creating product...",
+                on_complete=self._on_product_created,
+                on_error=self._on_product_create_error
+            )
+    
+    async def _create_product(self, data: Dict[str, Any]) -> Any:
+        """Create product asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        # Map state string to enum
+        state_map = {
+            "Active": 1,
+            "New": 0,
+            "Engineering": 2,
+            "Deprecated": 3,
+            "Obsolete": 4
+        }
+        
+        return client.product.create_product(
+            part_number=data['partNumber'],
+            name=data.get('name'),
+            description=data.get('description'),
+            non_serial=data.get('nonSerial', False),
+            state=state_map.get(data.get('state', 'Active'), 1),
+        )
+    
+    def _on_product_created(self, result: TaskResult) -> None:
+        """Handle successful product creation"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", "Product created successfully")
+            self._load_products_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to create product")
+    
+    def _on_product_create_error(self, result: TaskResult) -> None:
+        """Handle product creation error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to create product: {error_msg}")
     
     def _on_edit_product(self) -> None:
         """Edit selected product"""
@@ -888,26 +923,41 @@ BOM and Box Build tabs are now available for this revision.
         dialog = ProductDialog(product=self._selected_product, parent=self)
         
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                data = dialog.get_data()
-                client = self._get_api_client()
-                if not client:
-                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-                    return
-                
-                # Update product
-                result = client.product.update_product(
-                    part_number=data['partNumber'],
-                    name=data.get('name'),
-                    description=data.get('description'),
-                    non_serial=data.get('nonSerial', False),
-                )
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Product updated successfully")
-                    self._load_products()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to update product: {e}")
+            data = dialog.get_data()
+            
+            # Run update operation async
+            self.run_async(
+                self._update_product(data),
+                name="Updating product...",
+                on_complete=self._on_product_updated,
+                on_error=self._on_product_update_error
+            )
+    
+    async def _update_product(self, data: Dict[str, Any]) -> Any:
+        """Update product asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        return client.product.update_product(
+            part_number=data['partNumber'],
+            name=data.get('name'),
+            description=data.get('description'),
+            non_serial=data.get('nonSerial', False),
+        )
+    
+    def _on_product_updated(self, result: TaskResult) -> None:
+        """Handle successful product update"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", "Product updated successfully")
+            self._load_products_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to update product")
+    
+    def _on_product_update_error(self, result: TaskResult) -> None:
+        """Handle product update error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to update product: {error_msg}")
     
     def _on_add_revision(self) -> None:
         """Add revision to selected product"""
@@ -925,24 +975,42 @@ BOM and Box Build tabs are now available for this revision.
         )
         
         if ok and revision:
-            try:
-                client = self._get_api_client()
-                if not client:
-                    QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-                    return
-                result = client.product.create_revision(
-                    part_number=part_number,
-                    revision=revision,
-                )
-                
-                if result:
-                    QMessageBox.information(self, "Success", f"Revision '{revision}' created")
-                    # Refresh the tree to show new revision
-                    self._load_products()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to create revision")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to create revision: {e}")
+            client = self._get_api_client()
+            if not client:
+                QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+                return
+            
+            # Run create revision async
+            self.run_async(
+                self._create_revision(part_number, revision),
+                name="Creating revision...",
+                on_complete=lambda r: self._on_revision_created(r, revision),
+                on_error=self._on_revision_create_error
+            )
+    
+    async def _create_revision(self, part_number: str, revision: str) -> Any:
+        """Create revision asynchronously"""
+        client = self._get_api_client()
+        if not client:
+            raise RuntimeError("Not connected to WATS server")
+        
+        return client.product.create_revision(
+            part_number=part_number,
+            revision=revision,
+        )
+    
+    def _on_revision_created(self, result: TaskResult, revision: str) -> None:
+        """Handle successful revision creation"""
+        if result.is_success and result.result:
+            QMessageBox.information(self, "Success", f"Revision '{revision}' created")
+            self._load_products_async()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to create revision")
+    
+    def _on_revision_create_error(self, result: TaskResult) -> None:
+        """Handle revision creation error"""
+        error_msg = str(result.error) if result.error else "Unknown error"
+        QMessageBox.critical(self, "Error", f"Failed to create revision: {error_msg}")
     
     def _on_add_subunit(self) -> None:
         """Add subunit to box build template"""

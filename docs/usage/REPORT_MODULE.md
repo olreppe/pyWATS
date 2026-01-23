@@ -429,53 +429,87 @@ api.report.send_uur_report(uur)
 
 ## Querying Reports
 
-### Using WATSFilter
+The report query API uses OData filters for flexible querying. The helper methods provide a simpler interface for common queries.
+
+### Using OData Filters
 
 ```python
-from pywats.domains.report import WATSFilter
-from datetime import datetime, timedelta
+from pywats.domains.report import ReportType
 
 # Filter by part number
-filter = WATSFilter(part_number="PART-001")
-headers = api.report.query_uut_headers(filter)
-
-# Filter by date range
-start = datetime.now() - timedelta(days=7)
-filter = WATSFilter(date_from=start, date_to=datetime.now())
-headers = api.report.query_uut_headers(filter)
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'PART-001'"
+)
 
 # Filter by serial number
-filter = WATSFilter(serial_number="SN-12345")
-headers = api.report.query_uut_headers(filter)
-
-# Complex filter
-filter = WATSFilter(
-    part_number="PART-001",
-    date_from=start,
-    date_to=datetime.now(),
-    passed=True,  # Only passed reports
-    top_count=100  # Limit results
+headers = api.report.query_uut_headers(
+    odata_filter="serialNumber eq 'SN-12345'"
 )
-headers = api.report.query_uut_headers(filter)
+
+# Filter by result
+headers = api.report.query_uut_headers(
+    odata_filter="result eq 'Passed'",
+    top=100
+)
+
+# Combined filters
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'PART-001' and result eq 'Failed'",
+    top=100,
+    orderby="start desc"
+)
+
+# Query repair (UUR) reports
+repairs = api.report.query_uur_headers(
+    odata_filter="serialNumber eq 'SN-12345'"
+)
+
+# Unified query using ReportType enum
+headers = api.report.query_headers(
+    report_type=ReportType.UUT,
+    odata_filter="serialNumber eq 'SN-12345'"
+)
 ```
 
 ### Convenience Methods
 
 ```python
 # Get reports by serial number
-reports = api.report.get_uut_reports_by_serial("SN-12345")
+headers = api.report.get_headers_by_serial("SN-12345")
 
 # Get reports by part number
-reports = api.report.get_uut_reports_by_part("PART-001")
+headers = api.report.get_headers_by_part_number("PART-001")
+
+# Get reports by date range
+from datetime import datetime, timedelta
+start = datetime.now() - timedelta(days=7)
+end = datetime.now()
+headers = api.report.get_headers_by_date_range(start, end)
 
 # Get recent reports
-reports = api.report.get_recent_uut_reports(days=7, top=50)
+headers = api.report.get_recent_headers(count=50)
 
 # Get today's reports
-reports = api.report.get_todays_reports(top=100)
+headers = api.report.get_todays_headers()
 
 # Load full report by UUID
 report = api.report.get_uut_report("report-uuid-here")
+```
+
+### Expanded Fields
+
+```python
+# Include sub-units in response
+headers = api.report.query_uut_headers(
+    odata_filter="serialNumber eq 'SN-12345'",
+    expand=["subUnits"]
+)
+
+# Include miscellaneous info
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'PART-001'",
+    expand=["miscInfo"]
+)
 ```
 
 ## Best Practices

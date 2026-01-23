@@ -1,118 +1,78 @@
-"""Production service - business logic layer.
+"""Production service - thin sync wrapper around AsyncProductionService.
 
-High-level operations for production unit management.
+This module provides synchronous access to AsyncProductionService methods.
+All business logic is maintained in async_service.py (source of truth).
 
-Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
-that may change without notice. Use with caution.
+⚠️ INTERNAL API methods are marked and may change without notice.
 """
-from typing import Optional, List, Dict, Any, Sequence, Union, TYPE_CHECKING
-import logging
+from typing import Optional, List, Dict, Any, Sequence, Union
+from datetime import datetime
 
-if TYPE_CHECKING:
-    from .service_internal import ProductionServiceInternal
-
+from .async_service import AsyncProductionService
+from .async_repository import AsyncProductionRepository
 from .models import (
     Unit, UnitChange, ProductionBatch, SerialNumberType,
     UnitVerification, UnitVerificationGrade, UnitPhase
 )
 from .enums import UnitPhaseFlag
-from .repository import ProductionRepository
-
-logger = logging.getLogger(__name__)
+from ...core.sync_runner import run_sync
 
 
 class ProductionService:
     """
-    Production business logic.
+    Synchronous wrapper for AsyncProductionService.
 
-    Provides high-level operations for managing production units,
-    serial numbers, batches, and assembly relationships.
-    
-    Unit Phases:
-        The service caches available unit phases on first access.
-        Use get_phases() to retrieve all phases, or get_phase() to
-        look up a specific phase by ID, code, or name.
+    Provides sync access to all async production service operations.
+    All business logic is in AsyncProductionService.
     """
 
-    def __init__(
-        self, 
-        repository: ProductionRepository, 
-        base_url: str = "",
-        internal_service: Optional["ProductionServiceInternal"] = None
-    ):
+    def __init__(self, async_service: AsyncProductionService = None, *, repository=None):
         """
-        Initialize with repository.
+        Initialize with AsyncProductionService or repository.
 
         Args:
-            repository: ProductionRepository for data access
-            base_url: Base URL for internal API calls
-            internal_service: Optional internal service for internal API methods
+            async_service: AsyncProductionService instance to wrap
+            repository: (Deprecated) Repository instance for backward compatibility
         """
-        self._repository = repository
-        self._base_url = base_url.rstrip("/") if base_url else ""
-        self._internal = internal_service
-        
-        # Phase cache (loaded on first access)
-        self._phases: Optional[List[UnitPhase]] = None
-        self._phase_by_id: Dict[int, UnitPhase] = {}
-        self._phase_by_code: Dict[str, UnitPhase] = {}
-        self._phase_by_name: Dict[str, UnitPhase] = {}
+        if repository is not None:
+            # Backward compatibility: create async service from repository
+            self._async_service = AsyncProductionService(repository)
+            self._repository = repository  # Keep reference for tests
+        elif async_service is not None:
+            self._async_service = async_service
+            self._repository = async_service._repository  # Expose underlying repo
+        else:
+            raise ValueError("Either async_service or repository must be provided")
+
+    @classmethod
+    def from_repository(cls, repository: AsyncProductionRepository) -> "ProductionService":
+        """
+        Create ProductionService from an AsyncProductionRepository.
+
+        Args:
+            repository: AsyncProductionRepository instance
+
+        Returns:
+            ProductionService wrapping an AsyncProductionService
+        """
+        async_service = AsyncProductionService(repository)
+        return cls(async_service)
 
     # =========================================================================
     # Unit Operations
     # =========================================================================
 
-    def get_unit(
-        self, serial_number: str, part_number: str
-    ) -> Optional[Unit]:
-        """
-        Get a production unit.
-
-        Args:
-            serial_number: The unit serial number
-            part_number: The product part number
-
-        Returns:
-            Unit if found, None otherwise
-            
-        Raises:
-            ValueError: If serial_number or part_number is empty or None
-        """
-        if not serial_number or not serial_number.strip():
-            raise ValueError("serial_number is required")
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        return self._repository.get_unit(serial_number, part_number)
+    def get_unit(self, serial_number: str, part_number: str) -> Optional[Unit]:
+        """Get a production unit."""
+        return run_sync(self._async_service.get_unit(serial_number, part_number))
 
     def create_units(self, units: Sequence[Unit]) -> List[Unit]:
-        """
-        Create multiple production units.
-
-        Args:
-            units: List of Unit objects to create
-
-        Returns:
-            List of created Unit objects
-        """
-        results = self._repository.save_units(units)
-        for unit in results:
-            logger.info(f"UNIT_CREATED: {unit.serial_number} (pn={unit.part_number})")
-        return results
+        """Create multiple production units."""
+        return run_sync(self._async_service.create_units(units))
 
     def update_unit(self, unit: Unit) -> Optional[Unit]:
-        """
-        Update a production unit.
-
-        Args:
-            unit: Unit object with updated fields
-
-        Returns:
-            Updated Unit object
-        """
-        result = self._repository.save_units([unit])
-        if result:
-            logger.info(f"UNIT_UPDATED: {unit.serial_number} (pn={unit.part_number})")
-        return result[0] if result else None
+        """Update a production unit."""
+        return run_sync(self._async_service.update_unit(unit))
 
     # =========================================================================
     # Unit Verification
@@ -124,27 +84,8 @@ class ProductionService:
         part_number: str,
         revision: Optional[str] = None
     ) -> Optional[UnitVerification]:
-        """
-        Verify a unit and get its status.
-
-        Args:
-            serial_number: The unit serial number
-            part_number: The product part number
-            revision: Optional product revision
-
-        Returns:
-            UnitVerification result
-            
-        Raises:
-            ValueError: If serial_number or part_number is empty or None
-        """
-        if not serial_number or not serial_number.strip():
-            raise ValueError("serial_number is required")
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        return self._repository.get_unit_verification(
-            serial_number, part_number, revision
-        )
+        """Verify a unit and get its status."""
+        return run_sync(self._async_service.verify_unit(serial_number, part_number, revision))
 
     def get_unit_grade(
         self,
@@ -152,155 +93,89 @@ class ProductionService:
         part_number: str,
         revision: Optional[str] = None
     ) -> Optional[UnitVerificationGrade]:
-        """
-        Get complete verification grade for a unit.
+        """Get the verification grade for a unit."""
+        return run_sync(self._async_service.get_unit_grade(serial_number, part_number, revision))
 
-        Args:
-            serial_number: The unit serial number
-            part_number: The product part number
-            revision: Optional product revision
+    def is_unit_passing(self, serial_number: str, part_number: str) -> bool:
+        """Check if a unit is passing all tests."""
+        return run_sync(self._async_service.is_unit_passing(serial_number, part_number))
 
-        Returns:
-            UnitVerificationGrade result
-            
-        Raises:
-            ValueError: If serial_number or part_number is empty or None
-        """
-        if not serial_number or not serial_number.strip():
-            raise ValueError("serial_number is required")
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        return self._repository.get_unit_verification_grade(
-            serial_number, part_number, revision
-        )
+    # =========================================================================
+    # Serial Number Types
+    # =========================================================================
 
-    def is_unit_passing(
-        self,
-        serial_number: str,
-        part_number: str
-    ) -> bool:
-        """
-        Check if a unit is passing all tests.
-
-        Args:
-            serial_number: The unit serial number
-            part_number: The product part number
-
-        Returns:
-            True if unit is passing
-            
-        Raises:
-            ValueError: If serial_number or part_number is empty or None
-        """
-        if not serial_number or not serial_number.strip():
-            raise ValueError("serial_number is required")
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        grade = self._repository.get_unit_verification_grade(
-            serial_number, part_number
-        )
-        if grade:
-            return grade.all_processes_passed_last_run
-        return False
+    def get_serial_number_types(self) -> List[SerialNumberType]:
+        """Get all configured serial number types."""
+        return run_sync(self._async_service.get_serial_number_types())
 
     # =========================================================================
     # Unit Phases
     # =========================================================================
 
-    def _load_phases(self) -> None:
-        """Load and cache unit phases from server."""
-        if self._phases is not None:
-            return  # Already loaded
-        
-        if not self._base_url:
-            logger.warning("Cannot load phases: base_url not set")
-            self._phases = []
-            return
-        
-        phases = self._repository.get_unit_phases(self._base_url)
-        self._phases = phases
-        
-        # Build lookup dictionaries
-        self._phase_by_id = {p.phase_id: p for p in phases}
-        self._phase_by_code = {p.code.lower(): p for p in phases if p.code}
-        self._phase_by_name = {p.name.lower(): p for p in phases if p.name}
-        
-        logger.debug(f"Loaded {len(phases)} unit phases from server")
-
-    def get_phases(self) -> List[UnitPhase]:
-        """
-        Get all available unit phases.
-        
-        Phases are cached after the first call.
-        
-        Returns:
-            List of UnitPhase objects
-            
-        Example:
-            phases = api.production.get_phases()
-            for phase in phases:
-                print(f"{phase.phase_id}: {phase.name}")
-        """
-        self._load_phases()
-        return list(self._phases or [])
+    def get_phases(self, force_refresh: bool = False) -> List[UnitPhase]:
+        """Get all available unit phases."""
+        return run_sync(self._async_service.get_phases(force_refresh))
 
     def get_phase(
-        self, 
-        identifier: Union[int, str]
+        self,
+        phase_id: Optional[int] = None,
+        code: Optional[str] = None,
+        name: Optional[str] = None
     ) -> Optional[UnitPhase]:
-        """
-        Get a unit phase by ID, code, or name.
-        
-        Args:
-            identifier: Phase ID (int), code (str), or name (str)
-            
-        Returns:
-            UnitPhase if found, None otherwise
-            
-        Example:
-            # By ID
-            phase = api.production.get_phase(16)
-            
-            # By code
-            phase = api.production.get_phase("Finalized")
-            
-            # By name (case-insensitive)
-            phase = api.production.get_phase("Under production")
-        """
-        self._load_phases()
-        
-        if isinstance(identifier, int):
-            return self._phase_by_id.get(identifier)
-        
-        # Try by code first (case-insensitive)
-        identifier_lower = identifier.lower()
-        if identifier_lower in self._phase_by_code:
-            return self._phase_by_code[identifier_lower]
-        
-        # Then by name (case-insensitive)
-        return self._phase_by_name.get(identifier_lower)
+        """Get a specific unit phase by ID, code, or name."""
+        return run_sync(self._async_service.get_phase(phase_id, code, name))
 
     def get_phase_id(self, phase: Union[int, str, UnitPhaseFlag]) -> Optional[int]:
-        """
-        Resolve a phase identifier to its ID.
-        
-        Args:
-            phase: Phase ID (int), code (str), name (str), or UnitPhaseFlag enum
-            
-        Returns:
-            Phase ID if found, None otherwise
-            
-        Example:
-            phase_id = api.production.get_phase_id("Finalized")  # Returns 16
-            phase_id = api.production.get_phase_id(UnitPhaseFlag.FINALIZED)  # Returns 16
-        """
-        if isinstance(phase, UnitPhaseFlag):
-            return int(phase)
-        if isinstance(phase, int):
-            return phase
-        
-        phase_obj = self.get_phase(phase)
-        return phase_obj.phase_id if phase_obj else None
+        """Resolve a phase identifier to its ID."""
+        return run_sync(self._async_service.get_phase_id(phase))
+
+    def get_all_unit_phases(self) -> List[UnitPhase]:
+        """Get all available unit phases (alias for get_phases)."""
+        return run_sync(self._async_service.get_all_unit_phases())
+
+    def get_phase_by_name(self, name: str) -> Optional[UnitPhase]:
+        """Get a unit phase by name."""
+        return run_sync(self._async_service.get_phase_by_name(name))
+
+    # =========================================================================
+    # Unit History
+    # =========================================================================
+
+    def get_unit_history(
+        self,
+        serial_number: str,
+        part_number: str
+    ) -> List[UnitChange]:
+        """Get the change history for a unit."""
+        return run_sync(self._async_service.get_unit_history(serial_number, part_number))
+
+    # =========================================================================
+    # Batches
+    # =========================================================================
+
+    def get_batches(
+        self,
+        part_number: Optional[str] = None,
+        batch_id: Optional[str] = None
+    ) -> List[ProductionBatch]:
+        """Get production batches."""
+        return run_sync(self._async_service.get_batches(part_number, batch_id))
+
+    def create_batch(
+        self, batch: Union[ProductionBatch, Dict[str, Any]]
+    ) -> Optional[ProductionBatch]:
+        """Create a new production batch."""
+        return run_sync(self._async_service.create_batch(batch))
+
+    def update_batch(self, batch: ProductionBatch) -> Optional[ProductionBatch]:
+        """Update an existing production batch."""
+        return run_sync(self._async_service.update_batch(batch))
+
+    def save_batches(
+        self, batches: Sequence[Union[ProductionBatch, Dict[str, Any]]]
+    ) -> List[ProductionBatch]:
+        """Add or update batches (bulk)."""
+        return run_sync(self._async_service.save_batches(batches))
 
     # =========================================================================
     # Unit Phase and Process
@@ -313,39 +188,10 @@ class ProductionService:
         phase: Union[int, str, UnitPhaseFlag],
         comment: Optional[str] = None
     ) -> bool:
-        """
-        Set a unit's current phase.
-
-        Args:
-            serial_number: The unit serial number
-            part_number: The product part number
-            phase: Phase ID (int), code (str), name (str), or UnitPhaseFlag enum
-            comment: Optional comment
-
-        Returns:
-            True if successful
-            
-        Example:
-            # By phase ID
-            api.production.set_unit_phase("SN001", "PART001", 16)
-            
-            # By phase code
-            api.production.set_unit_phase("SN001", "PART001", "Finalized")
-            
-            # By phase name
-            api.production.set_unit_phase("SN001", "PART001", "Under production")
-            
-            # By enum (recommended)
-            api.production.set_unit_phase("SN001", "PART001", UnitPhaseFlag.FINALIZED)
-        """
-        # Resolve phase to ID if string
-        phase_id = self.get_phase_id(phase)
-        if phase_id is None:
-            raise ValueError(f"Unknown phase: {phase}")
-        
-        return self._repository.set_unit_phase(
-            serial_number, part_number, phase_id, comment
-        )
+        """Set a unit's current phase."""
+        return run_sync(self._async_service.set_unit_phase(
+            serial_number, part_number, phase, comment
+        ))
 
     def set_unit_process(
         self,
@@ -354,21 +200,10 @@ class ProductionService:
         process_code: Optional[int] = None,
         comment: Optional[str] = None
     ) -> bool:
-        """
-        Set a unit's process.
-
-        Args:
-            serial_number: The unit serial number
-            part_number: The product part number
-            process_code: The process code
-            comment: Optional comment
-
-        Returns:
-            True if successful
-        """
-        return self._repository.set_unit_process(
+        """Set a unit's process."""
+        return run_sync(self._async_service.set_unit_process(
             serial_number, part_number, process_code, comment
-        )
+        ))
 
     # =========================================================================
     # Unit Changes
@@ -378,67 +213,24 @@ class ProductionService:
         self,
         serial_number: Optional[str] = None,
         part_number: Optional[str] = None,
-        top: Optional[int] = None
+        top: Optional[int] = None,
+        skip: Optional[int] = None
     ) -> List[UnitChange]:
-        """
-        Get unit change records.
+        """Get unit change records."""
+        return run_sync(self._async_service.get_unit_changes(
+            serial_number, part_number, top, skip
+        ))
 
-        Args:
-            serial_number: Optional serial number filter
-            part_number: Optional part number filter
-            top: Max number of records
-
-        Returns:
-            List of UnitChange objects
-        """
-        return self._repository.get_unit_changes(
-            serial_number=serial_number,
-            part_number=part_number,
-            top=top
-        )
+    def delete_unit_change(self, change_id: str) -> bool:
+        """Delete a unit change record."""
+        return run_sync(self._async_service.delete_unit_change(change_id))
 
     def acknowledge_unit_change(self, change_id: str) -> bool:
-        """
-        Acknowledge and delete a unit change record.
-
-        Args:
-            change_id: The change record ID
-
-        Returns:
-            True if successful
-        """
-        return self._repository.delete_unit_change(change_id)
+        """Acknowledge and delete a unit change record."""
+        return run_sync(self._async_service.acknowledge_unit_change(change_id))
 
     # =========================================================================
-    # Assembly (Parent/Child Unit Relationships)
-    # =========================================================================
-    #
-    # These methods manage ACTUAL UNIT assemblies during production.
-    # 
-    # KEY CONCEPT DISTINCTION:
-    # ========================
-    # 
-    # Box Build Template (Product Domain):
-    #   - Defines WHAT subunits are REQUIRED (design-time)
-    #   - Managed via api.product.get_box_build_template()
-    #   - Example: "Controller Module requires 1x Power Supply, 2x Sensor"
-    #
-    # Unit Assembly (Production Domain - THIS SECTION):
-    #   - ATTACHES actual units with serial numbers (runtime/production)
-    #   - Managed via these methods below
-    #   - Example: "Unit CTRL-001 contains PSU-456 and SNS-789, SNS-790"
-    #
-    # WORKFLOW:
-    # 1. Create production units (both parent and children)
-    # 2. Test and finalize child units (set phase to "Finalized")
-    # 3. Use add_child_to_assembly() to attach children to parent
-    # 4. Use verify_assembly() to confirm all required parts are attached
-    #
-    # VALIDATION RULES for add_child_to_assembly():
-    # - Child unit must not already have a parent
-    # - Parent's box build template must define the child as valid
-    # - Child unit must be in phase "Finalized" (or have PhaseFinalized tag)
-    # - The relation cannot create a loop
+    # Child Units (Assembly) - Public API
     # =========================================================================
 
     def add_child_to_assembly(
@@ -448,54 +240,10 @@ class ProductionService:
         child_serial: str,
         child_part: str
     ) -> bool:
-        """
-        Add a child unit to a parent assembly (box build).
-        
-        This attaches an ACTUAL production unit (with serial number) to a parent
-        assembly. The child must match one of the subunits defined in the parent's
-        box build template.
-
-        Prerequisites:
-            - Parent's box build template must define this child product as valid
-            - Child unit must be in phase "Finalized" (or product has PhaseFinalized tag)
-            - Child unit must not already have a parent
-            
-        Args:
-            parent_serial: Parent unit serial number
-            parent_part: Parent product part number
-            child_serial: Child unit serial number
-            child_part: Child product part number
-
-        Returns:
-            True if successful
-            
-        Raises:
-            API error if validation fails (child not finalized, not in template, etc.)
-            
-        Example:
-            # 1. First, ensure box build template is defined (Product domain)
-            # template = api.product.get_box_build_template("MODULE", "A")
-            # template.add_subunit("PCBA", "A").save()
-            
-            # 2. Finalize the child unit
-            api.production.set_unit_phase("PCBA-001", "PCBA", "Finalized")
-            
-            # 3. Add child to parent assembly
-            api.production.add_child_to_assembly(
-                parent_serial="MODULE-001",
-                parent_part="MODULE",
-                child_serial="PCBA-001", 
-                child_part="PCBA"
-            )
-            
-        See Also:
-            - BoxBuildTemplate: Define what subunits are required
-            - verify_assembly(): Check if all required parts are attached
-            - remove_child_from_assembly(): Detach a child unit
-        """
-        return self._repository.add_child_unit(
+        """Attach a child unit to a parent assembly."""
+        return run_sync(self._async_service.add_child_to_assembly(
             parent_serial, parent_part, child_serial, child_part
-        )
+        ))
 
     def remove_child_from_assembly(
         self,
@@ -504,24 +252,10 @@ class ProductionService:
         child_serial: str,
         child_part: str
     ) -> bool:
-        """
-        Remove a child unit from a parent assembly.
-        
-        Detaches an actual production unit from its parent assembly.
-        The child unit will be available for reassignment to another parent.
-
-        Args:
-            parent_serial: Parent unit serial number
-            parent_part: Parent product part number
-            child_serial: Child unit serial number
-            child_part: Child product part number
-
-        Returns:
-            True if successful
-        """
-        return self._repository.remove_child_unit(
+        """Remove the parent/child relation between two units."""
+        return run_sync(self._async_service.remove_child_from_assembly(
             parent_serial, parent_part, child_serial, child_part
-        )
+        ))
 
     def verify_assembly(
         self,
@@ -529,40 +263,14 @@ class ProductionService:
         part_number: str,
         revision: str
     ) -> Optional[Dict[str, Any]]:
-        """
-        Verify that assembly child units match the box build template.
-        
-        Checks whether all required subunits (as defined in the product's
-        box build template) have been attached to this specific unit.
-        
-        This compares:
-        - Box Build Template: "What subunits are REQUIRED" (Product domain)
-        - Current Assembly: "What units are ATTACHED" (Production domain)
-
-        Args:
-            serial_number: Parent serial number
-            part_number: Parent part number
-            revision: Parent revision
-
-        Returns:
-            Verification results or None
-        """
-        return self._repository.check_child_units(
+        """Verify that assembly child units match the box build template."""
+        return run_sync(self._async_service.verify_assembly(
             serial_number, part_number, revision
-        )
+        ))
 
     # =========================================================================
-    # Serial Numbers
+    # Serial Numbers - Public API
     # =========================================================================
-
-    def get_serial_number_types(self) -> List[SerialNumberType]:
-        """
-        Get all serial number types.
-
-        Returns:
-            List of SerialNumberType objects
-        """
-        return self._repository.get_serial_number_types()
 
     def allocate_serial_numbers(
         self,
@@ -572,22 +280,10 @@ class ProductionService:
         reference_pn: Optional[str] = None,
         station_name: Optional[str] = None
     ) -> List[str]:
-        """
-        Allocate serial numbers from pool.
-
-        Args:
-            type_name: Serial number type name
-            count: Number to allocate
-            reference_sn: Optional reference serial number
-            reference_pn: Optional reference part number
-            station_name: Optional station name
-
-        Returns:
-            List of allocated serial numbers
-        """
-        return self._repository.take_serial_numbers(
+        """Allocate serial numbers from pool."""
+        return run_sync(self._async_service.allocate_serial_numbers(
             type_name, count, reference_sn, reference_pn, station_name
-        )
+        ))
 
     def find_serial_numbers_in_range(
         self,
@@ -595,20 +291,10 @@ class ProductionService:
         from_serial: str,
         to_serial: str
     ) -> List[Dict[str, Any]]:
-        """
-        Find serial numbers in a range.
-
-        Args:
-            type_name: Serial number type name
-            from_serial: Start of range
-            to_serial: End of range
-
-        Returns:
-            List of serial number records
-        """
-        return self._repository.get_serial_numbers_by_range(
+        """Find serial numbers in a range."""
+        return run_sync(self._async_service.find_serial_numbers_in_range(
             type_name, from_serial, to_serial
-        )
+        ))
 
     def find_serial_numbers_by_reference(
         self,
@@ -616,37 +302,18 @@ class ProductionService:
         reference_serial: Optional[str] = None,
         reference_part: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """
-        Find serial numbers by reference.
-
-        Args:
-            type_name: Serial number type name
-            reference_serial: Reference serial number
-            reference_part: Reference part number
-
-        Returns:
-            List of serial number records
-        """
-        return self._repository.get_serial_numbers_by_reference(
+        """Find serial numbers by reference."""
+        return run_sync(self._async_service.find_serial_numbers_by_reference(
             type_name, reference_serial, reference_part
-        )
+        ))
 
     def import_serial_numbers(
         self,
         file_content: bytes,
         content_type: str = "text/csv"
     ) -> bool:
-        """
-        Import serial numbers from file.
-
-        Args:
-            file_content: File content as bytes
-            content_type: MIME type (text/csv or application/xml)
-
-        Returns:
-            True if successful
-        """
-        return self._repository.upload_serial_numbers(file_content, content_type)
+        """Import serial numbers from file (XML or CSV)."""
+        return run_sync(self._async_service.import_serial_numbers(file_content, content_type))
 
     def export_serial_numbers(
         self,
@@ -654,90 +321,180 @@ class ProductionService:
         state: Optional[str] = None,
         format: str = "csv"
     ) -> Optional[bytes]:
-        """
-        Export serial numbers to file.
-
-        Args:
-            type_name: Serial number type name
-            state: Optional state filter
-            format: Output format (csv or xml)
-
-        Returns:
-            File content as bytes or None
-        """
-        return self._repository.export_serial_numbers(type_name, state, format)
+        """Export serial numbers as file."""
+        return run_sync(self._async_service.export_serial_numbers(type_name, state, format))
 
     # =========================================================================
-    # Batches
+    # ⚠️ INTERNAL API - Connection Check
     # =========================================================================
 
-    def save_batches(
-        self, batches: Sequence[ProductionBatch]
-    ) -> List[ProductionBatch]:
-        """
-        Create or update production batches.
-
-        Args:
-            batches: List of ProductionBatch objects
-
-        Returns:
-            List of saved ProductionBatch objects
-        """
-        return self._repository.save_batches(batches)
+    def is_connected(self) -> bool:
+        """⚠️ INTERNAL: Check if Production module is connected."""
+        return run_sync(self._async_service.is_connected())
 
     # =========================================================================
-    # Internal API Methods
-    # =========================================================================
-    # Extended Methods (from internal service)
+    # ⚠️ INTERNAL API - Sites
     # =========================================================================
 
-    def _ensure_internal(self) -> "ProductionServiceInternal":
-        """Ensure internal service is available."""
-        if self._internal is None:
-            raise RuntimeError(
-                "Internal production methods are not available. "
-                "This pyWATS client was not configured with internal API support."
-            )
-        return self._internal
+    def get_sites(self) -> List[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get all production sites."""
+        return run_sync(self._async_service.get_sites())
 
-    # -------------------------------------------------------------------------
-    # Unit Phases (Extended)
-    # -------------------------------------------------------------------------
+    # =========================================================================
+    # ⚠️ INTERNAL API - Unit Operations
+    # =========================================================================
 
-    def get_all_unit_phases(self) -> List[UnitPhase]:
-        """
-        Get all available unit phases with full details.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Unit phases define production workflow states:
-        - "In Test" - Unit is being tested
-        - "Passed" - Unit passed testing
-        - "Failed" - Unit failed testing
-        - "In Repair" - Unit is being repaired
-        - "Scrapped" - Unit has been scrapped
-        - etc.
+    def get_unit_info(
+        self,
+        serial_number: str,
+        part_number: str
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get detailed unit information."""
+        return run_sync(self._async_service.get_unit_info(serial_number, part_number))
 
-        Returns:
-            List of UnitPhase objects containing phase configuration
-            
-        Example:
-            phases = api.production.get_all_unit_phases()
-            for phase in phases:
-                print(f"{phase.name}: {phase.description}")
-        """
-        return self._ensure_internal().get_unit_phases()
+    def get_unit_hierarchy(
+        self,
+        serial_number: str,
+        part_number: str
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get the complete unit hierarchy."""
+        return run_sync(self._async_service.get_unit_hierarchy(serial_number, part_number))
 
-    def get_phase_by_name(self, name: str) -> Optional[UnitPhase]:
-        """
-        Get a specific unit phase by name.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
+    def get_unit_state_history(
+        self,
+        serial_number: str,
+        part_number: str
+    ) -> List[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get the unit state change history."""
+        return run_sync(self._async_service.get_unit_state_history(serial_number, part_number))
 
-        Args:
-            name: The name of the phase to find
-            
-        Returns:
-            UnitPhase if found, None otherwise
-        """
-        return self._ensure_internal().get_phase_by_name(name)
+    def get_unit_contents(
+        self,
+        serial_number: str,
+        part_number: str,
+        revision: str
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get unit contents (BOM/components)."""
+        return run_sync(self._async_service.get_unit_contents(
+            serial_number, part_number, revision
+        ))
+
+    def create_unit(
+        self,
+        serial_number: str,
+        part_number: str,
+        revision: str,
+        batch_number: Optional[str] = None,
+        unit_phase: Optional[int] = None
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Create a new unit in the production system."""
+        return run_sync(self._async_service.create_unit(
+            serial_number, part_number, revision, batch_number, unit_phase
+        ))
+
+    # =========================================================================
+    # ⚠️ INTERNAL API - Child Unit Operations
+    # =========================================================================
+
+    def add_child_unit_validated(
+        self,
+        serial_number: str,
+        part_number: str,
+        child_serial_number: str,
+        child_part_number: str,
+        check_part_number: str,
+        check_revision: str,
+        culture_code: str = "en-US",
+        check_phase: Optional[bool] = None
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Add a child unit to a parent unit with validation."""
+        return run_sync(self._async_service.add_child_unit_validated(
+            serial_number, part_number, child_serial_number, child_part_number,
+            check_part_number, check_revision, culture_code, check_phase
+        ))
+
+    def remove_child_unit_localized(
+        self,
+        serial_number: str,
+        part_number: str,
+        child_serial_number: str,
+        child_part_number: str,
+        culture_code: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Remove a child unit from a parent unit."""
+        return run_sync(self._async_service.remove_child_unit_localized(
+            serial_number, part_number, child_serial_number, child_part_number, culture_code
+        ))
+
+    def remove_all_child_units(
+        self,
+        serial_number: str,
+        part_number: str,
+        culture_code: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Remove all child units from a parent unit."""
+        return run_sync(self._async_service.remove_all_child_units(
+            serial_number, part_number, culture_code
+        ))
+
+    def validate_child_units(
+        self,
+        parent_serial_number: str,
+        parent_part_number: str,
+        culture_code: str = "en-US"
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Validate child units of a parent unit."""
+        return run_sync(self._async_service.validate_child_units(
+            parent_serial_number, parent_part_number, culture_code
+        ))
+
+    # =========================================================================
+    # ⚠️ INTERNAL API - Serial Number Management
+    # =========================================================================
+
+    def find_serial_numbers(
+        self,
+        serial_number_type: str,
+        start_address: str,
+        end_address: str,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+    ) -> List[Dict[str, Any]]:
+        """⚠️ INTERNAL: Find all serial numbers in a range."""
+        return run_sync(self._async_service.find_serial_numbers(
+            serial_number_type, start_address, end_address, start_date, end_date
+        ))
+
+    def get_serial_number_count(
+        self,
+        serial_number_type: str,
+        start_address: Optional[str] = None,
+        end_address: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None
+    ) -> Optional[int]:
+        """⚠️ INTERNAL: Get count of serial numbers in a range."""
+        return run_sync(self._async_service.get_serial_number_count(
+            serial_number_type, start_address, end_address, from_date, to_date
+        ))
+
+    def free_serial_numbers(
+        self,
+        ranges: List[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Free reserved serial numbers in specified ranges."""
+        return run_sync(self._async_service.free_serial_numbers(ranges))
+
+    def get_serial_number_ranges(
+        self,
+        serial_number_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get current serial number ranges."""
+        return run_sync(self._async_service.get_serial_number_ranges(serial_number_type))
+
+    def get_serial_number_statistics(
+        self,
+        serial_number_type: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get statistics for serial numbers."""
+        return run_sync(self._async_service.get_serial_number_statistics(serial_number_type))

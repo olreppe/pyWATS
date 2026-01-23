@@ -3,6 +3,7 @@
 Contains HTTP client, authentication, error handling, and base exceptions.
 """
 from .client import HttpClient, Response
+from .async_client import AsyncHttpClient
 from .config import (
     APISettings,
     APIConfigManager,
@@ -24,6 +25,7 @@ from .exceptions import (
     ErrorHandler,
     # Exceptions
     PyWATSError,
+    WatsApiError,
     AuthenticationError,
     AuthorizationError,
     NotFoundError,
@@ -66,6 +68,7 @@ from .pagination import (
     Paginator,
     PaginationConfig,
 )
+from .routes import Routes, API
 
 __all__ = [
     # Client
@@ -112,6 +115,9 @@ __all__ = [
     "paginate_all",
     "Paginator",
     "PaginationConfig",
+    # Routes
+    "Routes",
+    "API",
     # Error handling
     "ErrorMode",
     "ErrorHandler",

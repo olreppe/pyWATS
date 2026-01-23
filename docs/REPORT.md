@@ -18,6 +18,8 @@ The Report domain manages test reports (UUT/UUR) containing test results, measur
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS
 
@@ -59,15 +61,50 @@ root.add_pass_fail_step(
 report_id = api.report.submit_report(report)
 print(f"Report submitted: {report_id}")
 
-# Query reports
-from pywats.domains.report import WATSFilter
+# Query reports using OData filter or helper methods
+# Method 1: Helper method (simplest)
+headers = api.report.get_headers_by_serial("W12345")
 
-filter_obj = WATSFilter(
-    part_number="WIDGET-001",
-    days=7  # Last 7 days
+# Method 2: Using query_headers with ReportType
+from pywats.domains.report import ReportType
+headers = api.report.query_headers(
+    report_type=ReportType.UUT,
+    odata_filter="partNumber eq 'WIDGET-001'",
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def query_reports():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        # Query multiple serials concurrently
+        serials = ["SN-001", "SN-002", "SN-003"]
+        results = await asyncio.gather(*[
+            api.report.get_headers_by_serial(sn) 
+            for sn in serials
+        ])
+        
+        for sn, headers in zip(serials, results):
+            print(f"{sn}: {len(headers)} reports")
+
+asyncio.run(query_reports())
+```
+    top=100
 )
 
-headers = api.report.query_uut_headers(filter_obj)
+# Method 3: Using query_uut_headers with OData filter
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001'",
+    top=100
+)
 print(f"Found {len(headers)} reports")
 ```
 
@@ -529,91 +566,118 @@ root.add_generic_step(
 
 ## Querying Reports
 
+The report query API uses **OData filters** for flexible querying. Helper methods are provided for common use cases.
+
+### ReportType Enum
+
+```python
+from pywats.domains.report import ReportType
+
+# ReportType.UUT = "U" - Unit Under Test (test results)
+# ReportType.UUR = "R" - Unit Under Repair (repair records)
+```
+
 ### Query UUT Report Headers
 
 ```python
-from pywats.domains.report import WATSFilter
+# Simple queries using helper methods
+headers = api.report.get_headers_by_serial("W12345")
+headers = api.report.get_headers_by_part_number("WIDGET-001")
+headers = api.report.get_recent_headers(days=7)
+headers = api.report.get_todays_headers()
 
-# Basic query - last 7 days
-filter_obj = WATSFilter(days=7)
-headers = api.report.query_uut_headers(filter_obj)
+# Using the unified query_headers method
+from pywats.domains.report import ReportType
+
+headers = api.report.query_headers(
+    report_type=ReportType.UUT,
+    odata_filter="serialNumber eq 'W12345'",
+    top=100,
+    orderby="start desc"
+)
+
+# Using query_uut_headers with OData filter
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001'",
+    top=100
+)
 
 print(f"Found {len(headers)} reports")
 for header in headers[:10]:
-    print(f"{header.serial_number}: {header.result} ({header.start_time})")
+    print(f"{header.serial_number}: {header.status} ({header.start_utc})")
+```
+
+### OData Filter Examples
+
+```python
+# Filter by serial number
+headers = api.report.query_uut_headers(
+    odata_filter="serialNumber eq 'W12345'"
+)
 
 # Filter by part number
-filter_obj = WATSFilter(
-    part_number="WIDGET-001",
-    days=30
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001'"
 )
-headers = api.report.query_uut_headers(filter_obj)
 
-# Filter by serial number
-filter_obj = WATSFilter(
-    serial_number="W12345"
+# Filter by status
+headers = api.report.query_uut_headers(
+    odata_filter="status eq 'Failed'"
 )
-headers = api.report.query_uut_headers(filter_obj)
 
-# Filter by result (passed/failed)
-filter_obj = WATSFilter(
-    part_number="WIDGET-001",
-    result="Failed",  # or "Passed"
-    days=7
+# Date range filter
+headers = api.report.query_uut_headers(
+    odata_filter="start ge 2026-01-01T00:00:00Z and start le 2026-01-31T23:59:59Z"
 )
-headers = api.report.query_uut_headers(filter_obj)
 
-# Date range
-from datetime import datetime, timedelta
-
-end_date = datetime.now()
-start_date = end_date - timedelta(days=90)
-
-filter_obj = WATSFilter(
-    part_number="WIDGET-001",
-    start_date_time=start_date,
-    end_date_time=end_date
+# Combined filters
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001' and status eq 'Failed'"
 )
-headers = api.report.query_uut_headers(filter_obj)
 
-# Limit results
-filter_obj = WATSFilter(
-    part_number="WIDGET-001",
-    days=30,
-    top_count=100  # Limit to 100 results
+# With pagination
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001'",
+    top=100,
+    skip=0,
+    orderby="start desc"
 )
-headers = api.report.query_uut_headers(filter_obj)
 ```
 
-### Load Full Report
+### Query with Expanded Fields
 
 ```python
-# Get report by UUID
-report_id = "550e8400-e29b-41d4-a716-446655440000"
-report = api.report.get_uut_report(report_id)
+# Expand sub-units
+headers = api.report.query_uut_headers(
+    odata_filter="serialNumber eq 'W12345'",
+    expand=["subUnits"]
+)
 
-if report:
-    print(f"Loaded report: {report.sn}")
-    print(f"Result: {report.result}")
-    print(f"Station: {report.station_name}")
-    
-    # Access steps
-    root = report.get_root_sequence_call()
-    print(f"Steps: {len(root.steps)}")
+for header in headers:
+    if header.sub_units:
+        for sub in header.sub_units:
+            print(f"  Sub-unit: {sub.serial_number}")
+
+# Expand misc info
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001'",
+    expand=["miscInfo"]
+)
 ```
 
-### Query by Operation Type
+### Query UUR (Repair) Headers
 
 ```python
-# Get reports for specific test operation
-filter_obj = WATSFilter(
-    part_number="WIDGET-001",
-    operation_type=100,  # EOL test
-    days=7
+# Query repair reports
+repairs = api.report.query_uur_headers(
+    odata_filter="serialNumber eq 'W12345'"
 )
-headers = api.report.query_uut_headers(filter_obj)
 
-print(f"EOL test reports: {len(headers)}")
+# Using ReportType enum
+repairs = api.report.query_headers(
+    report_type=ReportType.UUR,
+    odata_filter="serialNumber eq 'W12345'"
+)
 ```
 
 ---
@@ -657,9 +721,10 @@ api.report.submit_report(report)
 ### Download Attachments
 
 ```python
-# Get report header
-filter_obj = WATSFilter(serial_number="W12345")
-headers = api.report.query_uut_headers(filter_obj)
+# Get report header using OData filter
+headers = api.report.query_uut_headers(
+    odata_filter="serialNumber eq 'W12345'"
+)
 
 if headers:
     header = headers[0]
@@ -762,15 +827,14 @@ print(f"Test {'PASSED' if passed else 'FAILED'} - Report: {report_id}")
 ```python
 def generate_failure_report(days=7):
     """Generate failure analysis from recent tests"""
-    from pywats.domains.report import WATSFilter
+    from datetime import datetime, timedelta
     
-    # Get failed reports
-    filter_obj = WATSFilter(
-        result="Failed",
-        days=days
+    # Get failed reports using OData filter
+    start_date = datetime.now() - timedelta(days=days)
+    headers = api.report.query_uut_headers(
+        odata_filter=f"result eq 'Failed' and start ge {start_date.strftime('%Y-%m-%d')}",
+        top=500
     )
-    
-    headers = api.report.query_uut_headers(filter_obj)
     
     print(f"\n=== FAILURE ANALYSIS ({days} days) ===\n")
     print(f"Total failures: {len(headers)}")
@@ -805,19 +869,34 @@ generate_failure_report(days=7)
 
 #### UUT Report Operations
 - `create_uut_report(...)` → `UUTReport` - Create new UUT report
-- `query_uut_headers(filter)` → `List[ReportHeader]` - Query report headers
+- `query_uut_headers(odata_filter, top, skip, orderby, expand)` → `List[ReportHeader]` - Query UUT report headers with OData
 - `get_uut_report(report_id)` → `Optional[UUTReport]` - Get full report
 - `submit_report(report)` → `Optional[UUID]` - Submit report to server
 
 #### UUR Report Operations  
 - `create_uur_report(uut, ...)` → `UURReport` - Create UUR from UUT
 - `create_uur_from_part_and_process(...)` → `UURReport` - Create UUR from metadata
+- `query_uur_headers(odata_filter, top, skip, orderby, expand)` → `List[ReportHeader]` - Query UUR report headers with OData
+
+#### Unified Query Operations
+- `query_headers(report_type, odata_filter, top, skip, orderby, expand)` → `List[ReportHeader]` - Query UUT/UUR headers
+
+#### Query Helper Methods
+- `get_headers_by_serial(serial_number)` → `List[ReportHeader]` - Get headers by serial
+- `get_headers_by_part_number(part_number)` → `List[ReportHeader]` - Get headers by part number
+- `get_headers_by_date_range(start_date, end_date)` → `List[ReportHeader]` - Get headers by date range
+- `get_recent_headers(count)` → `List[ReportHeader]` - Get most recent headers
+- `get_todays_headers()` → `List[ReportHeader]` - Get today's headers
 
 #### Attachment Operations
 - `get_attachments(report_id)` → `List[Attachment]` - Get attachment list
 - `download_attachment(report_id, filename)` → `bytes` - Download attachment data
 
 ### Models
+
+#### ReportType Enum
+- `ReportType.UUT` - "U" - UUT (Unit Under Test) reports
+- `ReportType.UUR` - "R" - UUR (Unit Under Repair) reports
 
 #### UUTReport
 - `pn`: Part number
@@ -835,7 +914,11 @@ generate_failure_report(days=7)
 - `steps`: List of child steps
 - Methods: `add_numeric_step()`, `add_pass_fail_step()`, `add_sequence_call()`, etc.
 
-#### WATSFilter
+#### WATSFilter (Analytics API only)
+
+**Note:** WATSFilter is used with the Analytics API, not for report queries. 
+For querying report headers, use OData filter syntax or the helper methods.
+
 - `part_number`: Filter by part
 - `serial_number`: Filter by serial
 - `result`: "Passed" or "Failed"

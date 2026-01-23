@@ -9,8 +9,14 @@ from .enums import (
     TicketUpdateType,
 )
 from .models import Ticket, TicketUpdate, TicketAttachment
-from .repository import RootCauseRepository
-from .service import RootCauseService
+
+# Async implementations (primary API)
+from .async_repository import AsyncRootCauseRepository
+from .async_service import AsyncRootCauseService
+
+# Backward-compatible aliases
+RootCauseRepository = AsyncRootCauseRepository
+RootCauseService = AsyncRootCauseService
 
 __all__ = [
     # Enums
@@ -22,7 +28,10 @@ __all__ = [
     "Ticket",
     "TicketUpdate",
     "TicketAttachment",
-    # Repository & Service
+    # Async implementations (primary API)
+    "AsyncRootCauseRepository",
+    "AsyncRootCauseService",
+    # Backward-compatible aliases
     "RootCauseRepository",
     "RootCauseService",
 ]

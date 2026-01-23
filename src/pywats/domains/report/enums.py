@@ -13,6 +13,20 @@ class DateGrouping(IntEnum):
     HOUR = 5
 
 
+class ReportType(str, Enum):
+    """
+    Report type for querying headers.
+    
+    - UUT (U): Unit Under Test reports - test results
+    - UUR (R): Unit Under Repair reports - repair/rework records
+    """
+    UUT = "U"
+    UUR = "R"
+    
+    def __str__(self) -> str:
+        return self.value
+
+
 class ImportMode(Enum):
     """
     Import mode for UUT report creation.

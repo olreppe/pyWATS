@@ -1,13 +1,37 @@
 """Process repository - internal API data access layer.
 
+⚠️ DEPRECATED - USE AsyncProcessRepository INSTEAD ⚠️
+
+This module is DEPRECATED. All internal API methods have been consolidated
+into async_repository.py. Use AsyncProcessRepository for both public and
+internal API methods.
+
+Migration:
+    # Old:
+    from pywats.domains.process.repository_internal import ProcessRepositoryInternal
+    
+    # New:
+    from pywats.domains.process import AsyncProcessRepository
+    # OR
+    from pywats.domains.process import ProcessRepository  # alias
+
 ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
 
 Uses internal WATS API endpoints that are not publicly documented.
-These endpoints may change without notice. This module should be
-replaced with public API endpoints as soon as they become available.
+These endpoints may change without notice.
 
 The internal API requires the Referer header to be set to the base URL.
 """
+import warnings
+
+# Emit deprecation warning on import
+warnings.warn(
+    "ProcessRepositoryInternal is deprecated. "
+    "Use AsyncProcessRepository from pywats.domains.process instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 
@@ -20,6 +44,8 @@ if TYPE_CHECKING:
 
 class ProcessRepositoryInternal:
     """
+    ⚠️ DEPRECATED - Use AsyncProcessRepository instead ⚠️
+    
     Process data access layer using internal API.
     
     ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
@@ -75,14 +101,14 @@ class ProcessRepositoryInternal:
         """
         Get all processes with full details.
         
-        ⚠️ INTERNAL API - uses /api/internal/Process/GetProcesses
+        Uses internal API (/api/internal/Process/GetProcesses)
         
         Returns:
             List of ProcessInfo objects with full details
         """
         data = self._internal_get(
             "/api/internal/Process/GetProcesses",
-            operation="get_processes_internal"
+            operation="get_processes_detailed"
         )
         if data and isinstance(data, list):
             # Internal API uses PascalCase - need to map fields

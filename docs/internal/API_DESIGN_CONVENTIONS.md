@@ -121,7 +121,7 @@ The user-facing API (`api.domain.method()`) remains unchanged.
 - `get_unit_flow()` - Unit flow analysis
 - `get_measurement_list()` - Detailed measurements with filters
 - `get_step_status_list()` - Step status breakdown
-- `get_top_failed_internal()` - Extended TopFailed with POST
+- `get_top_failed_advanced()` - Extended TopFailed with advanced filters (POST endpoint)
 
 ### Product
 - `get_box_build_template()` - Box build template management
@@ -137,12 +137,18 @@ The user-facing API (`api.domain.method()`) remains unchanged.
 - `blob_exists()` - Check if file exists
 
 ### Production
-- `get_all_unit_phases()` - Full phase details
-- `get_phase_by_name()` - Lookup phase by name
+- `get_unit_phases_mes()` - Full phase details from MES API
+- `get_unit_by_serial()` - Get unit by serial number
+- `create_unit()` - Create new unit
+- `add_child_unit_validated()` - Add child unit with validation
+- `remove_child_unit_localized()` - Remove child unit with localized response
+- `validate_child_units()` - Validate child units
 
 ### Process
-- `get_all_processes()` - Full process details
-- `get_process_by_id()` - Lookup by GUID
+- `get_processes_detailed()` - Full process details
+- `get_process_detailed()` - Lookup by GUID with full details
+- `get_repair_operations()` - Repair operation configurations
+- `get_repair_operation()` - Get single repair operation config
 - `get_all_test_operations()` - Test operations with details
 - `get_all_repair_processes()` - Repair processes with details
 - `get_process_by_code()` - Lookup by code

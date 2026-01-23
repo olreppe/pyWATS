@@ -5,20 +5,38 @@ Base class for all configuration pages.
 
 Supports both legacy (config-only) and new (facade-based) initialization patterns
 to allow gradual migration of existing pages.
+
+Async Support:
+    Pages can execute async operations without blocking the UI using the
+    run_async() method or by connecting to the facade's AsyncTaskRunner signals.
+
+Error Handling:
+    Pages inherit centralized error handling via ErrorHandlingMixin:
+    - handle_error(error, context) - Show appropriate dialog based on exception type
+    - show_success(message) - Show success message
+    - show_warning(message) - Show warning message
+    - show_error(message) - Show error message
+    - confirm_action(message) - Show confirmation dialog
 """
 
-from typing import Callable, Dict, Any, List, Optional, TYPE_CHECKING
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame
-from PySide6.QtCore import Signal
+from typing import Awaitable, Callable, Dict, Any, List, Optional, TYPE_CHECKING, TypeVar
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QProgressBar
+)
+from PySide6.QtCore import Signal, Qt
 
 from ...core.config import ClientConfig
 from ...core.event_bus import AppEvent, event_bus
+from ...core.async_runner import TaskResult, AsyncTaskRunner
+from ..error_mixin import ErrorHandlingMixin
 
 if TYPE_CHECKING:
     from ...core.app_facade import AppFacade
 
+T = TypeVar('T')
 
-class BasePage(QWidget):
+
+class BasePage(QWidget, ErrorHandlingMixin):
     """
     Base class for configuration pages.
     
@@ -27,6 +45,8 @@ class BasePage(QWidget):
     - Config change signal
     - Save/load config methods
     - Optional AppFacade integration for decoupled event-driven updates
+    - Async operation support with loading indicators
+    - Centralized error handling (via ErrorHandlingMixin)
     
     Two initialization patterns are supported:
     
@@ -42,10 +62,39 @@ class BasePage(QWidget):
     - Subscribe to application events via EventBus
     - Access API client safely via facade.api
     - Use domain shortcuts (facade.asset, facade.product, etc.)
+    - Run async operations without blocking UI via run_async()
+    
+    Error Handling (from ErrorHandlingMixin):
+        try:
+            result = api.do_something()
+        except Exception as e:
+            self.handle_error(e, "doing something")  # Shows appropriate dialog
+    
+    Async Example:
+        def _on_refresh(self):
+            self.run_async(
+                self._load_data(),
+                name="load_data",
+                on_complete=self._on_data_loaded
+            )
+        
+        async def _load_data(self):
+            if api := self.facade.api:
+                return await api.asset.get_assets()
+            return []
+        
+        def _on_data_loaded(self, result: TaskResult):
+            if result.is_success:
+                self._populate_table(result.result)
+            else:
+                self._show_error(str(result.error))
     """
     
     # Emitted when configuration is changed
     config_changed = Signal()
+    
+    # Emitted when async loading state changes (is_loading, task_name)
+    loading_changed = Signal(bool, str)
     
     def __init__(
         self, 
@@ -58,6 +107,8 @@ class BasePage(QWidget):
         self.config = config
         self._facade: Optional["AppFacade"] = facade
         self._event_subscriptions: List[tuple[AppEvent, Callable]] = []
+        self._running_tasks: Dict[str, str] = {}  # task_id -> name
+        self._async_runner: Optional[AsyncTaskRunner] = None
         self._setup_base_ui()
     
     def _setup_base_ui(self) -> None:
@@ -66,10 +117,44 @@ class BasePage(QWidget):
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(15)
         
+        # Title row with optional loading indicator
+        title_row = QHBoxLayout()
+        title_row.setContentsMargins(0, 0, 0, 0)
+        
         # Title
         self._title_label = QLabel(self.page_title)
         self._title_label.setObjectName("titleLabel")
-        self._layout.addWidget(self._title_label)
+        title_row.addWidget(self._title_label)
+        
+        title_row.addStretch()
+        
+        # Loading indicator (hidden by default)
+        self._loading_indicator = QProgressBar()
+        self._loading_indicator.setObjectName("loadingIndicator")
+        self._loading_indicator.setRange(0, 0)  # Indeterminate
+        self._loading_indicator.setFixedWidth(100)
+        self._loading_indicator.setFixedHeight(16)
+        self._loading_indicator.hide()
+        self._loading_indicator.setStyleSheet("""
+            QProgressBar#loadingIndicator {
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                background-color: #2d2d2d;
+            }
+            QProgressBar#loadingIndicator::chunk {
+                background-color: #0078d4;
+                border-radius: 3px;
+            }
+        """)
+        title_row.addWidget(self._loading_indicator)
+        
+        self._loading_label = QLabel()
+        self._loading_label.setObjectName("loadingLabel")
+        self._loading_label.setStyleSheet("color: #808080; font-size: 11px;")
+        self._loading_label.hide()
+        title_row.addWidget(self._loading_label)
+        
+        self._layout.addLayout(title_row)
         
         # Separator
         separator = QFrame()
@@ -117,6 +202,134 @@ class BasePage(QWidget):
         the facade (e.g., subscribing to events, loading initial data).
         """
         pass
+    
+    # =========================================================================
+    # Async Operation Support
+    # =========================================================================
+    
+    @property
+    def async_runner(self) -> AsyncTaskRunner:
+        """
+        Get or create the async task runner for this page.
+        
+        Uses the facade's runner if available, otherwise creates a local one.
+        """
+        if self._facade and self._facade._async_runner:
+            return self._facade.async_runner
+        
+        if self._async_runner is None:
+            self._async_runner = AsyncTaskRunner(parent=self)
+            # Connect to task lifecycle signals
+            self._async_runner.task_started.connect(self._on_task_started)
+            self._async_runner.task_finished.connect(self._on_task_finished)
+        
+        return self._async_runner
+    
+    def run_async(
+        self,
+        coro: Awaitable[T],
+        name: str = "task",
+        on_complete: Optional[Callable[["TaskResult[T]"], None]] = None,
+        on_error: Optional[Callable[["TaskResult[T]"], None]] = None,
+        show_loading: bool = True
+    ) -> str:
+        """
+        Run an async operation without blocking the UI.
+        
+        Args:
+            coro: The async coroutine to execute
+            name: Human-readable task name (shown in loading indicator)
+            on_complete: Callback for successful completion
+            on_error: Callback for errors
+            show_loading: Whether to show loading indicator
+        
+        Returns:
+            Task ID that can be used to cancel the task
+        
+        Example:
+            def _on_refresh(self):
+                self.run_async(
+                    self._fetch_assets(),
+                    name="Loading assets...",
+                    on_complete=self._on_assets_loaded
+                )
+            
+            async def _fetch_assets(self):
+                return await self.facade.api.asset.get_assets()
+        """
+        task_id = self.async_runner.run(coro, name, on_complete, on_error)
+        
+        if show_loading:
+            self._running_tasks[task_id] = name
+            self._update_loading_state()
+        
+        return task_id
+    
+    def cancel_task(self, task_id: str) -> bool:
+        """Cancel a running async task"""
+        if task_id in self._running_tasks:
+            del self._running_tasks[task_id]
+            self._update_loading_state()
+        return self.async_runner.cancel(task_id)
+    
+    def cancel_all_tasks(self) -> int:
+        """Cancel all running async tasks"""
+        self._running_tasks.clear()
+        self._update_loading_state()
+        return self.async_runner.cancel_all()
+    
+    @property
+    def is_loading(self) -> bool:
+        """Check if any async tasks are running"""
+        return len(self._running_tasks) > 0
+    
+    def _on_task_started(self, task_id: str, name: str) -> None:
+        """Handle task start (internal)"""
+        pass
+    
+    def _on_task_finished(self, result: TaskResult) -> None:
+        """Handle task completion (internal)"""
+        if result.task_id in self._running_tasks:
+            del self._running_tasks[result.task_id]
+            self._update_loading_state()
+    
+    def _update_loading_state(self) -> None:
+        """Update the loading indicator visibility"""
+        is_loading = len(self._running_tasks) > 0
+        
+        if is_loading:
+            # Get the first task name for display
+            task_name = next(iter(self._running_tasks.values()), "Loading...")
+            self._loading_label.setText(task_name)
+            self._loading_indicator.show()
+            self._loading_label.show()
+        else:
+            self._loading_indicator.hide()
+            self._loading_label.hide()
+        
+        # Emit signal for custom handling
+        task_name = next(iter(self._running_tasks.values()), "") if is_loading else ""
+        self.loading_changed.emit(is_loading, task_name)
+    
+    def set_loading(self, is_loading: bool, message: str = "Loading...") -> None:
+        """
+        Manually set the loading state.
+        
+        Useful for sync operations or custom loading behavior.
+        
+        Args:
+            is_loading: Whether loading is in progress
+            message: Loading message to display
+        """
+        if is_loading:
+            self._loading_label.setText(message)
+            self._loading_indicator.show()
+            self._loading_label.show()
+        else:
+            self._loading_indicator.hide()
+            self._loading_label.hide()
+        
+        self.loading_changed.emit(is_loading, message if is_loading else "")
     
     # =========================================================================
     # Event Subscription Helpers
@@ -172,13 +385,15 @@ class BasePage(QWidget):
     # =========================================================================
     
     def closeEvent(self, event) -> None:
-        """Clean up event subscriptions when page is closed."""
+        """Clean up when page is closed."""
         self.unsubscribe_all_events()
+        self.cancel_all_tasks()
         super().closeEvent(event)
     
     def deleteLater(self) -> None:
-        """Clean up event subscriptions before deletion."""
+        """Clean up before deletion."""
         self.unsubscribe_all_events()
+        self.cancel_all_tasks()
         super().deleteLater()
     
     # =========================================================================

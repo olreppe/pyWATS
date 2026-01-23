@@ -16,13 +16,13 @@ A Python library for interacting with the [WATS](https://servername.wats.com) (W
 ## Features
 
 - **PyWATS Library** - Core API library for WATS integration
-  - Product management
-  - Asset management  
-  - Report creation and submission
-  - Production/serial number management
-  - RootCause ticket system
-  - Software distribution
-  - Statistics and analytics
+  - **Async-First Architecture** - Built on `httpx` with native async support
+  - **Sync Compatibility** - Full sync API via thin wrappers (no code changes needed)
+  - **9 Domain Services**: Product, Asset, Report, Production, Analytics, Software, RootCause, Process, SCIM
+  - **170+ API Endpoints** - Centralized route management
+  - Report creation and submission with comprehensive step types
+  - OData filtering and pagination support
+  - Structured logging with configurable verbosity
 
 - **PyWATS Client** - Desktop and headless client application
   - Connection management
@@ -100,14 +100,48 @@ api = pyWATS(
 if api.test_connection():
     print(f"Connected! Server version: {api.get_version()}")
 
-# Get products
+# Get products (sync)
 products = api.product.get_products()
 for p in products:
     print(f"{p.part_number}: {p.name}")
+```
 
-# Query recent reports
-filter = WATSFilter(top_count=10)
-headers = api.report.query_uut_headers(filter)
+### Async Quick Start
+
+For high-performance applications with concurrent requests:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def main():
+    async with AsyncWATS(
+        base_url="https://your-server.wats.com",
+        token="your_token"
+    ) as api:
+        # Concurrent requests - much faster!
+        products, assets, version = await asyncio.gather(
+            api.product.get_products(),
+            api.asset.get_assets(top=10),
+            api.analytics.get_version()
+        )
+        print(f"Fetched {len(products)} products, {len(assets)} assets")
+
+asyncio.run(main())
+```
+
+### Query Reports
+
+```python
+# Query recent reports (OData filter)
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001'",
+    top=10
+)
+
+# Or use helper methods
+headers = api.report.get_headers_by_serial("SN-12345")
+headers = api.report.get_todays_headers()
 ```
 
 ### Enable Debug Logging
@@ -190,9 +224,20 @@ See [Headless Operation Guide](src/pywats_client/control/HEADLESS_GUIDE.md) for 
 pyWATS/
 ├── src/
 │   ├── pywats/              # Core library
-│   │   ├── domains/         # Domain models and services
-│   │   ├── core/            # HTTP client, exceptions, station
+│   │   ├── domains/         # Domain services (async + sync wrappers)
+│   │   │   ├── analytics/   # Statistics, yield, Unit Flow
+│   │   │   ├── asset/       # Equipment tracking, calibration
+│   │   │   ├── process/     # Operation types, caching
+│   │   │   ├── product/     # Products, revisions, BOMs
+│   │   │   ├── production/  # Serial numbers, unit lifecycle
+│   │   │   ├── report/      # Test reports, measurements
+│   │   │   ├── rootcause/   # Issue tracking, defects
+│   │   │   ├── scim/        # User provisioning
+│   │   │   └── software/    # Package distribution
+│   │   ├── core/            # HTTP client, routes, sync_runner
 │   │   ├── models/          # Report models (UUT/UUR)
+│   │   ├── async_wats.py    # AsyncWATS main class
+│   │   └── sync_wats.py     # SyncWATS wrapper (pyWATS alias)
 │   └── pywats_client/       # Client application
 │       ├── core/            # Core client functionality
 │       ├── gui/             # Qt GUI components (optional)
@@ -200,11 +245,8 @@ pyWATS/
 │       └── services/        # Background services
 ├── converters/              # User converter plugins
 ├── docs/                    # Documentation
-│   ├── api_specs/           # OpenAPI specifications
-│   ├── examples/            # Usage examples
-│   └── gui_screens/         # GUI screenshots
-├── pyproject.toml           # Project configuration
-└── requirements.txt         # Dependencies
+├── examples/                # Usage examples by domain
+└── pyproject.toml           # Project configuration
 ```
 
 ## Documentation

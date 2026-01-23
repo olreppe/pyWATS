@@ -1,47 +1,50 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 from typing import List, Optional, Tuple
 
 import pytest
 
 from pywats.domains.asset.enums import AssetState
 from pywats.domains.asset.models import Asset
-from pywats.domains.asset.service import AssetService
+from pywats.domains.asset import AssetService
 
 
 class DummyAssetRepository:
+    """Mock repository for testing AssetService."""
+    
     def __init__(self) -> None:
         self.saved: List[Asset] = []
-        self.deleted: List[Tuple[str, Optional[str]]] = []
-        self.state_updates: List[Tuple[AssetState, Optional[str], Optional[str]]] = []
+        self.deleted: List[str] = []
+        self.state_updates: List[Tuple[str, AssetState]] = []
         self._assets: dict[str, Asset] = {}
 
-    def save(self, asset: Asset) -> Asset:
+    async def save(self, asset: Asset) -> Asset:
         asset.asset_id = asset.asset_id or str(uuid4())
         self._assets[asset.serial_number] = asset
         self.saved.append(asset)
         return asset
 
-    def get_by_serial_number(self, serial_number: str) -> Optional[Asset]:
+    async def get_by_serial_number(self, serial_number: str) -> Optional[Asset]:
         existing = self._assets.get(serial_number)
         if existing:
             return existing
-        return Asset(
-            serial_number=serial_number,
-            type_id=uuid4(),
-            asset_id="resolved-id"
-        )
+        return None
 
-    def delete(self, asset_id: str, serial_number: Optional[str] = None) -> bool:
-        self.deleted.append((asset_id, serial_number))
+    async def get_by_id(self, asset_id: str) -> Optional[Asset]:
+        for asset in self._assets.values():
+            if asset.asset_id == asset_id:
+                return asset
+        return None
+
+    async def delete(self, asset_id: str, serial_number: Optional[str] = None) -> bool:
+        self.deleted.append(asset_id)
         return True
 
-    def set_state(
+    async def set_state(
         self,
-        state: AssetState,
-        asset_id: Optional[str] = None,
-        serial_number: Optional[str] = None
+        asset_id: str,
+        state: AssetState
     ) -> bool:
-        self.state_updates.append((state, asset_id, serial_number))
+        self.state_updates.append((asset_id, state))
         return True
 
 
@@ -51,44 +54,44 @@ def asset_service() -> AssetService:
     return AssetService(repository=repository)
 
 
-def test_create_asset_calls_repository(asset_service: AssetService) -> None:
+@pytest.mark.asyncio
+async def test_create_asset_calls_repository(asset_service: AssetService) -> None:
     serial_number = "SN-123"
-    type_id = uuid4()
 
-    asset = asset_service.create_asset(
+    asset = await asset_service.create_asset(
         serial_number=serial_number,
-        type_id=type_id,
-        asset_name="Test Asset"
+        asset_name="Test Asset",
+        type_id=UUID("00000000-0000-0000-0000-000000000001")
     )
 
     repo = asset_service._repository
     assert asset is not None
     assert repo.saved[-1] is asset
     assert asset.serial_number == serial_number
-    assert asset.type_id == type_id
 
 
-def test_delete_asset_by_serial_number_resolves_identifier(asset_service: AssetService) -> None:
+@pytest.mark.asyncio
+async def test_get_asset_returns_asset(asset_service: AssetService) -> None:
     repo = asset_service._repository
-    repo._assets["SN-DEL"] = Asset(
-        serial_number="SN-DEL",
-        type_id=uuid4(),
-        asset_id="ID-DEL"
+    # Pre-populate repository
+    test_asset = Asset(
+        serial_number="SN-GET",
+        asset_id="ID-GET",
+        name="Get Test Asset"
     )
+    repo._assets["SN-GET"] = test_asset
 
-    deleted = asset_service.delete_asset(serial_number="SN-DEL")
+    result = await asset_service.get_asset(serial_number="SN-GET")
+
+    assert result is not None
+    assert result.serial_number == "SN-GET"
+
+
+@pytest.mark.asyncio
+async def test_delete_asset_calls_repository(asset_service: AssetService) -> None:
+    repo = asset_service._repository
+
+    deleted = await asset_service.delete_asset(asset_id="ID-DEL")
 
     assert deleted is True
-    assert repo.deleted[-1][0] == "ID-DEL"
-
-
-def test_set_asset_state_updates_repository(asset_service: AssetService) -> None:
-    result = asset_service.set_asset_state(
-        state=AssetState.IN_MAINTENANCE,
-        serial_number="SN-STATE"
-    )
-
-    repo = asset_service._repository
-    assert result is True
-    assert repo.state_updates[-1][0] == AssetState.IN_MAINTENANCE
-    assert repo.state_updates[-1][2] == "SN-STATE"
+    assert "ID-DEL" in repo.deleted

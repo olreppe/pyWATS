@@ -1,67 +1,63 @@
-"""Software service - business logic layer.
+"""Software service - thin sync wrapper around AsyncSoftwareService.
 
-All business operations for software distribution packages.
+This module provides synchronous access to AsyncSoftwareService methods.
+All business logic is maintained in async_service.py (source of truth).
+
+⚠️ INTERNAL API methods are marked and may change without notice.
 """
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 from uuid import UUID
-import logging
 
-from .repository import SoftwareRepository
-
-logger = logging.getLogger(__name__)
+from .async_service import AsyncSoftwareService
+from .async_repository import AsyncSoftwareRepository
 from .models import Package, PackageFile, PackageTag, VirtualFolder
 from .enums import PackageStatus
+from ...core.sync_runner import run_sync
 
 
 class SoftwareService:
     """
-    Software distribution business logic layer.
+    Synchronous wrapper for AsyncSoftwareService.
 
-    Provides high-level operations for managing software packages.
-    
-    Architecture Note:
-        This service should only receive a SoftwareRepository instance.
-        HTTP operations are handled by the repository layer, not the service.
+    Provides sync access to all async software service operations.
+    All business logic is in AsyncSoftwareService.
     """
 
-    def __init__(self, repository: SoftwareRepository):
+    def __init__(self, async_service: AsyncSoftwareService = None, *, repository=None):
         """
-        Initialize with SoftwareRepository.
+        Initialize with AsyncSoftwareService or repository.
 
         Args:
-            repository: SoftwareRepository instance for data access
+            async_service: AsyncSoftwareService instance to wrap
+            repository: (Deprecated) Repository instance for backward compatibility
         """
-        self._repository = repository
+        if repository is not None:
+            # Backward compatibility: create async service from repository
+            self._async_service = AsyncSoftwareService(repository)
+            self._repository = repository
+        elif async_service is not None:
+            self._async_service = async_service
+            self._repository = async_service._repository
+        else:
+            raise ValueError("Either async_service or repository must be provided")
+
+    @classmethod
+    def from_repository(cls, repository: AsyncSoftwareRepository) -> "SoftwareService":
+        """Create SoftwareService from an AsyncSoftwareRepository."""
+        async_service = AsyncSoftwareService(repository)
+        return cls(async_service)
 
     # =========================================================================
     # Query Packages
     # =========================================================================
 
     def get_packages(self) -> List[Package]:
-        """
-        Get all available software packages.
-
-        Returns:
-            List of Package objects
-        """
-        return self._repository.get_packages()
+        """Get all available software packages."""
+        return run_sync(self._async_service.get_packages())
 
     def get_package(self, package_id: Union[str, UUID]) -> Optional[Package]:
-        """
-        Get a specific software package by ID.
-
-        Args:
-            package_id: Package UUID
-
-        Returns:
-            Package object or None if not found
-            
-        Raises:
-            ValueError: If package_id is empty or None
-        """
-        if not package_id:
-            raise ValueError("package_id is required")
-        return self._repository.get_package(package_id)
+        """Get a specific software package by ID."""
+        return run_sync(self._async_service.get_package(package_id))
 
     def get_package_by_name(
         self,
@@ -69,42 +65,12 @@ class SoftwareService:
         status: Optional[PackageStatus] = None,
         version: Optional[int] = None,
     ) -> Optional[Package]:
-        """
-        Get a software package by name.
-
-        Args:
-            name: Package name
-            status: Optional status filter
-            version: Optional specific version number
-
-        Returns:
-            Package object or None if not found
-            
-        Raises:
-            ValueError: If name is empty or None
-        """
-        if not name or not name.strip():
-            raise ValueError("name is required")
-        return self._repository.get_package_by_name(name, status, version)
+        """Get a software package by name."""
+        return run_sync(self._async_service.get_package_by_name(name, status, version))
 
     def get_released_package(self, name: str) -> Optional[Package]:
-        """
-        Get the released version of a package.
-
-        Args:
-            name: Package name
-
-        Returns:
-            Released Package object or None
-            
-        Raises:
-            ValueError: If name is empty or None
-        """
-        if not name or not name.strip():
-            raise ValueError("name is required")
-        return self._repository.get_package_by_name(
-            name, status=PackageStatus.RELEASED
-        )
+        """Get the released version of a package."""
+        return run_sync(self._async_service.get_released_package(name))
 
     def get_packages_by_tag(
         self,
@@ -112,25 +78,8 @@ class SoftwareService:
         value: str,
         status: Optional[PackageStatus] = None,
     ) -> List[Package]:
-        """
-        Get packages filtered by tag.
-
-        Args:
-            tag: Tag name to filter by
-            value: Tag value to match
-            status: Optional status filter
-
-        Returns:
-            List of matching Package objects
-            
-        Raises:
-            ValueError: If tag or value is empty or None
-        """
-        if not tag or not tag.strip():
-            raise ValueError("tag is required")
-        if not value or not value.strip():
-            raise ValueError("value is required")
-        return self._repository.get_packages_by_tag(tag, value, status)
+        """Get packages filtered by tag."""
+        return run_sync(self._async_service.get_packages_by_tag(tag, value, status))
 
     # =========================================================================
     # Create, Update, Delete Packages
@@ -145,199 +94,49 @@ class SoftwareService:
         priority: Optional[int] = None,
         tags: Optional[List[PackageTag]] = None,
     ) -> Optional[Package]:
-        """
-        Create a new package in Draft status.
-
-        If name exists, version will be previous version + 1.
-
-        Args:
-            name: Package name (required)
-            description: Package description
-            install_on_root: Whether to install on root
-            root_directory: Root directory path
-            priority: Installation priority
-            tags: List of PackageTag objects
-
-        Returns:
-            Created Package object or None
-            
-        Raises:
-            ValueError: If name is empty or None
-        """
-        if not name or not name.strip():
-            raise ValueError("name is required")
-        package = Package(
+        """Create a new package in Draft status."""
+        return run_sync(self._async_service.create_package(
             name=name,
             description=description,
             install_on_root=install_on_root,
             root_directory=root_directory,
             priority=priority,
             tags=tags,
-        )
-        result = self._repository.create_package(package)
-        if result:
-            logger.info(f"PACKAGE_CREATED: {result.name} (id={result.package_id}, version={result.version})")
-        return result
+        ))
 
     def update_package(self, package: Package) -> Optional[Package]:
-        """
-        Update a software package.
-
-        Note: This will overwrite existing configuration.
-        - Package in Draft: all details can be edited
-        - Package in Pending/Released: only Status and Tags can be edited
-
-        Args:
-            package: Package object with updated data
-
-        Returns:
-            Updated Package object or None
-        """
-        if not package.package_id:
-            return None
-        result = self._repository.update_package(package.package_id, package)
-        if result:
-            logger.info(f"PACKAGE_UPDATED: {result.name} (id={result.package_id})")
-        return result
+        """Update a software package."""
+        return run_sync(self._async_service.update_package(package))
 
     def delete_package(self, package_id: Union[str, UUID]) -> bool:
-        """
-        Delete a software package by ID.
-
-        Note: Status must be Draft or Revoked before deletion.
-
-        Args:
-            package_id: Package UUID to delete
-
-        Returns:
-            True if deleted successfully
-            
-        Raises:
-            ValueError: If package_id is empty or None
-        """
-        if not package_id:
-            raise ValueError("package_id is required")
-        result = self._repository.delete_package(package_id)
-        if result:
-            logger.info(f"PACKAGE_DELETED: id={package_id}")
-        return result
+        """Delete a software package by ID."""
+        return run_sync(self._async_service.delete_package(package_id))
 
     def delete_package_by_name(
         self, name: str, version: Optional[int] = None
     ) -> bool:
-        """
-        Delete a software package by name.
-
-        Note: Status must be Draft or Revoked before deletion.
-
-        Args:
-            name: Package name
-            version: Optional version number
-
-        Returns:
-            True if deleted successfully
-            
-        Raises:
-            ValueError: If name is empty or None
-        """
-        if not name or not name.strip():
-            raise ValueError("name is required")
-        result = self._repository.delete_package_by_name(name, version)
-        if result:
-            logger.info(f"PACKAGE_DELETED: {name} (version={version})")
-        return result
+        """Delete a software package by name."""
+        return run_sync(self._async_service.delete_package_by_name(name, version))
 
     # =========================================================================
     # Package Status Workflow
     # =========================================================================
 
     def submit_for_review(self, package_id: Union[str, UUID]) -> bool:
-        """
-        Submit a draft package for review (Draft -> Pending).
-
-        Args:
-            package_id: Package UUID
-
-        Returns:
-            True if successful
-            
-        Raises:
-            ValueError: If package_id is empty or None
-        """
-        if not package_id:
-            raise ValueError("package_id is required")
-        result = self._repository.update_package_status(
-            package_id, PackageStatus.PENDING
-        )
-        if result:
-            logger.info(f"PACKAGE_SUBMITTED_FOR_REVIEW: id={package_id} (status=PENDING)")
-        return result
+        """Submit a draft package for review (Draft -> Pending)."""
+        return run_sync(self._async_service.submit_for_review(package_id))
 
     def return_to_draft(self, package_id: Union[str, UUID]) -> bool:
-        """
-        Return a pending package to draft (Pending -> Draft).
-
-        Args:
-            package_id: Package UUID
-
-        Returns:
-            True if successful
-            
-        Raises:
-            ValueError: If package_id is empty or None
-        """
-        if not package_id:
-            raise ValueError("package_id is required")
-        result = self._repository.update_package_status(
-            package_id, PackageStatus.DRAFT
-        )
-        if result:
-            logger.info(f"PACKAGE_RETURNED_TO_DRAFT: id={package_id} (status=DRAFT)")
-        return result
+        """Return a pending package to draft (Pending -> Draft)."""
+        return run_sync(self._async_service.return_to_draft(package_id))
 
     def release_package(self, package_id: Union[str, UUID]) -> bool:
-        """
-        Release a pending package (Pending -> Released).
-
-        Args:
-            package_id: Package UUID
-
-        Returns:
-            True if successful
-            
-        Raises:
-            ValueError: If package_id is empty or None
-        """
-        if not package_id:
-            raise ValueError("package_id is required")
-        result = self._repository.update_package_status(
-            package_id, PackageStatus.RELEASED
-        )
-        if result:
-            logger.info(f"PACKAGE_RELEASED: id={package_id} (status=RELEASED)")
-        return result
+        """Release a pending package (Pending -> Released)."""
+        return run_sync(self._async_service.release_package(package_id))
 
     def revoke_package(self, package_id: Union[str, UUID]) -> bool:
-        """
-        Revoke a released package (Released -> Revoked).
-
-        Args:
-            package_id: Package UUID
-
-        Returns:
-            True if successful
-            
-        Raises:
-            ValueError: If package_id is empty or None
-        """
-        if not package_id:
-            raise ValueError("package_id is required")
-        result = self._repository.update_package_status(
-            package_id, PackageStatus.REVOKED
-        )
-        if result:
-            logger.info(f"PACKAGE_REVOKED: id={package_id} (status=REVOKED)")
-        return result
+        """Revoke a released package (Released -> Revoked)."""
+        return run_sync(self._async_service.revoke_package(package_id))
 
     # =========================================================================
     # Package Files
@@ -346,21 +145,8 @@ class SoftwareService:
     def get_package_files(
         self, package_id: Union[str, UUID]
     ) -> List[PackageFile]:
-        """
-        Get files associated with a package.
-
-        Args:
-            package_id: Package UUID
-
-        Returns:
-            List of PackageFile objects
-            
-        Raises:
-            ValueError: If package_id is empty or None
-        """
-        if not package_id:
-            raise ValueError("package_id is required")
-        return self._repository.get_package_files(package_id)
+        """Get files associated with a package."""
+        return run_sync(self._async_service.get_package_files(package_id))
 
     def upload_zip(
         self,
@@ -368,70 +154,137 @@ class SoftwareService:
         zip_content: bytes,
         clean_install: bool = False,
     ) -> bool:
-        """
-        Upload a zip file to a software package.
-
-        Note:
-        - Will merge files by default
-        - Use clean_install=True to delete all files before installing
-        - Zip cannot contain files on root level
-        - All files must be in a folder: zipFile/myFolder/myFile.txt
-
-        Args:
-            package_id: Package UUID
-            zip_content: Zip file content as bytes
-            clean_install: If True, delete existing files first
-
-        Returns:
-            True if upload successful
-            
-        Raises:
-            ValueError: If package_id or zip_content is empty or None
-        """
-        if not package_id:
-            raise ValueError("package_id is required")
-        if not zip_content:
-            raise ValueError("zip_content is required")
-        result = self._repository.upload_package_zip(
-            package_id, zip_content, clean_install
-        )
-        if result:
-            logger.info(f"PACKAGE_ZIP_UPLOADED: id={package_id} (size={len(zip_content)}, clean_install={clean_install})")
-        return result
+        """Upload a zip file to a software package."""
+        return run_sync(self._async_service.upload_zip(package_id, zip_content, clean_install))
 
     def update_file_attribute(
         self, file_id: Union[str, UUID], attributes: str
     ) -> bool:
-        """
-        Update file attributes for a specific file.
-
-        Get file ID by calling get_package_files() first.
-
-        Args:
-            file_id: The file ID (from get_package_files)
-            attributes: Attribute data to update
-
-        Returns:
-            True if update successful
-            
-        Raises:
-            ValueError: If file_id or attributes is empty or None
-        """
-        if not file_id:
-            raise ValueError("file_id is required")
-        if not attributes or not attributes.strip():
-            raise ValueError("attributes is required")
-        return self._repository.update_file_attribute(file_id, attributes)
+        """Update file attributes for a specific file."""
+        return run_sync(self._async_service.update_file_attribute(file_id, attributes))
 
     # =========================================================================
     # Virtual Folders
     # =========================================================================
 
     def get_virtual_folders(self) -> List[VirtualFolder]:
-        """
-        Get all virtual folders registered in Production Manager.
+        """Get all virtual folders registered in Production Manager."""
+        return run_sync(self._async_service.get_virtual_folders())
 
-        Returns:
-            List of VirtualFolder objects
-        """
-        return self._repository.get_virtual_folders()
+    # =========================================================================
+    # ⚠️ INTERNAL API - Connection Check
+    # =========================================================================
+
+    def is_connected(self) -> bool:
+        """⚠️ INTERNAL: Check if Software module is connected."""
+        return run_sync(self._async_service.is_connected())
+
+    # =========================================================================
+    # ⚠️ INTERNAL API - File Operations
+    # =========================================================================
+
+    def get_file(self, file_id: Union[str, UUID]) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get file metadata by ID."""
+        return run_sync(self._async_service.get_file(file_id))
+
+    def check_file(
+        self,
+        package_id: Union[str, UUID],
+        parent_folder_id: Union[str, UUID],
+        file_path: str,
+        checksum: str,
+        file_date_epoch: int
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Check if a file already exists on the server."""
+        return run_sync(self._async_service.check_file(
+            package_id, parent_folder_id, file_path, checksum, file_date_epoch
+        ))
+
+    # =========================================================================
+    # ⚠️ INTERNAL API - Folder Operations
+    # =========================================================================
+
+    def create_package_folder(
+        self,
+        package_id: Union[str, UUID],
+        folder_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Create a new folder in a package."""
+        return run_sync(self._async_service.create_package_folder(package_id, folder_data))
+
+    def update_package_folder(
+        self,
+        folder_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Update an existing package folder."""
+        return run_sync(self._async_service.update_package_folder(folder_data))
+
+    def delete_package_folder(
+        self,
+        package_folder_id: Union[str, UUID]
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Delete a package folder."""
+        return run_sync(self._async_service.delete_package_folder(package_folder_id))
+
+    def delete_package_folder_files(
+        self,
+        file_ids: List[Union[str, UUID]]
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Delete multiple files from a package folder."""
+        return run_sync(self._async_service.delete_package_folder_files(file_ids))
+
+    # =========================================================================
+    # ⚠️ INTERNAL API - Package History & Validation
+    # =========================================================================
+
+    def get_package_history(
+        self,
+        tags: str,
+        status: Optional[int] = None,
+        all_versions: Optional[bool] = None
+    ) -> List[Package]:
+        """⚠️ INTERNAL: Get package history by tags."""
+        return run_sync(self._async_service.get_package_history(tags, status, all_versions))
+
+    def get_package_download_history(
+        self,
+        client_id: int
+    ) -> List[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get package download history for a client."""
+        return run_sync(self._async_service.get_package_download_history(client_id))
+
+    def get_revoked_packages(
+        self,
+        installed_packages: List[Union[str, UUID]],
+        include_revoked_only: Optional[bool] = None
+    ) -> List[str]:
+        """⚠️ INTERNAL: Get list of revoked package IDs from installed packages."""
+        return run_sync(self._async_service.get_revoked_packages(
+            installed_packages, include_revoked_only
+        ))
+
+    def get_available_packages(
+        self,
+        installed_packages: List[Union[str, UUID]]
+    ) -> List[Package]:
+        """⚠️ INTERNAL: Check server for new versions of installed packages."""
+        return run_sync(self._async_service.get_available_packages(installed_packages))
+
+    def get_software_entity_details(
+        self,
+        package_id: Union[str, UUID]
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get detailed information about a software package."""
+        return run_sync(self._async_service.get_software_entity_details(package_id))
+
+    # =========================================================================
+    # ⚠️ INTERNAL API - Logging
+    # =========================================================================
+
+    def log_download(
+        self,
+        package_id: Union[str, UUID],
+        download_size: int
+    ) -> Optional[Dict[str, Any]]:
+        """⚠️ INTERNAL: Log a package download."""
+        return run_sync(self._async_service.log_download(package_id, download_size))

@@ -1,24 +1,13 @@
-"""Analytics service - business logic layer.
+"""Analytics service - thin sync wrapper around AsyncAnalyticsService.
 
-All business operations for statistics, KPIs, yield analysis, and dashboard data.
-Note: Maps to the WATS /api/App/* endpoints (backend naming).
-
-Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
-that may change without notice. Use with caution.
-
-Type-Safe Enums:
-----------------
-This module supports type-safe enums for better IDE autocomplete and error prevention:
-- Use StatusFilter for status filters (PASSED, FAILED, ERROR)
-- Use RunFilter for run selection (FIRST, LAST, ALL)
-- Use DimensionBuilder with Dimension/KPI enums for dynamic queries
-- Use StepPath/MeasurementPath for path inputs (handles / to ¶ conversion)
+This module provides synchronous access to AsyncAnalyticsService methods.
+All business logic is maintained in async_service.py (source of truth).
 """
-import logging
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Union
+from datetime import datetime
 
-from .repository import AnalyticsRepository
+from .async_service import AsyncAnalyticsService
+from .async_repository import AsyncAnalyticsRepository
 from .models import (
     YieldData,
     ProcessInfo,
@@ -31,7 +20,6 @@ from .models import (
     MeasurementData,
     AggregatedMeasurement,
     OeeAnalysisResult,
-    # Internal models
     UnitFlowNode,
     UnitFlowLink,
     UnitFlowUnit,
@@ -41,63 +29,49 @@ from .models import (
     StepStatusItem,
 )
 from ..report.models import WATSFilter, ReportHeader
-from ...shared.paths import normalize_path, normalize_paths, StepPath
-
-if TYPE_CHECKING:
-    from .service_internal import AnalyticsServiceInternal
-
-logger = logging.getLogger(__name__)
+from ...shared.paths import StepPath
+from ...core.sync_runner import run_sync
 
 
 class AnalyticsService:
     """
-    Analytics/Statistics business logic layer.
+    Synchronous wrapper for AsyncAnalyticsService.
 
-    Provides high-level operations for yield statistics, KPIs, failure analysis,
-    and production analytics. This module wraps the WATS /api/App/* endpoints.
-    
-    Example:
-        >>> api = pyWATS(base_url="...", token="...")
-        >>> # Get yield statistics
-        >>> yield_data = api.analytics.get_dynamic_yield(
-        ...     WATSFilter(part_number="WIDGET-001", period_count=30)
-        ... )
-        >>> # Get top failures
-        >>> failures = api.analytics.get_top_failed(part_number="WIDGET-001")
+    Provides sync access to all async analytics service operations.
+    All business logic is in AsyncAnalyticsService.
     """
 
-    def __init__(
-        self, 
-        repository: AnalyticsRepository,
-        internal_service: Optional["AnalyticsServiceInternal"] = None
-    ):
+    def __init__(self, async_service: AsyncAnalyticsService = None, *, repository=None):
         """
-        Initialize with AnalyticsRepository.
+        Initialize with AsyncAnalyticsService or repository.
 
         Args:
-            repository: AnalyticsRepository instance for data access
-            internal_service: Optional internal service for internal API methods
+            async_service: AsyncAnalyticsService instance to wrap
+            repository: (Deprecated) Repository instance for backward compatibility
         """
-        self._repository = repository
-        self._internal = internal_service
+        if repository is not None:
+            # Backward compatibility: create async service from repository
+            self._async_service = AsyncAnalyticsService(repository)
+            self._repository = repository
+        elif async_service is not None:
+            self._async_service = async_service
+            self._repository = async_service._repository
+        else:
+            raise ValueError("Either async_service or repository must be provided")
+
+    @classmethod
+    def from_repository(cls, repository: AsyncAnalyticsRepository) -> "AnalyticsService":
+        """Create AnalyticsService from an AsyncAnalyticsRepository."""
+        async_service = AsyncAnalyticsService(repository)
+        return cls(async_service)
 
     # =========================================================================
     # System Info
     # =========================================================================
 
     def get_version(self) -> Optional[str]:
-        """
-        Get WATS API version information.
-
-        Returns:
-            Version string (e.g., "24.1.0") or None if not available
-            
-        Example:
-            >>> version = api.analytics.get_version()
-            >>> print(f"WATS Server: {version}")
-            WATS Server: 24.1.0
-        """
-        return self._repository.get_version()
+        """Get WATS API version information."""
+        return run_sync(self._async_service.get_version())
 
     def get_processes(
         self,
@@ -106,78 +80,24 @@ class AnalyticsService:
         include_wip_operations: Optional[bool] = None,
         include_inactive_processes: Optional[bool] = None,
     ) -> List[ProcessInfo]:
-        """
-        Get all defined test processes/operations.
-
-        By default (no filters), retrieves active processes marked as 
-        isTestOperation, isRepairOperation, or isWipOperation.
-
-        Args:
-            include_test_operations: Include processes marked as IsTestOperation
-            include_repair_operations: Include processes marked as IsRepairOperation
-            include_wip_operations: Include processes marked as IsWipOperation
-            include_inactive_processes: Include inactive processes
-
-        Returns:
-            List of ProcessInfo objects
-            
-        Example:
-            >>> # Get all processes (default behavior)
-            >>> processes = api.analytics.get_processes()
-            >>> 
-            >>> # Get only test operations
-            >>> test_ops = api.analytics.get_processes(include_test_operations=True)
-            >>> 
-            >>> # Include inactive processes
-            >>> all_processes = api.analytics.get_processes(include_inactive_processes=True)
-        """
-        return self._repository.get_processes(
+        """Get all defined test processes/operations."""
+        return run_sync(self._async_service.get_processes(
             include_test_operations=include_test_operations,
             include_repair_operations=include_repair_operations,
             include_wip_operations=include_wip_operations,
             include_inactive_processes=include_inactive_processes,
-        )
+        ))
 
     def get_levels(self) -> List[LevelInfo]:
-        """
-        Get all production levels.
-
-        Returns:
-            List of LevelInfo objects
-            
-        Example:
-            >>> levels = api.analytics.get_levels()
-            >>> for lvl in levels:
-            ...     print(f"{lvl.level_id}: {lvl.level_name}")
-            1: PCBA
-            2: Box Build
-        """
-        return self._repository.get_levels()
+        """Get all production levels."""
+        return run_sync(self._async_service.get_levels())
 
     def get_product_groups(
         self,
         include_filters: Optional[bool] = None
     ) -> List[ProductGroup]:
-        """
-        Get all product groups.
-
-        Args:
-            include_filters: Include or exclude product group filters (default: None)
-
-        Returns:
-            List of ProductGroup objects
-            
-        Example:
-            >>> groups = api.analytics.get_product_groups()
-            >>> for g in groups:
-            ...     print(f"{g.product_group_id}: {g.product_group_name}")
-            1: Electronics
-            2: Sensors
-            >>> 
-            >>> # Include filters for advanced querying
-            >>> groups_with_filters = api.analytics.get_product_groups(include_filters=True)
-        """
-        return self._repository.get_product_groups(include_filters=include_filters)
+        """Get all product groups."""
+        return run_sync(self._async_service.get_product_groups(include_filters=include_filters))
 
     # =========================================================================
     # Yield Statistics
@@ -186,70 +106,38 @@ class AnalyticsService:
     def get_dynamic_yield(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[YieldData]:
-        """
-        Get dynamic yield statistics by custom dimensions (PREVIEW).
+        """Get dynamic yield statistics by custom dimensions (PREVIEW)."""
+        return run_sync(self._async_service.get_dynamic_yield(filter_data))
 
-        Supported dimensions: part_number, product_name, station_name, location,
-        purpose, revision, test_operation, process_code, sw_filename, sw_version,
-        product_group, level, period, batch_number, operator, fixture_id, etc.
+    def get_yield_summary(
+        self,
+        part_number: str,
+        revision: Optional[str] = None,
+        days: int = 30,
+    ) -> List[YieldData]:
+        """Get yield summary for a product over a time period."""
+        return run_sync(self._async_service.get_yield_summary(
+            part_number=part_number,
+            revision=revision,
+            days=days,
+        ))
 
-        Args:
-            filter_data: WATSFilter with dimensions and filters
-
-        Returns:
-            List of YieldData objects
-
-        Note:
-            When using period-based filtering (period_count/date_grouping),
-            include_current_period defaults to True. Set it explicitly to False
-            only if you want to exclude the current period's data.
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(
-            ...     part_number="WIDGET-001",
-            ...     period_count=30,
-            ...     dimensions="partNumber;period"
-            ... )
-            >>> yield_data = api.analytics.get_dynamic_yield(filter_obj)
-            >>> for y in yield_data:
-            ...     print(f"{y.part_number} ({y.period}): FPY={y.fpy}%")
-        """
-        return self._repository.get_dynamic_yield(filter_data)
+    def get_station_yield(
+        self,
+        station_name: str,
+        days: int = 7,
+    ) -> List[YieldData]:
+        """Get yield statistics for a specific test station."""
+        return run_sync(self._async_service.get_station_yield(
+            station_name=station_name,
+            days=days,
+        ))
 
     def get_dynamic_repair(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[RepairStatistics]:
-        """
-        Get dynamic repair statistics by custom dimensions (PREVIEW).
-
-        Supported dimensions: partNumber, revision, productName, productGroup,
-        unitType, repairOperation, period, level, stationName, location,
-        purpose, operator, repairCode, repairCategory, repairType, etc.
-
-        Args:
-            filter_data: WATSFilter with dimensions and filters
-
-        Returns:
-            List of RepairStatistics objects with repair counts and rates
-
-        Note:
-            When using period-based filtering (period_count/date_grouping),
-            include_current_period defaults to True. Set it explicitly to False
-            only if you want to exclude the current period's data.
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(
-            ...     part_number="WIDGET-001",
-            ...     period_count=30,
-            ...     dimensions="partNumber;period"
-            ... )
-            >>> repairs = api.analytics.get_dynamic_repair(filter_obj)
-            >>> for r in repairs:
-            ...     print(f"{r.part_number}: {r.repair_count} repairs ({r.repair_rate}%)")
-        """
-        return self._repository.get_dynamic_repair(filter_data)
+        """Get dynamic repair statistics by custom dimensions (PREVIEW)."""
+        return run_sync(self._async_service.get_dynamic_repair(filter_data))
 
     def get_volume_yield(
         self,
@@ -257,29 +145,12 @@ class AnalyticsService:
         product_group: Optional[str] = None,
         level: Optional[str] = None,
     ) -> List[YieldData]:
-        """
-        Get volume/yield statistics.
-
-        Args:
-            filter_data: Optional WATSFilter for POST request
-            product_group: Optional product group filter (for GET)
-            level: Optional level filter (for GET)
-
-        Returns:
-            List of YieldData objects
-            
-        Example:
-            >>> # Simple GET request with filters
-            >>> yield_data = api.analytics.get_volume_yield(
-            ...     product_group="Electronics",
-            ...     level="PCBA"
-            ... )
-            >>> for y in yield_data:
-            ...     print(f"{y.part_number}: {y.unit_count} units, FPY={y.fpy}%")
-        """
-        return self._repository.get_volume_yield(
-            filter_data=filter_data, product_group=product_group, level=level
-        )
+        """Get volume/yield statistics."""
+        return run_sync(self._async_service.get_volume_yield(
+            filter_data=filter_data,
+            product_group=product_group,
+            level=level,
+        ))
 
     def get_worst_yield(
         self,
@@ -287,47 +158,18 @@ class AnalyticsService:
         product_group: Optional[str] = None,
         level: Optional[str] = None,
     ) -> List[YieldData]:
-        """
-        Get worst yield statistics (products with lowest yield).
-
-        Args:
-            filter_data: Optional WATSFilter for POST request
-            product_group: Optional product group filter (for GET)
-            level: Optional level filter (for GET)
-
-        Returns:
-            List of YieldData objects sorted by worst yield first
-            
-        Example:
-            >>> # Find products with worst yield in PCBA level
-            >>> worst = api.analytics.get_worst_yield(level="PCBA")
-            >>> for y in worst[:5]:  # Top 5 worst
-            ...     print(f"{y.part_number}: FPY={y.fpy}%")
-        """
-        return self._repository.get_worst_yield(
-            filter_data=filter_data, product_group=product_group, level=level
-        )
+        """Get worst yield statistics (products with lowest yield)."""
+        return run_sync(self._async_service.get_worst_yield(
+            filter_data=filter_data,
+            product_group=product_group,
+            level=level,
+        ))
 
     def get_worst_yield_by_product_group(
         self, filter_data: WATSFilter
     ) -> List[YieldData]:
-        """
-        Get worst yield statistics grouped by product group.
-
-        Args:
-            filter_data: WATSFilter with parameters
-
-        Returns:
-            List of YieldData objects grouped by product group, sorted by worst yield
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(period_count=30)
-            >>> worst = api.analytics.get_worst_yield_by_product_group(filter_obj)
-            >>> for y in worst:
-            ...     print(f"{y.product_group}: FPY={y.fpy}%")
-        """
-        return self._repository.get_worst_yield_by_product_group(filter_data)
+        """Get worst yield statistics grouped by product group."""
+        return run_sync(self._async_service.get_worst_yield_by_product_group(filter_data))
 
     # =========================================================================
     # High Volume Analysis
@@ -339,47 +181,18 @@ class AnalyticsService:
         product_group: Optional[str] = None,
         level: Optional[str] = None,
     ) -> List[YieldData]:
-        """
-        Get high volume product list (products with most units tested).
-
-        Args:
-            filter_data: Optional WATSFilter for POST request
-            product_group: Optional product group filter (for GET)
-            level: Optional level filter (for GET)
-
-        Returns:
-            List of YieldData objects sorted by highest volume first
-            
-        Example:
-            >>> # Get highest volume products in Electronics group
-            >>> high_vol = api.analytics.get_high_volume(product_group="Electronics")
-            >>> for y in high_vol[:5]:  # Top 5 by volume
-            ...     print(f"{y.part_number}: {y.unit_count} units")
-        """
-        return self._repository.get_high_volume(
-            filter_data=filter_data, product_group=product_group, level=level
-        )
+        """Get high volume product list (products with most units tested)."""
+        return run_sync(self._async_service.get_high_volume(
+            filter_data=filter_data,
+            product_group=product_group,
+            level=level,
+        ))
 
     def get_high_volume_by_product_group(
         self, filter_data: WATSFilter
     ) -> List[YieldData]:
-        """
-        Get yield statistics grouped by product group, sorted by volume.
-
-        Args:
-            filter_data: WATSFilter with parameters
-
-        Returns:
-            List of YieldData objects grouped by product group, sorted by volume
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(period_count=30)
-            >>> by_group = api.analytics.get_high_volume_by_product_group(filter_obj)
-            >>> for y in by_group:
-            ...     print(f"{y.product_group}: {y.unit_count} units, FPY={y.fpy}%")
-        """
-        return self._repository.get_high_volume_by_product_group(filter_data)
+        """Get yield statistics grouped by product group, sorted by volume."""
+        return run_sync(self._async_service.get_high_volume_by_product_group(filter_data))
 
     # =========================================================================
     # Failure Analysis
@@ -395,73 +208,27 @@ class AnalyticsService:
         revision: Optional[str] = None,
         top_count: Optional[int] = None,
     ) -> List[TopFailedStep]:
-        """
-        Get top failed test steps.
-
-        Can be called with a WATSFilter (uses POST) or with explicit parameters (uses GET).
-
-        Args:
-            filter_data: Optional WATSFilter for POST request (takes precedence)
-            product_group: Filter by product group (GET only)
-            level: Filter by production level (GET only)
-            part_number: Filter by part number (GET only)
-            revision: Filter by revision (GET only)
-            top_count: Maximum number of results (GET only)
-
-        Returns:
-            List of TopFailedStep objects with failure counts and rates
-            
-        Example:
-            >>> # Simple GET request
-            >>> failures = api.analytics.get_top_failed(
-            ...     part_number="WIDGET-001",
-            ...     top_count=10
-            ... )
-            >>> for f in failures:
-            ...     print(f"{f.step_name}: {f.fail_count} failures ({f.fail_rate}%)")
-            
-            >>> # Or with WATSFilter for more control
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(part_number="WIDGET-001", top_count=10)
-            >>> failures = api.analytics.get_top_failed(filter_obj)
-        """
-        return self._repository.get_top_failed(
-            filter_data,
+        """Get top failed test steps."""
+        return run_sync(self._async_service.get_top_failed(
+            filter_data=filter_data,
             product_group=product_group,
             level=level,
             part_number=part_number,
             revision=revision,
             top_count=top_count,
-        )
+        ))
+
+    def get_related_repair_history(
+        self, part_number: str, revision: str
+    ) -> List[RepairHistoryRecord]:
+        """Get list of repaired failures related to the part number and revision."""
+        return run_sync(self._async_service.get_related_repair_history(part_number, revision))
 
     def get_test_step_analysis(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[StepAnalysisRow]:
-        """
-        Get test step analysis data (PREVIEW).
-
-        Args:
-            filter_data: WATSFilter with analysis parameters including:
-                - part_number: Product part number (required)
-                - test_operation: Test operation (required)
-                - max_count: Maximum number of results
-                - date_from: Start date
-
-        Returns:
-            List of StepAnalysisRow rows with step statistics
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(
-            ...     part_number="WIDGET-001",
-            ...     test_operation="100",
-            ...     max_count=1000
-            ... )
-            >>> analysis = api.analytics.get_test_step_analysis(filter_obj)
-            >>> for row in analysis:
-            ...     print(f"{row.step_name}: {row.step_count} runs, {row.step_failed_count} failures")
-        """
-        return self._repository.get_test_step_analysis(filter_data)
+        """Get step and measurement statistics (PREVIEW)."""
+        return run_sync(self._async_service.get_test_step_analysis(filter_data))
 
     def get_test_step_analysis_for_operation(
         self,
@@ -473,260 +240,67 @@ class AnalyticsService:
         run: int = 1,
         max_count: int = 10000,
     ) -> List[StepAnalysisRow]:
-        """Convenience wrapper for TestStepAnalysis.
-
-        A simplified interface that automatically creates the filter object
-        with sensible defaults for common use cases.
-
-        Args:
-            part_number: Product part number (required).
-            test_operation: Test operation name (required).
-            revision: Product revision (optional).
-            days: Number of days to look back from now (default: 30).
-            run: Run number to analyze (default: 1 for first run).
-            max_count: Maximum number of results (default: 10000).
-
-        Returns:
-            List[StepAnalysisRow]: Typed step analysis results.
-
-        Raises:
-            ValueError: If part_number or test_operation is empty.
-
-        Example:
-            >>> # Simple call with just required parameters
-            >>> analysis = api.analytics.get_test_step_analysis_for_operation(
-            ...     part_number="PCBA-001",
-            ...     test_operation="FCT"
-            ... )
-            >>> for row in analysis:
-            ...     print(f"{row.step_name}: {row.step_count} tests")
-
-            >>> # With optional parameters
-            >>> analysis = api.analytics.get_test_step_analysis_for_operation(
-            ...     part_number="PCBA-001",
-            ...     test_operation="FCT",
-            ...     revision="A",
-            ...     days=7,
-            ...     max_count=500
-            ... )
-        """
-        if not part_number:
-            raise ValueError("part_number is required")
-        if not test_operation:
-            raise ValueError("test_operation is required")
-
-        filter_data = WATSFilter(
+        """Convenience wrapper for TestStepAnalysis."""
+        return run_sync(self._async_service.get_test_step_analysis_for_operation(
             part_number=part_number,
             test_operation=test_operation,
             revision=revision,
-            max_count=max_count,
-            date_from=datetime.now() - timedelta(days=days),
+            days=days,
             run=run,
-        )
-        return self.get_test_step_analysis(filter_data)
+            max_count=max_count,
+        ))
 
     # =========================================================================
-    # Repair History
+    # Measurements
     # =========================================================================
-
-    def get_related_repair_history(
-        self, part_number: str, revision: str
-    ) -> List[RepairHistoryRecord]:
-        """
-        Get list of repaired failures related to the part number and revision.
-
-        Args:
-            part_number: Product part number
-            revision: Product revision
-
-        Returns:
-            List of RepairHistoryRecord objects with repair details
-            
-        Example:
-            >>> repairs = api.analytics.get_related_repair_history(
-            ...     part_number="WIDGET-001",
-            ...     revision="A"
-            ... )
-            >>> for r in repairs:
-            ...     print(f"SN {r.serial_number}: {r.fail_step_name} -> {r.repair_code}")
-        """
-        return self._repository.get_related_repair_history(
-            part_number, revision
-        )
-
-    # =========================================================================
-    # Measurement Analysis
-    # =========================================================================
-
-    def get_aggregated_measurements(
-        self, 
-        filter_data: WATSFilter,
-        *,
-        measurement_paths: Optional[Union[str, StepPath, List[str], List[StepPath]]] = None,
-    ) -> List[AggregatedMeasurement]:
-        """
-        Get aggregated measurement statistics.
-
-        IMPORTANT: This API requires partNumber and testOperation filters.
-        Without them, it returns measurements from the last 7 days of most 
-        failed steps, which can cause timeouts.
-
-        Args:
-            filter_data: WATSFilter with measurement filters.
-                REQUIRED: part_number to avoid timeout.
-            measurement_paths: Measurement path(s). Accepts:
-                - String with / separators: "Main/Voltage Test/Output"
-                - StepPath or MeasurementPath object
-                - List of paths (separated by ; internally)
-                The / characters are automatically converted to ¶ for the API.
-
-        Returns:
-            List of AggregatedMeasurement objects with statistics (min, max, avg, cpk, etc.)
-            
-        Example:
-            >>> from pywats import WATSFilter, StepPath
-            >>> filter_obj = WATSFilter(part_number="WIDGET-001")
-            >>> # Using string path (/ is converted automatically)
-            >>> measurements = api.analytics.get_aggregated_measurements(
-            ...     filter_obj,
-            ...     measurement_paths="Main/Voltage Test/Output Voltage"
-            ... )
-            >>> # Or using StepPath for type safety
-            >>> path = StepPath("Main/Voltage Test/Output Voltage")
-            >>> measurements = api.analytics.get_aggregated_measurements(
-            ...     filter_obj,
-            ...     measurement_paths=path
-            ... )
-            >>> for m in measurements:
-            ...     print(f"{m.step_name}: avg={m.avg}, cpk={m.cpk}")
-        """
-        # Normalize paths to API format (/ → ¶)
-        normalized_paths = None
-        if measurement_paths is not None:
-            normalized_paths = normalize_paths(measurement_paths)
-        
-        return self._repository.get_aggregated_measurements(
-            filter_data, 
-            measurement_paths=normalized_paths
-        )
 
     def get_measurements(
-        self, 
-        filter_data: WATSFilter,
+        self,
+        filter_data: Union[WATSFilter, Dict[str, Any]],
         *,
-        measurement_paths: Optional[Union[str, StepPath, List[str], List[StepPath]]] = None,
+        measurement_paths: Optional[str] = None,
     ) -> List[MeasurementData]:
-        """
-        Get individual measurement data points (PREVIEW).
-
-        IMPORTANT: This API requires partNumber and testOperation filters.
-        Without them, it returns measurements from the last 7 days of most 
-        failed steps, which can cause timeouts.
-
-        Args:
-            filter_data: WATSFilter with measurement filters.
-                REQUIRED: part_number to avoid timeout.
-            measurement_paths: Measurement path(s). Accepts:
-                - String with / separators: "Main/Voltage Test/Output"
-                - StepPath or MeasurementPath object
-                - List of paths (separated by ; internally)
-                The / characters are automatically converted to ¶ for the API.
-
-        Returns:
-            List of MeasurementData objects with individual measurement values
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(part_number="WIDGET-001", top_count=100)
-            >>> data = api.analytics.get_measurements(
-            ...     filter_obj,
-            ...     measurement_paths="Main/Voltage Test/Output Voltage"
-            ... )
-            >>> for m in data:
-            ...     print(f"SN {m.serial_number}: {m.value}")
-        """
-        # Normalize paths to API format (/ → ¶)
-        normalized_paths = None
-        if measurement_paths is not None:
-            normalized_paths = normalize_paths(measurement_paths)
-        
-        return self._repository.get_measurements(
+        """Get numeric measurements by measurement path (PREVIEW)."""
+        return run_sync(self._async_service.get_measurements(
             filter_data,
-            measurement_paths=normalized_paths
-        )
+            measurement_paths=measurement_paths,
+        ))
+
+    def get_aggregated_measurements(
+        self,
+        filter_data: Union[WATSFilter, Dict[str, Any]],
+        *,
+        measurement_paths: Optional[str] = None,
+    ) -> List[AggregatedMeasurement]:
+        """Get aggregated numeric measurements by measurement path."""
+        return run_sync(self._async_service.get_aggregated_measurements(
+            filter_data,
+            measurement_paths=measurement_paths,
+        ))
 
     # =========================================================================
-    # OEE Analysis
+    # OEE (Overall Equipment Effectiveness)
     # =========================================================================
 
-    def get_oee_analysis(self, filter_data: WATSFilter) -> Optional[OeeAnalysisResult]:
-        """
-        Get Overall Equipment Effectiveness analysis.
-
-        OEE = Availability × Performance × Quality
-
-        Supported filters: product_group, level, part_number, revision,
-        station_name, test_operation, status, sw_filename, sw_version,
-        socket, date_from, date_to
-
-        Args:
-            filter_data: WATSFilter with OEE parameters
-
-        Returns:
-            OeeAnalysisResult object with OEE metrics, or None if no data
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> from datetime import datetime, timedelta
-            >>> filter_obj = WATSFilter(
-            ...     station_name="Line1-EOL",
-            ...     date_from=datetime.now() - timedelta(days=7),
-            ...     date_to=datetime.now()
-            ... )
-            >>> oee = api.analytics.get_oee_analysis(filter_obj)
-            >>> if oee:
-            ...     print(f"OEE: {oee.oee}%")
-            ...     print(f"  Availability: {oee.availability}%")
-            ...     print(f"  Performance: {oee.performance}%")
-            ...     print(f"  Quality: {oee.quality}%")
-        """
-        return self._repository.get_oee_analysis(filter_data)
+    def get_oee_analysis(
+        self, filter_data: Union[WATSFilter, Dict[str, Any]]
+    ) -> Optional[OeeAnalysisResult]:
+        """Overall Equipment Effectiveness - analysis."""
+        return run_sync(self._async_service.get_oee_analysis(filter_data))
 
     # =========================================================================
-    # Serial Number History
+    # Serial Number and Unit History
     # =========================================================================
 
     def get_serial_number_history(
-        self, filter_data: WATSFilter
+        self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[ReportHeader]:
-        """
-        Get test history for a serial number.
-
-        Supported filters: product_group, level, serial_number, part_number,
-        batch_number, misc_value
-
-        Args:
-            filter_data: WATSFilter with serial number and other filters
-
-        Returns:
-            List of ReportHeader objects
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(serial_number="SN12345")
-            >>> history = api.analytics.get_serial_number_history(filter_obj)
-            >>> for report in history:
-            ...     print(f"{report.start}: {report.status} - {report.part_number}")
-        """
-        return self._repository.get_serial_number_history(filter_data)
-
-    # =========================================================================
-    # UUT/UUR Reports
-    # =========================================================================
+        """Serial Number History."""
+        return run_sync(self._async_service.get_serial_number_history(filter_data))
 
     def get_uut_reports(
         self,
-        filter_data: Optional[WATSFilter] = None,
+        filter_data: Optional[Union[WATSFilter, Dict[str, Any]]] = None,
         *,
         product_group: Optional[str] = None,
         level: Optional[str] = None,
@@ -736,40 +310,9 @@ class AnalyticsService:
         status: Optional[str] = None,
         top_count: Optional[int] = None,
     ) -> List[ReportHeader]:
-        """
-        Get UUT report headers (like Test Reports in Reporting).
-
-        Can be called with a WATSFilter (uses POST) or with explicit parameters (uses GET).
-        By default the 1000 newest reports that match the filter are returned.
-
-        Note: This API is not suitable for workflow or production management,
-        use the Production module instead.
-
-        Args:
-            filter_data: Optional WATSFilter for POST request (takes precedence)
-            product_group: Filter by product group (GET only)
-            level: Filter by production level (GET only)
-            part_number: Filter by part number (GET only)
-            revision: Filter by revision (GET only)
-            serial_number: Filter by serial number (GET only)
-            status: Filter by status: 'Passed', 'Failed', 'Error' (GET only)
-            top_count: Maximum number of results, default 1000 (GET only)
-
-        Returns:
-            List of ReportHeader objects
-            
-        Example:
-            >>> # Simple query for recent reports
-            >>> reports = api.analytics.get_uut_reports(
-            ...     part_number="WIDGET-001",
-            ...     status="Failed",
-            ...     top_count=100
-            ... )
-            >>> for r in reports:
-            ...     print(f"{r.serial_number}: {r.status} at {r.start}")
-        """
-        return self._repository.get_uut_reports(
-            filter_data,
+        """Returns UUT report header info."""
+        return run_sync(self._async_service.get_uut_reports(
+            filter_data=filter_data,
             product_group=product_group,
             level=level,
             part_number=part_number,
@@ -777,333 +320,137 @@ class AnalyticsService:
             serial_number=serial_number,
             status=status,
             top_count=top_count,
-        )
+        ))
 
-    def get_uur_reports(self, filter_data: WATSFilter) -> List[ReportHeader]:
-        """
-        Get UUR report headers (like Repair Reports in Reporting).
-
-        By default the 1000 newest reports that match the filter are returned.
-        Use top_count filter to change this.
-
-        Note: This API is not suitable for workflow or production management,
-        use the Production module instead.
-
-        Args:
-            filter_data: WATSFilter with filter parameters
-
-        Returns:
-            List of ReportHeader objects
-            
-        Example:
-            >>> from pywats import WATSFilter
-            >>> filter_obj = WATSFilter(
-            ...     part_number="WIDGET-001",
-            ...     top_count=50
-            ... )
-            >>> repairs = api.analytics.get_uur_reports(filter_obj)
-            >>> for r in repairs:
-            ...     print(f"{r.serial_number}: repaired at {r.start}")
-        """
-        return self._repository.get_uur_reports(filter_data)
+    def get_uur_reports(
+        self, filter_data: Union[WATSFilter, Dict[str, Any]]
+    ) -> List[ReportHeader]:
+        """Returns UUR report header info."""
+        return run_sync(self._async_service.get_uur_reports(filter_data))
 
     # =========================================================================
-    # Helper Methods
+    # Unit Flow Methods (⚠️ INTERNAL API)
     # =========================================================================
-
-    def get_yield_summary(
-        self,
-        part_number: str,
-        revision: Optional[str] = None,
-        days: int = 30,
-    ) -> List[YieldData]:
-        """
-        Get yield summary for a product over a time period.
-        
-        Convenience wrapper that creates a WATSFilter internally.
-
-        Args:
-            part_number: Product part number
-            revision: Optional product revision
-            days: Number of days to include (default: 30)
-
-        Returns:
-            List of YieldData objects
-            
-        Example:
-            >>> # Get 30-day yield summary for a product
-            >>> summary = api.analytics.get_yield_summary(
-            ...     part_number="WIDGET-001",
-            ...     days=30
-            ... )
-            >>> for y in summary:
-            ...     print(f"{y.period}: FPY={y.fpy}%")
-        """
-        filter_data = WATSFilter(
-            part_number=part_number,
-            revision=revision,
-            period_count=days,
-            dimensions="partNumber;period",
-        )
-        return self.get_dynamic_yield(filter_data)
-
-    def get_station_yield(
-        self, station_name: str, days: int = 7
-    ) -> List[YieldData]:
-        """
-        Get yield statistics for a specific test station.
-        
-        Convenience wrapper that creates a WATSFilter internally.
-
-        Args:
-            station_name: Test station name
-            days: Number of days to include (default: 7)
-
-        Returns:
-            List of YieldData objects
-            
-        Example:
-            >>> # Get 7-day yield for a station
-            >>> station_yield = api.analytics.get_station_yield(
-            ...     station_name="Line1-EOL",
-            ...     days=7
-            ... )
-            >>> for y in station_yield:
-            ...     print(f"{y.period}: {y.unit_count} units, FPY={y.fpy}%")
-        """
-        filter_data = WATSFilter(
-            station_name=station_name,
-            period_count=days,
-            dimensions="stationName;period",
-        )
-        return self.get_dynamic_yield(filter_data)
-
-    # =========================================================================
-    # Internal API Methods
-    # =========================================================================
-    # ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-    # These methods use undocumented WATS API endpoints that may change
-    # without notice. Use with caution.
-    # =========================================================================
-
-    def _ensure_internal(self) -> "AnalyticsServiceInternal":
-        """Ensure internal service is available."""
-        if self._internal is None:
-            raise RuntimeError(
-                "Internal analytics methods are not available. "
-                "This pyWATS client was not configured with internal API support."
-            )
-        return self._internal
-
-    # -------------------------------------------------------------------------
-    # Unit Flow Methods (Internal)
-    # -------------------------------------------------------------------------
 
     def get_unit_flow(
-        self, 
+        self,
         filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
     ) -> UnitFlowResult:
-        """
-        Get complete unit flow data with nodes and links.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        This is the main method for unit flow analysis. Returns a complete
-        flow diagram showing how units traverse through production operations.
-        
-        Args:
-            filter_data: UnitFlowFilter or dict with filter criteria.
-                Common filters:
-                - part_number: Product part number
-                - date_from/date_to: Date range
-                - station_name: Filter by station
-                - include_passed/include_failed: Filter by status
-                
-        Returns:
-            UnitFlowResult with nodes, links, and metadata
-            
-        Example:
-            >>> from pywats import UnitFlowFilter
-            >>> from datetime import datetime, timedelta
-            >>> 
-            >>> filter = UnitFlowFilter(
-            ...     part_number="WIDGET-001",
-            ...     date_from=datetime.now() - timedelta(days=7)
-            ... )
-            >>> result = api.analytics.get_unit_flow(filter)
-            >>> 
-            >>> for node in result.nodes:
-            ...     print(f"{node.name}: {node.unit_count} units")
-        """
-        return self._ensure_internal().get_unit_flow(filter_data)
-
-    def get_flow_nodes(self) -> List[UnitFlowNode]:
-        """
-        Get all nodes from the current unit flow state.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns:
-            List of UnitFlowNode objects
-        """
-        return self._ensure_internal().get_flow_nodes()
+        """Get complete unit flow data with nodes and links. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_unit_flow(filter_data))
 
     def get_flow_links(self) -> List[UnitFlowLink]:
-        """
-        Get all links from the current unit flow state.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns:
-            List of UnitFlowLink objects
-        """
-        return self._ensure_internal().get_flow_links()
+        """Get all links from the current unit flow state. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_flow_links())
 
-    def get_flow_units(self) -> List[UnitFlowUnit]:
-        """
-        Get all individual units from the unit flow.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns:
-            List of UnitFlowUnit objects
-        """
-        return self._ensure_internal().get_flow_units()
+    def get_flow_nodes(self) -> List[UnitFlowNode]:
+        """Get all nodes from the current unit flow state. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_flow_nodes())
 
     def trace_serial_numbers(
         self,
         serial_numbers: List[str],
         filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
-    ) -> UnitFlowResult:
-        """
-        Trace specific serial numbers through the production flow.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Args:
-            serial_numbers: List of serial numbers to trace
-            filter_data: Additional filter parameters
-            
-        Returns:
-            UnitFlowResult showing paths for the specified units
-        """
-        return self._ensure_internal().trace_serial_numbers(serial_numbers, filter_data)
+    ) -> Optional[UnitFlowResult]:
+        """Trace the production flow for specific serial numbers. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.trace_serial_numbers(
+            serial_numbers=serial_numbers,
+            filter_data=filter_data,
+        ))
 
-    def get_bottlenecks(
-        self,
-        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None,
-        min_yield_threshold: float = 95.0
-    ) -> List[UnitFlowNode]:
-        """
-        Find production bottlenecks (nodes with yield below threshold).
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Args:
-            filter_data: Filter criteria for the flow
-            min_yield_threshold: Minimum acceptable yield (default 95%)
-            
-        Returns:
-            List of UnitFlowNode objects with yield below threshold
-        """
-        return self._ensure_internal().get_bottlenecks(filter_data, min_yield_threshold)
-
-    def get_flow_summary(
-        self,
-        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
-    ) -> Dict[str, Any]:
-        """
-        Get a summary of the unit flow statistics.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Provides high-level metrics about the production flow.
-        
-        Args:
-            filter_data: Filter criteria for the flow query
-            
-        Returns:
-            Dictionary with summary statistics including:
-            - total_nodes, total_links, total_units
-            - passed_units, failed_units
-            - avg_yield, min_yield, max_yield
-        """
-        return self._ensure_internal().get_flow_summary(filter_data)
+    def get_flow_units(self) -> List[UnitFlowUnit]:
+        """Get all individual units from the unit flow. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_flow_units())
 
     def split_flow_by(
-        self, 
+        self,
         dimension: str,
         filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
     ) -> UnitFlowResult:
-        """
-        Split the unit flow by a specific dimension.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Splits the flow diagram to show parallel paths based on the
-        specified dimension (e.g., by station, location, or purpose).
-        
-        Args:
-            dimension: Dimension to split by. Common values:
-                - "stationName": Split by test station
-                - "location": Split by physical location
-                - "purpose": Split by station purpose
-                - "processCode": Split by process type
-            filter_data: Additional filter parameters
-            
-        Returns:
-            UnitFlowResult with split flow view
-        """
-        return self._ensure_internal().split_flow_by(dimension, filter_data)
+        """Split the unit flow by a specific dimension. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.split_flow_by(
+            dimension=dimension,
+            filter_data=filter_data,
+        ))
 
     def set_unit_order(
-        self, 
+        self,
         order_by: str,
         filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
     ) -> UnitFlowResult:
-        """
-        Set how units are ordered in the flow visualization.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Args:
-            order_by: Order specification. Common values:
-                - "startTime": Order by when units entered
-                - "endTime": Order by when units exited
-                - "serialNumber": Order alphabetically by serial
-                - "status": Order by pass/fail status
-            filter_data: Additional filter parameters
-            
-        Returns:
-            UnitFlowResult with reordered units
-        """
-        return self._ensure_internal().set_unit_order(order_by, filter_data)
+        """Set how units are ordered in the flow visualization. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.set_unit_order(
+            order_by=order_by,
+            filter_data=filter_data,
+        ))
+
+    def set_unit_flow_visibility(
+        self,
+        show_operations: Optional[List[str]] = None,
+        hide_operations: Optional[List[str]] = None,
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> UnitFlowResult:
+        """Control visibility of operations in the unit flow. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.set_unit_flow_visibility(
+            show_operations=show_operations,
+            hide_operations=hide_operations,
+            filter_data=filter_data,
+        ))
+
+    def show_operations(
+        self,
+        operation_ids: List[str],
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> UnitFlowResult:
+        """Show specific operations in the unit flow diagram. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.show_operations(
+            operation_ids=operation_ids,
+            filter_data=filter_data,
+        ))
+
+    def hide_operations(
+        self,
+        operation_ids: List[str],
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> UnitFlowResult:
+        """Hide specific operations from the unit flow diagram. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.hide_operations(
+            operation_ids=operation_ids,
+            filter_data=filter_data,
+        ))
 
     def expand_operations(
         self,
         expand: bool = True,
         filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
     ) -> UnitFlowResult:
-        """
-        Expand or collapse operations in the unit flow.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        When expanded, shows detailed sub-operations within each process.
-        When collapsed, shows an aggregated view.
-        
-        Args:
-            expand: True to expand operations, False to collapse
-            filter_data: Additional filter parameters
-            
-        Returns:
-            UnitFlowResult with updated expansion state
-        """
-        return self._ensure_internal().expand_operations(expand, filter_data)
+        """Expand or collapse operations in the unit flow. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.expand_operations(
+            expand=expand,
+            filter_data=filter_data,
+        ))
 
-    # -------------------------------------------------------------------------
-    # Measurement List Methods (Internal)
-    # -------------------------------------------------------------------------
+    def get_bottlenecks(
+        self,
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None,
+        min_yield_threshold: float = 95.0
+    ) -> List[UnitFlowNode]:
+        """Find production bottlenecks (nodes with yield below threshold). ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_bottlenecks(
+            filter_data=filter_data,
+            min_yield_threshold=min_yield_threshold,
+        ))
+
+    def get_flow_summary(
+        self,
+        filter_data: Optional[Union[UnitFlowFilter, Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
+        """Get a summary of the unit flow statistics. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_flow_summary(filter_data))
+
+    # =========================================================================
+    # Step/Measurement Filter Methods (⚠️ INTERNAL API)
+    # =========================================================================
 
     def get_measurement_list(
         self,
@@ -1111,49 +458,12 @@ class AnalyticsService:
         step_filters: str,
         sequence_filters: str
     ) -> List[MeasurementListItem]:
-        """
-        Get measurement list with full filter support.
-        
-        POST /api/internal/App/MeasurementList
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns individual measurement values matching the specified step
-        and sequence filters.
-        
-        Args:
-            filter_data: Filter parameters including:
-                - serialNumber, partNumber, revision, batchNumber
-                - stationName, testOperation, status, yield
-                - productGroup, level, swFilename, swVersion
-                - dateFrom, dateTo, dateGrouping, periodCount
-                - includeCurrentPeriod, maxCount, minCount, topCount
-            step_filters: XML string defining step filters.
-                Typically obtained from TopFailed endpoint results.
-            sequence_filters: XML string defining sequence filters.
-                Typically obtained from TopFailed endpoint results.
-            
-        Returns:
-            List of MeasurementListItem objects with measurement details.
-            
-        Example:
-            >>> results = api.analytics.get_measurement_list(
-            ...     filter_data={
-            ...         "partNumber": "WIDGET-001",
-            ...         "dateFrom": "2024-01-01T00:00:00",
-            ...         "dateTo": "2024-01-31T23:59:59"
-            ...     },
-            ...     step_filters="<filters>...</filters>",
-            ...     sequence_filters="<filters>...</filters>"
-            ... )
-            >>> for m in results:
-            ...     print(f"{m.serial_number}: {m.step_name} = {m.value}")
-        """
-        return self._ensure_internal().get_measurement_list(
+        """Get measurement list with step/sequence filters. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_measurement_list(
             filter_data=filter_data,
             step_filters=step_filters,
-            sequence_filters=sequence_filters
-        )
+            sequence_filters=sequence_filters,
+        ))
 
     def get_measurement_list_by_product(
         self,
@@ -1163,37 +473,14 @@ class AnalyticsService:
         step_filters: str,
         sequence_filters: str
     ) -> List[MeasurementListItem]:
-        """
-        Get measurement list using simple query parameters.
-        
-        GET /api/internal/App/MeasurementList
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Simplified version that queries measurements by product group, level,
-        and time range with step/sequence filters.
-        
-        Args:
-            product_group_id: Product group ID (required)
-            level_id: Level ID (required)
-            days: Number of days to query (required)
-            step_filters: XML string defining step filters (required)
-            sequence_filters: XML string defining sequence filters (required)
-            
-        Returns:
-            List of MeasurementListItem objects.
-        """
-        return self._ensure_internal().get_measurement_list_by_product(
+        """Get measurement list using simple parameters. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_measurement_list_by_product(
             product_group_id=product_group_id,
             level_id=level_id,
             days=days,
             step_filters=step_filters,
-            sequence_filters=sequence_filters
-        )
-
-    # -------------------------------------------------------------------------
-    # Step Status Methods (Internal)
-    # -------------------------------------------------------------------------
+            sequence_filters=sequence_filters,
+        ))
 
     def get_step_status_list(
         self,
@@ -1201,50 +488,12 @@ class AnalyticsService:
         step_filters: str,
         sequence_filters: str
     ) -> List[StepStatusItem]:
-        """
-        Get step status list with full filter support.
-        
-        POST /api/internal/App/StepStatusList
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns step pass/fail counts matching the specified step
-        and sequence filters.
-        
-        Args:
-            filter_data: Filter parameters including:
-                - serialNumber, partNumber, revision, batchNumber
-                - stationName, testOperation, status, yield
-                - productGroup, level, swFilename, swVersion
-                - dateFrom, dateTo, dateGrouping, periodCount
-                - includeCurrentPeriod, maxCount, minCount, topCount
-            step_filters: XML string defining step filters.
-                Typically obtained from TopFailed endpoint results.
-            sequence_filters: XML string defining sequence filters.
-                Typically obtained from TopFailed endpoint results.
-            
-        Returns:
-            List of StepStatusItem objects with step status details.
-            
-        Example:
-            >>> results = api.analytics.get_step_status_list(
-            ...     filter_data={
-            ...         "partNumber": "WIDGET-001",
-            ...         "status": "Failed",
-            ...         "periodCount": 30
-            ...     },
-            ...     step_filters="<filters>...</filters>",
-            ...     sequence_filters="<filters>...</filters>"
-            ... )
-            >>> for step in results:
-            ...     fail_rate = step.fail_count / step.total_count * 100
-            ...     print(f"{step.step_name}: {fail_rate:.1f}% failure rate")
-        """
-        return self._ensure_internal().get_step_status_list(
+        """Get step status list with step/sequence filters. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_step_status_list(
             filter_data=filter_data,
             step_filters=step_filters,
-            sequence_filters=sequence_filters
-        )
+            sequence_filters=sequence_filters,
+        ))
 
     def get_step_status_list_by_product(
         self,
@@ -1254,86 +503,25 @@ class AnalyticsService:
         step_filters: str,
         sequence_filters: str
     ) -> List[StepStatusItem]:
-        """
-        Get step status list using simple query parameters.
-        
-        GET /api/internal/App/StepStatusList
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Simplified version that queries step statuses by product group, level,
-        and time range with step/sequence filters.
-        
-        Args:
-            product_group_id: Product group ID (required)
-            level_id: Level ID (required)
-            days: Number of days to query (required)
-            step_filters: XML string defining step filters (required)
-            sequence_filters: XML string defining sequence filters (required)
-            
-        Returns:
-            List of StepStatusItem objects.
-        """
-        return self._ensure_internal().get_step_status_list_by_product(
+        """Get step status list using simple parameters. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_step_status_list_by_product(
             product_group_id=product_group_id,
             level_id=level_id,
             days=days,
             step_filters=step_filters,
-            sequence_filters=sequence_filters
-        )
-
-    # -------------------------------------------------------------------------
-    # Top Failed Steps (Internal)
-    # -------------------------------------------------------------------------
+            sequence_filters=sequence_filters,
+        ))
 
     def get_top_failed_internal(
         self,
         filter_data: Dict[str, Any],
         top_count: Optional[int] = None
     ) -> List[TopFailedStep]:
-        """
-        Get top failed steps using internal API with full filter support.
-        
-        POST /api/internal/App/TopFailed
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns the most frequently failing steps. Unlike the public
-        get_top_failed() method, this uses the internal API which may
-        provide different filtering options.
-        
-        Args:
-            filter_data: Filter parameters including:
-                - partNumber: Product part number
-                - testOperation: Test operation name
-                - yield: Yield threshold
-                - productGroup: Product group name
-                - level: Production level
-                - periodCount: Number of periods to include
-                - grouping: Time grouping (Day, Week, Month, etc.)
-                - includeCurrentPeriod: Include current period in results
-                - topCount: Maximum number of failed steps to return
-            top_count: Optional override for topCount (convenience parameter)
-            
-        Returns:
-            List of TopFailedStep objects with failure statistics.
-            
-        Example:
-            >>> results = api.analytics.get_top_failed_internal(
-            ...     filter_data={
-            ...         "partNumber": "WIDGET-001",
-            ...         "productGroup": "Widgets",
-            ...         "periodCount": 30
-            ...     },
-            ...     top_count=20
-            ... )
-            >>> for step in results:
-            ...     print(f"{step.step_name}: {step.fail_count} failures")
-        """
-        return self._ensure_internal().get_top_failed(
+        """Get top failed steps with advanced filter support. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_top_failed_internal(
             filter_data=filter_data,
-            top_count=top_count
-        )
+            top_count=top_count,
+        ))
 
     def get_top_failed_by_product(
         self,
@@ -1344,45 +532,13 @@ class AnalyticsService:
         days: int,
         count: int = 10
     ) -> List[TopFailedStep]:
-        """
-        Get top failed steps using simple query parameters.
-        
-        GET /api/internal/App/TopFailed
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Simplified version that queries top failed steps by product and time
-        range. Useful for quick analysis without building complex filter objects.
-        
-        Args:
-            part_number: Part number of reports (required)
-            process_code: Process code of reports (required)
-            product_group_id: Product group ID (required)
-            level_id: Level ID (required)
-            days: Number of days to query (required)
-            count: Number of top failed steps to return (default 10)
-            
-        Returns:
-            List of TopFailedStep objects with failure statistics.
-            
-        Example:
-            >>> results = api.analytics.get_top_failed_by_product(
-            ...     part_number="WIDGET-001",
-            ...     process_code="TEST",
-            ...     product_group_id="pg-123",
-            ...     level_id="level-456",
-            ...     days=30,
-            ...     count=10
-            ... )
-            >>> for step in results:
-            ...     print(f"{step.step_name}: {step.fail_count} failures")
-        """
-        return self._ensure_internal().get_top_failed_by_product(
+        """Get top failed steps using simple parameters. ⚠️ INTERNAL"""
+        return run_sync(self._async_service.get_top_failed_by_product(
             part_number=part_number,
             process_code=process_code,
             product_group_id=product_group_id,
             level_id=level_id,
             days=days,
-            count=count
-        )
+            count=count,
+        ))
 

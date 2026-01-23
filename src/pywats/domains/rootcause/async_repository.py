@@ -1,48 +1,48 @@
-"""RootCause repository - data access layer.
+"""Async RootCause repository - data access layer.
 
-All API interactions for the RootCause ticketing system.
+All async API interactions for the RootCause ticketing system.
+All endpoints are defined in pywats.core.routes.Routes.
 """
 from typing import Optional, List, Union, Dict, Any, TYPE_CHECKING
-import logging
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from ...core import HttpClient
+    from ...core.async_client import AsyncHttpClient
     from ...core.exceptions import ErrorHandler
 
+from ...core.routes import Routes
 from .models import Ticket, TicketAttachment
 from .enums import TicketStatus, TicketView
 
 
-class RootCauseRepository:
+class AsyncRootCauseRepository:
     """
-    RootCause (Ticketing) data access layer.
+    Async RootCause (Ticketing) data access layer.
 
-    Handles all WATS API interactions for the ticketing system.
+    Handles all async WATS API interactions for the ticketing system.
     """
 
     def __init__(
         self, 
-        http_client: "HttpClient",
+        http_client: "AsyncHttpClient",
         error_handler: Optional["ErrorHandler"] = None
     ):
         """
-        Initialize with HTTP client.
+        Initialize with async HTTP client.
 
         Args:
-            http_client: HttpClient for making HTTP requests
-            error_handler: Optional ErrorHandler for error handling (default: STRICT mode)
+            http_client: AsyncHttpClient for making async HTTP requests
+            error_handler: ErrorHandler for response handling
         """
-        self._http_client = http_client
-        # Import here to avoid circular imports
         from ...core.exceptions import ErrorHandler, ErrorMode
+        self._http_client = http_client
         self._error_handler = error_handler or ErrorHandler(ErrorMode.STRICT)
 
     # =========================================================================
     # Ticket Operations
     # =========================================================================
 
-    def get_ticket(self, ticket_id: Union[str, UUID]) -> Optional[Ticket]:
+    async def get_ticket(self, ticket_id: Union[str, UUID]) -> Optional[Ticket]:
         """
         Get a root cause ticket by ID.
 
@@ -54,8 +54,8 @@ class RootCauseRepository:
         Returns:
             Ticket object or None if not found
         """
-        response = self._http_client.get(
-            "/api/RootCause/Ticket", params={"ticketId": str(ticket_id)}
+        response = await self._http_client.get(
+            Routes.RootCause.TICKET, params={"ticketId": str(ticket_id)}
         )
         data = self._error_handler.handle_response(
             response, operation="get_ticket", allow_empty=True
@@ -64,7 +64,7 @@ class RootCauseRepository:
             return Ticket.model_validate(data)
         return None
 
-    def get_tickets(
+    async def get_tickets(
         self,
         status: TicketStatus,
         view: TicketView,
@@ -87,7 +87,7 @@ class RootCauseRepository:
         if search_string:
             params["searchString"] = search_string
 
-        response = self._http_client.get("/api/RootCause/Tickets", params=params)
+        response = await self._http_client.get(Routes.RootCause.TICKETS, params=params)
         data = self._error_handler.handle_response(
             response, operation="get_tickets", allow_empty=True
         )
@@ -95,7 +95,7 @@ class RootCauseRepository:
             return [Ticket.model_validate(item) for item in data]
         return []
 
-    def create_ticket(self, ticket: Ticket) -> Optional[Ticket]:
+    async def create_ticket(self, ticket: Ticket) -> Optional[Ticket]:
         """
         Create a new root cause ticket.
 
@@ -107,8 +107,8 @@ class RootCauseRepository:
         Returns:
             Created Ticket object with assigned ID and ticket number
         """
-        response = self._http_client.post(
-            "/api/RootCause/Ticket",
+        response = await self._http_client.post(
+            Routes.RootCause.TICKET,
             data=ticket.model_dump(mode="json", by_alias=True, exclude_none=True),
         )
         data = self._error_handler.handle_response(
@@ -118,7 +118,7 @@ class RootCauseRepository:
             return Ticket.model_validate(data)
         return None
 
-    def update_ticket(self, ticket: Ticket) -> Optional[Ticket]:
+    async def update_ticket(self, ticket: Ticket) -> Optional[Ticket]:
         """
         Update a root cause ticket.
 
@@ -130,8 +130,8 @@ class RootCauseRepository:
         Returns:
             Updated Ticket object
         """
-        response = self._http_client.put(
-            "/api/RootCause/Ticket",
+        response = await self._http_client.put(
+            Routes.RootCause.TICKET,
             data=ticket.model_dump(mode="json", by_alias=True, exclude_none=True),
         )
         data = self._error_handler.handle_response(
@@ -141,15 +141,13 @@ class RootCauseRepository:
             return Ticket.model_validate(data)
         return None
 
-    def archive_tickets(
+    async def archive_tickets(
         self, ticket_ids: List[Union[str, UUID]]
     ) -> Optional[Ticket]:
         """
         Archive tickets.
 
         POST /api/RootCause/ArchiveTickets
-
-        Only Solved tickets can be archived.
 
         Args:
             ticket_ids: List of ticket IDs to archive
@@ -158,7 +156,7 @@ class RootCauseRepository:
             Ticket object or None
         """
         ids = [str(tid) for tid in ticket_ids]
-        response = self._http_client.post("/api/RootCause/ArchiveTickets", data=ids)
+        response = await self._http_client.post(Routes.RootCause.ARCHIVE_TICKETS, data=ids)
         data = self._error_handler.handle_response(
             response, operation="archive_tickets", allow_empty=True
         )
@@ -170,7 +168,7 @@ class RootCauseRepository:
     # Attachment Operations
     # =========================================================================
 
-    def get_attachment(
+    async def get_attachment(
         self,
         attachment_id: Union[str, UUID],
         filename: Optional[str] = None,
@@ -191,8 +189,7 @@ class RootCauseRepository:
         if filename:
             params["fileName"] = filename
 
-        response = self._http_client.get("/api/RootCause/Attachment", params=params)
-        # For binary responses, check success and handle errors
+        response = await self._http_client.get(Routes.RootCause.ATTACHMENT, params=params)
         if not response.is_success:
             self._error_handler.handle_response(
                 response, operation="get_attachment"
@@ -200,7 +197,7 @@ class RootCauseRepository:
             return None
         return response.raw
 
-    def upload_attachment(
+    async def upload_attachment(
         self, file_content: bytes, filename: str
     ) -> Optional[UUID]:
         """
@@ -216,12 +213,10 @@ class RootCauseRepository:
             UUID of the created attachment, or None if failed
         """
         files = {"file": (filename, file_content)}
-        response = self._http_client.post("/api/RootCause/Attachment", files=files)
+        response = await self._http_client.post(Routes.RootCause.ATTACHMENT, files=files)
         data = self._error_handler.handle_response(
             response, operation="upload_attachment", allow_empty=False
         )
         if data:
-            return (
-                UUID(data) if isinstance(data, str) else None
-            )
+            return UUID(data) if isinstance(data, str) else None
         return None

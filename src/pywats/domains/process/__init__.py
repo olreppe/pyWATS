@@ -8,22 +8,24 @@ This module handles the process list which defines:
 - WIP operations
 """
 from .models import ProcessInfo, RepairOperationConfig, RepairCategory
-from .repository import ProcessRepository
-from .service import ProcessService
 
-# Internal API (⚠️ subject to change - will be replaced with public API)
-from .repository_internal import ProcessRepositoryInternal
-from .service_internal import ProcessServiceInternal
+# Async implementations (primary API)
+from .async_repository import AsyncProcessRepository
+from .async_service import AsyncProcessService
+
+# Backward-compatible aliases
+ProcessRepository = AsyncProcessRepository
+ProcessService = AsyncProcessService
 
 __all__ = [
     # Models
     "ProcessInfo",
     "RepairOperationConfig",
     "RepairCategory",
-    # Public API
+    # Async implementations (primary API)
+    "AsyncProcessRepository",
+    "AsyncProcessService",
+    # Backward-compatible aliases
     "ProcessRepository",
     "ProcessService",
-    # Internal API (⚠️ subject to change)
-    "ProcessRepositoryInternal",
-    "ProcessServiceInternal",
 ]

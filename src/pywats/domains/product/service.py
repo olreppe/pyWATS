@@ -1,95 +1,78 @@
-"""Product service - business logic layer.
+"""Product service - thin sync wrapper around AsyncProductService.
 
-High-level operations for product management.
+This module provides synchronous access to AsyncProductService methods.
+All business logic is maintained in async_service.py (source of truth).
 
-Internal API methods (marked with ⚠️ INTERNAL) use undocumented endpoints
-that may change without notice. Use with caution.
+⚠️ INTERNAL API methods are marked and may change without notice.
 """
-from typing import Optional, List, Dict, TYPE_CHECKING, Any, Callable
-import logging
+from typing import Optional, List, Dict, Any
+from uuid import UUID
 
-if TYPE_CHECKING:
-    from .service_internal import ProductServiceInternal
-
+from .async_service import AsyncProductService
+from .async_repository import AsyncProductRepository
 from .models import Product, ProductRevision, ProductGroup, ProductView, BomItem, ProductRevisionRelation
-from .box_build import BoxBuildTemplate
-
-logger = logging.getLogger(__name__)
 from .enums import ProductState
-from .repository import ProductRepository
-from ...shared.result import Result, Success, Failure
+from ...core.sync_runner import run_sync
 
 
 class ProductService:
     """
-    Product business logic.
+    Synchronous wrapper for AsyncProductService.
 
-    Provides high-level operations for managing products, revisions,
-    groups, and vendors.
+    Provides sync access to all async product service operations.
+    All business logic is in AsyncProductService.
+
+    ⚠️ INTERNAL API methods are marked and may change without notice.
     """
 
-    def __init__(
-        self, 
-        repository: ProductRepository,
-        internal_service: Optional["ProductServiceInternal"] = None
-    ):
+    def __init__(self, async_service: AsyncProductService = None, *, repository=None):
         """
-        Initialize with repository.
+        Initialize with AsyncProductService or repository.
 
         Args:
-            repository: ProductRepository for data access
-            internal_service: Optional internal service for internal API methods
+            async_service: AsyncProductService instance to wrap
+            repository: (Deprecated) Repository instance for backward compatibility
         """
-        self._repository = repository
-        self._internal = internal_service
+        if repository is not None:
+            # Backward compatibility: create async service from repository
+            self._async_service = AsyncProductService(repository)
+            self._repository = repository  # Keep reference for tests
+        elif async_service is not None:
+            self._async_service = async_service
+            self._repository = async_service._repository  # Expose underlying repo
+        else:
+            raise ValueError("Either async_service or repository must be provided")
+
+    @classmethod
+    def from_repository(cls, repository: AsyncProductRepository, base_url: str = "") -> "ProductService":
+        """
+        Create ProductService from an AsyncProductRepository.
+
+        Args:
+            repository: AsyncProductRepository instance
+            base_url: Base URL for internal API calls
+
+        Returns:
+            ProductService wrapping an AsyncProductService
+        """
+        async_service = AsyncProductService(repository, base_url)
+        return cls(async_service)
 
     # =========================================================================
     # Product Operations
     # =========================================================================
 
     def get_products(self) -> List[ProductView]:
-        """
-        Get all products as simplified views.
-
-        Returns:
-            List of ProductView objects
-        """
-        products = self._repository.get_all()
-        return [
-            ProductView(
-                part_number=p.part_number,
-                name=p.name,
-                non_serial=p.non_serial,
-                state=p.state
-            )
-            for p in products
-        ]
+        """Get all products as simplified views."""
+        return run_sync(self._async_service.get_products())
 
     def get_products_full(self) -> List[Product]:
-        """
-        Get all products with full details.
-
-        Returns:
-            List of Product objects
-        """
-        return self._repository.get_all()
+        """Get all products with full details."""
+        return run_sync(self._async_service.get_products_full())
 
     def get_product(self, part_number: str) -> Optional[Product]:
-        """
-        Get a product by part number.
-
-        Args:
-            part_number: The product part number
-
-        Returns:
-            Product if found, None otherwise
-            
-        Raises:
-            ValueError: If part_number is empty or None
-        """
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        return self._repository.get_by_part_number(part_number)
+        """Get a product by part number."""
+        return run_sync(self._async_service.get_product(part_number))
 
     def create_product(
         self,
@@ -102,144 +85,41 @@ class ProductService:
         xml_data: Optional[str] = None,
         product_category_id: Optional[str] = None,
     ) -> Optional[Product]:
-        """
-        Create a new product.
-
-        Args:
-            part_number: Unique part number (required)
-            name: Product display name
-            description: Product description text
-            non_serial: If True, product cannot have serialized units (default: False)
-            state: Product state (default: ProductState.ACTIVE). Values: ACTIVE, INACTIVE
-            xml_data: Custom XML data for key-value storage
-            product_category_id: UUID of product category to assign
-
-        Returns:
-            Created Product object, or None on failure
-            
-        Raises:
-            ValueError: If part_number is empty or None
-            
-        Example:
-            >>> product = service.create_product(
-            ...     part_number="WIDGET-001",
-            ...     name="Widget Model A",
-            ...     description="Standard widget for testing",
-            ...     state=ProductState.ACTIVE
-            ... )
-        """
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        product = Product(
-            part_number=part_number,
-            name=name,
-            description=description,
-            non_serial=non_serial,
-            state=state,
-            xml_data=xml_data,
-            product_category_id=product_category_id,
+        """Create a new product."""
+        return run_sync(
+            self._async_service.create_product(
+                part_number, name, description, non_serial, state,
+                xml_data=xml_data, product_category_id=product_category_id
+            )
         )
-        result = self._repository.save(product)
-        if result:
-            logger.info(f"PRODUCT_CREATED: {result.part_number} (name={name}, state={state.name})")
-        return result
 
     def update_product(self, product: Product) -> Optional[Product]:
-        """
-        Update an existing product.
+        """Update an existing product."""
+        return run_sync(self._async_service.update_product(product))
 
-        Args:
-            product: Product object with updated fields
-
-        Returns:
-            Updated Product object
-        """
-        result = self._repository.save(product)
-        if result:
-            logger.info(f"PRODUCT_UPDATED: {result.part_number}")
-        return result
-
-    def bulk_save_products(
-        self, products: List[Product]
-    ) -> List[Product]:
-        """
-        Bulk create or update products.
-
-        Args:
-            products: List of Product objects
-
-        Returns:
-            List of saved Product objects
-        """
-        results = self._repository.save_bulk(products)
-        if results:
-            logger.info(f"PRODUCTS_BULK_SAVED: count={len(results)}")
-        return results
-
-    def is_active(self, product: Product) -> bool:
-        """
-        Check if a product is active.
-
-        Args:
-            product: Product to check
-
-        Returns:
-            True if product is active
-        """
-        return product.state == ProductState.ACTIVE
+    def bulk_save_products(self, products: List[Product]) -> List[Product]:
+        """Bulk create or update products."""
+        return run_sync(self._async_service.bulk_save_products(products))
 
     def get_active_products(self) -> List[ProductView]:
-        """
-        Get all active products.
+        """Get all active products."""
+        return run_sync(self._async_service.get_active_products())
 
-        Returns:
-            List of active ProductView objects
-        """
-        return [p for p in self.get_products() if p.state == ProductState.ACTIVE]
+    def is_active(self, product: Product) -> bool:
+        """Check if a product is in active state."""
+        return self._async_service.is_active(product)
 
     # =========================================================================
     # Revision Operations
     # =========================================================================
 
-    def get_revision(
-        self, part_number: str, revision: str
-    ) -> Optional[ProductRevision]:
-        """
-        Get a specific product revision.
-
-        Args:
-            part_number: The product part number
-            revision: The revision identifier
-
-        Returns:
-            ProductRevision if found, None otherwise
-            
-        Raises:
-            ValueError: If part_number or revision is empty or None
-        """
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        if not revision or not revision.strip():
-            raise ValueError("revision is required")
-        return self._repository.get_revision(part_number, revision)
-
     def get_revisions(self, part_number: str) -> List[ProductRevision]:
-        """
-        Get all revisions for a product.
+        """Get all revisions for a product."""
+        return run_sync(self._async_service.get_revisions(part_number))
 
-        Args:
-            part_number: The product part number
-
-        Returns:
-            List of ProductRevision objects
-            
-        Raises:
-            ValueError: If part_number is empty or None
-        """
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        product = self._repository.get_by_part_number(part_number)
-        return product.revisions if product else []
+    def get_revision(self, part_number: str, revision: str) -> Optional[ProductRevision]:
+        """Get a specific product revision."""
+        return run_sync(self._async_service.get_revision(part_number, revision))
 
     def create_revision(
         self,
@@ -247,603 +127,214 @@ class ProductService:
         revision: str,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        state: ProductState = ProductState.ACTIVE,
-        *,
-        xml_data: Optional[str] = None,
+        state: ProductState = ProductState.ACTIVE
     ) -> Optional[ProductRevision]:
-        """
-        Create a new product revision.
-
-        Args:
-            part_number: Product part number (required)
-            revision: Revision identifier string (required), e.g., "1.0", "A"
-            name: Revision display name
-            description: Revision description text
-            state: Revision state (default: ProductState.ACTIVE). Values: ACTIVE, INACTIVE
-            xml_data: Custom XML data for key-value storage
-
-        Returns:
-            Created ProductRevision object, or None if product not found
-            
-        Raises:
-            ValueError: If part_number or revision is empty or None
-            
-        Example:
-            >>> rev = service.create_revision(
-            ...     part_number="WIDGET-001",
-            ...     revision="1.0",
-            ...     name="Initial Release",
-            ...     state=ProductState.ACTIVE
-            ... )
-        """
-        if not part_number or not part_number.strip():
-            raise ValueError("part_number is required")
-        if not revision or not revision.strip():
-            raise ValueError("revision is required")
-        # Get product to link revision
-        product = self._repository.get_by_part_number(part_number)
-        if not product:
-            return None
-
-        rev = ProductRevision(
-            revision=revision,
-            name=name,
-            description=description,
-            state=state,
-            product_id=product.product_id,
-            part_number=part_number,
-            xml_data=xml_data,
+        """Create a new product revision."""
+        return run_sync(
+            self._async_service.create_revision(
+                part_number, revision, name, description, state
+            )
         )
-        result = self._repository.save_revision(rev)
-        if result:
-            logger.info(f"REVISION_CREATED: {part_number}/{revision} (name={name})")
-        return result
 
-    def update_revision(
-        self, revision: ProductRevision
-    ) -> Optional[ProductRevision]:
-        """
-        Update an existing product revision.
+    def update_revision(self, revision: ProductRevision) -> Optional[ProductRevision]:
+        """Update an existing product revision."""
+        return run_sync(self._async_service.update_revision(revision))
 
-        Args:
-            revision: ProductRevision object with updated fields
-
-        Returns:
-            Updated ProductRevision object
-        """
-        result = self._repository.save_revision(revision)
-        if result:
-            logger.info(f"REVISION_UPDATED: {result.part_number}/{result.revision}")
-        return result
-
-    def bulk_save_revisions(
-        self, revisions: List[ProductRevision]
-    ) -> List[ProductRevision]:
-        """
-        Bulk create or update revisions.
-
-        Args:
-            revisions: List of ProductRevision objects
-
-        Returns:
-            List of saved ProductRevision objects
-        """
-        results = self._repository.save_revisions_bulk(revisions)
-        if results:
-            logger.info(f"REVISIONS_BULK_SAVED: count={len(results)}")
-        return results
-
-    # =========================================================================
-    # Bill of Materials
-    # =========================================================================
-
-    def get_bom(
-        self,
-        part_number: str,
-        revision: str
-    ) -> List["BomItem"]:
-        """
-        Get BOM (Bill of Materials) for a product revision.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-
-        Args:
-            part_number: Product part number
-            revision: Product revision
-
-        Returns:
-            List of BomItem objects
-        """
-        return self._ensure_internal().get_bom(part_number, revision)
-
-    def get_bom_items(
-        self,
-        part_number: str,
-        revision: str
-    ) -> List["BomItem"]:
-        """
-        Get BOM items as parsed BomItem objects.
-        
-        This is an alias for get_bom() for backward compatibility.
-
-        Args:
-            part_number: Product part number
-            revision: Product revision
-
-        Returns:
-            List of BomItem objects
-        """
-        return self.get_bom(part_number, revision)
-
-    def update_bom(
-        self,
-        part_number: str,
-        revision: str,
-        bom_items: List["BomItem"],
-        description: Optional[str] = None
-    ) -> bool:
-        """
-        Update product BOM (Bill of Materials).
-        
-        Uses the public API which accepts WSBF (WATS Standard BOM Format) XML.
-
-        Args:
-            part_number: Product part number
-            revision: Product revision
-            bom_items: List of BomItem objects
-            description: Optional product description
-
-        Returns:
-            True if successful
-        """
-        result = self._repository.update_bom(part_number, revision, bom_items, description)
-        if result:
-            logger.info(f"BOM_UPDATED: {part_number}/{revision} (items={len(bom_items)})")
-        return result
+    def bulk_save_revisions(self, revisions: List[ProductRevision]) -> List[ProductRevision]:
+        """Bulk create or update product revisions."""
+        return run_sync(self._async_service.bulk_save_revisions(revisions))
 
     # =========================================================================
     # Product Groups
     # =========================================================================
 
-    def get_groups(
+    def get_groups(self) -> List[ProductGroup]:
+        """Get all product groups."""
+        return run_sync(self._async_service.get_groups())
+
+    def create_group(
         self,
-        filter_str: Optional[str] = None,
-        top: Optional[int] = None
-    ) -> List[ProductGroup]:
-        """
-        Get product groups.
+        name: str,
+        description: Optional[str] = None
+    ) -> Optional[ProductGroup]:
+        """Create a new product group."""
+        return run_sync(self._async_service.create_group(name, description))
 
-        Args:
-            filter_str: OData filter string
-            top: Max number of results
-
-        Returns:
-            List of ProductGroup objects
-        """
-        return self._repository.get_groups(filter_str=filter_str, top=top)
-
-    def get_groups_for_product(
-        self, part_number: str, revision: str
-    ) -> List[ProductGroup]:
-        """
-        Get product groups for a specific product.
-
-        Args:
-            part_number: The product part number
-            revision: The revision identifier
-
-        Returns:
-            List of ProductGroup objects
-        """
-        return self._repository.get_groups_for_product(part_number, revision)
+    def get_groups_for_product(self, part_number: str) -> List[ProductGroup]:
+        """Get product groups that contain a specific product."""
+        return run_sync(self._async_service.get_groups_for_product(part_number))
 
     # =========================================================================
-    # Tags
+    # ⚠️ INTERNAL API - BOM Operations
+    # =========================================================================
+
+    def get_bom(self, part_number: str, revision: str) -> List[BomItem]:
+        """⚠️ INTERNAL: Get BOM (Bill of Materials) for a product revision."""
+        return run_sync(self._async_service.get_bom(part_number, revision))
+
+    def upload_bom(
+        self,
+        part_number: str,
+        revision: str,
+        bom_items: List[Dict[str, Any]],
+        format: str = "json"
+    ) -> bool:
+        """⚠️ INTERNAL: Upload/update BOM items."""
+        return run_sync(
+            self._async_service.upload_bom(part_number, revision, bom_items, format)
+        )
+
+    def get_bom_items(self, part_number: str, revision: str) -> List[BomItem]:
+        """⚠️ INTERNAL: Get BOM items (alias for get_bom)."""
+        return run_sync(self._async_service.get_bom_items(part_number, revision))
+
+    def update_bom(
+        self,
+        part_number: str,
+        revision: str,
+        bom_items: List[BomItem],
+        description: Optional[str] = None
+    ) -> bool:
+        """Update product BOM (Bill of Materials)."""
+        return run_sync(
+            self._async_service.update_bom(part_number, revision, bom_items, description)
+        )
+
+    # =========================================================================
+    # ⚠️ INTERNAL API - Box Build / Revision Relations
+    # =========================================================================
+
+    def get_product_hierarchy(
+        self,
+        part_number: str,
+        revision: str
+    ) -> List[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get product hierarchy including all child revision relations."""
+        return run_sync(
+            self._async_service.get_product_hierarchy(part_number, revision)
+        )
+
+    def add_subunit(
+        self,
+        parent_part_number: str,
+        parent_revision: str,
+        child_part_number: str,
+        child_revision: str,
+        quantity: int = 1,
+        revision_mask: Optional[str] = None
+    ) -> Optional[ProductRevisionRelation]:
+        """⚠️ INTERNAL: Add a subunit to a product's box build template."""
+        return run_sync(
+            self._async_service.add_subunit(
+                parent_part_number, parent_revision,
+                child_part_number, child_revision,
+                quantity, revision_mask
+            )
+        )
+
+    def remove_subunit(self, relation_id: UUID) -> bool:
+        """⚠️ INTERNAL: Remove a subunit from a product's box build template."""
+        return run_sync(self._async_service.remove_subunit(relation_id))
+
+    def get_box_build_template(self, part_number: str, revision: str):
+        """⚠️ INTERNAL: Get or create a box build template for a product revision."""
+        return run_sync(self._async_service.get_box_build_template(part_number, revision))
+
+    def get_box_build_subunits(
+        self,
+        part_number: str,
+        revision: str
+    ) -> List[ProductRevisionRelation]:
+        """⚠️ INTERNAL: Get subunits for a box build (read-only)."""
+        return run_sync(
+            self._async_service.get_box_build_subunits(part_number, revision)
+        )
+
+    # =========================================================================
+    # ⚠️ INTERNAL API - Product Categories
+    # =========================================================================
+
+    def get_product_categories(self) -> List[Dict[str, Any]]:
+        """⚠️ INTERNAL: Get all product categories."""
+        return run_sync(self._async_service.get_product_categories())
+
+    def save_product_categories(self, categories: List[Dict[str, Any]]) -> bool:
+        """⚠️ INTERNAL: Save product categories."""
+        return run_sync(self._async_service.save_product_categories(categories))
+
+    # =========================================================================
+    # Tags (using product/revision updates)
     # =========================================================================
 
     def get_product_tags(self, part_number: str) -> List[Dict[str, str]]:
-        """
-        Get tags for a product.
-
-        Args:
-            part_number: Product part number
-
-        Returns:
-            List of tag dictionaries with 'key' and 'value'
-        """
-        product = self.get_product(part_number)
-        if product and product.tags:
-            return [{"key": t.key, "value": t.value or ""} for t in product.tags]
-        return []
+        """Get tags for a product."""
+        return run_sync(self._async_service.get_product_tags(part_number))
 
     def set_product_tags(
-        self, 
-        part_number: str, 
+        self,
+        part_number: str,
         tags: List[Dict[str, str]]
     ) -> Optional[Product]:
-        """
-        Set tags for a product (replaces existing tags).
-
-        Args:
-            part_number: Product part number
-            tags: List of tag dictionaries with 'key' and 'value'
-
-        Returns:
-            Updated Product or None if not found
-        """
-        product = self.get_product(part_number)
-        if not product:
-            return None
-        
-        # Convert tags to Setting objects format for XML
-        from ...shared import Setting, ChangeType
-        product.tags = [
-            Setting(key=t["key"], value=t["value"], change=ChangeType.ADD)
-            for t in tags
-        ]
-        return self.update_product(product)
+        """Set tags for a product (replaces existing tags)."""
+        return run_sync(self._async_service.set_product_tags(part_number, tags))
 
     def add_product_tag(
-        self, 
-        part_number: str, 
-        key: str, 
+        self,
+        part_number: str,
+        name: str,
         value: str
     ) -> Optional[Product]:
-        """
-        Add a tag to a product.
-
-        Args:
-            part_number: Product part number
-            key: Tag key
-            value: Tag value
-
-        Returns:
-            Updated Product or None if not found
-        """
-        product = self.get_product(part_number)
-        if not product:
-            return None
-        
-        from ...shared import Setting, ChangeType
-        
-        # Check if tag already exists
-        for tag in product.tags:
-            if tag.key == key:
-                tag.value = value
-                tag.change = ChangeType.UPDATE
-                return self.update_product(product)
-        
-        # Add new tag
-        product.tags.append(Setting(key=key, value=value, change=ChangeType.ADD))
-        return self.update_product(product)
+        """Add a single tag to a product."""
+        return run_sync(self._async_service.add_product_tag(part_number, name, value))
 
     def get_revision_tags(
-        self, 
-        part_number: str, 
+        self,
+        part_number: str,
         revision: str
     ) -> List[Dict[str, str]]:
-        """
-        Get tags for a product revision.
-
-        Args:
-            part_number: Product part number
-            revision: Revision identifier
-
-        Returns:
-            List of tag dictionaries with 'key' and 'value'
-        """
-        rev = self.get_revision(part_number, revision)
-        if rev and rev.tags:
-            return [{"key": t.key, "value": t.value or ""} for t in rev.tags]
-        return []
+        """Get tags for a product revision."""
+        return run_sync(self._async_service.get_revision_tags(part_number, revision))
 
     def set_revision_tags(
-        self, 
-        part_number: str, 
+        self,
+        part_number: str,
         revision: str,
         tags: List[Dict[str, str]]
     ) -> Optional[ProductRevision]:
-        """
-        Set tags for a product revision (replaces existing tags).
-
-        Args:
-            part_number: Product part number
-            revision: Revision identifier
-            tags: List of tag dictionaries with 'key' and 'value'
-
-        Returns:
-            Updated ProductRevision or None if not found
-        """
-        rev = self.get_revision(part_number, revision)
-        if not rev:
-            return None
-        
-        from ...shared import Setting, ChangeType
-        rev.tags = [
-            Setting(key=t["key"], value=t["value"], change=ChangeType.ADD)
-            for t in tags
-        ]
-        return self.update_revision(rev)
+        """Set tags for a product revision."""
+        return run_sync(
+            self._async_service.set_revision_tags(part_number, revision, tags)
+        )
 
     def add_revision_tag(
-        self, 
-        part_number: str, 
+        self,
+        part_number: str,
         revision: str,
-        key: str, 
+        name: str,
         value: str
     ) -> Optional[ProductRevision]:
-        """
-        Add a tag to a product revision.
-
-        Args:
-            part_number: Product part number
-            revision: Revision identifier
-            key: Tag key
-            value: Tag value
-
-        Returns:
-            Updated ProductRevision or None if not found
-        """
-        rev = self.get_revision(part_number, revision)
-        if not rev:
-            return None
-        
-        from ...shared import Setting, ChangeType
-        
-        # Check if tag already exists
-        for tag in rev.tags:
-            if tag.key == key:
-                tag.value = value
-                tag.change = ChangeType.UPDATE
-                return self.update_revision(rev)
-        
-        # Add new tag
-        rev.tags.append(Setting(key=key, value=value, change=ChangeType.ADD))
-        return self.update_revision(rev)
+        """Add a single tag to a product revision."""
+        return run_sync(
+            self._async_service.add_revision_tag(part_number, revision, name, value)
+        )
 
     # =========================================================================
-    # Vendors
+    # ⚠️ INTERNAL API - Vendors
     # =========================================================================
 
     def get_vendors(self) -> List[Dict[str, Any]]:
-        """
-        Get all vendors.
-
-        Returns:
-            List of vendor dictionaries
-        """
-        return self._repository.get_vendors()
+        """⚠️ INTERNAL: Get all vendors."""
+        return run_sync(self._async_service.get_vendors())
 
     def save_vendor(
-        self, vendor_data: Dict[str, Any]
+        self,
+        name: str,
+        vendor_id: Optional[str] = None,
+        **kwargs
     ) -> Optional[Dict[str, Any]]:
-        """
-        Create or update a vendor.
-
-        Args:
-            vendor_data: Vendor data dictionary
-
-        Returns:
-            Created/updated vendor data
-        """
-        return self._repository.save_vendor(vendor_data)
+        """⚠️ INTERNAL: Create or update a vendor."""
+        return run_sync(self._async_service.save_vendor(name, vendor_id, **kwargs))
 
     def delete_vendor(self, vendor_id: str) -> bool:
-        """
-        Delete a vendor.
-
-        Args:
-            vendor_id: The vendor ID
-
-        Returns:
-            True if successful
-        """
-        return self._repository.delete_vendor(vendor_id)
-
-    # =========================================================================
-    # Extended Methods (from internal service)
-    # =========================================================================
-
-    def _ensure_internal(self) -> "ProductServiceInternal":
-        """Ensure internal service is available."""
-        if self._internal is None:
-            raise RuntimeError(
-                "Extended product methods are not available. "
-                "This pyWATS client was not configured with extended API support."
-            )
-        return self._internal
-
-    # -------------------------------------------------------------------------
-    # Box Build Templates
-    # -------------------------------------------------------------------------
-
-    def get_box_build_template(self, part_number: str, revision: str) -> BoxBuildTemplate:
-        """
-        Get or create a box build template for a product revision.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        A box build template defines WHAT subunits are required to build a product.
-        This is a PRODUCT-LEVEL definition - it does not create production units.
-        
-        Args:
-            part_number: Parent product part number
-            revision: Parent product revision
-            
-        Returns:
-            BoxBuildTemplate for managing subunits
-            
-        Example:
-            template = api.product.get_box_build_template("MAIN-BOARD", "A")
-            template.add_subunit("PCBA-001", "A", quantity=2)
-            template.save()
-        """
-        return self._ensure_internal().get_box_build(part_number, revision)
-
-    def get_box_build_subunits(
-        self, 
-        part_number: str, 
-        revision: str
-    ) -> List[ProductRevisionRelation]:
-        """
-        Get subunits for a box build (read-only).
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Args:
-            part_number: Parent product part number
-            revision: Parent product revision
-            
-        Returns:
-            List of ProductRevisionRelation representing subunits
-        """
-        return self._ensure_internal().get_box_build_subunits(part_number, revision)
-
-    # -------------------------------------------------------------------------
-    # Product Categories
-    # -------------------------------------------------------------------------
-
-    def get_product_categories(self) -> List[Dict[str, Any]]:
-        """
-        Get all product categories.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Returns:
-            List of category dictionaries
-        """
-        return self._ensure_internal().get_categories()
-
-    def save_product_categories(self, categories: List[Dict[str, Any]]) -> bool:
-        """
-        Save product categories.
-        
-        ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
-        
-        Args:
-            categories: List of category dictionaries
-            
-        Returns:
-            True if successful
-        """
-        return self._ensure_internal().save_categories(categories)
-
-    # =========================================================================
-    # Batch Operations
-    # =========================================================================
-
-    def get_products_batch(
-        self,
-        part_numbers: List[str],
-        max_workers: int = 10,
-        on_progress: Optional[Callable[[int, int], None]] = None,
-    ) -> List[Result[Product]]:
-        """
-        Get multiple products concurrently by part number.
-        
-        Fetches multiple products in parallel using a thread pool for improved
-        performance. Results are returned in the same order as input part numbers.
-        
-        Args:
-            part_numbers: List of part numbers to fetch
-            max_workers: Maximum concurrent requests (default: 10)
-            on_progress: Optional callback (completed, total) for progress tracking
-            
-        Returns:
-            List of Result[Product] in same order as input.
-            Each result is either Success(product) or Failure(error_code, message).
-            
-        Example:
-            >>> # Fetch multiple products
-            >>> results = api.product.get_products_batch(
-            ...     ["PN-001", "PN-002", "PN-003"],
-            ...     max_workers=5,
-            ... )
-            >>> 
-            >>> # Process results
-            >>> for pn, result in zip(part_numbers, results):
-            ...     if result.is_success:
-            ...         print(f"{pn}: {result.value.name}")
-            ...     else:
-            ...         print(f"{pn}: NOT FOUND - {result.message}")
-            
-            >>> # Get only successful results
-            >>> from pywats.core.batch import collect_successes
-            >>> products = collect_successes(results)
-            >>> print(f"Found {len(products)} of {len(part_numbers)} products")
-            
-            >>> # With progress tracking
-            >>> def on_progress(done, total):
-            ...     print(f"Progress: {done}/{total}")
-            >>> results = api.product.get_products_batch(
-            ...     part_numbers,
-            ...     on_progress=on_progress,
-            ... )
-            
-        Note:
-            - Results preserve input order
-            - Individual failures don't stop other requests
-            - Products not found return Failure with error_code="NOT_FOUND"
-        """
-        from ...core.batch import batch_execute
-        
-        return batch_execute(
-            keys=part_numbers,
-            operation=self.get_product,
-            max_workers=max_workers,
-            on_progress=on_progress,
-        )
-
-    def get_revisions_batch(
-        self,
-        part_number_revision_pairs: List[tuple[str, str]],
-        max_workers: int = 10,
-        on_progress: Optional[Callable[[int, int], None]] = None,
-    ) -> List[Result[ProductRevision]]:
-        """
-        Get multiple product revisions concurrently.
-        
-        Fetches multiple revisions in parallel using a thread pool.
-        Results are returned in the same order as input pairs.
-        
-        Args:
-            part_number_revision_pairs: List of (part_number, revision) tuples
-            max_workers: Maximum concurrent requests (default: 10)
-            on_progress: Optional callback (completed, total) for progress tracking
-            
-        Returns:
-            List of Result[ProductRevision] in same order as input.
-            Each result is either Success(revision) or Failure(error_code, message).
-            
-        Example:
-            >>> # Fetch multiple revisions
-            >>> pairs = [
-            ...     ("PN-001", "A"),
-            ...     ("PN-001", "B"),
-            ...     ("PN-002", "A"),
-            ... ]
-            >>> results = api.product.get_revisions_batch(pairs)
-            >>> 
-            >>> # Process results
-            >>> for (pn, rev), result in zip(pairs, results):
-            ...     if result.is_success:
-            ...         print(f"{pn} Rev {rev}: {result.value.name}")
-            ...     else:
-            ...         print(f"{pn} Rev {rev}: {result.error_code}")
-            
-        Note:
-            - Results preserve input order
-            - Use tuple of (part_number, revision) as input
-        """
-        from ...core.batch import batch_execute
-        
-        def fetch_revision(pair: tuple[str, str]) -> Optional[ProductRevision]:
-            part_number, revision = pair
-            return self.get_revision(part_number, revision)
-        
-        return batch_execute(
-            keys=part_number_revision_pairs,
-            operation=fetch_revision,
-            max_workers=max_workers,
-            on_progress=on_progress,
-        )
+        """⚠️ INTERNAL: Delete a vendor."""
+        return run_sync(self._async_service.delete_vendor(vendor_id))

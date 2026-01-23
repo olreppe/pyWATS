@@ -81,7 +81,6 @@ if ticket:
 # =============================================================================
 
 # Search by various criteria
-from pywats.domains.report import WATSFilter
 
 # Open tickets
 open_tickets = api.rootcause.search_tickets(status="Open")

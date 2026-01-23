@@ -7,7 +7,7 @@ Comprehensive examples organized by domain for the pyWATS library.
 ```python
 from pywats import pyWATS
 
-# Initialize the API
+# Initialize the API (synchronous)
 api = pyWATS(
     base_url="https://your-wats-server.com",
     token="your-base64-token"  # Base64 of "username:password"
@@ -17,6 +17,26 @@ api = pyWATS(
 products = api.product.get_products()
 ```
 
+### Async Quick Start
+
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def main():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-base64-token"
+    ) as api:
+        # Concurrent requests
+        products, assets = await asyncio.gather(
+            api.product.get_products(),
+            api.asset.get_assets(top=10)
+        )
+
+asyncio.run(main())
+```
+
 ## Directory Structure
 
 ```
@@ -24,7 +44,8 @@ examples/
 ├── getting_started/          # Basic setup and connection
 │   ├── 01_connection.py      # API connection basics
 │   ├── 02_authentication.py  # Authentication options
-│   └── 03_station_setup.py   # Test station configuration
+│   ├── 03_station_setup.py   # Test station configuration
+│   └── 04_async_usage.py     # Async patterns and run_sync()
 │
 ├── product/                  # Product management
 │   ├── basic_operations.py   # CRUD operations

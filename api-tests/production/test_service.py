@@ -4,20 +4,22 @@ import pytest
 
 from pywats.domains.production.enums import UnitPhaseFlag
 from pywats.domains.production.models import Unit
-from pywats.domains.production.service import ProductionService
+from pywats.domains.production import ProductionService
 
 
 class DummyProductionRepository:
+    """Mock repository for testing ProductionService."""
+    
     def __init__(self) -> None:
         self.saved_units: List[Unit] = []
         self.phase_calls: List[Tuple[str, str, int, str]] = []
         self.child_calls: List[Tuple[str, str, str, str]] = []
 
-    def save_units(self, units: List[Unit]) -> List[Unit]:
+    async def save_units(self, units: List[Unit]) -> List[Unit]:
         self.saved_units.extend(units)
         return units
 
-    def set_unit_phase(
+    async def set_unit_phase(
         self,
         serial_number: str,
         part_number: str,
@@ -27,7 +29,7 @@ class DummyProductionRepository:
         self.phase_calls.append((serial_number, part_number, phase, comment or ""))
         return True
 
-    def add_child_unit(
+    async def add_child_unit(
         self,
         parent_serial: str,
         parent_part: str,
@@ -44,18 +46,20 @@ def production_service() -> ProductionService:
     return ProductionService(repository=repository)
 
 
-def test_create_units_invokes_repository(production_service: ProductionService) -> None:
+@pytest.mark.asyncio
+async def test_create_units_invokes_repository(production_service: ProductionService) -> None:
     units = [Unit(serial_number="SN-A", part_number="PN-A"), Unit(serial_number="SN-B", part_number="PN-B")]
 
-    created = production_service.create_units(units)
+    created = await production_service.create_units(units)
 
     repo = production_service._repository
     assert created == units
     assert repo.saved_units == units
 
 
-def test_set_unit_phase_accepts_enum(production_service: ProductionService) -> None:
-    result = production_service.set_unit_phase(
+@pytest.mark.asyncio
+async def test_set_unit_phase_accepts_enum(production_service: ProductionService) -> None:
+    result = await production_service.set_unit_phase(
         serial_number="SN-123",
         part_number="PN-123",
         phase=UnitPhaseFlag.FINALIZED
@@ -66,8 +70,9 @@ def test_set_unit_phase_accepts_enum(production_service: ProductionService) -> N
     assert repo.phase_calls[-1][2] == int(UnitPhaseFlag.FINALIZED)
 
 
-def test_add_child_unit_routes_call(production_service: ProductionService) -> None:
-    success = production_service.add_child_to_assembly(
+@pytest.mark.asyncio
+async def test_add_child_unit_routes_call(production_service: ProductionService) -> None:
+    success = await production_service.add_child_to_assembly(
         parent_serial="SN-P",
         parent_part="PN-P",
         child_serial="SN-C",

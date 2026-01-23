@@ -19,6 +19,8 @@ The RootCause domain provides issue tracking and defect management capabilities.
 
 ## Quick Start
 
+### Synchronous Usage
+
 ```python
 from pywats import pyWATS
 
@@ -50,6 +52,31 @@ from pywats.domains.rootcause.models import TicketView
 
 active = api.rootcause.get_active_tickets(view=TicketView.ASSIGNED)
 print(f"\n{len(active)} tickets assigned to me")
+```
+
+### Asynchronous Usage
+
+For concurrent requests and better performance:
+
+```python
+import asyncio
+from pywats import AsyncWATS
+from pywats.domains.rootcause.models import TicketView
+
+async def track_issues():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        # Fetch different ticket views concurrently
+        my_tickets, all_open = await asyncio.gather(
+            api.rootcause.get_active_tickets(view=TicketView.ASSIGNED),
+            api.rootcause.get_open_tickets()
+        )
+        
+        print(f"My tickets: {len(my_tickets)}, All open: {len(all_open)}")
+
+asyncio.run(track_issues())
 ```
 
 ---

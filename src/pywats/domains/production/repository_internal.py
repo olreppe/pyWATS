@@ -1,13 +1,37 @@
 """Production repository - internal API data access layer.
 
+⚠️ DEPRECATED - USE AsyncProductionRepository INSTEAD ⚠️
+
+This module is DEPRECATED. All internal API methods have been consolidated
+into async_repository.py. Use AsyncProductionRepository for both public and
+internal API methods.
+
+Migration:
+    # Old:
+    from pywats.domains.production.repository_internal import ProductionRepositoryInternal
+    
+    # New:
+    from pywats.domains.production import AsyncProductionRepository
+    # OR
+    from pywats.domains.production import ProductionRepository  # alias
+
 ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
 
 Uses internal WATS API endpoints that are not publicly documented.
-These endpoints may change without notice. This module should be
-replaced with public API endpoints as soon as they become available.
+These endpoints may change without notice.
 
 The internal API requires the Referer header to be set to the base URL.
 """
+import warnings
+
+# Emit deprecation warning on import
+warnings.warn(
+    "ProductionRepositoryInternal is deprecated. "
+    "Use AsyncProductionRepository from pywats.domains.production instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from datetime import datetime
 
@@ -20,6 +44,8 @@ if TYPE_CHECKING:
 
 class ProductionRepositoryInternal:
     """
+    ⚠️ DEPRECATED - Use AsyncProductionRepository instead ⚠️
+    
     Production data access layer using internal API.
     
     ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️
@@ -256,7 +282,7 @@ class ProductionRepositoryInternal:
         return self._internal_get(
             "/api/internal/Production/GetUnit", 
             params,
-            operation="get_unit_internal"
+            operation="get_unit_by_serial"
         )
     
     def get_unit_info(
@@ -513,7 +539,7 @@ class ProductionRepositoryInternal:
         return self._internal_post(
             "/api/internal/Production/AddChildUnit", 
             params=params,
-            operation="add_child_unit_internal"
+            operation="add_child_unit_validated"
         )
     
     def remove_child_unit(
@@ -552,7 +578,7 @@ class ProductionRepositoryInternal:
         return self._internal_post(
             "/api/internal/Production/RemoveChildUnit", 
             params=params,
-            operation="remove_child_unit_internal"
+            operation="remove_child_unit_localized"
         )
     
     def remove_all_child_units(
@@ -617,7 +643,7 @@ class ProductionRepositoryInternal:
         return self._internal_get(
             "/api/internal/Production/CheckChildUnits", 
             params,
-            operation="check_child_units_internal"
+            operation="validate_child_units"
         )
     
     # =========================================================================

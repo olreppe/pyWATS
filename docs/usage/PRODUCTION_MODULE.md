@@ -283,17 +283,21 @@ for serial in serial_numbers:
 ### 2. Query Batch Units
 
 ```python
-# Get all units in batch (via report query)
-from pywats.domains.report import WATSFilter
+# Get all units in batch (via report query with OData)
+# Note: Tag-based filtering may require specific OData syntax
+headers = api.report.query_uut_headers(
+    odata_filter="partNumber eq 'WIDGET-001'",
+    top=500
+)
 
-filter = WATSFilter(tags=[
-    {"key": "LotNumber", "value": "BATCH-2025-W01"}
-])
+# Filter by tag in application code
+batch_units = [
+    r for r in headers 
+    if any(t.get("key") == "LotNumber" and t.get("value") == "BATCH-2025-W01" 
+           for t in getattr(r, 'misc_info', []) or [])
+]
 
-reports = api.report.query_uut_headers(filter)
-batch_serials = [r.serial_number for r in reports]
-
-print(f"Batch has {len(batch_serials)} units")
+print(f"Batch has {len(batch_units)} units")
 ```
 
 ## Common Patterns
@@ -423,17 +427,15 @@ def repair_workflow(serial_number: str):
 ```python
 def production_dashboard(part_number: str):
     """Show production status for a product"""
-    
-    # Get all reports for product
-    from pywats.domains.report import WATSFilter
     from datetime import datetime, timedelta
     
-    filter = WATSFilter(
-        part_number=part_number,
-        date_from=datetime.now() - timedelta(days=7)
-    )
+    # Get all reports for product using OData filter
+    start_date = datetime.now() - timedelta(days=7)
     
-    headers = api.report.query_uut_headers(filter)
+    headers = api.report.query_uut_headers(
+        odata_filter=f"partNumber eq '{part_number}' and start ge {start_date.strftime('%Y-%m-%d')}",
+        top=1000
+    )
     
     # Analyze
     total = len(headers)
