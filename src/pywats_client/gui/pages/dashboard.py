@@ -8,6 +8,8 @@ Provides real-time monitoring of:
 - Quick actions (start/stop service)
 """
 
+import sys
+import logging
 from pathlib import Path
 from typing import Optional, Dict, Any, TYPE_CHECKING
 from datetime import datetime
@@ -18,13 +20,33 @@ from PySide6.QtWidgets import (
     QProgressBar, QFrame
 )
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtGui import QColor, QFont, QMouseEvent
 
 from .base import BasePage
 from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+
+
+class DebugButton(QPushButton):
+    """Debug button that logs all mouse events"""
+    
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        print(f"🟢 DebugButton.mousePressEvent() - Button: {event.button()}, Pos: {event.pos()}", file=sys.stderr, flush=True)
+        super().mousePressEvent(event)
+    
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        print(f"🟡 DebugButton.mouseReleaseEvent() - Button: {event.button()}, Pos: {event.pos()}", file=sys.stderr, flush=True)
+        super().mouseReleaseEvent(event)
+    
+    def enterEvent(self, event) -> None:
+        print(f"🔵 DebugButton.enterEvent() - Mouse entered button", file=sys.stderr, flush=True)
+        super().enterEvent(event)
+    
+    def leaveEvent(self, event) -> None:
+        print(f"🟣 DebugButton.leaveEvent() - Mouse left button", file=sys.stderr, flush=True)
+        super().leaveEvent(event)
 
 
 class StatusIndicator(QFrame):
@@ -56,6 +78,8 @@ class StatusIndicator(QFrame):
                 border: 1px solid #3c3c3c;
             }}
         """)
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardPage(BasePage):
@@ -117,14 +141,16 @@ class DashboardPage(BasePage):
         
         status_row.addStretch()
         
-        # Control buttons
-        self._start_btn = QPushButton("Start Service")
-        self._start_btn.clicked.connect(lambda: self.service_action_requested.emit("start"))
+        # Control buttons - using DebugButton to track mouse events
+        self._start_btn = DebugButton("Start Service")
+        self._start_btn.clicked.connect(self._on_start_clicked)
+        # DEBUG: Add a direct lambda to test if Qt click events work at all
+        self._start_btn.clicked.connect(lambda: print("🔴 RAW Qt CLICK EVENT DETECTED on Start button! 🔴", file=sys.stderr, flush=True))
         self._start_btn.setEnabled(False)
         status_row.addWidget(self._start_btn)
         
         self._stop_btn = QPushButton("Stop Service")
-        self._stop_btn.clicked.connect(lambda: self.service_action_requested.emit("stop"))
+        self._stop_btn.clicked.connect(self._on_stop_clicked)
         self._stop_btn.setEnabled(False)
         status_row.addWidget(self._stop_btn)
         
@@ -247,6 +273,20 @@ class DashboardPage(BasePage):
         
         return card
     
+    def _on_start_clicked(self) -> None:
+        """Handle Start Service button click"""
+        print("=" * 80, file=sys.stderr, flush=True)
+        print("[Dashboard] START SERVICE BUTTON CLICKED!!!", file=sys.stderr, flush=True)
+        print("=" * 80, file=sys.stderr, flush=True)
+        logger.info("Start Service button clicked")
+        self.service_action_requested.emit("start")
+    
+    def _on_stop_clicked(self) -> None:
+        """Handle Stop Service button click"""
+        print("[Dashboard] Stop Service button clicked!", file=sys.stderr, flush=True)
+        logger.info("Stop Service button clicked")
+        self.service_action_requested.emit("stop")
+    
     def _refresh_status(self) -> None:
         """Refresh all status indicators"""
         # Check service status via facade
@@ -271,6 +311,9 @@ class DashboardPage(BasePage):
         is_running = status.get("running", False)
         is_error = status.get("error", False)
         is_standalone = status.get("standalone", False)
+        
+        print(f"[Dashboard] Updating service status: running={is_running}, error={is_error}, standalone={is_standalone}", file=sys.stderr, flush=True)
+        print(f"[Dashboard] BUTTON STATE: Start enabled={self._start_btn.isEnabled()}, visible={self._start_btn.isVisible()}, Stop enabled={self._stop_btn.isEnabled()}", file=sys.stderr, flush=True)
         
         if is_standalone:
             self._service_indicator.set_status("unknown")

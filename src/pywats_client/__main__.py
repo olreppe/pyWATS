@@ -213,7 +213,6 @@ def main():
     
     # Handle 'service' subcommand separately (runs headless service)
     if len(sys.argv) > 1 and sys.argv[1] == "service":
-    if len(sys.argv) > 1 and sys.argv[1] == "service":
         from .control.service import HeadlessService, ServiceConfig
         from .core.config import ClientConfig
         

@@ -267,6 +267,18 @@ class EventBus(QObject):
     def emit_queue_status(self, pending: int, failed: int) -> None:
         """Convenience method to emit queue status change."""
         self.publish(AppEvent.QUEUE_STATUS_CHANGED, pending=pending, failed=failed)
+    
+    def emit_service_started(self) -> None:
+        """Convenience method to emit service started event."""
+        self.publish(AppEvent.APP_STARTED)
+    
+    def emit_service_stopped(self) -> None:
+        """Convenience method to emit service stopped event."""
+        self.publish(AppEvent.APP_STOPPED)
+    
+    def emit_service_error(self, error: str) -> None:
+        """Convenience method to emit service error event."""
+        self.publish(AppEvent.APP_ERROR, error=error)
 
 
 # Global singleton instance

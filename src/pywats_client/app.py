@@ -243,8 +243,17 @@ class pyWATSApplication:
             
             # Initialize services
             logger.info("Initializing services...")
+            
+            # Create connection config from client config
+            from .core.connection_config import ConnectionConfig
+            connection_config = ConnectionConfig(
+                server_url=self.config.service_address,
+                username=self.config.username,
+                token_encrypted=self.config.api_token  # TODO: Should be encrypted
+            )
+            
             self._connection = ConnectionService(
-                connection_config=self.config.connection,
+                connection_config=connection_config,
                 proxy_config=getattr(self.config, 'proxy', None)
             )
             
@@ -275,7 +284,7 @@ class pyWATSApplication:
             
             # Start services
             logger.info("Starting services...")
-            await self._connection.start()
+            # ConnectionService doesn't have async start - it's initialized via login/connect
             await self._process_sync.start()
             await self._report_queue.start()
             
@@ -322,8 +331,7 @@ class pyWATSApplication:
             if self._process_sync:
                 await self._process_sync.stop()
             
-            if self._connection:
-                await self._connection.stop()
+            # ConnectionService doesn't have async stop - managed via disconnect()
             
             # Cancel remaining tasks
             for task in self._tasks:

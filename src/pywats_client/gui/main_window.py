@@ -451,6 +451,10 @@ class MainWindow(QMainWindow):
             # Connect config change signal to enable Apply button
             if hasattr(page, 'config_changed'):
                 page.config_changed.connect(self._on_config_changed)
+            # Connect service action signal from Dashboard
+            if hasattr(page, 'service_action_requested'):
+                logger.info(f"Connecting service_action_requested signal from {page.__class__.__name__}")
+                page.service_action_requested.connect(self._on_service_action)
         
         content_layout.addWidget(self._page_stack, 1)
         
@@ -629,6 +633,17 @@ class MainWindow(QMainWindow):
     def _on_config_changed(self) -> None:
         """Handle configuration changes"""
         self._apply_btn.setEnabled(True)
+    
+    def _on_service_action(self, action: str) -> None:
+        """Handle service control actions from Dashboard"""
+        logger.info(f"Service action requested: {action}")
+        
+        if action == "start":
+            self._facade.start_service()
+        elif action == "stop":
+            self._facade.stop_service()
+        else:
+            logger.warning(f"Unknown service action: {action}")
     
     def _save_config(self) -> None:
         """Save configuration from all pages"""
