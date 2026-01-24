@@ -162,14 +162,23 @@ class AsyncHttpClient:
         self._retry_config = value
 
     async def _get_client(self) -> httpx.AsyncClient:
-        """Get or create the async httpx client."""
+        """Get or create the async httpx client with connection pooling."""
         if self._client is None:
+            # Configure connection pooling for better performance
+            limits = httpx.Limits(
+                max_connections=100,  # Total connection pool size
+                max_keepalive_connections=20,  # Keep connections alive
+                keepalive_expiry=30.0  # Keep-alive timeout in seconds
+            )
+            
             self._client = httpx.AsyncClient(
                 base_url=self.base_url,
                 headers=self._headers,
                 timeout=self.timeout,
                 verify=self.verify_ssl,
-                follow_redirects=True
+                follow_redirects=True,
+                limits=limits,  # Enable connection pooling
+                http2=True  # Enable HTTP/2 for multiplexing
             )
         return self._client
 

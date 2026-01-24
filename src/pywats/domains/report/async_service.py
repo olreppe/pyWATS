@@ -589,28 +589,146 @@ class AsyncReportService:
 
     async def submit_report(
         self,
-        report: Union[UUTReport, UURReport, Dict[str, Any]]
+        report: Union[UUTReport, UURReport, Dict[str, Any]],
+        offline_fallback: bool = False,
+        queue_dir: Optional[str] = None
     ) -> Optional[str]:
         """
         Submit a test report.
+        
+        Supports two submission modes:
+        1. Normal submit: Try to submit, raise exception if fails
+        2. Offline fallback: Try to submit, queue to file if offline
 
         Args:
             report: UUTReport, UURReport, or dict
+            offline_fallback: If True, save to queue if submission fails (default: False)
+            queue_dir: Directory for queue files (default: ./wats_queue)
 
         Returns:
-            Report ID if successful
+            Report ID if successful, None if queued
+
+        Example:
+            >>> # Normal submit (exception if offline)
+            >>> report_id = await service.submit_report(report)
+            >>> 
+            >>> # Submit with offline fallback
+            >>> result = await service.submit_report(report, offline_fallback=True)
+            >>> if result:
+            ...     print(f"Submitted: {result}")
+            ... else:
+            ...     print("Queued for later submission")
         """
-        result = await self._repository.post_wsjf(report)
-        if result:
-            # Extract identifying info for logging
-            if isinstance(report, dict):
-                pn = report.get('part_number') or report.get('pn') or report.get('partNumber', 'unknown')
-                sn = report.get('serial_number') or report.get('sn') or report.get('serialNumber', 'unknown')
+        try:
+            result = await self._repository.post_wsjf(report)
+            if result:
+                # Extract identifying info for logging
+                if isinstance(report, dict):
+                    pn = report.get('part_number') or report.get('pn') or report.get('partNumber', 'unknown')
+                    sn = report.get('serial_number') or report.get('sn') or report.get('serialNumber', 'unknown')
+                else:
+                    pn = getattr(report, 'part_number', None) or getattr(report, 'pn', None) or 'unknown'
+                    sn = getattr(report, 'serial_number', None) or getattr(report, 'sn', None) or 'unknown'
+                logger.info(f"REPORT_SUBMITTED: id={result} (pn={pn}, sn={sn})")
+            return result
+        except Exception as ex:
+            if offline_fallback:
+                # Queue to file instead of raising exception
+                logger.warning(f"Submission failed, queuing report: {ex}")
+                return await self.submit_offline(report, queue_dir=queue_dir)
             else:
-                pn = getattr(report, 'part_number', None) or getattr(report, 'pn', None) or 'unknown'
-                sn = getattr(report, 'serial_number', None) or getattr(report, 'sn', None) or 'unknown'
-            logger.info(f"REPORT_SUBMITTED: id={result} (pn={pn}, sn={sn})")
-        return result
+                raise
+    
+    async def submit_offline(
+        self,
+        report: Union[UUTReport, UURReport, Dict[str, Any]],
+        queue_dir: Optional[str] = None,
+        file_name: Optional[str] = None
+    ) -> None:
+        """
+        Submit a report offline (save to queue for later submission).
+        
+        Report is saved in WSJF format and can be submitted later using
+        process_queue() or SimpleQueue.process_all().
+
+        Args:
+            report: UUTReport, UURReport, or dict
+            queue_dir: Directory for queue files (default: ./wats_queue)
+            file_name: Optional custom file name (without extension)
+
+        Returns:
+            None (report is queued)
+
+        Example:
+            >>> # Explicitly queue report
+            >>> await service.submit_offline(report)
+            >>> print("Report queued for later submission")
+            >>> 
+            >>> # Later, process the queue
+            >>> results = await service.process_queue()
+        """
+        from ...queue import SimpleQueue
+        from pathlib import Path
+        
+        # Default queue directory
+        if queue_dir is None:
+            queue_dir = Path.cwd() / "wats_queue"
+        
+        # Create SimpleQueue instance (requires sync API wrapper)
+        # For now, we'll use the sync version since SimpleQueue is sync
+        # In a real implementation, we'd need an async queue or use sync wrapper
+        from ...pywats import pyWATS
+        
+        # Get API instance from repository's client
+        # This is a bit of a hack - better to inject queue in constructor
+        sync_api = pyWATS(
+            base_url=self._repository._base_url,
+            token=self._repository._api_token
+        )
+        
+        queue = SimpleQueue(sync_api, queue_dir=queue_dir)
+        queue_path = queue.add(report, file_name=file_name)
+        
+        logger.info(f"Report queued: {queue_path}")
+        return None
+    
+    async def process_queue(
+        self,
+        queue_dir: Optional[str] = None,
+        include_errors: bool = True
+    ) -> Dict[str, int]:
+        """
+        Process all queued reports.
+
+        Args:
+            queue_dir: Directory containing queued reports (default: ./wats_queue)
+            include_errors: Also retry error reports (default: True)
+
+        Returns:
+            Dictionary with success/failure counts
+
+        Example:
+            >>> results = await service.process_queue()
+            >>> print(f"Success: {results['success']}, Failed: {results['failed']}")
+        """
+        from ...queue import SimpleQueue
+        from pathlib import Path
+        from ...pywats import pyWATS
+        
+        # Default queue directory
+        if queue_dir is None:
+            queue_dir = Path.cwd() / "wats_queue"
+        
+        # Create queue instance
+        sync_api = pyWATS(
+            base_url=self._http_client._base_url,
+            token=self._http_client._token,
+            timeout=self._http_client._timeout,
+            verify_ssl=self._http_client._verify_ssl
+        )
+        
+        queue = SimpleQueue(sync_api, queue_dir=queue_dir)
+        return queue.process_all(include_errors=include_errors)
 
     # =========================================================================
     # Attachments
