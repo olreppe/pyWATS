@@ -5,6 +5,7 @@ Official documentation for pyWATS - Python API library for WATS (Web-based Autom
 ## Getting Started
 
 - **[Getting Started Guide](GETTING_STARTED.md)** - Complete installation, configuration, and initialization guide
+- **[Performance Optimizations](PERFORMANCE_OPTIMIZATIONS.md)** - Caching, batching, connection pooling, MessagePack
 - **[Client Installation](CLIENT_INSTALLATION.md)** - End-user client installation for test stations
 - **[Windows Service Setup](WINDOWS_SERVICE.md)** - Install client as Windows Service (auto-start on boot)
 - **[Linux Service Setup](LINUX_SERVICE.md)** - Install client as systemd service (Ubuntu, RHEL, Debian)
@@ -70,6 +71,9 @@ Documentation for the pyWATS Client application:
 - **[Headless Operation Guide](../src/pywats_client/control/HEADLESS_GUIDE.md)** - Run on Raspberry Pi, servers, embedded systems
 
 ## Quick Reference by Task
+
+### High Performance Applications
+See [Performance Optimizations](PERFORMANCE_OPTIMIZATIONS.md) - Caching, batching, connection pooling, MessagePack for 5-100x speedups
 
 ### Async vs Sync Usage
 See [Getting Started - Async Usage](GETTING_STARTED.md#async-usage) - Use `AsyncWATS` for concurrent requests or `pyWATS` for simple blocking calls

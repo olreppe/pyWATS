@@ -51,8 +51,13 @@ prune converters
 prune scripts
 prune .github
 prune packages
+prune referenced_code
 prune docs/internal
 prune docs/archive
+prune docs/refactoring
+prune docs/project
+prune docs/release_reviews
+prune docs/server_release_notes
 
 # Exclude specific files
 exclude .env

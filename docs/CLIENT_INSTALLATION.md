@@ -151,30 +151,52 @@ Each instance maintains separate queues, converters, and logs.
 
 ### GUI Mode
 
+**Important:** The GUI is for configuration only. Always start the service first.
+
 #### Windows
 
-**Option 1: Start Menu**
-After installation, search for "PyWATS Client" in the Start menu.
-
-**Option 2: Command Line**
+**Step 1: Start the service**
 ```bash
+# Default behavior starts service
 python -m pywats_client
+
+# Or explicitly
+python -m pywats_client service --instance-id default
+```
+
+**Step 2: Launch GUI when needed** (for configuration)
+```bash
+python -m pywats_client gui --instance-id default
 ```
 
 **Option 3: Python Script**
 ```python
-from pywats_client import run_gui
-run_gui()
+from pywats_client.gui.app import run_gui
+from pywats_client.core.config import ClientConfig, get_default_config_path
+
+config_path = get_default_config_path("default")
+config = ClientConfig.load_or_create(config_path)
+run_gui(config, instance_id="default")
 ```
 
 #### Linux / Mac
 
+**Step 1: Start the service**
+```bash
+# Default behavior starts service
+python -m pywats_client
+
+# Or explicitly
+python -m pywats_client service --instance-id default
+```
+
+**Step 2: Launch GUI when needed**
 ```bash
 # Using installed command
 pywats-client gui
 
 # Or directly
-python -m pywats_client
+python -m pywats_client gui --instance-id default
 ```
 
 ### Headless Mode

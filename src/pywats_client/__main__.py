@@ -2,11 +2,12 @@
 pyWATS Client Entry Point
 
 Run the client with:
-    python -m pywats_client                 # GUI mode (default)
-    python -m pywats_client service         # Background service mode (recommended)
-    python -m pywats_client gui             # GUI only (connects to service)
+    python -m pywats_client                 # Service mode (default) - runs background service
+    python -m pywats_client service         # Background service mode (explicit)
+    python -m pywats_client gui             # GUI only (for configuration - requires running service)
     
 Or use CLI commands:
+    pywats-client                           # Run background service (default)
     pywats-client service                   # Run background service
     pywats-client gui                       # Run GUI (connects to service)
     pywats-client config show               # Show configuration
@@ -477,28 +478,36 @@ CLI Commands (use 'pywats-client <command> --help' for details):
         config.api_token = args.api_token
     
     # Determine run mode
-    use_headless = args.no_gui or args.daemon or args.api
+    # Default is now service mode (not GUI) since GUI is just for configuration
+    use_gui = not args.no_gui and not args.daemon and not args.api
     
-    if use_headless:
-        if args.daemon or args.api:
-            # Full headless service with API support
-            from .control.service import HeadlessService, ServiceConfig
-            
-            service_config = ServiceConfig(
-                enable_api=args.api,
-                api_host=args.api_host,
-                api_port=args.api_port,
-                daemon=args.daemon,
-            )
-            
-            service = HeadlessService(config, service_config)
-            service.run()
-        else:
-            # Simple headless mode (legacy)
-            _run_headless_mode(config)
-    else:
-        # GUI mode
+    if use_gui:
+        # Explicit GUI mode requested
+        print("Warning: Running GUI without explicit service mode.")
+        print("The GUI is for configuration only. Make sure a service is running:")
+        print("  python -m pywats_client service --instance-id default")
+        print()
         _run_gui_mode(config)
+    elif args.daemon or args.api:
+        # Full headless service with API support
+        from .control.service import HeadlessService, ServiceConfig
+        
+        service_config = ServiceConfig(
+            enable_api=args.api,
+            api_host=args.api_host,
+            api_port=args.api_port,
+            daemon=args.daemon,
+        )
+        
+        service = HeadlessService(config, service_config)
+        service.run()
+    else:
+        # Default: Run service mode
+        instance_id = getattr(config, 'instance_id', 'default')
+        print(f"Starting pyWATS Client Service (instance: {instance_id})")
+        print("To configure, launch GUI: python -m pywats_client gui")
+        print()
+        _run_service_mode(instance_id)
 
 
 if __name__ == "__main__":

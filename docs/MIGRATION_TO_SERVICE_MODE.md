@@ -51,7 +51,7 @@ pyWATS Client has been redesigned to follow a clean **service/GUI separation** a
 
 #### Before (v1.x)
 ```bash
-# Start application
+# Start application (GUI with embedded services)
 python -m pywats_client
 
 # Closing GUI stops everything
@@ -61,6 +61,10 @@ python -m pywats_client
 
 **Step 1: Start service** (runs 24/7 in background)
 ```bash
+# Default behavior now starts service
+python -m pywats_client
+
+# Or explicitly:
 python -m pywats_client service --instance-id default
 ```
 
