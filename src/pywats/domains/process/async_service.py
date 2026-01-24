@@ -1,6 +1,6 @@
 """Async Process service - business logic layer.
 
-Uses the WATS API for process operations with in-memory caching.
+Uses the WATS API for process operations with enhanced TTL caching.
 
 Includes internal API methods (marked with ⚠️ INTERNAL) that use undocumented
 endpoints. These may change without notice and should be used with caution.
@@ -9,18 +9,21 @@ from typing import List, Optional, Union, Dict, Any
 from datetime import datetime, timedelta
 from uuid import UUID
 import asyncio
+import logging
 
 from .async_repository import AsyncProcessRepository
 from .models import ProcessInfo, RepairOperationConfig, RepairCategory
+from ...core.cache import AsyncTTLCache
+
+logger = logging.getLogger(__name__)
 
 
 class AsyncProcessService:
     """
-    Async Process business logic layer with caching.
+    Async Process business logic layer with enhanced TTL caching.
     
-    Maintains an in-memory cache of processes that refreshes at a 
-    configurable interval. Provides read-only access to processes
-    with lookup methods by name or code.
+    Uses AsyncTTLCache for automatic cache expiration and management.
+    Cache reduces server calls for static data like operation types.
     
     Example:
         # Get a test operation by code
@@ -34,10 +37,13 @@ class AsyncProcessService:
         
         # Force cache refresh
         await api.process.refresh()
+        
+        # View cache statistics
+        print(api.process.cache_stats)
     """
     
-    # Default cache refresh interval (5 minutes)
-    DEFAULT_REFRESH_INTERVAL = 300
+    # Default cache refresh interval (5 minutes = 300 seconds)
+    DEFAULT_CACHE_TTL = 300
     
     # Default process codes (WATS convention)
     DEFAULT_TEST_PROCESS_CODE = 100
@@ -46,82 +52,102 @@ class AsyncProcessService:
     def __init__(
         self, 
         repository: AsyncProcessRepository,
-        refresh_interval: int = DEFAULT_REFRESH_INTERVAL
+        cache_ttl: float = DEFAULT_CACHE_TTL,
+        max_cache_size: int = 10000
     ):
         """
-        Initialize service with repository and caching.
+        Initialize service with repository and enhanced caching.
         
         Args:
             repository: AsyncProcessRepository instance
-            refresh_interval: Cache refresh interval in seconds (default: 300)
+            cache_ttl: Cache time-to-live in seconds (default: 300)
+            max_cache_size: Maximum cache entries (default: 10000)
         """
         self._repository = repository
-        self._refresh_interval = refresh_interval
+        self._cache_ttl = cache_ttl
         
-        # Cache state
-        self._cache: List[ProcessInfo] = []
-        self._last_refresh: Optional[datetime] = None
+        # Enhanced TTL cache (replaces simple in-memory list)
+        self._cache = AsyncTTLCache[List[ProcessInfo]](
+            default_ttl=cache_ttl,
+            max_size=max_cache_size,
+            auto_cleanup=True,
+            cleanup_interval=60.0  # Cleanup every minute
+        )
+        
         self._lock = asyncio.Lock()
+        self._cache_started = False
 
     # =========================================================================
     # Cache Management
     # =========================================================================
 
-    @property
-    def refresh_interval(self) -> int:
-        """Get the cache refresh interval in seconds."""
-        return self._refresh_interval
+    async def _ensure_cache_started(self) -> None:
+        """Ensure background cache cleanup is running."""
+        if not self._cache_started:
+            async with self._lock:
+                if not self._cache_started:
+                    await self._cache.start_cleanup()
+                    self._cache_started = True
 
-    @refresh_interval.setter
-    def refresh_interval(self, value: int) -> None:
-        """Set the cache refresh interval in seconds."""
-        if value < 0:
-            raise ValueError("Refresh interval must be non-negative")
-        self._refresh_interval = value
+    @property
+    def cache_ttl(self) -> float:
+        """Get the cache TTL in seconds."""
+        return self._cache_ttl
+
+    @property
+    def cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        stats = self._cache.stats
+        return {
+            'hits': stats.hits,
+            'misses': stats.misses,
+            'hit_rate': f"{stats.hit_rate:.1%}",
+            'evictions': stats.evictions,
+            'cache_size': self._cache.size
+        }
 
     async def refresh(self) -> None:
         """
         Force refresh the process cache from the server.
         
-        Thread-safe operation that fetches fresh data from the API.
+        Thread-safe operation that fetches fresh data from the API
+        and updates the cache.
         """
-        async with self._lock:
-            self._cache = await self._repository.get_processes()
-            self._last_refresh = datetime.now()
+        await self._ensure_cache_started()
+        
+        processes = await self._repository.get_processes()
+        await self._cache.set_async('processes', processes)
+        
+        logger.info(f"Process cache refreshed ({len(processes)} processes)")
 
-    async def _ensure_cache(self) -> None:
-        """Ensure cache is populated and not stale."""
-        needs_refresh = False
+    async def _get_cached_processes(self) -> List[ProcessInfo]:
+        """Get processes from cache or fetch if not cached."""
+        await self._ensure_cache_started()
         
-        async with self._lock:
-            if not self._cache or self._last_refresh is None:
-                needs_refresh = True
-            elif self._refresh_interval > 0:
-                age = datetime.now() - self._last_refresh
-                if age > timedelta(seconds=self._refresh_interval):
-                    needs_refresh = True
+        # Try to get from cache
+        processes = await self._cache.get_async('processes')
         
-        if needs_refresh:
+        if processes is None:
+            # Cache miss - fetch from server
+            logger.debug("Process cache miss - fetching from server")
             await self.refresh()
+            processes = await self._cache.get_async('processes')
+        
+        return processes if processes is not None else []
 
-    @property
-    def last_refresh(self) -> Optional[datetime]:
-        """Get the timestamp of the last cache refresh."""
-        return self._last_refresh
-
-    # =========================================================================
-    # Process Listing (Read-Only)
-    # =========================================================================
-
+    async def clear_cache(self) -> None:
+        """Clear the process cache."""
+        await self._cache.clear_async()
+        logger.info("Process cache cleared")
     async def get_processes(self) -> List[ProcessInfo]:
         """
-        Get all processes (cached).
+        Get all processes (cached with TTL).
         
         Returns:
             List of ProcessInfo objects
         """
-        await self._ensure_cache()
-        return list(self._cache)  # Return copy to prevent modification
+        processes = await self._get_cached_processes()
+        return list(processes)  # Return copy to prevent modification
 
     async def get_test_operations(self) -> List[ProcessInfo]:
         """

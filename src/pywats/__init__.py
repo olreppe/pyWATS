@@ -49,6 +49,9 @@ from .core.station import Station, StationRegistry, StationConfig, Purpose
 from .core.throttle import configure_throttling, RateLimiter
 from .core.retry import RetryConfig, RetryExhaustedError
 
+# Optional queue module (imported only when needed)
+# from .queue import SimpleQueue, convert_to_wsjf, convert_from_wsxf, convert_from_wstf
+
 # Import commonly used models from domains for convenience
 from .domains.product import Product, ProductRevision, ProductGroup, ProductView
 from .domains.product.enums import ProductState

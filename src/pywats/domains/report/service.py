@@ -217,10 +217,99 @@ class ReportService:
 
     def submit_report(
         self,
-        report: Union[UUTReport, UURReport, Dict[str, Any]]
+        report: Union[UUTReport, UURReport, Dict[str, Any]],
+        offline_fallback: bool = False,
+        queue_dir: Optional[str] = None
     ) -> Optional[str]:
-        """Submit a test report."""
-        return run_sync(self._async_service.submit_report(report))
+        """
+        Submit a test report.
+        
+        Supports two submission modes:
+        1. Normal submit: Try to submit, raise exception if fails
+        2. Offline fallback: Try to submit, queue to file if offline
+
+        Args:
+            report: UUTReport, UURReport, or dict
+            offline_fallback: If True, save to queue if submission fails (default: False)
+            queue_dir: Directory for queue files (default: ./wats_queue)
+
+        Returns:
+            Report ID if successful, None if queued
+
+        Example:
+            >>> # Normal submit (exception if offline)
+            >>> report_id = api.report.submit(report)
+            >>> 
+            >>> # Submit with offline fallback
+            >>> result = api.report.submit(report, offline_fallback=True)
+            >>> if result:
+            ...     print(f"Submitted: {result}")
+            ... else:
+            ...     print("Queued for later submission")
+        """
+        return run_sync(self._async_service.submit_report(
+            report,
+            offline_fallback=offline_fallback,
+            queue_dir=queue_dir
+        ))
+    
+    # Alias for backward compatibility
+    submit = submit_report
+    
+    def submit_offline(
+        self,
+        report: Union[UUTReport, UURReport, Dict[str, Any]],
+        queue_dir: Optional[str] = None,
+        file_name: Optional[str] = None
+    ) -> None:
+        """
+        Submit a report offline (save to queue for later submission).
+        
+        Report is saved in WSJF format and can be submitted later using
+        process_queue().
+
+        Args:
+            report: UUTReport, UURReport, or dict
+            queue_dir: Directory for queue files (default: ./wats_queue)
+            file_name: Optional custom file name (without extension)
+
+        Example:
+            >>> # Explicitly queue report
+            >>> api.report.submit_offline(report)
+            >>> print("Report queued for later submission")
+            >>> 
+            >>> # Later, process the queue
+            >>> results = api.report.process_queue()
+        """
+        return run_sync(self._async_service.submit_offline(
+            report,
+            queue_dir=queue_dir,
+            file_name=file_name
+        ))
+    
+    def process_queue(
+        self,
+        queue_dir: Optional[str] = None,
+        include_errors: bool = True
+    ) -> Dict[str, int]:
+        """
+        Process all queued reports.
+
+        Args:
+            queue_dir: Directory containing queued reports (default: ./wats_queue)
+            include_errors: Also retry error reports (default: True)
+
+        Returns:
+            Dictionary with success/failure counts
+
+        Example:
+            >>> results = api.report.process_queue()
+            >>> print(f"Success: {results['success']}, Failed: {results['failed']}")
+        """
+        return run_sync(self._async_service.process_queue(
+            queue_dir=queue_dir,
+            include_errors=include_errors
+        ))
 
     # =========================================================================
     # Attachments
