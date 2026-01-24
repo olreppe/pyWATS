@@ -1,0 +1,20 @@
+﻿<UserControl x:Class="Virinco.WATS.Client.PackageManager.CaptionButtons"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Virinco.WATS.Client.PackageManager"
+             mc:Ignorable="d" 
+             d:DesignHeight="32" d:DesignWidth="96">
+    <StackPanel Orientation="Horizontal" x:Name="root">
+        <Button Click="Minimize" Height="20" Width="20" Padding="1" Margin="5,0" Visibility="{Binding MinimizeVisibility}">
+            <Image Source="{Binding MinimizeSource}" />
+        </Button>
+        <Button Click="Maximize" Height="20" Width="20" Padding="1" Margin="5,0" Visibility="{Binding MaximizeVisibility}">
+            <Image Source="{Binding MaximizeSource}" />
+        </Button>
+        <Button Click="Close" Height="20" Width="20" Padding="1" Margin="5,0" Visibility="{Binding CloseVisibility}">
+            <Image Source="{Binding CloseSource}" />
+        </Button>
+    </StackPanel>
+</UserControl>

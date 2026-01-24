@@ -1,0 +1,520 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Comment CommentText="Main entry point to the Interface. Create an instance with TDM() or TDM(EndPoint) to start.">
+    <Position X="0.5" Y="0.5" Height="0.75" Width="2.458" />
+  </Comment>
+  <Comment CommentText="Unit Under Test report. To create a test, use TDM.CreateUUTReport and add test-steps using the GetRootSequenceCall() methods. The root sequence call is created automatically. Sequence Calls can be used to create a step hierarchy  in your test. Just remember to save a pointer to the step.">
+    <Position X="7.853" Y="5.287" Height="1.616" Width="2.329" />
+  </Comment>
+  <Comment CommentText="Unit under repair. A repair report with the possibilities to link  to the UUT and step that caused the repair.">
+    <Position X="13.828" Y="5.762" Height="1.033" Width="2.187" />
+  </Comment>
+  <Comment CommentText="General steps that makes up a UUT, use one of the CallSequence methods to create a specific type.">
+    <Position X="12.882" Y="12.836" Height="0.75" Width="2.579" />
+  </Comment>
+  <Comment CommentText="Type of test, e.g. Final Function Test, PCBA Test etc..">
+    <Position X="4.487" Y="4.864" Height="0.481" Width="2.027" />
+  </Comment>
+  <Comment CommentText="Optional sub parts that makes up the unit in test">
+    <Position X="4.52" Y="8.5" Height="0.56" Width="1.981" />
+  </Comment>
+  <Comment CommentText="Additional data you want to connect to the UUT. e.g. Firmware Version">
+    <Position X="4.524" Y="11.489" Height="0.632" Width="1.936" />
+  </Comment>
+  <Comment CommentText="A chart can be added to any step. Select Linear og logaritmic X-Y  chart.">
+    <Position X="9.163" Y="14.677" Height="0.703" Width="2.068" />
+  </Comment>
+  <Comment CommentText="Use sequence call to group a set of steps, use one of the Add methods to add steps. A AddSequenceCall to create a sub-sequence.">
+    <Position X="3.878" Y="19.466" Height="0.774" Width="2.293" />
+  </Comment>
+  <Comment CommentText="A repair type is a set of fail-codes. e.g. Module Repair has a different set of failcodes than System Repair">
+    <Position X="22.385" Y="7.602" Height="0.74" Width="2.04" />
+  </Comment>
+  <Class Name="Virinco.WATS.Interface.UUTReport">
+    <Position X="7.75" Y="7" Width="2.5" />
+    <Members>
+      <Field Name="currentMeasOrder" Hidden="true" />
+      <Field Name="currentStepOrder" Hidden="true" />
+      <Method Name="GetNextMeasOrder" Hidden="true" />
+      <Method Name="GetNextStepOrder" Hidden="true" />
+      <Method Name="InitializeUutHeader" Hidden="true" />
+      <Field Name="partInfo" Hidden="true" />
+      <Field Name="rootSequenceCall" Hidden="true" />
+      <Field Name="uutHeaderRow" Hidden="true" />
+      <Method Name="UUTReport" Hidden="true" />
+    </Members>
+    <InheritanceLine Type="Virinco.WATS.Interface.Report" FixedToPoint="true">
+      <Path>
+        <Point X="11.5" Y="5.18" />
+        <Point X="11.5" Y="9.135" />
+        <Point X="10.25" Y="9.135" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>B4AQCgC0IIAAAAAAAAAIYIQAAIhAQgEABiBAAAAQIQA=</HashCode>
+      <FileName>UUTClasses\UUTReport.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="OperationType" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="PartInfo" />
+      <Property Name="MiscInfo" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.Report">
+    <Position X="10.5" Y="1.25" Width="2" />
+    <Members>
+      <Method Name="AddStatistics" Hidden="true" />
+      <Field Name="api" Hidden="true" />
+      <Method Name="DeleteFile" Hidden="true" />
+      <Field Name="dt1970" Hidden="true" />
+      <Method Name="EnsureStatisticsUpdated" Hidden="true" />
+      <Method Name="GetReportFileName" Hidden="true" />
+      <Field Name="isStartDateTimeOffsetSet" Hidden="true" />
+      <Field Name="isStartDateTimeSet" Hidden="true" />
+      <Method Name="Load" Hidden="true" />
+      <Method Name="ReadFromFile" Hidden="true" />
+      <Method Name="Report" Hidden="true" />
+      <Property Name="ReportFileName" Hidden="true" />
+      <Field Name="reportRow" Hidden="true" />
+      <Field Name="reportTransferStatus" Hidden="true" />
+      <Property Name="ReportTransferStatus" Hidden="true" />
+      <Method Name="SaveToFile" Hidden="true" />
+      <Method Name="ValidateReport" Hidden="true" />
+      <Method Name="ValidateReportRow" Hidden="true" />
+    </Members>
+    <NestedTypes>
+      <Enum Name="Virinco.WATS.Interface.Report.ReportTransferStatusEnum" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Report.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>CAACgEAhAIAAMQAQYQIASAABAAEgAAAEICEAAAZAQAg=</HashCode>
+      <FileName>Report.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.UURReport">
+    <Position X="13.75" Y="7" Width="2.5" />
+    <Members>
+      <Method Name="AddFailure" Hidden="true" />
+      <Field Name="failureIndex" Hidden="true" />
+      <Field Name="failures" Hidden="true" />
+      <Method Name="GetMiscInfoType" Hidden="true" />
+      <Field Name="uurHeader" Hidden="true" />
+      <Method Name="UURReport" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>QIQQAAAEAgAAAAAAAAAAEAAAEIAA0BQAgkBwAAAAIAA=</HashCode>
+      <FileName>UURClasses\UURReport.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="RepairTypeSelected" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="PartInfo" />
+      <Property Name="Failures" />
+      <Property Name="MiscUURInfo" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.OperationType">
+    <Position X="4.5" Y="5.5" Width="2" />
+    <Members>
+      <Method Name="OperationType" Hidden="true" />
+      <Field Name="process" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAAAAAAAgAAYAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>OperationType.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.Step">
+    <Position X="12.25" Y="13.75" Width="3.75" />
+    <Members>
+      <Method Name="ApplyMultipleStatusToStep" Hidden="true" />
+      <Method Name="Create" Hidden="true" />
+      <Field Name="failParentOnFail" Hidden="true" />
+      <Method Name="GetMeasureStatusFromExplicitStepStatus" Hidden="true" />
+      <Field Name="measureIndex" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+      <Field Name="reportRow" Hidden="true" />
+      <Method Name="Step" Hidden="true" />
+      <Field Name="stepRow" Hidden="true" />
+    </Members>
+    <AssociationLine Name="Parent" Type="Virinco.WATS.Interface.SequenceCall" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="12.25" Y="18.712" />
+        <Point X="6.875" Y="18.712" />
+        <Point X="6.875" Y="23.416" />
+        <Point X="6.5" Y="23.416" />
+      </Path>
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="4.839" Y="4.444" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>IABGCQUEAACEkGgGAgAAyAQIwAAAAEAAAQAAAAAigAA=</HashCode>
+      <FileName>UUTClasses\Step.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Parent" />
+      <Property Name="Chart" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.SequenceCall">
+    <Position X="3.75" Y="21" Width="2.75" />
+    <Members>
+      <Field Name="loopingActive" Hidden="true" />
+      <Field Name="loopSteps" Hidden="true" />
+      <Field Name="mainLoopStep" Hidden="true" />
+      <Field Name="seqRow" Hidden="true" />
+      <Method Name="SequenceCall" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAChAAACBgQACEAhAAIAIAQAAAAACEAAAAAACAAAAAA=</HashCode>
+      <FileName>UUTClasses\SequenceCall.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.UUTPartInfo">
+    <Position X="4.5" Y="9.25" Width="2" />
+    <Members>
+      <Field Name="partRow" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+      <Method Name="UUTPartInfo" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAAAAAAQAAAAAAAAAUAAAAAAAAAAABAABA=</HashCode>
+      <FileName>UUTClasses\UUTPartInfo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MiscUUTInfo">
+    <Position X="4.5" Y="12.25" Width="2" />
+    <Members>
+      <Field Name="miscRow" Hidden="true" />
+      <Method Name="MiscUUTInfo" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAgAAAAAQAgAAAAAAAAQAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\MiscUUTInfo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.NumericLimitTest">
+    <Position X="7.5" Y="24.25" Width="2" />
+    <Members>
+      <Method Name="NumericLimitTest" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+      <Field Name="step" Hidden="true" />
+      <Field Name="testRow" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAIEAAAAAAAAAAAEAgAAAAAAAAAgCACAEAAAAEAQAAA=</HashCode>
+      <FileName>UUTClasses\NumericLimitTest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.PassFailTest">
+    <Position X="10.75" Y="24.25" Width="1.75" />
+    <Members>
+      <Method Name="PassFailTest" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+      <Field Name="step" Hidden="true" />
+      <Field Name="testRow" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAIkAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAQAAA=</HashCode>
+      <FileName>UUTClasses\PassFailTest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.StringValueStep">
+    <Position X="13.5" Y="21" Width="2" />
+    <Members>
+      <Method Name="AddSingleTest" Hidden="true" />
+      <Property Name="IsMultiple" Hidden="true" />
+      <Property Name="IsSingle" Hidden="true" />
+      <Method Name="StringValueStep" Hidden="true" />
+      <Method Name="Validate" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>EAgAABAAAADAAAABgAAAAAAAAAAAAAAAAAgAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\StringValueStep.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="tests" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.NumericLimitStep">
+    <Position X="7.25" Y="21" Width="2.5" />
+    <Members>
+      <Method Name="AddSingleTest" Hidden="true" />
+      <Property Name="IsMultiple" Hidden="true" />
+      <Property Name="IsSingle" Hidden="true" />
+      <Method Name="NumericLimitStep" Hidden="true" />
+      <Method Name="Validate" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>EAgAABAAAADAAAABgAAAAAAAAAAAAAAAAAgAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\NumericLimitStep.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="tests" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.PassFailStep">
+    <Position X="10.5" Y="21" Width="2.25" />
+    <Members>
+      <Method Name="AddTestPrivate" Hidden="true" />
+      <Property Name="IsMultiple" Hidden="true" />
+      <Property Name="IsSingle" Hidden="true" />
+      <Method Name="PassFailStep" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>EAgAABAAAABAAAABgAAAEAAAAAAAAAAAAAgAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\PassFailStep.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Field Name="tests" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.StringValueTest">
+    <Position X="13.75" Y="24.25" Width="1.5" />
+    <Members>
+      <Field Name="report" Hidden="true" />
+      <Field Name="step" Hidden="true" />
+      <Method Name="StringValueTest" Hidden="true" />
+      <Field Name="testRow" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAIEABAAAAAAAAAEAgAAAAAAAAAgAAAgAAAAAAAQAAA=</HashCode>
+      <FileName>UUTClasses\StringValueTest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.GenericStep">
+    <Position X="23" Y="21" Width="1.5" />
+    <Members>
+      <Method Name="GenericStep" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\GenericStep.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.Chart">
+    <Position X="9" Y="15.5" Width="2.5" />
+    <Members>
+      <Method Name="Chart" Hidden="true" />
+      <Property Name="ChartRow" Hidden="true" />
+      <Field Name="measureIndex" Hidden="true" />
+      <Field Name="parent" Hidden="true" />
+      <Field Name="reportRow" Hidden="true" />
+      <Field Name="uutReport" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>QAEBAAACACBAAABAIQAACAAAgAAAAAAAAAAAAAAAAIE=</HashCode>
+      <FileName>UUTClasses\Chart.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.PropertyLoaderStep">
+    <Position X="20.75" Y="21" Width="1.5" />
+    <Members>
+      <Method Name="PropertyLoaderStep" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\PropertyLoader.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MessagePopupStep">
+    <Position X="18.25" Y="21" Width="1.75" />
+    <Members>
+      <Method Name="MessagePopupStep" Hidden="true" />
+      <Field Name="row" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAABAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\MessagePopupStep.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.CallExeStep">
+    <Position X="16.25" Y="21" Width="1.25" />
+    <Members>
+      <Method Name="CallExeStep" Hidden="true" />
+      <Field Name="row" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAIAAAACAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\CallExeStep.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.RepairType">
+    <Position X="22.25" Y="8.5" Width="2.25" />
+    <Members>
+      <Field Name="process" Hidden="true" />
+      <Field Name="repairtype" Hidden="true" />
+      <Method Name="RepairType" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAEAAAAAgAAYAACAAAIAAAAAAAAQAAAA=</HashCode>
+      <FileName>RepairType.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.TDM">
+    <Position X="0.5" Y="1.75" Width="2.75" />
+    <Members>
+      <Property Name="_clientinfo" Hidden="true" />
+      <Property Name="_processes" Hidden="true" />
+      <Field Name="_statistics" Hidden="true" />
+      <Field Name="_status" Hidden="true" />
+      <Method Name="CheckConfiguration" Hidden="true" />
+      <Field Name="clientUpdatesFolder" Hidden="true" />
+      <Method Name="ConnectServer" Hidden="true" />
+      <Method Name="CreateUURReport" Hidden="true" />
+      <Method Name="Dispose" Hidden="true" />
+      <Field Name="dt1900" Hidden="true" />
+      <Field Name="dt1900utc" Hidden="true" />
+      <Field Name="eventSource" Hidden="true" />
+      <Method Name="GetAsWRML" Hidden="true" />
+      <Method Name="GetClient" Hidden="true" />
+      <Method Name="GetClientInfo" Hidden="true" />
+      <Method Name="GetClientMiscInfo" Hidden="true" />
+      <Method Name="GetClientUpdateUri" Hidden="true" />
+      <Method Name="GetDriveInfoElement" Hidden="true" />
+      <Method Name="GetProcess" Hidden="true" />
+      <Method Name="GetReportFileName" Hidden="true" />
+      <Method Name="GetUURMiscInfo" Hidden="true" />
+      <Method Name="InsertServiceStatus" Hidden="true" />
+      <Method Name="IsConnectedToServer" Hidden="true" />
+      <Method Name="LoadReportFromWRML" Hidden="true" />
+      <Method Name="LoadWrml" Hidden="true" />
+      <Field Name="mainSequenceName" Hidden="true" />
+      <Method Name="Ping" Hidden="true" />
+      <Field Name="proxy" Hidden="true" />
+      <Field Name="ReportExceptionTimeout" Hidden="true" />
+      <Method Name="ReportResultToStatus" Hidden="true" />
+      <Field Name="reportsDirectoyName" Hidden="true" />
+      <Method Name="SaveReport" Hidden="true" />
+      <Method Name="SetPropertyValidated" Hidden="true" />
+      <Method Name="SetReportStatus" Hidden="true" />
+      <Method Name="SetStatus" Hidden="true" />
+      <Field Name="settings_keyname_ClientPasscode" Hidden="true" />
+      <Field Name="settings_keyname_ClientState" Hidden="true" />
+      <Field Name="settings_keyname_TargetURL" Hidden="true" />
+      <Method Name="SetVersion" Hidden="true" />
+      <Field Name="stationName" Hidden="true" />
+      <Property Name="Statistics" Hidden="true" />
+      <Event Name="StatusChanged" Hidden="true" />
+      <Method Name="Submit" Hidden="true" />
+      <Method Name="SubmitReport" Hidden="true" />
+      <Method Name="SubmitReports" Hidden="true" />
+      <Field Name="testMode" Hidden="true" />
+      <Method Name="UpdateClientInfo" Hidden="true" />
+    </Members>
+    <NestedTypes>
+      <Enum Name="Virinco.WATS.Interface.TDM.InitializationMode" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>TDM.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Struct Name="Virinco.WATS.Interface.TDM.InitializationMethod" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>TDM.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+      <Delegate Name="Virinco.WATS.Interface.TDM.StatusChangedEventHandler" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>TDM.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Delegate>
+      <Class Name="Virinco.WATS.Interface.TDM.StatusChangedEventArgs" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>TDM.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Delegate Name="Virinco.WATS.Interface.TDM.ClientStateChangedEventHandler" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>TDM.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Delegate>
+      <Class Name="Virinco.WATS.Interface.TDM.ClientStateChangedEventArgs" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>TDM.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Delegate Name="Virinco.WATS.Interface.TDM.ConfigChangedEventHandler" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>TDM.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Delegate>
+      <Class Name="Virinco.WATS.Interface.TDM.ConfigChangedEventArgs" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>TDM.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>gGXIDAFWjCAgCIkHQUoAkTEE0FgQMCXE6jI0DbRORCs=</HashCode>
+      <FileName>TDM.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Virinco.WATS.Interface.FailCode">
+    <Position X="22.25" Y="4" Width="2" />
+    <Members>
+      <Method Name="FailCode" Hidden="true" />
+      <Field Name="fc" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAChAAAABAgAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UURClasses\FailCodes.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.Failure">
+    <Position X="17.5" Y="3.75" Width="2.75" />
+    <Members>
+      <Field Name="failRow" Hidden="true" />
+      <Method Name="Failure" Hidden="true" />
+      <Property Name="PartIndex" Hidden="true" />
+      <Field Name="uur" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAAAEEAgAgIAAAAAAAEAgAAMAAACAAAIAAAAAAAAQ=</HashCode>
+      <FileName>UURClasses\Failure.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="FailCode" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.UURPartInfo">
+    <Position X="18" Y="8.5" Width="2.25" />
+    <Members>
+      <Field Name="failures" Hidden="true" />
+      <Field Name="partRow" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+      <Method Name="UURPartInfo" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAAAAAAQAAAAAAAAAEAEBAAAAAQAABAABA=</HashCode>
+      <FileName>UURClasses\UURPartInfo.cs</FileName>
+      <NewMemberFileName>UUTClasses\UUTPartInfo.cs</NewMemberFileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Failures" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MiscUURInfo">
+    <Position X="18" Y="12" Width="2.25" />
+    <Members>
+      <Property Name="Id" Hidden="true" />
+      <Field Name="miData" Hidden="true" />
+      <Field Name="miDef" Hidden="true" />
+      <Method Name="MiscUURInfo" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAGAAAAAIAgABAAAAAgAAAACAAAAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>UURClasses\MiscUURInfo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

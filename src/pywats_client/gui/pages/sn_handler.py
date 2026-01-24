@@ -149,7 +149,7 @@ class SNHandlerPage(BasePage):
     ):
         self._sn_types: List = []
         self._taken_serials: List[dict] = []  # History of taken serials
-        super().__init__(config, parent, facade=facade)
+        super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
     
@@ -300,10 +300,10 @@ class SNHandlerPage(BasePage):
         # Connect selection change to enable copy button
         self._results_table.itemSelectionChanged.connect(self._on_result_selection_changed)
         
-        # Auto-load types if connected
-        if self._get_api_client():
-            print("[SN Handler] Auto-loading types on initialization")
-            self._load_sn_types()
+        # Note: Auto-load is disabled during initialization to prevent event loop conflicts
+        # Types will be loaded when user clicks refresh or when service starts
+        # if self._get_api_client():
+        #     self._load_sn_types()
     
     def _on_type_selected(self) -> None:
         """Handle serial number type selection in table"""

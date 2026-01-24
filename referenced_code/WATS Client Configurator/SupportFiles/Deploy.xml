@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<WATSIntegration xmlns="http://schemas.virinco.com/WATS/Wats-Client/Deployment.xsd">
+  <Product Name="TestStand 2021 32-bit" Id="TS2021x86" State="Unknown">
+    <Archive source="TS2021.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2021 (32-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2021 (32-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2021 64-bit" Id="TS2021x64" State="Unknown">
+    <Archive source="TS2021.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2021 (64-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2021 (64-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2022 32-bit" Id="TS2022x86" State="Unknown">
+    <Archive source="TS2022.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2022 (32-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2022 (32-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2022 64-bit" Id="TS2022x64" State="Unknown">
+    <Archive source="TS2022.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2022 (64-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2022 (64-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2023 32-bit" Id="TS2023x86" State="Unknown">
+    <Archive source="TS2023.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2023 (32-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2023 (32-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2023 64-bit" Id="TS2023x64" State="Unknown">
+    <Archive source="TS2023.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2023 (64-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2023 (64-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2024 32-bit" Id="TS2024x86" State="Unknown">
+    <Archive source="TS2024.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2024 (32-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2024 (32-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2024 64-bit" Id="TS2024x64" State="Unknown">
+    <Archive source="TS2024.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2024 (64-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2024 (64-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2025 32-bit" Id="TS2025x86" State="Unknown">
+    <Archive source="TS2025.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2025 (32-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2025 (32-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+  <Product Name="TestStand 2025 64-bit" Id="TS2025x64" State="Unknown">
+    <Archive source="TS2025.zip" destination="$(CommonDocuments)\National Instruments\TestStand 2025 (64-bit)" />
+    <ModifyXml file="$(CommonApplicationData)\National Instruments\TestStand 2025 (64-bit)\Cfg\GeneralEngine.cfg" >
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='ModelsMRUList']/*[local-name()='value']">WATS_SequentialModel.Seq|WATS_BatchModel.Seq|WATS_ParallelModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='StationModelPath2']/*[local-name()='value']">WATS_SequentialModel.Seq</set-value>
+      <set-value xpath="/*[local-name()='teststandfileheader']/*[local-name()='Data']/*[local-name()='subprops']/*[local-name()='UseStationModel']/*[local-name()='value']">True</set-value>
+    </ModifyXml>
+  </Product>
+</WATSIntegration>

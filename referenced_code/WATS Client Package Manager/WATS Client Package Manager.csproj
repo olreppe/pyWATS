@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.18362.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Virinco.WATS.Client.PackageManager</RootNamespace>
+    <AssemblyName>Virinco.WATS.Client.PackageManager</AssemblyName>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+  </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\ClientSharedAssemblyInfo.cs">
+      <Link>Properties\ClientSharedAssemblyInfo.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <AppDesigner Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\download.png" />
+    <Resource Include="Resources\warning.png" />
+    <Resource Include="Resources\watsBee.ico" />
+    <Resource Include="Resources\wats-logo.png" />
+    <Resource Include="Resources\close.png" />
+    <Resource Include="Resources\maximize.png" />
+    <Resource Include="Resources\minimize.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Windows.Shell" Version="3.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WATS Client API\WATS Client API.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Reports xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://wats.virinco.com/schemas/WATS/Report">
+  <Report type="UUR" ID="46e9f4c5-a04f-4580-a66e-d822db7fd593" Start="2017-07-07T10:10:23.6540416+02:00" Start_utc="2017-07-07T08:10:23.6540416Z" Result="Passed" SN="FATTest-810" PN="FATPartNo" Rev="Rev1" MachineName="VIC-WS-RE-LT" Location="Drammen, Norway" Purpose="SW Test">
+    <UUR UserLoginName="FAToper" Active="true">
+      <Process Code="10" />
+    </UUR>
+    <Process Code="500" />
+    <ReportUnitHierarchy Idx="0" PN="FATPartNo" SN="FATTest-810" Rev="Rev1" />
+    <ReportUnitHierarchy Idx="1" ParentIDX="0" PN="SubPartNo1" SN="SubPartSN1" Rev="Rev2" />
+    <ReportUnitHierarchy Idx="2" ParentIDX="0" PN="SubPartNo2" SN="SubPartSN2" Rev="Rev3" />
+    <Failures Category="Assembly Process" Code="Missing component" Idx="0" PartIdx="0" CompRef="U16" StepID="32" Failcode="cabe9e57-d2fd-48c0-90f5-d70557382c24">
+      <Comment>Failure on subunit</Comment>
+    </Failures>
+    <Failures Category="Solder Process" Code="Appearance" Idx="1" PartIdx="0" CompRef="R55" StepID="16" Failcode="94098841-0a9b-484d-a425-0cde979d971d">
+      <Comment>Failure on main unit</Comment>
+    </Failures>
+    <ReportInfo key="clientstat" value="True" />
+  </Report>
+</Reports>

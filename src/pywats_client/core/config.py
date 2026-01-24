@@ -199,9 +199,13 @@ class ClientConfig:
     
     By default, these can be the same. However, a single client can
     represent multiple stations (hub mode) by using station_presets.
+    
+    Note: 99% of deployments use a single instance with instance_id="default".
+    Multiple instances are an advanced feature for special use cases.
     """
     # Instance identification (the client installation)
-    instance_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    # Default to "default" for single-instance deployments (99% of use cases)
+    instance_id: str = "default"
     instance_name: str = "WATS Client"
     
     # Server connection
@@ -276,6 +280,25 @@ class ClientConfig:
     # Software Distribution settings
     software_auto_update: bool = False
     
+    # HTTP API settings
+    api_enabled: bool = False
+    api_host: str = "127.0.0.1"
+    api_port: int = 8080
+    api_base_path: str = "/api/v1"
+    api_cors_enabled: bool = False
+    api_cors_origins: str = "*"
+    api_auth_type: str = "None"  # "None", "API Key", "Bearer Token", "Basic Auth"
+    api_rate_limit_enabled: bool = False
+    api_rate_limit_requests: int = 100
+    api_rate_limit_window: int = 60  # seconds
+    
+    # Webhook settings
+    webhook_converter_url: str = ""
+    webhook_report_url: str = ""
+    webhook_service_url: str = ""
+    webhook_auth_header: str = ""
+    webhook_auth_value: str = ""
+    
     # GUI tab visibility settings - control which tabs are shown
     show_software_tab: bool = True
     show_sn_handler_tab: bool = True
@@ -304,6 +327,7 @@ class ClientConfig:
     
     # Internal state (not saved)
     _config_path: Optional[Path] = field(default=None, repr=False)
+    _env_applied: bool = field(default=False, repr=False)  # Track if env vars applied
     
     def __post_init__(self):
         """Ensure nested objects are properly initialized"""
@@ -326,6 +350,50 @@ class ClientConfig:
                 else:
                     converted_presets.append(sp)
             self.station_presets = converted_presets
+        
+        # DO NOT apply environment variables here - they are runtime-only
+        # and should not be persisted to config files
+    
+    def get_runtime_credentials(self) -> tuple[str, str]:
+        """
+        Get runtime credentials with environment variable fallback.
+        
+        Returns credentials for use at runtime without modifying the config.
+        This allows env vars for debugging without persisting them.
+        
+        Returns:
+            tuple: (service_address, api_token)
+        """
+        # Start with config values
+        service_address = self.service_address
+        api_token = self.api_token
+        
+        # Apply environment variable overrides (runtime only, not saved)
+        if not service_address:
+            service_address = os.environ.get('PYWATS_SERVER_URL', '')
+        
+        if not api_token:
+            api_token = os.environ.get('PYWATS_API_TOKEN', '')
+        
+        return service_address, api_token
+    
+    def _apply_env_overrides(self) -> None:
+        """
+        DEPRECATED: Use get_runtime_credentials() instead.
+        
+        This method modified the config object which caused env vars
+        to be persisted when saving the config.
+        """
+        pass
+    
+    # =========================================================================
+    # Configuration File Path
+    # =========================================================================
+    
+    @property
+    def config_path(self) -> Optional[Path]:
+        """Get the configuration file path"""
+        return self._config_path
     
     # =========================================================================
     # Station Properties and Methods
@@ -450,13 +518,21 @@ class ClientConfig:
         """Get the base data path for this instance.
         
         This is the directory containing config, reports, logs, etc.
+        Matches Virinco WATS Client folder structure.
         """
         if self._config_path:
             return self._config_path.parent
-        # Fallback to default location
+        
+        # Fallback to default location matching Virinco/WATS structure
         if os.name == 'nt':
-            return Path(os.environ.get('APPDATA', '')) / 'pyWATS_Client'
-        return Path.home() / '.config' / 'pywats_client'
+            # Windows: Use ProgramData/Virinco/pyWATS
+            programdata = os.environ.get('PROGRAMDATA', 'C:\\ProgramData')
+            return Path(programdata) / 'Virinco' / 'pyWATS'
+        else:
+            # Linux/Mac: Use /var/lib/pywats or ~/.config/pywats_client
+            if os.geteuid() == 0:  # Running as root
+                return Path('/var/lib/pywats')
+            return Path.home() / '.config' / 'pywats_client'
     
     def get_reports_path(self) -> Path:
         """Get absolute path to reports folder"""
@@ -583,8 +659,24 @@ class ClientConfig:
         
         config = cls()
         config._config_path = path
+        # Environment variables are applied in __post_init__
+        # Save config with env vars applied (if any)
         config.save()
         return config
+    
+    @classmethod
+    def load_for_instance(cls, instance_id: str = "default") -> "ClientConfig":
+        """
+        Load configuration for a specific instance.
+        
+        Args:
+            instance_id: Instance identifier
+            
+        Returns:
+            ClientConfig instance (creates new if doesn't exist)
+        """
+        config_path = get_default_config_path(instance_id)
+        return cls.load_or_create(config_path)
 
 
 def get_default_config_path(instance_id: Optional[str] = None) -> Path:

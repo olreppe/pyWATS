@@ -131,7 +131,7 @@ class SoftwarePage(BasePage):
     ):
         self._packages: List[Dict[str, Any]] = []
         self._selected_package: Optional[Any] = None
-        super().__init__(config, parent, facade=facade)
+        super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
     
@@ -339,7 +339,7 @@ class SoftwarePage(BasePage):
         # Auto-load packages if connected
         if self._get_api_client():
             print("[Software] Auto-loading packages on initialization")
-            self._fetch_packages()
+            self._load_packages_async()
     
     def _on_selection_changed(self) -> None:
         """Handle package selection change"""

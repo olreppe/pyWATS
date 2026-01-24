@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Comment CommentText="Unit under repair. A repair report with the possibilities to link  to the UUT and step that caused the repair.">
+    <Position X="3.635" Y="0.517" Height="1.033" Width="2.187" />
+  </Comment>
+  <Comment CommentText="A repair type is a set of fail-codes. e.g. Module Repair has a different set of failcodes than System Repair">
+    <Position X="4.587" Y="2.939" Height="0.74" Width="2.04" />
+  </Comment>
+  <Class Name="Virinco.WATS.Interface.Report">
+    <Position X="4.5" Y="0.5" Width="2.5" />
+    <Members>
+      <Method Name="AddStatistics" Hidden="true" />
+      <Field Name="api" Hidden="true" />
+      <Method Name="DeleteFile" Hidden="true" />
+      <Method Name="EnsureStatisticsUpdated" Hidden="true" />
+      <Method Name="GetReportFileName" Hidden="true" />
+      <Method Name="Load" Hidden="true" />
+      <Method Name="ReadFromFile" Hidden="true" />
+      <Method Name="Report" Hidden="true" />
+      <Property Name="ReportFileName" Hidden="true" />
+      <Field Name="reportRow" Hidden="true" />
+      <Field Name="reportTransferStatus" Hidden="true" />
+      <Property Name="ReportTransferStatus" Hidden="true" />
+      <Method Name="SaveToFile" Hidden="true" />
+      <Method Name="ValidateReport" Hidden="true" />
+    </Members>
+    <NestedTypes>
+      <Enum Name="Virinco.WATS.Interface.Report.ReportTransferStatusEnum" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Report.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>CAACgEAhAIAAMQAQYQIASAABAAEgAAAEICEAAAZAQAg=</HashCode>
+      <FileName>Report.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.UURReport">
+    <Position X="4.5" Y="6.25" Width="2.5" />
+    <Members>
+      <Field Name="failures" Hidden="true" />
+      <Method Name="UURReport" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>QIQQAAAEAgAAAAAAAAAAEAAAEIAA0BQAgkBwAAAAIAA=</HashCode>
+      <FileName>UURClasses\UURReport.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="RepairTypeSelected" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="PartInfo" />
+      <Property Name="Failures" />
+      <Property Name="MiscUURInfo" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.RepairType">
+    <Position X="0.5" Y="7" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAEAAAAAgAAYAACAAAIAAAAAAAAQAAAA=</HashCode>
+      <FileName>RepairType.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.FailCode">
+    <Position X="12.25" Y="7.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAChAAAABAgAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UURClasses\FailCodes.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.Failure">
+    <Position X="8.25" Y="7" Width="2.75" />
+    <Members>
+      <Field Name="failRow" Hidden="true" />
+      <Method Name="Failure" Hidden="true" />
+      <Field Name="uur" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAAAEEAgAgIAAAAAAAEAgAAMAAACAAAIAAAAAAAAQ=</HashCode>
+      <FileName>UURClasses\Failure.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="FailCode" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.UURPartInfo">
+    <Position X="8" Y="3.75" Width="2.25" />
+    <Members>
+      <Field Name="failures" Hidden="true" />
+      <Field Name="partRow" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+      <Method Name="UURPartInfo" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAAAAAAQAAAAAAAAAEAEBAAAAAQAABAABA=</HashCode>
+      <FileName>UURClasses\UURPartInfo.cs</FileName>
+      <NewMemberFileName>UUTClasses\UUTPartInfo.cs</NewMemberFileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Failures" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MiscUURInfo">
+    <Position X="0.5" Y="3.25" Width="2.25" />
+    <Members>
+      <Method Name="MiscUURInfo" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAGAAAAAIAgABAAAAAgAAAACAAAAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>UURClasses\MiscUURInfo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

@@ -169,7 +169,7 @@ class RootCausePage(BasePage):
     ):
         self._tickets: List[Dict[str, Any]] = []
         self._teams: List[str] = []
-        super().__init__(config, parent, facade=facade)
+        super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
     

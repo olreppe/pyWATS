@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="SerialNumbers">
+    <xs:annotation>
+      <xs:documentation>Protocol for retrieving serialnumbers from WATS</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" name="SN">
+          <xs:complexType>
+            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="taken" type="xs:dateTime" use="optional" />
+            <xs:attribute name="seq" type="xs:int" use="optional" />
+            <xs:attribute name="refSN" type="xs:string" use="optional" />
+            <xs:attribute name="refPN" type="xs:string" use="optional" />
+            <xs:attribute name="refStn" type="xs:string" use="optional" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="requestType" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Can be Reserve or Take. Reserve gives only a reservation (can be released)</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="serialNumberType" type="xs:string" use="required" />
+      <xs:attribute name="reservedUTC" type="xs:dateTime" use="required" />
+      <xs:attribute name="siteName" type="xs:string" use="required" />
+      <xs:attribute name="stationName" type="xs:string" use="required" />
+      <xs:attribute name="batchSize" type="xs:int" use="required" />
+      <xs:attribute name="fetchWhenLessThan" type="xs:int" use="optional" />
+      <xs:attribute name="receipt" type="xs:string" use="optional" />
+      <xs:attribute name="tokenId" type="xs:string" use="required" />
+      <xs:attribute name="url" type="xs:string" use="required" />
+      <xs:attribute name="onlyInSequence" type="xs:boolean" use="optional" />
+      <xs:attribute name="refSN" type="xs:string" use="optional" />
+      <xs:attribute name="refPN" type="xs:string" use="optional" />
+      <xs:attribute name="fromSerialNumber" type="xs:string" use="optional" />
+      <xs:attribute name="reuseOnDuplicateRequest" type="xs:boolean" use="optional" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

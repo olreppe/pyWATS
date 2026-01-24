@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.18362.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Virinco.WATS.Client.StatusMonitor</RootNamespace>
+    <AssemblyName>Virinco.WATS.Client.StatusMonitor</AssemblyName>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Images\favicon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\ClientSharedAssemblyInfo.cs">
+      <Link>Properties\ClientSharedAssemblyInfo.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <AppDesigner Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\RebrandIcons\20.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\RebrandIcons\40.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\RebrandIcons\close.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\RebrandIcons\favicon-196x196.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\RebrandIcons\fullscreen.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\RebrandIcons\wats-icon-dark-rebrand.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\RebrandIcons\window-minimize.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\favicon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="favicon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ABOUT.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WATS Client API\WATS Client API.csproj" />
+    <ProjectReference Include="..\WATS Client Shared Services\WATS Client Shared Services.csproj" />
+  </ItemGroup>
+</Project>

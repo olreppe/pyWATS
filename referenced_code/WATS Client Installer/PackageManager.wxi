@@ -1,0 +1,31 @@
+﻿<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment Id="fWatsPackageManager">
+
+    <ComponentGroup Id="cgWatsPackageManager">
+      <ComponentRef Id="cVirinco.WATS.Client.PackageManager.exe" />
+      <ComponentRef Id="cVirinco.WATS.Client.PackageManager_autorun" />
+      <ComponentRef Id="cCommandLine" />
+      <ComponentRef Id="cMicrosoft.Windows.Shell" />
+    </ComponentGroup>
+
+    <!--Newtonsoft.Json and WATS Client API are installed through main feature, which is required.-->
+    <DirectoryRef Id="INSTALLDIR" FileSource="$(var.ArtifactsFolder)\Applications\WATS Client Package Manager">
+      <Component Id="cVirinco.WATS.Client.PackageManager.exe" Guid="{2E491B28-5277-474B-A4F9-13167FFB1F70}">
+        <File Name="Virinco.WATS.Client.PackageManager.exe" Id="fVirinco.WATS.Client.PackageManager.exe" KeyPath="yes" />
+        <File Name="Virinco.WATS.Client.PackageManager.dll" Id="fVirinco.WATS.Client.PackageManager.dll" />
+        <File Name="Virinco.WATS.Client.PackageManager.deps.json" Id="fVirinco.WATS.Client.PackageManager.deps.json" />
+        <File Name="Virinco.WATS.Client.PackageManager.runtimeconfig.json" Id="fVirinco.WATS.Client.PackageManager.runtimeconfig.json" />
+      </Component>
+      <Component Id="cVirinco.WATS.Client.PackageManager_autorun" Guid="{E1EF9AE7-F493-4315-B3D0-81B0FE711B21}" Bitness="always64">
+        <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="WATS Package Manager" Type="string" Value="&quot;[!fVirinco.WATS.Client.PackageManager.exe]&quot; /start-hidden" />
+      </Component>
+      <Component Id="cCommandLine" Guid="{D2E8415B-23F4-447D-94EE-23818E11085E}">
+        <File Name="CommandLine.dll" Id="fCommandLine.dll" KeyPath="yes" />
+      </Component>      
+      <Component Id="cMicrosoft.Windows.Shell" Guid="{889985D7-8990-4788-89E2-17D485B2198F}">
+        <File Name="Microsoft.Windows.Shell.dll" Id="fMicrosoft.Windows.Shell.dll" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+    
+  </Fragment>
+</Include>

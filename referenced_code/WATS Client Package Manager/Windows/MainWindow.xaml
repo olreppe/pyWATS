@@ -1,0 +1,143 @@
+﻿<Window x:Class="Virinco.WATS.Client.PackageManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Virinco.WATS.Client.PackageManager"
+        Title="WATS Package Manager" 
+        ShowInTaskbar="True" 
+        WindowStyle="ToolWindow"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource Window}"
+        Icon="{StaticResource Icon}"
+        Height="350" Width="525" MinHeight="250" MinWidth="380">
+
+    <Window.DataContext>
+        <local:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <DataTemplate x:Key="PackageCheckBoxGridColumn">
+            <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageImageGridColumn">
+            <Image Width="24">
+                <Image.Style>
+                    <Style TargetType="{x:Type Image}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Status}" Value="{x:Static local:PackageStatus.None}">
+                                <Setter Property="Source" Value="{x:Null}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Status}" Value="{x:Static local:PackageStatus.Warning}">
+                                <Setter Property="Source" Value="{StaticResource Warning}" />
+                                <Setter Property="ToolTip" Value="Package contents have been changed!" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Status}" Value="{x:Static local:PackageStatus.NewVersionAvailable}">
+                                <Setter Property="Source" Value="{StaticResource Download}" />
+                                <Setter Property="ToolTip" Value="A new version is available!" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Image.Style>
+            </Image>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageNameGridColumn">
+            <TextBlock Text="{Binding Item.Name}" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageVersionGridColumn">
+            <TextBlock Text="{Binding Item.Version}" TextAlignment="Right" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageDescriptionGridColumn">
+            <TextBlock Text="{Binding Item.Description}" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageSizeGridColumn">
+            <TextBlock Text="{Binding Item.DownloadSize, Converter={StaticResource fbc}, NotifyOnTargetUpdated=True}" TextAlignment="Right" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="AvailablePackagesCheckBoxGridHeader">
+            <CheckBox IsChecked="{Binding Path=DataContext.IsAvailablePackagesHeaderChecked, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" HorizontalAlignment="Center" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageNameGridHeader">
+            <TextBlock Text="Name" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageVersionGridHeader">
+            <TextBlock Text="Version" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageDescriptionGridHeader">
+            <TextBlock Text="Description" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="PackageSizeGridHeader">
+            <TextBlock Text="{Binding Path=DataContext.TotalSize, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource fbc}, NotifyOnTargetUpdated=True}" TextAlignment="Right" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel Background="{StaticResource DarkBrush}">
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File" Style="{StaticResource FirstMenuItem}">
+                <MenuItem Header="_Refresh" ToolTip="Check for available packages." Click="Refresh" IsEnabled="{Binding IsRefreshEnabled, Mode=OneWay}" />
+                <MenuItem Header="_Configure" Click="OpenConfiguration" IsEnabled="{Binding IsConfigurationEnabled, Mode=OneWay}"  />
+                <Separator Style="{StaticResource Separator}" />
+                <MenuItem Header="_Exit" Click="Exit"  />
+            </MenuItem>
+            <MenuItem Header="_Help" Click="OpenHelp" />
+        </Menu>
+
+        <TabControl SelectedIndex="{Binding SelectedTab}">
+            <TabItem Header="Available">
+                <Grid Margin="0,0,5,5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DataGrid Grid.Row="0" ItemsSource="{Binding AvailablePackages}" IsEnabled="{Binding IsSelectingAvailablePackagesEnabled}" AutoGenerateColumns="False" TargetUpdated="UpdateDataGridLayout">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="Auto" CanUserResize="False" CellTemplate="{StaticResource PackageCheckBoxGridColumn}" HeaderTemplate="{StaticResource AvailablePackagesCheckBoxGridHeader}" />
+                            <DataGridTemplateColumn Width="Auto" CellTemplate="{StaticResource PackageNameGridColumn}" HeaderTemplate="{StaticResource PackageNameGridHeader}" />
+                            <DataGridTemplateColumn Width="Auto" CellTemplate="{StaticResource PackageVersionGridColumn}" HeaderTemplate="{StaticResource PackageVersionGridHeader}" />
+                            <DataGridTemplateColumn Width="*" CellTemplate="{StaticResource PackageDescriptionGridColumn}" HeaderTemplate="{StaticResource PackageDescriptionGridHeader}" />
+                            <DataGridTemplateColumn Width="Auto" CellTemplate="{StaticResource PackageSizeGridColumn}" HeaderTemplate="{StaticResource PackageSizeGridHeader}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Grid.Row="1" Text="No packages available" Margin="10" Visibility="{Binding NoAvailablePackagesTextVisibility}" HorizontalAlignment="Center" />
+                    <DockPanel  Grid.Row="2" Height="55" VerticalAlignment="Bottom">
+                        <Image DockPanel.Dock="Left" Source="{StaticResource Logo}" Width="96" Height="55"/>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TotalSelectedText}" Margin="10,0" VerticalAlignment="Center" />
+                            <Button Content="Install" Click="InstallPackages" IsEnabled="{Binding IsInstallEnabled}" />
+                        </StackPanel>                        
+                    </DockPanel>    
+                </Grid>                
+            </TabItem>
+            <TabItem Header="Installed">
+                <Grid Margin="0,0,5,5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DataGrid Grid.Row="0" ItemsSource="{Binding InstalledPackages}" IsEnabled="{Binding IsSelectingInstalledPackagesEnabled}" AutoGenerateColumns="False" TargetUpdated="UpdateDataGridLayout">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="Auto" CanUserResize="False" CellTemplate="{StaticResource PackageImageGridColumn}" />
+                            <DataGridTemplateColumn Width="Auto" CellTemplate="{StaticResource PackageNameGridColumn}" HeaderTemplate="{StaticResource PackageNameGridHeader}" />
+                            <DataGridTemplateColumn Width="Auto" CellTemplate="{StaticResource PackageVersionGridColumn}" HeaderTemplate="{StaticResource PackageVersionGridHeader}" />
+                            <DataGridTemplateColumn Width="*"    CellTemplate="{StaticResource PackageDescriptionGridColumn}" HeaderTemplate="{StaticResource PackageDescriptionGridHeader}" />
+                            <DataGridTemplateColumn Width="Auto" CellTemplate="{StaticResource PackageSizeGridColumn}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Grid.Row="1" DockPanel.Dock="Top" Text="No packages installed" Margin="10" Visibility="{Binding NoInstalledPackagesTextVisibility}" HorizontalAlignment="Center" />
+                    <Image Grid.Row="2" Source="{StaticResource Logo}" Width="96" Height="55" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

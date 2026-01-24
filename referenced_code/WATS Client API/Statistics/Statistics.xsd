@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified"
+    targetNamespace="http://schemas.virinco.com/WATS/API/Statistics.xsd"
+    xmlns="http://schemas.virinco.com/WATS/API/Statistics.xsd"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" >
+  <xs:element name="Statistics">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="overview" maxOccurs="1" minOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Value" minOccurs="0" maxOccurs="unbounded" >
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="key" type="xs:string" use="required" />
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Product" minOccurs="0" maxOccurs="unbounded" >
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Operation" minOccurs="0" maxOccurs="unbounded" >
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute name="Id" use="required" type="xs:string" />
+                      <xs:attribute name="Name" use="required" type="xs:string" />
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="PN" use="required" type="xs:string" />
+            <xs:attribute name="WarnLevel" use="required" type="xs:double" />
+            <xs:attribute name="CriticalLevel" use="required" type="xs:double" />
+            <xs:attribute name="TotalCount" use="required" type="xs:int" />
+            <xs:attribute name="LastCount" use="required" type="xs:int" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

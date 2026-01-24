@@ -5,11 +5,12 @@ Contains all page widgets for the main window.
 """
 
 from .base import BasePage
+from .dashboard import DashboardPage
 from .setup import SetupPage
 from .connection import ConnectionPage
+from .api_settings import APISettingsPage
 from .proxy_settings import ProxySettingsPage
-from .converters import ConvertersPage
-from .converters_v2 import ConvertersPageV2  # New unified converters page
+from .converters import ConvertersPageV2 as ConvertersPage  # AI-enabled unified converters page
 from .location import LocationPage
 from .sn_handler import SNHandlerPage
 from .software import SoftwarePage
@@ -22,11 +23,12 @@ from .product import ProductPage
 
 __all__ = [
     "BasePage",
+    "DashboardPage",
     "SetupPage",
     "ConnectionPage",
+    "APISettingsPage",
     "ProxySettingsPage",
     "ConvertersPage",
-    "ConvertersPageV2",
     "LocationPage",
     "SNHandlerPage",
     "SoftwarePage",

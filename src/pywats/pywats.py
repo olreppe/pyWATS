@@ -182,21 +182,27 @@ class pyWATS:
     
     def __init__(
         self,
-        base_url: str,
-        token: str,
+        base_url: Optional[str] = None,
+        token: Optional[str] = None,
         station: Optional[Station] = None,
         timeout: int = 30,
         verify_ssl: bool = True,
         error_mode: ErrorMode = ErrorMode.STRICT,
         retry_config: Optional[RetryConfig] = None,
         retry_enabled: bool = True,
+        instance_id: str = "default",
     ):
         """
         Initialize the pyWATS API.
         
+        Credentials can be provided explicitly or auto-discovered from a running
+        pyWATS Client service.
+        
         Args:
             base_url: Base URL of the WATS server (e.g., "https://your-wats.com")
+                     If None, attempts to discover from running service.
             token: API token (Base64-encoded credentials)
+                   If None, attempts to discover from running service.
             station: Default station configuration for reports. If provided,
                      this station's name, location, and purpose will be used
                      when creating reports (unless overridden).
@@ -208,7 +214,32 @@ class pyWATS:
             retry_config: Custom retry configuration. If None, uses defaults.
             retry_enabled: Enable/disable retry (default: True). 
                 Shorthand for RetryConfig(enabled=False).
+            instance_id: pyWATS Client instance ID for auto-discovery (default: "default")
+        
+        Raises:
+            ValueError: If credentials not provided and service discovery fails
+        
+        Examples:
+            # Explicit credentials
+            api = pyWATS(base_url="https://wats.com", token="abc123")
+            
+            # Auto-discover from running service
+            api = pyWATS()  # Uses default instance
+            api = pyWATS(instance_id="production")  # Specific instance
         """
+        # Auto-discover credentials from running service if not provided
+        if not base_url or not token:
+            discovered = self._discover_credentials(instance_id)
+            if discovered:
+                base_url = base_url or discovered["base_url"]
+                token = token or discovered["token"]
+                logger.info(f"Auto-discovered credentials from service instance '{instance_id}'")
+            elif not base_url or not token:
+                raise ValueError(
+                    "Credentials required. Either provide base_url and token, "
+                    f"or ensure pyWATS Client service is running (instance: {instance_id})"
+                )
+        
         self._base_url = base_url.rstrip("/")
         self._token = token
         self._timeout = timeout
@@ -249,6 +280,36 @@ class pyWATS:
         self._rootcause: Optional[SyncServiceWrapper] = None
         self._scim: Optional[SyncServiceWrapper] = None
         self._process: Optional[SyncServiceWrapper] = None
+    
+    @staticmethod
+    def _discover_credentials(instance_id: str = "default") -> Optional[dict]:
+        """
+        Attempt to discover credentials from running pyWATS Client service.
+        
+        Args:
+            instance_id: Instance ID to connect to (defaults to "default")
+            
+        Returns:
+            Dictionary with 'base_url' and 'token' or None if not found
+        """
+        try:
+            # Import here to avoid circular dependency
+            from pywats_client.service.ipc_client import ServiceIPCClient
+            
+            client = ServiceIPCClient(instance_id)
+            if client.connect(timeout_ms=500):
+                credentials = client.get_credentials()
+                client.disconnect()
+                
+                if credentials and credentials.get("base_url") and credentials.get("token"):
+                    return credentials
+        except ImportError:
+            # pywats_client not installed - that's ok
+            pass
+        except Exception as e:
+            logger.debug(f"Service discovery failed: {e}")
+        
+        return None
     
     # -------------------------------------------------------------------------
     # Module Properties

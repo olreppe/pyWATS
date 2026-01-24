@@ -474,6 +474,98 @@ class AppFacade:
         """
         return self._app.get_queue_status()
     
+    def get_service_status(self) -> Dict[str, Any]:
+        """
+        Get service status information for dashboard.
+        
+        Returns:
+            Dictionary with service status:
+            - running: bool - Service is running
+            - error: bool - Service has error
+            - standalone: bool - Running in standalone mode (no service)
+            - uptime_seconds: int - Uptime in seconds
+            - converters_active: int - Number of active converters
+            - reports_today: int - Reports processed today
+            - queue_pending: int - Pending items in queue
+        """
+        try:
+            status = self._app.status.value if hasattr(self._app.status, 'value') else str(self._app.status)
+            
+            # Try to get queue status, but don't fail if service not started
+            try:
+                queue = self.get_queue_status()
+                queue_pending = queue.get("pending_reports", 0) + queue.get("pending_files", 0)
+            except Exception:
+                queue_pending = 0
+            
+            return {
+                "running": status == "RUNNING",
+                "error": False,
+                "standalone": False,
+                "uptime_seconds": 0,  # TODO: Track uptime
+                "converters_active": len([c for c in self.config.converters if c.enabled]),
+                "reports_today": 0,  # TODO: Track today's reports
+                "queue_pending": queue_pending,
+            }
+        except Exception as e:
+            logger.error(f"Error getting service status: {e}")
+            # Service stopped - not standalone, just stopped
+            return {
+                "running": False,
+                "error": False,
+                "standalone": False,
+                "uptime_seconds": 0,
+                "converters_active": len([c for c in self.config.converters if c.enabled]),
+                "reports_today": 0,
+                "queue_pending": 0,
+            }
+    
+    def start_service(self) -> None:
+        """
+        Start the embedded service.
+        
+        This method runs the service start in an async task to avoid blocking
+        the GUI thread.
+        """
+        logger.info("Starting embedded service via facade")
+        
+        def on_complete(result: TaskResult):
+            if result.is_success:
+                logger.info("Service started successfully")
+                event_bus.emit_service_started()
+            else:
+                logger.error(f"Service start failed: {result.error}")
+                event_bus.emit_service_error(str(result.error))
+        
+        self.run_async(
+            self._app.start(),
+            name="start_service",
+            on_complete=on_complete
+        )
+    
+    def stop_service(self) -> None:
+        """
+        Stop the embedded service.
+        
+        This method runs the service stop in an async task to avoid blocking
+        the GUI thread.
+        """
+        logger.info("Stopping embedded service via facade")
+        
+        def on_complete(result: TaskResult):
+            if result.is_success:
+                logger.info("Service stopped successfully")
+                event_bus.emit_service_stopped()
+            else:
+                logger.error(f"Service stop failed: {result.error}")
+                event_bus.emit_service_error(str(result.error))
+        
+        self.run_async(
+            self._app.stop(),
+            name="stop_service",
+            on_complete=on_complete
+        )
+    
     # =========================================================================
     # Application Configuration
     # =========================================================================

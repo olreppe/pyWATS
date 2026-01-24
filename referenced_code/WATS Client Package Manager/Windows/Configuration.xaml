@@ -1,0 +1,60 @@
+﻿<Window x:Class="Virinco.WATS.Client.PackageManager.Configuration"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Virinco.WATS.Client.PackageManager"
+        mc:Ignorable="d"
+        WindowStyle="ToolWindow"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource Window}"
+        Icon="{StaticResource Icon}" 
+        Title="Configuration" 
+        Height="400" Width="350" MinWidth="300" MinHeight="300">
+    <Window.DataContext>
+        <local:ConfigurationViewModel />
+    </Window.DataContext>
+    <DockPanel>
+        <Grid DockPanel.Dock="Top" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="2"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Package check interval:" VerticalAlignment="Center"></TextBlock>
+            <ComboBox Grid.Row="0" Grid.Column="2" ItemsSource="{Binding Intervals}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding SelectedInterval}" VerticalAlignment="Center" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Package status:" VerticalAlignment="Center"></TextBlock>
+            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Statuses}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding SelectedStatus}" VerticalAlignment="Center" />
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Bring to front:" ToolTip="Automatically display the download manager UI when a new package is identified." VerticalAlignment="Center" />
+            <CheckBox Grid.Row="4" Grid.Column="2" IsChecked="{Binding BringToFront}" VerticalAlignment="Center" />
+
+            <TextBlock Grid.Row="6" Grid.ColumnSpan="3" Text="Package filter:" />
+
+            <TextBox Grid.Row="8" Grid.ColumnSpan="3" Text="{Binding Filter}" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" />
+            <TextBox Grid.Row="10" Grid.ColumnSpan="3" Text="{Binding XPath}" ToolTip="{Binding Text}" ToolTipService.IsEnabled="True" IsReadOnly="True" />
+
+            <StackPanel Grid.Row="12" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" >
+                <Button Content="Cancel" Click="Cancel" Margin="5,0"/>
+                <Button Content="OK" Click="Exit"/>
+            </StackPanel>
+        </Grid>
+    </DockPanel>   
+</Window>

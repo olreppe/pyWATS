@@ -1,0 +1,260 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment Id="fts41">
+    <DirectoryRef Id="SupportFiles">
+      <Directory Id="sf_ts41" Name="TS4.1" FileSource="$(var.WATS Client Config.TargetDir)\SupportFiles\TS4.1">
+        <Directory Name="CodeTemplates" Id="ts41_templates">
+          <!--
+            .\SupportFiles\TS4.1\CodeTemplates\User\WATS-MPFT-LabVIEW\config.ini
+            .\SupportFiles\TS4.1\CodeTemplates\User\WATS-MPFT-LabVIEW\labview.vi
+            .\SupportFiles\TS4.1\CodeTemplates\User\WATS-MSVT-LabVIEW\config.ini
+            .\SupportFiles\TS4.1\CodeTemplates\User\WATS-MSVT-LabVIEW\labview.vi
+            .\SupportFiles\TS4.1\CodeTemplates\User\WATS-XMLPFT-LabVIEW\config.ini
+            .\SupportFiles\TS4.1\CodeTemplates\User\WATS-XMLPFT-LabVIEW\labview.vi
+            .\SupportFiles\TS4.1\CodeTemplates\User\WATS-XYGMNLT-LabVIEW\config.ini
+            .\SupportFiles\TS4.1\CodeTemplates\User\WATS-XYGMNLT-LabVIEW\labview.vi
+            -->
+          <Directory Name="WATS-MPFT-LabVIEW" Id="ts41_templates_mpft">
+            <Component Id="cts41_templates_mpft" Guid="{0DB15015-B035-4774-B731-76806E38BC60}">
+              <CreateFolder />
+              <File Name="config.ini" Id="ts41_templates_mpft_config.ini" />
+              <File Name="labview.vi" Id="ts41_templates_mpft_labview.vi" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS-MSVT-LabVIEW" Id="ts41_templates_msvt">
+            <Component Id="cts41_templates_msvt" Guid="{16B85DA7-AC5B-4181-9717-DB396D052668}">
+              <CreateFolder />
+              <File Name="config.ini" Id="ts41_templates_msvt_config.ini" />
+              <File Name="labview.vi" Id="ts41_templates_msvt_labview.vi" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS-XMLPFT-LabVIEW" Id="ts41_templates_xmlpft">
+            <Component Id="cts41_templates_xmlpft" Guid="{E578A6A1-D879-4338-AF3D-055B4A5C274E}">
+              <CreateFolder />
+              <File Name="config.ini" Id="ts41_templates_xmlpft_config.ini" />
+              <File Name="labview.vi" Id="ts41_templates_xmlpft_labview.vi" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS-XYGMNLT-LabVIEW" Id="ts41_templates_xygmnlt">
+            <Component Id="cts41_templates_xygmnlt" Guid="{8481F6CB-8530-4ADF-B269-6B9F68DB0F57}">
+              <CreateFolder />
+              <File Name="config.ini" Id="ts41_templates_xygmnlt_config.ini" />
+              <File Name="labview.vi" Id="ts41_templates_xygmnlt_labview.vi" />
+            </Component>
+          </Directory>
+          <Component Id="cts41_templates_0" Guid="e00aa2d6-1a30-4a8d-abb5-64022d820a7d">
+            <File Name="Path.txt" Id="ts41_templates_Path.txt" />
+          </Component>
+        </Directory>
+        <Directory Name="Components" Id="ts41_comp">
+          <Directory Name="Icons" Id="ts41_comp_icons">
+            <!--
+              .\SupportFiles\TS4.1\Components\User\Icons\ET_A.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\ET_MNLT.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\ET_MPFT.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\ET_MSVT.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\ET_NLT.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\ET_PFT.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\ET_SVT.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\ET_XMLPFT.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\WATS_SeqCall.ico
+              .\SupportFiles\TS4.1\Components\User\Icons\WATS_XYGMNLT.ico
+              -->
+            <Component Id="cts41_comp_icons" Guid="{60A57345-E1B2-4DE3-8176-06335FC6B1E4}">
+              <CreateFolder />
+              <File Name="ET_A.ico" Id="ts41_comp_icons_ET_A.ico" />
+              <File Name="ET_MNLT.ico" Id="ts41_comp_icons_ET_MNLT.ico" />
+              <File Name="ET_MPFT.ico" Id="ts41_comp_icons_ET_MPFT.ico" />
+              <File Name="ET_MSVT.ico" Id="ts41_comp_icons_ET_MSVT.ico" />
+              <File Name="ET_NLT.ico" Id="ts41_comp_icons_ET_NLT.ico" />
+              <File Name="ET_PFT.ico" Id="ts41_comp_icons_ET_PFT.ico" />
+              <File Name="ET_SVT.ico" Id="ts41_comp_icons_ET_SVT.ico" />
+              <File Name="ET_XMLPFT.ico" Id="ts41_comp_icons_ET_XMLPFT.ico" />
+              <File Name="WATS_OperationType.ico" Id="ts41_comp_icons_WATS_OperationType.ico" />
+              <File Name="WATS_SeqCall.ico" Id="ts41_comp_icons_WATS_SeqCall.ico" />
+              <File Name="WATS_XYGMNLT.ico" Id="ts41_comp_icons_WATS_XYGMNLT.ico" />
+            </Component>
+          </Directory>
+          <Directory Name="TypePalettes" Id="ts41_comp_typepalettes">
+            <!--
+              .\SupportFiles\TS4.1\Components\User\TypePalettes\WATS_Types.ini
+              -->
+            <Component Id="cts41_comp_typepalettes" Guid="{1AB617AD-57DB-4E25-8578-C41DA7A3DE13}">
+              <CreateFolder />
+              <File Id="ts41_comp_typepalettes_WATS_Types.ini" Name="WATS_Types.ini" />
+            </Component>
+            <Component Id="cts41_comp_user_typepalettes_cfgtypes" Guid="{138B26B1-F8F9-4C30-AB1C-CD99F665F1EA}">
+              <CreateFolder />
+              <File Id="ts41_comp_user_typepalettes_WATS_CfgTypes.ini" Name="WATS_CfgTypes.ini" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS_Models" Id="ts41_comp_watsmodels">
+            <!--
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_BatchModel.seq
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_Database_Log.seq
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_LogToWATS_xml.seq
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_ParallelModel.seq
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_ReportGen_html.seq
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_reportgen_txt.seq
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_reportgen_xml.seq
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_SequentialModel-API.seq
+              .\SupportFiles\TS4.1\Components\User\WATS_Models\WATS_SequentialModel.seq
+              -->
+            <Component Id="cts41_comp_watsmodels" Guid="{D35B65E8-9A3C-4AA6-A208-1BE25546E985}">
+              <CreateFolder />
+              <File Name="WATS_BatchModel.seq" Id="ts41_comp_watsmodels_WATS_BatchModel.seq" />
+              <File Name="WATS_Database_Log.seq" Id="ts41_comp_watsmodels_WATS_Database_Log.seq" />
+              <File Name="WATS_LogToWATS_API.seq" Id="ts41_comp_watsmodels_WATS_LogToWATS_API.seq" />
+              <File Name="WATS_ParallelModel.seq" Id="ts41_comp_watsmodels_WATS_ParallelModel.seq" />
+              <File Name="WATS_ReportGen_atml.seq" Id="ts41_comp_watsmodels_WATS_ReportGen_atml.seq" />
+              <File Name="WATS_ReportGen_html.seq" Id="ts41_comp_watsmodels_WATS_ReportGen_html.seq" />
+              <File Name="WATS_reportgen_txt.seq" Id="ts41_comp_watsmodels_WATS_reportgen_txt.seq" />
+              <File Name="WATS_reportgen_xml.seq" Id="ts41_comp_watsmodels_WATS_reportgen_xml.seq" />
+              <!--<File Name="WATS_SequentialModel-API.seq" Id="ts41_comp_watsmodels_WATS_SequentialModelAPI.seq" />-->
+              <File Name="WATS_SequentialModel.seq" Id="ts41_comp_watsmodels_WATS_SequentialModel.seq" />
+            </Component>
+            <Component Id="cts41_comp_user_watsmodels_MES" Guid="{2C8FFBEE-5E02-4328-BF58-DB102925FD96}">
+              <CreateFolder />
+              <File Name="WATS_MESModel.seq" Id="ts41_comp_user_watsmodels_WATS_MESModel.seq" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS_ModelSupport" Id="ts41_comp_modsup">
+            <Directory Name="Single" Id="ts41_comp_modsup_single">
+              <!--
+                .\SupportFiles\TS4.1\Components\User\WATS_ModelSupport\Single\DisplayStatusBanner.vi
+                .\SupportFiles\TS4.1\Components\User\WATS_ModelSupport\Single\IdentifyUUT.vi
+                -->
+              <Component Id="cts41_comp_modsup_single" Guid="{1E3D4412-892D-42C0-86F4-A277C5CC8C51}">
+                <CreateFolder />
+                <File Name="DisplayStatusBanner.vi" Id="ts41_comp_modsup_single_DisplayStatusBanner.vi" />
+                <File Name="IdentifyUUT.vi" Id="ts41_comp_modsup_single_IdentifyUUT.vi" />
+              </Component>
+              <Component Id="cts41_comp_user_modsup_single_MESIdentify" Guid="{ACBDC5AB-7631-49FE-936E-43BDB9E236CC}">
+                <CreateFolder />
+                <File Name="IdentifyUUT-MES.vi" Id="ts41_comp_user_modsup_single_IdentifyUUT_MES.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="Parallel" Id="ts41_comp_modsup_parallel">
+              <!--
+                .\SupportFiles\TS4.1\Components\User\WATS_ModelSupport\Parallel\DisplayStatusBannerParallel.vi
+                .\SupportFiles\TS4.1\Components\User\WATS_ModelSupport\Parallel\IdentifyParallelUUTs.vi
+                -->
+              <Component Id="cts41_comp_modsup_parallel" Guid="{0FD45D4F-9F35-48FE-91CA-34062C4E6A55}">
+                <CreateFolder />
+                <File Name="DisplayStatusBannerParallel.vi" Id="ts41_comp_modsup_parallel_DisplayStatusBannerParallel.vi" />
+                <File Name="IdentifyParallelUUTs.vi" Id="ts41_comp_modsup_parallel_IdentifyParallelUUTs.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="Batch" Id="ts41_comp_modsup_batch">
+              <!--
+                .\SupportFiles\TS4.1\Components\User\WATS_ModelSupport\Batch\Identify-Status-BatchUUTs.vi
+                .\SupportFiles\TS4.1\Components\User\WATS_ModelSupport\Batch\IdentifyBatchUUTserials-oneandone.vi
+                -->
+              <Component Id="cts41_comp_modsup_batch" Guid="{3C130AB2-C50C-490E-AF2C-C5D1CBE599D5}">
+                <CreateFolder />
+                <File Name="Identify-Status-BatchUUTs.vi" Id="ts41_comp_modsup_batch_Identify_Status_BatchUUTs.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="WATS_Teststand_Support" Id="ts41_comp_modsup_wtssupport">
+              <Component Id="cts41_comp_modsup_wtssupport" Guid="{176C72B2-2EFE-46F1-9121-BBE242C6EC3D}">
+                <CreateFolder />
+                <File Name="WATS_Teststand_Support.dll" Id="ts41_comp_modsup_wtssupport_support.dll" Source="$(var.WATS_Teststand_Support.TargetDir)\WATS_Teststand_Support.dll" />
+              </Component>
+            </Directory>
+            <Component Id="cts41_comp_modsup" Guid="{7171EFF0-EB0F-474C-A9BF-FDFF8A3F0B4E}">
+              <CreateFolder />
+              <File Name="error.png" Id="ts41_comp_modsup_error.png" />
+              <File Name="sign_warning.png" Id="ts41_comp_modsup_sign_warning.png" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS_StepTypes" Id="ts41_comp_steptypes">
+            <Directory Name="MPFT" Id="ts41_comp_steptypes_mpft">
+              <!--
+                .\SupportFiles\TS4.1\Components\User\WATS_StepTypes\MPFT\MPFT_Edit.vi
+                -->
+              <Component Id="cts41_comp_steptypes_mpft" Guid="{F8A2E9E3-85BC-446E-BF41-E0233FC0F9DE}">
+                <CreateFolder />
+                <File Name="MPFT_Edit.vi" Id="ts41_comp_steptypes_mpft_MPFT_Edit.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="MSVT" Id="ts41_comp_steptypes_msvt">
+              <!--
+                .\SupportFiles\TS4.1\Components\User\WATS_StepTypes\MSVT\MSVT_Edit.vi
+                -->
+              <Component Id="cts41_comp_steptypes_msvt" Guid="{66228260-9721-405B-92D4-AE421D00203C}">
+                <CreateFolder />
+                <File Name="MSVT_Edit.vi" Id="ts41_comp_steptypes_msvt_MSVT_Edit.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="WATS_XYGMNLT" Id="ts41_comp_steptypes_xygmnlt">
+              <!--
+                .\SupportFiles\TS4.1\Components\User\WATS_StepTypes\WATS_XYGMNLT\WATS_XYGMNLT_Edit.vi
+                -->
+              <Component Id="cts41_comp_steptypes_xygmnlt" Guid="{D9E53703-3C15-4538-9A44-A2277C15643D}">
+                <CreateFolder />
+                <File Name="WATS_XYGMNLT_Edit.vi" Id="ts41_comp_steptypes_xygmnlt_WATS_XYGMNLT_Edit.vi" />
+              </Component>
+            </Directory>
+          </Directory>
+          <Component Id="cts41_comp_0" Guid="b4c884c0-9c64-485e-a8b9-ae6f444907ea">
+            <File Name="Path.txt" Id="ts41_comp_Path.txt" />
+          </Component>
+        </Directory>
+        <Directory Name="Examples" Id="ts41_ex">
+          <Directory Name="WATS" Id="ts41_ex_wats">
+            <Directory Name="Log misc UUT info" Id="ts41_ex_wats_miscuutinfo">
+              <Directory Name="UsingLabVIEW" Id="ts41_ex_wats_miscuutinfo_lv">
+                <!--
+                .\SupportFiles\TS4.1\Examples\WATS\Log misc UUT info\UsingLabVIEW\IdentifyUUT with Misc UUT info - WATSExample.vi
+                .\SupportFiles\TS4.1\Examples\WATS\Log misc UUT info\UsingLabVIEW\Logging of Misc UUT info.seq
+                -->
+                <Component Id="cts41_ex_wats_miscuutinfo_lv" Guid="{C34C45F2-9B0E-4A0F-AEEA-9F2EF6FA03BE}">
+                  <CreateFolder />
+                  <File Name="IdentifyUUT with Misc UUT info - WATSExample.vi" Id="ts41_ex_wats_miscuutinfo_lv_IdentifyUUTwithMiscUUTinfo.vi" />
+                  <File Name="Logging of Misc UUT info.seq" Id="ts41_ex_wats_miscuutinfo_lv_logging.seq" />
+                </Component>
+              </Directory>
+            </Directory>
+            <Directory Name="XML step type" Id="ts41_ex_wats_xmlstep">
+              <Directory Name="UsingLabVIEW" Id="ts41_ex_wats_xmlstep_lv">
+                <!--
+                .\SupportFiles\TS4.1\Examples\WATS\XML step type\UsingLabVIEW\XML PFT - WATSExample.vi
+                .\SupportFiles\TS4.1\Examples\WATS\XML step type\UsingLabVIEW\XML step type example.seq
+                -->
+                <Component Id="cts41_ex_wats_xmlstep_lv" Guid="{E48AD3D1-0833-4A19-B37C-AB6049FFE961}">
+                  <CreateFolder />
+                  <File Name="XML PFT - WATSExample.vi" Id="ts41_ex_wats_xmlstep_lv_XMLPFT.vi" />
+                  <File Name="XML step type example.seq" Id="ts41_ex_wats_xmlstep_lv_XMLsteptype.seq" />
+                </Component>
+              </Directory>
+            </Directory>
+          </Directory>
+        </Directory>
+      </Directory>
+    </DirectoryRef>
+    <ComponentGroup Id="cgts41">
+      <ComponentRef Id="cts41_templates_mpft" />
+      <ComponentRef Id="cts41_templates_msvt" />
+      <ComponentRef Id="cts41_templates_xmlpft" />
+      <ComponentRef Id="cts41_templates_xygmnlt" />
+      <ComponentRef Id="cts41_comp_icons" />
+      <ComponentRef Id="cts41_comp_typepalettes" />
+      <ComponentRef Id="cts41_comp_watsmodels" />
+      <ComponentRef Id="cts41_comp_modsup_single" />
+      <ComponentRef Id="cts41_comp_modsup_parallel" />
+      <ComponentRef Id="cts41_comp_modsup_batch" />
+      <ComponentRef Id="cts41_comp_modsup_wtssupport" />
+      <ComponentRef Id="cts41_comp_modsup" />
+      <ComponentRef Id="cts41_comp_steptypes_mpft" />
+      <ComponentRef Id="cts41_comp_steptypes_msvt" />
+      <ComponentRef Id="cts41_comp_steptypes_xygmnlt" />
+      <ComponentRef Id="cts41_ex_wats_miscuutinfo_lv" />
+      <ComponentRef Id="cts41_ex_wats_xmlstep_lv" />
+      <ComponentRef Id="cts41_comp_user_typepalettes_cfgtypes" />
+      <ComponentRef Id="cts41_comp_user_watsmodels_MES" />
+      <ComponentRef Id="cts41_comp_user_modsup_single_MESIdentify" />
+      <ComponentRef Id="cts41_templates_0" />
+      <ComponentRef Id="cts41_comp_0" />
+    </ComponentGroup>
+  </Fragment>
+</Include>

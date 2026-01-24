@@ -23,10 +23,12 @@ QListWidget#navList {
     border: none;
     outline: none;
     padding: 10px 0;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 QListWidget#navList::item {
-    padding: 12px 20px;
+    padding: 14px 20px;
     border: none;
     color: #cccccc;
 }
@@ -39,6 +41,7 @@ QListWidget#navList::item:hover {
 QListWidget#navList::item:selected {
     background-color: #2a2d2e;
     color: #ffffff;
+    font-weight: 700;
     border-left: 3px solid #f0a30a;
 }
 

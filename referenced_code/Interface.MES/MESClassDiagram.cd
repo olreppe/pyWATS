@@ -1,0 +1,343 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Comment CommentText="Serial number handler reserves serial numbers  of a type from WATS, and marks them as taken when used.">
+    <Position X="20.821" Y="6.348" Height="0.489" Width="3.623" />
+  </Comment>
+  <Comment CommentText="Track usage of assets used in testing and when they must be maintained or calibrated.">
+    <Position X="17.249" Y="11.684" Height="0.636" Width="2.205" />
+  </Comment>
+  <Comment CommentText="Information about how much the asset has been used and when it needs maintenance.">
+    <Position X="14.946" Y="8.234" Height="0.587" Width="1.945" />
+  </Comment>
+  <Comment CommentText="Type of asset; how many times it can be used, and how long between maintenance">
+    <Position X="12.288" Y="8.065" Height="0.75" Width="1.7" />
+  </Comment>
+  <Comment CommentText="Class that represent an asset. An asset is normally a device used in testing that can be controlled for service maintenance, running count etc.">
+    <Position X="12.266" Y="12.12" Height="1.237" Width="1.7" />
+  </Comment>
+  <Comment CommentText="Response from calls in AssetHandler, with the asset and if the calls went OK.">
+    <Position X="15.505" Y="14.533" Height="0.75" Width="1.439" />
+  </Comment>
+  <Comment CommentText="Information about a scanned unit. ">
+    <Position X="20.413" Y="11.85" Height="0.457" Width="1.7" />
+  </Comment>
+  <Comment CommentText="Production handles unit info on serial number and part number.">
+    <Position X="22.794" Y="11.815" Height="0.505" Width="2.205" />
+  </Comment>
+  <Comment CommentText="Information about a product: Part number, name and child/parent relations.">
+    <Position X="26.141" Y="11.75" Height="0.571" Width="2.01" />
+  </Comment>
+  <Comment CommentText="Product handles product info">
+    <Position X="28.691" Y="11.88" Height="0.424" Width="1.7" />
+  </Comment>
+  <Comment CommentText="Software handles software distribution">
+    <Position X="31.12" Y="11.859" Height="0.44" Width="1.7" />
+  </Comment>
+  <Comment CommentText="Workflow represents a workflow">
+    <Position X="33.549" Y="11.837" Height="0.473" Width="1.39" />
+  </Comment>
+  <Class Name="Virinco.WATS.Interface.MES.Asset.Asset">
+    <Position X="12.25" Y="13.5" Width="1.75" />
+    <AssociationLine Name="AssetType" Type="Virinco.WATS.Interface.MES.Asset.AssetType" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="14" Y="13.875" />
+        <Point X="14.375" Y="13.875" />
+        <Point X="14.375" Y="10.225" />
+        <Point X="14" Y="10.225" />
+      </Path>
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="-0.591" Y="-1.603" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>QAAAAAAAAAAhRAAEQAoAAAAAA0EAAEIgEAgABAAAAwA=</HashCode>
+      <FileName>Asset\Asset.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="AssetType" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Asset.AssetHandler">
+    <Position X="17.25" Y="12.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>BAIAAAIAAAAAgAgAAAAAQAAAAAAAAIAAAGACQAAACAA=</HashCode>
+      <FileName>Asset\AssetHandler.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Asset.AssetResponse">
+    <Position X="15.5" Y="15.5" Width="1.5" />
+    <Members>
+      <Field Name="_errorMessage" Hidden="true" />
+      <Method Name="SetError" Hidden="true" />
+      <Method Name="SetOK" Hidden="true" />
+    </Members>
+    <AssociationLine Name="Status" Type="Virinco.WATS.Interface.MES.Asset.Asset_Status" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="15.5" Y="15.75" />
+        <Point X="15.125" Y="15.75" />
+        <Point X="15.125" Y="13.158" />
+        <Point X="15.5" Y="13.158" />
+      </Path>
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.143" Y="0.044" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AQAAAAAEAQAwAAAIAAAAAAAEEAAAAAAAAAABAAAAAAA=</HashCode>
+      <FileName>Asset\AssetResponse.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Status" />
+      <Property Name="AssetObject" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="SubAssets" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Asset.AssetStatus">
+    <Position X="14.75" Y="9" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAIAEAEAgAABAAAAAAAAAAAAAAAAAAAAAAAIAAAIgA=</HashCode>
+      <FileName>Asset\AssetStatus.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Status" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Asset.AssetType">
+    <Position X="12.25" Y="9" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAIAAAgAAAAAAAAAAAGAAAAAAAEBAgAAAAAgAAAAA=</HashCode>
+      <FileName>Asset\AssetType.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.MesInterface">
+    <Position X="28.5" Y="18.25" Width="1.75" />
+    <Members>
+      <Field Name="_asset" Hidden="true" />
+      <Field Name="_defaultCultureCode" Hidden="true" />
+      <Field Name="_product" Hidden="true" />
+      <Field Name="_production" Hidden="true" />
+      <Field Name="_software" Hidden="true" />
+      <Field Name="_workflow" Hidden="true" />
+    </Members>
+    <AssociationLine Name="Asset" Type="Virinco.WATS.Interface.MES.Asset.AssetHandler" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="28.5" Y="18.812" />
+        <Point X="18.375" Y="18.812" />
+        <Point X="18.375" Y="16.29" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="Software" Type="Virinco.WATS.Interface.MES.Software.Software" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="30.25" Y="18.5" />
+        <Point X="32" Y="18.5" />
+        <Point X="32" Y="15.906" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="Workflow" Type="Virinco.WATS.Interface.MES.Workflow.Workflow" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="30.25" Y="18.812" />
+        <Point X="34.25" Y="18.812" />
+        <Point X="34.25" Y="15.906" />
+      </Path>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAADAAAAACEAAABAAAACAAAAAAAAAAwAAMAwAAAAAAA=</HashCode>
+      <FileName>MES.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Asset" />
+      <Property Name="Product" />
+      <Property Name="Production" />
+      <Property Name="Software" />
+      <Property Name="Workflow" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.MesBase">
+    <Position X="28.25" Y="4.25" Width="2.5" />
+    <Members>
+      <Field Name="_generalOptions" Hidden="true" />
+      <Field Name="_processes" Hidden="true" />
+      <Field Name="adminToken" Hidden="true" />
+      <Property Name="generalOptions" Hidden="true" />
+      <Method Name="getArr" Hidden="true" />
+      <Method Name="GetEndpointIdentity" Hidden="true" />
+      <Method Name="loadSettings" Hidden="true" />
+      <Method Name="ReadGeneralOptions" Hidden="true" />
+      <Field Name="serviceProxy" Hidden="true" />
+      <Field Name="Translations" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>IBFAAUCQiBCAAAACwAAAYAYQAhgBIAQEABwBCEEAAAA=</HashCode>
+      <FileName>MesBase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Configuration.CommonUserSettings">
+    <Position X="31.25" Y="5.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAACiAAQKAAAAAAICQZAgAAARAAAAAIAAAgAAA=</HashCode>
+      <FileName>Configuration\CommonUserSettings.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Product.Product">
+    <Position X="28.5" Y="12.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAAAAIAAQAAAAAABAAAACAAACAAAAAA=</HashCode>
+      <FileName>Product\Product.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Product.ProductInfo">
+    <Position X="26" Y="12.75" Width="2.25" />
+    <Members>
+      <Method Name="CopyProductInfo" Hidden="true" />
+      <Method Name="createObject" Hidden="true" />
+      <Method Name="GetXmlFromJson" Hidden="true" />
+      <Method Name="getXpathInfo" Hidden="true" />
+      <Field Name="ProductInfoObject" Hidden="true" />
+      <Field Name="RelatedProducts" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>BAAAAgAgBAAABgAAQAICCAWBAFABQEAAAAAAgAQAEAA=</HashCode>
+      <FileName>Product\ProductInfo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Production.Production">
+    <Position X="22.75" Y="12.75" Width="2.25" />
+    <NestedTypes>
+      <Class Name="Virinco.WATS.Interface.MES.Production.Production.UnitStateHistory" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Production\Production.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>QAgICACAAAIAAAACAAAAYgABBAAAAAAAIEABAAADAAA=</HashCode>
+      <FileName>Production\Production.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Production.SerialNumberHandler">
+    <Position X="22.75" Y="7" Width="1.75" />
+    <Members>
+      <Method Name="AddSequenceCount" Hidden="true" />
+      <Method Name="GetFileDir" Hidden="true" />
+      <Method Name="GetFileName" Hidden="true" />
+      <Method Name="GetFromServer" Hidden="true" />
+      <Method Name="GetNextSerialnumberBatch" Hidden="true" />
+      <Method Name="GetSerialNumbersLocal" Hidden="true" />
+      <Method Name="GetSerialNumbersOnline" Hidden="true" />
+      <Method Name="IsInSequence" Hidden="true" />
+      <Method Name="ReadFile" Hidden="true" />
+      <Method Name="SaveFile" Hidden="true" />
+      <Field Name="serialTypeName" Hidden="true" />
+      <Field Name="setupToken" Hidden="true" />
+    </Members>
+    <NestedTypes>
+      <Enum Name="Virinco.WATS.Interface.MES.Production.SerialNumberHandler.Status" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Production\SerialNumberHandler.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="Virinco.WATS.Interface.MES.Production.SerialNumberHandler.RequestType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Production\SerialNumberHandler.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAACSCICAABAQQBBBAAAEwA0QgAwACABBgAgAAAAAAA=</HashCode>
+      <FileName>Production\SerialNumberHandler.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Production.SerialNumberType">
+    <Position X="20.75" Y="9.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgBAAAAAAAAAQAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Production\SerialNumberType.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Production.UnitInfo">
+    <Position X="20.25" Y="12.75" Width="2.25" />
+    <Members>
+      <Field Name="_unitObject" Hidden="true" />
+      <Method Name="createObject" Hidden="true" />
+      <Method Name="getXpathInfo" Hidden="true" />
+      <Field Name="ProductionRef" Hidden="true" />
+      <Field Name="RelatedUnits" Hidden="true" />
+      <Method Name="UnitInfo" Hidden="true" />
+      <Field Name="UnitInfoObject" Hidden="true" />
+      <Property Name="UnitObject" Hidden="true" />
+    </Members>
+    <NestedTypes>
+      <Enum Name="Virinco.WATS.Interface.MES.Production.UnitInfo.DataType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Production\UnitInfo.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>BAQAOAAgDAAAFgBAQAICAAGAAEEFQEAAQgAAAAQgAAA=</HashCode>
+      <FileName>Production\UnitInfo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SerialNumbersSN">
+    <Position X="20.75" Y="7" Width="1.75" />
+    <Members>
+      <Field Name="idField" Hidden="true" />
+      <Field Name="refPNField" Hidden="true" />
+      <Field Name="refSNField" Hidden="true" />
+      <Field Name="refStnField" Hidden="true" />
+      <Field Name="seqField" Hidden="true" />
+      <Field Name="seqFieldSpecified" Hidden="true" />
+      <Field Name="takenField" Hidden="true" />
+      <Field Name="takenFieldSpecified" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>CEBIAQAQAAgBAAAAEAQAAAAAIAAAACAAAACABAAAAoA=</HashCode>
+      <FileName>Production\LocalSerialNumbers.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Software.Software">
+    <Position X="30.75" Y="12.75" Width="2.5" />
+    <Members>
+      <Method Name="deleteAllFiles" Hidden="true" />
+      <Method Name="DeleteFile" Hidden="true" />
+      <Method Name="ExecuteFile" Hidden="true" />
+      <Method Name="GetFilesOffline" Hidden="true" />
+      <Method Name="getPackageById" Hidden="true" />
+      <Method Name="getPreviousInstalledPackage" Hidden="true" />
+      <Method Name="GetRootPath" Hidden="true" />
+      <Method Name="getXpath" Hidden="true" />
+      <Field Name="installedPackagesXml" Hidden="true" />
+      <Method Name="isPackageInstalled" Hidden="true" />
+      <Method Name="LogPackageDownloaded" Hidden="true" />
+      <Method Name="storePackageInfo" Hidden="true" />
+      <Method Name="validateFiles" Hidden="true" />
+      <Method Name="validatePackages" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAIAABAAEAAEAAQkAAQACACAAAMgAACAMBDAIIAkg=</HashCode>
+      <FileName>Software\Software.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MES.Workflow.Workflow">
+    <Position X="33.5" Y="12.75" Width="1.5" />
+    <Members>
+      <Method Name="CheckDefaultCulture" Hidden="true" />
+      <Property Name="Service" Hidden="true" />
+      <Method Name="ShowErrordialog" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>QIAAAAAAQACABQAAAQIAQAAAIBAAQAAAAAAAICAAAAA=</HashCode>
+      <FileName>Workflow\Workflow.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Enum Name="Virinco.WATS.Interface.MES.Asset.Asset_Status">
+    <Position X="15.5" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAAACBAAAAAAAAAAAABBAAAAgAA=</HashCode>
+      <FileName>Asset\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

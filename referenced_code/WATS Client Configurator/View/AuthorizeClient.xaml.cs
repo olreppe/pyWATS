@@ -1,0 +1,50 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace Virinco.WATS.Client.Configurator.View
+{
+    /// <summary>
+    /// Interaction logic for AuthorizeClient.xaml
+    /// </summary>
+    public partial class AuthorizeClient : Window
+    {
+        public string authUserpass
+        {
+            get { return this.tbAuthPwd.Password; }
+            internal set { this.tbAuthPwd.Password = value; }
+        }
+        public string authUsername
+        {
+            get { return this.tbAuthUser.Text; }
+            internal set { this.tbAuthUser.Text = value; }
+        }
+
+        public AuthorizeClient()
+        {
+            InitializeComponent();
+        }
+
+        private void btnRegister_Click(object sender, RoutedEventArgs e)
+        {
+            this.DialogResult = true;
+            this.Close();
+        }
+
+        private void btnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            this.DialogResult = false;
+            this.Close();
+
+        }
+    }
+}

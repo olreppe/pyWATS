@@ -1,0 +1,469 @@
+﻿<WixLocalization xmlns="http://wixtoolset.org/schemas/v4/wxl" Culture="en-US">
+  <String Id="LCID" Value="1033" />
+  <String Id="IDS_BTN_BACK" Value="&lt; &amp;Back" />
+  <String Id="IDS_BTN_BROWSE" Value="Br&amp;owse" />
+  <String Id="IDS_BTN_CANCEL" Value="&amp;Cancel" />
+  <String Id="IDS_BTN_EXIT" Value="&amp;Exit" />
+  <String Id="IDS_BTN_FINISH" Value="&amp;Finish" />
+  <String Id="IDS_BTN_IGNORE" Value="&amp;Ignore" />
+  <String Id="IDS_BTN_INSTALL" Value="&amp;Install" />
+  <String Id="IDS_BTN_UPGRADE" Value="&amp;Upgrade" />
+  <String Id="IDS_BTN_NEXT" Value="&amp;Next &gt;" />
+  <String Id="IDS_BTN_NO" Value="&amp;No" />
+  <String Id="IDS_BTN_OK" Value="&amp;OK" />
+  <String Id="IDS_BTN_REMOVE" Value="&amp;Remove" />
+  <String Id="IDS_BTN_REPAIR" Value="&amp;Repair" />
+  <String Id="IDS_BTN_RESET" Value="&amp;Reset" />
+  <String Id="IDS_BTN_RETRY" Value="&amp;Retry" />
+  <String Id="IDS_BTN_RETURN" Value="&amp;Return" />
+  <String Id="IDS_BTN_YES" Value="&amp;Yes" />
+  <String Id="IDS_PROGRESS1" Value="Installing" />
+  <String Id="IDS_PROGRESS2" Value="installs" />
+  <String Id="IDS_PROGRESS4" Value="removes" />
+  <String Id="IDS_PROGRESS5" Value="Removing" />
+  <String Id="IDS_PROGRESS6" Value="changes" />
+  <String Id="IDS_PROGRESS7" Value="Changing" />
+  <String Id="IDS_PROGRESS8" Value="repairs" />
+  <String Id="IDS_PROGRESS9" Value="Repairing" />
+  <String Id="IDS_SETUP" Value="Setup" />
+  <String Id="IDS_SETUP_WIZARD" Value="WATS Client Wizard" />
+  <String Id="IDS_ADMINWELCOMEDLG_DESCRIPTION" Value="The [Wizard] will create a server image of [ProductName], at a specified network location. Click Next to continue or Cancel to exit the [Wizard]." />
+  <String Id="IDS_WELCOME_WIZARD" Value="{\VerdanaBold13}Welcome to the [ProductName] [Wizard]" />
+  <String Id="IDS_CLICKFINISH" Value="Click the Finish button to exit the [Wizard]." />
+  <String Id="IDS_EXITDIALOG_TITLE" Value="{\VerdanaBold13}Completing the [ProductName] [Wizard]" />
+  <String Id="IDS_FATALERROR_TITLE" Value="{\VerdanaBold13}[ProductName] [Wizard] ended prematurely" />
+  <String Id="IDS_FATALERROR_DESCRIPTION1" Value="[ProductName] setup ended prematurely because of an error. Your system has not been modified. To install this program at a later time, please run the installation again." />
+  <String Id="IDS_PREPAREDLG_DESCRIPTION" Value="Please wait while the [Wizard] prepares to guide you through the installation." />
+  <String Id="IDS_PROGRESSDLG_TEXT" Value="Please wait while the [Wizard] [Progress2] [ProductName]. This may take several minutes." />
+  <String Id="IDS_PROGRESS3" Value="Progress done" />
+  <String Id="IDS_STATUSLABEL" Value="Status:" />
+  <String Id="IDS_USEREXIT_TITLE" Value="{\VerdanaBold13}[ProductName] [Wizard] was interrupted" />
+  <String Id="IDS_USEREXIT_DESCRIPTION1" Value="[ProductName] setup was interrupted. Your system has not been modified. To install this program at a later time, please run the installation again." />
+  <String Id="IDS_UPONELEVEL" Value="Up One Level|" />
+  <String Id="IDS_LOOK_IN" Value="&amp;Look in:" />
+  <String Id="IDS_BROWSE_DESTINATION" Value="Browse to the destination folder" />
+  <String Id="IDS_FOLDER_NAME" Value="&amp;Folder name:" />
+  <String Id="IDS_NEW_FOLDER" Value="Create A New Folder|" />
+  <String Id="IDS_BROWSEDLG_TITLE" Value="[DlgTitleFont]Change current destination folder" />
+  <String Id="IDS_ADMININSTALLPOINTDLG_TEXT" Value="&amp;Enter a new network location or click Browse to browse to one." />
+  <String Id="IDS_ADMININSTALLPOINTDLG_DESCRIPTION" Value="Please specify a network location for the server image of [ProductName] product" />
+  <String Id="IDS_ADMININSTALLPOINTDLG_TITLE" Value="[DlgTitleFont]Network Location" />
+  <String Id="IDS_REGISTER_DESCRIPTION" Value="Please enter your company information" />
+  <String Id="IDS_REGISTER_TITLE" Value="[DlgTitleFont]Company Information" />
+  <String Id="IDS_REGISTER_ORGANIZATION" Value="&amp;Please enter the name of your organization in the box below. This will be used as default company name for subsequent installations of [ProductName]:" />
+  <String Id="IDS_CDKEY" Value="License number:" />
+  <String Id="IDS_CANCELPROMPT" Value="Are you sure you want to cancel [ProductName] installation?" />
+  <String Id="IDS_CUSTOMIZEDLG_TEXT" Value="Click on the icons in the tree below to change the way features will be installed." />
+  <String Id="IDS_CUSTOMIZEDLG_DESCRIPTION" Value="Select the way you want features to be installed." />
+  <String Id="IDS_CUSTOMIZEDLG_TITLE" Value="[DlgTitleFont]Custom Setup" />
+  <String Id="IDS_TREE_SELECTIONS" Value="Tree of selections" />
+  <String Id="IDS_BTN_DISKCOST" Value="Disk &amp;Usage" />
+  <String Id="IDS_ITEMDESCRIPTION" Value="Multiline description of the currently selected item." />
+  <String Id="IDS_ITEMSIZE" Value="The size of the currently selected item." />
+  <String Id="IDS_SELECTION_PATH" Value="&lt;The selection's path&gt;" />
+  <String Id="IDS_LOCATIONLABEL" Value="Location:" />
+  <String Id="IDS_DISKCOSTDLG_TEXT" Value="The highlighted volumes (if any) do not have enough disk space available for the currently selected features. You can either remove some files from the highlighted volumes, or choose to install less features onto local drive(s), or select different destination drive(s)." />
+  <String Id="IDS_DISKCOSTDLG_DESCRIPTION" Value="The disk space required for the installation of the selected features." />
+  <String Id="IDS_DISKCOSTDLG_TITLE" Value="[DlgTitleFont]Disk Space Requirements" />
+  <String Id="IDS_INFOTEXT" Value="Information text" />
+  <String Id="IDS_FILESINUSE_TEXT" Value="The following applications are using files that need to be updated by this setup. Close these applications and then click Retry to continue the installation or Cancel to exit it." />
+  <String Id="IDS_FILESINUSE_DESCRIPTION" Value="Some files that need to be updated are currently in use." />
+  <String Id="IDS_FILESINUSE_TITLE" Value="[DlgTitleFont]Files in Use" />
+  <String Id="IDS_LICENSEAGREEMENTDLG_DESCRIPTION" Value="Please read the following license agreement carefully" />
+  <String Id="IDS_LICENSEAGREEMENTDLG_TITLE" Value="[DlgTitleFont]End-User License Agreement" />
+  <String Id="IDS_MAINTENANCETYPEDLG_DESCRIPTION" Value="Select the operation you wish to perform." />
+  <String Id="IDS_MAINTENANCETYPEDLG_TITLE" Value="[DlgTitleFont]Modify, Repair or Remove installation" />
+  <String Id="IDS_CHANGELABEL" Value="[DlgTitleFont]&amp;Modify" />
+  <String Id="IDS_CHANGEBUTTON" Value="Modify Installation|" />
+  <String Id="IDS_REPAIRLABEL" Value="[DlgTitleFont]Re&amp;pair" />
+  <String Id="IDS_CHANGETEXT" Value="Allows users to change the way features are installed." />
+  <String Id="IDS_REMOVEBUTTON" Value="Remove Installation|" />
+  <String Id="IDS_REMOVELABEL" Value="[DlgTitleFont]&amp;Remove" />
+  <String Id="IDS_REMOVETEXT" Value="Removes [ProductName] from your computer." />
+  <String Id="IDS_REPAIRBUTTON" Value="Repair Installation|" />
+  <String Id="IDS_REPAIRTEXT" Value="Repairs errors in the most recent installation state - fixes missing or corrupt files, shortcuts and registry entries." />
+  <String Id="IDS_MAINTENANCEWELCOMEDLG_DESCRIPTION" Value="The [Wizard] will allow you to change the way [ProductName] features are installed on your computer or even to remove [ProductName] from your computer. Click Next to continue or Cancel to exit the [Wizard]." />
+  <String Id="IDS_MAINTENANCEWELCOMEDLG_TITLE" Value="{\VerdanaBold13}Welcome to the [ProductName] [Wizard]" />
+  <String Id="IDS_OUTOFDISKDLG_TEXT" Value="The highlighted volumes do not have enough disk space available for the currently selected features. You can either remove some files from the highlighted volumes, or choose to install less features onto local drive(s), or select different destination drive(s)." />
+  <String Id="IDS_OUTOFDISKDLG_DESCRIPTION" Value="Disk space required for the installation exceeds available disk space." />
+  <String Id="IDS_OUTOFDISKDLG_TITLE" Value="[DlgTitleFont]Out of Disk Space" />
+  <String Id="IDS_OUTOFRBDISKDLG_TEXT2" Value="Alternatively, you may choose to disable the installer's rollback functionality. This allows the installer to restore your computer's original state should the installation be interrupted in any way. Click Yes if you wish to take the risk to disable rollback." />
+  <String Id="IDS_RESUMEDLG_TEXT" Value="The [Wizard] will complete the installation of [ProductName] on your computer. Click Install to continue or Cancel to exit the [Wizard]." />
+  <String Id="IDS_RESUMEDLG_TITLE" Value="{\VerdanaBold13}Resuming the [ProductName] [Wizard]" />
+  <String Id="IDS_SETUPTYPEDLG_DESCRIPTION" Value="Choose the setup type that best suits your needs" />
+  <String Id="IDS_SETUPTYPEDLG_TITLE" Value="[DlgTitleFont]Choose Setup Type" />
+  <String Id="IDS_TYPICALLABEL" Value="[DlgTitleFont]&amp;Typical" />
+  <String Id="IDS_COMPLETEBUTTON" Value="Complete Installation|" />
+  <String Id="IDS_COMPLETELABEL" Value="[DlgTitleFont]C&amp;omplete" />
+  <String Id="IDS_COMPLETETEXT" Value="All program features will be installed. (Requires most disk space)" />
+  <String Id="IDS_CUSTOMBUTTON" Value="Custom Installation|" />
+  <String Id="IDS_CUSTOMLABEL" Value="[DlgTitleFont]C&amp;ustom" />
+  <String Id="IDS_CUSTOMTEXT" Value="Allows users to choose which program features will be installed and where they will be installed. Recommended for advanced users." />
+  <String Id="IDS_TYPICALBUTTON" Value="Typical Installation|" />
+  <String Id="IDS_TYPICALTEXT" Value="Installs the most common program features. Recommended for most users." />
+  <String Id="IDS_CUSTOMER_REGISTER_DESCRIPTION" Value="Please enter your customer information" />
+  <String Id="IDS_CUSTOMER_REGISTER_TITLE" Value="[DlgTitleFont]Customer Information" />
+  <String Id="IDS_ORGANIZATIONLABEL" Value="&amp;Organization:" />
+  <String Id="IDS_USERNAMELABEL" Value="&amp;User Name:" />
+  <String Id="IDS_JUSTME" Value="Just for &amp;me ([USERNAME])" />
+  <String Id="IDS_ALLUSERS" Value="&amp;Everyone who uses this computer (all users)" />
+  <String Id="IDS_INSTALL_FOR" Value="&amp;Install this application for:" />
+  <String Id="IDS_VERIFYREADYDLG_TEXT" Value="Click Install to begin the installation. If you want to review or change any of your installation settings, click Back. Click Cancel to exit the wizard." />
+  <String Id="IDS_VERIFYREADYDLG_DESCRIPTION" Value="The [Wizard] is ready to begin the installation" />
+  <String Id="IDS_VERIFYREADYDLG_TITLE" Value="[DlgTitleFont]Ready to Install" />
+  <String Id="IDS_VERIFYUPGRADEDLG_TEXT" Value="Click Install to begin the product upgrade. If you want to review or change any of your installation settings, click Back. Click Cancel to exit the wizard." />
+  <String Id="IDS_VERIFYUPGRADEDLG_TEXT2" Value="IMPORTANT: Please make sure that all instances of NI LabView and NI TestStand are closed before proceeding with the upgrade." />
+  <String Id="IDS_VERIFYUPGRADEDLG_DESCRIPTION" Value="The [Wizard] is ready to begin the product upgrade" />
+  <String Id="IDS_VERIFYUPGRADEDLG_TITLE" Value="[DlgTitleFont]Ready to Upgrade" />
+  <String Id="IDS_VERIFYREMOVEDLG_TEXT" Value="Click Remove to remove [ProductName] from your computer. If you want to review or change any of your installation settings, click Back. Click Cancel to exit the wizard." />
+  <String Id="IDS_VERIFYREMOVEDLG_DESCRIPTION" Value="You have chosen to remove the program from your computer." />
+  <String Id="IDS_VERIFYREMOVEDLG_TITLE" Value="[DlgTitleFont]Remove" />
+  <String Id="IDS_VERIFYREPAIRDLG_TEXT" Value="Click Repair to repair the installation of [ProductName]. If you want to review or change any of your installation settings, click Back. Click Cancel to exit the wizard." />
+  <String Id="IDS_VERIFYREPAIRDLG_DESCRIPTION" Value="The [Wizard] is ready to begin the repair of [ProductName]." />
+  <String Id="IDS_VERIFYREPAIRDLG_TITLE" Value="[DlgTitleFont]Repair" />
+  <String Id="IDS_WAITFORCOSTINGDLG_TEXT" Value="Please wait while the installer finishes determining your disk space requirements." />
+  <String Id="IDS_WELCOMEDLG_DESCRIPTION" Value="The [Wizard] will install [ProductName] on your computer. Click Next to continue or Cancel to exit the [Wizard]." />
+  <String Id="IDS_WELCOMEDLG_TITLE" Value="{\VerdanaBold13}Welcome to the [ProductName] [Wizard]" />
+  <String Id="IDS_ACTION_INSTALLVALIDATE" Value="Validating install" />
+  <String Id="IDS_ACTION_INSTALLFILES" Value="Copying new files" />
+  <String Id="IDS_ACTION_INSTALLFILES_TEMPLATE" Value="File: [1], Directory: [9], Size: [6]" />
+  <String Id="IDS_ACTION_INSTALLADMINPACKAGE" Value="Copying network install files" />
+  <String Id="IDS_ACTION_COST" Value="Computing space requirements" />
+  <String Id="IDS_ACTION_CREATESHORTCUTS" Value="Creating shortcuts" />
+  <String Id="IDS_ACTION_SHORTCUTS_TEMPLATE" Value="Shortcut: [1]" />
+  <String Id="IDS_ACTION_PUBLISHCOMPONENTS" Value="Publishing Qualified Components" />
+  <String Id="IDS_ACTION_PUBLISHCOMPONENTS_TEMPLATE" Value="Component ID: [1], Qualifier: [2]" />
+  <String Id="IDS_ACTION_PUBLISHFEATURES" Value="Publishing product features" />
+  <String Id="IDS_ACTION_FEATURE_TEMPLATE" Value="Feature: [1]" />
+  <String Id="IDS_ACTION_PUBLISHPRODUCT" Value="Publishing product information" />
+  <String Id="IDS_ACTION_REGISTERCLASSINFO" Value="Registering COM servers" />
+  <String Id="IDS_ACTION_CLASS_TEMPLATE" Value="Class Id: [1]" />
+  <String Id="IDS_ACTION_REGISTEREXTENSIONINFO" Value="Configuring file associations" />
+  <String Id="IDS_ACTION_EXTENSION_TEMPLATE" Value="Extension: [1]" />
+  <String Id="IDS_ACTION_REGISTERMIMEINFO" Value="Registering MIME types" />
+  <String Id="IDS_ACTION_MIME_TEMPLATE" Value="MIME Content Type: [1], Extension: [2]" />
+  <String Id="IDS_ACTION_REGISTERPROGIDINFO" Value="Registering program identifiers" />
+  <String Id="IDS_ACTION_PROGID_TEMPLATE" Value="ProgId: [1]" />
+  <String Id="IDS_ACTION_ALLOCATEREGISTRYSPACE" Value="Allocating registry space" />
+  <String Id="IDS_ACTION_FREESPACE_TEMPLATE" Value="Free space: [1]" />
+  <String Id="IDS_ACTION_APPSEARCH" Value="Searching for installed applications" />
+  <String Id="IDS_ACTION_APPSEARCH_TEMPLATE" Value="Property: [1], Signature: [2]" />
+  <String Id="IDS_ACTION_BINDIMAGE" Value="Binding executables" />
+  <String Id="IDS_ACTION_FILE_TEMPLATE" Value="File: [1]" />
+  <String Id="IDS_ACTION_CCPSEARCH" Value="Searching for qualifying products" />
+  <String Id="IDS_ACTION_CREATEFOLDERS" Value="Creating folders" />
+  <String Id="IDS_ACTION_FOLDER_TEMPLATE" Value="Folder: [1]" />
+  <String Id="IDS_ACTION_DELETESERVICES" Value="Deleting services" />
+  <String Id="IDS_ACTION_SERVICE_TEMPLATE" Value="Service: [1]" />
+  <String Id="IDS_ACTION_DUPLICATEFILES" Value="Creating duplicate files" />
+  <String Id="IDS_ACTION_FINDRELATEDPRODUCTS" Value="Searching for related applications" />
+  <String Id="IDS_ACTION_FINDRELATEDPRODUCTS_TEMPLATE" Value="Found application: [1]" />
+  <String Id="IDS_ACTION_INSTALLODBC" Value="Installing ODBC components" />
+  <String Id="IDS_ACTION_INSTALLSERVICES" Value="Installing new services" />
+  <String Id="IDS_ACTION_SERVICE2_TEMPLATE" Value="Service: [2]" />
+  <String Id="IDS_ACTION_LAUNCHCONDITIONS" Value="Evaluating launch conditions" />
+  <String Id="IDS_ACTION_MIGRATEFEATURESTATES" Value="Migrating feature states from related applications" />
+  <String Id="IDS_ACTION_APPLICATION_TEMPLATE" Value="Application: [1]" />
+  <String Id="IDS_ACTION_MOVEFILES" Value="Moving files" />
+  <String Id="IDS_ACTION_PATCHFILES" Value="Patching files" />
+  <String Id="IDS_ACTION_PATCHFILES_TEMPLATE" Value="File: [1], Directory: [2], Size: [3]" />
+  <String Id="IDS_ACTION_PROCESSCOMPONENTS" Value="Updating component registration" />
+  <String Id="IDS_ACTION_REGISTERCOMPLUS" Value="Registering COM+ Applications and Components" />
+  <String Id="IDS_ACTION_REGISTERCOMPLUS_TEMPLATE" Value="AppId: [1]{{, AppType: [2], Users: [3], RSN: [4]}}" />
+  <String Id="IDS_ACTION_REGISTERFONTS" Value="Registering fonts" />
+  <String Id="IDS_ACTION_FONT_TEMPLATE" Value="Font: [1]" />
+  <String Id="IDS_ACTION_REGISTERPRODUCT" Value="Registering product" />
+  <String Id="IDS_ACTION_REGISTERTYPELIBRARIES" Value="Registering type libraries" />
+  <String Id="IDS_ACTION_REGISTERUSER" Value="Registering user" />
+  <String Id="IDS_ACTION_REMOVEDUPLICATEFILES" Value="Removing duplicated files" />
+  <String Id="IDS_ACTION_REMOVEFILES_TEMPLATE" Value="File: [1], Directory: [9]" />
+  <String Id="IDS_ACTION_REMOVEENVIRONMENTSTRINGS" Value="Updating environment strings" />
+  <String Id="IDS_ACTION_ENV_TEMPLATE" Value="Name: [1], Value: [2], Action [3]" />
+  <String Id="IDS_ACTION_REMOVEEXISTINGPRODUCTS" Value="Removing applications" />
+  <String Id="IDS_ACTION_REMOVEAPP_TEMPLATE" Value="Application: [1], Command line: [2]" />
+  <String Id="IDS_ACTION_REMOVEFILES" Value="Removing files" />
+  <String Id="IDS_ACTION_REMOVEFOLDERS" Value="Removing folders" />
+  <String Id="IDS_ACTION_REMOVEINIVALUES" Value="Removing INI files entries" />
+  <String Id="IDS_ACTION_REMOVEREGISTRYVALUES" Value="Removing registry values" />
+  <String Id="IDS_ACTION_INI_TEMPLATE" Value="File: [1], Section: [2], Key: [3], Value: [4]" />
+  <String Id="IDS_ACTION_REMOVEODBC" Value="Removing ODBC components" />
+  <String Id="IDS_ACTION_REG_TEMPLATE" Value="Key: [1], Name: [2]" />
+  <String Id="IDS_ACTION_REMOVESHORTCUTS" Value="Removing shortcuts" />
+  <String Id="IDS_ACTION_SELFREGMODULES" Value="Registering modules" />
+  <String Id="IDS_ACTION_SELFREG_TEMPLATE" Value="File: [1], Folder: [2]" />
+  <String Id="IDS_ACTION_SELFUNREGMODULES" Value="Unregistering modules" />
+  <String Id="IDS_ACTION_SETODBCFOLDERS" Value="Initializing ODBC directories" />
+  <String Id="IDS_ACTION_STARTSERVICES" Value="Starting services" />
+  <String Id="IDS_ACTION_STOPSERVICES" Value="Stopping services" />
+  <String Id="IDS_ACTION_UNPUBLISHCOMPONENTS" Value="Unpublishing Qualified Components" />
+  <String Id="IDS_ACTION_UNPUBLISHFEATURES" Value="Unpublishing Product Features" />
+  <String Id="IDS_ACTION_UNREGISTERCLASSINFO" Value="Unregistering COM servers" />
+  <String Id="IDS_ACTION_UNREGISTERCOMPLUS" Value="Unregistering COM+ Applications and Components" />
+  <String Id="IDS_ACTION_UNREGISTERCOMPLUS_TEMPLATE" Value="AppId: [1]{{, AppType: [2]}}" />
+  <String Id="IDS_ACTION_UNREGISTEREXTENSIONINFO" Value="Removing file associations" />
+  <String Id="IDS_ACTION_UNREGISTERFONTS" Value="Unregistering fonts" />
+  <String Id="IDS_ACTION_UNREGISTERMIMEINFO" Value="Unregistering MIME types" />
+  <String Id="IDS_ACTION_UNREGISTERPROGIDINFO" Value="Unregistering program identifiers" />
+  <String Id="IDS_ACTION_UNREGISTERTYPELIBRARIES" Value="Unregistering type libraries" />
+  <String Id="IDS_ACTION_TLB_TEMPLATE" Value="LibID: [1]" />
+  <String Id="IDS_ACTION_WRITEENVIRONMENTSTRINGS" Value="Updating environment strings" />
+  <String Id="IDS_ACTION_WRITEREGISTRYVALUES" Value="Writing system registry values" />
+  <String Id="IDS_ACTION_WRITEINIVALUES" Value="Writing ini values" />
+  <String Id="IDS_ACTION_ADVERTISE" Value="Advertising application" />
+  <String Id="IDS_ACTION_GENERATESCRIPT" Value="Generating script operations for action:" />
+  <String Id="IDS_ACTION_INSTALLSFPCATALOGFILE" Value="Installing system catalog" />
+  <String Id="IDS_ACTION_CAT_TEMPLATE" Value="File: [1], Dependencies: [2]" />
+  <String Id="IDS_ACTION_MSIPUBLISHASSEMBLIES" Value="Publishing assembly information" />
+  <String Id="IDS_ACTION_MSIUNPUBLISHASSEMBLIES" Value="Unpublishing assembly information" />
+  <String Id="IDS_ACTION_ASSEMBLY_TEMPLATE" Value="Application Context: [1], Assembly Name: [2]" />
+  <String Id="IDS_ACTION_ROLLBACK" Value="Rolling back action:" />
+  <String Id="IDS_ACTION_ROLLBACKCLEANUP" Value="Removing backup files" />
+  <String Id="IDS_ACTION_UNMOVEFILES" Value="Removing moved files" />
+  <String Id="IDS_ACTION_UNPUBLISHPRODUCT" Value="Unpublishing product information" />
+  <String Id="IDS_WIZDLG_CAPTION" Value="[ProductName] [Setup]" />
+  <String Id="IDS_ERROR" Value="Error" />
+  <String Id="IDS_IAGREE" Value="{\DlgFont8}I &amp;accept the terms in the License Agreement" />
+  <String Id="IDS_IDISAGREE" Value="{\DlgFont8}I &amp;do not accept the terms in the License Agreement" />
+  <String Id="IDS_UNIT_BYTES" Value="bytes" />
+  <String Id="IDS_UNIT_KB" Value="KB" />
+  <String Id="IDS_UNIT_MB" Value="MB" />
+  <String Id="IDS_UNIT_GB" Value="GB" />
+  <String Id="IDS_UI_MENUABSENT" Value="Entire feature will be unavailable" />
+  <String Id="IDS_UI_MENUADVERTISE" Value="Feature will be installed when required" />
+  <String Id="IDS_UI_MENUALLCD" Value="Entire feature will be installed to run from CD" />
+  <String Id="IDS_UI_MENUALLLOCAL" Value="Entire feature will be installed on local hard drive" />
+  <String Id="IDS_UI_MENUALLNETWORK" Value="Entire feature will be installed to run from network" />
+  <String Id="IDS_UI_MENUCD" Value="Will be installed to run from CD" />
+  <String Id="IDS_UI_MENULOCAL" Value="Will be installed on local hard drive" />
+  <String Id="IDS_UI_MENUNETWORK" Value="Will be installed to run from network" />
+  <String Id="IDS_SCRIPTINPROGRESS" Value="Gathering required information..." />
+  <String Id="IDS_UI_SELABSENTABSENT" Value="This feature will remain uninstalled" />
+  <String Id="IDS_UI_SELABSENTADVERTISE" Value="This feature will be set to be installed when required" />
+  <String Id="IDS_UI_SELABSENTCD" Value="This feature will be installed to run from CD" />
+  <String Id="IDS_UI_SELABSENTLOCAL" Value="This feature will be installed on the local hard drive" />
+  <String Id="IDS_UI_SELABSENTNETWORK" Value="This feature will be installed to run from the network" />
+  <String Id="IDS_UI_SELADVERTISEABSENT" Value="This feature will become unavailable" />
+  <String Id="IDS_UI_SELADVERTISEADVERTISE" Value="Will be installed when required" />
+  <String Id="IDS_UI_SELADVERTISECD" Value="This feature will be available to run from CD" />
+  <String Id="IDS_UI_SELADVERTISELOCAL" Value="This feature will be installed on your local hard drive" />
+  <String Id="IDS_UI_SELADVERTISENETWORK" Value="This feature will be available to run from the network" />
+  <String Id="IDS_UI_SELCDABSENT" Value="This feature will be uninstalled completely, you won't be able to run it from CD" />
+  <String Id="IDS_UI_SELCDADVERTISE" Value="This feature will change from run from CD state to set to be installed when required" />
+  <String Id="IDS_UI_SELCDCD" Value="This feature will remain to be run from CD" />
+  <String Id="IDS_UI_SELCDLOCAL" Value="This feature will change from run from CD state to be installed on the local hard drive" />
+  <String Id="IDS_UI_SELLOCALABSENT" Value="This feature will be completely removed" />
+  <String Id="IDS_UI_SELLOCALADVERTISE" Value="This feature will be removed from your local hard drive, but will be set to be installed when required" />
+  <String Id="IDS_UI_SELLOCALCD" Value="This feature will be removed from your local hard drive, but will be still available to run from CD" />
+  <String Id="IDS_UI_SELLOCALLOCAL" Value="This feature will remain on your local hard drive" />
+  <String Id="IDS_UI_SELLOCALNETWORK" Value="This feature will be removed from your local hard drive, but will be still available to run from the network" />
+  <String Id="IDS_UI_SELNETWORKABSENT" Value="This feature will be uninstalled completely, you won't be able to run it from the network" />
+  <String Id="IDS_UI_SELNETWORKADVERTISE" Value="This feature will change from run from network state to set to be installed when required" />
+  <String Id="IDS_UI_SELNETWORKLOCAL" Value="This feature will change from run from network state to be installed on the local hard drive" />
+  <String Id="IDS_UI_SELNETWORKNETWORK" Value="This feature will remain to be run from the network" />
+  <String Id="IDS_UI_SELCHILDCOSTNEG" Value="This feature frees up [1] on your hard drive." />
+  <String Id="IDS_UI_SELCHILDCOSTPOS" Value="This feature requires [1] on your hard drive." />
+  <String Id="IDS_UI_SELCOSTPENDING" Value="Compiling cost for this feature..." />
+  <String Id="IDS_UI_SELPARENTCOSTNEGNEG" Value="This feature frees up [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures free up [4] on your hard drive." />
+  <String Id="IDS_UI_SELPARENTCOSTNEGPOS" Value="This feature frees up [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures require [4] on your hard drive." />
+  <String Id="IDS_UI_SELPARENTCOSTPOSNEG" Value="This feature requires [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures free up [4] on your hard drive." />
+  <String Id="IDS_UI_SELPARENTCOSTPOSPOS" Value="This feature requires [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures require [4] on your hard drive." />
+  <String Id="IDS_TIMEREMAINING" Value="Time remaining: {[1] minutes }{[2] seconds}" />
+  <String Id="IDS_AVAILABLE" Value="Available" />
+  <String Id="IDS_DIFFERENCE" Value="Difference" />
+  <String Id="IDS_REQUIRED" Value="Required" />
+  <String Id="IDS_DISKSIZE" Value="Disk Size" />
+  <String Id="IDS_VOLUME" Value="Volume" />
+  <String Id="IDS_ERROR0" Value="{{Fatal error: }}" />
+  <String Id="IDS_ERROR1" Value="Error [1]." />
+  <String Id="IDS_ERROR2" Value="Warning [1]." />
+  <String Id="IDS_ERROR4" Value="Info [1]." />
+  <String Id="IDS_ERROR5" Value="The installer has encountered an unexpected error installing this package. This may indicate a problem with this package. The error code is [1]. {{The arguments are: [2], [3], [4]}}" />
+  <String Id="IDS_ERROR7" Value="{{Disk full: }}" />
+  <String Id="IDS_ERROR8" Value="Action [Time]: [1]. [2]" />
+  <String Id="IDS_ERROR11" Value="Message type: [1], Argument: [2]" />
+  <String Id="IDS_ERROR12" Value="=== Logging started: [Date] [Time] ===" />
+  <String Id="IDS_ERROR13" Value="=== Logging stopped: [Date] [Time] ===" />
+  <String Id="IDS_ERROR14" Value="Action start [Time]: [1]." />
+  <String Id="IDS_ERROR15" Value="Action ended [Time]: [1]. Return value [2]." />
+  <String Id="IDS_ERROR16" Value="Time remaining: {[1] minutes }{[2] seconds}" />
+  <String Id="IDS_ERROR17" Value="Out of memory. Shut down other applications before retrying." />
+  <String Id="IDS_ERROR18" Value="Installer is no longer responding." />
+  <String Id="IDS_ERROR19" Value="Installer stopped prematurely." />
+  <String Id="IDS_ERROR20" Value="Please wait while Windows configures [ProductName]" />
+  <String Id="IDS_ERROR21" Value="Gathering required information..." />
+  <String Id="IDS_ERROR22" Value="Removing older versions of this application..." />
+  <String Id="IDS_ERROR23" Value="Preparing to remove older versions of this application..." />
+  <String Id="IDS_ERROR32" Value="{[ProductName] }Setup completed successfully." />
+  <String Id="IDS_ERROR33" Value="{[ProductName] }Setup failed." />
+  <String Id="IDS_ERROR1101" Value="Error reading from file: [2]. {{ System error [3].}} Verify that the file exists and that you can access it." />
+  <String Id="IDS_ERROR1301" Value="Cannot create the file '[2]'. A directory with this name already exists. Cancel the install and try installing to a different location." />
+  <String Id="IDS_ERROR1302" Value="Please insert the disk: [2]" />
+  <String Id="IDS_ERROR1303" Value="The installer has insufficient privileges to access this directory: [2]. The installation cannot continue. Log on as administrator or contact your system administrator." />
+  <String Id="IDS_ERROR1304" Value="Error writing to file: [2]. Verify that you have access to that directory." />
+  <String Id="IDS_ERROR1305" Value="Error reading from file [2]. {{ System error [3].}} Verify that the file exists and that you can access it." />
+  <String Id="IDS_ERROR1306" Value="Another application has exclusive access to the file '[2]'. Please shut down all other applications, then click Retry." />
+  <String Id="IDS_ERROR1307" Value="There is not enough disk space to install this file: [2]. Free some disk space and click Retry, or click Cancel to exit." />
+  <String Id="IDS_ERROR1308" Value="Source file not found: [2]. Verify that the file exists and that you can access it." />
+  <String Id="IDS_ERROR1309" Value="Error reading from file: [3]. {{ System error [2].}} Verify that the file exists and that you can access it." />
+  <String Id="IDS_ERROR1310" Value="Error writing to file: [3]. {{ System error [2].}} Verify that you have access to that directory." />
+  <String Id="IDS_ERROR1311" Value="Source file not found{{(cabinet)}}: [2]. Verify that the file exists and that you can access it." />
+  <String Id="IDS_ERROR1312" Value="Cannot create the directory '[2]'. A file with this name already exists. Please rename or remove the file and click retry, or click Cancel to exit." />
+  <String Id="IDS_ERROR1313" Value="The volume [2] is currently unavailable. Please select another." />
+  <String Id="IDS_ERROR1314" Value="The specified path '[2]' is unavailable." />
+  <String Id="IDS_ERROR1315" Value="Unable to write to the specified folder: [2]." />
+  <String Id="IDS_ERROR1316" Value="A network error occurred while attempting to read from the file: [2]" />
+  <String Id="IDS_ERROR1317" Value="An error occurred while attempting to create the directory: [2]" />
+  <String Id="IDS_ERROR1318" Value="A network error occurred while attempting to create the directory: [2]" />
+  <String Id="IDS_ERROR1319" Value="A network error occurred while attempting to open the source file cabinet: [2]" />
+  <String Id="IDS_ERROR1320" Value="The specified path is too long: [2]" />
+  <String Id="IDS_ERROR1321" Value="The Installer has insufficient privileges to modify this file: [2]." />
+  <String Id="IDS_ERROR1322" Value="A portion of the folder path '[2]' is invalid. It is either empty or exceeds the length allowed by the system." />
+  <String Id="IDS_ERROR1323" Value="The folder path '[2]' contains words that are not valid in folder paths." />
+  <String Id="IDS_ERROR1324" Value="The folder path '[2]' contains an invalid character." />
+  <String Id="IDS_ERROR1325" Value="'[2]' is not a valid short file name." />
+  <String Id="IDS_ERROR1326" Value="Error getting file security: [3] GetLastError: [2]" />
+  <String Id="IDS_ERROR1327" Value="Invalid Drive: [2]" />
+  <String Id="IDS_ERROR1328" Value="Error applying patch to file [2]. It has probably been updated by other means, and can no longer be modified by this patch. For more information contact your patch vendor. {{System Error: [3]}}" />
+  <String Id="IDS_ERROR1329" Value="A file that is required cannot be installed because the cabinet file [2] is not digitally signed. This may indicate that the cabinet file is corrupt." />
+  <String Id="IDS_ERROR1330" Value="A file that is required cannot be installed because the cabinet file [2] has an invalid digital signature. This may indicate that the cabinet file is corrupt.{{ Error [3] was returned by WinVerifyTrust.}}" />
+  <String Id="IDS_ERROR1331" Value="Failed to correctly copy [2] file: CRC error." />
+  <String Id="IDS_ERROR1332" Value="Failed to correctly move [2] file: CRC error." />
+  <String Id="IDS_ERROR1333" Value="Failed to correctly patch [2] file: CRC error." />
+  <String Id="IDS_ERROR1334" Value="The file '[2]' cannot be installed because the file cannot be found in cabinet file '[3]'. This could indicate a network error, an error reading from the CD-ROM, or a problem with this package." />
+  <String Id="IDS_ERROR1335" Value="The cabinet file '[2]' required for this installation is corrupt and cannot be used. This could indicate a network error, an error reading from the CD-ROM, or a problem with this package." />
+  <String Id="IDS_ERROR1336" Value="There was an error creating a temporary file that is needed to complete this installation.{{ Folder: [3]. System error code: [2]}}" />
+  <String Id="IDS_ERROR1401" Value="Could not create key: [2]. {{ System error [3].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1402" Value="Could not open key: [2]. {{ System error [3].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1403" Value="Could not delete value [2] from key [3]. {{ System error [4].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1404" Value="Could not delete key [2]. {{ System error [3].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1405" Value="Could not read value [2] from key [3]. {{ System error [4].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1406" Value="Could not write value [2] to key [3]. {{ System error [4].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1407" Value="Could not get value names for key [2]. {{ System error [3].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1408" Value="Could not get sub key names for key [2]. {{ System error [3].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1409" Value="Could not read security information for key [2]. {{ System error [3].}} Verify that you have sufficient access to that key, or contact your support personnel." />
+  <String Id="IDS_ERROR1410" Value="Could not increase the available registry space. [2] KB of free registry space is required for the installation of this application." />
+  <String Id="IDS_ERROR1500" Value="Another installation is in progress. You must complete that installation before continuing this one." />
+  <String Id="IDS_ERROR1501" Value="Error accessing secured data. Please make sure the Windows Installer is configured properly and try the install again." />
+  <String Id="IDS_ERROR1502" Value="User '[2]' has previously initiated an install for product '[3]'. That user will need to run that install again before they can use that product. Your current install will now continue." />
+  <String Id="IDS_ERROR1503" Value="User '[2]' has previously initiated an install for product '[3]'. That user will need to run that install again before they can use that product." />
+  <String Id="IDS_ERROR1601" Value="Out of disk space -- Volume: '[2]'; required space: [3] KB; available space: [4] KB. Free some disk space and retry." />
+  <String Id="IDS_ERROR1602" Value="Are you sure you want to cancel?" />
+  <String Id="IDS_ERROR1603" Value="The file [2][3] is being held in use{ by the following process: Name: [4], Id: [5], Window Title: '[6]'}. Close that application and retry." />
+  <String Id="IDS_ERROR1604" Value="The product '[2]' is already installed, preventing the installation of this product. The two products are incompatible." />
+  <String Id="IDS_ERROR1605" Value="There is not enough disk space on the volume '[2]' to continue the install with recovery enabled. [3] KB are required, but only [4] KB are available. Click Ignore to continue the install without saving recovery information, click Retry to check for available space again, or click Cancel to quit the installation." />
+  <String Id="IDS_ERROR1606" Value="Could not access network location [2]." />
+  <String Id="IDS_ERROR1607" Value="The following applications should be closed before continuing the install:" />
+  <String Id="IDS_ERROR1608" Value="Could not find any previously installed compliant products on the machine for installing this product." />
+  <String Id="IDS_ERROR1609" Value="An error occurred while applying security settings. [2] is not a valid user or group. This could be a problem with the package, or a problem connecting to a domain controller on the network. Check your network connection and click Retry, or Cancel to end the install. {{Unable to locate the user's SID, system error [3]}}" />
+  <String Id="IDS_ERROR1701" Value="The key [2] is not valid. Verify that you entered the correct key." />
+  <String Id="IDS_ERROR1702" Value="The installer must restart your system before configuration of [2] can continue. Click Yes to restart now or No if you plan to manually restart later." />
+  <String Id="IDS_ERROR1703" Value="You must restart your system for the configuration changes made to [2] to take effect. Click Yes to restart now or No if you plan to manually restart later." />
+  <String Id="IDS_ERROR1704" Value="An installation for [2] is currently suspended. You must undo the changes made by that installation to continue. Do you want to undo those changes?" />
+  <String Id="IDS_ERROR1705" Value="A previous installation for this product is in progress. You must undo the changes made by that installation to continue. Do you want to undo those changes?" />
+  <String Id="IDS_ERROR1706" Value="An installation package for the product [2] cannot be found. Try the installation again using a valid copy of the installation package '[3]'." />
+  <String Id="IDS_ERROR1707" Value="Installation completed successfully." />
+  <String Id="IDS_ERROR1708" Value="Installation failed." />
+  <String Id="IDS_ERROR1709" Value="Product: [2] -- [3]" />
+  <String Id="IDS_ERROR1710" Value="You may either restore your computer to its previous state or continue the install later. Would you like to restore?" />
+  <String Id="IDS_ERROR1711" Value="An error occurred while writing installation information to disk. Check to make sure enough disk space is available, and click Retry, or Cancel to end the install." />
+  <String Id="IDS_ERROR1712" Value="One or more of the files required to restore your computer to its previous state could not be found. Restoration will not be possible." />
+  <String Id="IDS_ERROR1713" Value="[2] cannot install one of its required products. Contact your technical support group. {{System Error: [3].}}" />
+  <String Id="IDS_ERROR1714" Value="The older version of [2] cannot be removed. Contact your technical support group. {{System Error [3].}}" />
+  <String Id="IDS_ERROR1715" Value="Installed [2]" />
+  <String Id="IDS_ERROR1716" Value="Configured [2]" />
+  <String Id="IDS_ERROR1717" Value="Removed [2]" />
+  <String Id="IDS_ERROR1718" Value="File [2] was rejected by digital signature policy." />
+  <String Id="IDS_ERROR1719" Value="The Windows Installer Service could not be accessed. This can occur if you are running Windows in safe mode, or if the Windows Installer is not correctly installed. Contact your support personnel for assistance." />
+  <String Id="IDS_ERROR1720" Value="There is a problem with this Windows Installer package. A script required for this install to complete could not be run. Contact your support personnel or package vendor. {{Custom action [2] script error [3], [4]: [5] Line [6], Column [7], [8] }}" />
+  <String Id="IDS_ERROR1721" Value="There is a problem with this Windows Installer package. A program required for this install to complete could not be run. Contact your support personnel or package vendor. {{Action: [2], location: [3], command: [4] }}" />
+  <String Id="IDS_ERROR1722" Value="There is a problem with this Windows Installer package. A program run as part of the setup did not finish as expected. Contact your support personnel or package vendor. {{Action [2], location: [3], command: [4] }}" />
+  <String Id="IDS_ERROR1723" Value="There is a problem with this Windows Installer package. A DLL required for this install to complete could not be run. Contact your support personnel or package vendor. {{Action [2], entry: [3], library: [4] }}" />
+  <String Id="IDS_ERROR1724" Value="Removal completed successfully." />
+  <String Id="IDS_ERROR1725" Value="Removal failed." />
+  <String Id="IDS_ERROR1726" Value="Advertisement completed successfully." />
+  <String Id="IDS_ERROR1727" Value="Advertisement failed." />
+  <String Id="IDS_ERROR1728" Value="Configuration completed successfully." />
+  <String Id="IDS_ERROR1729" Value="Configuration failed." />
+  <String Id="IDS_ERROR1730" Value="You must be an Administrator to remove this application. To remove this application, you can log on as an Administrator, or contact your technical support group for assistance." />
+  <String Id="IDS_ERROR1801" Value="The path [2] is not valid. Please specify a valid path." />
+  <String Id="IDS_ERROR1802" Value="Out of memory. Shut down other applications before retrying." />
+  <String Id="IDS_ERROR1803" Value="There is no disk in drive [2]. Please insert one and click Retry, or click Cancel to go back to the previously selected volume." />
+  <String Id="IDS_ERROR1804" Value="There is no disk in drive [2]. Please insert one and click Retry, or click Cancel to return to the browse dialog and select a different volume." />
+  <String Id="IDS_ERROR1805" Value="The folder [2] does not exist. Please enter a path to an existing folder." />
+  <String Id="IDS_ERROR1806" Value="You have insufficient privileges to read this folder." />
+  <String Id="IDS_ERROR1807" Value="A valid destination folder for the install could not be determined." />
+  <String Id="IDS_ERROR1901" Value="Error attempting to read from the source install database: [2]." />
+  <String Id="IDS_ERROR1902" Value="Scheduling reboot operation: Renaming file [2] to [3]. Must reboot to complete operation." />
+  <String Id="IDS_ERROR1903" Value="Scheduling reboot operation: Deleting file [2]. Must reboot to complete operation." />
+  <String Id="IDS_ERROR1904" Value="Module [2] failed to register. HRESULT [3]. Contact your support personnel." />
+  <String Id="IDS_ERROR1905" Value="Module [2] failed to unregister. HRESULT [3]. Contact your support personnel." />
+  <String Id="IDS_ERROR1906" Value="Failed to cache package [2]. Error: [3]. Contact your support personnel." />
+  <String Id="IDS_ERROR1907" Value="Could not register font [2]. Verify that you have sufficient permissions to install fonts, and that the system supports this font." />
+  <String Id="IDS_ERROR1908" Value="Could not unregister font [2]. Verify that you that you have sufficient permissions to remove fonts." />
+  <String Id="IDS_ERROR1909" Value="Could not create Shortcut [2]. Verify that the destination folder exists and that you can access it." />
+  <String Id="IDS_ERROR1910" Value="Could not remove Shortcut [2]. Verify that the shortcut file exists and that you can access it." />
+  <String Id="IDS_ERROR1911" Value="Could not register type library for file [2]. Contact your support personnel." />
+  <String Id="IDS_ERROR1912" Value="Could not unregister type library for file [2]. Contact your support personnel." />
+  <String Id="IDS_ERROR1913" Value="Could not update the ini file [2][3]. Verify that the file exists and that you can access it." />
+  <String Id="IDS_ERROR1914" Value="Could not schedule file [2] to replace file [3] on reboot. Verify that you have write permissions to file [3]." />
+  <String Id="IDS_ERROR1915" Value="Error removing ODBC driver manager, ODBC error [2]: [3]. Contact your support personnel." />
+  <String Id="IDS_ERROR1916" Value="Error installing ODBC driver manager, ODBC error [2]: [3]. Contact your support personnel." />
+  <String Id="IDS_ERROR1917" Value="Error removing ODBC driver: [4], ODBC error [2]: [3]. Verify that you have sufficient privileges to remove ODBC drivers." />
+  <String Id="IDS_ERROR1918" Value="Error installing ODBC driver: [4], ODBC error [2]: [3]. Verify that the file [4] exists and that you can access it." />
+  <String Id="IDS_ERROR1919" Value="Error configuring ODBC data source: [4], ODBC error [2]: [3]. Verify that the file [4] exists and that you can access it." />
+  <String Id="IDS_ERROR1920" Value="Service '[2]' ([3]) failed to start. Verify that you have sufficient privileges to start system services." />
+  <String Id="IDS_ERROR1921" Value="Service '[2]' ([3]) could not be stopped. Verify that you have sufficient privileges to stop system services." />
+  <String Id="IDS_ERROR1922" Value="Service '[2]' ([3]) could not be deleted. Verify that you have sufficient privileges to remove system services." />
+  <String Id="IDS_ERROR1923" Value="Service '[2]' ([3]) could not be installed. Verify that you have sufficient privileges to install system services." />
+  <String Id="IDS_ERROR1924" Value="Could not update environment variable '[2]'. Verify that you have sufficient privileges to modify environment variables." />
+  <String Id="IDS_ERROR1925" Value="You do not have sufficient privileges to complete this installation for all users of the machine. Log on as administrator and then retry this installation." />
+  <String Id="IDS_ERROR1926" Value="Could not set file security for file '[3]'. Error: [2]. Verify that you have sufficient privileges to modify the security permissions for this file." />
+  <String Id="IDS_ERROR1927" Value="Component Services (COM+ 1.0) are not installed on this computer. This installation requires Component Services in order to complete successfully. Component Services are available on Windows 2000." />
+  <String Id="IDS_ERROR1928" Value="Error registering COM+ Application. Contact your support personnel for more information." />
+  <String Id="IDS_ERROR1929" Value="Error unregistering COM+ Application. Contact your support personnel for more information." />
+  <String Id="IDS_ERROR1930" Value="The description for service '[2]' ([3]) could not be changed." />
+  <String Id="IDS_ERROR1931" Value="The Windows Installer service cannot update the system file [2] because the file is protected by Windows. You may need to update your operating system for this program to work correctly. {{Package version: [3], OS Protected version: [4]}}" />
+  <String Id="IDS_ERROR1932" Value="The Windows Installer service cannot update the protected Windows file [2]. {{Package version: [3], OS Protected version: [4], SFP Error: [5]}}" />
+  <String Id="IDS_ERROR1933" Value="The Windows Installer service cannot update one or more protected Windows files. {{SFP Error: [2]. List of protected files:\r\n[3]}}" />
+  <String Id="IDS_ERROR1934" Value="User installations are disabled via policy on the machine." />
+  <String Id="IDS_ERROR1935" Value="An error occurred during the installation of assembly component [2]. HRESULT: [3]. {{assembly interface: [4], function: [5], assembly name: [6]}}" />
+
+  <!-- Server properties dialog-->
+  <String Id="IDS_SRVPROP_DESCRIPTION" Value="Please provide server details" />
+  <String Id="IDS_SRVPROP_TITLE" Value="[DlgTitleFont]Server Properties" />
+  <String Id="IDS_SRVPROP_SERVERTYPE" Value="Server &amp;type" />
+  <String Id="IDS_SRVPROP_NAMEDESCRIPTION" Value="&amp;Server name / description" />
+  <String Id="IDS_SRVPROP_LOCATION" Value="Server &amp;location" />
+  <String Id="IDS_SRVPROP_PURPOSE" Value="Server &amp;purpose" />
+  <String Id="IDS_SRVPROP_REMOTEURL" Value="Remote server &amp;url" />
+  <String Id="IDS_INVALIDCUSTKEY" Value="The productkey entered does not match the company name." />
+  <String Id="IDS_CONFIRMINVALIDSQLSERVER" Value="The specified SQL Server does not exist. Do you want to continue with the specified servername?" />
+
+  <String Id="IDS_TA_SVC_DISPLAYNAME" Value="WATS Client Service" />
+  <String Id="IDS_TA_SVC_DESCRIPTION" Value="WATS Client Service" />
+
+  <!-- License type dialog texts -->
+  <!--<String Id="IDS_LICTYPELABEL">Select License type</String>
+  <String Id="IDS_LICTYPE_PRODUCTION">Production</String>
+  <String Id="IDS_LICTYPE_DEVELOPMENT">Development</String>
+
+  <String Id="LicenseTypeDlg_Title" Overridable="yes">[ProductName] Setup</String>
+  <String Id="LicenseTypeDlgProductionButton" Overridable="yes">Production</String>
+  <String Id="LicenseTypeDlgProductionButtonTooltip" Overridable="yes">Production Installation</String>
+  <String Id="LicenseTypeDlgDevelopmentButton" Overridable="yes">Development</String>
+  <String Id="LicenseTypeDlgDevelopmentButtonTooltip" Overridable="yes">Development Installation</String>
+  <String Id="LicenseTypeDlgTitle" Overridable="yes">{\WixUI_Font_Title}Choose License Type</String>
+  <String Id="LicenseTypeDlgDescription" Overridable="yes">Choose the license type for this installation</String>
+  <String Id="LicenseTypeDlgProductionText" Overridable="yes">Installs features for running in production environment.</String>
+  <String Id="LicenseTypeDlgDevelopmentText" Overridable="yes">Development features will be installed. Not for use in production.</String>-->
+
+  <String Id="UnsupportedTestStandDlg_Title" Overridable="yes" Value="{\WixUI_Font_Bigger}Unsupported TestStand versions detected" />
+  <String Id="UnsupportedTestStandDlg_Text" Overridable="yes" Value="Installed TestStand version(s) [UNSUPPORTED_TESTSTAND_VERSIONS] are not supported by [ProductName].Click Next to continue anyway or Cancel to exit the Setup Wizard." />
+
+	<String Id="FirstTimeInstallOptionsDlg_Title" Overridable="yes" Value="{\WixUI_Font_Bigger}Select additional options"/>
+	<String Id="FirstTimeInstallOptionsDlg_Text" Overridable="yes" Value="Choose additional configuration options." />
+	<String Id="FirstTimeInstallOptionsDlg_GPSEnabled_Text" Overridable="yes" Value="Track GPS if Windows Location setting is enabled."/>
+
+
+	<String Id="NewerVersionInstalled" Value="A later version of [ProductName] is already installed. Setup will now exit." />
+</WixLocalization>

@@ -1,0 +1,25 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Virinco.WATS.Client.Configurator.ViewModel;
+
+namespace Virinco.WATS.Client.Configurator.Pages
+{
+    class ProxyViewModel : IPageViewModel
+    {
+        internal ProxyViewModel(ConfigViewModel config)
+        {
+            this.Config = config;
+
+        }
+
+        public string Name
+        {
+            get { return "Proxy"; }
+        }
+
+        public ConfigViewModel Config { get; set; }
+
+    }
+}

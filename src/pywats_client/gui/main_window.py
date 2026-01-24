@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget,
     QListWidget, QListWidgetItem, QLabel, QFrame, QSizePolicy,
-    QSystemTrayIcon, QMenu, QMessageBox, QApplication, QPushButton
+    QMenu, QMessageBox, QApplication, QPushButton
 )
 from PySide6.QtCore import Qt, QSize, Signal, Slot, QTimer
 from PySide6.QtGui import QAction, QCloseEvent
@@ -24,13 +24,12 @@ from PySide6.QtGui import QAction, QCloseEvent
 from .styles import DARK_STYLESHEET
 from .settings_dialog import SettingsDialog
 from .pages import (
-    BasePage, SetupPage, ConnectionPage,
-    ConvertersPage, ConvertersPageV2, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
+    BasePage, DashboardPage, SetupPage, ConnectionPage, APISettingsPage,
+    ConvertersPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
     AssetPage, RootCausePage, ProductionPage, ProductPage
 )
 from ..core.config import ClientConfig
-from ..core.app_facade import AppFacade
-from ..app import pyWATSApplication, ApplicationStatus
+from ..service.ipc_client import ServiceIPCClient, discover_services
 
 
 class SidebarMode(Enum):
@@ -62,129 +61,56 @@ class MainWindow(QMainWindow):
     def __init__(
         self, 
         config: ClientConfig, 
-        app: Optional[pyWATSApplication] = None, 
         parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
         
         self.config = config
-        self.app = app if app else pyWATSApplication(config)  # pyWATSApplication instance
-        self._facade = AppFacade(self.app)  # Create facade for GUI components
-        self._tray_icon: Optional[QSystemTrayIcon] = None
-        self._is_connected = False
+        
+        # IPC client for communicating with service
+        self._ipc_client: Optional[ServiceIPCClient] = None
+        self._current_instance_id: str = config.instance_id
+        self._service_connected = False
         
         # Setup UI
         self._setup_window()
-        self._setup_tray_icon()
         self._setup_ui()
         self._apply_styles()
         self._connect_signals()
         
-        # Connect application status callbacks
-        self.app.on_status_changed(self._on_app_status_changed)
+        # Connect to service via IPC (non-blocking)
+        # Use QTimer.singleShot to defer connection until after GUI is shown
+        QTimer.singleShot(100, self._connect_to_service)
         
         # Update timer for status refresh
         self._status_timer = QTimer()
         self._status_timer.timeout.connect(self._update_status)
-        self._status_timer.start(5000)  # Update every 5 seconds
-        
-        # Auto-start application if previously connected or auto_connect is enabled
-        QTimer.singleShot(500, self._auto_start_on_startup)
+        self._status_timer.start(10000)  # Update every 10 seconds (reduced from 5)
     
-    @property
-    def facade(self) -> AppFacade:
+    def _connect_to_service(self) -> None:
         """
-        Get the application facade for GUI components.
+        Connect to the service process via IPC.
         
-        Returns:
-            AppFacade instance for accessing application services
+        If service is not running, the GUI will display a message
+        and allow the user to start it.
         """
-        return self._facade
-    
-    def _auto_start_on_startup(self) -> None:
-        """Auto-start application on startup if configured"""
-        # User has logged in successfully, start services automatically
-        if self.config.service_address and self.config.api_token:
-            # Use QTimer to delay startup slightly
-            from PySide6.QtCore import QTimer
-            QTimer.singleShot(100, self._do_auto_start_async)
-    
-    def _do_auto_start_async(self) -> None:
-        """Perform auto-start of application services in background thread"""
-        import threading
-        import asyncio
-        import logging
+        self._ipc_client = ServiceIPCClient(self._current_instance_id)
         
-        logger = logging.getLogger(__name__)
-        
-        def start_in_thread():
-            try:
-                logger.info("Auto-starting services...")
-                self.application_status_changed.emit("Starting")
-                
-                # Create new event loop for this thread
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
-                # Run the async start
-                loop.run_until_complete(self.app.start())
-                
-                self._is_connected = True
-                
-                # Update connection status based on actual connection
-                if self.app.is_online():
-                    self.connection_status_changed.emit("Online")
-                else:
-                    self.connection_status_changed.emit("Offline (Queuing)")
-                
-                self.application_status_changed.emit("Running")
-                logger.info("Services started successfully")
-                
-            except Exception as e:
-                error_msg = str(e)
-                logger.error(f"Failed to auto-start services: {error_msg}")
-                
-                # Show user-friendly error message
-                if "already running" in error_msg.lower():
-                    self.connection_status_changed.emit("Error: Another instance already running")
-                else:
-                    self.connection_status_changed.emit(f"Error: {error_msg[:30]}")
-                    
-                self.application_status_changed.emit("Error")
-            finally:
-                loop.close()
-        
-        thread = threading.Thread(target=start_in_thread, daemon=True)
-        thread.start()
-    
-    def _do_auto_start(self) -> None:
-        """Perform auto-start of application services"""
-        try:
-            self.application_status_changed.emit("Starting")
-            self.app.start()
-            self._is_connected = True
-            
-            # Update UI based on connection status
-            if self.app.is_online():
-                self.connection_status_changed.emit("Online")
-            else:
-                self.connection_status_changed.emit("Offline (Queuing)")
-            
-            # Update setup page state
-            if "Setup" in self._pages:
-                setup_page = cast(SetupPage, self._pages["Setup"])
-                setup_page.set_connected(True)
-        except Exception as e:
-            self.connection_status_changed.emit(f"Error: {str(e)[:20]}")
-            self.application_status_changed.emit("Error")
-    
-    def _on_app_status_changed(self, status: ApplicationStatus) -> None:
-        """Handle application status changes"""
-        self.application_status_changed.emit(status.value)
+        if self._ipc_client.connect():
+            logger.info(f"Connected to service instance: {self._current_instance_id}")
+            self._service_connected = True
+            self._update_window_title()
+            self._update_status()
+        else:
+            logger.warning(f"Service not running for instance: {self._current_instance_id}")
+            self._service_connected = False
+            self._update_window_title()
+            self.connection_status_changed.emit("Service not running")
+            self.application_status_changed.emit("Stopped")
     
     def _setup_window(self) -> None:
         """Configure window properties"""
-        self.setWindowTitle(f"WATS Client - {self.config.instance_name}")
+        self._update_window_title()
         self.setMinimumSize(800, 600)
         self.resize(1000, 750)
         
@@ -193,46 +119,6 @@ class MainWindow(QMainWindow):
         icon_path = Path(__file__).parent / "resources" / "favicon.ico"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
-    
-    def _setup_tray_icon(self) -> None:
-        """Setup system tray icon"""
-        if not QSystemTrayIcon.isSystemTrayAvailable():
-            return
-        
-        tray_icon = QSystemTrayIcon(self)
-        
-        # Set tray icon FIRST before any other operations
-        from PySide6.QtGui import QIcon
-        icon_path = Path(__file__).parent / "resources" / "favicon.ico"
-        if icon_path.exists():
-            icon = QIcon(str(icon_path))
-            if not icon.isNull():
-                tray_icon.setIcon(icon)
-            else:
-                logger.warning(f"Failed to load tray icon from {icon_path}")
-        else:
-            logger.warning(f"Tray icon file not found: {icon_path}")
-        
-        # Create tray menu
-        tray_menu = QMenu()
-        
-        show_action = QAction("Show", self)
-        show_action.triggered.connect(self.show)
-        tray_menu.addAction(show_action)
-        
-        tray_menu.addSeparator()
-        
-        quit_action = QAction("Quit", self)
-        quit_action.triggered.connect(self._quit_application)
-        tray_menu.addAction(quit_action)
-        
-        tray_icon.setContextMenu(tray_menu)
-        tray_icon.activated.connect(self._on_tray_activated)
-        
-        if self.config.minimize_to_tray:
-            tray_icon.show()
-        
-        self._tray_icon = tray_icon
     
     def _setup_ui(self) -> None:
         """Setup the main UI layout"""
@@ -250,6 +136,9 @@ class MainWindow(QMainWindow):
         
         # Create content area
         self._create_content_area(main_layout)
+        
+        # Create menu bar
+        self._create_menu_bar()
         
         # Create status bar
         self._create_status_bar()
@@ -370,31 +259,137 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(self._sidebar)
     
+    def _create_menu_bar(self) -> None:
+        """Create menu bar with File and Help menus"""
+        menu_bar = self.menuBar()
+        
+        # File menu
+        file_menu = menu_bar.addMenu("&File")
+        
+        # Restart GUI action
+        restart_action = QAction("&Restart GUI", self)
+        restart_action.setShortcut("Ctrl+R")
+        restart_action.triggered.connect(self._restart_gui)
+        file_menu.addAction(restart_action)
+        
+        file_menu.addSeparator()
+        
+        # Stop Service action
+        stop_service_action = QAction("&Stop Service", self)
+        stop_service_action.setShortcut("Ctrl+Shift+S")
+        stop_service_action.triggered.connect(self._stop_service)
+        file_menu.addAction(stop_service_action)
+        
+        file_menu.addSeparator()
+        
+        # Exit action
+        exit_action = QAction("E&xit", self)
+        exit_action.setShortcut("Alt+F4")
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+    
+    def _update_window_title(self) -> None:
+        """Update window title with service status"""
+        status = "Connected" if self._service_connected else "Disconnected"
+        self.setWindowTitle(f"WATS Client - {self.config.instance_name} [{status}]")
+    
+    def _restart_gui(self) -> None:
+        """Restart the GUI application"""
+        reply = QMessageBox.question(
+            self,
+            "Restart GUI",
+            "Restart the GUI? The service will continue running.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # Get the application and restart
+            app = QApplication.instance()
+            if app:
+                # Schedule restart after current event processing
+                QTimer.singleShot(0, lambda: self._do_restart(app))
+    
+    def _do_restart(self, app: QApplication) -> None:
+        """Perform the actual restart"""
+        import sys
+        import os
+        
+        # Close this window
+        self.close()
+        
+        # Restart using same arguments
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+    
+    def _stop_service(self) -> None:
+        """Stop the service via IPC"""
+        if not self._ipc_client or not self._service_connected:
+            QMessageBox.warning(
+                self,
+                "Service Not Connected",
+                "Cannot stop service: not connected to service."
+            )
+            return
+        
+        reply = QMessageBox.question(
+            self,
+            "Stop Service",
+            "Stop the pyWATS Client service?\n\nThis will:\n• Stop all file watching\n• Stop all converter workers\n• Close the service process\n\nThe GUI will remain open but disconnected.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                result = self._ipc_client.send_command("stop")
+                if result and result.get("status") == "ok":
+                    QMessageBox.information(
+                        self,
+                        "Service Stopped",
+                        "Service stopped successfully."
+                    )
+                    self._service_connected = False
+                    self._update_window_title()
+                    self.connection_status_changed.emit("Service stopped")
+                    self.application_status_changed.emit("Stopped")
+                else:
+                    QMessageBox.warning(
+                        self,
+                        "Stop Failed",
+                        f"Failed to stop service: {result}"
+                    )
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Error stopping service: {e}"
+                )
+    
     def _build_nav_items(self) -> list:
         """Build list of all navigation items based on config"""
         # Core navigation items that are always shown
         nav_items = [
-            ("General", "⚙️"),
-            ("Connection", "🔗"),
-            ("Log", "📋"),
+            "General",
+            "Connection",
+            "Log",
         ]
         
         # Add optional operational tabs based on configuration
         # Note: Location and Proxy Settings are now in Settings dialog only
         if self.config.show_converters_tab:
-            nav_items.append(("Converters", "🔄"))
+            nav_items.append("Converters")
         if self.config.show_sn_handler_tab:
-            nav_items.append(("SN Handler", "🔢"))
+            nav_items.append("SN Handler")
         if self.config.show_software_tab:
-            nav_items.append(("Software", "💻"))
+            nav_items.append("Software")
         if self.config.show_asset_tab:
-            nav_items.append(("Assets", "🔧"))
+            nav_items.append("Assets")
         if self.config.show_rootcause_tab:
-            nav_items.append(("RootCause", "🎫"))
+            nav_items.append("RootCause")
         if self.config.show_production_tab:
-            nav_items.append(("Production", "🏭"))
+            nav_items.append("Production")
         if self.config.show_product_tab:
-            nav_items.append(("Products", "📦"))
+            nav_items.append("Products")
         
         return nav_items
     
@@ -402,21 +397,21 @@ class MainWindow(QMainWindow):
         """Update navigation list based on current sidebar mode"""
         self._nav_list.clear()
         
-        for name, icon in self._all_nav_items:
+        for name in self._all_nav_items:
             # In Compact mode, skip advanced pages
             if self._sidebar_mode == SidebarMode.COMPACT and name in self.ADVANCED_PAGES:
                 continue
             
             if self._sidebar_mode == SidebarMode.MINIMIZED:
-                # Icons only
-                item = QListWidgetItem(icon)
+                # Abbreviated text
+                item = QListWidgetItem(name[:3])
                 item.setToolTip(name)
             else:
-                # Full text with icon
-                item = QListWidgetItem(f"  {icon}  {name}")
+                # Full text - no icons, bigger font
+                item = QListWidgetItem(name)
             
             item.setData(Qt.ItemDataRole.UserRole, name)
-            item.setSizeHint(QSize(0, 45))
+            item.setSizeHint(QSize(0, 50))  # Increased from 45
             self._nav_list.addItem(item)
         
         # Select first item
@@ -477,35 +472,41 @@ class MainWindow(QMainWindow):
         # Build page dict dynamically based on config visibility settings
         # Note: SetupPage is now shown as "General" in navigation
         # Note: Location and Proxy Settings are now in Settings dialog only
-        # Note: All pages receive the facade for event-driven updates
+        # Note: Pages use IPC client from main window to communicate with service
         self._pages: Dict[str, BasePage] = {
-            "General": SetupPage(self.config, self, facade=self._facade),
-            "Connection": ConnectionPage(self.config, self, facade=self._facade),
-            "Log": LogPage(self.config, self, facade=self._facade),
+            "Dashboard": DashboardPage(self.config, self),
+            "General": SetupPage(self.config, self),
+            "Connection": ConnectionPage(self.config, self),
+            "API Settings": APISettingsPage(self.config, self),
+            "Log": LogPage(self.config, self),
         }
         
         # Add optional operational pages based on configuration
         if self.config.show_converters_tab:
             # Use new unified converters page (V2) with system/user distinction
-            self._pages["Converters"] = ConvertersPageV2(self.config, self, facade=self._facade)
+            self._pages["Converters"] = ConvertersPage(self.config, self)
         if self.config.show_sn_handler_tab:
-            self._pages["SN Handler"] = SNHandlerPage(self.config, self, facade=self._facade)
+            self._pages["SN Handler"] = SNHandlerPage(self.config, self)
         if self.config.show_software_tab:
-            self._pages["Software"] = SoftwarePage(self.config, self, facade=self._facade)
+            self._pages["Software"] = SoftwarePage(self.config, self)
         if self.config.show_asset_tab:
-            self._pages["Assets"] = AssetPage(self.config, self, facade=self._facade)
+            self._pages["Assets"] = AssetPage(self.config, self)
         if self.config.show_rootcause_tab:
-            self._pages["RootCause"] = RootCausePage(self.config, self, facade=self._facade)
+            self._pages["RootCause"] = RootCausePage(self.config, self)
         if self.config.show_production_tab:
-            self._pages["Production"] = ProductionPage(self.config, self, facade=self._facade)
+            self._pages["Production"] = ProductionPage(self.config, self)
         if self.config.show_product_tab:
-            self._pages["Products"] = ProductPage(self.config, self, facade=self._facade)
+            self._pages["Products"] = ProductPage(self.config, self)
         
         for page in self._pages.values():
             self._page_stack.addWidget(page)
             # Connect config change signal to enable Apply button
             if hasattr(page, 'config_changed'):
                 page.config_changed.connect(self._on_config_changed)
+            # Connect service action signal from Dashboard
+            if hasattr(page, 'service_action_requested'):
+                logger.info(f"Connecting service_action_requested signal from {page.__class__.__name__}")
+                page.service_action_requested.connect(self._on_service_action)
         
         content_layout.addWidget(self._page_stack, 1)
         
@@ -556,12 +557,6 @@ class MainWindow(QMainWindow):
         self._station_status_label = QLabel(self._get_effective_station_display())
         self._station_status_label.setToolTip("Active station name for reports")
         status_bar.addWidget(self._station_status_label)
-        
-        status_bar.addWidget(QLabel(" | "))
-        
-        # Instance info
-        self._instance_label = QLabel(f"Instance: {self.config.instance_id}")
-        status_bar.addWidget(self._instance_label)
     
     def _get_effective_station_display(self) -> str:
         """Get the effective station name for status bar display."""
@@ -599,41 +594,12 @@ class MainWindow(QMainWindow):
     
     @Slot(bool)
     def _on_connection_request(self, should_connect: bool) -> None:
-        """Handle connection request from setup page"""
-        if should_connect:
-            asyncio.create_task(self._perform_start())
-        else:
-            asyncio.create_task(self._perform_stop())
-    
-    async def _perform_start(self) -> None:
-        """Start application services"""
-        self.application_status_changed.emit("Starting")
-        try:
-            await self.app.start()
-            self._is_connected = True
-            
-            # Update connection status based on actual connection
-            if self.app.is_online():
-                self.connection_status_changed.emit("Online")
-            else:
-                self.connection_status_changed.emit("Offline (Queuing)")
-            
-            self.application_status_changed.emit("Running")
-        except Exception as e:
-            self.connection_status_changed.emit(f"Error: {str(e)[:20]}")
-            self.application_status_changed.emit("Error")
-            # Revert setup page state
-            if "Setup" in self._pages:
-                setup_page = cast(SetupPage, self._pages["Setup"])
-                setup_page.set_connected(False)
-    
-    async def _perform_stop(self) -> None:
-        """Stop application services"""
-        self.application_status_changed.emit("Stopping")
-        await self.app.stop()
-        self._is_connected = False
-        self.connection_status_changed.emit("Disconnected")
-        self.application_status_changed.emit("Stopped")
+        """
+        Handle connection request from setup page.
+        Note: This is deprecated in IPC mode - service runs independently.
+        """
+        logger.warning("Connection request received but service runs independently. Use service commands.")
+        pass
     
     # Navigation handling
     
@@ -685,6 +651,36 @@ class MainWindow(QMainWindow):
         """Handle configuration changes"""
         self._apply_btn.setEnabled(True)
     
+    def _on_service_action(self, action: str) -> None:
+        """Handle service control actions from Dashboard"""
+        logger.info(f"Service action requested: {action}")
+        
+        if not self._ipc_client or not self._service_connected:
+            QMessageBox.warning(
+                self,
+                "Service Not Running",
+                "The service is not currently running.\n\n"
+                "Start it with:\npython -m pywats_client service"
+            )
+            return
+        
+        if action == "stop":
+            try:
+                self._ipc_client.stop_service()
+                self.connection_status_changed.emit("Service stopping...")
+            except Exception as e:
+                logger.error(f"Failed to stop service: {e}")
+                QMessageBox.critical(self, "Error", f"Failed to stop service: {e}")
+        elif action == "start":
+            # Service should already be running if we have IPC connection
+            QMessageBox.information(
+                self,
+                "Service Running",
+                "The service is already running."
+            )
+        else:
+            logger.warning(f"Unknown service action: {action}")
+    
     def _save_config(self) -> None:
         """Save configuration from all pages"""
         for page in self._pages.values():
@@ -716,18 +712,57 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
     
     def _update_status(self) -> None:
-        """Periodic status update"""
-        # Update connection status
-        if self.app.is_online():
-            self.connection_status_changed.emit("Online")
-        elif self.app.status == ApplicationStatus.RUNNING:
-            self.connection_status_changed.emit("Offline (Queuing)")
+        """Periodic status update via IPC"""
+        if not self._ipc_client:
+            # No IPC client - try to reconnect
+            self._connect_to_service()
+            if not self._ipc_client or not self._service_connected:
+                self.connection_status_changed.emit("Service not running")
+                self.application_status_changed.emit("Stopped")
+                return
         
-        # Update queue status
-        queue_status = self.app.get_queue_status()
-        if queue_status.get("pending_reports", 0) > 0:
-            pending = queue_status["pending_reports"]
-            self._status_label.setToolTip(f"{pending} reports queued")
+        try:
+            # Ping service first to check if still alive
+            if not self._ipc_client.ping():
+                # Service died, try to reconnect
+                logger.warning("Service not responding, attempting reconnect...")
+                self._service_connected = False
+                self._connect_to_service()
+                return
+            
+            # Get status from service via IPC
+            status_data = self._ipc_client.get_status()
+            
+            if status_data:
+                # Update application status
+                app_status = status_data.get("status", "unknown")
+                self.application_status_changed.emit(app_status)
+                
+                # Update API connection status
+                api_status = status_data.get("api_status", "unknown")
+                if api_status.lower() == "online":
+                    self.connection_status_changed.emit("Online")
+                elif api_status.lower() == "offline":
+                    self.connection_status_changed.emit("Offline (Queuing)")
+                else:
+                    self.connection_status_changed.emit(api_status)
+                
+                # Update queue status if available
+                queue_size = status_data.get("queue_size", 0)
+                if queue_size > 0:
+                    self._status_label.setToolTip(f"{queue_size} reports queued")
+                else:
+                    self._status_label.setToolTip("")
+            else:
+                # Service not responding
+                self.connection_status_changed.emit("Service unavailable")
+                self.application_status_changed.emit("Error")
+                self._service_connected = False
+        
+        except Exception as e:
+            logger.error(f"Error updating status via IPC: {e}")
+            self.connection_status_changed.emit("IPC error")
+            self._service_connected = False
     
     # Window events
     
@@ -746,167 +781,107 @@ class MainWindow(QMainWindow):
             self._quit_application()
             event.accept()
     
-    def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
-        """Handle tray icon activation"""
-        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
-            self.show()
-            self.activateWindow()
-    
     def _quit_application(self) -> None:
         """Quit the application"""
         # Stop status timer first
         if self._status_timer:
             self._status_timer.stop()
         
-        # Stop application services (fire and forget - app cleanup is async)
-        try:
-            asyncio.create_task(self.app.stop())
-        except RuntimeError:
-            # No running event loop - that's fine, we're quitting anyway
-            pass
-        
-        # Hide tray icon
-        if self._tray_icon:
-            self._tray_icon.hide()
+        # Disconnect from service (but don't stop it - service runs independently)
+        if self._ipc_client:
+            self._ipc_client = None
         
         QApplication.quit()
     
     # Public methods for pages
     
     async def test_connection(self) -> bool:
-        """Test connection to WATS server"""
-        if self.app.wats_client:
-            # Test connection by refreshing process cache
-            try:
-                self.app.wats_client.process.refresh()
-                return True
-            except Exception as e:
-                logger.debug(f"Connection test failed: {e}")
-                return False
+        """
+        Test connection to WATS server via IPC.
+        
+        Note: This tests if the service can reach the WATS API,
+        not the GUI-to-service IPC connection.
+        """
+        if not self._ipc_client or not self._service_connected:
+            return False
+        
+        try:
+            # Get status from service - if api_status is 'online', connection works
+            status = self._ipc_client.get_status()
+            if status:
+                api_status = status.get("api_status", "").lower()
+                return api_status == "online"
+        except Exception as e:
+            logger.debug(f"Connection test failed: {e}")
+        
         return False
     
     async def start_services(self) -> bool:
-        """Start application services"""
-        try:
-            await self.app.start()
-            self._is_connected = True
-            # Persist connection state
-            self.config.was_connected = True
-            self._save_config()
-            return True
-        except Exception as e:
-            logger.error(f"Failed to start services: {e}")
+        """
+        Start application services.
+        
+        In IPC mode, the service must be started externally:
+        python -m pywats_client service --instance-id <instance>
+        
+        This method checks if service is running.
+        """
+        if not self._service_connected:
+            QMessageBox.information(
+                self,
+                "Start Service",
+                f"Service is not running for instance '{self._current_instance_id}'.\n\n"
+                "Start it with:\n"
+                f"python -m pywats_client service --instance-id {self._current_instance_id}"
+            )
             return False
+        return True
     
     async def stop_services(self) -> None:
-        """Stop application services"""
-        self._is_connected = False
-        # Persist disconnected state
-        self.config.was_connected = False
-        self._save_config()
-        await self.app.stop()
+        """
+        Stop application services via IPC.
+        
+        Sends stop command to service process.
+        """
+        if self._ipc_client and self._service_connected:
+            try:
+                self._ipc_client.stop_service()
+                self._service_connected = False
+            except Exception as e:
+                logger.error(f"Failed to stop service: {e}")
     
     def refresh_converters(self) -> None:
-        """Refresh converters from converter manager"""
-        if self.app.converter_manager:
-            # Converter manager handles converter discovery
-            pass
+        """
+        Refresh converters from service.
+        
+        In IPC mode, converters are managed by the service.
+        Get fresh status to update converter list.
+        """
+        if self._ipc_client and self._service_connected:
+            self._update_status()
 
     async def send_test_uut(self) -> dict:
         """
         Send a test UUT report to verify full connectivity.
         
-        Creates a comprehensive test report with various test types
-        and submits it to the WATS server.
-        
-        Uses effective station info from config (respects multi-station mode).
+        In IPC mode, reports are submitted by the service process.
+        This method is deprecated - use converters or direct API testing.
         
         Returns:
-            dict with keys:
-                - success: bool indicating if submission was successful
-                - report_id: UUID of submitted report (if successful)
-                - serial_number: Serial number of test report
-                - part_number: Part number of test report
-                - error: Error message (if failed)
+            dict with error indicating IPC mode doesn't support direct report submission
         """
-        from pywats.tools.test_uut import create_test_uut_report
-        
-        try:
-            # Get effective station info from config (respects multi-station mode)
-            station_name = self.config.get_effective_station_name() or "pyWATS-Client"
-            location = self.config.get_effective_location() or "TestLocation"
-            purpose = self.config.get_effective_purpose() or "Development"
-            
-            # Create test report with effective station info
-            report = create_test_uut_report(
-                station_name=station_name,
-                location=location,
-                operator_name=getattr(self.config, 'operator', 'pyWATS-User')
-            )
-            
-            # Override purpose if create_test_uut_report doesn't accept it
-            if hasattr(report, 'purpose'):
-                report.purpose = purpose
-            
-            result = {
-                "success": False,
-                "serial_number": report.sn,
-                "part_number": report.pn,
-                "report_id": str(report.id),
-                "station_name": station_name
-            }
-            
-            if self.app.wats_client:
-                # Convert to dictionary for submission
-                report_data = report.model_dump(mode="json", by_alias=True, exclude_none=True)
-                
-                # Submit the report via API client
-                submit_result = await self.app.wats_client.report.create(report_data)
-                if submit_result:
-                    result["success"] = True
-                else:
-                    result["error"] = "Report submission returned false"
-            else:
-                result["error"] = "Client not initialized"
-            
-            return result
-            
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "serial_number": "N/A",
-                "part_number": "N/A"
-            }
+        return {
+            "success": False,
+            "error": "Direct report submission not supported in IPC mode. Use converters or service API.",
+            "serial_number": "N/A",
+            "part_number": "N/A"
+        }
 
     async def test_send_uut(self) -> bool:
         """
         Create and submit a test UUT report.
         
-        Uses effective station info (respects multi-station mode).
+        In IPC mode, use the service's API for testing.
+        This method is deprecated.
         """
-        if not self.app.wats_client:
-            return False
-        
-        try:
-            from pywats.tools import create_test_uut_report
-            
-            # Get effective station info from config
-            station_name = self.config.get_effective_station_name() or "pyWATS-Client"
-            location = self.config.get_effective_location() or "TestLocation"
-            
-            # Create test report using effective station info
-            report = create_test_uut_report(
-                station_name=station_name,
-                location=location,
-            )
-            
-            # Convert to dictionary for submission (Pydantic model_dump with by_alias for serialization)
-            report_data = report.model_dump(mode="json", by_alias=True, exclude_none=True)
-            
-            # Submit via API client
-            result = await self.app.wats_client.report.create(report_data)
-            return bool(result)
-        except Exception as e:
-            print(f"Error creating/submitting test UUT: {e}")
-            return False
+        logger.warning("test_send_uut called in IPC mode - not supported")
+        return False

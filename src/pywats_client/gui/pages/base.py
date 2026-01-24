@@ -44,25 +44,20 @@ class BasePage(QWidget, ErrorHandlingMixin):
     - Title display
     - Config change signal
     - Save/load config methods
-    - Optional AppFacade integration for decoupled event-driven updates
     - Async operation support with loading indicators
     - Centralized error handling (via ErrorHandlingMixin)
     
-    Two initialization patterns are supported:
+    In IPC mode (new architecture):
+        Pages communicate with service via MainWindow's IPC client.
+        The 'facade' parameter is deprecated and should not be used.
+        Access service via: self.parent()._ipc_client
     
-    1. Legacy pattern (for backward compatibility):
-        page = MyPage(config, parent)
-        
-    2. Facade pattern (recommended for new pages):
+    Legacy pattern (deprecated):
         page = MyPage(config, parent, facade=app_facade)
-        # Or set later:
-        page.set_facade(app_facade)
     
-    Pages using the facade pattern can:
-    - Subscribe to application events via EventBus
-    - Access API client safely via facade.api
-    - Use domain shortcuts (facade.asset, facade.product, etc.)
-    - Run async operations without blocking UI via run_async()
+    New pattern:
+        page = MyPage(config, parent)
+        # Access service via IPC through main window
     
     Error Handling (from ErrorHandlingMixin):
         try:
@@ -77,17 +72,6 @@ class BasePage(QWidget, ErrorHandlingMixin):
                 name="load_data",
                 on_complete=self._on_data_loaded
             )
-        
-        async def _load_data(self):
-            if api := self.facade.api:
-                return await api.asset.get_assets()
-            return []
-        
-        def _on_data_loaded(self, result: TaskResult):
-            if result.is_success:
-                self._populate_table(result.result)
-            else:
-                self._show_error(str(result.error))
     """
     
     # Emitted when configuration is changed
@@ -101,11 +85,11 @@ class BasePage(QWidget, ErrorHandlingMixin):
         config: ClientConfig, 
         parent: Optional[QWidget] = None,
         *,
-        facade: Optional["AppFacade"] = None
+        facade: Optional["AppFacade"] = None  # Deprecated in IPC mode
     ):
         super().__init__(parent)
         self.config = config
-        self._facade: Optional["AppFacade"] = facade
+        self._facade: Optional["AppFacade"] = facade  # Legacy support only
         self._event_subscriptions: List[tuple[AppEvent, Callable]] = []
         self._running_tasks: Dict[str, str] = {}  # task_id -> name
         self._async_runner: Optional[AsyncTaskRunner] = None

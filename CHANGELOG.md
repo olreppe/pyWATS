@@ -7,6 +7,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Service Dashboard Page** - New home page for real-time monitoring:
+  - Service status indicator (running/stopped/error/standalone)
+  - Service control buttons (start/stop)
+  - Uptime tracking
+  - Converter health grid showing all active converters
+  - Statistics cards: active converters, queue status, reports today, success rate
+  - Server connection status display
+  - Auto-refresh every 2 seconds
+  - Set as first page in navigation
+
+- **API Settings Page** - Comprehensive HTTP API configuration:
+  - HTTP API server settings (host, port, base path)
+  - CORS configuration for web browser access
+  - Authentication methods: None, API Key, Bearer Token, Basic Auth
+  - Secure API token generation and management
+  - Rate limiting configuration (requests per time window)
+  - Webhook configuration for converter, report, and service events
+  - Webhook authentication settings (custom headers)
+  - API documentation references
+  - Full configuration persistence to client.json
+
+- **Default Converter Setup** - Automatic configuration for standard converters:
+  - 6 pre-configured standard converters (WSXF, WSJF, WSTF, TeradyneICT, TeradyneSpectrum, KitronSeica)
+  - Watch folders in `C:\ProgramData\Virinco\pyWATS\<format>`
+  - Auto-created subdirectories: `Done/`, `Error/`, `Pending/`
+  - Files automatically moved to `Done/` folder after processing
+  - "Setup Defaults..." button in Converters page
+  - Auto-initialization on first run if no converters configured
+  - All converters enabled by default
+
+- **Consolidated Converter Architecture** - AI-enabled unified converter management:
+  - Removed legacy converters.py (v1 - 934 lines without AI features)
+  - Renamed converters_v2.py → converters.py (AI-enabled - 1291 lines)
+  - Single list showing both system and user converters
+  - System converters read-only but can be customized (forked)
+  - Versioning support for converters
+  - Auto-detection architecture foundation for LLM integration
+  - Updated all imports to use unified ConvertersPage
+
+- **Cross-Platform Service Installation** - Auto-start on boot for all platforms:
+  - **Windows Service Support** - Install as Windows Service with NSSM or sc.exe
+    - Service name: `pyWATS_Service` (matches WATS Client pattern)
+    - Auto-start on system boot
+    - Automatic crash recovery and log rotation (NSSM)
+    - Multi-instance support for multi-station setups
+    - Logs to `C:\ProgramData\Virinco\pyWATS\logs\`
+    - CLI: `python -m pywats_client install-service` / `uninstall-service`
+  - **Linux systemd Support** - Install as systemd service on Ubuntu/Debian/RHEL
+    - Service name: `pywats-service`
+    - Compatible with Ubuntu 16.04+, Debian 8+, RHEL/CentOS 7+, Fedora 15+
+    - System-wide (`/var/lib/pywats/`) or user-specific installation
+    - journalctl integration for logging
+    - Automatic restart on failure
+    - Security hardening with systemd sandboxing
+  - **macOS launchd Support** - Install as Launch Daemon or Agent
+    - Launch Daemon: Runs at boot (system-wide, requires sudo)
+    - Launch Agent: Runs at login (user-level, no sudo)
+    - Automatic restart on crash
+    - Console.app integration for logs
+    - Compatible with macOS 10.10+ (Yosemite and later)
+  - Platform-specific CLI arguments and installation workflows
+  - Comprehensive documentation: `WINDOWS_SERVICE.md`, `LINUX_SERVICE.md`, `MACOS_SERVICE.md`
+
+- **Service/GUI Separation Architecture** - Complete refactor for production deployments:
+  - **Service Mode** - Headless daemon runs independently of GUI
+    - CLI: `python -m pywats_client service --instance-id <id>`
+    - Daemon mode with PID files and signal handling
+    - Optional HTTP control API
+    - Multiple instances per machine (multi-station support)
+  - **IPC Communication Layer** - Service and GUI communicate via IPC
+    - `ServiceIPCServer` runs in service, handles commands
+    - `ServiceIPCClient` connects from GUI to service
+    - `ServiceDiscovery` scans for running service instances
+    - JSON protocol over QLocalSocket
+    - Commands: get_status, get_config, update_config, ping, restart, stop
+  - **Instance Selector Widget** - GUI shows all discovered service instances
+    - Auto-refresh every 5 seconds
+    - Status indicators (●online, ○offline)
+    - "Start Service" button when none running
+    - Switch between multiple instances
+  - **Multi-Instance Management** - Support for multiple independent services
+    - Each instance has unique ID, config file, IPC endpoint
+    - IPC endpoints: `pyWATS_Service_{instance_id}`
+    - Separate configurations per station
+    - No service auto-start from GUI (services run independently)
+  - Architecture design documented in `docs/refactoring/SEPARATE_SERVICE_GUI_MODE.md`
+
+- **Virinco Folder Structure** - Match existing WATS Client installation pattern:
+  - Windows production: `C:\ProgramData\Virinco\pyWATS\` (data/config/logs)
+  - Windows install: `C:\Program Files\Virinco\pyWATS\` (binaries, planned)
+  - Linux system: `/var/lib/pywats/` (root) or `~/.config/pywats_client/` (user)
+  - macOS daemon: `/var/lib/pywats/` (system) or `~/.config/pywats_client/` (user)
+  - Logs: Platform-specific locations (journalctl, Console.app, ProgramData)
+
+### Changed
+
+- **Client Configuration** - Updated default paths to match Virinco structure
+  - Windows default changed from `%APPDATA%\pyWATS_Client` to `%PROGRAMDATA%\Virinco\pyWATS`
+  - Linux system installations use `/var/lib/pywats/` instead of home directory
+  - Config.data_path property updated with platform detection
+
+- **Main Window** - Removed service auto-start, added instance discovery
+  - Removed `_do_auto_start_async()` method (75 lines)
+  - Added instance selector to sidebar
+  - Status updates now query via IPC instead of direct app access
+  - `_on_instance_selected()` connects to selected service
+  - GUI is configuration interface only, doesn't manage service lifecycle
+
+- **CLI Entry Point** - Added service subcommands for all platforms
+  - `service` - Run headless service daemon
+  - `install-service` - Install as system service (Windows/Linux/macOS)
+  - `uninstall-service` - Remove system service
+  - Platform detection with appropriate installers
+  - Help text updated with service installation examples
+
+### Fixed
+
+- Service initialization parameter errors corrected:
+  - ConnectionService, ProcessSyncService, ReportQueueService, ConverterManager
+  - All services now receive correct constructor parameters
+  - EventBus.emit_status_changed() method added
+
 ## [0.1.0b35] - 2026-01-23
 
 ### Added
