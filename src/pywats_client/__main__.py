@@ -2,19 +2,20 @@
 pyWATS Client Entry Point
 
 Run the client with:
-    python -m pywats_client          # GUI mode (default)
-    python -m pywats_client --no-gui # Headless mode
+    python -m pywats_client                 # GUI mode (default)
+    python -m pywats_client service         # Background service mode (recommended)
+    python -m pywats_client gui             # GUI only (connects to service)
     
 Or use CLI commands:
-    pywats-client config show        # Show configuration
-    pywats-client config init        # Initialize config
-    pywats-client status             # Show status
-    pywats-client start --daemon     # Run as daemon
-    pywats-client start --api        # Run with HTTP control API
+    pywats-client service                   # Run background service
+    pywats-client gui                       # Run GUI (connects to service)
+    pywats-client config show               # Show configuration
+    pywats-client config init               # Initialize config
+    pywats-client status                    # Show status
 
 Windows Service commands:
-    pywats-client install-service    # Install Windows Service (requires admin)
-    pywats-client uninstall-service  # Uninstall Windows Service (requires admin)
+    pywats-client install-service           # Install Windows Service (requires admin)
+    pywats-client uninstall-service         # Uninstall Windows Service (requires admin)
 
 Or use the installed command:
     pywats-client
@@ -47,8 +48,32 @@ def _run_gui_mode(config):
     run_gui(config)
 
 
+def _run_service_mode(instance_id: str = "default"):
+    """
+    Run in service mode (background process).
+    
+    This is the recommended way to run pyWATS Client.
+    Service runs independently and can be controlled via IPC from GUI.
+    """
+    from .service.client_service import ClientService
+    
+    print(f"Starting pyWATS Client Service [instance: {instance_id}]")
+    service = ClientService(instance_id)
+    
+    try:
+        service.start()  # Blocks until stopped
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+    finally:
+        service.stop()
+
+
 def _run_headless_mode(config):
-    """Run in simple headless mode (legacy)"""
+    """Run in simple headless mode (legacy - deprecated)"""
+    print("Warning: Headless mode is deprecated. Use 'service' mode instead:")
+    print("  python -m pywats_client service")
+    print()
+    
     from .core.client import WATSClient
     
     async def run_headless():
@@ -69,8 +94,75 @@ def _run_headless_mode(config):
 def main():
     """Main entry point"""
     # Check if this is a CLI subcommand or service mode
-    # CLI commands: config, status, test-connection, converters, start, stop, service
-    cli_commands = ["config", "status", "test-connection", "converters", "start", "stop"]
+    # CLI commands: config, status, test-connection, converters, service, gui, tray
+    cli_commands = ["config", "status", "test-connection", "converters", "service", "gui", "tray"]
+    
+    # Handle 'service' command - run background service
+    if len(sys.argv) > 1 and sys.argv[1] == "service":
+        parser = argparse.ArgumentParser(
+            prog="pywats-client service",
+            description="Run pyWATS Client as background service"
+        )
+        parser.add_argument(
+            "--instance-id",
+            type=str,
+            default="default",
+            help="Instance ID (default: default)"
+        )
+        args = parser.parse_args(sys.argv[2:])
+        _run_service_mode(args.instance_id)
+        return
+    
+    # Handle 'gui' command - run GUI only (connects to service)
+    if len(sys.argv) > 1 and sys.argv[1] == "gui":
+        parser = argparse.ArgumentParser(
+            prog="pywats-client gui",
+            description="Run pyWATS Client GUI"
+        )
+        parser.add_argument(
+            "--instance-id",
+            type=str,
+            default="default",
+            help="Instance ID to connect to (default: default)"
+        )
+        args = parser.parse_args(sys.argv[2:])
+        
+        if not _check_gui_available():
+            print("Error: GUI mode requires PySide6")
+            print("Install with: pip install pywats-api[client]")
+            sys.exit(1)
+        
+        from .gui.app import run_gui
+        from .core.config import get_default_config_path, ClientConfig
+        
+        # Load config for instance
+        config_path = get_default_config_path(args.instance_id)
+        config = ClientConfig.load_or_create(config_path)
+        
+        run_gui(config, instance_id=args.instance_id)
+        return
+    
+    # Handle 'tray' command - run system tray icon
+    if len(sys.argv) > 1 and sys.argv[1] == "tray":
+        parser = argparse.ArgumentParser(
+            prog="pywats-client tray",
+            description="Run pyWATS Client system tray icon"
+        )
+        parser.add_argument(
+            "--instance-id",
+            type=str,
+            default="default",
+            help="Instance ID to connect to (default: default)"
+        )
+        args = parser.parse_args(sys.argv[2:])
+        
+        if not _check_gui_available():
+            print("Error: Tray icon requires PySide6")
+            print("Install with: pip install pywats-api[client]")
+            sys.exit(1)
+        
+        from .service.service_tray import main as tray_main
+        sys.exit(tray_main(args.instance_id))
     
     # Handle Service installation commands (Windows/Linux/macOS)
     if len(sys.argv) > 1 and sys.argv[1] == "install-service":

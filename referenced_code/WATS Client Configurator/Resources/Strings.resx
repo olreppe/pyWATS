@@ -1,0 +1,441 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CfgMnu_Gen_Name" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="CfgMnu_Gen_Gen_Name" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="CfgMnu_Gen_Pxy_Name" xml:space="preserve">
+    <value>Proxy Settings</value>
+  </data>
+  <data name="CfgMnu_TDM_Name" xml:space="preserve">
+    <value>WATS TDM</value>
+  </data>
+  <data name="CfgMnu_TDM_TDM_Name" xml:space="preserve">
+    <value>Connection</value>
+  </data>
+  <data name="CfgMnu_TDM_TS_Name" xml:space="preserve">
+    <value>NI TestStand add-on</value>
+  </data>
+  <data name="CfgMnu_TDM_LV_Name" xml:space="preserve">
+    <value>NI LabVIEW add-on</value>
+  </data>
+  <data name="CfgMnu_TDM_YM_Name" xml:space="preserve">
+    <value>Yield monitor settings</value>
+  </data>
+  <data name="Cfg_Gen_Gen_Heading" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Cfg_Gen_Gen_Loc_Name" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="Cfg_Gen_Gen_Pur_Name" xml:space="preserve">
+    <value>Purpose</value>
+  </data>
+  <data name="Cfg_Gen_Gen_gps_Name" xml:space="preserve">
+    <value>GPS coordinates</value>
+  </data>
+  <data name="Cfg_Gen_Gen_gps_Description" xml:space="preserve">
+    <value>By adding the GPS coordinates of the Station, the System Manager in the WATS Dashboard can display it in a map.</value>
+  </data>
+  <data name="Cfg_Gen_Gen_gps_Example" xml:space="preserve">
+    <value>E.g: 59.697867,10.247821</value>
+  </data>
+  <data name="Cfg_Gen_Gen_gps_ExampleUrl" xml:space="preserve">
+    <value>https://getlatlong.net/</value>
+  </data>
+  <data name="Cfg_Gen_Gen_LocPur_Description" xml:space="preserve">
+    <value>Location and Purpose is used to identify the station and are displayed in reports and dashboards. To edit the values, go to your WATS web application &gt; Control Panel &gt; System Manager</value>
+  </data>
+  <data name="Cfg_Gen_Gen_station_Name" xml:space="preserve">
+    <value>Station name</value>
+  </data>
+  <data name="Cfg_Gen_Gen_station_Description" xml:space="preserve">
+    <value>The station name is equal with the Windows computer name and must be edited in Windows.</value>
+  </data>
+  <data name="Cfg_Gen_Pxy_Heading" xml:space="preserve">
+    <value>Proxy Settings</value>
+  </data>
+  <data name="Cfg_Gen_Pxy_method_Name" xml:space="preserve">
+    <value>Auth. method</value>
+  </data>
+  <data name="Cfg_Gen_Pxy_adr_Name" xml:space="preserve">
+    <value>Proxy address</value>
+  </data>
+  <data name="Cfg_Gen_Pxy_usr_Name" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="Cfg_Gen_Pxy_pwd_Name" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Cfg_TDM_TDM_Heading" xml:space="preserve">
+    <value>Connection</value>
+  </data>
+  <data name="Cfg_TDM_TDM_adr_Name" xml:space="preserve">
+    <value>Service address</value>
+  </data>
+  <data name="Cfg_TDM_TDM_adr_Description" xml:space="preserve">
+    <value>Service address to your wats.com account or WATS server. Click “Disconnect” to reset the client and log on to another service.</value>
+  </data>
+  <data name="Cfg_TDM_TDM_tst_Name" xml:space="preserve">
+    <value>Test connection</value>
+  </data>
+  <data name="Cfg_TDM_TDM_tst_BText" xml:space="preserve">
+    <value>Run test</value>
+  </data>
+  <data name="Cfg_TDM_TDM_ep_Name" xml:space="preserve">
+    <value>TDM Endpoint</value>
+  </data>
+  <data name="Cfg_TDM_TDM_ep_Description" xml:space="preserve">
+    <value>If multiple endpoints are available, select the proper one to use.</value>
+  </data>
+  <data name="Cfg_TDM_TS_Heading" xml:space="preserve">
+    <value>NI TestStand add-on</value>
+  </data>
+  <data name="Cfg_TDM_TS_Description" xml:space="preserve">
+    <value>Configure one or more TestStand installations to add WATS logging</value>
+  </data>
+  <data name="Cfg_TDM_TS_Configured" xml:space="preserve">
+    <value>Add-on installed</value>
+  </data>
+  <data name="Cfg_TDM_TS_UnConfigured" xml:space="preserve">
+    <value>Add-on not installed</value>
+  </data>
+  <data name="Cfg_TDM_TS_Install_BText" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Cfg_TDM_TS_Reinstall_BText" xml:space="preserve">
+    <value>Reinstall</value>
+  </data>
+  <data name="Cfg_TDM_TS_Uninstall_BText" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Cfg_TDM_LV_Heading" xml:space="preserve">
+    <value>NI LabVIEW add-on</value>
+  </data>
+  <data name="Cfg_TDM_LV_Description" xml:space="preserve">
+    <value>Select which LabVIEW installations to update with the WATS TDM LabVIEW toolkit.
+PS: You must restart LabVIEW after the installation. 
+This update IS NOT required for TestStand Users</value>
+  </data>
+  <data name="Cfg_TDM_LV_Configured" xml:space="preserve">
+    <value>- Configured for WATS</value>
+  </data>
+  <data name="Cfg_TDM_LV_UnConfigured" xml:space="preserve">
+    <value>- Unconfigured</value>
+  </data>
+  <data name="Cfg_TDM_LV_Install_BText" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Cfg_TDM_LV_Reinstall_BText" xml:space="preserve">
+    <value>Reinstall</value>
+  </data>
+  <data name="Cfg_TDM_LV_Uninstall_BText" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Cfg_TDM_YM_Heading" xml:space="preserve">
+    <value>Yield monitor settings</value>
+  </data>
+  <data name="Cfg_TDM_YM_AutoRun_Name" xml:space="preserve">
+    <value>Run on start up</value>
+  </data>
+  <data name="Cfg_TDM_YM_OnTop_Name" xml:space="preserve">
+    <value>Always on top</value>
+  </data>
+  <data name="Cfg_TDM_YM_Transp_Name" xml:space="preserve">
+    <value>% Transparency</value>
+  </data>
+  <data name="Cfg_TDM_YM_PN_Name" xml:space="preserve">
+    <value>Part number</value>
+  </data>
+  <data name="Cfg_TDM_YM_WL_Name" xml:space="preserve">
+    <value>Warning Level</value>
+  </data>
+  <data name="Cfg_TDM_YM_CL_Name" xml:space="preserve">
+    <value>Critical Level</value>
+  </data>
+  <data name="Cfg_TDM_YM_LC_Name" xml:space="preserve">
+    <value>Large Count</value>
+  </data>
+  <data name="Cfg_TDM_YM_LC_ShortDescription" xml:space="preserve">
+    <value>previous units in the YIELD calculation</value>
+  </data>
+  <data name="Cfg_TDM_YM_SC_Name" xml:space="preserve">
+    <value>Small Count</value>
+  </data>
+  <data name="Cfg_TDM_YM_SC_ShortDescription" xml:space="preserve">
+    <value>previous units in the YIELD calculation</value>
+  </data>
+  <data name="Cfg_AdvOptText" xml:space="preserve">
+    <value>Advanced options</value>
+    <comment>Commonly used on several places </comment>
+  </data>
+  <data name="Cfg_Cancel_BText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Cfg_OK_BText" xml:space="preserve">
+    <value>Ok</value>
+  </data>
+  <data name="Cfg_Apply_BText" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="CfgMnu_TDM_API_Name" xml:space="preserve">
+    <value>.NET API</value>
+  </data>
+  <data name="Cfg_TDM_API_Description" xml:space="preserve">
+    <value>The WATS .NET API can be used to integrate WATS into test sequencers or other systems, or create data converters for import into WATS. See the API Reference documentation here:</value>
+  </data>
+  <data name="Cfg_TDM_API_Heading" xml:space="preserve">
+    <value>.NET API</value>
+  </data>
+  <data name="Cfg_MES_MES_Heading" xml:space="preserve">
+    <value>MES Settings</value>
+  </data>
+  <data name="Cfg_MES_MES_adr_Description" xml:space="preserve">
+    <value>Service  address is the URL to the WATS MES Service.</value>
+  </data>
+  <data name="Cfg_MES_MES_adr_Name" xml:space="preserve">
+    <value>Service address</value>
+  </data>
+  <data name="Cfg_MES_MES_ep_Description" xml:space="preserve">
+    <value>If multiple endpoints are available, select the proper one to use.</value>
+  </data>
+  <data name="Cfg_MES_MES_ep_Name" xml:space="preserve">
+    <value>MES Endpoint</value>
+  </data>
+  <data name="Cfg_MES_MES_tst_BText" xml:space="preserve">
+    <value>Run test</value>
+  </data>
+  <data name="Cfg_MES_MES_tst_Name" xml:space="preserve">
+    <value>Test connection</value>
+  </data>
+  <data name="Cfg_MES_SW_chunksize_Description" xml:space="preserve">
+    <value>Chunk size of data beeing transfered.</value>
+  </data>
+  <data name="Cfg_MES_SW_chunksize_Name" xml:space="preserve">
+    <value>Filechunk size</value>
+  </data>
+  <data name="Cfg_MES_SW_Heading" xml:space="preserve">
+    <value>Software</value>
+  </data>
+  <data name="Cfg_MES_SW_root_Description" xml:space="preserve">
+    <value>Software root folder. Local path to where all software packages are installed.</value>
+  </data>
+  <data name="Cfg_MES_SW_root_name" xml:space="preserve">
+    <value>Root folder</value>
+  </data>
+  <data name="CfgMnu_MES_MES_Name" xml:space="preserve">
+    <value>MES Settings</value>
+  </data>
+  <data name="CfgMnu_MES_SW_Name" xml:space="preserve">
+    <value>Software</value>
+  </data>
+  <data name="Cfg_TDM_TDM_Compression_Description" xml:space="preserve">
+    <value>Enable Compression on transfers to server. This may improve transfer speed over slow networks.</value>
+  </data>
+  <data name="Cfg_TDM_TDM_Compression_Name" xml:space="preserve">
+    <value>Compress transfer</value>
+  </data>
+  <data name="CfgMsgboxUpdate" xml:space="preserve">
+    <value>A new WATS client version is available, upgrade will start automatically.</value>
+  </data>
+  <data name="CfgMsgboxUpdateHdr" xml:space="preserve">
+    <value>Client upgrade</value>
+  </data>
+  <data name="CfgMnu_MES_Name" xml:space="preserve">
+    <value>WATS MES</value>
+  </data>
+  <data name="Cfg_TDM_TS_NotFound" xml:space="preserve">
+    <value>The configurator could not locate any valid TestStand installation. Please see the installation guide for the requirement list</value>
+  </data>
+  <data name="Cfg_TDM_LV_NotFound" xml:space="preserve">
+    <value>The configurator could not locate any valid LabView installation. Please see the installation guide for the requirement list</value>
+  </data>
+  <data name="Cfg_MES_MES_enabled" xml:space="preserve">
+    <value>MES enabled</value>
+  </data>
+  <data name="Cfg_TDM_Converters_Heading" xml:space="preserve">
+    <value>Installed Converters</value>
+  </data>
+  <data name="CfgMnu_TDM_Converters" xml:space="preserve">
+    <value>Converters</value>
+  </data>
+  <data name="Cfg_TDM_TDM_Authorize" xml:space="preserve">
+    <value>Authorize</value>
+  </data>
+  <data name="Cfg_TDM_TDM_AuthorizeDescription" xml:space="preserve">
+    <value>Enter valid WATS credentials to register the client.</value>
+  </data>
+  <data name="Cfg_TDM_TDM_AuthPassword" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Cfg_TDM_TDM_AuthUsername" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="Cfg_TDM_TDM_AuthCancel_BText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Cfg_TDM_TDM_AuthRegister_BText" xml:space="preserve">
+    <value>Log in</value>
+  </data>
+  <data name="CfgMnu_Gen_Con_Name" xml:space="preserve">
+    <value>Converters</value>
+  </data>
+  <data name="CfgMnu_Gen_Sta_Name" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Cfg_MES_notallowed" xml:space="preserve">
+    <value>MES requires a minimum version {0}, server reports version {1}</value>
+  </data>
+  <data name="Cfg_MES_minver" xml:space="preserve">
+    <value>MES requires version {0} or later</value>
+  </data>
+  <data name="Cfg_MES_srvver" xml:space="preserve">
+    <value>Server version is {0}</value>
+  </data>
+  <data name="Cfg_TDM_TDM_confirmdisconnect_text" xml:space="preserve">
+    <value>Are you sure you want to disconnect this client from the connected server? The client must be registered again before it can deliver any reports to the server.</value>
+  </data>
+  <data name="Cfg_TDM_TDM_confirmdisconnect_title" xml:space="preserve">
+    <value>Confirm Disconnect</value>
+  </data>
+  <data name="Cfg_TDM_TDM_disconnect_BText" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="CfgMnu_Gen_Setup_Name" xml:space="preserve">
+    <value>Setup</value>
+  </data>
+  <data name="CfgMnu_TDM_Header" xml:space="preserve">
+    <value>Client Settings</value>
+  </data>
+  <data name="Cfg_Client_Header" xml:space="preserve">
+    <value>WATS Client</value>
+  </data>
+  <data name="CfgMnu_Help_Help" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="Cfg_Gen_Gen_Server_Url_Text" xml:space="preserve">
+    <value>The same address as your WATS web application (e.g. virinco.wats.com)</value>
+  </data>
+  <data name="Cfg_TDM_TS_DeploymentPackageFound" xml:space="preserve">
+    <value>The configurator only found a TestStand deployement package. To use the add-on, include it when creating the deployement as described in the TestStand Deployment Guide article on the support center.</value>
+  </data>
+</root>

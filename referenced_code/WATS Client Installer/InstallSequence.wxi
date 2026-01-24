@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment Id="fInstallSequence">
+    <AdminExecuteSequence>
+      <CostInitialize Sequence="800" />
+      <FileCost Sequence="900" />
+      <CostFinalize Sequence="1000" />
+      <InstallValidate Sequence="1400" />
+      <InstallInitialize Sequence="1500" />
+      <InstallAdminPackage Sequence="3900" />
+      <InstallFiles Sequence="4000" />
+      <InstallFinalize Sequence="6600" />
+    </AdminExecuteSequence>
+    <AdminUISequence>
+      <Show Dialog="FatalErrorDlg" OnExit="error" />
+      <Show Dialog="UserExitDlg" OnExit="cancel" />
+      <Show Dialog="ExitDlg" OnExit="success" />
+      <Show Dialog="PrepareDlg" Sequence="140" />
+      <CostInitialize Sequence="800" />
+      <FileCost Sequence="900" />
+      <CostFinalize Sequence="1000" />
+      <Show Dialog="AdminWelcomeDlg" Sequence="1230" />
+      <Show Dialog="ProgressDlg" Sequence="1280" />
+      <ExecuteAction Sequence="1300" />
+    </AdminUISequence>
+    <InstallExecuteSequence>
+      <AppSearch Sequence="100" />
+      <LaunchConditions Sequence="105" />
+      <CCPSearch Sequence="500">NOT Installed</CCPSearch>
+      <RMCCPSearch Sequence="600">NOT Installed</RMCCPSearch>
+      <ValidateProductID Sequence="700" />
+      <FindRelatedProducts Sequence="710" />
+      <CostInitialize Sequence="800" />
+      <FileCost Sequence="900" />
+      <CostFinalize Sequence="1000" />
+      <MigrateFeatureStates Sequence="1001" />
+      <SetODBCFolders Sequence="1100" />
+      <InstallValidate Sequence="1400" />
+      <Custom Action="CASetLicenseTypeFromDialog" Sequence="1494">LICENSE_TYPE</Custom>
+      <Custom Action="CASetDefaultClientFunction" Sequence="1495">CLIENTFUNCTION = ""</Custom>
+      <!-- Set condition CLIENTFUNCTION = "" for do-not-overwrite -->
+      <Custom Action="CASetDefaultTDMENDPOINT" Sequence="1497">TDMENDPOINT = ""</Custom>
+      <Custom Action="CASetInstallCommandParameter" Sequence="1499" />
+      <InstallInitialize Sequence="1500" />
+      <Custom Action="WixCloseApplications" Sequence="1501" />
+      <Custom Action="LaunchUninstallCommand" Sequence="1505">Installed AND NOT REINSTALL AND NOT UPGRADEPRODUCTS</Custom>
+      <AllocateRegistrySpace Sequence="1550">NOT Installed</AllocateRegistrySpace>
+      <ProcessComponents Sequence="1600" />
+      <UnpublishComponents Sequence="1700" />
+      <UnpublishFeatures Sequence="1800" />
+      <StopServices Sequence="1900">VersionNT</StopServices>
+      <DeleteServices Sequence="2000">VersionNT</DeleteServices>
+      <UnregisterComPlus Sequence="2100" />
+      <SelfUnregModules Sequence="2200" />
+      <UnregisterTypeLibraries Sequence="2300" />
+      <RemoveODBC Sequence="2400" />
+      <UnregisterFonts Sequence="2500" />
+      <RemoveRegistryValues Sequence="2600" />
+      <UnregisterClassInfo Sequence="2700" />
+      <UnregisterExtensionInfo Sequence="2800" />
+      <UnregisterProgIdInfo Sequence="2900" />
+      <UnregisterMIMEInfo Sequence="3000" />
+      <RemoveIniValues Sequence="3100" />
+      <RemoveShortcuts Sequence="3200" />
+      <RemoveEnvironmentStrings Sequence="3300" />
+      <RemoveDuplicateFiles Sequence="3400" />
+      <RemoveFiles Sequence="3500" />
+      <RemoveFolders Sequence="3600" />
+      <CreateFolders Sequence="3700" />
+      <MoveFiles Sequence="3800" />
+      <InstallFiles Sequence="4000" />
+      <PatchFiles Sequence="4090" />
+      <DuplicateFiles Sequence="4210" />
+      <BindImage Sequence="4300" />
+      <CreateShortcuts Sequence="4500" />
+      <RegisterClassInfo Sequence="4600" />
+      <RegisterExtensionInfo Sequence="4700" />
+      <RegisterProgIdInfo Sequence="4800" />
+      <RegisterMIMEInfo Sequence="4900" />
+      <WriteRegistryValues Sequence="5000" />
+      <WriteIniValues Sequence="5100" />
+      <WriteEnvironmentStrings Sequence="5200" />
+      <RegisterFonts Sequence="5300" />
+      <InstallODBC Sequence="5400" />
+      <RegisterTypeLibraries Sequence="5500" />
+      <SelfRegModules Sequence="5600" />
+      <RegisterComPlus Sequence="5700" />
+      <InstallServices Sequence="5800">VersionNT</InstallServices>
+      <RegisterUser Sequence="6000" />
+      <RegisterProduct Sequence="6100" />
+      <PublishComponents Sequence="6200" />
+      <PublishFeatures Sequence="6300" />
+      <PublishProduct Sequence="6400" />
+      <!-- <RemoveExistingProducts /> -->
+
+      <Custom Action="LaunchInstallCommand" Sequence="6490">NOT Installed OR REINSTALL</Custom>
+      <StartServices Sequence="6500">VersionNT</StartServices>
+      <Custom Action="LaunchCM" Sequence="6570">NOT Installed OR REINSTALL</Custom>
+      <InstallExecute Sequence="6580" />
+      <RemoveExistingProducts Sequence="6590" />
+      <InstallFinalize Sequence="6600" />
+      <!-- OnExit="success" fails with ICE75 -->
+    </InstallExecuteSequence>
+    <InstallUISequence>
+      <Show Dialog="FatalErrorDlg" OnExit="error" />
+      <Show Dialog="UserExitDlg" OnExit="cancel" />
+      <Show Dialog="ExitDlg" OnExit="success" />
+      <AppSearch Sequence="100" />
+      <Custom Action="CASetDialogLicenseType" Sequence="102" />
+      <LaunchConditions Sequence="105" />
+      <Show Dialog="PrepareDlg" Sequence="140" />
+      <CCPSearch Sequence="500">NOT Installed</CCPSearch>
+      <RMCCPSearch Sequence="600">NOT Installed</RMCCPSearch>
+      <FindRelatedProducts Sequence="710" />
+      <CostInitialize Sequence="800" />
+      <FileCost Sequence="900" />
+      <CostFinalize Sequence="1000" />
+      <MigrateFeatureStates Sequence="1001" />
+      <Show Dialog="WelcomeDlg" Sequence="1230">NOT Installed AND NOT UPGRADEPRODUCTS</Show>
+      <Show Dialog="VerifyUpgradeDlg" Sequence="1230">NOT Installed AND UPGRADEPRODUCTS</Show>
+      <Show Dialog="ResumeDlg" Sequence="1240">Installed AND ( RESUME OR Preselected )</Show>
+      <Show Dialog="MaintenanceWelcomeDlg" Sequence="1250">Installed AND NOT RESUME AND NOT Preselected</Show>
+      <Show Dialog="ProgressDlg" Sequence="1280" />
+      <ExecuteAction Sequence="1300" />
+    </InstallUISequence>
+  </Fragment>
+</Include>

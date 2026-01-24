@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Comment CommentText="General steps that makes up a UUT, use one of the CallSequence methods to create a specific type.">
+    <Position X="3.402" Y="0.605" Height="0.75" Width="1.7" />
+  </Comment>
+  <Comment CommentText="A chart can be added to any step. Select Linear og logaritmic X-Y  chart.">
+    <Position X="9.071" Y="1.634" Height="0.703" Width="2.068" />
+  </Comment>
+  <Comment CommentText="Use sequence call to group a set of steps, use one of the Add methods to add steps. A AddSequenceCall to create a sub-sequence.">
+    <Position X="0.514" Y="5.728" Height="0.774" Width="2.293" />
+  </Comment>
+  <Class Name="Virinco.WATS.Interface.Step">
+    <Position X="10" Y="0.5" Width="3.75" />
+    <Members>
+      <Field Name="failParentOnFail" Hidden="true" />
+      <Field Name="measureIndex" Hidden="true" />
+      <Field Name="report" Hidden="true" />
+      <Method Name="Step" Hidden="true" />
+      <Field Name="stepRow" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>IABGCQUEAACEkGgGAgAAyAQIwAAAAEAAAQAAAAAigAA=</HashCode>
+      <FileName>UUTClasses\Step.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Parent" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.SequenceCall">
+    <Position X="0.5" Y="8" Width="3" />
+    <Members>
+      <Field Name="seqRow" Hidden="true" />
+      <Method Name="SequenceCall" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAChAAACBgQACEAhAAIAIAQAAAAACEAAAAAACAAAAAA=</HashCode>
+      <FileName>UUTClasses\SequenceCall.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.NumericLimitTest">
+    <Position X="4.75" Y="4" Width="2" />
+    <Members>
+      <Method Name="NumericLimitTest" Hidden="true" />
+      <Field Name="testRow" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAIEAAAAAAAAAAAEAgAAAAAAAAAgCACAEAAAAEAQAAA=</HashCode>
+      <FileName>UUTClasses\NumericLimitTest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.PassFailTest">
+    <Position X="5.25" Y="11.5" Width="1.75" />
+    <Members>
+      <Method Name="PassFailTest" Hidden="true" />
+      <Field Name="testRow" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAIkAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAQAAA=</HashCode>
+      <FileName>UUTClasses\PassFailTest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.StringValueStep">
+    <Position X="11" Y="8" Width="2.25" />
+    <Members>
+      <Method Name="StringValueStep" Hidden="true" />
+      <Method Name="Validate" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>EAgAABAAAADAAAABgAAAAAAAAAAAAAAAAAgAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\StringValueStep.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Tests" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.NumericLimitStep">
+    <Position X="4.25" Y="8" Width="2.75" />
+    <Members>
+      <Method Name="NumericLimitStep" Hidden="true" />
+      <Method Name="Validate" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>EAgAABAAAADAAAABgAAAAAAAAAAAAAAAAAgAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\NumericLimitStep.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Tests" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.PassFailStep">
+    <Position X="7.75" Y="8" Width="2.5" />
+    <Members>
+      <Method Name="PassFailStep" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>EAgAABAAAABAAAABgAAAEAAAAAAAAAAAAAgAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\PassFailStep.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Tests" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.StringValueTest">
+    <Position X="14.5" Y="11" Width="1.5" />
+    <Members>
+      <Method Name="StringValueTest" Hidden="true" />
+      <Field Name="testRow" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAIEABAAAAAAAAAEAgAAAAAAAAAgAAAgAAAAAAAQAAA=</HashCode>
+      <FileName>UUTClasses\StringValueTest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.GenericStep">
+    <Position X="21.5" Y="8" Width="1.75" />
+    <Members>
+      <Method Name="GenericStep" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\GenericStep.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.Chart" Collapsed="true">
+    <Position X="24.25" Y="0.5" Width="1.5" />
+    <Members>
+      <Method Name="Chart" Hidden="true" />
+      <Field Name="measureIndex" Hidden="true" />
+      <Field Name="parent" Hidden="true" />
+      <Field Name="uutReport" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>QAEBAAACACBAAABAIQAACAAAgAAAAAAAAAAAAAAAAIE=</HashCode>
+      <FileName>UUTClasses\Chart.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.PropertyLoaderStep">
+    <Position X="19" Y="8" Width="1.75" />
+    <Members>
+      <Method Name="PropertyLoaderStep" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\PropertyLoader.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.MessagePopupStep">
+    <Position X="16.5" Y="8" Width="1.75" />
+    <Members>
+      <Method Name="MessagePopupStep" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAABAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\MessagePopupStep.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Virinco.WATS.Interface.CallExeStep">
+    <Position X="14" Y="8" Width="1.75" />
+    <Members>
+      <Method Name="CallExeStep" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAIAAAACAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>UUTClasses\CallExeStep.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

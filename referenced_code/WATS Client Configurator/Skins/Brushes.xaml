@@ -1,0 +1,12 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:Virinco.WATS.Client.Configurator.Skins">
+    <SolidColorBrush x:Key="WatsButtonForeground" Color="#eeeeee" />
+    <SolidColorBrush x:Key="WatsButtonBackground" Color="#393939" />
+    <SolidColorBrush x:Key="WatsButtonDisabledForeground" Color="#aaa" />
+    <SolidColorBrush x:Key="WatsBackground" Color="#222222" />
+    <SolidColorBrush x:Key="WatsButtonHover" Color="#424242" />
+    <SolidColorBrush x:Key="WatsButtonPress" Color="#3D3D3D" />
+    <SolidColorBrush x:Key="WatsGreen" Color="#1f7d1f" />
+    <SolidColorBrush x:Key="WatsRed" Color="#b82525" />
+</ResourceDictionary>

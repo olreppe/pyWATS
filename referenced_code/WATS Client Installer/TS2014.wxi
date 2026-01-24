@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment Id="fts2014">
+    <DirectoryRef Id="SupportFiles">
+      <Directory Id="sf_ts2014" Name="TS2014" FileSource="$(var.WATS Client Config.TargetDir)\SupportFiles\TS2014">
+        <Directory Name="CodeTemplates" Id="ts2014_CodeTemplates">
+          <Directory Name="WATS-MPFT-LabVIEW" Id="ts2014_CodeTemplates_WATS_MPFT_LabVIEW">
+            <Component Id="cts2014_CodeTemplates_WATS_MPFT_LabVIEW_0" Guid="8e011812-db8d-4443-8cdf-b24d4d9abc2d">
+              <File Name="config.ini" Id="ts2014_CodeTemplates_WATS_MPFT_LabVIEW_config.ini" />
+              <File Name="labview.vi" Id="ts2014_CodeTemplates_WATS_MPFT_LabVIEW_labview.vi" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS-MSVT-LabVIEW" Id="ts2014_CodeTemplates_WATS_MSVT_LabVIEW">
+            <Component Id="cts2014_CodeTemplates_WATS_MSVT_LabVIEW_0" Guid="8693c5dc-8747-41cd-add4-47ad84e33332">
+              <File Name="config.ini" Id="ts2014_CodeTemplates_WATS_MSVT_LabVIEW_config.ini" />
+              <File Name="labview.vi" Id="ts2014_CodeTemplates_WATS_MSVT_LabVIEW_labview.vi" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS-XMLPFT-LabVIEW" Id="ts2014_CodeTemplates_WATS_XMLPFT_LabVIEW">
+            <Component Id="cts2014_CodeTemplates_WATS_XMLPFT_LabVIEW_0" Guid="d0f3ef6e-9ecd-4580-a300-e17c0e2db073">
+              <File Name="config.ini" Id="ts2014_CodeTemplates_WATS_XMLPFT_LabVIEW_config.ini" />
+              <File Name="labview.vi" Id="ts2014_CodeTemplates_WATS_XMLPFT_LabVIEW_labview.vi" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS-XYGMNLT-LabVIEW" Id="ts2014_CodeTemplates_WATS_XYGMNLT_LabVIEW">
+            <Component Id="cts2014_CodeTemplates_WATS_XYGMNLT_LabVIEW_0" Guid="de009421-2b80-4248-9278-a548d05debca">
+              <File Name="config.ini" Id="ts2014_CodeTemplates_WATS_XYGMNLT_LabVIEW_config.ini" />
+              <File Name="labview.vi" Id="ts2014_CodeTemplates_WATS_XYGMNLT_LabVIEW_labview.vi" />
+            </Component>
+          </Directory>
+        </Directory>
+        <Directory Name="Components" Id="ts2014_Components">
+          <Directory Name="Icons" Id="ts2014_Components_Icons">
+            <Component Id="cts2014_Components_Icons_0" Guid="a925f898-baa0-4ef3-a801-6a6d327804d3">
+              <File Name="ET_A.ico" Id="ts2014_Components_Icons_ET_A.ico" />
+              <File Name="ET_MNLT.ico" Id="ts2014_Components_Icons_ET_MNLT.ico" />
+              <File Name="ET_MPFT.ico" Id="ts2014_Components_Icons_ET_MPFT.ico" />
+              <File Name="ET_MSVT.ico" Id="ts2014_Components_Icons_ET_MSVT.ico" />
+              <File Name="ET_NLT.ico" Id="ts2014_Components_Icons_ET_NLT.ico" />
+              <File Name="ET_PFT.ico" Id="ts2014_Components_Icons_ET_PFT.ico" />
+              <File Name="ET_SVT.ico" Id="ts2014_Components_Icons_ET_SVT.ico" />
+              <File Name="ET_XMLPFT.ico" Id="ts2014_Components_Icons_ET_XMLPFT.ico" />
+              <File Name="WATSBee.ico" Id="ts2014_Components_Icons_WATSBee.ico" />
+              <File Name="WATS_AttachFile.ico" Id="ts2014_Components_Icons_WATS_AttachFile.ico" />
+              <File Name="WATS_OperationType.ico" Id="ts2014_Components_Icons_WATS_OperationType.ico" />
+              <File Name="WATS_SeqCall.ico" Id="ts2014_Components_Icons_WATS_SeqCall.ico" />
+              <File Name="WATS_XYGMNLT.ico" Id="ts2014_Components_Icons_WATS_XYGMNLT.ico" />
+            </Component>
+          </Directory>
+          <Directory Name="Models" Id="ts2014_Components_Models">
+            <Directory Name="ModelPlugins" Id="ts2014_Components_Models_ModelPlugins">
+              <Component Id="cts2014_Components_Models_ModelPlugins_0" Guid="82be1611-c2bb-4aed-b327-80090870c7e6">
+                <File Name="WATS_ReportLogger.seq" Id="ts2014_Components_Models_ModelPlugins_WATS_ReportLogger.seq" />
+              </Component>
+            </Directory>
+          </Directory>
+          <Directory Name="TypePalettes" Id="ts2014_Components_TypePalettes">
+            <Component Id="cts2014_Components_TypePalettes_0" Guid="383d5dbd-ffa9-4d58-8ccb-c6073c84286d">
+              <File Name="WATS_CfgTypes.ini" Id="ts2014_Components_TypePalettes_WATS_CfgTypes.ini" />
+              <File Name="WATS_Types.ini" Id="ts2014_Components_TypePalettes_WATS_Types.ini" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS_Models" Id="ts2014_Components_WATS_Models">
+            <Component Id="cts2014_Components_WATS_Models_0" Guid="05576c53-2146-41f0-9de8-6ed5040c7a82">
+              <File Name="WATS_BatchModel.seq" Id="ts2014_Components_WATS_Models_WATS_BatchModel.seq" />
+              <File Name="WATS_MESModel.seq" Id="ts2014_Components_WATS_Models_WATS_MESModel.seq" />
+              <File Name="WATS_ParallelModel.seq" Id="ts2014_Components_WATS_Models_WATS_ParallelModel.seq" />
+              <File Name="WATS_SequentialModel.Seq" Id="ts2014_Components_WATS_Models_WATS_SequentialModel.Seq" />
+            </Component>
+          </Directory>
+          <Directory Name="WATS_ModelSupport" Id="ts2014_Components_WATS_ModelSupport">
+            <Component Id="cts2014_Components_WATS_ModelSupport_0" Guid="840871e1-8cc4-4ca2-ac5d-3c4660430ee5">
+              <File Name="error.png" Id="ts2014_Components_WATS_ModelSupport_error.png" />
+              <File Name="sign_warning.png" Id="ts2014_Components_WATS_ModelSupport_sign_warning.png" />
+            </Component>
+            <Directory Name="Batch" Id="ts2014_Components_WATS_ModelSupport_Batch">
+              <Component Id="cts2014_Components_WATS_ModelSupport_Batch_0" Guid="ad1788d9-ba27-4e2c-8cff-3eaf7a1b329a">
+                <File Name="Identify-Status-BatchUUTs.vi" Id="ts2014_Components_WATS_ModelSupport_Batch_IdentifyStatusBatchUUTs.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="Parallel" Id="ts2014_Components_WATS_ModelSupport_Parallel">
+              <Component Id="cts2014_Components_WATS_ModelSupport_Parallel_0" Guid="a4fb17aa-ab49-46f6-9b51-13e5c19f22b9">
+                <File Name="DisplayStatusBannerParallel.vi" Id="ts2014_Components_WATS_ModelSupport_Parallel_DisplayStatusBannerParallel.vi" />
+                <File Name="IdentifyParallelUUTs.vi" Id="ts2014_Components_WATS_ModelSupport_Parallel_IdentifyParallelUUTs.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="Single" Id="ts2014_Components_WATS_ModelSupport_Single">
+              <Component Id="cts2014_Components_WATS_ModelSupport_Single_0" Guid="6e722578-dce4-4d7a-a3d2-5d2d200668ac">
+                <File Name="DisplayStatusBanner.vi" Id="ts2014_Components_WATS_ModelSupport_Single_DisplayStatusBanner.vi" />
+                <File Name="IdentifyUUT-MES.vi" Id="ts2014_Components_WATS_ModelSupport_Single_IdentifyUUTMES.vi" />
+                <File Name="IdentifyUUT.vi" Id="ts2014_Components_WATS_ModelSupport_Single_IdentifyUUT.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="WATS_Teststand_Support" Id="ts2014_Components_WATS_ModelSupport_WATS_Teststand_Support">
+              <Component Id="cts2014_Components_WATS_ModelSupport_WATS_Teststand_Support_0" Guid="fa3f989d-017f-4fcb-9368-b7f772b75dd3">
+                <File Name="WATS_Teststand_Support.dll" Id="ts2014_comp_modsup_wtssupport_support.dll" Source="$(var.WATS_Teststand_Support.TargetDir)\WATS_Teststand_Support.dll" />
+                <File Name="ChangeHistory.txt" Id="ts2014_comp_modsup_wtssupport_ChangeHistory.txt" Source="$(var.WATS_Teststand_Support.TargetDir)\ChangeHistory.txt" />
+              </Component>
+            </Directory>
+          </Directory>
+          <Directory Name="WATS_StepTypes" Id="ts2014_Components_WATS_StepTypes">
+            <Directory Name="MPFT" Id="ts2014_Components_WATS_StepTypes_MPFT">
+              <Component Id="cts2014_Components_WATS_StepTypes_MPFT_0" Guid="9156749c-76c5-4063-b3f0-30ece65bdbfc">
+                <File Name="MPFT_Edit.vi" Id="ts2014_Components_WATS_StepTypes_MPFT_MPFT_Edit.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="MSVT" Id="ts2014_Components_WATS_StepTypes_MSVT">
+              <Component Id="cts2014_Components_WATS_StepTypes_MSVT_0" Guid="24c820f8-e0d6-46a5-99fe-6a97e1d9a0b0">
+                <File Name="MSVT_Edit.vi" Id="ts2014_Components_WATS_StepTypes_MSVT_MSVT_Edit.vi" />
+              </Component>
+            </Directory>
+            <Directory Name="WATS_XYGMNLT" Id="ts2014_Components_WATS_StepTypes_WATS_XYGMNLT">
+              <Component Id="cts2014_Components_WATS_StepTypes_WATS_XYGMNLT_0" Guid="eb1c96e1-60b1-45b2-8e00-824c7d16caec">
+                <File Name="WATS_XYGMNLT_Edit.vi" Id="ts2014_Components_WATS_StepTypes_WATS_XYGMNLT_WATS_XYGMNLT_Edit.vi" />
+              </Component>
+            </Directory>
+          </Directory>
+        </Directory>
+        <Directory Name="Examples" Id="ts2014_Examples">
+          <Directory Name="WATS" Id="ts2014_Examples_WATS">
+            <Directory Name="Log misc UUT info" Id="ts2014_Examples_WATS_LogmiscUUTinfo">
+              <Directory Name="UsingLabVIEW" Id="ts2014_Examples_WATS_LogmiscUUTinfo_UsingLabVIEW">
+                <Component Id="cts2014_Examples_WATS_LogmiscUUTinfo_UsingLabVIEW_0" Guid="72709bf3-2655-4cb3-a29f-5dea574488c1">
+                  <File Name="IdentifyUUT with Misc UUT info - WATSExample.vi" Id="ts2014_Examples_WATS_LogmiscUUTinfo_UsingLabVIEW_IdentifyUUTwithMiscUUTinfoWATSExample.vi" />
+                  <File Name="Logging of Misc UUT info.seq" Id="ts2014_Examples_WATS_LogmiscUUTinfo_UsingLabVIEW_LoggingofMiscUUTinfo.seq" />
+                </Component>
+              </Directory>
+            </Directory>
+            <Directory Name="XML step type" Id="ts2014_Examples_WATS_XMLsteptype">
+              <Directory Name="UsingLabVIEW" Id="ts2014_Examples_WATS_XMLsteptype_UsingLabVIEW">
+                <Component Id="cts2014_Examples_WATS_XMLsteptype_UsingLabVIEW_0" Guid="7dd50eb9-d249-49bc-80c4-0fb52098d9e8">
+                  <File Name="XML PFT - WATSExample.vi" Id="ts2014_Examples_WATS_XMLsteptype_UsingLabVIEW_XMLPFTWATSExample.vi" />
+                  <File Name="XML step type example.seq" Id="ts2014_Examples_WATS_XMLsteptype_UsingLabVIEW_XMLsteptypeexample.seq" />
+                </Component>
+              </Directory>
+            </Directory>
+          </Directory>
+        </Directory>
+      </Directory>
+    </DirectoryRef>
+    <ComponentGroup Id="cgts2014">
+      <ComponentRef Id="cts2014_CodeTemplates_WATS_MPFT_LabVIEW_0" />
+      <ComponentRef Id="cts2014_CodeTemplates_WATS_MSVT_LabVIEW_0" />
+      <ComponentRef Id="cts2014_CodeTemplates_WATS_XMLPFT_LabVIEW_0" />
+      <ComponentRef Id="cts2014_CodeTemplates_WATS_XYGMNLT_LabVIEW_0" />
+      <ComponentRef Id="cts2014_Components_Icons_0" />
+      <ComponentRef Id="cts2014_Components_Models_ModelPlugins_0" />
+      <ComponentRef Id="cts2014_Components_TypePalettes_0" />
+      <ComponentRef Id="cts2014_Components_WATS_Models_0" />
+      <ComponentRef Id="cts2014_Components_WATS_ModelSupport_0" />
+      <ComponentRef Id="cts2014_Components_WATS_ModelSupport_Batch_0" />
+      <ComponentRef Id="cts2014_Components_WATS_ModelSupport_Parallel_0" />
+      <ComponentRef Id="cts2014_Components_WATS_ModelSupport_Single_0" />
+      <ComponentRef Id="cts2014_Components_WATS_ModelSupport_WATS_Teststand_Support_0" />
+      <ComponentRef Id="cts2014_Components_WATS_StepTypes_MPFT_0" />
+      <ComponentRef Id="cts2014_Components_WATS_StepTypes_MSVT_0" />
+      <ComponentRef Id="cts2014_Components_WATS_StepTypes_WATS_XYGMNLT_0" />
+      <ComponentRef Id="cts2014_Examples_WATS_LogmiscUUTinfo_UsingLabVIEW_0" />
+      <ComponentRef Id="cts2014_Examples_WATS_XMLsteptype_UsingLabVIEW_0" />
+    </ComponentGroup>
+  </Fragment>
+</Include>

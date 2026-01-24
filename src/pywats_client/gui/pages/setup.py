@@ -307,7 +307,7 @@ class SetupPage(BasePage):
     ):
         self._main_window = main_window
         self._is_connected = False
-        super().__init__(config, parent, facade=facade)
+        super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
     

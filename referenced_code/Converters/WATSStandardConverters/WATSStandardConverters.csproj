@@ -1,0 +1,118 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net48;net8.0-windows10.0.18362.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Virinco.WATS.Integration</RootNamespace>
+    <AssemblyName>Virinco.WATS.Converters.Standard</AssemblyName>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+	<!--Nuget-->
+  <ItemGroup>
+    <None Include="..\..\WATS Client NuGet Package\favicon-196x196.png" Pack="true" PackagePath="" />
+    <None Include="..\..\WATS Client NuGet Package\LICENSE.txt" Pack="true" PackagePath="" />
+  </ItemGroup>
+  <PropertyGroup Label="Nuget">
+		<IsPackable>true</IsPackable>
+		<PackageId>Virinco.WATS.StandardConverters</PackageId>
+		<PackageVersion>7.0.0</PackageVersion>
+		<PackageTitle>WATS Client Converter development kit</PackageTitle>
+		<PackageAuthors>Virinco WATS development team</PackageAuthors>
+		<PackageProjectUrl>http://support.virinco.com</PackageProjectUrl>
+		<PackageIcon>favicon-196x196.png</PackageIcon>
+		<PackageIconUrl>https://vicbuild.blob.core.windows.net/public/resources/images/favicon-196x196.png</PackageIconUrl>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<PackageDescription>
+Access to WATS Standard Converters for use in development of WATS converters.
+
+The purpose of this package is to provide a starting point for developers who want to create converters for the WATS Client. It includes the base class Virinco.WATS.Integration.TextConverter.TextConverterBase that can be inherited from to make creating custom converters easier.
+This package requires WATS.ClientAPI to be installed, and will require additional configuration if the software made using this package is not deployed alongside an installation of the WATS Client.
+Functions like automatic retry of failed reports will need to be implemented manually if running without the WATS Client installed.
+
+See samples on http://support.virinco.com
+
+Use the newest 6.x version of the WATS.Client NuGet package if developing for use with WATS Client 6.x.
+    </PackageDescription>
+		<PackageCopyright>Copyright © 2024 Virinco AS | All rights reserved</PackageCopyright>
+		<PackageTags>WATS Client API WATSClient</PackageTags>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <WarningLevel>0</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\ClientSharedAssemblyInfo.cs">
+      <Link>Properties\ClientSharedAssemblyInfo.cs</Link>
+    </Compile>
+    <None Update="ATML\schema\202\Common.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\202\TestResults.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\50\Common.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\50\SimicaCommon.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\50\TestResults.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\50\TestResultsCollection.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\50\TestResultsTSExtension.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\601\Common.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\601\SimicaCommon.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\601\TestResults.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\601\TestResultsCollection.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Update="ATML\schema\601\TestResultsTSExtension.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <Content Include="ATML\schema\50\XsdToClass.txt" />
+    <Content Include="Data\ATML\ATML 2.02 [123456789][2 30 27 PM][5 15 2019].XML" />
+    <Content Include="Data\ATML\ATML 5.00 [2 31 11 PM][5 15 2019].xml" />
+    <Content Include="Data\ATML\ATML 6.01 [2 31 52 PM][5 15 2019].xml" />
+    <Content Include="Data\ATML\Report_LS2621-1002[Passed][9190300075][2019-03-11][15 06 37].xml" />
+    <Content Include="Data\ATML\TS2017_ATML2.02 - FATv1.XML" />
+    <Content Include="Data\ATML\TS2017_ATML5.00 - FATv1.xml" />
+    <Content Include="Data\ATML\TS2017_ATML6.01 - FATv1.xml" />
+    <Content Include="Data\ATML\TS2021-FATv1_Report[1498.2141822][12_12_33][09.08.2022].xml" />
+    <Content Include="Data\uur-wrml.xml" />
+    <Content Include="Data\uur-wsxf.xml" />
+    <Content Include="Data\uut-wrml.xml" />
+    <Content Include="Data\uut-wsxf.xml" />
+    <Content Include="Data\WatsStandardTextFormat.txt" />
+    <Content Include="Data\WATS_6194314361_11-11-2019_140833.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\WATS Client API\WATS Client API.csproj" />
+  </ItemGroup>
+</Project>

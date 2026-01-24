@@ -1,0 +1,22 @@
+﻿
+
+*** Full UI, Company/PID set parameters set ***
+msiexec /i \\virinco.local\public\Product\WATS\3.1\Debug\WATSClient_3.1.0168_x86.msi /lvx* "%TEMP%\watsinstall.log" PIDKEY=2bea45db3016 COMPANYNAME=Virinco
+msiexec /i \\virinco.local\public\Product\WATS\3.1\Debug\WATSClient_3.1.0168_x64.msi /lvx* "%TEMP%\watsinstall.log" PIDKEY=2bea45db3016 COMPANYNAME=Virinco
+
+*** Passive UI, Company/PID set parameters set ***
+msiexec /i \\virinco.local\public\Product\WATS\3.1\Debug\WATSClient_3.1.0168_x86.msi /passive /lvx* "%TEMP%\watsinstall.log" PIDKEY=2bea45db3016 COMPANYNAME=Virinco
+msiexec /i \\virinco.local\public\Product\WATS\3.1\Debug\WATSClient_3.1.0168_x64.msi /passive /lvx* "%TEMP%\watsinstall.log" PIDKEY=2bea45db3016 COMPANYNAME=Virinco
+
+*** Full UI, All parameters set ***
+msiexec /i \\virinco.local\public\Product\WATS\3.1\Debug\WATSClient_3.1.0168_x86.msi /lvx* "%TEMP%\watsinstall.log" PIDKEY=2bea45db3016 COMPANYNAME=Virinco CLIENTFUNCTION=TDM TDMURL=http://eltek-egts-dw2.virinco.local/wats-dc/reportcenter.svc LICENSETYPE=Development
+msiexec /i \\virinco.local\public\Product\WATS\3.1\Debug\WATSClient_3.1.0168_x64.msi /lvx* "%TEMP%\watsinstall.log" PIDKEY=2bea45db3016 COMPANYNAME=Virinco CLIENTFUNCTION=TDM TDMURL=http://eltek-egts-dw2.virinco.local/wats-dc/reportcenter.svc LICENSETYPE=Development
+
+*** Passive UI, All parameters set ***
+msiexec /i \\virinco.local\public\Product\WATS\3.1\Debug\WATSClient_3.1.0168_x86.msi /passive /lvx* "%TEMP%\watsinstall.log" PIDKEY=2bea45db3016 COMPANYNAME=Virinco CLIENTFUNCTION=TDM TDMURL=http://eltek-egts-dw2.virinco.local/wats-dc/reportcenter.svc LICENSETYPE=Development
+msiexec /i \\virinco.local\public\Product\WATS\3.1\Debug\WATSClient_3.1.0168_x64.msi /passive /lvx* "%TEMP%\watsinstall.log" PIDKEY=2bea45db3016 COMPANYNAME=Virinco CLIENTFUNCTION=TDM TDMURL=http://eltek-egts-dw2.virinco.local/wats-dc/reportcenter.svc LICENSETYPE=Development
+
+
+
+*** Set LoggingLevel to All ***
+reg ADD HKLM\SOFTWARE\Virinco\WATS /v LoggingLevel /t REG_SZ /d All /f

@@ -1,0 +1,35 @@
+﻿<UserControl x:Class="Virinco.WATS.Client.Configurator.Pages.ProxyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:res="clr-namespace:Virinco.WATS.Client.Configurator.Resources"
+             mc:Ignorable="d" 
+             d:DesignHeight="250" d:DesignWidth="350">
+    <StackPanel DataContext="{Binding Config}">
+        <TextBlock Margin="3" Text="{x:Static res:Strings.Cfg_Gen_Pxy_Heading}" Style="{StaticResource ConfigPageHeader}" />
+        <Grid Margin="0,0,30,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="130*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" HorizontalAlignment="Left" Name="textBlock5" Text="Auth. method:" VerticalAlignment="Center" Style="{StaticResource SectionLabel}" />
+            <TextBlock Grid.Row="2" HorizontalAlignment="Left" Name="textBlock6" Text="Proxy address:" VerticalAlignment="Center" Style="{StaticResource SectionLabel}" />
+            <TextBlock Grid.Row="4" HorizontalAlignment="Left" Name="textBlock7" Text="Username:" VerticalAlignment="Center" Style="{StaticResource SectionLabel}" />
+            <TextBlock Grid.Row="6" HorizontalAlignment="Left" Name="textBlock8" Text="Password:" VerticalAlignment="Center" Style="{StaticResource SectionLabel}" />
+            <ComboBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" Name="cbPxyMethod" VerticalAlignment="Center" ItemsSource="{Binding ProxyMethods}" SelectedItem="{Binding ProxyMethod}" />
+            <TextBox Grid.Column="1" Grid.Row="2" HorizontalAlignment="Stretch" Name="textBoxPxyAdr" Text="{Binding Path=ProxyAddress, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" IsEnabled="{Binding Path=ProxyMethodIsCustom, Mode=OneWay}" />
+            <TextBox Grid.Column="1" Grid.Row="4" HorizontalAlignment="Stretch" Name="textBoxPxyUsn" Text="{Binding Path=ProxyUsername, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" IsEnabled="{Binding Path=ProxyMethodIsCustom, Mode=OneWay}" />
+            <PasswordBox Grid.Column="1" Grid.Row="6" HorizontalAlignment="Stretch" Name="textBoxPxyPwd"  Password="#!DefaultPasswordNotChanged!#" VerticalAlignment="Center" IsEnabled="{Binding Path=ProxyMethodIsCustom, Mode=OneWay}" LostFocus="textBoxPxyPwd_LostFocus"  />
+        </Grid>
+    </StackPanel>
+</UserControl>

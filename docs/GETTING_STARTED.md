@@ -813,6 +813,30 @@ pywats-client
 
 See **[GUI Configuration Guide](../src/pywats_client/GUI_CONFIGURATION.md)** for detailed setup.
 
+#### Using the File Menu
+
+The GUI includes helpful controls in the **File** menu:
+
+**Restart GUI** (Ctrl+R)
+- Restarts only the GUI application
+- Service continues running in the background
+- Configuration is reloaded automatically
+- Useful after GUI code changes during development
+
+**Stop Service** (Ctrl+Shift+S)
+- Sends stop command to the service process
+- Stops all file watching and converter workers
+- GUI remains open but shows [Disconnected] status
+- Useful before making service code changes
+
+**Exit** (Alt+F4)
+- Closes the GUI application
+- Service continues running if started separately
+
+**Window Title Status:**
+- Shows `[Connected]` when service is running
+- Shows `[Disconnected]` when service is not reachable
+
 ---
 
 ### Headless Client (No GUI)

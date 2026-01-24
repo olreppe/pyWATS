@@ -1,0 +1,199 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util" xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx">
+
+  <!-- Version definitions has been moved into shared targets-file (included from wixproj-file) -->
+  <?define Manufacturer="Virinco as"?>
+  <?define ProductCode="*"?>
+  <!--<?define ProductCode="{781FAE84-ED90-499E-80FF-64FB0828C719}"?>-->
+  <?define UpgradeCode="{dfb29141-00fc-452b-a239-1af7d1c4b4a4}"?>
+  <?define PackageCode="*"?>
+  <?define PackageDescription="WATS Client $(var.ProductRelease)" ?>
+  <?define FirstProductVersion="2.3.0" ?>
+
+  <?define var.Platform="x64" ?>
+
+  <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+  <?define ProductName = "WATS Client $(var.ProductRelease)"?>
+  <?define Comments = "Installation Database for WATS Client $(var.ProductRelease)" ?>
+
+  <Package Name="$(var.ProductName)" Language="1033" Codepage="1252" Version="$(var.ProductMsiVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)" InstallerVersion="301" ProductCode="$(var.ProductCode)">
+    <SummaryInformation Manufacturer="$(var.Manufacturer)" Description="$(var.PackageDescription)" Comments="$(var.Comments)" />
+    <Media Id="1" Cabinet="WATS3.cab" EmbedCab="yes" DiskPrompt="CD-ROM #1" CompressionLevel="mszip" />
+    <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="!(loc.NewerVersionInstalled)" AllowSameVersionUpgrades="no" />
+
+    <util:QueryWindowsDirectories />
+
+    <Feature Id="ProductFeature" Title="WATS Client" Level="1" Description="Installs the WATS Client, the WATS Client Service, support files for TestStand, and the WATS LabView Toolkit." Display="hidden" AllowAbsent="no">
+      <!-- TODO: Remove the comments around this ComponentRef element and the Component above in order to add resources to this installer. -->
+      <!-- <ComponentRef Id="ProductComponent" /> -->
+      <!--<ComponentRef Id="CfgFiles"/>-->
+      <ComponentGroupRef Id="cgWCS" />
+      <ComponentGroupRef Id="cgSupportFileArchives" />
+      <ComponentGroupRef Id="cgDocumentation" />
+      <!-- Note: The following ComponentGroupRef is required to pull in generated authoring from project references. -->
+      <!--<ComponentGroupRef Id="Product.Generated" />-->
+      <Feature Id="DesignFeature" Title="Development support" Description="Installs DLLs used to develop tools that uses WATS functionality." Display="hidden">
+        <!--<Condition Level="2">LICENSETYPE="Development"</Condition>-->
+        <ComponentGroupRef Id="cgWCS_Development" />
+      </Feature>
+    </Feature>
+    <Feature Id="PackageManagerFeature" Title="WATS Package Manager" Level="1" Description="Installs the Package Manager for downloading and installing software packages." AllowAdvertise="no">
+      <ComponentGroupRef Id="cgWatsPackageManager" />
+    </Feature>
+
+    <Binary Id="deploycheckscript" SourceFile="Binary/deploycheck.vbs" />
+    <Binary Id="deploybackupscript" SourceFile="Binary/deploybackup.vbs" />
+
+    <CustomAction Id="LaunchInstallCommand" ExeCommand="/installed" Return="asyncNoWait" Impersonate="yes" Execute="commit" FileRef="fVirinco.WATS.Client.Configurator.exe" />
+    <CustomAction Id="LaunchUninstallCommand" ExeCommand="/uninstalling" Return="ignore" Impersonate="yes" Execute="deferred" FileRef="fVirinco.WATS.Client.Configurator.exe" />
+    <CustomAction Id="LaunchConfigurator" ExeCommand="" Return="asyncNoWait" Impersonate="yes" FileRef="fVirinco.WATS.Client.Configurator.exe" />
+    <CustomAction Id="LaunchLauncher" ExeCommand="&quot;&quot;" FileRef="fWATSTray.exe" Return="asyncNoWait" Impersonate="yes" />
+    <CustomAction Id="LaunchPackageManager" ExeCommand="/start-hidden" Return="asyncNoWait" Impersonate="yes" FileRef="fVirinco.WATS.Client.PackageManager.exe" />
+    <CustomAction Id="BackupDeployXml" Execute="immediate" VBScriptCall="" BinaryRef="deploybackupscript" />
+    <CustomAction Id="CheckDeployXml" Execute="immediate" VBScriptCall="" BinaryRef="deploycheckscript" />
+    
+    <Property Id="USERNAME">
+      <RegistrySearch Id="regsrc_UserName" Root="HKLM" Key="SOFTWARE\Virinco\WATS" Name="UserName" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="COMPANYNAME">
+      <RegistrySearch Id="regsrc_Company" Root="HKLM" Key="SOFTWARE\Virinco\WATS" Name="Company" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="PIDKEY">
+      <RegistrySearch Id="regsrc_PID" Root="HKLM" Key="SOFTWARE\Virinco\WATS" Name="PID" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="LOCATION" Secure="yes">
+      <RegistrySearch Id="regsrc_Loc" Root="HKLM" Key="SOFTWARE\Virinco\WATS" Name="Location" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="PURPOSE" Secure="yes">
+      <RegistrySearch Id="regsrc_Purp" Root="HKLM" Key="SOFTWARE\Virinco\WATS" Name="Purpose" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="LICENSETYPE" Secure="yes">
+      <RegistrySearch Id="regsrc_LicType" Root="HKLM" Key="SOFTWARE\Virinco\WATS" Name="LicenseType" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="SWDIST" Secure="yes">
+      <RegistrySearch Id="regsrc_SWDsitrib" Root="HKLM" Key="SOFTWARE\Virinco\WATS" Name="SoftwareDistribution" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="GPSENABLED" Secure="yes">
+      <RegistrySearch Id="regsrc_GPSEnabled" Root="HKLM" Key="SOFTWARE\Virinco\WATS" Name="GPSPositionEnabled" Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="TDMINTERFACE">
+      <ComponentSearch Id="compsrc_tdmif" Guid="6FA5D36F-555E-4DE5-9F87-8F88B37B50E8" Type="file">
+        <FileSearch Name="Virinco.WATS.Interface.TDM.dll" MinVersion="5.0.0.0" />
+      </ComponentSearch>
+    </Property>
+
+    <Property Id="CLIENTAPI">
+      <ComponentSearch Id="compsrc_clientapi" Guid="15B5778B-8135-4E8F-A433-7CD741704842" Type="file">
+        <FileSearch Name="Virinco.WATS.ClientAPI.dll" MinVersion="7.0.0.0" />
+      </ComponentSearch>
+    </Property>
+    
+    <Property Id="LAUNCHMODE" />
+
+    <!-- Default property values-->
+    <SetProperty Id="LICENSETYPE" Value="Production" After="AppSearch" Condition="NOT LICENSETYPE" />
+    <SetProperty Id="GPSENABLED" Value="1" Sequence="ui" After="AppSearch" Condition="NOT GPSENABLED" />
+    <SetProperty Id="FirstTimeInstallOptionsDlg" Value="1" Sequence="ui" After="AppSearch" Condition="NOT GPSENABLED OR NOT Installed" />
+
+    <!-- Transform GPSENABLED to correct values -->
+    <SetProperty Id="GPSENABLED" Action="SetGPSENABLED1" Sequence="execute" Value="True" After="AppSearch" Condition="GPSENABLED AND GPSENABLED=&quot;1&quot;"/>
+    <SetProperty Id="GPSENABLED" Action="SetGPSENABLED0" Sequence="execute" Value="False" After="AppSearch" Condition="NOT GPSENABLED"/>
+
+    <!--<CustomAction Id="SetGPSENABLED1" Property="GPSENABLED" Value="True" Execute="firstSequence" />
+    <CustomAction Id="SetGPSENABLED0" Property="GPSENABLED" Value="False" Execute="firstSequence" />-->
+
+
+    <!-- Default LicenseType--><!--
+    <SetProperty Id="LICENSETYPE" Value="Production" After="AppSearch" Condition="NOT LICENSETYPE" />-->
+
+    <Property Id="WixShellExecTarget" Value="[#WATS_bin_readme.htm]" />
+    <Icon Id="ProductIcon_ico" SourceFile="Binary\favicon.ico" />
+
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon_ico" />
+    <!--<Property Id="ARPNOMODIFY" Value="yes" Secure="yes" />-->
+
+    <Property Id="UPGRADEPRODUCTS" Secure="yes" />
+    <!--<Property Id="ALLUSERS" Secure="yes" Value="1" />-->
+    <Property Id="DiskPrompt" Value="WATS Client [1]" />
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    
+    <Property Id="UNSUPPORTED_TESTSTAND_VERSIONS" />
+    <Property Id="ARE_UNSUPPORTED_TESTSTAND_VERSIONS_INSTALLED" Value="0" />
+
+
+    <netfx:DotNetCompatibilityCheck Platform="x64" Property="DOTNETINSTALLED" RollForward="latestMinor" RuntimeType="desktop" Version="8.0.0" />
+    <Launch Condition="DOTNETINSTALLED = 0" Message="This application requires .NET 8 to be installed. Please install .NET 8 and try again."/>
+
+    <?if $(var.Platform) = x64 ?>
+    <Launch Condition="Installed OR (VersionNT64 &gt;= 600)" Message="This install package is only supported on 64-bit versions of Windows 10 and 11." />
+    <?else?>
+    <Launch Condition="Installed OR (NOT VersionNT64)" Message="This install package only supports 64-bit operating systems." />
+    <?endif?>
+
+    <Launch Condition="Installed OR NOT WIX_UPGRADE_DETECTED OR TDMINTERFACE OR CLIENTAPI" Message="Upgrading from version 4.2 or lower is not supported. Please upgrade to version 5.1 first." />
+    
+    <Property Id="ShowLicenseAgreementDlg" Value="1" />
+    <Property Id="ShowUserRegistrationDlg" Value="1" />
+    <Property Id="ShowCustomDlg" Value="1" />
+    <Property Id="FirstTimeInstallOptionsDlg" Value="0"/>
+    <Property Id="UsesCDKey" Value="0" />
+    <Property Id="ProductFullVersion" Value="$(var.ProductFullVersion)" />
+
+    <WixVariable Id="WixUILicenseRtf" Value="Binary\License.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="Binary\Banner-W.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="Binary\Dialog-W.bmp" />
+
+    <UIRef Id="WATSDialogs" />
+    <InstallExecuteSequence>
+      <Custom Action="BackupDeployXml" After="CostFinalize" />
+
+      <!--<Custom Action="SetGPSENABLED1" After="AppSearch" Condition="GPSENABLED AND GPSENABLED=&quot;1&quot;" />
+      <Custom Action="SetGPSENABLED0" After="AppSearch" Condition="NOT GPSENABLED" />-->
+
+      <Custom Action="LaunchUninstallCommand" After="InstallInitialize" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      
+      <Custom Action="LaunchInstallCommand" Before="StartServices" Condition="NOT Installed OR REINSTALL" />
+      <Custom Action="LaunchPackageManager" After="InstallFinalize" Condition="(NOT Installed OR REINSTALL OR NOT REMOVE=&quot;ALL&quot;) AND&amp;PackageManagerFeature=3" />
+      
+      <Custom Action="LaunchConfigurator" After="InstallFinalize" Condition="((NOT Installed AND NOT WIX_UPGRADE_DETECTED) OR LAUNCHMODE=&quot;ALWAYS&quot;) AND NOT LAUNCHMODE=&quot;NEVER&quot;" />
+		<Custom Action="LaunchLauncher" After="InstallFinalize" Condition="((NOT Installed AND NOT WIX_UPGRADE_DETECTED) OR LAUNCHMODE=&quot;ALWAYS&quot;) AND NOT LAUNCHMODE=&quot;NEVER&quot;" />
+		<!--NOT Installed OR REINSTALL" /> -->
+
+	</InstallExecuteSequence>
+    <InstallUISequence />
+      <!--<Show Dialog="FatalError" OnExit="error"/>
+      <Show Dialog="UserExit" OnExit="cancel" />
+      <Show Dialog="ExitDialog" OnExit="success" />-->
+	  
+
+    <!--</InstallUISequence>-->
+    <AdminUISequence />
+      <!--<Show Dialog="FatalError" OnExit="error" />
+      <Show Dialog="UserExit" OnExit="cancel" />
+      <Show Dialog="ExitDialog" OnExit="success" />
+    </AdminUISequence>-->
+  
+      <Directory Id="$(var.PlatformProgramFilesFolder)">
+        <Directory Id="PF_VIC" Name="Virinco">
+          <Directory Id="INSTALLDIR" Name="WATS" />
+        </Directory>
+      </Directory>
+
+      <StandardDirectory Id="CommonAppDataFolder">
+        <Directory Id="CD_VIC" Name="Virinco">
+          <Directory Id="CD_VIC_WATS" Name="WATS" />
+        </Directory>
+      </StandardDirectory>
+
+      <StandardDirectory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="WATS" />
+      </StandardDirectory>
+      
+      <StandardDirectory Id="StartupFolder" />
+    </Package>
+  <?include .\ClientService.wxi ?>
+  <?include .\SupportFiles.wxi ?>
+  <?include .\WATSDialogs.wxi ?>
+  <?include .\Documentation.wxi ?>
+  <?include .\PackageManager.wxi ?>
+</Wix>

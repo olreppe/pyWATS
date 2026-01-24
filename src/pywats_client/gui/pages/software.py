@@ -131,7 +131,7 @@ class SoftwarePage(BasePage):
     ):
         self._packages: List[Dict[str, Any]] = []
         self._selected_package: Optional[Any] = None
-        super().__init__(config, parent, facade=facade)
+        super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
     

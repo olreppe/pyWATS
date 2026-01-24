@@ -1,0 +1,227 @@
+<Reports xmlns="http://wats.virinco.com/schemas/WATS/Report/wsxf">
+  <Report type="UUT" ID="D26DDF31-FD90-47A5-AF13-180404CDE8BE" Start_utc="2017-06-07T07:24:20.857Z" Start="2017-06-07T09:24:20.857+02:00" Result="Failed" SN="FATTest-422" PN="FATPartNo" Rev="Rev1" origin="1C660CF4-3B36-49ED-BE6F-904E41BF87A0" MachineName="VIC-WS-RE-LT" Location="FAT Station Location" Purpose="FAT Station Purpose">
+    <UUT UserLoginName="FAToper" BatchSN="BatchSN" ExecutionTime="123.67" FixtureId="FAT FixtureId" ErrorMessage="Error code 999">
+      <Comment>FAT Comment - can be 500 long</Comment>
+    </UUT>
+    <Process Code="10" Name="SW Debug" />
+    <MiscInfo Typedef="" Description="MiscInfoNumeric" Numeric="100" idx="0" order_no="0" />
+    <MiscInfo Typedef="" Description="MiscInfoString" idx="1" order_no="1">Hello</MiscInfo>
+    <ReportUnitHierarchy PartType="PCBA" PN="SubPartNo1" SN="SubPartSN1" Rev="Rev2" Position="0" />
+    <ReportUnitHierarchy PartType="MODULE" PN="SubPartNo2" SN="SubPartSN2" Rev="Rev3" Position="1" />
+    <Step Id="1" Group="Main" Name="MainSequence Callback" StepType="SequenceCall" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="0" Idx="1" StepCausedUUTFailure="0">
+      <SequenceCall MeasIndex="0" Name="Seq1" Version="1.0.0" Filename="Seq1" Filepath="Seq1" />
+      <Step Id="2" Group="Main" Name="Numeric tests" StepType="SequenceCall" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="1" StepCausedUUTFailure="0">
+        <SequenceCall MeasIndex="0" Name="Seq1" Version="1.0.0" Filename="Seq1" Filepath="Seq1" />
+        <Step Id="3" Group="Main" Name="SingleLog" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="1" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="10" Units="A" CompOperator="LOG" Status="Passed" MeasIndex="1" />
+        </Step>
+        <Step Id="4" Group="Main" Name="SingleLogDone" StepType="ET_NLT" Status="Done" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="2" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="15" Units="Log" CompOperator="LOG" Status="Passed" MeasIndex="2" />
+        </Step>
+        <Step Id="5" Group="Main" Name="SingleEQPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="3" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" LowLimit="500" Units="V" CompOperator="EQ" Status="Passed" MeasIndex="3" />
+        </Step>
+        <Step Id="6" Group="Main" Name="SingleEQFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="4" StepCausedUUTFailure="1">
+          <NumericLimit NumericValue="500" LowLimit="501" Units="V" CompOperator="EQ" Status="Passed" MeasIndex="4" />
+        </Step>
+        <Step Id="7" Group="Main" Name="SingleGEPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="5" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" LowLimit="500" Units="V" CompOperator="GE" Status="Passed" MeasIndex="5" />
+        </Step>
+        <Step Id="8" Group="Main" Name="SingleGEFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="6" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" LowLimit="501" Units="V" CompOperator="GE" Status="Passed" MeasIndex="6" />
+        </Step>
+        <Step Id="9" Group="Main" Name="SingleGELEPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="7" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="500" LowLimit="500" Units="V" CompOperator="GELE" Status="Passed" MeasIndex="7" />
+        </Step>
+        <Step Id="10" Group="Main" Name="SingleGELEFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="8" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="502" LowLimit="501" Units="V" CompOperator="GELE" Status="Passed" MeasIndex="8" />
+        </Step>
+        <Step Id="11" Group="Main" Name="SingleGELTPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="9" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="501" LowLimit="500" Units="V" CompOperator="GELT" Status="Passed" MeasIndex="9" />
+        </Step>
+        <Step Id="12" Group="Main" Name="SingleGELTFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="10" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="500" LowLimit="499" Units="V" CompOperator="GELT" Status="Passed" MeasIndex="10" />
+        </Step>
+        <Step Id="13" Group="Main" Name="SingleGTPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="11" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" LowLimit="499" Units="V" CompOperator="GT" Status="Passed" MeasIndex="11" />
+        </Step>
+        <Step Id="14" Group="Main" Name="SingleGTFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="12" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" LowLimit="500" Units="V" CompOperator="GT" Status="Passed" MeasIndex="12" />
+        </Step>
+        <Step Id="15" Group="Main" Name="SingleGTLEPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="13" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="500" LowLimit="499" Units="V" CompOperator="GTLE" Status="Passed" MeasIndex="13" />
+        </Step>
+        <Step Id="16" Group="Main" Name="SingleGTLEFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="14" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="501" LowLimit="500" Units="V" CompOperator="GTLE" Status="Passed" MeasIndex="14" />
+        </Step>
+        <Step Id="17" Group="Main" Name="SingleGTLTPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="15" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="501" LowLimit="499" Units="V" CompOperator="GTLT" Status="Passed" MeasIndex="15" />
+        </Step>
+        <Step Id="18" Group="Main" Name="SingleGTLTFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="16" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="500" LowLimit="499" Units="V" CompOperator="GTLT" Status="Passed" MeasIndex="16" />
+        </Step>
+        <Step Id="19" Group="Main" Name="SingleLEPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="17" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="500" Units="V" CompOperator="LE" Status="Passed" MeasIndex="17" />
+        </Step>
+        <Step Id="20" Group="Main" Name="SingleLEFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="18" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="499" Units="V" CompOperator="LE" Status="Passed" MeasIndex="18" />
+        </Step>
+        <Step Id="21" Group="Main" Name="SingleLEGEPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="19" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="500" LowLimit="500" Units="V" CompOperator="LEGE" Status="Passed" MeasIndex="19" />
+        </Step>
+        <Step Id="22" Group="Main" Name="SingleLEGEFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="20" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="501" LowLimit="499" Units="V" CompOperator="LEGE" Status="Passed" MeasIndex="20" />
+        </Step>
+        <Step Id="23" Group="Main" Name="SingleLEGTPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="21" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="500" LowLimit="500" Units="V" CompOperator="LEGT" Status="Passed" MeasIndex="21" />
+        </Step>
+        <Step Id="24" Group="Main" Name="SingleLEGTFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="22" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="501" LowLimit="499" Units="V" CompOperator="LEGT" Status="Passed" MeasIndex="22" />
+        </Step>
+        <Step Id="25" Group="Main" Name="SingleLTPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="23" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="501" Units="V" CompOperator="LT" Status="Passed" MeasIndex="23" />
+        </Step>
+        <Step Id="26" Group="Main" Name="SingleLTFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="24" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="500" Units="V" CompOperator="LT" Status="Passed" MeasIndex="24" />
+        </Step>
+        <Step Id="27" Group="Main" Name="SingleLTGEPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="25" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="498" HighLimit="501" LowLimit="499" Units="V" CompOperator="LTGE" Status="Passed" MeasIndex="25" />
+        </Step>
+        <Step Id="28" Group="Main" Name="SingleLTGEFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="26" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="501" LowLimit="500" Units="V" CompOperator="LTGE" Status="Passed" MeasIndex="26" />
+        </Step>
+        <Step Id="29" Group="Main" Name="SingleLTGTPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="27" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="502" HighLimit="501" LowLimit="499" Units="V" CompOperator="LTGT" Status="Passed" MeasIndex="27" />
+        </Step>
+        <Step Id="30" Group="Main" Name="SingleLTGTFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="28" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" HighLimit="501" LowLimit="500" Units="V" CompOperator="LTGT" Status="Passed" MeasIndex="28" />
+        </Step>
+        <Step Id="31" Group="Main" Name="SingleNEPass" StepType="ET_NLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="29" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" LowLimit="499" Units="V" CompOperator="NE" Status="Passed" MeasIndex="29" />
+        </Step>
+        <Step Id="32" Group="Main" Name="SingleNEFail" StepType="ET_NLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="30" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="500" LowLimit="500" Units="V" CompOperator="NE" Status="Passed" MeasIndex="30" />
+        </Step>
+        <Step Id="33" Group="Main" Name="Multiple Numeric Step" StepType="ET_MNLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="31" StepCausedUUTFailure="0">
+          <NumericLimit Name="MultiLog" NumericValue="10" Units="A" CompOperator="LOG" Status="Passed" MeasIndex="31" />
+          <NumericLimit Name="MultiEQPass" NumericValue="500" LowLimit="500" Units="V" CompOperator="EQ" Status="Passed" MeasIndex="32" />
+          <NumericLimit Name="MultiEQFail" NumericValue="500" LowLimit="501" Units="V" CompOperator="EQ" Status="Failed" MeasIndex="33" />
+          <NumericLimit Name="MultiGEPass" NumericValue="500" LowLimit="500" Units="V" CompOperator="GE" Status="Passed" MeasIndex="34" />
+          <NumericLimit Name="MultiGEFail" NumericValue="500" LowLimit="501" Units="V" CompOperator="GE" Status="Failed" MeasIndex="35" />
+          <NumericLimit Name="MultiGELEPass" NumericValue="500" HighLimit="500" LowLimit="500" Units="V" CompOperator="GELE" Status="Passed" MeasIndex="36" />
+          <NumericLimit Name="MultiGELEFail" NumericValue="500" HighLimit="502" LowLimit="501" Units="V" CompOperator="GELE" Status="Failed" MeasIndex="37" />
+          <NumericLimit Name="MultiGELTPass" NumericValue="500" HighLimit="501" LowLimit="500" Units="V" CompOperator="GELT" Status="Passed" MeasIndex="38" />
+          <NumericLimit Name="MultiGELTFail" NumericValue="500" HighLimit="500" LowLimit="499" Units="V" CompOperator="GELT" Status="Failed" MeasIndex="39" />
+          <NumericLimit Name="MultiGTPass" NumericValue="500" LowLimit="499" Units="V" CompOperator="GT" Status="Passed" MeasIndex="40" />
+          <NumericLimit Name="MultiGTFail" NumericValue="500" LowLimit="500" Units="V" CompOperator="GT" Status="Failed" MeasIndex="41" />
+          <NumericLimit Name="MultiGTLEPass" NumericValue="500" HighLimit="500" LowLimit="499" Units="V" CompOperator="GTLE" Status="Passed" MeasIndex="42" />
+          <NumericLimit Name="MultiGTLEFail" NumericValue="500" HighLimit="501" LowLimit="500" Units="V" CompOperator="GTLE" Status="Failed" MeasIndex="43" />
+          <NumericLimit Name="MultiGTLTPass" NumericValue="500" HighLimit="501" LowLimit="499" Units="V" CompOperator="GTLT" Status="Passed" MeasIndex="44" />
+          <NumericLimit Name="MultiGTLTFail" NumericValue="500" HighLimit="500" LowLimit="499" Units="V" CompOperator="GTLT" Status="Failed" MeasIndex="45" />
+          <NumericLimit Name="MultiLEPass" NumericValue="500" HighLimit="500" Units="V" CompOperator="LE" Status="Passed" MeasIndex="46" />
+          <NumericLimit Name="MultiLEFail" NumericValue="500" HighLimit="499" Units="V" CompOperator="LE" Status="Failed" MeasIndex="47" />
+          <NumericLimit Name="MultiLEGEPass" NumericValue="500" HighLimit="500" LowLimit="500" Units="V" CompOperator="LEGE" Status="Passed" MeasIndex="48" />
+          <NumericLimit Name="MultiLEGEFail" NumericValue="500" HighLimit="501" LowLimit="499" Units="V" CompOperator="LEGE" Status="Failed" MeasIndex="49" />
+          <NumericLimit Name="MultiLEGTPass" NumericValue="500" HighLimit="500" LowLimit="500" Units="V" CompOperator="LEGT" Status="Passed" MeasIndex="50" />
+          <NumericLimit Name="MultiLEGTFail" NumericValue="500" HighLimit="501" LowLimit="499" Units="V" CompOperator="LEGT" Status="Failed" MeasIndex="51" />
+          <NumericLimit Name="MultiLTPass" NumericValue="500" HighLimit="501" Units="V" CompOperator="LT" Status="Passed" MeasIndex="52" />
+          <NumericLimit Name="MultiLTFail" NumericValue="500" HighLimit="500" Units="V" CompOperator="LT" Status="Failed" MeasIndex="53" />
+          <NumericLimit Name="MultiLTGEPass" NumericValue="498" HighLimit="501" LowLimit="499" Units="V" CompOperator="LTGE" Status="Passed" MeasIndex="54" />
+          <NumericLimit Name="MultiLTGEFail" NumericValue="500" HighLimit="501" LowLimit="500" Units="V" CompOperator="LTGE" Status="Failed" MeasIndex="55" />
+          <NumericLimit Name="MultiLTGTPass" NumericValue="502" HighLimit="501" LowLimit="499" Units="V" CompOperator="LTGT" Status="Passed" MeasIndex="56" />
+          <NumericLimit Name="MultiLTGTFail" NumericValue="500" HighLimit="501" LowLimit="500" Units="V" CompOperator="LTGT" Status="Failed" MeasIndex="57" />
+          <NumericLimit Name="MultiNEPass" NumericValue="500" LowLimit="499" Units="V" CompOperator="NE" Status="Passed" MeasIndex="58" />
+          <NumericLimit Name="MultiNEFail" NumericValue="500" LowLimit="500" Units="V" CompOperator="NE" Status="Failed" MeasIndex="59" />
+          <NumericLimit Name="MultiLOGPass" NumericValue="500" Units="V" CompOperator="LOG" Status="Failed" MeasIndex="60" />
+        </Step>
+      </Step>
+      <Step Id="34" Group="Main" Name="Pass/Fail tests" StepType="SequenceCall" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="2" StepCausedUUTFailure="0">
+        <SequenceCall MeasIndex="0" Name="Seq1" Version="1.0.0" Filename="Seq1" Filepath="Seq1" />
+        <Step Id="35" Group="Main" Name="SinglePass" StepType="ET_PFT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="1" StepCausedUUTFailure="0">
+          <PassFail MeasIndex="1" Status="Passed" />
+        </Step>
+        <Step Id="36" Group="Main" Name="SingleFail" StepType="ET_PFT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="2" StepCausedUUTFailure="0">
+          <PassFail MeasIndex="2" Status="Failed" />
+        </Step>
+        <Step Id="37" Group="Main" Name="SinglePassDone" StepType="ET_PFT" Status="Done" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="3" StepCausedUUTFailure="0">
+          <PassFail MeasIndex="3" Status="Passed" />
+        </Step>
+        <Step Id="38" Group="Main" Name="Multiple tests" StepType="ET_MPFT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="4" StepCausedUUTFailure="0">
+          <PassFail MeasIndex="4" Name="Pass" Status="Passed" />
+          <PassFail MeasIndex="5" Name="Fail" Status="Failed" />
+          <PassFail MeasIndex="6" Name="PassSkipped" Status="Passed" />
+        </Step>
+      </Step>
+      <Step Id="39" Group="Main" Name="StringValue tests" StepType="SequenceCall" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="3" StepCausedUUTFailure="0">
+        <SequenceCall MeasIndex="0" Name="Seq1" Version="1.0.0" Filename="Seq1" Filepath="Seq1" />
+        <Step Id="40" Group="Main" Name="Single" StepType="ET_SVT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="1" StepCausedUUTFailure="0">
+          <StringValue CompOperator="LOG" StringValue="No compare" Status="Passed" MeasOrderNumber="65" MeasIndex="1" />
+        </Step>
+        <Step Id="41" Group="Main" Name="SingleCasePass" StepType="ET_SVT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="2" StepCausedUUTFailure="0">
+          <StringValue CompOperator="CASESENSIT" StringLimit="CaseSensitive" StringValue="CaseSensitive" Status="Passed" MeasOrderNumber="66" MeasIndex="2" />
+        </Step>
+        <Step Id="42" Group="Main" Name="SingleCaseFail" StepType="ET_SVT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="3" StepCausedUUTFailure="0">
+          <StringValue CompOperator="CASESENSIT" StringLimit="CaseSensitive" StringValue="caseSensitive" Status="Passed" MeasOrderNumber="67" MeasIndex="3" />
+        </Step>
+        <Step Id="43" Group="Main" Name="SingleInsiensPass" StepType="ET_SVT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="4" StepCausedUUTFailure="0">
+          <StringValue CompOperator="IGNORECASE" StringLimit="CaseSensitive" StringValue="caseSensitive" Status="Passed" MeasOrderNumber="68" MeasIndex="4" />
+        </Step>
+        <Step Id="44" Group="Main" Name="Multiple tests" StepType="ET_MSVT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="5" StepCausedUUTFailure="0">
+          <StringValue Name="Multi" CompOperator="LOG" StringValue="No compare" Status="Passed" MeasOrderNumber="69" MeasIndex="5" />
+          <StringValue Name="MultiCasePass" CompOperator="CASESENSIT" StringLimit="CaseSensitive" StringValue="CaseSensitive" Status="Passed" MeasOrderNumber="70" MeasIndex="6" />
+          <StringValue Name="MultiCaseFail" CompOperator="CASESENSIT" StringLimit="CaseSensitive" StringValue="caseSensitive" Status="Failed" MeasOrderNumber="71" MeasIndex="7" />
+          <StringValue Name="MultiInsiensPass" CompOperator="IGNORECASE" StringLimit="CaseSensitive" StringValue="caseSensitive" Status="Passed" MeasOrderNumber="72" MeasIndex="8" />
+          <StringValue Name="MultiInsiensFail" CompOperator="IGNORECASE" StringLimit="CaseSensitive2" StringValue="caseSensitive" Status="Failed" MeasOrderNumber="73" MeasIndex="9" />
+        </Step>
+      </Step>
+      <Step Id="45" Group="Main" Name="Graphs" StepType="SequenceCall" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="4" StepCausedUUTFailure="0">
+        <SequenceCall MeasIndex="0" Name="Seq1" Version="1.0.0" Filename="Seq1" Filepath="Seq1" />
+        <Step Id="46" Group="Main" Name="Fibionacci" StepType="WATS_XYGMNLT" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="1" StepCausedUUTFailure="0">
+          <NumericLimit NumericValue="28.9230769230769" Units="Number" CompOperator="LOG" Status="Passed" MeasIndex="1" />
+          <Chart idx="0" ChartType="Line" Label="Fibonacci numbers" XLabel="X" XUnit="" YLabel="Y" YUnit="">
+            <Series Name="Fibionacci" DataType="XYG">
+              <ydata>0;1;1;2;3;5;8;13;21;34;55;89;144</ydata>
+              <xdata>0;1;2;3;4;5;6;7;8;9;10;11;12</xdata>
+            </Series>
+            <Series Name="Mean" DataType="XYG">
+              <ydata>28.9230769230769;28.9230769230769</ydata>
+              <xdata>0;12</xdata>
+            </Series>
+          </Chart>
+        </Step>
+        <Step Id="47" Group="Main" Name="Current from burn-in test" StepType="WATS_XYGMNLT" Status="Failed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="2" StepCausedUUTFailure="0">
+          <NumericLimit Name="MinValue" NumericValue="0" LowLimit="52" Units="A" CompOperator="GE" Status="Failed" MeasIndex="2" />
+          <NumericLimit Name="MaxValue" NumericValue="62.6" HighLimit="72" Units="A" CompOperator="LE" Status="Passed" MeasIndex="3" />
+          <NumericLimit Name="Mean" NumericValue="46.3015" Units="A" CompOperator="LOG" Status="Failed" MeasIndex="4" />
+          <Chart idx="0" ChartType="Line" Label="Current" XLabel="Minutes" XUnit="min" YLabel="Current" YUnit="A">
+            <Series Name="Current" DataType="XYG">
+              <ydata>60.72;61.886;62.6;0</ydata>
+              <xdata>0;1;2;3</xdata>
+            </Series>
+            <Series Name="Mean" DataType="XYG">
+              <ydata>46.3015;46.3015</ydata>
+              <xdata>0;3</xdata>
+            </Series>
+            <Series Name="LowLimit" DataType="XYG">
+              <ydata>52;52</ydata>
+              <xdata>0;3</xdata>
+            </Series>
+            <Series Name="HighLimit" DataType="XYG">
+              <ydata>72;72</ydata>
+              <xdata>0;3</xdata>
+            </Series>
+          </Chart>
+        </Step>
+      </Step>
+      <Step Id="48" Group="Main" Name="Misc Features" StepType="SequenceCall" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="5" StepCausedUUTFailure="0">
+        <SequenceCall MeasIndex="0" Name="Seq1" Version="1.0.0" Filename="Seq1" Filepath="Seq1" />
+        <Step Id="49" Group="Main" Name="Attach file" StepType="WATS_AttachFile" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="1" StepCausedUUTFailure="0">
+          <Attachment Name="winhlp32.exe" ContentType="application/x-msdownload" Size="10240" />
+        </Step>
+        <Step Id="50" Group="Main" Name="Attach Byte array" StepType="WATS_AttachFile" Status="Passed" total_time="0" module_time="0" TSGuid="" StepIndex="1" Idx="2" StepCausedUUTFailure="0">
+          <Attachment Name="WiFiNotification" ContentType="image/png" Size="2626" />
+        </Step>
+      </Step>
+    </Step>
+  </Report>
+</Reports>

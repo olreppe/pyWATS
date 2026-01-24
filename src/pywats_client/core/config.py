@@ -327,6 +327,7 @@ class ClientConfig:
     
     # Internal state (not saved)
     _config_path: Optional[Path] = field(default=None, repr=False)
+    _env_applied: bool = field(default=False, repr=False)  # Track if env vars applied
     
     def __post_init__(self):
         """Ensure nested objects are properly initialized"""
@@ -349,6 +350,50 @@ class ClientConfig:
                 else:
                     converted_presets.append(sp)
             self.station_presets = converted_presets
+        
+        # DO NOT apply environment variables here - they are runtime-only
+        # and should not be persisted to config files
+    
+    def get_runtime_credentials(self) -> tuple[str, str]:
+        """
+        Get runtime credentials with environment variable fallback.
+        
+        Returns credentials for use at runtime without modifying the config.
+        This allows env vars for debugging without persisting them.
+        
+        Returns:
+            tuple: (service_address, api_token)
+        """
+        # Start with config values
+        service_address = self.service_address
+        api_token = self.api_token
+        
+        # Apply environment variable overrides (runtime only, not saved)
+        if not service_address:
+            service_address = os.environ.get('PYWATS_SERVER_URL', '')
+        
+        if not api_token:
+            api_token = os.environ.get('PYWATS_API_TOKEN', '')
+        
+        return service_address, api_token
+    
+    def _apply_env_overrides(self) -> None:
+        """
+        DEPRECATED: Use get_runtime_credentials() instead.
+        
+        This method modified the config object which caused env vars
+        to be persisted when saving the config.
+        """
+        pass
+    
+    # =========================================================================
+    # Configuration File Path
+    # =========================================================================
+    
+    @property
+    def config_path(self) -> Optional[Path]:
+        """Get the configuration file path"""
+        return self._config_path
     
     # =========================================================================
     # Station Properties and Methods
@@ -614,8 +659,24 @@ class ClientConfig:
         
         config = cls()
         config._config_path = path
+        # Environment variables are applied in __post_init__
+        # Save config with env vars applied (if any)
         config.save()
         return config
+    
+    @classmethod
+    def load_for_instance(cls, instance_id: str = "default") -> "ClientConfig":
+        """
+        Load configuration for a specific instance.
+        
+        Args:
+            instance_id: Instance identifier
+            
+        Returns:
+            ClientConfig instance (creates new if doesn't exist)
+        """
+        config_path = get_default_config_path(instance_id)
+        return cls.load_or_create(config_path)
 
 
 def get_default_config_path(instance_id: Optional[str] = None) -> Path:

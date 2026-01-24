@@ -84,7 +84,7 @@ class DashboardPage(BasePage):
         facade = None
     ):
         self._main_window = main_window
-        super().__init__(config, parent, facade=facade)
+        super().__init__(config, parent)
         
         # Refresh timer
         self._refresh_timer = QTimer()
@@ -123,7 +123,14 @@ class DashboardPage(BasePage):
         # Control buttons
         self._start_btn = QPushButton("Start Service")
         self._start_btn.clicked.connect(self._on_start_clicked)
+        self._start_btn.clicked.connect(lambda: logger.info("🔴 LAMBDA: Start button clicked!"))
         self._start_btn.setEnabled(False)
+        # Override mousePressEvent to debug
+        original_mouse_press = self._start_btn.mousePressEvent
+        def debug_mouse_press(event):
+            logger.info(f"🟢 MOUSE PRESS on Start button! Enabled: {self._start_btn.isEnabled()}")
+            original_mouse_press(event)
+        self._start_btn.mousePressEvent = debug_mouse_press
         status_row.addWidget(self._start_btn)
         
         self._stop_btn = QPushButton("Stop Service")
@@ -260,6 +267,11 @@ class DashboardPage(BasePage):
         logger.info("Stop Service button clicked")
         self.service_action_requested.emit("stop")
     
+    def showEvent(self, event) -> None:
+        """Called when the page becomes visible"""
+        super().showEvent(event)
+        logger.info("📺 Dashboard page is now VISIBLE")
+    
     def _refresh_status(self) -> None:
         """Refresh all status indicators"""
         # Check service status via facade
@@ -315,6 +327,7 @@ class DashboardPage(BasePage):
             self._service_indicator.set_status("stopped")
             self._service_status_label.setText("Service Stopped")
             self._service_status_label.setStyleSheet("color: #808080;")
+            logger.info(f"Setting Start button enabled: True (was: {self._start_btn.isEnabled()})")
             self._start_btn.setEnabled(True)
             self._stop_btn.setEnabled(False)
             self._uptime_label.setText("Uptime: --")

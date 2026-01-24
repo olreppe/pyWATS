@@ -149,7 +149,7 @@ class SNHandlerPage(BasePage):
     ):
         self._sn_types: List = []
         self._taken_serials: List[dict] = []  # History of taken serials
-        super().__init__(config, parent, facade=facade)
+        super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
     

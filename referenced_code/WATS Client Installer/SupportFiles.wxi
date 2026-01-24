@@ -1,0 +1,67 @@
+﻿<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment Id="fSupportFiles">
+    <DirectoryRef Id="INSTALLDIR">
+      <Directory Id="dSupportFiles" Name="SupportFiles">
+        <!--<Directory Id="dLegacySupportFiles" Name="Legacy" />-->
+      </Directory>
+    </DirectoryRef>
+
+    <DirectoryRef Id="dSupportFiles" FileSource="$(var.ArtifactsFolder)\SupportFiles">
+      <Component Id="cSupport_TDMLabViewToolkitArchive" Guid="{1EB4B4DA-E7F2-458B-BC04-D5B538B5AFA2}">
+        <CreateFolder />
+        <File Name="WATS TDM - LabVIEW Toolkit.zip" Id="TDMLabViewToolKitArchive" />
+      </Component>
+      <Component Id="cSupport_MESLabViewToolkitArchive" Guid="{7A423CED-81F7-483B-B98D-FB4AAA2F9A8F}">
+        <CreateFolder />
+        <File Name="WATS MES.zip" Id="MESLabViewToolKitArchive" />
+      </Component>
+		 
+      <Component Id="cSupport_TS2021" Guid="{127A138B-2C7C-4065-A36F-F81C76CFCDD3}">
+	      <File Name="TS2021.zip"/>
+      </Component>
+      <Component Id="cSupport_TS2022" Guid="{153DE0A7-2F88-4E84-A5C2-6EA43CA21A77}">
+	      <File Name="TS2022.zip"/>
+      </Component>
+      <Component Id="cSupport_TS2023" Guid="{2C8A2384-BA27-47CC-8F12-D4BAEBA02E51}">
+	      <File Name="TS2023.zip"/>
+      </Component>
+      <Component Id="cSupport_TS2024" Guid="{F3E19E17-41CE-410F-8737-DD736AD2FB1A}">
+	      <File Name="TS2024.zip"/>
+      </Component>
+      <Component Id="cSupport_TS2025" Guid="{A22D273B-577D-42C4-BD68-FF74DD3BAAEE}">
+        <File Name="TS2025.zip"/>
+      </Component>
+    </DirectoryRef>
+
+    <!--<DirectoryRef Id="dSupportFiles" FileSource="$(var.ArtifactsFolder)\Applications\TestStand.Support">
+      <Component Id="cSupport_WATS_Teststand_Support.dll" Guid="{90C80549-1531-4332-AF2E-7E8ED254007A}">
+        <File Name="WATS_Teststand_Support.dll" Id="fWATS_Teststand_Support.dll" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="dLegacySupportFiles" FileSource="$(var.ArtifactsFolder)\Applications\Legacy\TestStand.Support">
+      <Component Id="cLegacySupport_WATS_Teststand_Support.dll" Guid="{98522116-A8FD-4F3E-834C-1887B0EA7F4D}">
+        <File Name="WATS_Teststand_Support.dll" Id="fLegacy_WATS_Teststand_Support.dll" />
+      </Component>
+    </DirectoryRef>-->
+
+    <DirectoryRef Id="dSupportFiles" FileSource="$(var.ArtifactsFolder)\Applications\WATS Client Configurator\SupportFiles">
+      <Component Id="cSupport_Deploy.xml" Guid="{C718D722-D431-4F9E-BA8D-331E1353FDFC}">
+        <File Name="Deploy.xml" Id="fDeploy.xml" />
+      </Component>
+    </DirectoryRef>
+    
+    <ComponentGroup Id="cgSupportFileArchives">
+      <ComponentRef Id="cSupport_TDMLabViewToolkitArchive" />
+      <ComponentRef Id="cSupport_MESLabViewToolkitArchive" />
+      <ComponentRef Id="cSupport_TS2021" />
+      <ComponentRef Id="cSupport_TS2022" />
+      <ComponentRef Id="cSupport_TS2023" />
+      <ComponentRef Id="cSupport_TS2024" />
+      <ComponentRef Id="cSupport_TS2025" />
+      <!--<ComponentRef Id="cSupport_WATS_Teststand_Support.dll" />
+      <ComponentRef Id="cLegacySupport_WATS_Teststand_Support.dll" />-->
+      <ComponentRef Id="cSupport_Deploy.xml" />
+    </ComponentGroup>
+  </Fragment>
+</Include>

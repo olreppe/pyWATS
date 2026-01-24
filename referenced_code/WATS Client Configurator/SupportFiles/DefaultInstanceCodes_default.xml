@@ -1,0 +1,22 @@
+<?xml version="1.0" standalone="yes"?>
+<Codes xmlns="http://wats.virinco.local/Codes.xsd">
+  <OPERATIONTYPES>
+    <GUID>00000000-0000-0000-0000-000000000000</GUID>
+    <Category>0</Category>
+    <Code>10</Code>
+    <Name>SW Debug</Name>
+    <Description>Used for SW debugging</Description>
+    <State>1</State>
+  </OPERATIONTYPES>
+  <Process>
+    <GUID>00000000-0000-0000-0000-000000000000</GUID>
+    <Code>10</Code>
+    <Name>SW Debug</Name>
+    <Description>Used for SW debugging</Description>
+    <State>1</State>
+    <ProcessIndex>0</ProcessIndex>
+    <IsTestOperation>true</IsTestOperation>
+    <IsWIPOperation>false</IsWIPOperation>
+    <IsRepairOperation>false</IsRepairOperation>
+  </Process>
+</Codes>

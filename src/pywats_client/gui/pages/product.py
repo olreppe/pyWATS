@@ -209,7 +209,7 @@ class ProductPage(BasePage):
         self._products: List[Dict[str, Any]] = []
         self._selected_product: Optional[Dict[str, Any]] = None
         self._selected_revision: Optional[str] = None
-        super().__init__(config, parent, facade=facade)
+        super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
     

@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<converters xmlns="http://schemas.virinco.com/WATS/Wats-Client-Service/Converters.xsd">
+  <converter name="WSTFImporter" assembly="Virinco.WATS.Converters.Standard" class="Virinco.WATS.Integration.TextConverter.WATSStandardTextFormat">
+    <Source type="folder">
+      <Parameter name="Path">C:\Users\All Users\Virinco\WATS\WatsStandardTextFormat</Parameter>
+      <Parameter name="Filter">*.txt</Parameter>
+      <Parameter name="PostProcessAction">Delete</Parameter>
+    </Source>
+    <Destination type="api">
+      <Parameter name="online">False</Parameter>
+    </Destination>
+  </converter>
+  <converter name="WSXFImporter" assembly="Virinco.WATS.Converters.Standard" class="Virinco.WATS.Integration.XMLConverter.WATSStandardXMLFormat">
+    <Source type="folder">
+      <Parameter name="Path">C:\Users\All Users\Virinco\WATS\WatsStandardXmlFormat</Parameter>
+      <Parameter name="Filter">*.xml</Parameter>
+      <Parameter name="PostProcessAction">Delete</Parameter>
+    </Source>
+    <Destination type="api">
+      <Parameter name="online">False</Parameter>
+    </Destination>
+  </converter>
+  <converter name="WSJFImporter" assembly="Virinco.WATS.Converters.Standard" class="Virinco.WATS.Integration.JsonConverter.WATSStandardJsonConverter">
+    <Source type="folder">
+      <Parameter name="Path">C:\Users\All Users\Virinco\WATS\WatsStandardJsonFormat</Parameter>
+      <Parameter name="Filter">*.json</Parameter>
+      <Parameter name="PostProcessAction">Delete</Parameter>
+    </Source>
+    <Destination type="api">
+      <Parameter name="operator">oper</Parameter>
+      <Parameter name="processCode">10</Parameter>
+      <Parameter name="sequenceName">sequenceName</Parameter>
+      <Parameter name="sequenceVersion">1.0.0</Parameter>
+      <Parameter name="partnumber">pn</Parameter>
+      <Parameter name="revision">rev</Parameter>
+      <Parameter name="serialnumber">sn</Parameter>
+      <Parameter name="testMode">import</Parameter>
+    </Destination>
+  </converter>
+  <converter name="ATMLImporter" assembly="Virinco.WATS.Converters.Standard" class="Virinco.WATS.Integration.ATML.ATMLConverter">
+    <Source type="folder">
+      <Parameter name="Path">C:\Users\All Users\Virinco\WATS\ATMLFormat</Parameter>
+      <Parameter name="Filter">*.xml</Parameter>
+      <Parameter name="PostProcessAction">Delete</Parameter>
+    </Source>
+    <Destination type="api">
+      <Parameter name="online">False</Parameter>
+      <Parameter name="operationTypeCode">10</Parameter>
+      <Parameter name="partNumber">PartNo</Parameter>
+      <Parameter name="partRevision">1.0</Parameter>
+      <Parameter name="operator">oper</Parameter>
+      <Parameter name="sequenceVersion">1.0.0</Parameter>
+    </Destination>
+  </converter>
+</converters>

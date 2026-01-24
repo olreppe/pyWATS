@@ -18,7 +18,6 @@ from .main_window import MainWindow
 from .login_window import LoginWindow
 from ..core.config import ClientConfig, get_default_config_path
 from ..core.connection_config import ConnectionState, migrate_legacy_config
-from ..app import pyWATSApplication
 
 
 def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] = None, instance_id: Optional[str] = None) -> int:
@@ -114,11 +113,10 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
             # User cancelled login
             return 0
     
-    # Create pyWATS application (service layer)
-    pywats_app = pyWATSApplication(config)
-    
-    # Create and show main window (UI layer)
-    window = MainWindow(config, pywats_app, None)  # config, app, parent
+    # Create and show main window
+    # Service layer runs separately as a service process
+    # GUI connects to service via IPC
+    window = MainWindow(config, None)  # config, parent
     
     # Connect server to handle activation requests from other instances
     if server:
