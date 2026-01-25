@@ -1,25 +1,22 @@
 """
 pyWATS Client Entry Point
 
-Run the client with:
-    python -m pywats_client                 # Service mode (default) - runs background service
-    python -m pywats_client service         # Background service mode (explicit)
-    python -m pywats_client gui             # GUI only (for configuration - requires running service)
-    
-Or use CLI commands:
-    pywats-client                           # Run background service (default)
-    pywats-client service                   # Run background service
-    pywats-client gui                       # Run GUI (connects to service)
-    pywats-client config show               # Show configuration
-    pywats-client config init               # Initialize config
-    pywats-client status                    # Show status
+Simplified usage (single test station - recommended):
+    python -m pywats_client                 # Start service (background)
+    python -m pywats_client gui             # Open configuration GUI
 
-Windows Service commands:
-    pywats-client install-service           # Install Windows Service (requires admin)
-    pywats-client uninstall-service         # Uninstall Windows Service (requires admin)
+Service management:
+    pywats-client install-service           # Install as Windows Service
+    pywats-client install-service --native  # Install as native Windows Service (visible in Task Manager)
+    pywats-client uninstall-service         # Remove Windows Service
+    pywats-client status                    # Show service status
 
-Or use the installed command:
-    pywats-client
+Advanced (multi-station simulation):
+    pywats-client service --instance-id station1
+    pywats-client gui --instance-id station1
+
+Note: Multi-instance mode is for advanced use cases only (testing, development).
+Most users should use the default single-instance mode.
 """
 
 import sys
@@ -108,9 +105,16 @@ def main():
             "--instance-id",
             type=str,
             default="default",
-            help="Instance ID (default: default)"
+            help="Instance ID for multi-station mode (default: default, hidden for normal use)"
         )
         args = parser.parse_args(sys.argv[2:])
+        
+        # Only show instance ID if not default
+        if args.instance_id != "default":
+            print(f"Starting pyWATS Client Service [multi-station instance: {args.instance_id}]")
+        else:
+            print("Starting pyWATS Client Service...")
+        
         _run_service_mode(args.instance_id)
         return
     
@@ -118,13 +122,13 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "gui":
         parser = argparse.ArgumentParser(
             prog="pywats-client gui",
-            description="Run pyWATS Client GUI"
+            description="Run pyWATS Client GUI (Configurator)"
         )
         parser.add_argument(
             "--instance-id",
             type=str,
             default="default",
-            help="Instance ID to connect to (default: default)"
+            help="Instance ID for multi-station mode (default: default)"
         )
         args = parser.parse_args(sys.argv[2:])
         
@@ -168,7 +172,6 @@ def main():
     # Handle Service installation commands (Windows/Linux/macOS)
     if len(sys.argv) > 1 and sys.argv[1] == "install-service":
         if sys.platform == "win32":
-            from .control.windows_service import WindowsServiceInstaller as ServiceInstaller
             installer_type = "windows"
         elif sys.platform == "darwin":
             from .control.unix_service import MacOSServiceInstaller as ServiceInstaller
@@ -198,6 +201,16 @@ def main():
         
         if installer_type == "windows":
             parser.add_argument(
+                "--native",
+                action="store_true",
+                help="Use native Windows Service (requires pywin32, appears in Task Manager)"
+            )
+            parser.add_argument(
+                "--use-nssm",
+                action="store_true",
+                help="Use NSSM wrapper (default if --native not specified)"
+            )
+            parser.add_argument(
                 "--use-sc",
                 action="store_true",
                 help="Use sc.exe instead of NSSM (not recommended)"
@@ -218,13 +231,24 @@ def main():
         args = parser.parse_args(sys.argv[2:])
         
         if installer_type == "windows":
-            if args.use_sc:
-                success = ServiceInstaller.install_with_sc(
+            if getattr(args, 'native', False):
+                # Native Windows Service using pywin32
+                from .control.windows_native_service import install_service, is_pywin32_available
+                if not is_pywin32_available():
+                    print("ERROR: Native Windows service requires pywin32")
+                    print("Install with: pip install pywin32")
+                    sys.exit(1)
+                success = install_service(instance_id=args.instance_id)
+            elif args.use_sc:
+                from .control.windows_service import WindowsServiceInstaller
+                success = WindowsServiceInstaller.install_with_sc(
                     instance_id=args.instance_id,
                     config_path=args.config
                 )
             else:
-                success = ServiceInstaller.install_with_nssm(
+                # Default: NSSM wrapper
+                from .control.windows_service import WindowsServiceInstaller
+                success = WindowsServiceInstaller.install_with_nssm(
                     instance_id=args.instance_id,
                     config_path=args.config
                 )
@@ -245,7 +269,6 @@ def main():
     
     if len(sys.argv) > 1 and sys.argv[1] == "uninstall-service":
         if sys.platform == "win32":
-            from .control.windows_service import WindowsServiceInstaller as ServiceInstaller
             installer_type = "windows"
         elif sys.platform == "darwin":
             from .control.unix_service import MacOSServiceInstaller as ServiceInstaller
@@ -270,6 +293,11 @@ def main():
         
         if installer_type == "windows":
             parser.add_argument(
+                "--native",
+                action="store_true",
+                help="Remove native Windows Service (installed with --native)"
+            )
+            parser.add_argument(
                 "--use-sc",
                 action="store_true",
                 help="Use sc.exe instead of NSSM (not recommended)"
@@ -284,12 +312,17 @@ def main():
         args = parser.parse_args(sys.argv[2:])
         
         if installer_type == "windows":
-            if args.use_sc:
-                success = ServiceInstaller.uninstall_with_sc(
+            if getattr(args, 'native', False):
+                from .control.windows_native_service import uninstall_service
+                success = uninstall_service(instance_id=args.instance_id)
+            elif args.use_sc:
+                from .control.windows_service import WindowsServiceInstaller
+                success = WindowsServiceInstaller.uninstall_with_sc(
                     instance_id=args.instance_id
                 )
             else:
-                success = ServiceInstaller.uninstall_with_nssm(
+                from .control.windows_service import WindowsServiceInstaller
+                success = WindowsServiceInstaller.uninstall_with_nssm(
                     instance_id=args.instance_id
                 )
         elif installer_type == "linux":
@@ -478,14 +511,13 @@ CLI Commands (use 'pywats-client <command> --help' for details):
         config.api_token = args.api_token
     
     # Determine run mode
-    # Default is now service mode (not GUI) since GUI is just for configuration
+    # Default is service mode (not GUI) since GUI is just for configuration
     use_gui = not args.no_gui and not args.daemon and not args.api
     
     if use_gui:
         # Explicit GUI mode requested
-        print("Warning: Running GUI without explicit service mode.")
-        print("The GUI is for configuration only. Make sure a service is running:")
-        print("  python -m pywats_client service --instance-id default")
+        print("Note: Starting in GUI mode for configuration.")
+        print("For background service, run: python -m pywats_client service")
         print()
         _run_gui_mode(config)
     elif args.daemon or args.api:
@@ -502,12 +534,12 @@ CLI Commands (use 'pywats-client <command> --help' for details):
         service = HeadlessService(config, service_config)
         service.run()
     else:
-        # Default: Run service mode
-        instance_id = getattr(config, 'instance_id', 'default')
-        print(f"Starting pyWATS Client Service (instance: {instance_id})")
+        # Default: Run service mode (single instance)
+        # No need to mention instance_id for default case
+        print("Starting pyWATS Client Service...")
         print("To configure, launch GUI: python -m pywats_client gui")
         print()
-        _run_service_mode(instance_id)
+        _run_service_mode("default")
 
 
 if __name__ == "__main__":

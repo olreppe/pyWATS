@@ -197,22 +197,38 @@ class ServiceTrayIcon(QObject):
         )
     
     def _open_configurator(self) -> None:
-        """Launch the Configurator GUI"""
+        """Launch the Configurator GUI as a separate process"""
         import subprocess
         
         try:
+            # Use pythonw.exe on Windows to avoid console window
+            python_exe = sys.executable
+            creation_flags = 0
+            
+            if sys.platform == 'win32':
+                # Try pythonw.exe for no console window
+                if python_exe.endswith('python.exe'):
+                    pythonw = python_exe.replace('python.exe', 'pythonw.exe')
+                    if Path(pythonw).exists():
+                        python_exe = pythonw
+                # Create detached process on Windows
+                creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+            
+            # Build command - only add instance-id if not default
+            cmd = [python_exe, "-m", "pywats_client", "gui"]
+            if self.instance_id and self.instance_id != "default":
+                cmd.extend(["--instance-id", self.instance_id])
+            
             # Launch GUI in separate process
-            subprocess.Popen([
-                sys.executable,
-                "-m",
-                "pywats_client",
-                "gui",
-                "--instance-id",
-                self.instance_id
-            ])
-            logger.info("Launched Configurator GUI")
+            subprocess.Popen(
+                cmd,
+                creationflags=creation_flags,
+                start_new_session=True if sys.platform != 'win32' else False
+            )
+            logger.info(f"Launched Configurator GUI (instance: {self.instance_id})")
+            
         except Exception as e:
-            logger.error(f"Failed to launch GUI: {e}")
+            logger.error(f"Failed to launch GUI: {e}", exc_info=True)
             QMessageBox.critical(
                 None,
                 "Error",
