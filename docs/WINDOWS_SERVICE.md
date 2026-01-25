@@ -64,7 +64,28 @@ NSSM provides the best Windows Service experience with:
    nssm start pyWATS_Service
    ```
 
-### Option 2: Using sc.exe (Fallback)
+### Option 2: Native Windows Service (Recommended for Enterprise)
+
+The native Windows service uses pywin32 and provides:
+- **Appears in Task Manager** → Services tab
+- **Automatic restart on failure** (5s/5s/30s delays)
+- **Delayed auto-start** (waits for network services)
+- **Windows Event Log integration** (events in Event Viewer)
+
+```powershell
+# Install native service (run as Administrator)
+python -m pywats_client install-service --native
+
+# Start the service
+net start pyWATS_Service
+```
+
+**Features automatically configured:**
+- Service recovery: restarts after 5s on first two failures, 30s thereafter
+- Delayed start: waits for network to be ready before starting
+- Event logging: service events written to Windows Event Log
+
+### Option 3: Using sc.exe (Fallback)
 
 If NSSM is not available:
 
@@ -237,6 +258,94 @@ If you see errors about ports or IPC endpoints already in use:
    net stop pyWATS_Service
    net stop pyWATS_Service_station_a
    ```
+
+## Silent Installation (IT Deployment)
+
+For scripted deployment via GPO, SCCM, or automation tools:
+
+### Basic Silent Install
+
+```powershell
+# Install silently with native service
+python -m pywats_client install-service --native --silent
+
+# Check exit code
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Installation failed with exit code $LASTEXITCODE"
+    exit 1
+}
+```
+
+### Silent Install with Configuration
+
+```powershell
+python -m pywats_client install-service --native --silent `
+    --server-url "https://wats.company.com" `
+    --api-token "your-api-token" `
+    --watch-folder "C:\TestReports"
+```
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 2 | Missing requirements (Python version, pywin32) |
+| 10 | Service already installed |
+| 11 | Service not installed (uninstall) |
+| 14 | Permission denied (need Administrator) |
+| 41 | Server unreachable |
+
+### Example Deployment Script
+
+```powershell
+# deploy_pywats.ps1 - Silent deployment script
+
+param(
+    [string]$ServerUrl = "https://wats.company.com",
+    [string]$ApiToken,
+    [string]$WatchFolder = "C:\TestReports"
+)
+
+# Ensure admin privileges
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Error "Administrator privileges required"
+    exit 14
+}
+
+# Install Python package (if needed)
+pip install pywats-api[client] --quiet
+
+# Install service
+python -m pywats_client install-service --native --silent `
+    --server-url $ServerUrl `
+    --api-token $ApiToken `
+    --watch-folder $WatchFolder
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Service installation failed: exit code $LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+
+# Start service
+net start pyWATS_Service
+Write-Host "pyWATS Service installed and started successfully"
+```
+
+## Event Log
+
+When using `--native`, the service writes to Windows Event Log:
+
+```powershell
+# View pyWATS events in Event Viewer
+Get-EventLog -LogName Application -Source "pyWATS" -Newest 20
+```
+
+Events include:
+- Service installation/uninstallation
+- Service start/stop
+- Errors and warnings
 
 ## Advanced Configuration
 
