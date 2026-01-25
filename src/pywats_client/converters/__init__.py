@@ -64,7 +64,8 @@ from .context import ConverterContext
 
 # Standard converters
 from .standard import (
-    KitronSeicaXMLConverter,
+    SeicaXMLConverter,
+    KitronSeicaXMLConverter,  # Deprecated alias for SeicaXMLConverter
     TeradyneICTConverter,
     TerradyneSpectrumICTConverter,
     WATSStandardTextConverter,
@@ -98,7 +99,8 @@ __all__ = [
     "ScheduledConverter",
     "ConverterContext",
     # Standard converters
-    "KitronSeicaXMLConverter",
+    "SeicaXMLConverter",
+    "KitronSeicaXMLConverter",  # Deprecated alias
     "TeradyneICTConverter",
     "TerradyneSpectrumICTConverter",
     "WATSStandardTextConverter",

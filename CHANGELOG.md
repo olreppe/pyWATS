@@ -116,7 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full configuration persistence to client.json
 
 - **Default Converter Setup** - Automatic configuration for standard converters:
-  - 6 pre-configured standard converters (WSXF, WSJF, WSTF, TeradyneICT, TeradyneSpectrum, KitronSeica)
+  - 6 pre-configured standard converters (WSXF, WSJF, WSTF, TeradyneICT, TeradyneSpectrum, Seica)
   - Watch folders in `C:\ProgramData\Virinco\pyWATS\<format>`
   - Auto-created subdirectories: `Done/`, `Error/`, `Pending/`
   - Files automatically moved to `Done/` folder after processing

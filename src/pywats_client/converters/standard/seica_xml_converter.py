@@ -1,8 +1,7 @@
 """
-Kitron Seica XML Converter - V2 Using UUTReport Model
+Seica Flying Probe XML Converter
 
-Converts Kitron/Seica XML test result files into WATS reports using pyWATS UUTReport model.
-Port of the C# KitronSeicaXMLConverter.
+Converts Seica flying probe XML test result files into WATS reports using pyWATS UUTReport model.
 
 IMPORTANT: This converter uses the pyWATS UUTReport model - NOT raw dictionaries!
 
@@ -49,9 +48,9 @@ from pywats_client.converters.models import (
 )
 
 
-class KitronSeicaXMLConverter(FileConverter):
+class SeicaXMLConverter(FileConverter):
     """
-    Converts Kitron/Seica XML test result files to WATS reports using UUTReport model.
+    Converts Seica flying probe XML test result files to WATS reports using UUTReport model.
     
     File qualification:
     - File extension must be .xml or .Xml
@@ -61,7 +60,7 @@ class KitronSeicaXMLConverter(FileConverter):
     
     @property
     def name(self) -> str:
-        return "Kitron Seica XML Converter"
+        return "Seica XML Converter"
     
     @property
     def version(self) -> str:
@@ -69,7 +68,7 @@ class KitronSeicaXMLConverter(FileConverter):
     
     @property
     def description(self) -> str:
-        return "Converts Kitron/Seica XML test result files into WATS reports using UUTReport model"
+        return "Converts Seica flying probe XML test result files into WATS reports using UUTReport model"
     
     @property
     def file_patterns(self) -> List[str]:
@@ -96,7 +95,7 @@ class KitronSeicaXMLConverter(FileConverter):
         }
     
     def validate(self, source: ConverterSource, context: ConverterContext) -> ValidationResult:
-        """Validate that the file is a properly formatted Kitron/Seica XML file."""
+        """Validate that the file is a properly formatted Seica XML file."""
         if not source.path or not source.path.exists():
             return ValidationResult.no_match("File not found")
         
@@ -121,21 +120,21 @@ class KitronSeicaXMLConverter(FileConverter):
                 return ValidationResult(
                     can_convert=True,
                     confidence=0.4,
-                    message="Kitron XML but missing ST element"
+                    message="Seica XML but missing ST element"
                 )
             
             if not xml_bis:
                 return ValidationResult(
                     can_convert=True,
                     confidence=0.5,
-                    message="Kitron XML but missing BI elements"
+                    message="Seica XML but missing BI elements"
                 )
             
             if xml_et is None:
                 return ValidationResult(
                     can_convert=True,
                     confidence=0.6,
-                    message="Kitron XML but missing ET element"
+                    message="Seica XML but missing ET element"
                 )
             
             nm = xml_st.get('NM', '')
@@ -153,7 +152,7 @@ class KitronSeicaXMLConverter(FileConverter):
             return ValidationResult(
                 can_convert=True,
                 confidence=confidence,
-                message=f"Valid Kitron/Seica XML ({len(xml_bis)} board(s))",
+                message=f"Valid Seica XML ({len(xml_bis)} board(s))",
                 detected_serial_number=serial_number,
                 detected_part_number=part_number,
                 detected_result=result_str,
@@ -165,7 +164,7 @@ class KitronSeicaXMLConverter(FileConverter):
             return ValidationResult.no_match(f"Error reading file: {e}")
     
     def convert(self, source: ConverterSource, context: ConverterContext) -> ConverterResult:
-        """Convert Kitron/Seica XML test file to WATS UUTReport(s)"""
+        """Convert Seica XML test file to WATS UUTReport(s)"""
         if not source.path:
             return ConverterResult.failed_result(error="No file path provided")
         
@@ -346,6 +345,10 @@ class KitronSeicaXMLConverter(FileConverter):
             )
 
 
+# Backward compatibility alias (deprecated)
+KitronSeicaXMLConverter = SeicaXMLConverter
+
+
 # Test code
 if __name__ == "__main__":
     import json
@@ -371,7 +374,7 @@ if __name__ == "__main__":
         temp_path = Path(f.name)
     
     try:
-        converter = KitronSeicaXMLConverterV2()
+        converter = SeicaXMLConverter()
         source = ConverterSource.from_file(temp_path)
         context = ConverterContext()
         

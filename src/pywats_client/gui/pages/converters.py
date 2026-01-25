@@ -66,7 +66,7 @@ def get_system_converters() -> List[ConverterInfo]:
     
     try:
         from ...converters.standard import (
-            KitronSeicaXMLConverter,
+            SeicaXMLConverter,
             TeradyneICTConverter,
             TerradyneSpectrumICTConverter,
             WATSStandardTextConverter,
@@ -79,8 +79,8 @@ def get_system_converters() -> List[ConverterInfo]:
         std_path = Path(std_module.__file__).parent
         
         system_converters = [
-            ("Kitron/Seica XML", "KitronSeicaXMLConverter", "kitron_seica_xml_converter", 
-             "1.0.0", "Kitron/Seica Flying Probe XML format", ["*.xml"]),
+            ("Seica XML", "SeicaXMLConverter", "seica_xml_converter", 
+             "2.0.0", "Seica Flying Probe XML format", ["*.xml"]),
             ("Teradyne ICT", "TeradyneICTConverter", "teradyne_ict_converter",
              "1.0.0", "Teradyne i3070 ICT format", ["*.txt", "*.log"]),
             ("Teradyne Spectrum ICT", "TerradyneSpectrumICTConverter", "teradyne_spectrum_ict_converter",
@@ -139,8 +139,8 @@ def create_default_converter_configs(data_path: Path) -> List[ConverterConfig]:
          "TeradyneICT", ["*.txt", "*.log"], "Teradyne i3070 ICT format"),
         ("Teradyne Spectrum ICT", "pywats_client.converters.standard.teradyne_spectrum_ict_converter.TerradyneSpectrumICTConverter",
          "TeradyneSpectrum", ["*.txt", "*.log"], "Teradyne Spectrum ICT format"),
-        ("Kitron/Seica XML", "pywats_client.converters.standard.kitron_seica_xml_converter.KitronSeicaXMLConverter",
-         "KitronSeica", ["*.xml"], "Kitron/Seica Flying Probe XML format"),
+        ("Seica XML", "pywats_client.converters.standard.seica_xml_converter.SeicaXMLConverter",
+         "Seica", ["*.xml"], "Seica Flying Probe XML format"),
     ]
     
     for name, module_path, folder_name, patterns, description in converters_data:
