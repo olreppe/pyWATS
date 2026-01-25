@@ -460,17 +460,23 @@ def main():
                     config_path=args.config
                 )
         elif installer_type == "linux":
-            success = ServiceInstaller.install(
+            exit_code = ServiceInstaller.install(
                 instance_id=args.instance_id,
                 config_path=args.config,
-                user=getattr(args, 'user', None)
+                user=getattr(args, 'user', None),
+                silent=args.silent
             )
+            # install() now returns exit code, not bool
+            sys.exit(exit_code)
         elif installer_type == "macos":
-            success = ServiceInstaller.install(
+            exit_code = ServiceInstaller.install(
                 instance_id=args.instance_id,
                 config_path=args.config,
-                user_agent=getattr(args, 'user_agent', False)
+                user_agent=getattr(args, 'user_agent', False),
+                silent=args.silent
             )
+            # install() now returns exit code, not bool
+            sys.exit(exit_code)
         
         if success:
             _print("Service installed successfully")
@@ -553,14 +559,20 @@ def main():
                     instance_id=args.instance_id
                 )
         elif installer_type == "linux":
-            success = ServiceInstaller.uninstall(
-                instance_id=args.instance_id
-            )
-        elif installer_type == "macos":
-            success = ServiceInstaller.uninstall(
+            exit_code = ServiceInstaller.uninstall(
                 instance_id=args.instance_id,
-                user_agent=getattr(args, 'user_agent', False)
+                silent=args.silent
             )
+            # uninstall() now returns exit code, not bool
+            sys.exit(exit_code)
+        elif installer_type == "macos":
+            exit_code = ServiceInstaller.uninstall(
+                instance_id=args.instance_id,
+                user_agent=getattr(args, 'user_agent', False),
+                silent=args.silent
+            )
+            # uninstall() now returns exit code, not bool
+            sys.exit(exit_code)
         
         if success:
             _print("Service uninstalled successfully")

@@ -194,6 +194,159 @@ sudo python -m pywats_client uninstall-service --instance-id station_a
 systemctl list-units | grep pywats
 ```
 
+## Silent Installation (IT Deployment)
+
+For automated deployment via Ansible, Puppet, Chef, or shell scripts, use silent mode with exit codes.
+
+### Silent Mode Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `--silent` | Suppress all output (exit codes only) |
+| `--server-url URL` | Pre-configure WATS server URL |
+| `--api-token TOKEN` | Pre-configure API token |
+| `--watch-folder PATH` | Pre-configure watch folder path |
+| `--skip-preflight` | Skip connectivity checks |
+| `--instance-id ID` | Create named instance |
+| `--user USERNAME` | Run service as specific user |
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 2 | Missing requirements (systemd not available) |
+| 10 | Service already installed |
+| 11 | Service not installed (uninstall) |
+| 14 | Permission denied (not running as root) |
+| 20-22 | Configuration errors |
+| 30 | Server unreachable |
+
+### Bash Deployment Script
+
+```bash
+#!/bin/bash
+# deploy_pywats.sh - Silent deployment for Ubuntu/Debian
+
+set -e
+
+WATS_SERVER="https://your-wats-server.com"
+API_TOKEN="your-api-token"
+WATCH_FOLDER="/data/reports"
+SERVICE_USER="pywats"
+
+# Create service user if not exists
+if ! id "$SERVICE_USER" &>/dev/null; then
+    useradd -r -m -d /var/lib/pywats -s /bin/false "$SERVICE_USER"
+fi
+
+# Create directories
+mkdir -p /var/lib/pywats /var/log/pywats "$WATCH_FOLDER"
+chown -R "$SERVICE_USER:$SERVICE_USER" /var/lib/pywats /var/log/pywats
+
+# Install Python package
+pip3 install pywats-api[client] --quiet
+
+# Install service silently
+python3 -m pywats_client install-service \
+    --silent \
+    --server-url "$WATS_SERVER" \
+    --api-token "$API_TOKEN" \
+    --watch-folder "$WATCH_FOLDER" \
+    --user "$SERVICE_USER"
+
+EXIT_CODE=$?
+
+case $EXIT_CODE in
+    0)  echo "Installation successful"
+        systemctl start pywats-service
+        ;;
+    10) echo "Already installed, restarting..."
+        systemctl restart pywats-service
+        ;;
+    14) echo "ERROR: Must run as root"
+        exit 1
+        ;;
+    *)  echo "ERROR: Installation failed (code $EXIT_CODE)"
+        exit 1
+        ;;
+esac
+
+# Verify service is running
+systemctl is-active pywats-service
+```
+
+### Ansible Playbook
+
+```yaml
+# deploy_pywats.yml
+---
+- name: Deploy pyWATS Client
+  hosts: test_stations
+  become: yes
+  vars:
+    wats_server: "https://wats.example.com"
+    api_token: "{{ vault_api_token }}"
+    watch_folder: "/data/reports"
+    service_user: "pywats"
+
+  tasks:
+    - name: Create service user
+      user:
+        name: "{{ service_user }}"
+        system: yes
+        home: /var/lib/pywats
+        shell: /bin/false
+        create_home: yes
+
+    - name: Create directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ service_user }}"
+        group: "{{ service_user }}"
+        mode: '0755'
+      loop:
+        - /var/lib/pywats
+        - /var/log/pywats
+        - "{{ watch_folder }}"
+
+    - name: Install pyWATS
+      pip:
+        name: pywats-api[client]
+        state: latest
+
+    - name: Install service
+      command: >
+        python3 -m pywats_client install-service
+        --silent
+        --server-url {{ wats_server }}
+        --api-token {{ api_token }}
+        --watch-folder {{ watch_folder }}
+        --user {{ service_user }}
+      register: install_result
+      changed_when: install_result.rc == 0
+      failed_when: install_result.rc not in [0, 10]
+
+    - name: Start service
+      systemd:
+        name: pywats-service
+        state: started
+        enabled: yes
+```
+
+### Query Installation Status
+
+```bash
+# Check if service is installed
+python3 -m pywats_client status --instance-id default
+# Returns exit code 0 if installed, 11 if not
+
+# Get service status
+systemctl is-active pywats-service && echo "Running" || echo "Stopped"
+```
+
 ## Configuration
 
 ### Default Configuration
@@ -363,18 +516,39 @@ sudo systemctl restart pywats-service
 
 ### Resource Limits
 
-Limit CPU/memory usage:
+The service unit file includes production-hardened defaults:
 
-```bash
-sudo systemctl edit pywats-service --full
-```
-
-Add limits:
 ```ini
 [Service]
-MemoryLimit=512M
-CPUQuota=50%
+# Memory and CPU limits
+MemoryMax=512M
+CPUQuota=80%
+LimitNOFILE=65535
+LimitNPROC=4096
+
+# Watchdog (service health monitoring)
+Type=notify
+WatchdogSec=60s
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Capability restrictions
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# System call filtering
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
 ```
+
+To customize limits, override with:
 
 ### Network Dependencies
 
