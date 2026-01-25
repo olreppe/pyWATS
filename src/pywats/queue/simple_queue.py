@@ -61,6 +61,13 @@ class SimpleQueue:
     """
     Simple file-based queue for offline report submission.
     
+    .. deprecated::
+        SimpleQueue has file operations in the API layer which violates
+        the "memory-only" design principle. Use instead:
+        
+        - pywats.queue.MemoryQueue: Pure in-memory queue (recommended for API)
+        - pywats_client.queue.PersistentQueue: File-backed queue (recommended for client)
+    
     Reports are stored in WSJF format with extensions:
     - .pending.wsjf - Pending submission
     - .submitting.wsjf - Currently being submitted

@@ -7,21 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- **Converter Cleanup** - Architecture review and naming fixes:
-  - Renamed `KitronSeicaXMLConverter` → `SeicaXMLConverter` (removed customer name)
-  - Fixed typo `TerradyneSpectrumICTConverter` → `TeradyneSpectrumICTConverter` (extra 'r')
-  - Removed deprecated Kitron backward-compatibility alias
-  - Removed debug code from dashboard.py (mouse press handlers)
-  - Deleted duplicate C# source folder (`converters/WATS Standard Converters/`)
-
-- **Documentation** - Updated converter documentation:
-  - Added Standard Converters table to CLIENT_INSTALLATION.md
-  - Added Standard Converters section to CONVERTER_ARCHITECTURE.md
-  - Added Standard Converters table to examples/README.md
-
 ### Added
+
+- **Queue Architecture Refactoring** - Clean separation between memory and file operations:
+  - **MemoryQueue** (`pywats.queue`): Pure in-memory queue with NO file operations
+    - Thread-safe with RLock
+    - Async-compatible with wait_for_item()
+    - Abstract BaseQueue for custom implementations
+    - QueueItem data class for queue entries
+  - **PersistentQueue** (`pywats_client.queue`): File-backed queue extending MemoryQueue
+    - Uses atomic writes via file_utils
+    - Automatic crash recovery (processing → pending)
+    - WSJF format storage with metadata
+  - **file_utils** (`pywats_client.core`): Centralized safe file I/O utilities
+    - SafeFileWriter: Atomic writes (temp file + rename)
+    - SafeFileReader: Safe reads with backup recovery
+    - File locking for multi-process safety
+    - Consistent error handling
+  - Design principle: API (`pywats/`) is "memory-only", file I/O in client (`pywats_client/`)
 
 - **Standard Converters** - 6 pre-installed converters bundled with pyWATS Client:
   - `WATSStandardXMLConverter` - WATS Standard XML Format (WSXF/WRML)
@@ -45,6 +48,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Changed
+
+- **Converter Cleanup** - Architecture review and naming fixes:
+  - Renamed `KitronSeicaXMLConverter` → `SeicaXMLConverter` (removed customer name)
+  - Fixed typo `TerradyneSpectrumICTConverter` → `TeradyneSpectrumICTConverter` (extra 'r')
+  - Removed deprecated Kitron backward-compatibility alias
+  - Removed debug code from dashboard.py (mouse press handlers)
+  - Deleted duplicate C# source folder (`converters/WATS Standard Converters/`)
+
+- **Documentation** - Updated converter documentation:
+  - Added Standard Converters table to CLIENT_INSTALLATION.md
+  - Added Standard Converters section to CONVERTER_ARCHITECTURE.md
+  - Added Standard Converters table to examples/README.md
+
 - **GUI Architecture Consolidation** - Aligned Python client with C# WATS Client Configurator:
   - Rewrote `sn_handler.py` to match C# `SerialNumberView.xaml` - configuration-only page
     - Serial number type selection (Standard, Reuse, Reserve Offline)
@@ -54,6 +71,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Root folder path selection with browse dialog
     - File transfer chunk size (advanced setting)
   - All GUI pages now follow config-first pattern matching C# reference implementation
+
+### Deprecated
+
+- **SimpleQueue** (`pywats.queue.SimpleQueue`) - Has file operations in API layer:
+  - Use `pywats.queue.MemoryQueue` for pure in-memory queue
+  - Use `pywats_client.queue.PersistentQueue` for file-backed queue
+  - SimpleQueue will be removed in a future version
 
 ### Removed
 
