@@ -61,7 +61,7 @@ class AboutPage(BasePage):
         
         # Description
         desc_label = QLabel(
-            "A Python client for WATS (Web-Based Automated Test System).\n"
+            "A Python client for WATS.\\n"
             "Provides offline report storage, converter management,\n"
             "and integration with the WATS API."
         )

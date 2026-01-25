@@ -1,6 +1,6 @@
 # PyWATS Documentation
 
-Official documentation for pyWATS - Python API library for WATS (Web-based Automated Test System).
+Official documentation for pyWATS - Python API library for WATS.
 
 ## Getting Started
 
@@ -40,6 +40,7 @@ Complete documentation for each WATS domain with examples and API reference:
 Legacy usage guides with comprehensive examples and patterns:
 
 - **[Report Module Guide](usage/REPORT_MODULE.md)** - Detailed report creation and querying
+- **[Report Builder](usage/REPORT_BUILDER.md)** - Simple, LLM-friendly report building for converters
 - **[Product Module Guide](usage/PRODUCT_MODULE.md)** - Product and BOM management
 - **[Production Module Guide](usage/PRODUCTION_MODULE.md)** - Serial number and unit tracking
 - **[Asset Module Guide](usage/ASSET_MODULE.md)** - Equipment and calibration management
@@ -101,6 +102,11 @@ See [RootCause Domain](ROOTCAUSE.md) - Create tickets, track defects, manage wor
 
 ### Operation Types
 See [Process Domain](PROCESS.md) - Define test/repair operations, process caching
+
+## Tools & Utilities
+
+- **[LLM Converter Guide](LLM_CONVERTER_GUIDE.md)** - Quick reference for LLMs implementing converters
+- **[MCP Recommendations](MCP_RECOMMENDATIONS.md)** - Guide for building MCP servers (if needed in future)
 
 ## Links
 

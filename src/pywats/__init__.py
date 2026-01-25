@@ -1,5 +1,5 @@
 """
-pyWATS - Python API for WATS (Web-based Automatic Test System)
+pyWATS - Python API for WATS
 
 A clean, object-oriented Python library for interacting with the WATS server.
 

@@ -92,78 +92,7 @@ curl -X POST http://localhost:8765/restart
 
 ---
 
-### 3. MCP Server (AI Integration)
-
-```bash
-pip install pywats-api[mcp]
-```
-
-**Additional Dependencies:**
-- mcp (Model Context Protocol)
-
-**Use this for:**
-- AI assistant integration
-- Claude Desktop integration
-- ChatGPT integration
-- VS Code Copilot integration
-
-**Configuration:**
-
-Set environment variables:
-```bash
-export WATS_BASE_URL="https://your-company.wats.com"
-export WATS_AUTH_TOKEN="your_base64_encoded_token"
-```
-
-**Claude Desktop Config** (`~/Library/Application Support/Claude/claude_desktop_config.json` or `%APPDATA%\Claude\claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "wats": {
-      "command": "python",
-      "args": ["-m", "pywats_mcp"],
-      "env": {
-        "WATS_BASE_URL": "https://your-company.wats.com",
-        "WATS_AUTH_TOKEN": "your_token_here"
-      }
-    }
-  }
-}
-```
-
-**VS Code Settings** (`.vscode/settings.json`):
-```json
-{
-  "mcp.servers": {
-    "wats": {
-      "command": "python",
-      "args": ["-m", "pywats_mcp"],
-      "env": {
-        "WATS_BASE_URL": "https://your-company.wats.com",
-        "WATS_AUTH_TOKEN": "your_token_here"
-      }
-    }
-  }
-}
-```
-
-**Launch:**
-```bash
-pywats-mcp
-```
-
-**Available MCP Tools:**
-- Connection testing
-- Product queries
-- Report queries (UUT/UUR)
-- Asset management
-- Production data and serial numbers
-- Statistics and analytics
-- RootCause ticket management
-
----
-
-### 4. Development Tools
+### 3. Development Tools
 
 ```bash
 pip install pywats-api[dev]
@@ -196,9 +125,8 @@ pytest --cov=src --cov-report=html
 | API Library Only | `pip install pywats-api` | ~5 MB |
 | Desktop Client | `pip install pywats-api[client]` | ~150 MB |
 | Server/Raspberry Pi | `pip install pywats-api[client-headless]` | ~8 MB |
-| AI Integration | `pip install pywats-api[mcp]` | ~6 MB |
 | Development | `pip install pywats-api[dev]` | ~30 MB |
-| Everything | `pip install pywats-api[client,mcp,dev]` | ~180 MB |
+| Everything | `pip install pywats-api[client,dev]` | ~180 MB |
 
 ---
 
@@ -295,15 +223,6 @@ pip install pywats-api[client]
 
 # Verify PySide6
 python -c "from PySide6 import QtWidgets"
-```
-
-### MCP Server Issues
-```bash
-# Check MCP is installed
-pip show mcp
-
-# Test environment variables
-python -c "import os; print(os.getenv('WATS_BASE_URL'))"
 ```
 
 ---

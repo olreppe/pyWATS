@@ -1,6 +1,6 @@
 # WATS Domain Knowledge for AI Agents
 
-This document contains essential domain knowledge for AI agents working with WATS (Web-based Automated Test System). Understanding these concepts is crucial for correctly interpreting and answering questions about manufacturing test data.
+This document contains essential domain knowledge for AI agents working with WATS. Understanding these concepts is crucial for correctly interpreting and answering questions about manufacturing test data.
 
 ---
 

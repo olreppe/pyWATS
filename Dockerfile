@@ -69,31 +69,12 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=30s \
 CMD ["python", "-m", "pywats_client", "--headless"]
 
 # ============================================================================
-# Stage 4: MCP server (for AI assistant integration)
-# ============================================================================
-FROM base AS mcp
-
-# Install MCP server dependencies
-RUN pip install --no-cache-dir -e .[mcp]
-
-# Create non-root user
-RUN useradd -m -u 1000 pywats && chown -R pywats:pywats /app
-USER pywats
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD python -c "import pywats_mcp; print('MCP Server OK')" || exit 1
-
-# Run MCP server
-CMD ["python", "-m", "pywats_mcp.server"]
-
-# ============================================================================
-# Stage 5: Development image (all dependencies)
+# Stage 4: Development image (all dependencies)
 # ============================================================================
 FROM base AS dev
 
-# Install all dependencies (api + client-headless + mcp + dev + docs)
-RUN pip install --no-cache-dir -e .[client-headless,mcp,dev,docs]
+# Install all dependencies (api + client-headless + dev + docs)
+RUN pip install --no-cache-dir -e .[client-headless,dev,docs]
 
 # Create non-root user
 RUN useradd -m -u 1000 pywats && chown -R pywats:pywats /app

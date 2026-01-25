@@ -43,14 +43,6 @@ For servers, Raspberry Pi, and embedded systems (no Qt/GUI):
 pip install pywats-api[client-headless]
 ```
 
-### With MCP Server
-
-For AI assistant integration:
-
-```bash
-pip install pywats-api[mcp]
-```
-
 ### Development Installation
 
 From source for development:

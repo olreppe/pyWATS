@@ -44,25 +44,7 @@ class AsyncProductService:
     # Product Operations
     # =========================================================================
 
-    async def get_products(self) -> List[ProductView]:
-        """
-        Get all products as simplified views.
-
-        Returns:
-            List of ProductView objects
-        """
-        products = await self._repository.get_all()
-        return [
-            ProductView(
-                part_number=p.part_number,
-                name=p.name,
-                non_serial=p.non_serial,
-                state=p.state
-            )
-            for p in products
-        ]
-
-    async def get_products_full(self) -> List[Product]:
+    async def get_products(self) -> List[Product]:
         """
         Get all products with full details.
 
@@ -70,6 +52,17 @@ class AsyncProductService:
             List of Product objects
         """
         return await self._repository.get_all()
+
+    async def get_products_full(self) -> List[Product]:
+        """
+        Get all products with full details.
+        
+        Alias for get_products() for backward compatibility.
+
+        Returns:
+            List of Product objects
+        """
+        return await self.get_products()
 
     async def get_product(self, part_number: str) -> Optional[Product]:
         """

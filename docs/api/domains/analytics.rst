@@ -16,15 +16,10 @@ Models
    :undoc-members:
    :show-inheritance:
 
-Dimension Enums
----------------
+Enums
+-----
 
-.. autoclass:: pywats.domains.analytics.dimension_enums.Dimension
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. autoclass:: pywats.domains.analytics.dimension_enums.KPI
+.. automodule:: pywats.domains.analytics.enums
    :members:
    :undoc-members:
    :show-inheritance:

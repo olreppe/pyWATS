@@ -78,41 +78,6 @@ services:
   # --------------------------------------------------------------------------
   # MCP Server - AI Assistant Integration
   # --------------------------------------------------------------------------
-  mcp:
-    build:
-      context: .
-      target: mcp
-    container_name: pywats-mcp
-    restart: unless-stopped
-    
-    environment:
-      WATS_BASE_URL: ${WATS_BASE_URL}
-      WATS_TOKEN: ${WATS_TOKEN}
-      MCP_PORT: ${MCP_PORT:-3000}
-    
-    ports:
-      - "${MCP_PORT:-3000}:3000"
-    
-    networks:
-      - pywats-network
-    
-    healthcheck:
-      test: ["CMD", "python", "-c", "import pywats_mcp; print('OK')"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-  
-  # --------------------------------------------------------------------------
   # Development environment
   # --------------------------------------------------------------------------
   dev:

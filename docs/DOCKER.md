@@ -124,27 +124,7 @@ docker run -d \
 - Headless test stations
 - Raspberry Pi deployments
 
-### 3. MCP Server (`mcp`)
-
-AI assistant integration server.
-
-```bash
-# Build
-docker build --target mcp -t pywats-mcp .
-
-# Run
-docker run -d -p 3000:3000 \
-  -e WATS_BASE_URL=https://wats.example.com \
-  -e WATS_TOKEN=your_token \
-  pywats-mcp
-```
-
-**Use Cases:**
-- GitHub Copilot integration
-- AI-assisted data queries
-- Automated workflows
-
-### 4. Development (`dev`)
+### 3. Development (`dev`)
 
 Full development environment with all dependencies.
 
@@ -403,9 +383,6 @@ docker build --target api -t pywats-api:latest .
 
 # Headless client
 docker build --target client-headless -t pywats-client:latest .
-
-# MCP server
-docker build --target mcp -t pywats-mcp:latest .
 
 # Development (largest)
 docker build --target dev -t pywats-dev:latest .

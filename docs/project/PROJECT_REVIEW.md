@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-PyWATS is a well-architected Python library for WATS (Web-based Automated Test System) with a sophisticated client application. The project demonstrates strong software engineering practices with clear separation of concerns, comprehensive documentation, and modern Python patterns.
+PyWATS is a well-architected Python library for WATS with a sophisticated client application. The project demonstrates strong software engineering practices with clear separation of concerns, comprehensive documentation, and modern Python patterns.
 
 **Overall Rating:** ⭐⭐⭐⭐ (8.5/10)
 
