@@ -6,7 +6,6 @@ from .client import HttpClient, Response
 from .async_client import AsyncHttpClient
 from .config import (
     APISettings,
-    APIConfigManager,
     DomainSettings,
     ProductDomainSettings,
     ReportDomainSettings,
@@ -16,8 +15,7 @@ from .config import (
     AssetDomainSettings,
     RootCauseDomainSettings,
     AppDomainSettings,
-    get_api_settings,
-    get_api_config_manager,
+    get_default_settings,
 )
 from .exceptions import (
     # Error handling
@@ -87,9 +85,8 @@ __all__ = [
     # Client
     "HttpClient",
     "Response",
-    # Config
+    # Config (pure models, no file I/O)
     "APISettings",
-    "APIConfigManager",
     "DomainSettings",
     "ProductDomainSettings",
     "ReportDomainSettings",
@@ -99,8 +96,7 @@ __all__ = [
     "AssetDomainSettings",
     "RootCauseDomainSettings",
     "AppDomainSettings",
-    "get_api_settings",
-    "get_api_config_manager",
+    "get_default_settings",
     # Station
     "Station",
     "StationConfig",

@@ -1,18 +1,27 @@
 """
-pyWATS API Configuration
+pyWATS API Configuration Models
 
-Provides configuration management for the pyWATS API library.
-Settings are stored in a JSON config file and can be modified programmatically
-or through the GUI client.
+Pure configuration models for the pyWATS API library (no file I/O).
+For file-based config persistence, see pywats_client.core.config_manager.
 
 Configuration Hierarchy:
 - API Settings: Core API behavior (timeouts, error modes, caching)
 - Domain Settings: Per-domain configuration (product, report, etc.)
+
+Usage:
+    # Pure API - use constant defaults (no file I/O)
+    settings = APISettings()
+    
+    # Or explicitly configure
+    settings = APISettings(timeout_seconds=60, verify_ssl=False)
+    
+    # Client layer handles file persistence
+    from pywats_client.core import ConfigManager
+    manager = ConfigManager()
+    settings = manager.load()
 """
 
-import json
 import logging
-from pathlib import Path
 from typing import Optional, Dict, Any, TypeVar, Type
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -232,96 +241,17 @@ class APISettings(BaseModel):
         return settings
 
 
-class APIConfigManager:
+# Default settings instance (constant, no file I/O)
+_default_settings: Optional[APISettings] = None
+
+
+def get_default_settings() -> APISettings:
     """
-    Manages API configuration file operations.
+    Get the default API settings (constant defaults, no file I/O).
     
-    Handles loading, saving, and watching for changes to the API config file.
+    For file-based persistence, use pywats_client.core.ConfigManager.
     """
-    
-    DEFAULT_CONFIG_FILENAME = "pywats_api.json"
-    
-    def __init__(self, config_path: Optional[Path] = None):
-        """
-        Initialize the config manager.
-        
-        Args:
-            config_path: Path to config file. If None, uses default location.
-        """
-        if config_path is None:
-            # Default to user's config directory
-            import os
-            if os.name == 'nt':
-                base = Path(os.environ.get('APPDATA', '')) / 'pyWATS'
-            else:
-                base = Path.home() / '.config' / 'pywats'
-            config_path = base / self.DEFAULT_CONFIG_FILENAME
-        
-        self.config_path = Path(config_path)
-        self._settings: Optional[APISettings] = None
-    
-    def load(self) -> APISettings:
-        """Load settings from file, creating defaults if not found."""
-        if self.config_path.exists():
-            try:
-                with open(self.config_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                self._settings = APISettings.from_dict(data)
-                logger.debug(f"Loaded API settings from {self.config_path}")
-            except (json.JSONDecodeError, IOError) as e:
-                logger.warning(f"Failed to load API config, using defaults: {e}")
-                self._settings = APISettings()
-        else:
-            logger.debug("No API config file found, using defaults")
-            self._settings = APISettings()
-        
-        return self._settings
-    
-    def save(self, settings: Optional[APISettings] = None) -> None:
-        """Save settings to file."""
-        if settings:
-            self._settings = settings
-        
-        if self._settings is None:
-            self._settings = APISettings()
-        
-        # Ensure directory exists
-        self.config_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        try:
-            with open(self.config_path, 'w', encoding='utf-8') as f:
-                json.dump(self._settings.to_dict(), f, indent=2)
-            logger.debug(f"Saved API settings to {self.config_path}")
-        except IOError as e:
-            logger.error(f"Failed to save API config: {e}")
-            raise
-    
-    @property
-    def settings(self) -> APISettings:
-        """Get current settings, loading if needed."""
-        if self._settings is None:
-            self.load()
-        return self._settings  # type: ignore
-    
-    def reset_to_defaults(self) -> APISettings:
-        """Reset all settings to defaults."""
-        self._settings = APISettings()
-        self.save()
-        return self._settings
-
-
-# Global config manager instance
-_config_manager: Optional[APIConfigManager] = None
-
-
-def get_api_config_manager() -> APIConfigManager:
-    """Get the global API config manager instance."""
-    global _config_manager
-    if _config_manager is None:
-        _config_manager = APIConfigManager()
-    return _config_manager
-
-
-def get_api_settings() -> APISettings:
-    """Get the current API settings."""
-    return get_api_config_manager().settings
+    global _default_settings
+    if _default_settings is None:
+        _default_settings = APISettings()
+    return _default_settings

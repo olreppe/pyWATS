@@ -26,6 +26,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Consistent error handling
   - Design principle: API (`pywats/`) is "memory-only", file I/O in client (`pywats_client/`)
 
+- **Configuration Architecture Refactoring** - API layer is now pure (no file I/O):
+  - **APISettings** (`pywats.core.config`): Pure configuration model, no file operations
+    - `get_default_settings()`: Returns constant defaults (no file I/O)
+    - Settings can be passed to `pyWATS()` constructor via `settings=` parameter
+  - **ConfigManager** (`pywats_client.core`): File-based config persistence for client
+    - Uses atomic writes via SafeFileWriter
+    - Instance-aware config paths for multi-instance support
+    - `load_client_settings()` convenience function
+  - **pyWATS Constructor** - Enhanced with settings injection:
+    - New `settings: APISettings` parameter for explicit configuration
+    - Configuration priority: explicit params > injected settings > service discovery > defaults
+    - Pure API usage: `api = pyWATS(base_url="...", token="...", settings=my_settings)`
+    - With client file config: `settings = ConfigManager().load(); api = pyWATS(..., settings=settings)`
+
 - **Standard Converters** - 6 pre-installed converters bundled with pyWATS Client:
   - `WATSStandardXMLConverter` - WATS Standard XML Format (WSXF/WRML)
   - `WATSStandardJsonConverter` - WATS Standard JSON Format (WSJF)
@@ -48,7 +62,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-### Changed
+- **Configuration Moved to Client Layer** - File I/O removed from API:
+  - `APIConfigManager` moved from `pywats.core.config` to `pywats_client.core.ConfigManager`
+  - Removed `get_api_config_manager()` and `get_api_settings()` from API layer
+  - Added `get_default_settings()` for pure API constant defaults
+  - GUI settings dialog updated to use `ConfigManager` from client layer
 
 - **Converter Cleanup** - Architecture review and naming fixes:
   - Renamed `KitronSeicaXMLConverter` → `SeicaXMLConverter` (removed customer name)
@@ -78,6 +96,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Use `pywats.queue.MemoryQueue` for pure in-memory queue
   - Use `pywats_client.queue.PersistentQueue` for file-backed queue
   - SimpleQueue will be removed in a future version
+
+- **APIConfigManager** - File-based config manager moved to client layer:
+  - Use `pywats_client.core.ConfigManager` for file-based config persistence
+  - Use `pywats.core.config.get_default_settings()` for pure API defaults
 
 ### Removed
 

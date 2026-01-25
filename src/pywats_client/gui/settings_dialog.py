@@ -1274,14 +1274,16 @@ class SettingsDialog(QDialog):
     
     def _load_all_settings(self) -> None:
         """Load all settings into panels."""
-        # Load API settings
+        # Load API settings from file (client layer)
         try:
-            from pywats.core.config import get_api_settings
-            self._api_config = get_api_settings()
+            from pywats_client.core import ConfigManager
+            self._config_manager = ConfigManager()
+            self._api_config = self._config_manager.load()
         except ImportError:
-            # Create default if import fails
+            # Fallback to defaults if import fails
             from pywats.core.config import APISettings
             self._api_config = APISettings()
+            self._config_manager = None
         
         # Load API general
         if "api_general" in self._panels:
@@ -1350,10 +1352,13 @@ class SettingsDialog(QDialog):
                 if domain_config:
                     self._panels[panel_key].save_settings(domain_config)
         
-        # Save API config to file
+        # Save API config to file (client layer handles file I/O)
         try:
-            from pywats.core.config import get_api_config_manager
-            get_api_config_manager().save(self._api_config)
+            if self._config_manager:
+                self._config_manager.save(self._api_config)
+            else:
+                from pywats_client.core import ConfigManager
+                ConfigManager().save(self._api_config)
         except Exception as e:
             logger.error(f"Failed to save API config: {e}")
         
