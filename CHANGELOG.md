@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **ReportBuilder Tool** - Simple, LLM-friendly report building for converters:
+  - **Smart Type Inference** - Automatically determines step types (numeric, boolean, string, multi-value) from data
+  - **Auto Status Calculation** - Calculates pass/fail from limits without manual logic
+  - **Flexible Data Handling** - Handles messy data gracefully (string limits, various status formats)
+  - **Automatic Grouping** - Creates sequence hierarchy from group names
+  - **Dictionary Support** - Flexible key mapping with common variations auto-detected
+  - **Method Chaining** - Fluent API for easy composition
+  - **quick_report() Helper** - One-line report creation
+  - Perfect for LLM monitoring, autocorrection, and implementation of new converters
+  - Documentation: `docs/usage/REPORT_BUILDER.md`, `docs/LLM_CONVERTER_GUIDE.md`
+  - Examples: `examples/report/report_builder_examples.py`
+  - Template: `converters/simple_builder_converter.py`
+
 - **Performance Optimizations** - High-performance features for production applications:
   - **Enhanced TTL Caching** - AsyncTTLCache with automatic expiration and background cleanup
     - Generic typing for type safety (TTLCache[T])
@@ -152,9 +165,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **ReportBuilder multi-value step fixes** - Fixed API mismatches in multi-step handling:
+  - `MultiBooleanStep.add_measurement()` now passes required `name` parameter
+  - `MultiNumericStep.add_measurement()` now passes required `name` parameter
+  - `MultiStringStep.add_measurement()` now passes required `name`, `status`, and `comp_op` parameters
+  - Measurements named as "Value 1", "Value 2", etc. for each element in multi-value lists
+
+- **HTTP/2 dependency** - Added `httpx[http2]` extra to ensure `h2` package is installed:
+  - Updated `pyproject.toml` and `requirements.txt` to use `httpx[http2]>=0.24.0`
+  - Fixes `ImportError: Using http2=True, but the 'h2' package is not installed`
+
 - Service initialization parameter errors corrected:
   - ConnectionService, ProcessSyncService, ReportQueueService, ConverterManager
   - All services now receive correct constructor parameters
+  - EventBus.emit_status_changed() method added
+
+### Removed
+
+- **MCP Server** - Removed experimental Model Context Protocol server:
+  - Deleted `src/pywats_mcp/` directory and all MCP source code
+  - Removed `[mcp]` optional dependency from pyproject.toml
+  - Removed `pywats-mcp` script entry point
+  - Removed MCP documentation from README, INSTALLATION, GETTING_STARTED, DOCKER
+  - Removed MCP build stage from Dockerfile and service from docker-compose.yml
+  - Archived analysis to `docs/archive/MCP_ANALYSIS.md`
+  - Created recommendations guide: `docs/MCP_RECOMMENDATIONS.md`
+  - **Reason**: Critical async/sync bugs, low API coverage (~15-20%), better as separate project if needed
+
   - EventBus.emit_status_changed() method added
 
 ## [0.1.0b35] - 2026-01-23

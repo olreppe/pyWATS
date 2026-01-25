@@ -93,6 +93,26 @@ class AsyncProcessService:
     def cache_ttl(self) -> float:
         """Get the cache TTL in seconds."""
         return self._cache_ttl
+    
+    @property
+    def refresh_interval(self) -> float:
+        """Get the cache refresh interval in seconds (alias for cache_ttl)."""
+        return self._cache_ttl
+    
+    @refresh_interval.setter
+    def refresh_interval(self, value: float) -> None:
+        """Set the cache refresh interval in seconds."""
+        self._cache_ttl = value
+        self._cache._default_ttl = value
+    
+    @property
+    def last_refresh(self) -> Optional[datetime]:
+        """Get the timestamp of the last cache refresh."""
+        # Check if processes are cached and get their entry time
+        entry = self._cache._cache.get("processes")
+        if entry:
+            return entry.cached_at
+        return None
 
     @property
     def cache_stats(self) -> Dict[str, Any]:

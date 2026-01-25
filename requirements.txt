@@ -6,7 +6,7 @@
 # For optional dependencies: pip install pywats-api[client] or pywats-api[dev]
 
 # Core dependencies
-httpx>=0.24.0  # HTTP client for REST API
+httpx[http2]>=0.24.0  # HTTP client for REST API with HTTP/2 support
 pydantic>=1.10.0  # Data validation and serialization
 python-dateutil>=2.8.0  # Date parsing utilities
 attrs>=22.0.0  # Data classes and attributes for generated client
