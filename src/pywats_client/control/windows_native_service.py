@@ -24,10 +24,15 @@ import sys
 import os
 import logging
 import time
+import subprocess
 from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# Event Log constants
+EVENT_LOG_APPLICATION = "Application"
+EVENT_SOURCE_NAME = "pyWATS"
 
 # Check for pywin32 availability
 try:
@@ -35,6 +40,8 @@ try:
     import win32service
     import win32event
     import servicemanager
+    import win32evtlogutil
+    import win32evtlog
     import socket
     HAS_PYWIN32 = True
 except ImportError:
@@ -227,6 +234,126 @@ def is_admin() -> bool:
         return False
 
 
+# =============================================================================
+# Windows Event Log Functions
+# =============================================================================
+
+def register_event_source(silent: bool = False) -> bool:
+    """
+    Register pyWATS as an event source in Windows Event Log.
+    
+    This allows pyWATS to write entries to the Application event log
+    with a proper source name that appears in Event Viewer.
+    
+    Args:
+        silent: If True, suppress output
+        
+    Returns:
+        True if registration successful
+    """
+    if not HAS_PYWIN32:
+        return False
+    
+    def _print(msg: str) -> None:
+        if not silent:
+            print(msg)
+    
+    try:
+        # Register event source - uses the pywin32 message DLL
+        # This creates registry entries under:
+        # HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Application\pyWATS
+        win32evtlogutil.AddSourceToRegistry(
+            EVENT_SOURCE_NAME,
+            msgDLL=None,  # Use default message DLL
+            eventLogType=EVENT_LOG_APPLICATION
+        )
+        _print(f"  ✓ Event source '{EVENT_SOURCE_NAME}' registered")
+        return True
+    except Exception as e:
+        # May fail if already registered, which is fine
+        if "already exists" in str(e).lower():
+            return True
+        _print(f"  Warning: Could not register event source: {e}")
+        return False
+
+
+def unregister_event_source(silent: bool = False) -> bool:
+    """
+    Unregister pyWATS event source from Windows Event Log.
+    
+    Args:
+        silent: If True, suppress output
+        
+    Returns:
+        True if unregistration successful
+    """
+    if not HAS_PYWIN32:
+        return False
+    
+    def _print(msg: str) -> None:
+        if not silent:
+            print(msg)
+    
+    try:
+        win32evtlogutil.RemoveSourceFromRegistry(
+            EVENT_SOURCE_NAME,
+            EVENT_LOG_APPLICATION
+        )
+        _print(f"  ✓ Event source '{EVENT_SOURCE_NAME}' removed")
+        return True
+    except Exception as e:
+        # May fail if not registered, which is fine during uninstall
+        return True
+
+
+def log_event(
+    message: str,
+    event_type: str = "info",
+    event_id: int = 1
+) -> bool:
+    """
+    Write an entry to the Windows Event Log.
+    
+    This function can be called from anywhere in pyWATS to log
+    important events that administrators can view in Event Viewer.
+    
+    Args:
+        message: The message to log
+        event_type: "info", "warning", or "error"
+        event_id: Event ID number (default: 1)
+        
+    Returns:
+        True if logging successful
+        
+    Example:
+        from pywats_client.control.windows_native_service import log_event
+        log_event("Service started successfully", "info")
+        log_event("Connection failed", "error")
+    """
+    if not HAS_PYWIN32:
+        return False
+    
+    try:
+        # Map event type to Windows constant
+        type_map = {
+            "info": win32evtlog.EVENTLOG_INFORMATION_TYPE,
+            "warning": win32evtlog.EVENTLOG_WARNING_TYPE,
+            "error": win32evtlog.EVENTLOG_ERROR_TYPE,
+        }
+        event_type_const = type_map.get(event_type.lower(), win32evtlog.EVENTLOG_INFORMATION_TYPE)
+        
+        win32evtlogutil.ReportEvent(
+            EVENT_SOURCE_NAME,
+            event_id,
+            eventType=event_type_const,
+            strings=[message]
+        )
+        return True
+    except Exception as e:
+        logger.debug(f"Could not write to Event Log: {e}")
+        return False
+
+
 def install_service(
     instance_id: str = "default",
     startup: str = "auto",
@@ -318,11 +445,119 @@ def install_service(
         _print(f"\nTo view in Services:")
         _print(f"  services.msc")
         
+        # Configure service recovery options (auto-restart on failure)
+        _configure_service_recovery(service_name, silent=silent)
+        
+        # Configure delayed auto-start if startup is "auto"
+        if startup == "auto":
+            _configure_delayed_start(service_name, silent=silent)
+        
+        # Register Windows Event Log source
+        register_event_source(silent=silent)
+        
+        # Log installation to Event Log
+        log_event(f"pyWATS Service installed (instance: {instance_id})", "info")
+        
         return True
         
     except Exception as e:
         _print(f"ERROR: Failed to install service: {e}")
         logger.exception("Service installation failed")
+        return False
+
+
+def _configure_service_recovery(service_name: str, silent: bool = False) -> bool:
+    """
+    Configure service recovery options for auto-restart on failure.
+    
+    Recovery policy:
+    - First failure: Restart after 5 seconds
+    - Second failure: Restart after 5 seconds  
+    - Subsequent failures: Restart after 30 seconds
+    - Reset failure count after 24 hours (86400 seconds)
+    
+    Args:
+        service_name: Name of the Windows service
+        silent: If True, suppress output
+        
+    Returns:
+        True if configuration successful
+    """
+    import subprocess
+    
+    def _print(msg: str) -> None:
+        if not silent:
+            print(msg)
+    
+    try:
+        # sc.exe failure <service> reset= <seconds> actions= <action>/<delay_ms>/...
+        # actions: restart, run, reboot (we use restart)
+        # delays in milliseconds: 5000ms = 5s, 30000ms = 30s
+        cmd = [
+            "sc.exe", "failure", service_name,
+            "reset=", "86400",  # Reset failure count after 24 hours
+            "actions=", "restart/5000/restart/5000/restart/30000"
+        ]
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            shell=True  # Needed for sc.exe on some systems
+        )
+        
+        if result.returncode == 0:
+            _print("  ✓ Service recovery configured (auto-restart on failure)")
+            return True
+        else:
+            _print(f"  Warning: Could not configure service recovery: {result.stderr}")
+            return False
+            
+    except Exception as e:
+        _print(f"  Warning: Could not configure service recovery: {e}")
+        return False
+
+
+def _configure_delayed_start(service_name: str, silent: bool = False) -> bool:
+    """
+    Configure service for delayed auto-start.
+    
+    Delayed start means the service starts after other auto-start services,
+    which helps ensure network services are available.
+    
+    Args:
+        service_name: Name of the Windows service
+        silent: If True, suppress output
+        
+    Returns:
+        True if configuration successful
+    """
+    import subprocess
+    
+    def _print(msg: str) -> None:
+        if not silent:
+            print(msg)
+    
+    try:
+        # sc.exe config <service> start= delayed-auto
+        cmd = ["sc.exe", "config", service_name, "start=", "delayed-auto"]
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            shell=True
+        )
+        
+        if result.returncode == 0:
+            _print("  ✓ Delayed auto-start configured (starts after network ready)")
+            return True
+        else:
+            _print(f"  Warning: Could not configure delayed start: {result.stderr}")
+            return False
+            
+    except Exception as e:
+        _print(f"  Warning: Could not configure delayed start: {e}")
         return False
 
 
@@ -352,6 +587,9 @@ def uninstall_service(instance_id: str = "default", silent: bool = False) -> boo
     try:
         service_name = get_service_name(instance_id)
         
+        # Log uninstallation to Event Log before removing
+        log_event(f"pyWATS Service uninstalling (instance: {instance_id})", "info")
+        
         _print(f"Stopping service '{service_name}'...")
         try:
             win32serviceutil.StopService(service_name)
@@ -361,6 +599,10 @@ def uninstall_service(instance_id: str = "default", silent: bool = False) -> boo
         
         _print(f"Removing service '{service_name}'...")
         win32serviceutil.RemoveService(service_name)
+        
+        # Note: We don't unregister the event source here because
+        # other instances might still be using it, and it doesn't
+        # cause any harm to leave it registered.
         
         _print(f"\n✓ Service '{service_name}' removed successfully")
         return True

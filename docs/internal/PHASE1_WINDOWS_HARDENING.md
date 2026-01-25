@@ -59,19 +59,21 @@ Implement production-ready Windows service features that IT departments expect:
 ### 4. Service Recovery (Windows-specific)
 **Goal**: Service auto-restarts on crash
 
-- [ ] Configure recovery via `sc.exe failure` after install
-- [ ] First failure: Restart after 5 seconds
-- [ ] Second failure: Restart after 5 seconds
-- [ ] Subsequent failures: Restart after 30 seconds
-- [ ] Reset failure count after 24 hours
+- [x] Configure recovery via `sc.exe failure` after install
+- [x] First failure: Restart after 5 seconds
+- [x] Second failure: Restart after 5 seconds
+- [x] Subsequent failures: Restart after 30 seconds
+- [x] Reset failure count after 24 hours
+- [x] Configure delayed auto-start (starts after network ready)
 
 ### 5. Windows Event Log Integration
 **Goal**: Service writes to Windows Event Log (Application log)
 
-- [ ] Register event source during install
-- [ ] Log service start/stop to Event Log
-- [ ] Log errors to Event Log
-- [ ] Remove event source during uninstall
+- [x] Register event source during install
+- [x] Log service start/stop to Event Log
+- [x] Log errors to Event Log
+- [x] Provide `log_event()` helper function for application use
+- [ ] Remove event source during uninstall (skipped - may be used by other instances)
 
 ---
 
@@ -131,6 +133,13 @@ python -m pywats_client install-service --native --silent `
 - ✅ Added `is_service_installed()` function for duplicate detection
 - ✅ Added `silent` parameter to `install_service()` and `uninstall_service()`
 - ✅ Tested exit codes work correctly (EXIT_PERMISSION_DENIED = 14 when not admin)
+- ✅ Implemented service recovery (auto-restart on failure via sc.exe failure)
+- ✅ Implemented delayed auto-start (starts after network services ready)
+- ✅ Added Windows Event Log integration:
+  - `register_event_source()` - registers "pyWATS" in Application log
+  - `log_event(message, type, id)` - write to Event Log from anywhere
+  - Auto-registers during service install
+  - Logs install/uninstall events
 
 ---
 
