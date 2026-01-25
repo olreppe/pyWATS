@@ -199,26 +199,21 @@ def _run_service_mode(instance_id: str = "default"):
 
 
 def _run_headless_mode(config):
-    """Run in simple headless mode (legacy - deprecated)"""
-    print("Warning: Headless mode is deprecated. Use 'service' mode instead:")
-    print("  python -m pywats_client service")
+    """Run in simple headless mode (deprecated - redirects to service mode)"""
+    print("Note: Headless mode now uses service mode.")
     print()
     
-    from .core.client import WATSClient
+    from .service.client_service import ClientService
     
-    async def run_headless():
-        client = WATSClient(config)
-        try:
-            await client.start()
-            # Keep running until interrupted
-            while True:
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            print("\nShutting down...")
-        finally:
-            await client.stop()
+    # Use default instance
+    service = ClientService("default")
     
-    asyncio.run(run_headless())
+    try:
+        service.start()  # Blocks until stopped
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+    finally:
+        service.stop()
 
 
 def main():

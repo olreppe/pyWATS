@@ -33,7 +33,6 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
-    from ...core.app_facade import AppFacade
 
 
 class TakeSerialNumbersDialog(QDialog):

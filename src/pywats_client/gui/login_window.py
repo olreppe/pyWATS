@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, Slot, QTimer, QThread, QObject
 from PySide6.QtGui import QFont, QIcon
 
-from ..services.connection import ConnectionService
+from ..core.auth import authenticate_with_password, AuthResult
 from ..core.connection_config import ConnectionConfig
 from ..core.config import ClientConfig
 
@@ -24,23 +24,20 @@ from ..core.config import ClientConfig
 class AuthWorker(QObject):
     """Worker for performing authentication in a separate thread."""
     
-    finished = Signal(bool, str)  # success, error_message
+    finished = Signal(bool, str, str)  # success, error_message, token
     
-    def __init__(self, connection_service: ConnectionService, url: str, password: str, username: str = "admin") -> None:
+    def __init__(self, url: str, password: str) -> None:
         super().__init__()
-        self.connection_service = connection_service
         self.url = url
         self.password = password
-        self.username = username
     
     def run(self) -> None:
         """Perform authentication."""
         try:
-            success = self.connection_service.authenticate(self.url, self.password, self.username)
-            error = self.connection_service.last_error if not success else ""
-            self.finished.emit(success, error)
+            result = authenticate_with_password(self.url, self.password)
+            self.finished.emit(result.success, result.error or "", result.token or "")
         except Exception as e:
-            self.finished.emit(False, str(e))
+            self.finished.emit(False, str(e), "")
 
 
 class LoginWindow(QDialog):
@@ -68,7 +65,7 @@ class LoginWindow(QDialog):
         super().__init__(parent)
         
         self.config = config or ClientConfig()
-        self.connection_service: Optional[ConnectionService] = None
+        self._auth_token: Optional[str] = None
         
         self._setup_ui()
         self._apply_styles()
@@ -312,12 +309,9 @@ class LoginWindow(QDialog):
                 auto_reconnect=remember
             )
             
-            # Create connection service
-            self.connection_service = ConnectionService(connection_config)
-            
             # Create worker and thread for authentication
             self.auth_thread = QThread()
-            self.auth_worker = AuthWorker(self.connection_service, url, password)
+            self.auth_worker = AuthWorker(url, password)
             self.auth_worker.moveToThread(self.auth_thread)
             
             # Connect signals
@@ -335,7 +329,7 @@ class LoginWindow(QDialog):
             self.status_label.setStyleSheet("color: #f04040; font-size: 11px;")
             self._reset_ui()
     
-    def _on_auth_finished(self, success: bool, error_message: str):
+    def _on_auth_finished(self, success: bool, error_message: str, token: str):
         """Handle authentication completion."""
         if success:
             # Authentication successful
@@ -344,17 +338,13 @@ class LoginWindow(QDialog):
             
             # Update config
             url = self.url_input.text().strip()
-            password = self.password_input.text()
             remember = self.remember_cb.isChecked()
             
             self.config.service_address = url
-            self.config.api_token = password if not remember else ""
+            self.config.api_token = token
             self.config.auto_connect = remember
             self.config.was_connected = True
-            
-            # Add connection to config
-            if self.connection_service and not hasattr(self.config, 'connection'):
-                setattr(self.config, 'connection', self.connection_service.config)
+            self._auth_token = token
             
             # Close dialog after short delay
             QTimer.singleShot(500, lambda: self._on_auth_success())

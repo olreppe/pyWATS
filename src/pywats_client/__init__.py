@@ -2,51 +2,32 @@
 pyWATS Client - Cross-platform client application for WATS
 
 Features:
-- Process data synchronization from WATS server
-- Offline report storage and automatic upload when online
+- Background service for report processing
 - Converter framework for file-to-report conversion
-- Qt-based GUI (optional - can run headless)
+- Qt-based GUI for configuration and monitoring
 - CLI interface for headless configuration and control
-- HTTP control API for remote management
 - Multi-instance support
-- Persistent settings and serial number management
-- File monitoring and auto-conversion
-- Service/daemon mode support (systemd, Windows Service)
+- Service/daemon mode support (systemd, Windows Service, launchd)
 
-Installation Profiles:
-- pip install pywats-api[client]          # Full client with Qt GUI
-- pip install pywats-api[client-headless] # Headless only (no Qt)
+Installation:
+    pip install pywats-api[client]
 
 Usage:
-- GUI Mode:      python -m pywats_client
-- CLI Mode:      pywats-client config show
-- Service Mode:  pywats-client start --api --daemon
+- GUI Mode:      python -m pywats_client gui
+- Service Mode:  python -m pywats_client service
+- Install:       python -m pywats_client install-service
 """
 
 __version__ = "1.0.0"
 
-# Core components
-from .core.config import ClientConfig
-from .core.client import WATSClient
-from .converters.base import ConverterBase, ConverterResult
+# Core configuration
+from .core.config import ClientConfig, get_default_config_path
 
-# Application layer (no GUI)
-from .app import pyWATSApplication, ApplicationStatus, ApplicationError, ServiceError
-
-# Services
-from .services.settings_manager import (
-    SettingsManager,
-    ApplicationSettings,
-    MonitorFolder,
-    ConverterConfig,
-)
-from .services.serial_manager import SerialNumberManager, ReservedSerial
-from .services.file_monitor import FileMonitor, MonitorRule, FileEventType
-from .services.connection import ConnectionService, ConnectionStatus
-from .services.process_sync import ProcessSyncService
-from .services.report_queue import ReportQueueService
-from .services.converter_manager import ConverterManager
-from .services.converter_processor import ConverterProcessor, ConversionRecord
+# Service layer (NEW architecture)
+from .service.client_service import ClientService, ServiceStatus
+from .service.converter_pool import ConverterPool, ConversionItem
+from .service.pending_watcher import PendingWatcher
+from .service.ipc_client import ServiceIPCClient, ServiceDiscovery, InstanceInfo, discover_services
 
 # Converters
 from .converters.base import (
@@ -59,44 +40,29 @@ from .converters.base import (
     CSVConverter,
 )
 
-# Control interfaces (headless)
-from .control.service import HeadlessService, ServiceConfig
+# Control interfaces
 from .control.cli import ConfigCLI, cli_main
 
 __all__ = [
-    # Core
+    # Version
+    "__version__",
+    
+    # Core configuration
     "ClientConfig",
-    "WATSClient",
+    "get_default_config_path",
     
-    # Application
-    "pyWATSApplication",
-    "ApplicationStatus",
-    "ApplicationError",
-    "ServiceError",
+    # Service layer
+    "ClientService",
+    "ServiceStatus",
+    "ConverterPool",
+    "ConversionItem",
+    "PendingWatcher",
     
-    # Settings
-    "SettingsManager",
-    "ApplicationSettings",
-    "MonitorFolder",
-    "ConverterConfig",
-    
-    # Serial management
-    "SerialNumberManager",
-    "ReservedSerial",
-    
-    # File monitoring
-    "FileMonitor",
-    "MonitorRule",
-    "FileEventType",
-    
-    # Services
-    "ConnectionService",
-    "ConnectionStatus",
-    "ProcessSyncService",
-    "ReportQueueService",
-    "ConverterManager",
-    "ConverterProcessor",
-    "ConversionRecord",
+    # IPC
+    "ServiceIPCClient",
+    "ServiceDiscovery",
+    "InstanceInfo",
+    "discover_services",
     
     # Converters
     "ConverterBase",
@@ -107,9 +73,7 @@ __all__ = [
     "FileInfo",
     "CSVConverter",
     
-    # Control interfaces (headless)
-    "HeadlessService",
-    "ServiceConfig",
+    # CLI
     "ConfigCLI",
     "cli_main",
 ]

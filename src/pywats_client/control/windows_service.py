@@ -311,3 +311,73 @@ class WindowsServiceInstaller:
         except subprocess.CalledProcessError as e:
             print(f"ERROR: Failed to delete service: {e}")
             return False
+
+
+def is_auto_start_enabled(instance_id: str = "default") -> bool:
+    """
+    Check if the service is set to auto-start on system boot.
+    
+    Args:
+        instance_id: Instance ID of the service
+        
+    Returns:
+        True if auto-start is enabled
+    """
+    service_name = WindowsServiceInstaller.SERVICE_NAME
+    if instance_id != "default":
+        service_name = f"{service_name}_{instance_id}"
+    
+    try:
+        result = subprocess.run(
+            ["sc", "qc", service_name],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        if result.returncode == 0:
+            # Look for "START_TYPE" in output
+            # AUTO_START (2) means auto-start is enabled
+            return "AUTO_START" in result.stdout
+    except Exception as e:
+        logger.debug(f"Failed to check auto-start status: {e}")
+    
+    return False
+
+
+def set_auto_start(enabled: bool, instance_id: str = "default") -> bool:
+    """
+    Enable or disable auto-start for the service.
+    
+    Args:
+        enabled: True to enable auto-start, False to disable
+        instance_id: Instance ID of the service
+        
+    Returns:
+        True if the operation succeeded
+    """
+    if not WindowsServiceInstaller.is_admin():
+        logger.warning("Administrator privileges required to change auto-start")
+        return False
+    
+    service_name = WindowsServiceInstaller.SERVICE_NAME
+    if instance_id != "default":
+        service_name = f"{service_name}_{instance_id}"
+    
+    start_type = "auto" if enabled else "demand"
+    
+    try:
+        result = subprocess.run(
+            ["sc", "config", service_name, "start=", start_type],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        if result.returncode == 0:
+            logger.info(f"Auto-start {'enabled' if enabled else 'disabled'} for {service_name}")
+            return True
+        else:
+            logger.error(f"Failed to set auto-start: {result.stderr}")
+            return False
+    except Exception as e:
+        logger.error(f"Failed to set auto-start: {e}")
+        return False

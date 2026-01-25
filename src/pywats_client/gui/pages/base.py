@@ -30,9 +30,6 @@ from ...core.event_bus import AppEvent, event_bus
 from ...core.async_runner import TaskResult, AsyncTaskRunner
 from ..error_mixin import ErrorHandlingMixin
 
-if TYPE_CHECKING:
-    from ...core.app_facade import AppFacade
-
 T = TypeVar('T')
 
 
@@ -49,13 +46,9 @@ class BasePage(QWidget, ErrorHandlingMixin):
     
     In IPC mode (new architecture):
         Pages communicate with service via MainWindow's IPC client.
-        The 'facade' parameter is deprecated and should not be used.
         Access service via: self.parent()._ipc_client
     
-    Legacy pattern (deprecated):
-        page = MyPage(config, parent, facade=app_facade)
-    
-    New pattern:
+    Usage:
         page = MyPage(config, parent)
         # Access service via IPC through main window
     
@@ -83,13 +76,11 @@ class BasePage(QWidget, ErrorHandlingMixin):
     def __init__(
         self, 
         config: ClientConfig, 
-        parent: Optional[QWidget] = None,
-        *,
-        facade: Optional["AppFacade"] = None  # Deprecated in IPC mode
+        parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
         self.config = config
-        self._facade: Optional["AppFacade"] = facade  # Legacy support only
+        self._facade = None  # Removed - pages use IPC or direct pyWATS API
         self._event_subscriptions: List[tuple[AppEvent, Callable]] = []
         self._running_tasks: Dict[str, str] = {}  # task_id -> name
         self._async_runner: Optional[AsyncTaskRunner] = None

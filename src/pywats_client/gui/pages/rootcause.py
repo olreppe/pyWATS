@@ -29,7 +29,6 @@ from ...core import TaskResult
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
-    from ...core.app_facade import AppFacade
 
 
 class TicketDialog(QDialog):

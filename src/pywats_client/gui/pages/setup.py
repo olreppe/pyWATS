@@ -553,7 +553,7 @@ class SetupPage(BasePage):
             # Only available on Windows
             import sys
             if sys.platform == 'win32':
-                from ...services.windows_service import set_auto_start
+                from ...control.windows_service import set_auto_start
                 success = set_auto_start(enabled)
                 if not success:
                     # Revert checkbox if failed
@@ -754,7 +754,7 @@ class SetupPage(BasePage):
         try:
             import sys
             if sys.platform == 'win32':
-                from ...services.windows_service import is_auto_start_enabled
+                from ...control.windows_service import is_auto_start_enabled
                 auto_start_enabled = is_auto_start_enabled()
         except ImportError:
             auto_start_enabled = getattr(self.config, 'service_auto_start', False)

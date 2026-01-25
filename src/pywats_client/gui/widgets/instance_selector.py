@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QBrush
 
-from ...services.ipc import ServiceDiscovery, InstanceInfo
+from ...service.ipc_client import ServiceDiscovery, InstanceInfo
 
 logger = logging.getLogger(__name__)
 

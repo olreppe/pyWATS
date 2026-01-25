@@ -24,14 +24,19 @@ from .sub_unit import SubUnit
 
 class ReportStatus(Enum):
     """
-    P = Passed
-    F = Failed
-    S = Skipped
-    * Consider replacing with Eunm
+    UUT/UUR Report Status - matches C# UUTStatusType enum.
+    
+    P = Passed (0)
+    F = Failed (1)
+    E = Error (2)
+    T = Terminated (3)
+    S = Skipped (legacy, maps to Terminated on server)
     """
     Passed = 'P'
     Failed = 'F'
-    Skipped = 'S'
+    Error = 'E'
+    Terminated = 'T'
+    Skipped = 'S'  # Legacy - kept for backward compatibility
 
 class Report(WATSBase):
     """

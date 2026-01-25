@@ -3,10 +3,9 @@ Core module initialization
 """
 
 from .config import ClientConfig, get_default_config_path
-from .client import WATSClient
-from .instance_manager import InstanceManager
+from .instance_manager import InstanceManager, InstanceLock
 from .event_bus import EventBus, event_bus, AppEvent
-from .app_facade import AppFacade
+from .connection_config import ConnectionConfig, ConnectionState
 from .async_runner import (
     AsyncTaskRunner,
     TaskResult,
@@ -19,12 +18,13 @@ from .async_runner import (
 __all__ = [
     "ClientConfig",
     "get_default_config_path",
-    "WATSClient",
     "InstanceManager",
+    "InstanceLock",
     "EventBus",
     "event_bus",
     "AppEvent",
-    "AppFacade",
+    "ConnectionConfig",
+    "ConnectionState",
     # Async utilities
     "AsyncTaskRunner",
     "TaskResult",

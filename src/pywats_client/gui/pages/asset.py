@@ -32,7 +32,6 @@ from ...core.async_runner import TaskResult
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
-    from ...core.app_facade import AppFacade
 
 
 class AssetDialog(QDialog):

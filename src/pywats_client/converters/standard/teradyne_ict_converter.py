@@ -1,8 +1,10 @@
 """
-Teradyne ICT Converter (i3070 Format)
+Teradyne ICT Converter (i3070 Format) - V2 Using UUTReport Model
 
 Converts Teradyne ICT i3070 test result files into WATS reports.
 Port of the C# TeradyneICTConverter.
+
+IMPORTANT: This converter uses the pyWATS UUTReport model - NOT raw dictionaries!
 
 Expected file format:
 - Text-based with lines starting with special patterns
@@ -33,6 +35,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from enum import Enum
 
+# pyWATS model imports - REQUIRED
+from pywats.domains.report.report_models import UUTReport, StepStatus, ReportStatus, SequenceCall
+from pywats.domains.report.report_models.uut.steps import CompOp
+
+# Converter infrastructure
 from pywats_client.converters.file_converter import FileConverter
 from pywats_client.converters.context import ConverterContext
 from pywats_client.converters.models import (
@@ -126,6 +133,8 @@ class TeradyneICTConverter(FileConverter):
     """
     Converts Teradyne ICT i3070 test result files to WATS reports.
     
+    Uses the pyWATS UUTReport model to build reports properly.
+    
     File qualification:
     - Text file containing program path with .obc extension
     - Contains @ prefix for start markers
@@ -166,15 +175,15 @@ class TeradyneICTConverter(FileConverter):
     
     @property
     def name(self) -> str:
-        return "Teradyne ICT Converter"
+        return "Teradyne ICT Converter V2"
     
     @property
     def version(self) -> str:
-        return "1.0.0"
+        return "2.0.0"
     
     @property
     def description(self) -> str:
-        return "Converts Teradyne ICT i3070 test result files into WATS reports"
+        return "Converts Teradyne ICT i3070 test result files into WATS reports using UUTReport model"
     
     @property
     def file_patterns(self) -> List[str]:
@@ -184,8 +193,8 @@ class TeradyneICTConverter(FileConverter):
     def arguments_schema(self) -> Dict[str, ArgumentDefinition]:
         return {
             "operationTypeCode": ArgumentDefinition(
-                arg_type=ArgumentType.STRING,
-                default="20",
+                arg_type=ArgumentType.INTEGER,
+                default=20,
                 description="Operation type code",
             ),
             "stationName": ArgumentDefinition(
@@ -279,7 +288,7 @@ class TeradyneICTConverter(FileConverter):
             return ValidationResult.no_match(f"Error reading file: {e}")
     
     def convert(self, source: ConverterSource, context: ConverterContext) -> ConverterResult:
-        """Convert Teradyne ICT test file to WATS report"""
+        """Convert Teradyne ICT test file to UUTReport"""
         if not source.path:
             return ConverterResult.failed_result(error="No file path provided")
         
@@ -304,9 +313,9 @@ class TeradyneICTConverter(FileConverter):
         source: ConverterSource,
         context: ConverterContext
     ) -> ConverterResult:
-        """Convert new format with {@BATCH|, {@BTEST| patterns"""
+        """Convert new format with {@BATCH|, {@BTEST| patterns using UUTReport"""
         
-        operation_code = context.get_argument("operationTypeCode", "20")
+        operation_code = context.get_argument("operationTypeCode", 20)
         station_name = context.get_argument("stationName", "")
         seq_version = context.get_argument("sequenceVersion", "1.0")
         part_revision = context.get_argument("partRevision", "1")
@@ -322,76 +331,80 @@ class TeradyneICTConverter(FileConverter):
             if parts:
                 part_number = parts[0] if parts[0] else part_number
         
-        # Build report
-        report: Dict[str, Any] = {
-            "type": "Test",
-            "processCode": operation_code,
-            "partNumber": part_number,
-            "partRevision": part_revision,
-            "serialNumber": self._get_serial_number(source),
-            "sequenceName": sequence_name,
-            "sequenceVersion": seq_version,
-            "result": "P",  # Will be updated based on tests
-        }
+        serial_number = self._get_serial_number(source)
         
-        if station_name:
-            report["machineName"] = station_name
+        # Determine overall result
+        overall_passed = True
         
-        # Create root sequence
-        root_step: Dict[str, Any] = {
-            "type": "SEQ",
-            "name": "Root",
-            "status": "Done",
-            "stepResults": []
-        }
+        # Check BLOCK elements for failures
+        for match in self.RE_BLOCK.finditer(content):
+            block_content = match.group('content')
+            parts = [p.strip() for p in block_content.split('|')]
+            if len(parts) >= 2:
+                status = parts[-1] if parts[-1] in ('P', 'F', 'E') else 'P'
+                if status == 'F':
+                    overall_passed = False
+                    break
+        
+        # Check BTEST elements for failures
+        if overall_passed:
+            for match in self.RE_BTEST.finditer(content):
+                btest_content = match.group('content')
+                parts = [p.strip() for p in btest_content.split('|')]
+                for part in parts:
+                    if part in ('F', 'FAIL'):
+                        overall_passed = False
+                        break
+                if not overall_passed:
+                    break
+        
+        # ========================================
+        # BUILD REPORT USING UUTReport MODEL
+        # ========================================
+        
+        report = UUTReport(
+            pn=part_number,
+            sn=serial_number,
+            rev=part_revision,
+            process_code=operation_code,
+            station_name=station_name or "Teradyne ICT",
+            result=ReportStatus.Passed if overall_passed else ReportStatus.Failed,
+            start=datetime.now(),
+        )
+        
+        # Get root sequence
+        root = report.get_root_sequence_call()
+        root.name = sequence_name or "Root"
+        root.version = seq_version
         
         # Parse BLOCK elements
-        self._parse_blocks(content, root_step, report)
+        self._parse_blocks_to_model(content, root)
         
         # Parse BTEST elements
-        self._parse_btests(content, root_step, report)
-        
-        report["root"] = root_step
+        self._parse_btests_to_model(content, root)
         
         return ConverterResult.success_result(
             report=report,
             post_action=PostProcessAction.MOVE,
         )
     
-    def _parse_blocks(
-        self,
-        content: str,
-        root_step: Dict[str, Any],
-        report: Dict[str, Any]
-    ) -> None:
-        """Parse {@BLOCK|...} elements"""
+    def _parse_blocks_to_model(self, content: str, root: SequenceCall) -> None:
+        """Parse {@BLOCK|...} elements into SequenceCall steps"""
         for match in self.RE_BLOCK.finditer(content):
             block_content = match.group('content')
             parts = [p.strip() for p in block_content.split('|')]
             
             if len(parts) >= 2:
                 step_name = parts[0]
-                status = parts[-1] if parts[-1] in ('P', 'F', 'E') else 'P'
+                status_char = parts[-1] if parts[-1] in ('P', 'F', 'E') else 'P'
+                status = StepStatus.PASSED if status_char == 'P' else StepStatus.FAILED
                 
-                step = {
-                    "type": "PF",
-                    "name": step_name,
-                    "stepStatus": "Passed" if status == 'P' else "Failed",
-                }
-                root_step["stepResults"].append(step)
-                
-                if status == 'F':
-                    report["result"] = "F"
+                root.add_boolean_step(name=step_name, status=status)
     
-    def _parse_btests(
-        self,
-        content: str,
-        root_step: Dict[str, Any],
-        report: Dict[str, Any]
-    ) -> None:
-        """Parse {@BTEST|...} elements"""
+    def _parse_btests_to_model(self, content: str, root: SequenceCall) -> None:
+        """Parse {@BTEST|...} elements into SequenceCall steps"""
         current_group = ""
-        current_sequence: Optional[Dict[str, Any]] = None
+        current_sequence: Optional[SequenceCall] = None
         
         for match in self.RE_BTEST.finditer(content):
             btest_content = match.group('content')
@@ -401,42 +414,38 @@ class TeradyneICTConverter(FileConverter):
                 continue
             
             comp_ref = parts[0]
+            test_type = parts[1] if len(parts) > 1 else ""
             
             # Group by first character
             group_char = comp_ref[0] if comp_ref else 'X'
             
             if current_group != group_char:
                 current_group = group_char
-                current_sequence = {
-                    "type": "SEQ",
-                    "name": f"{group_char}-Group",
-                    "status": "Done",
-                    "stepResults": []
-                }
-                root_step["stepResults"].append(current_sequence)
+                current_sequence = root.add_sequence_call(
+                    name=f"{group_char}-Group",
+                    file_name=f"{group_char}_tests.seq",
+                    version="1.0"
+                )
             
-            # Parse measurement
-            step = self._parse_btest_step(parts)
-            if step and current_sequence:
-                current_sequence["stepResults"].append(step)
-                
-                if step.get("stepStatus") == "Failed":
-                    current_sequence["status"] = "Failed"
-                    report["result"] = "F"
+            # Parse and add step
+            self._add_btest_step_to_model(parts, test_type, comp_ref, current_sequence)
     
-    def _parse_btest_step(self, parts: List[str]) -> Optional[Dict[str, Any]]:
-        """Parse a BTEST step from its parts"""
-        if len(parts) < 3:
-            return None
+    def _add_btest_step_to_model(
+        self,
+        parts: List[str],
+        test_type: str,
+        comp_ref: str,
+        sequence: Optional[SequenceCall]
+    ) -> None:
+        """Parse a BTEST step and add to sequence"""
+        if not sequence or len(parts) < 3:
+            return
         
-        comp_ref = parts[0]
-        test_type = parts[1] if len(parts) > 1 else ""
-        
-        # Try to find measurement and limits
-        meas = None
-        low_limit = None
-        high_limit = None
-        status = "Passed"
+        # Parse measurement data
+        meas: Optional[float] = None
+        low_limit: Optional[float] = None
+        high_limit: Optional[float] = None
+        status = StepStatus.PASSED
         unit = TEST_TYPES.get(test_type, ("", ""))[1]
         
         for part in parts[2:]:
@@ -456,41 +465,39 @@ class TeradyneICTConverter(FileConverter):
                 except ValueError:
                     pass
             elif part in ('F', 'FAIL'):
-                status = "Failed"
+                status = StepStatus.FAILED
             elif part in ('P', 'PASS'):
-                status = "Passed"
+                status = StepStatus.PASSED
         
         step_name = f"{comp_ref}({test_type})" if test_type else comp_ref
         
         if meas is not None:
-            step: Dict[str, Any] = {
-                "type": "NT",
+            # Numeric step
+            kwargs: Dict[str, Any] = {
                 "name": step_name,
-                "numericValue": meas,
-                "stepStatus": status,
+                "value": meas,
+                "unit": unit,
+                "status": status,
             }
             
+            # Determine comparison operator and add limits
             if low_limit is not None and high_limit is not None:
-                step["compOp"] = "GELE"
-                step["lowLimit"] = low_limit
-                step["highLimit"] = high_limit
+                kwargs["comp_op"] = CompOp.GELE
+                kwargs["low_limit"] = low_limit
+                kwargs["high_limit"] = high_limit
             elif low_limit is not None:
-                step["compOp"] = "GE"
-                step["lowLimit"] = low_limit
+                kwargs["comp_op"] = CompOp.GE
+                kwargs["low_limit"] = low_limit
             elif high_limit is not None:
-                step["compOp"] = "LE"
-                step["highLimit"] = high_limit
+                kwargs["comp_op"] = CompOp.LE
+                kwargs["high_limit"] = high_limit
+            else:
+                kwargs["comp_op"] = CompOp.LOG
             
-            if unit:
-                step["unit"] = unit
-            
-            return step
+            sequence.add_numeric_step(**kwargs)
         else:
-            return {
-                "type": "PF",
-                "name": step_name,
-                "stepStatus": status,
-            }
+            # Boolean step
+            sequence.add_boolean_step(name=step_name, status=status)
     
     def _convert_classic_format(
         self,
@@ -498,9 +505,9 @@ class TeradyneICTConverter(FileConverter):
         source: ConverterSource,
         context: ConverterContext
     ) -> ConverterResult:
-        """Convert classic format with .obc and measurement patterns"""
+        """Convert classic format with .obc and measurement patterns using UUTReport"""
         
-        operation_code = context.get_argument("operationTypeCode", "20")
+        operation_code = context.get_argument("operationTypeCode", 20)
         station_name = context.get_argument("stationName", "")
         seq_version = context.get_argument("sequenceVersion", "1.0")
         part_revision = context.get_argument("partRevision", "1")
@@ -526,7 +533,7 @@ class TeradyneICTConverter(FileConverter):
         
         # Parse start test
         start_match = self.RE_START_TEST.search(content)
-        start_time = None
+        start_time: Optional[datetime] = None
         if start_match:
             try:
                 start_time = datetime.strptime(
@@ -538,8 +545,8 @@ class TeradyneICTConverter(FileConverter):
         
         # Parse main event for end time and status
         event_match = None
-        uut_status = "P"
-        end_time = None
+        uut_status = ReportStatus.Passed
+        end_time: Optional[datetime] = None
         
         for match in self.RE_MAIN_EVENT.finditer(content):
             event_match = match
@@ -547,13 +554,13 @@ class TeradyneICTConverter(FileConverter):
         if event_match:
             event_char = event_match.group('Event')
             if event_char == '"':
-                uut_status = "P"
+                uut_status = ReportStatus.Passed
             elif event_char == '/':
-                uut_status = "F"
+                uut_status = ReportStatus.Failed
             elif event_char in ('?', '!'):
-                uut_status = "T"  # Terminated
+                uut_status = ReportStatus.Terminated
             elif event_char in ('*', '&'):
-                uut_status = "E"  # Error
+                uut_status = ReportStatus.Error
             
             try:
                 end_time = datetime.strptime(
@@ -563,68 +570,56 @@ class TeradyneICTConverter(FileConverter):
             except ValueError:
                 pass
         
-        # Build report
-        report: Dict[str, Any] = {
-            "type": "Test",
-            "processCode": operation_code,
-            "partNumber": part_number,
-            "partRevision": part_revision,
-            "serialNumber": self._get_serial_number(source),
-            "sequenceName": sequence_name or part_number,
-            "sequenceVersion": seq_version,
-            "result": uut_status,
-        }
+        serial_number = self._get_serial_number(source)
         
-        if start_time:
-            report["start"] = start_time.isoformat()
+        # ========================================
+        # BUILD REPORT USING UUTReport MODEL
+        # ========================================
         
+        report = UUTReport(
+            pn=part_number,
+            sn=serial_number,
+            rev=part_revision,
+            process_code=operation_code,
+            station_name=station_name or "Teradyne ICT",
+            result=uut_status,
+            start=start_time or datetime.now(),
+        )
+        
+        # Get root sequence
+        root = report.get_root_sequence_call()
+        root.name = sequence_name or part_number or "Root"
+        root.version = seq_version
+        
+        # Set execution time
         if start_time and end_time:
-            report["execTime"] = (end_time - start_time).total_seconds()
-        
-        if station_name:
-            report["machineName"] = station_name
-        
-        # Create root sequence
-        root_step: Dict[str, Any] = {
-            "type": "SEQ",
-            "name": "Root",
-            "status": "Done" if uut_status == "P" else "Failed",
-            "stepResults": []
-        }
+            root.tot_time = (end_time - start_time).total_seconds()
         
         # Parse general failures
         for failure_match in self.RE_FAILURES_GEN.finditer(content):
             key = failure_match.group('Key')
             info = failure_match.group('Info')
             
-            step = {
-                "type": "ST",
-                "name": GEN_FAILURES.get(key, "Unknown failure"),
-                "stepStatus": "Failed",
-                "reportText": info,
-            }
-            root_step["stepResults"].append(step)
+            root.add_string_step(
+                name=GEN_FAILURES.get(key, "Unknown failure"),
+                value=info,
+                status=StepStatus.FAILED,
+            )
         
         # Parse measurements
-        self._parse_measurements(content, root_step)
-        
-        report["root"] = root_step
+        self._parse_measurements_to_model(content, root)
         
         return ConverterResult.success_result(
             report=report,
             post_action=PostProcessAction.MOVE,
         )
     
-    def _parse_measurements(
-        self,
-        content: str,
-        root_step: Dict[str, Any]
-    ) -> None:
-        """Parse measurement lines and group by component reference prefix"""
+    def _parse_measurements_to_model(self, content: str, root: SequenceCall) -> None:
+        """Parse measurement lines and add to model, grouped by component reference prefix"""
         
         comp_ref_groups: Dict[str, int] = {}
         current_group = ""
-        current_sequence: Optional[Dict[str, Any]] = None
+        current_sequence: Optional[SequenceCall] = None
         
         for match in self.RE_MEASURE.finditer(content):
             comp_ref = match.group('CompRef')
@@ -647,27 +642,40 @@ class TeradyneICTConverter(FileConverter):
             if current_group != comp_ref_type:
                 comp_ref_groups[comp_ref_type] += 1
                 current_group = comp_ref_type
-                current_sequence = {
-                    "type": "SEQ",
-                    "name": f"{comp_ref_type}-Group{comp_ref_groups[comp_ref_type]}",
-                    "status": "Done",
-                    "stepResults": []
-                }
-                root_step["stepResults"].append(current_sequence)
+                current_sequence = root.add_sequence_call(
+                    name=f"{comp_ref_type}-Group{comp_ref_groups[comp_ref_type]}",
+                    file_name=f"{comp_ref_type}_tests.seq",
+                    version="1.0"
+                )
+            
+            if not current_sequence:
+                continue
             
             # Create step
             step_name = f"{comp_ref}({test_type})" if test_type else comp_ref
+            
+            # Determine status
+            if result in ('=', '#'):
+                status = StepStatus.PASSED if result == '=' else StepStatus.DONE
+            else:
+                status = StepStatus.FAILED
             
             if meas_str:
                 try:
                     meas = float(meas_str)
                     meas_prefix = PREFIX_UNITS.get(meas_unit, PREFIX_UNITS[""])
                     
-                    step: Dict[str, Any] = {
-                        "type": "NT",
+                    # Build kwargs for numeric step
+                    kwargs: Dict[str, Any] = {
                         "name": step_name,
-                        "numericValue": meas,
+                        "value": meas,
+                        "status": status,
                     }
+                    
+                    # Add unit
+                    unit_str = f"{meas_prefix.symbol}({test_type})" if test_type else meas_prefix.symbol
+                    if unit_str:
+                        kwargs["unit"] = unit_str
                     
                     # Add limits
                     if low_lim_str and high_lim_str:
@@ -682,56 +690,28 @@ class TeradyneICTConverter(FileConverter):
                             high_prefix = PREFIX_UNITS.get(high_lim_unit, PREFIX_UNITS[""])
                             high_lim = self._convert_units(high_lim, high_prefix, meas_prefix)
                         
-                        step["compOp"] = "GELE"
-                        step["lowLimit"] = low_lim
-                        step["highLimit"] = high_lim
+                        kwargs["comp_op"] = CompOp.GELE
+                        kwargs["low_limit"] = low_lim
+                        kwargs["high_limit"] = high_lim
                     elif low_lim_str:
                         low_lim = float(low_lim_str)
-                        step["compOp"] = "GE"
-                        step["lowLimit"] = low_lim
+                        kwargs["comp_op"] = CompOp.GE
+                        kwargs["low_limit"] = low_lim
                     elif high_lim_str:
                         high_lim = float(high_lim_str)
-                        step["compOp"] = "LE"
-                        step["highLimit"] = high_lim
-                    
-                    # Add unit
-                    unit_str = f"{meas_prefix.symbol}({test_type})" if test_type else meas_prefix.symbol
-                    if unit_str:
-                        step["unit"] = unit_str
-                    
-                    # Set status
-                    if result in ('=', '#'):
-                        step["stepStatus"] = "Passed" if result == '=' else "Done"
+                        kwargs["comp_op"] = CompOp.LE
+                        kwargs["high_limit"] = high_lim
                     else:
-                        step["stepStatus"] = "Failed"
-                        if current_sequence:
-                            current_sequence["status"] = "Failed"
+                        kwargs["comp_op"] = CompOp.LOG
                     
-                    if message:
-                        step["reportText"] = message
+                    current_sequence.add_numeric_step(**kwargs)
                     
-                    if current_sequence:
-                        current_sequence["stepResults"].append(step)
-                        
                 except ValueError:
                     pass  # Skip invalid measurements
             else:
-                # Pass/Fail step
-                if test_type not in ('IS', 'VS'):  # Filter these
-                    step = {
-                        "type": "PF",
-                        "name": step_name,
-                        "stepStatus": "Passed" if result == '=' else "Failed",
-                    }
-                    
-                    if result not in ('=', '#') and current_sequence:
-                        current_sequence["status"] = "Failed"
-                    
-                    if message:
-                        step["reportText"] = message
-                    
-                    if current_sequence:
-                        current_sequence["stepResults"].append(step)
+                # Pass/Fail step (filter IS, VS types)
+                if test_type not in ('IS', 'VS'):
+                    current_sequence.add_boolean_step(name=step_name, status=status)
     
     def _convert_units(
         self,
@@ -792,7 +772,7 @@ C101=10.2U(9U,11U)CP
             temp_path = Path(f.name)
         
         try:
-            converter = TeradyneICTConverter()
+            converter = TeradyneICTConverterV2()
             source = ConverterSource.from_file(temp_path)
             context = ConverterContext()
             
@@ -806,8 +786,17 @@ C101=10.2U(9U,11U)CP
             # Convert
             result = converter.convert(source, context)
             print(f"Conversion status: {result.status.value}")
-            if result.report:
-                print("Generated report:")
-                print(json.dumps(result.report, indent=2))
+            
+            if result.report and isinstance(result.report, UUTReport):
+                report = result.report
+                print(f"\nGenerated UUTReport:")
+                print(f"  Part Number: {report.pn}")
+                print(f"  Serial Number: {report.sn}")
+                print(f"  Result: {report.result}")
+                
+                # Serialize to JSON
+                report_dict = report.model_dump(mode="json", by_alias=True, exclude_none=True)
+                print("\nSerialized Report:")
+                print(json.dumps(report_dict, indent=2))
         finally:
             temp_path.unlink()

@@ -6,11 +6,27 @@ Connects to service process via Qt LocalSocket for status queries and control.
 
 import json
 import logging
-from typing import Optional, Dict, Any
+from dataclasses import dataclass, asdict
+from typing import Optional, Dict, Any, List
 from PySide6.QtNetwork import QLocalSocket
 from PySide6.QtCore import QObject
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class InstanceInfo:
+    """Information about a discovered service instance"""
+    instance_id: str
+    socket_name: str
+    status: str = "unknown"  # unknown, online, offline
+    connection_state: str = "unknown"
+    config_file: Optional[str] = None
+    uptime: Optional[int] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        return asdict(self)
 
 
 class ServiceIPCClient(QObject):
@@ -183,7 +199,7 @@ class ServiceIPCClient(QObject):
         return response is not None
 
 
-def discover_services() -> list[str]:
+def discover_services() -> List[str]:
     """
     Discover all running service instances.
     
@@ -191,7 +207,7 @@ def discover_services() -> list[str]:
         List of instance IDs that are running
     """
     # Try common instance IDs
-    common_ids = ["default", "station1", "station2", "production", "test"]
+    common_ids = ["default", "station1", "station2", "station3", "station4", "station5", "production", "test"]
     running = []
     
     for instance_id in common_ids:
@@ -201,3 +217,83 @@ def discover_services() -> list[str]:
             client.disconnect()
     
     return running
+
+
+class ServiceDiscovery:
+    """
+    Discovers running service instances.
+    
+    Scans for IPC sockets matching pattern and tests connectivity.
+    
+    Usage:
+        discovery = ServiceDiscovery()
+        instances = ServiceDiscovery.discover_instances()
+        for instance in instances:
+            print(f"Found: {instance.instance_id} ({instance.status})")
+    """
+    
+    @staticmethod
+    def discover_instances(timeout_ms: int = 500) -> List[InstanceInfo]:
+        """
+        Discover all running service instances.
+        
+        Args:
+            timeout_ms: Connection timeout per instance
+            
+        Returns:
+            List of discovered instances
+        """
+        instances = []
+        
+        # Try common instance IDs
+        common_ids = ["default", "station1", "station2", "station3", "station4", "station5", "production", "test"]
+        
+        for instance_id in common_ids:
+            socket_name = f"pyWATS_Service_{instance_id}"
+            
+            # Try to connect
+            client = ServiceIPCClient(instance_id)
+            if client.connect(timeout_ms):
+                # Get status
+                status_data = client.get_status()
+                
+                if status_data:
+                    instance = InstanceInfo(
+                        instance_id=instance_id,
+                        socket_name=socket_name,
+                        status=status_data.get("status", "online"),
+                        connection_state=status_data.get("connection_state", "unknown"),
+                        config_file=status_data.get("config_file"),
+                        uptime=status_data.get("stats", {}).get("uptime")
+                    )
+                else:
+                    instance = InstanceInfo(
+                        instance_id=instance_id,
+                        socket_name=socket_name,
+                        status="online"
+                    )
+                
+                instances.append(instance)
+                client.disconnect()
+        
+        logger.info(f"Discovered {len(instances)} service instance(s)")
+        return instances
+    
+    @staticmethod
+    def check_instance_running(instance_id: str, timeout_ms: int = 500) -> bool:
+        """
+        Check if specific instance is running.
+        
+        Args:
+            instance_id: Instance ID to check
+            timeout_ms: Connection timeout
+            
+        Returns:
+            True if instance is running
+        """
+        client = ServiceIPCClient(instance_id)
+        if client.connect(timeout_ms):
+            is_alive = client.ping()
+            client.disconnect()
+            return is_alive
+        return False

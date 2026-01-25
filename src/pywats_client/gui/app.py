@@ -140,32 +140,3 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     
     # Run event loop
     return qt_app.exec()
-
-
-def run_headless(config_path: Optional[Path] = None) -> int:
-    """
-    Run the pyWATS Client in headless mode (no GUI).
-    
-    Args:
-        config_path: Path to configuration file (optional)
-    
-    Returns:
-        Exit code
-    """
-    from ..core.client import WATSClient
-    
-    # Load configuration
-    if config_path:
-        config = ClientConfig.load(Path(config_path))
-    else:
-        config = ClientConfig.load(get_default_config_path())
-    
-    # Create and run client
-    client = WATSClient(config)
-    
-    try:
-        client.run()
-        return 0
-    except Exception as e:
-        print(f"Error: {e}")
-        return 1

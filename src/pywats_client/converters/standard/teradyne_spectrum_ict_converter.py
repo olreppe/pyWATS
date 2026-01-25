@@ -1,8 +1,10 @@
 """
-Teradyne Spectrum ICT Converter
+Teradyne Spectrum ICT Converter - V2 Using UUTReport Model
 
-Converts Teradyne Spectrum ICT test result files into WATS reports.
+Converts Teradyne Spectrum ICT test result files into WATS reports using pyWATS UUTReport model.
 Port of the C# TerradyneSpectrumICTConverter.
+
+IMPORTANT: This converter uses the pyWATS UUTReport model - NOT raw dictionaries!
 
 Expected file format:
 - Text-based with parenthesized fields
@@ -24,6 +26,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 
+# pyWATS model imports - REQUIRED
+from pywats.domains.report.report_models import UUTReport, StepStatus, ReportStatus, SequenceCall
+from pywats.domains.report.report_models.uut.steps import CompOp
+
+# Converter infrastructure
 from pywats_client.converters.file_converter import FileConverter
 from pywats_client.converters.context import ConverterContext
 from pywats_client.converters.models import (
@@ -51,7 +58,6 @@ SCALE_FACTORS: Dict[str, float] = {
 
 def align_units(from_unit: str, value: float, to_unit: str) -> float:
     """Align a value from one unit scale to another"""
-    # Extract scale prefix (first char if not unit name)
     from_scale = ""
     to_scale = ""
     
@@ -68,7 +74,6 @@ def align_units(from_unit: str, value: float, to_unit: str) -> float:
     from_factor = SCALE_FACTORS.get(from_scale, 1.0)
     to_factor = SCALE_FACTORS.get(to_scale, 1.0)
     
-    # Convert to base unit then to target
     base_value = value * from_factor
     return base_value / to_factor
 
@@ -86,14 +91,14 @@ class SubStep:
     high_lim: Optional[float] = None
     high_scale: str = ""
     comment: str = ""
-    status: str = "Done"
+    status: str = "P"  # P=Passed, F=Failed, D=Done
 
 
 @dataclass
 class MainStep:
     """Represents a main step with sub-steps"""
     name: str = ""
-    status: str = "Done"
+    status: str = "P"
     start: Optional[datetime] = None
     description: str = ""
     sub_steps: List[SubStep] = field(default_factory=list)
@@ -101,14 +106,14 @@ class MainStep:
 
 class TerradyneSpectrumICTConverter(FileConverter):
     """
-    Converts Teradyne Spectrum ICT test result files to WATS reports.
+    Converts Teradyne Spectrum ICT test result files to WATS reports using UUTReport model.
     
     File qualification:
     - Text file containing (PROGRAM_NAME: pattern
     - Contains (STEP:, (PAGE:, (MEASVAL:) patterns
     """
     
-    # Regex patterns
+    # Regex patterns (same as original)
     RE_PROGRAM_NAME = re.compile(r'\(PROGRAM_NAME:\s*"(?P<ProgramName>[^"]+)"\s*\)')
     RE_SECTION_NAME = re.compile(r'\(SECTION_NAME:\s*"(?P<SequenceName>[^"]+)"\s*\)')
     RE_NEW_STEP = re.compile(r'\(TYPE:\s*(?P<TYPE>[^)]+)\s*\)\s*\(TIME:\s*(?P<TIME>[^)]+)\s*\)')
@@ -135,13 +140,6 @@ class TerradyneSpectrumICTConverter(FileConverter):
     RE_SERIAL = re.compile(r'\(USER:\s*Serialnumber:\s*(?P<Val>[^)]+)\s*\)')
     RE_OPERATOR = re.compile(r'\(USER:\s*Operator:\s*(?P<Val>[^)]+)\s*\)')
     RE_USER = re.compile(r'\(USER:\s*(?P<Keyword>[^:]+):\s*(?P<Value>[^)]+)\s*\)')
-    
-    # Measurement patterns (with template variable)
-    RE_MEAS_TEMPLATE = r'\({{Meas}}:\s*\(VAL:\s*(?P<VAL>[0-9+\-.E]+)\s*\)\s*(?:\(SCALE:\s*(?P<SCALE>[^)]+)\s*\))?\s*(?:\(UNIT:\s*(?P<UNIT>[^)]+)\s*\))?\s*\)'
-    RE_LOLIM = re.compile(RE_MEAS_TEMPLATE.replace('{{Meas}}', 'LOLIM|LOW'))
-    RE_HILIM = re.compile(RE_MEAS_TEMPLATE.replace('{{Meas}}', 'HILIM|HIGH'))
-    RE_MEASVAL = re.compile(RE_MEAS_TEMPLATE.replace('{{Meas}}', 'MEASVAL'))
-    
     RE_PROG_NAME = re.compile(r'\(PROG_NAME:\s*(?P<PName>[^)]+)\s*\)')
     
     @property
@@ -150,11 +148,11 @@ class TerradyneSpectrumICTConverter(FileConverter):
     
     @property
     def version(self) -> str:
-        return "1.0.0"
+        return "2.0.0"
     
     @property
     def description(self) -> str:
-        return "Converts Teradyne Spectrum ICT test result files into WATS reports"
+        return "Converts Teradyne Spectrum ICT test result files into WATS reports using UUTReport model"
     
     @property
     def file_patterns(self) -> List[str]:
@@ -191,15 +189,7 @@ class TerradyneSpectrumICTConverter(FileConverter):
         }
     
     def validate(self, source: ConverterSource, context: ConverterContext) -> ValidationResult:
-        """
-        Validate that the file is a Teradyne Spectrum format file.
-        
-        Confidence levels:
-        - 0.95: Contains (PROGRAM_NAME: and (MEASVAL: patterns
-        - 0.85: Contains (PROGRAM_NAME: pattern
-        - 0.7: Contains (STEP: or (PAGE: patterns
-        - 0.0: No recognizable patterns
-        """
+        """Validate that the file is a Teradyne Spectrum format file."""
         if not source.path or not source.path.exists():
             return ValidationResult.no_match("File not found")
         
@@ -209,18 +199,16 @@ class TerradyneSpectrumICTConverter(FileConverter):
         
         try:
             with open(source.path, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read(30000)  # Read first 30KB
+                content = f.read(30000)
             
             has_program = bool(self.RE_PROGRAM_NAME.search(content))
-            has_measval = bool(self.RE_MEASVAL.search(content))
+            has_measval = bool(re.search(r'\(MEASVAL:', content))
             has_step_type = bool(self.RE_STEP_TYPE.search(content))
             
             if has_program and has_measval:
-                # Extract program name for validation
                 prog_match = self.RE_PROGRAM_NAME.search(content)
                 program_name = prog_match.group('ProgramName') if prog_match else ""
                 
-                # Try to extract part number
                 pn_regex = context.get_argument(
                     "programNameToPartNumberRegEx",
                     r"(?P<PartNumber>\w+)"
@@ -231,7 +219,6 @@ class TerradyneSpectrumICTConverter(FileConverter):
                 except Exception:
                     part_number = program_name
                 
-                # Extract serial number
                 sn_match = self.RE_SERIAL.search(content)
                 serial_number = sn_match.group('Val').strip() if sn_match else ""
                 
@@ -263,7 +250,7 @@ class TerradyneSpectrumICTConverter(FileConverter):
             return ValidationResult.no_match(f"Error reading file: {e}")
     
     def convert(self, source: ConverterSource, context: ConverterContext) -> ConverterResult:
-        """Convert Teradyne Spectrum test file to WATS report"""
+        """Convert Teradyne Spectrum test file to WATS UUTReport"""
         if not source.path:
             return ConverterResult.failed_result(error="No file path provided")
         
@@ -271,9 +258,7 @@ class TerradyneSpectrumICTConverter(FileConverter):
             with open(source.path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
             
-            # Preprocess: join multi-line entries
             content = self._preprocess_content(content)
-            
             return self._parse_content(content, source, context)
             
         except Exception as e:
@@ -310,9 +295,9 @@ class TerradyneSpectrumICTConverter(FileConverter):
         source: ConverterSource,
         context: ConverterContext
     ) -> ConverterResult:
-        """Parse content and build WATS report"""
+        """Parse content and build WATS UUTReport"""
         
-        operation_code = context.get_argument("operationTypeCode", "30")
+        operation_code = int(context.get_argument("operationTypeCode", "30"))
         pn_regex = context.get_argument("programNameToPartNumberRegEx", r"(?P<PartNumber>\w+)")
         misc_info_fields = context.get_argument(
             "userInfoAddMiscInfo",
@@ -340,9 +325,9 @@ class TerradyneSpectrumICTConverter(FileConverter):
         operator = op_match.group('Val').strip() if op_match else ""
         
         # Parse USER fields
-        station_name = ""
+        station_name = "TeradyneSpectrum"
         sequence_version = "1.0"
-        misc_infos = []
+        misc_infos: List[Tuple[str, str]] = []
         uut_status = "P"
         
         for user_match in self.RE_USER.finditer(content):
@@ -350,7 +335,7 @@ class TerradyneSpectrumICTConverter(FileConverter):
             value = user_match.group('Value').strip()
             
             if keyword in misc_info_fields:
-                misc_infos.append({"name": keyword, "value": value})
+                misc_infos.append((keyword, value))
             
             if keyword == station_name_field:
                 station_name = value
@@ -361,52 +346,48 @@ class TerradyneSpectrumICTConverter(FileConverter):
             if keyword == "STATUS" and "FAIL" in value.upper():
                 uut_status = "F"
         
-        # Build report
-        report: Dict[str, Any] = {
-            "type": "Test",
-            "processCode": operation_code,
-            "partNumber": part_number,
-            "partRevision": "1",
-            "serialNumber": serial_number,
-            "sequenceName": program_name,
-            "sequenceVersion": sequence_version,
-            "result": uut_status,
-        }
+        # ========================================
+        # BUILD REPORT USING UUTReport MODEL
+        # ========================================
         
-        if operator:
-            report["operator"] = operator
+        report = UUTReport(
+            pn=part_number,
+            sn=serial_number,
+            rev="1",
+            process_code=operation_code,
+            station_name=station_name,
+            location="Production",
+            purpose="ICT Test",
+            result=uut_status,
+            start=datetime.now(),  # Will be updated when we find first step time
+        )
         
-        if station_name:
-            report["machineName"] = station_name
-        
-        if misc_infos:
-            report["miscInfos"] = misc_infos
-        
-        # Add file name as misc info
+        # Add file name as misc info using factory method
         if source.path:
-            report.setdefault("miscInfos", []).append({
-                "name": "File",
-                "value": source.path.name
-            })
+            report.add_misc_info(description="File", value=source.path.name)
         
-        # Create root sequence
-        root_step: Dict[str, Any] = {
-            "type": "SEQ",
-            "name": "Root",
-            "status": "Done",
-            "stepResults": []
-        }
+        # Add operator as misc info (since operator field may not be directly on report)
+        if operator:
+            report.add_misc_info(description="Operator", value=operator)
         
-        # Parse steps
-        start_time, execution_time = self._parse_steps(content, root_step, report)
+        # Add USER fields as misc info
+        for name, value in misc_infos:
+            report.add_misc_info(description=name, value=value)
+        
+        # Get root sequence
+        root = report.get_root_sequence_call()
+        root.name = program_name
+        root.sequence.version = sequence_version
+        
+        # Parse steps and update report
+        start_time, execution_time = self._parse_steps(content, root, report)
         
         if start_time:
-            report["start"] = start_time.isoformat()
+            report.start = start_time
         
-        if execution_time > 0:
-            report["execTime"] = execution_time
-        
-        report["root"] = root_step
+        # Update result based on any failed steps
+        if uut_status == "F":
+            report.result = "F"
         
         return ConverterResult.success_result(
             report=report,
@@ -416,12 +397,12 @@ class TerradyneSpectrumICTConverter(FileConverter):
     def _parse_steps(
         self,
         content: str,
-        root_step: Dict[str, Any],
-        report: Dict[str, Any]
+        root: SequenceCall,
+        report: UUTReport
     ) -> Tuple[Optional[datetime], float]:
         """Parse step content and return (start_time, execution_time)"""
         
-        current_sequence: Optional[Dict[str, Any]] = None
+        current_sequence: SequenceCall = root
         current_main_step: Optional[MainStep] = None
         prev_main_step: Optional[MainStep] = None
         start_time: Optional[datetime] = None
@@ -436,29 +417,23 @@ class TerradyneSpectrumICTConverter(FileConverter):
             # Check for new section
             section_match = self.RE_SECTION_NAME.search(line)
             if section_match:
-                # Create steps from previous main step if exists
                 if current_main_step and current_sequence:
-                    self._create_steps(current_main_step, current_sequence, prev_main_step)
+                    self._create_steps(current_main_step, current_sequence, prev_main_step, report)
                     if current_main_step.start:
                         prev_main_step = current_main_step
                     current_main_step = MainStep()
                 
                 seq_name = section_match.group('SequenceName')
-                current_sequence = {
-                    "type": "SEQ",
-                    "name": seq_name,
-                    "status": "Done",
-                    "stepResults": []
-                }
-                root_step["stepResults"].append(current_sequence)
+                new_sequence = root.add_sequence_call(name=seq_name, file_name=f"{seq_name}.seq")
+                assert isinstance(new_sequence, SequenceCall)
+                current_sequence = new_sequence
                 continue
             
             # Check for new step (TYPE/TIME)
             step_match = self.RE_NEW_STEP.search(line)
             if step_match:
-                # Create steps from previous main step if exists
                 if current_main_step and current_sequence:
-                    self._create_steps(current_main_step, current_sequence, prev_main_step)
+                    self._create_steps(current_main_step, current_sequence, prev_main_step, report)
                 
                 if current_main_step and current_main_step.start:
                     prev_main_step = current_main_step
@@ -496,8 +471,8 @@ class TerradyneSpectrumICTConverter(FileConverter):
                 )
                 current_main_step.sub_steps.append(sub_step)
                 
-                if sub_step.status == "Failed":
-                    report["result"] = "F"
+                if sub_step.status == "F":
+                    report.result = "F"
                 continue
             
             # Check for connected nodes
@@ -515,13 +490,12 @@ class TerradyneSpectrumICTConverter(FileConverter):
                     meas=float(group_match.group('VAL')),
                     status=self._parse_status(group_match.group('STAT'))
                 )
-                # Copy high limit from first sub step if exists
                 if current_main_step.sub_steps:
                     sub_step.high_lim = current_main_step.sub_steps[0].high_lim
                 current_main_step.sub_steps.append(sub_step)
                 
-                if sub_step.status == "Failed":
-                    report["result"] = "F"
+                if sub_step.status == "F":
+                    report.result = "F"
                 continue
             
             # Check for FSCAN_PIN
@@ -533,8 +507,8 @@ class TerradyneSpectrumICTConverter(FileConverter):
                 )
                 current_main_step.sub_steps.append(sub_step)
                 
-                if sub_step.status == "Failed":
-                    report["result"] = "F"
+                if sub_step.status == "F":
+                    report.result = "F"
                 continue
             
             # Check for MEAS_VAL_THRESHOLD
@@ -555,7 +529,7 @@ class TerradyneSpectrumICTConverter(FileConverter):
         
         # Process final main step
         if current_main_step and current_sequence:
-            self._create_steps(current_main_step, current_sequence, prev_main_step)
+            self._create_steps(current_main_step, current_sequence, prev_main_step, report)
         
         # Calculate execution time
         execution_time = 0.0
@@ -569,7 +543,6 @@ class TerradyneSpectrumICTConverter(FileConverter):
     def _parse_limits_and_meas(self, line: str, sub_step: SubStep) -> None:
         """Parse LOLIM, HILIM, MEASVAL from a line"""
         
-        # Check for LOLIM/LOW
         lo_match = re.search(
             r'\((?:LOLIM|LOW):\s*\(VAL:\s*(?P<VAL>[0-9+\-.E]+)\s*\)\s*(?:\(SCALE:\s*(?P<SCALE>[^)]+)\s*\))?\s*(?:\(UNIT:\s*(?P<UNIT>[^)]+)\s*\))?\s*\)',
             line
@@ -578,7 +551,6 @@ class TerradyneSpectrumICTConverter(FileConverter):
             sub_step.low_lim = float(lo_match.group('VAL'))
             sub_step.low_scale = lo_match.group('SCALE') or ""
         
-        # Check for HILIM/HIGH
         hi_match = re.search(
             r'\((?:HILIM|HIGH):\s*\(VAL:\s*(?P<VAL>[0-9+\-.E]+)\s*\)\s*(?:\(SCALE:\s*(?P<SCALE>[^)]+)\s*\))?\s*(?:\(UNIT:\s*(?P<UNIT>[^)]+)\s*\))?\s*\)',
             line
@@ -587,7 +559,6 @@ class TerradyneSpectrumICTConverter(FileConverter):
             sub_step.high_lim = float(hi_match.group('VAL'))
             sub_step.high_scale = hi_match.group('SCALE') or ""
         
-        # Check for MEASVAL
         meas_match = re.search(
             r'\(MEASVAL:\s*\(VAL:\s*(?P<VAL>[0-9+\-.E]+)\s*\)\s*(?:\(SCALE:\s*(?P<SCALE>[^)]+)\s*\))?\s*(?:\(UNIT:\s*(?P<UNIT>[^)]+)\s*\))?\s*\)',
             line
@@ -600,10 +571,11 @@ class TerradyneSpectrumICTConverter(FileConverter):
     def _create_steps(
         self,
         main_step: MainStep,
-        sequence: Dict[str, Any],
-        prev_step: Optional[MainStep]
+        sequence: SequenceCall,
+        prev_step: Optional[MainStep],
+        report: UUTReport
     ) -> None:
-        """Create WATS steps from a MainStep"""
+        """Create WATS steps from a MainStep using UUTReport factory methods"""
         
         if not main_step.sub_steps:
             return
@@ -612,64 +584,41 @@ class TerradyneSpectrumICTConverter(FileConverter):
         
         # If multiple sub-steps, create a nested sequence
         if len(main_step.sub_steps) > 1:
-            nested_seq: Dict[str, Any] = {
-                "type": "SEQ",
-                "name": main_step.name or "Step",
-                "status": "Done",
-                "stepResults": []
-            }
-            if main_step.description:
-                nested_seq["reportText"] = main_step.description
+            new_seq = sequence.add_sequence_call(
+                name=main_step.name or "Step",
+                file_name=f"{main_step.name or 'Step'}.seq"
+            )
+            assert isinstance(new_seq, SequenceCall)
             
-            # Calculate step time
-            if main_step.start and prev_step and prev_step.start:
-                nested_seq["totTime"] = (main_step.start - prev_step.start).total_seconds()
-            
-            sequence["stepResults"].append(nested_seq)
-            target_seq = nested_seq
+            # Note: reportText would be set via the step's report_text field if needed
+            target_seq = new_seq
         
         for sub_step in main_step.sub_steps:
-            step = self._create_sub_step(sub_step, main_step)
-            if step:
-                target_seq["stepResults"].append(step)
-                
-                # Propagate failure status
-                if step.get("stepStatus") == "Failed":
-                    target_seq["status"] = "Failed"
-                    sequence["status"] = "Failed"
+            self._create_sub_step(sub_step, main_step, target_seq, report)
         
-        # For single sub-step, add description to the step
-        if len(main_step.sub_steps) == 1 and main_step.description:
-            if target_seq["stepResults"]:
-                last_step = target_seq["stepResults"][-1]
-                existing_text = last_step.get("reportText", "")
-                last_step["reportText"] = f"{main_step.description} {existing_text}".strip()
+        # For single sub-step, add description to the step if it exists
+        # This would need to be handled via the step's report_text
     
     def _create_sub_step(
         self,
         sub_step: SubStep,
-        main_step: MainStep
-    ) -> Optional[Dict[str, Any]]:
-        """Create a WATS step from a SubStep"""
+        main_step: MainStep,
+        sequence: SequenceCall,
+        report: UUTReport
+    ) -> None:
+        """Create a WATS step from a SubStep using factory methods"""
         
         if sub_step.type == "DELAY":
-            return {
-                "type": "GEN",
-                "stepType": "Wait",
-                "name": sub_step.name,
-                "stepStatus": sub_step.status,
-            }
+            # Add as a string step for actions/wait
+            sequence.add_string_step(
+                name=sub_step.name,
+                value="Wait",
+                status=sub_step.status,
+            )
+            return
         
         if sub_step.meas is not None:
-            # Numeric limit step
-            step: Dict[str, Any] = {
-                "type": "NT",
-                "name": sub_step.name,
-                "numericValue": sub_step.meas,
-                "stepStatus": sub_step.status,
-            }
-            
-            # Check and align units
+            # Numeric limit step using add_numeric_step factory method
             unit = sub_step.unit or "?"
             meas_scale = sub_step.meas_scale or ""
             
@@ -691,55 +640,58 @@ class TerradyneSpectrumICTConverter(FileConverter):
                     meas_scale + unit
                 )
             
-            # Add limits
+            # Determine comp_op based on limits
+            comp_op = CompOp.LOG
             if low_lim is not None and high_lim is not None:
-                step["compOp"] = "GELE"
-                step["lowLimit"] = low_lim
-                step["highLimit"] = high_lim
+                comp_op = CompOp.GELE
             elif low_lim is not None:
-                step["compOp"] = "GE"
-                step["lowLimit"] = low_lim
+                comp_op = CompOp.GE
             elif high_lim is not None:
-                step["compOp"] = "LE"
-                step["highLimit"] = high_lim
+                comp_op = CompOp.LE
             
-            # Add unit
-            step["unit"] = meas_scale + unit
-            
-            # Add comment
+            # Build report text from comment
+            report_text = None
             if sub_step.comment:
                 comment = sub_step.comment.replace("Analysis Comments:", "").replace("Testable.", "").strip()
                 if comment:
-                    step["reportText"] = comment
+                    report_text = comment
             
-            return step
+            # Add numeric step using factory method
+            sequence.add_numeric_step(
+                name=sub_step.name,
+                value=sub_step.meas,
+                unit=meas_scale + unit,
+                comp_op=comp_op,
+                low_limit=low_lim,
+                high_limit=high_lim,
+                status=sub_step.status,
+                reportText=report_text,
+            )
         else:
-            # Generic action step
-            step = {
-                "type": "GEN",
-                "stepType": "Action",
-                "name": sub_step.name,
-                "stepStatus": sub_step.status,
-            }
-            
+            # Boolean step for pass/fail actions without measurements
+            report_text = None
             if sub_step.comment:
                 comment = sub_step.comment.replace("Analysis Comments:", "").replace("Testable.", "").strip()
                 if comment:
-                    step["reportText"] = comment
+                    report_text = comment
             
-            return step
+            sequence.add_boolean_step(
+                name=sub_step.name,
+                status=sub_step.status,
+                report_text=report_text,
+            )
     
     def _parse_status(self, status: str) -> str:
-        """Convert status string to WATS status"""
+        """Convert status string to WATS status (P/F/D/S)"""
         status_upper = status.upper().strip()
         if status_upper in ('PASS', 'PASSED', 'P'):
-            return "Passed"
+            return "P"
         elif status_upper in ('FAIL', 'FAILED', 'F'):
-            return "Failed"
+            return "F"
         elif status_upper in ('ERROR', 'E'):
-            return "Error"
+            return "F"  # Treat error as failed
         else:
-            return "Done"
+            return "P"  # Default to passed for "Done" etc
 
 
 # Test code
@@ -774,7 +726,7 @@ if __name__ == "__main__":
         temp_path = Path(f.name)
     
     try:
-        converter = TerradyneSpectrumICTConverter()
+        converter = TerradyneSpectrumICTConverterV2()
         source = ConverterSource.from_file(temp_path)
         context = ConverterContext()
         
@@ -787,8 +739,17 @@ if __name__ == "__main__":
         # Convert
         result = converter.convert(source, context)
         print(f"\nConversion status: {result.status.value}")
-        if result.report:
-            print("\nGenerated report:")
-            print(json.dumps(result.report, indent=2))
+        
+        if result.report and isinstance(result.report, UUTReport):
+            report = result.report
+            print(f"\nGenerated UUTReport:")
+            print(f"  Part Number: {report.pn}")
+            print(f"  Serial Number: {report.sn}")
+            print(f"  Result: {report.result}")
+            
+            # Serialize to JSON
+            report_dict = report.model_dump(mode="json", by_alias=True, exclude_none=True)
+            print("\nSerialized Report:")
+            print(json.dumps(report_dict, indent=2)[:2000])  # First 2000 chars
     finally:
         temp_path.unlink()

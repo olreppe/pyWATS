@@ -1,8 +1,10 @@
 """
-Kitron Seica XML Converter
+Kitron Seica XML Converter - V2 Using UUTReport Model
 
-Converts Kitron/Seica XML test result files into WATS reports.
+Converts Kitron/Seica XML test result files into WATS reports using pyWATS UUTReport model.
 Port of the C# KitronSeicaXMLConverter.
+
+IMPORTANT: This converter uses the pyWATS UUTReport model - NOT raw dictionaries!
 
 Expected XML structure:
 <R>
@@ -30,6 +32,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# pyWATS model imports - REQUIRED
+from pywats.domains.report.report_models import UUTReport, StepStatus, ReportStatus, SequenceCall
+from pywats.domains.report.report_models.uut.steps import CompOp
+
+# Converter infrastructure
 from pywats_client.converters.file_converter import FileConverter
 from pywats_client.converters.context import ConverterContext
 from pywats_client.converters.models import (
@@ -44,7 +51,7 @@ from pywats_client.converters.models import (
 
 class KitronSeicaXMLConverter(FileConverter):
     """
-    Converts Kitron/Seica XML test result files to WATS reports.
+    Converts Kitron/Seica XML test result files to WATS reports using UUTReport model.
     
     File qualification:
     - File extension must be .xml or .Xml
@@ -58,11 +65,11 @@ class KitronSeicaXMLConverter(FileConverter):
     
     @property
     def version(self) -> str:
-        return "1.0.0"
+        return "2.0.0"
     
     @property
     def description(self) -> str:
-        return "Converts Kitron/Seica XML test result files into WATS reports"
+        return "Converts Kitron/Seica XML test result files into WATS reports using UUTReport model"
     
     @property
     def file_patterns(self) -> List[str]:
@@ -72,8 +79,8 @@ class KitronSeicaXMLConverter(FileConverter):
     def arguments_schema(self) -> Dict[str, ArgumentDefinition]:
         return {
             "operationTypeCode": ArgumentDefinition(
-                arg_type=ArgumentType.STRING,
-                default="10",
+                arg_type=ArgumentType.INTEGER,
+                default=10,
                 description="Operation type code",
             ),
             "sequenceName": ArgumentDefinition(
@@ -89,15 +96,7 @@ class KitronSeicaXMLConverter(FileConverter):
         }
     
     def validate(self, source: ConverterSource, context: ConverterContext) -> ValidationResult:
-        """
-        Validate that the file is a properly formatted Kitron/Seica XML file.
-        
-        Confidence levels:
-        - 0.95: Has root 'R' element with ST, BI, ET elements and TEST children
-        - 0.75: Has 'R' root with partial structure
-        - 0.4: Valid XML with 'R' root but missing required elements
-        - 0.0: Not valid XML or different structure
-        """
+        """Validate that the file is a properly formatted Kitron/Seica XML file."""
         if not source.path or not source.path.exists():
             return ValidationResult.no_match("File not found")
         
@@ -109,13 +108,11 @@ class KitronSeicaXMLConverter(FileConverter):
             tree = ET.parse(source.path)
             root = tree.getroot()
             
-            # Check for 'R' root element
             if root.tag != 'R':
                 return ValidationResult.no_match(
                     f"XML file but root is '{root.tag}', not 'R'"
                 )
             
-            # Check for required elements
             xml_st = root.find('ST')
             xml_bis = list(root.findall('BI'))
             xml_et = root.find('ET')
@@ -141,20 +138,15 @@ class KitronSeicaXMLConverter(FileConverter):
                     message="Kitron XML but missing ET element"
                 )
             
-            # Extract info for validation result
             nm = xml_st.get('NM', '')
-            # Split name on _ or space to get part number and revision
             splitted_nm = re.split(r'[_\s]', nm)
             part_number = splitted_nm[0] if splitted_nm else ''
             
-            # Get serial from first BI
             serial_number = xml_bis[0].get('BCP', '') if xml_bis else ''
             
-            # Get status from ET
             nf = xml_et.get('NF', '0') if xml_et is not None else '0'
             result_str = "Passed" if nf == "0" else "Failed"
             
-            # Check for TEST elements
             has_tests = any(bi.findall('TEST') for bi in xml_bis)
             confidence = 0.85 if has_tests else 0.7
             
@@ -173,7 +165,7 @@ class KitronSeicaXMLConverter(FileConverter):
             return ValidationResult.no_match(f"Error reading file: {e}")
     
     def convert(self, source: ConverterSource, context: ConverterContext) -> ConverterResult:
-        """Convert Kitron/Seica XML test file to WATS report(s)"""
+        """Convert Kitron/Seica XML test file to WATS UUTReport(s)"""
         if not source.path:
             return ConverterResult.failed_result(error="No file path provided")
         
@@ -181,12 +173,10 @@ class KitronSeicaXMLConverter(FileConverter):
             tree = ET.parse(source.path)
             xml_r = tree.getroot()
             
-            # Get arguments
-            operation_code = context.get_argument("operationTypeCode", "10")
+            operation_code = context.get_argument("operationTypeCode", 10)
             seq_name_attr = context.get_argument("sequenceName", "SoftwareName")
-            seq_version_attr = context.get_argument("sequenceVersion", "SoftwareVersion")
+            seq_version_attr = context.get_argument("sequenceVersion", "1.0")
             
-            # Get sections
             xml_st = xml_r.find('ST')
             xml_bis = list(xml_r.findall('BI'))
             xml_et = xml_r.find('ET')
@@ -196,23 +186,19 @@ class KitronSeicaXMLConverter(FileConverter):
             if not xml_bis:
                 return ConverterResult.failed_result(error="Missing BI elements")
             
-            # Extract program info from ST
             nm = xml_st.get('NM', '')
             operator = xml_st.get('OP', '')
             board_name = xml_st.get('NMP', '')
             
-            # Split name to get part number and revision
             splitted_nm = re.split(r'[_\s]', nm)
             part_number = splitted_nm[0] if len(splitted_nm) > 0 else nm
             part_revision = splitted_nm[1] if len(splitted_nm) > 1 else '1'
             
-            # Get end time and status from ET
             end_date_string = xml_et.get('ED', '') if xml_et is not None else ''
             uut_status_string = xml_et.get('NF', '0') if xml_et is not None else '0'
             
             reports = []
             
-            # Process each board (BI element)
             for xml_bi in xml_bis:
                 report = self._process_board(
                     xml_bi=xml_bi,
@@ -228,8 +214,6 @@ class KitronSeicaXMLConverter(FileConverter):
                 )
                 reports.append(report)
             
-            # If single report, return it directly
-            # If multiple, return the first one (batch mode would handle multiple)
             if len(reports) == 1:
                 return ConverterResult.success_result(
                     report=reports[0],
@@ -251,83 +235,68 @@ class KitronSeicaXMLConverter(FileConverter):
         part_number: str,
         part_revision: str,
         board_name: str,
-        operation_code: str,
+        operation_code: int,
         seq_name: str,
         seq_version: str,
         end_date_string: str,
         uut_status_string: str,
-    ) -> Dict[str, Any]:
-        """Process a single board (BI element) into a UUT report"""
+    ) -> UUTReport:
+        """Process a single board (BI element) into a UUTReport"""
         
-        # Get board info
         serial_number = xml_bi.get('BCP', '')
         start_date_string = xml_bi.get('SD', '')
         
-        # Parse dates
         date_format = "%d-%m-%Y %H:%M:%S"
-        start_time = None
-        execution_time = 0.0
+        start_time = datetime.now()
         
         try:
             if start_date_string:
                 start_time = datetime.strptime(start_date_string, date_format)
-            if end_date_string and start_time:
-                end_time = datetime.strptime(end_date_string, date_format)
-                execution_time = (end_time - start_time).total_seconds()
         except ValueError:
-            pass  # Use defaults if parsing fails
+            pass
         
-        # Build report
-        report: Dict[str, Any] = {
-            "type": "Test",
-            "processCode": operation_code,
-            "partNumber": part_number,
-            "partRevision": part_revision,
-            "serialNumber": serial_number,
-            "operator": operator,
-            "sequenceName": seq_name,
-            "sequenceVersion": seq_version,
-            "result": "P" if uut_status_string == "0" else "F",
-        }
+        # ========================================
+        # BUILD REPORT USING UUTReport MODEL
+        # ========================================
         
-        if start_time:
-            report["start"] = start_time.isoformat()
+        report = UUTReport(
+            pn=part_number,
+            sn=serial_number,
+            rev=part_revision,
+            process_code=operation_code,
+            station_name="Seica",
+            location="Production",
+            purpose="ICT Test",
+            result="P" if uut_status_string == "0" else "F",
+            start=start_time,
+        )
         
-        if execution_time > 0:
-            report["execTime"] = execution_time
+        # Add misc info using factory method
+        report.add_misc_info(description="Board Name", value=board_name)
+        if operator:
+            report.add_misc_info(description="Operator", value=operator)
         
-        # Add misc info
-        report["miscInfos"] = [
-            {"name": "Board Name", "value": board_name}
-        ]
-        
-        # Create root sequence
-        root_step: Dict[str, Any] = {
-            "type": "SEQ",
-            "name": "Root",
-            "status": "Done",
-            "stepResults": []
-        }
+        # Get root sequence
+        root = report.get_root_sequence_call()
+        root.name = seq_name
+        root.sequence.version = seq_version
         
         # Process tests grouped by test group (F attribute)
         tests = list(xml_bi.findall('TEST'))
-        self._process_tests(tests, root_step)
-        
-        report["root"] = root_step
+        self._process_tests(tests, root)
         
         return report
     
-    def _process_tests(self, tests: List[ET.Element], root_step: Dict[str, Any]) -> None:
+    def _process_tests(self, tests: List[ET.Element], root: SequenceCall) -> None:
         """Process TEST elements, grouping by test group (F attribute)"""
         
         current_group = ""
-        current_sequence: Optional[Dict[str, Any]] = None
+        current_sequence: SequenceCall = root
         
         for test in tests:
             test_group = test.get('F', '')
             step_name = test.get('NM', '')
             
-            # Parse measurement values
             try:
                 measurement = float(test.get('MR', '0'))
             except ValueError:
@@ -347,50 +316,34 @@ class KitronSeicaXMLConverter(FileConverter):
             status = test.get('TR', '0')
             
             try:
-                test_time = float(test.get('TT', '0')) / 1000.0  # Convert ms to seconds
+                test_time = float(test.get('TT', '0')) / 1000.0
             except ValueError:
                 test_time = 0.0
             
             # Create new sequence if group changed
             if current_group == "" or test_group != current_group:
                 current_group = test_group
-                current_sequence = {
-                    "type": "SEQ",
-                    "name": test_group,
-                    "status": "Done",
-                    "stepResults": []
-                }
-                root_step["stepResults"].append(current_sequence)
+                new_sequence = root.add_sequence_call(
+                    name=test_group,
+                    file_name=f"{test_group}.seq"
+                )
+                assert isinstance(new_sequence, SequenceCall)
+                current_sequence = new_sequence
             
-            # Create numeric limit step
-            step: Dict[str, Any] = {
-                "type": "NT",
-                "name": step_name,
-                "numericValue": measurement,
-                "compOp": "GELE",
-                "lowLimit": lower_limit,
-                "highLimit": upper_limit,
-                "stepStatus": "Passed" if status == "0" else "Failed",
-            }
+            # Convert status: "0" = Passed, "1" = Failed
+            step_status = "P" if status == "0" else "F"
             
-            if unit:
-                step["unit"] = unit
-            
-            if test_time > 0:
-                step["totTime"] = test_time
-            
-            if current_sequence is not None:
-                current_sequence["stepResults"].append(step)
-    
-    @staticmethod
-    def _get_step_status(status: str) -> str:
-        """Convert status code to WATS status string"""
-        return "Passed" if status == "0" else "Failed"
-    
-    @staticmethod
-    def _get_uut_status(status: str) -> str:
-        """Convert status code to WATS UUT result"""
-        return "P" if status == "0" else "F"
+            # Create numeric limit step using factory method
+            current_sequence.add_numeric_step(
+                name=step_name,
+                value=measurement,
+                unit=unit or "?",
+                comp_op=CompOp.GELE,
+                low_limit=lower_limit,
+                high_limit=upper_limit,
+                status=step_status,
+                tot_time=test_time if test_time > 0 else None,
+            )
 
 
 # Test code
@@ -418,7 +371,7 @@ if __name__ == "__main__":
         temp_path = Path(f.name)
     
     try:
-        converter = KitronSeicaXMLConverter()
+        converter = KitronSeicaXMLConverterV2()
         source = ConverterSource.from_file(temp_path)
         context = ConverterContext()
         
@@ -431,8 +384,17 @@ if __name__ == "__main__":
         # Convert
         result = converter.convert(source, context)
         print(f"\nConversion status: {result.status.value}")
-        if result.report:
-            print("\nGenerated report:")
-            print(json.dumps(result.report, indent=2))
+        
+        if result.report and isinstance(result.report, UUTReport):
+            report = result.report
+            print(f"\nGenerated UUTReport:")
+            print(f"  Part Number: {report.pn}")
+            print(f"  Serial Number: {report.sn}")
+            print(f"  Result: {report.result}")
+            
+            # Serialize to JSON
+            report_dict = report.model_dump(mode="json", by_alias=True, exclude_none=True)
+            print("\nSerialized Report:")
+            print(json.dumps(report_dict, indent=2))
     finally:
         temp_path.unlink()
