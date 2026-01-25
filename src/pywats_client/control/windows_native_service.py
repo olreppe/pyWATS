@@ -194,6 +194,28 @@ def get_service_name(instance_id: str = "default") -> str:
     return f"pyWATS_Service_{instance_id}"
 
 
+def is_service_installed(instance_id: str = "default") -> bool:
+    """
+    Check if the service is already installed.
+    
+    Args:
+        instance_id: Instance identifier
+        
+    Returns:
+        True if service is installed
+    """
+    if not HAS_PYWIN32:
+        return False
+    
+    try:
+        service_name = get_service_name(instance_id)
+        # Try to query service status - will raise if not found
+        win32serviceutil.QueryServiceStatus(service_name)
+        return True
+    except Exception:
+        return False
+
+
 def is_admin() -> bool:
     """Check if running with administrator privileges"""
     if not HAS_PYWIN32:
@@ -209,7 +231,8 @@ def install_service(
     instance_id: str = "default",
     startup: str = "auto",
     username: Optional[str] = None,
-    password: Optional[str] = None
+    password: Optional[str] = None,
+    silent: bool = False
 ) -> bool:
     """
     Install pyWATS as a native Windows Service.
@@ -219,18 +242,23 @@ def install_service(
         startup: Startup type - "auto", "manual", or "disabled"
         username: Service account username (None for LocalSystem)
         password: Service account password
+        silent: If True, suppress all output
         
     Returns:
         True if installation successful
     """
+    def _print(msg: str) -> None:
+        if not silent:
+            print(msg)
+    
     if not HAS_PYWIN32:
-        print("ERROR: pywin32 is required for native Windows service")
-        print("Install with: pip install pywin32")
+        _print("ERROR: pywin32 is required for native Windows service")
+        _print("Install with: pip install pywin32")
         return False
     
     if not is_admin():
-        print("ERROR: Administrator privileges required")
-        print("Please run as Administrator")
+        _print("ERROR: Administrator privileges required")
+        _print("Please run as Administrator")
         return False
     
     try:
@@ -254,10 +282,10 @@ def install_service(
         if instance_id != "default":
             os.environ['PYWATS_INSTANCE_ID'] = instance_id
         
-        print(f"Installing service: {service_name}")
-        print(f"  Display name: {display_name}")
-        print(f"  Instance ID: {instance_id}")
-        print(f"  Startup type: {startup}")
+        _print(f"Installing service: {service_name}")
+        _print(f"  Display name: {display_name}")
+        _print(f"  Instance ID: {instance_id}")
+        _print(f"  Startup type: {startup}")
         
         # Map startup type
         startup_map = {
@@ -283,57 +311,62 @@ def install_service(
             description=PyWATSService._svc_description_
         )
         
-        print(f"\n✓ Service '{service_name}' installed successfully")
-        print(f"\nTo start the service:")
-        print(f"  net start {service_name}")
-        print(f"  or: sc start {service_name}")
-        print(f"\nTo view in Services:")
-        print(f"  services.msc")
+        _print(f"\n✓ Service '{service_name}' installed successfully")
+        _print(f"\nTo start the service:")
+        _print(f"  net start {service_name}")
+        _print(f"  or: sc start {service_name}")
+        _print(f"\nTo view in Services:")
+        _print(f"  services.msc")
         
         return True
         
     except Exception as e:
-        print(f"ERROR: Failed to install service: {e}")
+        _print(f"ERROR: Failed to install service: {e}")
         logger.exception("Service installation failed")
         return False
 
 
-def uninstall_service(instance_id: str = "default") -> bool:
+def uninstall_service(instance_id: str = "default", silent: bool = False) -> bool:
     """
     Uninstall the Windows Service.
     
     Args:
         instance_id: Instance identifier
+        silent: If True, suppress all output
         
     Returns:
         True if uninstallation successful
     """
+    def _print(msg: str) -> None:
+        if not silent:
+            print(msg)
+    
     if not HAS_PYWIN32:
-        print("ERROR: pywin32 is required")
+        _print("ERROR: pywin32 is required")
         return False
     
     if not is_admin():
-        print("ERROR: Administrator privileges required")
+        _print("ERROR: Administrator privileges required")
         return False
     
     try:
         service_name = get_service_name(instance_id)
         
-        print(f"Stopping service '{service_name}'...")
+        _print(f"Stopping service '{service_name}'...")
         try:
             win32serviceutil.StopService(service_name)
             time.sleep(2)  # Give it time to stop
         except Exception:
             pass  # Service might not be running
         
-        print(f"Removing service '{service_name}'...")
+        _print(f"Removing service '{service_name}'...")
         win32serviceutil.RemoveService(service_name)
         
-        print(f"\n✓ Service '{service_name}' removed successfully")
+        _print(f"\n✓ Service '{service_name}' removed successfully")
         return True
         
     except Exception as e:
-        print(f"ERROR: Failed to remove service: {e}")
+        _print(f"ERROR: Failed to remove service: {e}")
         return False
 
 

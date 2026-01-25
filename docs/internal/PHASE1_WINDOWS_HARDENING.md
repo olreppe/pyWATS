@@ -1,0 +1,149 @@
+# Phase 1: Windows Service Hardening
+
+**Sprint**: Phase 1 Quick Wins  
+**Branch**: `feature/separate-service-gui-mode`  
+**Started**: 2026-01-25  
+**Status**: 🔄 In Progress
+
+---
+
+## Objective
+
+Implement production-ready Windows service features that IT departments expect:
+- Silent installation for scripted deployments
+- Proper exit codes for CI/CD integration
+- Service recovery options (auto-restart on failure)
+- Pre-flight validation checks
+
+---
+
+## Task Checklist
+
+### 1. Silent Install Mode
+**Goal**: `python -m pywats_client install-service --silent` works without prompts
+
+- [x] Add `--silent` flag to install-service command
+- [x] Add `--server-url` flag for initial configuration
+- [x] Add `--api-token` flag for initial configuration  
+- [x] Add `--watch-folder` flag for initial configuration
+- [x] Suppress all print output when `--silent` is active
+- [ ] Write configuration file during silent install
+
+### 2. Exit Codes
+**Goal**: Scripted installers can check return code to determine success/failure
+
+| Code | Constant | Meaning |
+|------|----------|---------|
+| 0 | `EXIT_SUCCESS` | Success |
+| 1 | `EXIT_ERROR` | General error |
+| 2 | `EXIT_MISSING_REQUIREMENTS` | Python version, privileges, pywin32 |
+| 3 | `EXIT_CONFIG_ERROR` | Configuration invalid or missing |
+| 4 | `EXIT_ALREADY_INSTALLED` | Service already exists |
+| 5 | `EXIT_NOT_INSTALLED` | Service not found (for uninstall) |
+
+- [x] Create `exit_codes.py` module with constants
+- [x] Update `install-service` to use exit codes
+- [x] Update `uninstall-service` to use exit codes
+- [ ] Update `status` command to use exit codes
+- [ ] Document exit codes in WINDOWS_SERVICE.md
+
+### 3. Pre-flight Checks
+**Goal**: Validate environment before attempting install
+
+- [x] Check Python version ≥ 3.10
+- [x] Check admin/root privileges
+- [x] Check pywin32 availability (if --native)
+- [x] Check network connectivity to WATS server (if --server-url provided)
+- [ ] Check disk space for logs/queue (optional)
+
+### 4. Service Recovery (Windows-specific)
+**Goal**: Service auto-restarts on crash
+
+- [ ] Configure recovery via `sc.exe failure` after install
+- [ ] First failure: Restart after 5 seconds
+- [ ] Second failure: Restart after 5 seconds
+- [ ] Subsequent failures: Restart after 30 seconds
+- [ ] Reset failure count after 24 hours
+
+### 5. Windows Event Log Integration
+**Goal**: Service writes to Windows Event Log (Application log)
+
+- [ ] Register event source during install
+- [ ] Log service start/stop to Event Log
+- [ ] Log errors to Event Log
+- [ ] Remove event source during uninstall
+
+---
+
+## Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/pywats_client/control/exit_codes.py` | NEW - Exit code constants |
+| `src/pywats_client/__main__.py` | Silent install, pre-flight checks, exit codes |
+| `src/pywats_client/control/windows_native_service.py` | Service recovery, event log |
+| `docs/WINDOWS_SERVICE.md` | Document new flags and exit codes |
+
+---
+
+## Testing
+
+### Manual Testing
+```powershell
+# Test silent install (should return 0)
+python -m pywats_client install-service --native --silent
+echo $LASTEXITCODE
+
+# Test duplicate install (should return 4)
+python -m pywats_client install-service --native --silent
+echo $LASTEXITCODE
+
+# Test uninstall (should return 0)
+python -m pywats_client uninstall-service --native --silent
+echo $LASTEXITCODE
+
+# Test uninstall when not installed (should return 5)
+python -m pywats_client uninstall-service --native --silent
+echo $LASTEXITCODE
+
+# Test with configuration
+python -m pywats_client install-service --native --silent `
+    --server-url "https://wats.company.com" `
+    --api-token "xxx" `
+    --watch-folder "C:\TestReports"
+```
+
+### Automated Testing
+- [ ] Add unit tests for pre-flight checks
+- [ ] Add integration test for silent install/uninstall cycle
+
+---
+
+## Progress Log
+
+### 2026-01-25
+- Created tracking document
+- ✅ Created `exit_codes.py` module with all exit code constants
+- ✅ Added `--silent` flag to install-service and uninstall-service
+- ✅ Added `--server-url`, `--api-token`, `--watch-folder` flags for silent install
+- ✅ Added `--skip-preflight` flag  
+- ✅ Implemented pre-flight checks (Python version, admin privileges, pywin32, server connectivity)
+- ✅ Added `is_service_installed()` function for duplicate detection
+- ✅ Added `silent` parameter to `install_service()` and `uninstall_service()`
+- ✅ Tested exit codes work correctly (EXIT_PERMISSION_DENIED = 14 when not admin)
+
+---
+
+## Rollback Plan
+
+All changes are additive (new flags). Existing behavior preserved when flags not used.
+No database migrations or breaking changes.
+
+---
+
+## Next Steps (After This Sprint)
+
+1. Windows IoT LTSC testing
+2. Service recovery implementation
+3. Event Log integration
+4. Update documentation
