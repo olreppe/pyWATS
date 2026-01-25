@@ -80,7 +80,6 @@ class BasePage(QWidget, ErrorHandlingMixin):
     ):
         super().__init__(parent)
         self.config = config
-        self._facade = None  # Removed - pages use IPC or direct pyWATS API
         self._event_subscriptions: List[tuple[AppEvent, Callable]] = []
         self._running_tasks: Dict[str, str] = {}  # task_id -> name
         self._async_runner: Optional[AsyncTaskRunner] = None
@@ -143,42 +142,6 @@ class BasePage(QWidget, ErrorHandlingMixin):
         return "Page"
     
     # =========================================================================
-    # Facade Integration
-    # =========================================================================
-    
-    @property
-    def facade(self) -> Optional["AppFacade"]:
-        """
-        Get the application facade.
-        
-        Returns:
-            AppFacade if set, None otherwise
-        """
-        return self._facade
-    
-    def set_facade(self, facade: "AppFacade") -> None:
-        """
-        Set the application facade.
-        
-        This can be called after construction to enable facade features
-        on pages that were created with the legacy pattern.
-        
-        Args:
-            facade: The AppFacade instance to use
-        """
-        self._facade = facade
-        self._on_facade_ready()
-    
-    def _on_facade_ready(self) -> None:
-        """
-        Called when facade becomes available.
-        
-        Override in subclasses to perform initialization that requires
-        the facade (e.g., subscribing to events, loading initial data).
-        """
-        pass
-    
-    # =========================================================================
     # Async Operation Support
     # =========================================================================
     
@@ -186,12 +149,7 @@ class BasePage(QWidget, ErrorHandlingMixin):
     def async_runner(self) -> AsyncTaskRunner:
         """
         Get or create the async task runner for this page.
-        
-        Uses the facade's runner if available, otherwise creates a local one.
         """
-        if self._facade and self._facade._async_runner:
-            return self._facade.async_runner
-        
         if self._async_runner is None:
             self._async_runner = AsyncTaskRunner(parent=self)
             # Connect to task lifecycle signals

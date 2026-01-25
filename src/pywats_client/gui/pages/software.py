@@ -1,754 +1,180 @@
 """
-Software Page
+Software Distribution Settings Page
 
-Software Distribution page for downloading and managing software packages
-from the WATS server. This allows test stations to receive updates to
-test sequences, configurations, and other software.
+Configuration page for software distribution settings.
+Based on C# WATS Client Configurator SWDistView.
 
-Based on the WATS Software Distribution API:
-- GET /api/Software/Packages - List all packages
-- GET /api/Software/Package/{id} - Get package details
-- GET /api/Software/PackagesByTag - Filter packages by tag
-- POST /api/Software/Package - Create new package
-- POST /api/Software/Package/{id}/Release - Release a package
-- POST /api/Software/File - Upload file to package
+This page configures where software packages from WATS will be installed.
+The actual downloading and installation is handled by the service.
+
+Settings include:
+- Root folder for software installation
+- File transfer chunk size (advanced)
 """
 
-import asyncio
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from pathlib import Path
+from typing import Optional, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QGroupBox, QTableWidget, QTableWidgetItem, 
-    QHeaderView, QComboBox, QProgressBar, QMessageBox,
-    QCheckBox, QTreeWidget, QTreeWidgetItem, QDialog,
-    QFormLayout, QTextEdit, QDialogButtonBox, QFileDialog,
-    QSplitter, QListWidget, QListWidgetItem
+    QPushButton, QGroupBox, QSpinBox, QFileDialog, QMessageBox
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QColor
 
 from .base import BasePage
 from ...core.config import ClientConfig
-from ...core import TaskResult
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
 
 
-class PackageDialog(QDialog):
-    """Dialog for creating/editing software packages"""
-    
-    def __init__(
-        self,
-        package: Optional[Dict[str, Any]] = None,
-        parent: Optional[QWidget] = None
-    ):
-        super().__init__(parent)
-        self.package = package
-        self._setup_ui()
-        if package:
-            self._populate_data(package)
-    
-    def _setup_ui(self) -> None:
-        """Setup dialog UI"""
-        self.setWindowTitle("New Package" if not self.package else "Edit Package")
-        self.setMinimumWidth(500)
-        
-        layout = QVBoxLayout(self)
-        
-        # Form
-        form = QFormLayout()
-        form.setSpacing(10)
-        
-        self.name_edit = QLineEdit()
-        self.name_edit.setPlaceholderText("Package name (required)")
-        form.addRow("Name:", self.name_edit)
-        
-        self.desc_edit = QTextEdit()
-        self.desc_edit.setMaximumHeight(80)
-        self.desc_edit.setPlaceholderText("Package description")
-        form.addRow("Description:", self.desc_edit)
-        
-        self.folder_edit = QLineEdit()
-        self.folder_edit.setPlaceholderText("Virtual folder for organization (optional)")
-        form.addRow("Folder:", self.folder_edit)
-        
-        self.root_dir_edit = QLineEdit()
-        self.root_dir_edit.setPlaceholderText("Installation root directory (optional)")
-        form.addRow("Root Directory:", self.root_dir_edit)
-        
-        self.install_root_cb = QCheckBox("Install on root")
-        form.addRow("", self.install_root_cb)
-        
-        layout.addLayout(form)
-        
-        # Buttons
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | 
-            QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self._validate_and_accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-    
-    def _populate_data(self, package: Dict[str, Any]) -> None:
-        """Populate with existing package data"""
-        self.name_edit.setText(package.get('name', ''))
-        self.name_edit.setEnabled(False)  # Can't change name
-        self.desc_edit.setPlainText(package.get('description', ''))
-        self.root_dir_edit.setText(package.get('rootDirectory', ''))
-        self.install_root_cb.setChecked(package.get('installOnRoot', False))
-    
-    def _validate_and_accept(self) -> None:
-        """Validate input"""
-        if not self.name_edit.text().strip():
-            QMessageBox.warning(self, "Validation", "Package name is required")
-            return
-        self.accept()
-    
-    def get_data(self) -> Dict[str, Any]:
-        """Get package data"""
-        return {
-            'name': self.name_edit.text().strip(),
-            'description': self.desc_edit.toPlainText().strip() or None,
-            'folder': self.folder_edit.text().strip() or None,
-            'rootDirectory': self.root_dir_edit.text().strip() or None,
-            'installOnRoot': self.install_root_cb.isChecked(),
-        }
-
-
 class SoftwarePage(BasePage):
-    """Software Distribution page - manage packages from WATS server"""
+    """
+    Software Distribution settings page.
+    
+    Configures software distribution behavior for the pyWATS Client service.
+    Based on C# WATS Client Configurator SWDistView.
+    """
     
     def __init__(
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None,
-        *,
-        facade: Optional['AppFacade'] = None
+        parent: Optional[QWidget] = None
     ):
-        self._packages: List[Dict[str, Any]] = []
-        self._selected_package: Optional[Any] = None
+        self._main_window = main_window
         super().__init__(config, parent)
         self._setup_ui()
         self.load_config()
     
     @property
     def page_title(self) -> str:
-        return "Software"
-    
-    def _get_api_client(self):
-        """
-        Get API client via facade.
-        
-        Returns:
-            pyWATS client or None if not available
-        """
-        if self._facade and self._facade.has_api:
-            return self._facade.api
-        return None
+        return "Software Distribution"
     
     def _setup_ui(self) -> None:
-        """Setup page UI for Software Distribution"""
-        # Software Distribution Settings
-        settings_group = QGroupBox("Software Distribution Settings")
-        settings_layout = QVBoxLayout(settings_group)
+        """Setup page UI for software distribution settings"""
         
-        # Enable auto-update
-        self._auto_update_cb = QCheckBox("Enable automatic software updates")
-        self._auto_update_cb.setToolTip(
-            "Automatically check for and download software updates from WATS"
+        # Root Folder Setting
+        root_group = QGroupBox("Software Distribution")
+        root_layout = QVBoxLayout(root_group)
+        
+        # Root folder row
+        folder_layout = QHBoxLayout()
+        folder_layout.addWidget(QLabel("Root folder:"))
+        
+        self._root_folder_edit = QLineEdit()
+        self._root_folder_edit.setPlaceholderText("Select folder for software installations...")
+        self._root_folder_edit.setToolTip(
+            "Root directory where software packages will be installed.\n"
+            "The folder must exist and be empty."
         )
-        self._auto_update_cb.stateChanged.connect(self._emit_changed)
-        settings_layout.addWidget(self._auto_update_cb)
+        self._root_folder_edit.textChanged.connect(self._emit_changed)
+        folder_layout.addWidget(self._root_folder_edit, 1)
         
-        self._layout.addWidget(settings_group)
+        self._browse_btn = QPushButton("Browse")
+        self._browse_btn.setFixedWidth(80)
+        self._browse_btn.clicked.connect(self._on_browse)
+        folder_layout.addWidget(self._browse_btn)
         
-        self._layout.addSpacing(10)
+        root_layout.addLayout(folder_layout)
         
-        # Main content splitter
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        # Description
+        desc_label = QLabel(
+            "The root folder is where software packages from WATS will be installed.\n"
+            "Each package will be placed in a subdirectory under this folder.\n"
+            "The folder must exist and be empty when first configured."
+        )
+        desc_label.setStyleSheet("color: #808080; font-size: 11px;")
+        desc_label.setWordWrap(True)
+        root_layout.addWidget(desc_label)
         
-        # Left side - packages list
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.addWidget(root_group)
         
-        # Available Packages
-        packages_group = QGroupBox("Available Packages")
-        packages_layout = QVBoxLayout(packages_group)
+        # Advanced Options (collapsed by default)
+        advanced_group = QGroupBox("Advanced Options")
+        advanced_group.setCheckable(True)
+        advanced_group.setChecked(False)
+        advanced_layout = QVBoxLayout(advanced_group)
         
-        # Toolbar row
-        toolbar_layout = QHBoxLayout()
+        # Chunk size
+        chunk_layout = QHBoxLayout()
+        chunk_layout.addWidget(QLabel("File transfer chunk size:"))
         
-        self._refresh_btn = QPushButton("⟳ Refresh")
-        self._refresh_btn.setToolTip("Refresh packages from server")
-        self._refresh_btn.clicked.connect(self._on_refresh_packages)
-        toolbar_layout.addWidget(self._refresh_btn)
+        self._chunk_size_spin = QSpinBox()
+        self._chunk_size_spin.setRange(1024, 10485760)  # 1KB to 10MB
+        self._chunk_size_spin.setValue(65536)  # 64KB default
+        self._chunk_size_spin.setSingleStep(1024)
+        self._chunk_size_spin.setSuffix(" bytes")
+        self._chunk_size_spin.setToolTip(
+            "Size of each chunk when transferring files.\n"
+            "Larger chunks may be faster but use more memory."
+        )
+        self._chunk_size_spin.valueChanged.connect(self._emit_changed)
+        chunk_layout.addWidget(self._chunk_size_spin)
         
-        self._create_btn = QPushButton("+ Create")
-        self._create_btn.setToolTip("Create new package")
-        self._create_btn.clicked.connect(self._on_create_package)
-        toolbar_layout.addWidget(self._create_btn)
+        chunk_layout.addStretch()
+        advanced_layout.addLayout(chunk_layout)
         
-        toolbar_layout.addStretch()
-        packages_layout.addLayout(toolbar_layout)
+        # Chunk size description
+        chunk_desc = QLabel(
+            "The chunk size controls how large each piece of a file transfer is.\n"
+            "Default: 65536 bytes (64 KB). Increase for faster transfers on reliable connections."
+        )
+        chunk_desc.setStyleSheet("color: #808080; font-size: 11px;")
+        chunk_desc.setWordWrap(True)
+        advanced_layout.addWidget(chunk_desc)
         
-        # Filter row
-        filter_layout = QHBoxLayout()
-        filter_layout.addWidget(QLabel("Status:"))
+        self._layout.addWidget(advanced_group)
         
-        self._status_combo = QComboBox()
-        self._status_combo.addItems(["Released", "All", "Draft", "Pending", "Revoked"])
-        self._status_combo.currentIndexChanged.connect(self._on_filter_changed)
-        filter_layout.addWidget(self._status_combo)
-        
-        filter_layout.addSpacing(20)
-        filter_layout.addWidget(QLabel("Search:"))
-        
-        self._search_edit = QLineEdit()
-        self._search_edit.setPlaceholderText("Search packages...")
-        self._search_edit.textChanged.connect(self._on_filter_changed)
-        filter_layout.addWidget(self._search_edit, 1)
-        packages_layout.addLayout(filter_layout)
-        
-        # Packages tree view (organized by virtual folders)
-        self._packages_tree = QTreeWidget()
-        self._packages_tree.setColumnCount(4)
-        self._packages_tree.setHeaderLabels([
-            "Package / Folder", "Version", "Status", "Updated"
-        ])
-        self._packages_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self._packages_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        self._packages_tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        self._packages_tree.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        self._packages_tree.setAlternatingRowColors(True)
-        self._packages_tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
-        self._packages_tree.setIndentation(20)
-        self._packages_tree.setColumnWidth(0, 300)
-        # Apply styling to match other grids in the app
-        self._packages_tree.setStyleSheet("""
-            QTreeWidget {
-                font-size: 11pt;
-                background-color: #1e1e1e;
-                alternate-background-color: #2d2d2d;
-                border: 1px solid #3c3c3c;
-            }
-            QTreeWidget::item {
-                padding: 4px;
-            }
-            QTreeWidget::item:selected {
-                background-color: #0078d4;
-            }
-            QTreeWidget::item:hover {
-                background-color: #2d2d2d;
-            }
-            QHeaderView::section {
-                background-color: #2d2d2d;
-                padding: 4px;
-                border: 1px solid #3c3c3c;
-                font-weight: bold;
-            }
-        """)
-        packages_layout.addWidget(self._packages_tree)
-        
-        left_layout.addWidget(packages_group)
-        splitter.addWidget(left_widget)
-        
-        # Right side - package details and actions
-        right_widget = QWidget()
-        right_layout = QVBoxLayout(right_widget)
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Package Details
-        details_group = QGroupBox("Package Details")
-        details_layout = QVBoxLayout(details_group)
-        
-        self._details_label = QLabel("Select a package to view details")
-        self._details_label.setStyleSheet("color: #808080; font-style: italic;")
-        self._details_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._details_label.setWordWrap(True)
-        details_layout.addWidget(self._details_label)
-        
-        right_layout.addWidget(details_group)
-        
-        # Files list
-        files_group = QGroupBox("Package Files")
-        files_layout = QVBoxLayout(files_group)
-        
-        self._files_list = QListWidget()
-        self._files_list.setMaximumHeight(150)
-        files_layout.addWidget(self._files_list)
-        
-        # Upload button
-        self._upload_btn = QPushButton("📤 Upload File")
-        self._upload_btn.setEnabled(False)
-        self._upload_btn.clicked.connect(self._on_upload_file)
-        files_layout.addWidget(self._upload_btn)
-        
-        right_layout.addWidget(files_group)
-        
-        # Actions
-        actions_group = QGroupBox("Actions")
-        actions_layout = QVBoxLayout(actions_group)
-        
-        self._release_btn = QPushButton("✓ Release Package")
-        self._release_btn.setEnabled(False)
-        self._release_btn.setToolTip("Release this package for distribution")
-        self._release_btn.clicked.connect(self._on_release_package)
-        actions_layout.addWidget(self._release_btn)
-        
-        self._revoke_btn = QPushButton("✗ Revoke Package")
-        self._revoke_btn.setEnabled(False)
-        self._revoke_btn.setToolTip("Revoke this package from distribution")
-        self._revoke_btn.clicked.connect(self._on_revoke_package)
-        actions_layout.addWidget(self._revoke_btn)
-        
-        self._delete_btn = QPushButton("🗑 Delete Package")
-        self._delete_btn.setEnabled(False)
-        self._delete_btn.clicked.connect(self._on_delete_package)
-        actions_layout.addWidget(self._delete_btn)
-        
-        right_layout.addWidget(actions_group)
-        right_layout.addStretch()
-        
-        splitter.addWidget(right_widget)
-        splitter.setSizes([500, 300])
-        
-        self._layout.addWidget(splitter, 1)
-        
-        # Progress indicator
-        progress_layout = QHBoxLayout()
-        self._progress_bar = QProgressBar()
-        self._progress_bar.setVisible(False)
-        self._progress_bar.setMaximumWidth(200)
-        progress_layout.addWidget(self._progress_bar)
-        progress_layout.addStretch()
-        self._layout.addLayout(progress_layout)
-        
-        # Status message
-        self._status_label = QLabel("Connect to WATS server to view available packages")
-        self._status_label.setStyleSheet("color: #808080; font-style: italic;")
-        self._layout.addWidget(self._status_label)
-        
-        # Connect tree selection
-        self._packages_tree.itemSelectionChanged.connect(self._on_selection_changed)
-        
-        # Auto-load packages if connected
-        if self._get_api_client():
-            print("[Software] Auto-loading packages on initialization")
-            self._load_packages_async()
+        # Add stretch to push everything to top
+        self._layout.addStretch()
     
-    def _on_selection_changed(self) -> None:
-        """Handle package selection change"""
-        selected_items = self._packages_tree.selectedItems()
-        if selected_items:
-            item = selected_items[0]
-            package = item.data(0, Qt.ItemDataRole.UserRole)
-            if package:
-                self._selected_package = package
-                self._show_package_details(package)
-                
-                # Enable/disable buttons based on package status
-                status_str = str(package.status.value) if hasattr(package.status, 'value') else str(package.status)
-                is_draft = status_str.lower() == 'draft'
-                is_released = status_str.lower() == 'released'
-                
-                self._upload_btn.setEnabled(is_draft)
-                self._release_btn.setEnabled(is_draft)
-                self._revoke_btn.setEnabled(is_released)
-                self._delete_btn.setEnabled(is_draft)
-            else:
-                self._selected_package = None
-                self._clear_details()
-        else:
-            self._selected_package = None
-            self._clear_details()
-    
-    def _show_package_details(self, package: Any) -> None:
-        """Display package details"""
-        status_str = str(package.status.value) if hasattr(package.status, 'value') else str(package.status)
+    def _on_browse(self) -> None:
+        """Browse for root folder"""
+        current = self._root_folder_edit.text() or str(Path.home())
         
-        details = f"""
-<b>Name:</b> {package.name or 'N/A'}<br>
-<b>Version:</b> {package.version or 'N/A'}<br>
-<b>Status:</b> {status_str}<br>
-<b>Description:</b> {package.description or 'N/A'}<br>
-<b>Root Directory:</b> {package.root_directory or 'N/A'}<br>
-<b>Created:</b> {str(package.created_utc)[:19] if package.created_utc else 'N/A'}<br>
-<b>Modified:</b> {str(package.modified_utc)[:19] if package.modified_utc else 'N/A'}<br>
-"""
-        self._details_label.setText(details)
-        self._details_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "Select Software Distribution Root Folder",
+            current
+        )
         
-        # Populate files list
-        self._files_list.clear()
-        if hasattr(package, 'files') and package.files:
-            for f in package.files:
-                name = f.file_name if hasattr(f, 'file_name') else str(f)
-                self._files_list.addItem(f"📄 {name}")
-        else:
-            self._files_list.addItem("(No files)")
-    
-    def _clear_details(self) -> None:
-        """Clear the details panel"""
-        self._details_label.setText("Select a package to view details")
-        self._details_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._files_list.clear()
-        self._upload_btn.setEnabled(False)
-        self._release_btn.setEnabled(False)
-        self._revoke_btn.setEnabled(False)
-        self._delete_btn.setEnabled(False)
-    
-    def _on_filter_changed(self) -> None:
-        """Handle filter changes - refresh displayed packages"""
-        self._populate_packages_tree()
-    
-    def _on_create_package(self) -> None:
-        """Show dialog to create new package"""
-        client = self._get_api_client()
-        if not client:
-            QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
-            return
-        
-        dialog = PackageDialog(parent=self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            data = dialog.get_data()
+        if folder:
+            folder_path = Path(folder)
             
-            # Run create operation async
-            self.run_async(
-                self._create_package(data),
-                name="Creating package...",
-                on_complete=lambda r: self._on_package_created(r, data['name']),
-                on_error=self._on_package_create_error
-            )
-    
-    async def _create_package(self, data: Dict[str, Any]) -> Any:
-        """Create package asynchronously"""
-        client = self._get_api_client()
-        if not client:
-            raise RuntimeError("Not connected to WATS server")
-        
-        return client.software.create_package(
-            name=data['name'],
-            description=data.get('description'),
-            root_directory=data.get('rootDirectory'),
-            install_on_root=data.get('installOnRoot', False),
-        )
-    
-    def _on_package_created(self, result: TaskResult, name: str) -> None:
-        """Handle successful package creation"""
-        if result.is_success and result.result:
-            QMessageBox.information(self, "Success", f"Package '{name}' created successfully in Draft status")
-            self._load_packages_async()
-        else:
-            QMessageBox.warning(self, "Error", "Failed to create package")
-    
-    def _on_package_create_error(self, result: TaskResult) -> None:
-        """Handle package creation error"""
-        error_msg = str(result.error) if result.error else "Unknown error"
-        QMessageBox.critical(self, "Error", f"Failed to create package: {error_msg}")
-    
-    def _on_upload_file(self) -> None:
-        """Upload file to selected package as a zip"""
-        if not self._selected_package:
-            return
-        
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select File to Upload", "",
-            "ZIP Files (*.zip);;All Files (*.*)"
-        )
-        
-        if file_path:
-            try:
-                import zipfile
-                import tempfile
-                from pathlib import Path
-                
-                client = self._get_api_client()
-                pkg_id = self._selected_package.package_id
-                
-                file_path_obj = Path(file_path)
-                
-                # Check if already a zip file
-                if file_path_obj.suffix.lower() == '.zip':
-                    # Use zip file directly
-                    with open(file_path, 'rb') as f:
-                        zip_content = f.read()
-                else:
-                    # Wrap single file in a zip
-                    # Note: WATS requires files to be in a folder, not at root
-                    with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp:
-                        tmp_path = tmp.name
-                    
-                    try:
-                        with zipfile.ZipFile(tmp_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-                            # Put file in a subfolder (required by WATS API)
-                            folder_name = "uploaded_files"
-                            zf.write(file_path, f"{folder_name}/{file_path_obj.name}")
-                        
-                        with open(tmp_path, 'rb') as f:
-                            zip_content = f.read()
-                    finally:
-                        Path(tmp_path).unlink(missing_ok=True)
-                
-                result = client.software.upload_zip(pkg_id, zip_content)
-                
-                if result:
-                    QMessageBox.information(self, "Success", "File uploaded successfully")
-                    self._load_packages()
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to upload file")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to upload file: {e}")
-    
-    def _on_release_package(self) -> None:
-        """Release the selected package"""
-        if not self._selected_package:
-            return
-        
-        reply = QMessageBox.question(
-            self, "Confirm Release",
-            f"Are you sure you want to release package '{self._selected_package.name}'?\n\nThis will make it available for distribution.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            # Run release async
-            self.run_async(
-                self._release_package(self._selected_package.package_id),
-                name="Releasing package...",
-                on_complete=self._on_package_released,
-                on_error=self._on_release_error
-            )
-    
-    async def _release_package(self, package_id: str) -> Any:
-        """Release package asynchronously"""
-        client = self._get_api_client()
-        if not client:
-            raise RuntimeError("Not connected to WATS server")
-        return client.software.release_package(package_id)
-    
-    def _on_package_released(self, result: TaskResult) -> None:
-        """Handle successful package release"""
-        if result.is_success and result.result:
-            QMessageBox.information(self, "Success", "Package released successfully")
-            self._load_packages_async()
-        else:
-            QMessageBox.warning(self, "Error", "Failed to release package")
-    
-    def _on_release_error(self, result: TaskResult) -> None:
-        """Handle release error"""
-        error_msg = str(result.error) if result.error else "Unknown error"
-        QMessageBox.critical(self, "Error", f"Failed to release package: {error_msg}")
-    
-    def _on_revoke_package(self) -> None:
-        """Revoke the selected package"""
-        if not self._selected_package:
-            return
-        
-        reply = QMessageBox.question(
-            self, "Confirm Revoke",
-            f"Are you sure you want to revoke package '{self._selected_package.name}'?\n\nThis will remove it from distribution.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            # Run revoke async
-            self.run_async(
-                self._revoke_package(self._selected_package.package_id),
-                name="Revoking package...",
-                on_complete=self._on_package_revoked,
-                on_error=self._on_revoke_error
-            )
-    
-    async def _revoke_package(self, package_id: str) -> Any:
-        """Revoke package asynchronously"""
-        client = self._get_api_client()
-        if not client:
-            raise RuntimeError("Not connected to WATS server")
-        return client.software.revoke_package(package_id)
-    
-    def _on_package_revoked(self, result: TaskResult) -> None:
-        """Handle successful package revoke"""
-        if result.is_success and result.result:
-            QMessageBox.information(self, "Success", "Package revoked successfully")
-            self._load_packages_async()
-        else:
-            QMessageBox.warning(self, "Error", "Failed to revoke package")
-    
-    def _on_revoke_error(self, result: TaskResult) -> None:
-        """Handle revoke error"""
-        error_msg = str(result.error) if result.error else "Unknown error"
-        QMessageBox.critical(self, "Error", f"Failed to revoke package: {error_msg}")
-    
-    def _on_delete_package(self) -> None:
-        """Delete the selected package"""
-        if not self._selected_package:
-            return
-        
-        reply = QMessageBox.question(
-            self, "Confirm Delete",
-            f"Are you sure you want to delete package '{self._selected_package.name}'?\n\nThis action cannot be undone.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            # Run delete async
-            self.run_async(
-                self._delete_package(self._selected_package.package_id),
-                name="Deleting package...",
-                on_complete=self._on_package_deleted,
-                on_error=self._on_delete_error
-            )
-    
-    async def _delete_package(self, package_id: str) -> Any:
-        """Delete package asynchronously"""
-        client = self._get_api_client()
-        if not client:
-            raise RuntimeError("Not connected to WATS server")
-        return client.software.delete_package(package_id)
-    
-    def _on_package_deleted(self, result: TaskResult) -> None:
-        """Handle successful package delete"""
-        if result.is_success and result.result:
-            QMessageBox.information(self, "Success", "Package deleted successfully")
-            self._load_packages_async()
-        else:
-            QMessageBox.warning(self, "Error", "Failed to delete package")
-    
-    def _on_delete_error(self, result: TaskResult) -> None:
-        """Handle delete error"""
-        error_msg = str(result.error) if result.error else "Unknown error"
-        QMessageBox.critical(self, "Error", f"Failed to delete package: {error_msg}")
-
-    def _on_refresh_packages(self) -> None:
-        """Refresh packages from server"""
-        if self._get_api_client():
-            self._load_packages_async()
-        else:
-            QMessageBox.warning(
-                self, "Not Connected",
-                "Please connect to WATS server first."
-            )
-    
-
-    
-
-    
-    def _load_packages_async(self) -> None:
-        """Load packages from WATS server asynchronously"""
-        self._status_label.setText("Loading packages...")
-        self._progress_bar.setVisible(True)
-        self._progress_bar.setRange(0, 0)  # Indeterminate
-        
-        self.run_async(
-            self._fetch_packages(),
-            name="Loading packages...",
-            on_complete=self._on_packages_loaded,
-            on_error=self._on_packages_error
-        )
-    
-    async def _fetch_packages(self) -> List[Any]:
-        """Fetch packages asynchronously"""
-        client = self._get_api_client()
-        if not client:
-            raise RuntimeError("Not connected to WATS server")
-        
-        packages = client.software.get_packages()
-        return packages if packages else []
-    
-    def _on_packages_loaded(self, result: TaskResult) -> None:
-        """Handle successful packages load"""
-        self._progress_bar.setVisible(False)
-        
-        if result.is_success:
-            self._packages = result.result or []
-            self._populate_packages_tree()
-            self._status_label.setText(f"Found {len(self._packages)} packages")
-        else:
-            self._status_label.setText("Failed to load packages")
-    
-    def _on_packages_error(self, result: TaskResult) -> None:
-        """Handle packages load error"""
-        self._progress_bar.setVisible(False)
-        error_msg = str(result.error) if result.error else "Unknown error"
-        self._status_label.setText(f"Error loading packages: {error_msg}")
-    
-    def _populate_packages_tree(self) -> None:
-        """Populate packages tree with folders and filtered results"""
-        search_text = self._search_edit.text().lower()
-        status_filter = self._status_combo.currentText()
-        
-        self._packages_tree.clear()
-        
-        # Organize packages by virtual folder
-        folders: Dict[str, List[Any]] = {}
-        
-        for pkg in self._packages:
-            # Status filter
-            if status_filter != "All":
-                # Status might be enum or string
-                if hasattr(pkg.status, 'value'):
-                    pkg_status = str(pkg.status.value)
-                else:
-                    pkg_status = str(pkg.status) if pkg.status else ""
-                if pkg_status.lower() != status_filter.lower():
-                    continue
+            # Validate folder
+            if not folder_path.exists():
+                QMessageBox.warning(
+                    self, "Invalid Folder",
+                    "The selected folder does not exist."
+                )
+                return
             
-            # Search filter
-            if search_text:
-                name = (pkg.name or "").lower()
-                desc = (pkg.description or "").lower()
-                if search_text not in name and search_text not in desc:
-                    continue
+            # Check if empty (only for new configuration)
+            if self._root_folder_edit.text() != folder:
+                contents = list(folder_path.iterdir())
+                if contents:
+                    reply = QMessageBox.question(
+                        self, "Folder Not Empty",
+                        "The selected folder is not empty.\n\n"
+                        "For new configurations, an empty folder is recommended.\n"
+                        "Use this folder anyway?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                    )
+                    if reply != QMessageBox.StandardButton.Yes:
+                        return
             
-            # Get folder from tags or use "Uncategorized"
-            folder_name = "Uncategorized"
-            if pkg.tags:
-                for tag in pkg.tags:
-                    if hasattr(tag, 'key') and tag.key == "Folder":
-                        folder_name = tag.value or "Uncategorized"
-                        break
-            
-            if folder_name not in folders:
-                folders[folder_name] = []
-            folders[folder_name].append(pkg)
-        
-        # Create tree structure
-        for folder_name in sorted(folders.keys()):
-            # Create folder item
-            folder_item = QTreeWidgetItem(self._packages_tree)
-            folder_item.setText(0, f"📁 {folder_name}")
-            folder_item.setExpanded(True)
-            
-            # Add packages to folder
-            for pkg in folders[folder_name]:
-                pkg_item = QTreeWidgetItem(folder_item)
-                pkg_item.setText(0, pkg.name or "")
-                pkg_item.setText(1, str(pkg.version) if pkg.version else "")
-                
-                # Status might be enum or string
-                if hasattr(pkg.status, 'value'):
-                    status_str = str(pkg.status.value)
-                else:
-                    status_str = str(pkg.status) if pkg.status else ""
-                pkg_item.setText(2, status_str)
-                
-                modified = str(pkg.modified_utc)[:10] if pkg.modified_utc else ""
-                pkg_item.setText(3, modified)
-                
-                # Store package data
-                pkg_item.setData(0, Qt.ItemDataRole.UserRole, pkg)
+            self._root_folder_edit.setText(folder)
     
     def save_config(self) -> None:
-        """Save configuration"""
-        self.config.software_auto_update = self._auto_update_cb.isChecked()
+        """Save software distribution settings to config"""
+        self.config.sw_dist_root = self._root_folder_edit.text().strip()
+        self.config.sw_dist_chunk_size = self._chunk_size_spin.value()
     
     def load_config(self) -> None:
-        """Load configuration"""
-        self._auto_update_cb.setChecked(
-            getattr(self.config, 'software_auto_update', False)
-        )
+        """Load software distribution settings from config"""
+        root = getattr(self.config, 'sw_dist_root', '') or ''
+        self._root_folder_edit.setText(root)
+        
+        chunk_size = getattr(self.config, 'sw_dist_chunk_size', 65536)
+        self._chunk_size_spin.setValue(chunk_size)
 

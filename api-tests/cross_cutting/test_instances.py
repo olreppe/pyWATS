@@ -220,17 +220,6 @@ class TestInstanceManager:
             token=test_config.token
         )
     
-    def get_application(self, instance_id: TestInstanceID) -> "pyWATSApplication":
-        """
-        Get a full pyWATSApplication for the test instance.
-        
-        Includes all services (connection, sync, queue, converters).
-        """
-        from pywats_client.app import pyWATSApplication
-        
-        client_config = self.get_client_config(instance_id)
-        return pyWATSApplication(client_config)
-    
     def list_instances(self) -> Dict[TestInstanceID, TestInstanceConfig]:
         """List all configured test instances."""
         instances = {}

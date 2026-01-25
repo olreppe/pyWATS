@@ -301,9 +301,7 @@ class SetupPage(BasePage):
         self, 
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
-        parent: Optional[QWidget] = None,
-        *,
-        facade = None
+        parent: Optional[QWidget] = None
     ):
         self._main_window = main_window
         self._is_connected = False

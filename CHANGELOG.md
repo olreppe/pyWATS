@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **GUI Architecture Consolidation** - Aligned Python client with C# WATS Client Configurator:
+  - Rewrote `sn_handler.py` to match C# `SerialNumberView.xaml` - configuration-only page
+    - Serial number type selection (Standard, Reuse, Reserve Offline)
+    - Batch size, fetch threshold, in-sequence validation settings
+    - Local serials display table (read-only from config)
+  - Rewrote `software.py` to match C# `SWDistView.xaml` - simple root folder config
+    - Root folder path selection with browse dialog
+    - File transfer chunk size (advanced setting)
+  - All GUI pages now follow config-first pattern matching C# reference implementation
+
+### Removed
+
+- **Unused GUI Pages** - Removed pages not present in C# WATS Client Configurator:
+  - Deleted `asset.py` - Asset API features remain in service layer
+  - Deleted `product.py` - Product API features remain in service layer  
+  - Deleted `production.py` - Production API features remain in service layer
+  - Deleted `rootcause.py` - RootCause API features remain in service layer
+  - Removed tab visibility settings from Settings dialog (show_asset_tab, etc.)
+  - Removed related config properties and navigation items
+
+- **Legacy Application Architecture** - Removed old async Python-native architecture:
+  - Deleted `pyWATSApplication` class from `pywats_client/app.py`
+  - Deleted `AppFacade` wrapper from `pywats_client/core/app_facade.py`
+  - Deleted `Client` class from `pywats_client/core/client.py`
+  - Deleted HTTP Control API from `pywats_client/control/http_api.py`
+  - Deleted entire `pywats_client/services/` folder (async service layer)
+  - Removed obsolete test fixtures (`client_app_a`, `client_app_b`)
+  - Removed `TestClientApplications` test class (tested deleted architecture)
+  - **Note**: New architecture uses `ClientService` (threading-based, C# port)
+
 ### Added
 
 - **ReportBuilder Tool** - Simple, LLM-friendly report building for converters:

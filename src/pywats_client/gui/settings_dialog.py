@@ -965,22 +965,6 @@ class GUITabsPanel(SettingsPanel):
         tabs_layout.addRow(self.show_software_check)
         tabs_layout.addRow(self._create_description_label("Software distribution and updates"))
         
-        self.show_asset_check = self._create_checkbox("Assets")
-        tabs_layout.addRow(self.show_asset_check)
-        tabs_layout.addRow(self._create_description_label("Asset management and tracking"))
-        
-        self.show_rootcause_check = self._create_checkbox("RootCause")
-        tabs_layout.addRow(self.show_rootcause_check)
-        tabs_layout.addRow(self._create_description_label("Root cause analysis and tracking"))
-        
-        self.show_production_check = self._create_checkbox("Production")
-        tabs_layout.addRow(self.show_production_check)
-        tabs_layout.addRow(self._create_description_label("Production and manufacturing data"))
-        
-        self.show_product_check = self._create_checkbox("Products")
-        tabs_layout.addRow(self.show_product_check)
-        tabs_layout.addRow(self._create_description_label("Product and revision management"))
-        
         # Note about restart
         restart_note = self._create_description_label(
             "Note: Changes to tab visibility require an application restart to take effect."
@@ -999,10 +983,6 @@ class GUITabsPanel(SettingsPanel):
         self.show_sn_handler_check.setChecked(config.show_sn_handler_tab)
         self.show_proxy_check.setChecked(config.show_proxy_tab)
         self.show_software_check.setChecked(config.show_software_tab)
-        self.show_asset_check.setChecked(config.show_asset_tab)
-        self.show_rootcause_check.setChecked(config.show_rootcause_tab)
-        self.show_production_check.setChecked(config.show_production_tab)
-        self.show_product_check.setChecked(config.show_product_tab)
         self.clear_modified()
     
     def save_settings(self, config: ClientConfig) -> None:
@@ -1011,10 +991,6 @@ class GUITabsPanel(SettingsPanel):
         config.show_sn_handler_tab = self.show_sn_handler_check.isChecked()
         config.show_proxy_tab = self.show_proxy_check.isChecked()
         config.show_software_tab = self.show_software_check.isChecked()
-        config.show_asset_tab = self.show_asset_check.isChecked()
-        config.show_rootcause_tab = self.show_rootcause_check.isChecked()
-        config.show_production_tab = self.show_production_check.isChecked()
-        config.show_product_tab = self.show_product_check.isChecked()
 
 
 # ==============================================================================

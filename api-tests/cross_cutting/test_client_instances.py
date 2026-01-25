@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pywats import pyWATS
     from pywats_client.core.config import ClientConfig
-    from pywats_client.app import pyWATSApplication
 
 
 class TestClientInstances:
@@ -73,40 +72,8 @@ class TestAPIClients:
         assert version_a == version_b
 
 
-class TestClientApplications:
-    """Test full client applications."""
-
-    @pytest.mark.client_a
-    def test_client_app_a_initializes(self, client_app_a: "pyWATSApplication") -> None:
-        """Test Client A application initializes correctly."""
-        from pywats_client.app import ApplicationStatus
-        
-        assert client_app_a is not None
-        assert client_app_a.config is not None
-        assert client_app_a.config.instance_name == "Test Client A"
-        # Should start in stopped state
-        assert client_app_a.status == ApplicationStatus.STOPPED
-
-    @pytest.mark.client_b
-    def test_client_app_b_initializes(self, client_app_b: "pyWATSApplication") -> None:
-        """Test Client B application initializes correctly."""
-        from pywats_client.app import ApplicationStatus
-        
-        assert client_app_b is not None
-        assert client_app_b.config is not None
-        assert client_app_b.config.instance_name == "Test Client B"
-        assert client_app_b.status == ApplicationStatus.STOPPED
-
-    def test_applications_are_independent(
-        self, 
-        client_app_a: "pyWATSApplication", 
-        client_app_b: "pyWATSApplication"
-    ) -> None:
-        """Test that Client A and B applications are independent instances."""
-        # Different config objects
-        assert client_app_a.config is not client_app_b.config
-        # Different instance IDs
-        assert client_app_a.config.instance_id != client_app_b.config.instance_id
+# NOTE: TestClientApplications removed - was testing deleted pyWATSApplication (old architecture)
+# New architecture uses ClientService which is tested separately in service tests
 
 
 class TestInstanceManager:

@@ -21,11 +21,7 @@ API-level testing (PyWATS client only):
         # Explicitly use Client B
         products = wats_client_b.product.get_products()
 
-Client application testing (full pyWATSApplication):
-    def test_client_app(client_app_a):
-        # Full application with services
-        await client_app_a.start()
-        
+Client configuration testing:
     def test_client_config(client_config_a):
         # Just the ClientConfig for unit tests
         assert client_config_a.instance_name == "Test Client A"
@@ -48,7 +44,6 @@ from pywats import pyWATS
 
 if TYPE_CHECKING:
     from pywats_client.core.config import ClientConfig
-    from pywats_client.app import pyWATSApplication
 
 
 # =============================================================================
@@ -116,31 +111,6 @@ def client_config_a(test_instance_manager) -> "ClientConfig":
     return test_instance_manager.get_client_config("A")
 
 
-@pytest.fixture(scope="function")
-def client_app_a(test_instance_manager) -> Generator["pyWATSApplication", None, None]:
-    """
-    Get full pyWATSApplication for Test Instance A.
-    
-    Use this for integration tests that need the full client
-    application with all services (connection, sync, converters).
-    
-    Note: This is function-scoped to ensure clean state between tests.
-    """
-    app = test_instance_manager.get_application("A")
-    yield app
-    # Cleanup: stop services if running
-    if hasattr(app, '_running') and app._running:
-        import asyncio
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(app.stop())
-            else:
-                loop.run_until_complete(app.stop())
-        except Exception:
-            pass
-
-
 # =============================================================================
 # Client B Providers
 # =============================================================================
@@ -186,29 +156,6 @@ def client_config_b(test_instance_manager) -> "ClientConfig":
     alternative settings.
     """
     return test_instance_manager.get_client_config("B")
-
-
-@pytest.fixture(scope="function")
-def client_app_b(test_instance_manager) -> Generator["pyWATSApplication", None, None]:
-    """
-    Get full pyWATSApplication for Test Instance B.
-    
-    Use this for integration tests that need a second client
-    with different configuration.
-    """
-    app = test_instance_manager.get_application("B")
-    yield app
-    # Cleanup
-    if hasattr(app, '_running') and app._running:
-        import asyncio
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(app.stop())
-            else:
-                loop.run_until_complete(app.stop())
-        except Exception:
-            pass
 
 
 # =============================================================================

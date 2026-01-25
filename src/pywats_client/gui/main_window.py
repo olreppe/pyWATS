@@ -25,8 +25,7 @@ from .styles import DARK_STYLESHEET
 from .settings_dialog import SettingsDialog
 from .pages import (
     BasePage, DashboardPage, SetupPage, ConnectionPage, APISettingsPage,
-    ConvertersPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage,
-    AssetPage, RootCausePage, ProductionPage, ProductPage
+    ConvertersPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage
 )
 from ..core.config import ClientConfig
 from ..service.ipc_client import ServiceIPCClient, discover_services
@@ -382,14 +381,6 @@ class MainWindow(QMainWindow):
             nav_items.append("SN Handler")
         if self.config.show_software_tab:
             nav_items.append("Software")
-        if self.config.show_asset_tab:
-            nav_items.append("Assets")
-        if self.config.show_rootcause_tab:
-            nav_items.append("RootCause")
-        if self.config.show_production_tab:
-            nav_items.append("Production")
-        if self.config.show_product_tab:
-            nav_items.append("Products")
         
         return nav_items
     
@@ -489,14 +480,6 @@ class MainWindow(QMainWindow):
             self._pages["SN Handler"] = SNHandlerPage(self.config, self)
         if self.config.show_software_tab:
             self._pages["Software"] = SoftwarePage(self.config, self)
-        if self.config.show_asset_tab:
-            self._pages["Assets"] = AssetPage(self.config, self)
-        if self.config.show_rootcause_tab:
-            self._pages["RootCause"] = RootCausePage(self.config, self)
-        if self.config.show_production_tab:
-            self._pages["Production"] = ProductionPage(self.config, self)
-        if self.config.show_product_tab:
-            self._pages["Products"] = ProductPage(self.config, self)
         
         for page in self._pages.values():
             self._page_stack.addWidget(page)
