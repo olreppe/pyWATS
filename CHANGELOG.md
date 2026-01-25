@@ -16,7 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed debug code from dashboard.py (mouse press handlers)
   - Deleted duplicate C# source folder (`converters/WATS Standard Converters/`)
 
+- **Documentation** - Updated converter documentation:
+  - Added Standard Converters table to CLIENT_INSTALLATION.md
+  - Added Standard Converters section to CONVERTER_ARCHITECTURE.md
+  - Added Standard Converters table to examples/README.md
+
 ### Added
+
+- **Standard Converters** - 6 pre-installed converters bundled with pyWATS Client:
+  - `WATSStandardXMLConverter` - WATS Standard XML Format (WSXF/WRML)
+  - `WATSStandardJsonConverter` - WATS Standard JSON Format (WSJF)
+  - `WATSStandardTextConverter` - WATS Standard Text Format (tab-delimited)
+  - `TeradyneICTConverter` - Teradyne i3070 ICT format
+  - `TeradyneSpectrumICTConverter` - Teradyne Spectrum ICT format
+  - `SeicaXMLConverter` - Seica Flying Probe XML format
 
 - **Report Header Validation** - Soft validation for serial numbers and part numbers:
   - Blocks problematic characters that cause issues with WATS searches/filters

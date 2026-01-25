@@ -333,13 +333,28 @@ Test Equipment
 
 ### Converters
 
-Converters transform test equipment output into WATS format. They are Python scripts in the `converters/` folder.
+Converters transform test equipment output into WATS format.
 
-**Example converter locations:**
-- Windows: `%APPDATA%\pyWATS_Client\converters\my_ict_converter.py`
-- Linux: `~/.config/pywats_client/converters/my_ict_converter.py`
+#### Standard Converters (Pre-installed)
 
-See [Converter Architecture](../docs/internal/CONVERTER_ARCHITECTURE.md) for creating custom converters.
+The following converters are bundled with pyWATS Client and ready to use:
+
+| Converter | Format | File Patterns | Description |
+|-----------|--------|---------------|-------------|
+| `WATSStandardXMLConverter` | WSXF/WRML | `*.xml` | WATS Standard XML Format |
+| `WATSStandardJsonConverter` | WSJF | `*.json` | WATS Standard JSON Format |
+| `WATSStandardTextConverter` | WSTF | `*.txt` | WATS Standard Text Format (tab-delimited) |
+| `TeradyneICTConverter` | Teradyne i3070 | `*.txt`, `*.log` | Teradyne i3070 ICT format |
+| `TeradyneSpectrumICTConverter` | Teradyne Spectrum | `*.txt`, `*.log` | Teradyne Spectrum ICT format |
+| `SeicaXMLConverter` | Seica XML | `*.xml` | Seica Flying Probe XML format |
+
+#### Custom Converters
+
+You can create custom converters in the `converters/` folder:
+- Windows: `%APPDATA%\pyWATS_Client\converters\my_converter.py`
+- Linux: `~/.config/pywats_client/converters/my_converter.py`
+
+See [Converter Architecture](internal/CONVERTER_ARCHITECTURE.md) for creating custom converters.
 
 ---
 

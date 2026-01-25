@@ -98,6 +98,21 @@ examples/
     └── async_patterns.py     # Async usage
 ```
 
+## Standard Converters
+
+pyWATS Client includes 6 pre-installed converters for common test equipment formats:
+
+| Converter | Format | File Patterns |
+|-----------|--------|---------------|
+| `WATSStandardXMLConverter` | WSXF/WRML | `*.xml` |
+| `WATSStandardJsonConverter` | WSJF | `*.json` |
+| `WATSStandardTextConverter` | WSTF | `*.txt` |
+| `TeradyneICTConverter` | Teradyne i3070 | `*.txt`, `*.log` |
+| `TeradyneSpectrumICTConverter` | Teradyne Spectrum | `*.txt`, `*.log` |
+| `SeicaXMLConverter` | Seica Flying Probe | `*.xml` |
+
+See `converters/` folder for additional example/template converters.
+
 ## Requirements
 
 ```bash

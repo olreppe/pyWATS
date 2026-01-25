@@ -4,7 +4,33 @@
 
 The PyWATS Client converter architecture provides a flexible framework for converting various file formats into WATS report structures. Converters run on the client (and potentially on the server in the future) and integrate with the file monitoring system.
 
-## 📚 Reference Implementations (V2 Converters)
+## � Standard Converters (Pre-installed)
+
+These converters are bundled with pyWATS Client and ready to use out of the box:
+
+| Converter | Format | File Patterns | Description |
+|-----------|--------|---------------|-------------|
+| `WATSStandardXMLConverter` | WSXF/WRML | `*.xml` | WATS Standard XML Format - the native WATS format |
+| `WATSStandardJsonConverter` | WSJF | `*.json` | WATS Standard JSON Format - JSON equivalent of WSXF |
+| `WATSStandardTextConverter` | WSTF | `*.txt` | WATS Standard Text Format - tab-delimited text |
+| `TeradyneICTConverter` | Teradyne i3070 | `*.txt`, `*.log` | Teradyne i3070 In-Circuit Test format |
+| `TeradyneSpectrumICTConverter` | Teradyne Spectrum | `*.txt`, `*.log` | Teradyne Spectrum ICT format |
+| `SeicaXMLConverter` | Seica XML | `*.xml` | Seica Flying Probe XML format |
+
+**Location:** `pywats_client.converters.standard`
+
+```python
+from pywats_client.converters import (
+    WATSStandardXMLConverter,
+    WATSStandardJsonConverter,
+    WATSStandardTextConverter,
+    TeradyneICTConverter,
+    TeradyneSpectrumICTConverter,
+    SeicaXMLConverter,
+)
+```
+
+## �📚 Reference Implementations (V2 Converters)
 
 All new converters should follow the patterns demonstrated in these V2 reference implementations:
 
