@@ -128,6 +128,31 @@ A **UUT Report** documents a test session for a single unit. It contains:
 - `result`: Overall result ("P" = Pass, "F" = Fail)
 - `root`: Root SequenceCall containing all test steps
 
+#### Serial Number & Part Number Validation
+
+The `sn` (serial number) and `pn` (part number) fields are validated to prevent characters that cause issues with WATS searches and filters.
+
+**Recommended characters:** `A-Z`, `a-z`, `0-9`, `-`, `_`, `.`
+
+**Problematic characters (blocked by default):** `*`, `%`, `?`, `[`, `]`, `^`, `!`, `/`, `\`
+
+```python
+# This will raise ReportHeaderValidationError
+report = UUTReport(pn="PART/001", sn="SN*001", ...)  # Error!
+
+# Bypass when intentionally needed:
+from pywats import allow_problematic_characters
+
+with allow_problematic_characters():
+    report = UUTReport(pn="PART/001", sn="SN*001", ...)  # OK (warning issued)
+
+# Or use SUPPRESS: prefix (stripped from value):
+report = UUTReport(pn="SUPPRESS:PART/001", sn="SN-001", ...)
+# report.pn == "PART/001"
+```
+
+See [ERROR_CATALOG.md](ERROR_CATALOG.md#reportheadervalidationerror) for details.
+
 ### UUR Report (Unit Under Repair)
 A **UUR Report** documents a repair operation on a failed unit. It contains:
 - Reference to the original failed UUT

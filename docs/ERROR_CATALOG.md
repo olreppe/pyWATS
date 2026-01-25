@@ -257,6 +257,73 @@ except AuthorizationError as e:
 
 ## Data Validation Errors
 
+### ReportHeaderValidationError
+
+**HTTP Status:** N/A (client-side validation)  
+**Error Code:** `PROBLEMATIC_CHARACTERS`  
+**Retry:** ❌ No (fix input data or bypass intentionally)
+
+**Cause:**
+- Serial number or part number contains characters that cause issues with WATS searches/filters
+- Problematic characters: `*`, `%`, `?`, `[`, `]`, `^`, `!`, `/`, `\`
+
+**Example:**
+```python
+from pywats.models import UUTReport
+from pywats import ReportHeaderValidationError
+
+try:
+    report = UUTReport(
+        pn="PART/001",  # Contains '/' - problematic!
+        sn="SN*001",    # Contains '*' - problematic!
+        rev="A",
+        process_code=10,
+        station_name="TestStation",
+        location="Lab",
+        purpose="Development"
+    )
+except Exception as e:  # Wrapped in pydantic ValidationError
+    print(f"Problematic characters in report header")
+```
+
+**Bypass Options:**
+
+When you intentionally need to use problematic characters:
+
+#### Option 1: Context Manager
+```python
+from pywats import allow_problematic_characters
+from pywats.models import UUTReport
+
+with allow_problematic_characters():
+    report = UUTReport(
+        pn="PART/001",  # Now allowed (warning issued)
+        sn="SN*001",    # Now allowed (warning issued)
+        ...
+    )
+```
+
+#### Option 2: SUPPRESS: Prefix
+```python
+from pywats.models import UUTReport
+
+report = UUTReport(
+    pn="SUPPRESS:PART/001",  # Prefix stripped, value = "PART/001"
+    sn="SUPPRESS:SN*001",    # Prefix stripped, value = "SN*001"
+    ...
+)
+```
+
+**Remediation:**
+1. Use only recommended characters: `A-Z`, `a-z`, `0-9`, `-`, `_`, `.`
+2. If problematic characters are required, use bypass options above
+3. Be aware that bypassed values may cause issues with WATS searches/filters
+
+**Related Errors:**
+- `ValidationError` - General validation failures
+
+---
+
 ### ValidationError
 
 **HTTP Status:** 400 Bad Request  
