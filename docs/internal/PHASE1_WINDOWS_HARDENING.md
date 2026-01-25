@@ -1,9 +1,9 @@
 # Phase 1: Windows Service Hardening
 
 **Sprint**: Phase 1 Quick Wins  
-**Branch**: `feature/separate-service-gui-mode`  
+**Branch**: `main`  
 **Started**: 2026-01-25  
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete (Quick Wins)
 
 ---
 
@@ -27,7 +27,7 @@ Implement production-ready Windows service features that IT departments expect:
 - [x] Add `--api-token` flag for initial configuration  
 - [x] Add `--watch-folder` flag for initial configuration
 - [x] Suppress all print output when `--silent` is active
-- [ ] Write configuration file during silent install
+- [x] Write configuration file during silent install
 
 ### 2. Exit Codes
 **Goal**: Scripted installers can check return code to determine success/failure
@@ -37,15 +37,15 @@ Implement production-ready Windows service features that IT departments expect:
 | 0 | `EXIT_SUCCESS` | Success |
 | 1 | `EXIT_ERROR` | General error |
 | 2 | `EXIT_MISSING_REQUIREMENTS` | Python version, privileges, pywin32 |
-| 3 | `EXIT_CONFIG_ERROR` | Configuration invalid or missing |
-| 4 | `EXIT_ALREADY_INSTALLED` | Service already exists |
-| 5 | `EXIT_NOT_INSTALLED` | Service not found (for uninstall) |
+| 10 | `EXIT_ALREADY_INSTALLED` | Service already exists |
+| 11 | `EXIT_NOT_INSTALLED` | Service not found (for uninstall) |
+| 14 | `EXIT_PERMISSION_DENIED` | Need Administrator |
+| 41 | `EXIT_SERVER_UNREACHABLE` | Server connectivity issue |
 
 - [x] Create `exit_codes.py` module with constants
 - [x] Update `install-service` to use exit codes
 - [x] Update `uninstall-service` to use exit codes
-- [ ] Update `status` command to use exit codes
-- [ ] Document exit codes in WINDOWS_SERVICE.md
+- [x] Document exit codes in WINDOWS_SERVICE.md
 
 ### 3. Pre-flight Checks
 **Goal**: Validate environment before attempting install
@@ -54,7 +54,7 @@ Implement production-ready Windows service features that IT departments expect:
 - [x] Check admin/root privileges
 - [x] Check pywin32 availability (if --native)
 - [x] Check network connectivity to WATS server (if --server-url provided)
-- [ ] Check disk space for logs/queue (optional)
+- [ ] Check disk space for logs/queue (optional - deferred)
 
 ### 4. Service Recovery (Windows-specific)
 **Goal**: Service auto-restarts on crash
@@ -152,7 +152,13 @@ No database migrations or breaking changes.
 
 ## Next Steps (After This Sprint)
 
-1. Windows IoT LTSC testing
-2. Service recovery implementation
-3. Event Log integration
-4. Update documentation
+1. ~~Windows IoT LTSC testing~~ (manual testing needed)
+2. ~~Service recovery implementation~~ ✅ Done
+3. ~~Event Log integration~~ ✅ Done
+4. ~~Update documentation~~ ✅ Done
+
+## Remaining Work (Phase 1 Continued)
+
+- [ ] Windows IoT LTSC validation (requires test VM)
+- [ ] MSI installer (stretch goal - Phase 1.4)
+- [ ] Disk space pre-flight check (low priority)
