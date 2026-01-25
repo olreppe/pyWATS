@@ -69,6 +69,19 @@ from .pagination import (
     PaginationConfig,
 )
 from .routes import Routes, API
+from .validation import (
+    allow_problematic_characters,
+    validate_serial_number,
+    validate_part_number,
+    validate_batch_serial_number,
+    validate_report_header_field,
+    find_problematic_characters,
+    is_problematic_chars_allowed,
+    ReportHeaderValidationError,
+    ReportHeaderValidationWarning,
+    PROBLEMATIC_CHARS,
+    SUPPRESS_PREFIX,
+)
 
 __all__ = [
     # Client
@@ -118,6 +131,18 @@ __all__ = [
     # Routes
     "Routes",
     "API",
+    # Validation
+    "allow_problematic_characters",
+    "validate_serial_number",
+    "validate_part_number",
+    "validate_batch_serial_number",
+    "validate_report_header_field",
+    "find_problematic_characters",
+    "is_problematic_chars_allowed",
+    "ReportHeaderValidationError",
+    "ReportHeaderValidationWarning",
+    "PROBLEMATIC_CHARS",
+    "SUPPRESS_PREFIX",
     # Error handling
     "ErrorMode",
     "ErrorHandler",

@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
-from pydantic import BaseModel, ConfigDict, Field, ModelWrapValidatorHandler, ValidationInfo, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ModelWrapValidatorHandler, ValidationInfo, model_validator, field_validator
 
 from .wats_base import WATSBase
 from .deserialization_context import DeserializationContext
@@ -21,6 +21,7 @@ from .binary_data import BinaryData
 from .asset import Asset, AssetStats
 from .chart import Chart
 from .sub_unit import SubUnit
+from ....core.validation import validate_serial_number, validate_part_number
 
 class ReportStatus(Enum):
     """
@@ -42,6 +43,18 @@ class Report(WATSBase):
     """
     Class: Report
     Purpose: Base class for UUTReport and UURReport.
+    
+    Serial Number and Part Number Validation:
+        The sn (serial number) and pn (part number) fields are validated
+        for problematic characters that can cause issues with WATS searches.
+        
+        Problematic characters: * % ? [] [^] ! / \\
+        
+        To bypass validation (when you intentionally need these characters):
+        - Use the allow_problematic_characters() context manager
+        - Prefix the value with 'SUPPRESS:' (e.g., 'SUPPRESS:SN*001')
+        
+        See: pywats.core.validation for details
     """
     id: UUID  = Field(default_factory=uuid4, 
                       description="A UUID identifying the report. Submitting a report witn an existing id will overwrite the existing report. Generates new guid when UUTReport object is created.")
@@ -52,6 +65,20 @@ class Report(WATSBase):
     sn: str   = Field(..., max_length=100, min_length=1, description="The serial number of the unit tested or repaired.")
     rev: str  = Field(..., max_length=100, min_length=1, description="The revision of the unit(part number) tested or repaired.")
  
+    # Validate serial number for problematic characters
+    @field_validator('sn', mode='after')
+    @classmethod
+    def validate_sn(cls, v: str) -> str:
+        """Validate serial number for problematic characters."""
+        return validate_serial_number(v)
+    
+    # Validate part number for problematic characters
+    @field_validator('pn', mode='after')
+    @classmethod
+    def validate_pn(cls, v: str) -> str:
+        """Validate part number for problematic characters."""
+        return validate_part_number(v)
+    
     process_code: int = Field(..., validation_alias="processCode", serialization_alias="processCode")
     
     #info: ReportInfo | None = None

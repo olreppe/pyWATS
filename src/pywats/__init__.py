@@ -48,6 +48,11 @@ from .core.logging import enable_debug_logging
 from .core.station import Station, StationRegistry, StationConfig, Purpose
 from .core.throttle import configure_throttling, RateLimiter
 from .core.retry import RetryConfig, RetryExhaustedError
+from .core.validation import (
+    allow_problematic_characters,
+    ReportHeaderValidationError,
+    ReportHeaderValidationWarning,
+)
 
 # Optional queue module (imported only when needed)
 # from .queue import SimpleQueue, convert_to_wsjf, convert_from_wsxf, convert_from_wstf
@@ -123,6 +128,10 @@ __all__ = [
     # Retry configuration
     "RetryConfig",
     "RetryExhaustedError",
+    # Validation (report header fields)
+    "allow_problematic_characters",
+    "ReportHeaderValidationError",
+    "ReportHeaderValidationWarning",
     # Logging utilities
     "enable_debug_logging",
     # Exceptions

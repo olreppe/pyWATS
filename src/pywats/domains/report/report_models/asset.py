@@ -1,14 +1,34 @@
 from __future__ import annotations
 
 from typing import Optional
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 from .wats_base import WATSBase
+from ....core.validation import validate_serial_number
 
 
 class Asset(WATSBase):
+    """
+    An asset (test equipment) used during testing.
+    
+    Serial Number Validation:
+        The sn (serial number) field is validated for problematic characters
+        that can cause issues with WATS searches.
+        
+        To bypass validation: use allow_problematic_characters() context manager
+        or prefix with 'SUPPRESS:'
+    """
     sn: Optional[str] = Field(default="123", max_length=100, min_length=1, validation_alias="assetSN", serialization_alias="assetSN")
     usage_count: Optional[int] = Field(default=0, validation_alias="usageCount",serialization_alias="usageCount")
     usage_count_format: Optional[str] = Field(default=None, validation_alias="usageCountFormat", serialization_alias="usageCountFormat")
+
+    # Validate serial number for problematic characters
+    @field_validator('sn', mode='after')
+    @classmethod
+    def validate_sn(cls, v: Optional[str]) -> Optional[str]:
+        """Validate asset serial number for problematic characters."""
+        if v is None:
+            return v
+        return validate_serial_number(v)
 
     model_config = ConfigDict(populate_by_name=True)
 

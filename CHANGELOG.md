@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Report Header Validation** - Soft validation for serial numbers and part numbers:
+  - Blocks problematic characters that cause issues with WATS searches/filters
+  - Problematic characters: `* % ? [] [^] ! / \`
+  - Recommended characters: `A-Z, a-z, 0-9, -, _, .`
+  - Bypass options for intentional use:
+    - Context manager: `with allow_problematic_characters(): ...`
+    - Prefix: `SUPPRESS:SN*001` (prefix stripped, value used)
+  - Issues warnings even when bypassed to ensure awareness
+  - Applied to UUTReport.sn, UUTReport.pn fields via pydantic validators
+  - New module: `pywats.core.validation`
+  - Documentation: See docstrings in validation module
+
 ### Changed
 
 - **GUI Architecture Consolidation** - Aligned Python client with C# WATS Client Configurator:
