@@ -121,14 +121,7 @@ class DashboardPage(BasePage):
         # Control buttons
         self._start_btn = QPushButton("Start Service")
         self._start_btn.clicked.connect(self._on_start_clicked)
-        self._start_btn.clicked.connect(lambda: logger.info("🔴 LAMBDA: Start button clicked!"))
         self._start_btn.setEnabled(False)
-        # Override mousePressEvent to debug
-        original_mouse_press = self._start_btn.mousePressEvent
-        def debug_mouse_press(event):
-            logger.info(f"🟢 MOUSE PRESS on Start button! Enabled: {self._start_btn.isEnabled()}")
-            original_mouse_press(event)
-        self._start_btn.mousePressEvent = debug_mouse_press
         status_row.addWidget(self._start_btn)
         
         self._stop_btn = QPushButton("Stop Service")

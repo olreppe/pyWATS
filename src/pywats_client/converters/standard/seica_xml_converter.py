@@ -345,10 +345,6 @@ class SeicaXMLConverter(FileConverter):
             )
 
 
-# Backward compatibility alias (deprecated)
-KitronSeicaXMLConverter = SeicaXMLConverter
-
-
 # Test code
 if __name__ == "__main__":
     import json

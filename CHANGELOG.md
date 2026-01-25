@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Converter Cleanup** - Architecture review and naming fixes:
+  - Renamed `KitronSeicaXMLConverter` → `SeicaXMLConverter` (removed customer name)
+  - Fixed typo `TerradyneSpectrumICTConverter` → `TeradyneSpectrumICTConverter` (extra 'r')
+  - Removed deprecated Kitron backward-compatibility alias
+  - Removed debug code from dashboard.py (mouse press handlers)
+  - Deleted duplicate C# source folder (`converters/WATS Standard Converters/`)
+
 ### Added
 
 - **Report Header Validation** - Soft validation for serial numbers and part numbers:

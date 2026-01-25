@@ -2,7 +2,7 @@
 Teradyne Spectrum ICT Converter - V2 Using UUTReport Model
 
 Converts Teradyne Spectrum ICT test result files into WATS reports using pyWATS UUTReport model.
-Port of the C# TerradyneSpectrumICTConverter.
+Port of the C# TeradyneSpectrumICTConverter.
 
 IMPORTANT: This converter uses the pyWATS UUTReport model - NOT raw dictionaries!
 
@@ -104,7 +104,7 @@ class MainStep:
     sub_steps: List[SubStep] = field(default_factory=list)
 
 
-class TerradyneSpectrumICTConverter(FileConverter):
+class TeradyneSpectrumICTConverter(FileConverter):
     """
     Converts Teradyne Spectrum ICT test result files to WATS reports using UUTReport model.
     

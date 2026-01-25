@@ -13,18 +13,17 @@ Converters in this module:
 - WATSStandardXMLConverter: WATS Standard XML Format (WSXF/WRML)
 """
 
-from .seica_xml_converter import SeicaXMLConverter, KitronSeicaXMLConverter  # KitronSeicaXMLConverter is deprecated alias
+from .seica_xml_converter import SeicaXMLConverter
 from .teradyne_ict_converter import TeradyneICTConverter
-from .teradyne_spectrum_ict_converter import TerradyneSpectrumICTConverter
+from .teradyne_spectrum_ict_converter import TeradyneSpectrumICTConverter
 from .wats_standard_text_converter import WATSStandardTextConverter
 from .wats_standard_json_converter import WATSStandardJsonConverter
 from .wats_standard_xml_converter import WATSStandardXMLConverter
 
 __all__ = [
     "SeicaXMLConverter",
-    "KitronSeicaXMLConverter",  # Deprecated alias for backward compatibility
     "TeradyneICTConverter",
-    "TerradyneSpectrumICTConverter",
+    "TeradyneSpectrumICTConverter",
     "WATSStandardTextConverter",
     "WATSStandardJsonConverter",
     "WATSStandardXMLConverter",
