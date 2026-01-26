@@ -218,14 +218,30 @@ Converters transform test equipment output into WATS format.
 
 ### Built-in Converters
 
+**WATS Standard Formats:**
+
 | Converter | Format | File Patterns |
 |-----------|--------|---------------|
 | `WATSStandardXMLConverter` | WSXF/WRML | `*.xml` |
 | `WATSStandardJsonConverter` | WSJF | `*.json` |
 | `WATSStandardTextConverter` | WSTF | `*.txt` |
+
+**Test Equipment:**
+
+| Converter | Equipment | File Patterns |
+|-----------|-----------|---------------|
 | `TeradyneICTConverter` | Teradyne i3070 | `*.txt`, `*.log` |
-| `TeradyneSpectrumICTConverter` | Spectrum | `*.txt`, `*.log` |
-| `SeicaXMLConverter` | Seica XML | `*.xml` |
+| `TeradyneSpectrumICTConverter` | Teradyne Spectrum | `*.txt`, `*.log` |
+| `SeicaXMLConverter` | Seica Flying Probe | `*.xml` |
+| `KlippelConverter` | Klippel Audio/Acoustic | `*.txt` + data folder |
+| `SPEAConverter` | SPEA ATE | `*.txt` |
+| `XJTAGConverter` | XJTAG Boundary Scan | `*.zip` |
+
+**Special:**
+
+| Converter | Purpose |
+|-----------|---------|
+| `AIConverter` | Auto-detects file type and delegates to best matching converter |
 
 ### Custom Converters
 

@@ -52,7 +52,6 @@ recursive-include examples *.md
 # Exclude internal documentation (architecture, design, internal notes)
 prune tests
 prune api-tests
-prune converters
 prune scripts
 prune .github
 prune packages
