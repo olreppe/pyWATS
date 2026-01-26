@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Backend Endpoints Analysis - pyWATS</title>
+    <style>
+        /* Base styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #333;
+            background: #fff;
+        }
+        
+        /* Headers */
+        h1 {
+            color: #1a365d;
+            border-bottom: 3px solid #3182ce;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        h2 {
+            color: #2c5282;
+            border-bottom: 2px solid #90cdf4;
+            padding-bottom: 8px;
+            margin-top: 40px;
+            page-break-after: avoid;
+        }
+        
+        h3 {
+            color: #2b6cb0;
+            margin-top: 30px;
+            page-break-after: avoid;
+        }
+        
+        h4 {
+            color: #3182ce;
+            margin-top: 20px;
+            page-break-after: avoid;
+        }
+        
+        /* Blockquotes (metadata) */
+        blockquote {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            margin: 20px 0;
+            padding: 15px 20px;
+            font-style: normal;
+        }
+        
+        blockquote strong {
+            color: #2c5282;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+            page-break-inside: avoid;
+        }
+        
+        th {
+            background: #2c5282;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tr:nth-child(even) {
+            background: #f7fafc;
+        }
+        
+        tr:hover {
+            background: #ebf8ff;
+        }
+        
+        /* Code */
+        code {
+            background: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #c53030;
+        }
+        
+        pre {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            line-height: 1.5;
+            page-break-inside: avoid;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        
+        /* Lists */
+        ul, ol {
+            padding-left: 25px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        /* Horizontal rules */
+        hr {
+            border: none;
+            border-top: 2px solid #e2e8f0;
+            margin: 40px 0;
+        }
+        
+        /* Status indicators */
+        td:first-child {
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+        }
+        
+        /* Emoji styling */
+        .emoji {
+            font-style: normal;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                padding: 0;
+                font-size: 11pt;
+                max-width: none;
+            }
+            
+            h1 {
+                font-size: 24pt;
+            }
+            
+            h2 {
+                font-size: 18pt;
+                margin-top: 30px;
+            }
+            
+            h3 {
+                font-size: 14pt;
+            }
+            
+            pre {
+                background: #f5f5f5 !important;
+                color: #333 !important;
+                border: 1px solid #ddd;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            table {
+                font-size: 9pt;
+            }
+            
+            th {
+                background: #333 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            blockquote {
+                background: #f5f5f5 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            /* Page breaks */
+            h2 {
+                page-break-before: auto;
+            }
+            
+            table, pre, blockquote {
+                page-break-inside: avoid;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Cover page info */
+        .cover-info {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .cover-info h1 {
+            border: none;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .cover-info .subtitle {
+            color: #718096;
+            font-size: 1.2em;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #718096;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="cover-info">
+        <h1>🔌 Internal Backend Endpoints Analysis</h1>
+        <div class="subtitle">pyWATS API Documentation</div>
+    </div>
+    
+    <h1 id="internal-backend-endpoints-analysis">Internal Backend Endpoints Analysis</h1>
+
+<blockquote>
+  <p><strong>Analysis Date</strong>: January 26, 2026<br />
+  <strong>Branch</strong>: feature/separate-service-gui-mode<br />
+  <strong>Total Internal Endpoints</strong>: 68 across 6 modules</p>
+</blockquote>
+
+<hr />
+
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+
+<h3 id="status-overview">Status Overview</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Module</th>
+  <th>Internal Endpoints</th>
+  <th>Files</th>
+  <th>Proper ⚠️ Marking</th>
+  <th>Critical for Features</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Analytics</strong></td>
+  <td>13 endpoints</td>
+  <td>3 files</td>
+  <td>✅ All marked</td>
+  <td>Unit Flow, Measurement Filtering</td>
+</tr>
+<tr>
+  <td><strong>Asset</strong></td>
+  <td>4 endpoints</td>
+  <td>3 files</td>
+  <td>✅ All marked</td>
+  <td>File Attachments</td>
+</tr>
+<tr>
+  <td><strong>Process</strong></td>
+  <td>4 endpoints</td>
+  <td>4 files</td>
+  <td>✅ All marked</td>
+  <td>Detailed Process Info, Repair Ops</td>
+</tr>
+<tr>
+  <td><strong>Product</strong></td>
+  <td>14 endpoints</td>
+  <td>3 files</td>
+  <td>✅ All marked</td>
+  <td>Box Build, Categories, Tags</td>
+</tr>
+<tr>
+  <td><strong>Production</strong></td>
+  <td>20 endpoints</td>
+  <td>3 files</td>
+  <td>✅ All marked</td>
+  <td>Serial Numbers, Unit Hierarchy</td>
+</tr>
+<tr>
+  <td><strong>Software</strong></td>
+  <td>13 endpoints</td>
+  <td>3 files</td>
+  <td>✅ All marked</td>
+  <td>Package Management</td>
+</tr>
+<tr>
+  <td><strong>TOTAL</strong></td>
+  <td><strong>68 endpoints</strong></td>
+  <td><strong>19 files</strong></td>
+  <td>✅ <strong>All properly marked</strong></td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="key-findings">Key Findings</h3>
+
+<ol>
+<li>✅ <strong>All internal endpoints are properly flagged</strong> with <code>⚠️ INTERNAL</code> warnings in docstrings</li>
+<li>✅ <strong>Routes are centralized</strong> in <code>pywats/core/routes.py</code> with <code>Routes.*.Internal</code> nested classes</li>
+<li>✅ <strong>Consistent helper pattern</strong> using <code>_internal_get()</code> and <code>_internal_post()</code> with Referer headers</li>
+<li>⚠️ <strong>68 internal endpoints in use</strong> - significant dependency on undocumented API</li>
+<li>⚠️ <strong>No public API alternatives</strong> exist for most internal endpoint features</li>
+</ol>
+
+<hr />
+
+<h2 id="2-module-by-module-analysis">2. Module-by-Module Analysis</h2>
+
+<h3 id="21-analytics-module">2.1 Analytics Module</h3>
+
+<p><strong>Files</strong>: </p>
+
+<ul>
+<li><code>src/pywats/domains/analytics/async_repository.py</code></li>
+<li><code>src/pywats/domains/analytics/async_service.py</code></li>
+<li><code>src/pywats/domains/analytics/service_internal.py</code></li>
+</ul>
+
+<h4 id="internal-endpoints-used">Internal Endpoints Used</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Endpoint</th>
+  <th>Method</th>
+  <th>Purpose</th>
+  <th>Public Alternative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>POST /api/internal/UnitFlow</code></td>
+  <td><code>query_unit_flow()</code></td>
+  <td>Query production flow with filters</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/UnitFlow/Links</code></td>
+  <td><code>get_unit_flow_links()</code></td>
+  <td>Get Sankey diagram edges</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/UnitFlow/Nodes</code></td>
+  <td><code>get_unit_flow_nodes()</code></td>
+  <td>Get Sankey diagram nodes</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/UnitFlow/SN</code></td>
+  <td><code>get_unit_flow_by_sn()</code></td>
+  <td>Trace serial number flow</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/UnitFlow/SplitBy</code></td>
+  <td><code>split_unit_flow()</code></td>
+  <td>Split by dimension</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/UnitFlow/UnitOrder</code></td>
+  <td><code>set_unit_order()</code></td>
+  <td>Control unit ordering</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/UnitFlow/Units</code></td>
+  <td><code>get_unit_flow_units()</code></td>
+  <td>Get units in flow</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/App/MeasurementList</code></td>
+  <td><code>get_measurement_list()</code></td>
+  <td>Simple measurement query</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/App/MeasurementList</code></td>
+  <td><code>get_measurement_list_filtered()</code></td>
+  <td>Filtered measurements</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/App/StepStatusList</code></td>
+  <td><code>get_step_status_list()</code></td>
+  <td>Simple step status query</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/App/StepStatusList</code></td>
+  <td><code>get_step_status_list_filtered()</code></td>
+  <td>Filtered step status</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/App/TopFailed</code></td>
+  <td><code>get_top_failed()</code></td>
+  <td>Top failed steps (simple)</td>
+  <td>✅ Partial: <code>/api/App/TopFailed</code></td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/App/TopFailed</code></td>
+  <td><code>get_top_failed_filtered()</code></td>
+  <td>Top failed with filters</td>
+  <td>❌ None</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="why-internal-api-is-necessary">Why Internal API is Necessary</h4>
+
+<ol>
+<li><p><strong>Unit Flow Analysis</strong> - The entire unit flow visualization feature (Sankey diagrams, production path tracing) has NO public API equivalent. This powers the WATS dashboard's production flow visualization.</p></li>
+<li><p><strong>Measurement/Step Filtering</strong> - Advanced filtering by step path XML, measurement names with regex support. The public measurement endpoints don't support these filter capabilities.</p></li>
+<li><p><strong>Top Failed Enhancement</strong> - The internal POST version supports the full <code>WATSFilter</code> object for complex drill-down analysis.</p></li>
+</ol>
+
+<h4 id="recommended-public-api-extensions">Recommended Public API Extensions</h4>
+
+<pre><code># Proposed new public endpoints:
+
+GET  /api/Analytics/UnitFlow
+POST /api/Analytics/UnitFlow  (with filter body)
+GET  /api/Analytics/UnitFlow/{serialNumber}
+GET  /api/Analytics/MeasurementList (extend existing Measurements)
+GET  /api/Analytics/StepStatusList
+POST /api/App/TopFailed  (add filter body support to existing)
+</code></pre>
+
+<hr />
+
+<h3 id="22-asset-module">2.2 Asset Module</h3>
+
+<p><strong>Files</strong>:</p>
+
+<ul>
+<li><code>src/pywats/domains/asset/async_repository.py</code></li>
+<li><code>src/pywats/domains/asset/async_service.py</code></li>
+<li><code>src/pywats/domains/asset/service_internal.py</code></li>
+</ul>
+
+<h4 id="internal-endpoints-used-2">Internal Endpoints Used</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Endpoint</th>
+  <th>Method</th>
+  <th>Purpose</th>
+  <th>Public Alternative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>POST /api/internal/Blob/Asset/{id}</code></td>
+  <td><code>upload_file()</code></td>
+  <td>Upload file attachment</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Blob/Asset/{id}/{fileName}</code></td>
+  <td><code>download_file()</code></td>
+  <td>Download file attachment</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Blob/Asset/List/{assetId}</code></td>
+  <td><code>list_files()</code></td>
+  <td>List asset attachments</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>DELETE /api/internal/Blob/Assets</code></td>
+  <td><code>delete_files()</code></td>
+  <td>Delete asset files</td>
+  <td>❌ None</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="why-internal-api-is-necessary-2">Why Internal API is Necessary</h4>
+
+<p>The entire asset file attachment system uses internal Blob API. The public Asset API has no file management endpoints at all.</p>
+
+<p><strong>Missing from Public API:</strong></p>
+
+<ul>
+<li>Upload files to assets (calibration certs, maintenance docs, photos)</li>
+<li>Download asset attachments</li>
+<li>List/enumerate asset files</li>
+<li>Delete asset files</li>
+</ul>
+
+<h4 id="recommended-public-api-extensions-2">Recommended Public API Extensions</h4>
+
+<pre><code># Proposed new public endpoints:
+
+POST   /api/Asset/{id}/Files              # Upload file
+GET    /api/Asset/{id}/Files              # List files
+GET    /api/Asset/{id}/Files/{fileName}   # Download file
+DELETE /api/Asset/{id}/Files/{fileName}   # Delete file
+DELETE /api/Asset/{id}/Files              # Delete multiple (body: fileNames[])
+</code></pre>
+
+<hr />
+
+<h3 id="23-process-module">2.3 Process Module</h3>
+
+<p><strong>Files</strong>:</p>
+
+<ul>
+<li><code>src/pywats/domains/process/async_repository.py</code></li>
+<li><code>src/pywats/domains/process/async_service.py</code></li>
+<li><code>src/pywats/domains/process/repository_internal.py</code> <em>(deprecated)</em></li>
+<li><code>src/pywats/domains/process/service_internal.py</code> <em>(deprecated)</em></li>
+</ul>
+
+<h4 id="internal-endpoints-used-3">Internal Endpoints Used</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Endpoint</th>
+  <th>Method</th>
+  <th>Purpose</th>
+  <th>Public Alternative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>GET /api/internal/Process/GetProcesses</code></td>
+  <td><code>get_processes_detailed()</code></td>
+  <td>Full process details</td>
+  <td>✅ Partial: <code>/api/App/Processes</code></td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Process/GetProcess/{id}</code></td>
+  <td><code>get_process()</code></td>
+  <td>Single process by GUID</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Process/GetRepairOperations</code></td>
+  <td><code>get_repair_operations()</code></td>
+  <td>All repair operation configs</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Process/GetRepairOperation/{id}</code></td>
+  <td><code>get_repair_operation()</code></td>
+  <td>Single repair operation</td>
+  <td>❌ None</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="why-internal-api-is-necessary-3">Why Internal API is Necessary</h4>
+
+<ol>
+<li><p><strong>Process Details</strong> - Public <code>/api/App/Processes</code> returns minimal info (code, name, description). Internal version adds:</p>
+
+<ul>
+<li>ProcessID (GUID)</li>
+<li>processIndex</li>
+<li>state</li>
+<li>Properties dictionary</li>
+<li>isTestOperation, isRepairOperation, isWipOperation flags</li>
+</ul></li>
+<li><p><strong>Repair Operations</strong> - The entire repair operation configuration retrieval has no public endpoint. This is needed for UUR (Unit Under Repair) report creation.</p></li>
+</ol>
+
+<h4 id="recommended-public-api-extensions-3">Recommended Public API Extensions</h4>
+
+<pre><code># Proposed public endpoint extensions:
+
+GET /api/Process                         # Same as /api/App/Processes but with full details
+GET /api/Process/{id}                    # Get process by GUID or code
+GET /api/Process/RepairOperations        # Get repair operation configs
+GET /api/Process/RepairOperation/{id}    # Get single repair operation
+</code></pre>
+
+<hr />
+
+<h3 id="24-product-module">2.4 Product Module</h3>
+
+<p><strong>Files</strong>:</p>
+
+<ul>
+<li><code>src/pywats/domains/product/async_repository.py</code></li>
+<li><code>src/pywats/domains/product/async_service.py</code></li>
+<li><code>src/pywats/domains/product/service_internal.py</code></li>
+</ul>
+
+<h4 id="internal-endpoints-used-4">Internal Endpoints Used</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Endpoint</th>
+  <th>Method</th>
+  <th>Purpose</th>
+  <th>Public Alternative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>GET /api/internal/Product/Bom</code></td>
+  <td><code>get_bom_internal()</code></td>
+  <td>Get BOM items</td>
+  <td>✅ <code>/api/Product/{pn}/{rev}/BOM</code></td>
+</tr>
+<tr>
+  <td><code>PUT /api/internal/Product/BOM</code></td>
+  <td><code>upload_bom()</code></td>
+  <td>Upload BOM items</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Product/GetProductInfo</code></td>
+  <td><code>get_product_info()</code></td>
+  <td>Full product hierarchy</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Product/GetProductByPN</code></td>
+  <td><code>get_product_by_pn()</code></td>
+  <td>Product with relations</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Product/PostProductRevisionRelation</code></td>
+  <td><code>create_revision_relation()</code></td>
+  <td>Create box build relation</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>PUT /api/internal/Product/PutProductRevisionRelation</code></td>
+  <td><code>update_revision_relation()</code></td>
+  <td>Update box build relation</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>DELETE /api/internal/Product/DeleteProductRevisionRelation</code></td>
+  <td><code>delete_revision_relation()</code></td>
+  <td>Delete box build relation</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Product/GetProductCategories</code></td>
+  <td><code>get_categories()</code></td>
+  <td>Get all categories</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>PUT /api/internal/Product/PutProductCategories</code></td>
+  <td><code>save_categories()</code></td>
+  <td>Save categories</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Product/GetProductTags</code></td>
+  <td><code>get_product_tags()</code></td>
+  <td>Get product tags</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>PUT /api/internal/Product/PutProductTags</code></td>
+  <td><code>set_product_tags()</code></td>
+  <td>Set product tags</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Product/GetRevisionTags</code></td>
+  <td><code>get_revision_tags()</code></td>
+  <td>Get revision tags</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>PUT /api/internal/Product/PutRevisionTags</code></td>
+  <td><code>set_revision_tags()</code></td>
+  <td>Set revision tags</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Product/GetGroupsForProduct</code></td>
+  <td><code>get_groups_for_product()</code></td>
+  <td>Get product groups</td>
+  <td>✅ Partial: Groups exist</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="why-internal-api-is-necessary-4">Why Internal API is Necessary</h4>
+
+<ol>
+<li><p><strong>Box Build Management</strong> - The entire box build (multi-level product assembly) feature requires internal API:</p>
+
+<ul>
+<li>Product revision relations define what child products make up a parent</li>
+<li>No public CRUD for these relations</li>
+<li>Essential for manufacturing hierarchical products</li>
+</ul></li>
+<li><p><strong>Categories &amp; Tags</strong> - Product categorization and tagging system:</p>
+
+<ul>
+<li>Categories are site-specific product groupings</li>
+<li>Tags enable custom metadata on products and revisions</li>
+<li>No public API for either</li>
+</ul></li>
+<li><p><strong>BOM Upload</strong> - While BOM read has a public endpoint, BOM creation/modification requires internal API.</p></li>
+</ol>
+
+<h4 id="recommended-public-api-extensions-4">Recommended Public API Extensions</h4>
+
+<pre><code># Proposed public endpoint extensions (backward compatible):
+
+# Box Build Relations
+GET    /api/Product/{pn}/Relations                    # Get all revision relations
+POST   /api/Product/{pn}/{rev}/Relations              # Create relation
+PUT    /api/Product/{pn}/{rev}/Relations/{childPn}    # Update relation
+DELETE /api/Product/{pn}/{rev}/Relations/{childPn}    # Delete relation
+
+# Categories &amp; Tags
+GET    /api/Product/Categories                        # Get all categories
+PUT    /api/Product/Categories                        # Save categories
+GET    /api/Product/{pn}/Tags                         # Get product tags
+PUT    /api/Product/{pn}/Tags                         # Set product tags
+GET    /api/Product/{pn}/{rev}/Tags                   # Get revision tags
+PUT    /api/Product/{pn}/{rev}/Tags                   # Set revision tags
+
+# BOM Management
+PUT    /api/Product/{pn}/{rev}/BOM                    # Upload/update BOM (add to existing GET)
+</code></pre>
+
+<hr />
+
+<h3 id="25-production-module">2.5 Production Module</h3>
+
+<p><strong>Files</strong>:</p>
+
+<ul>
+<li><code>src/pywats/domains/production/async_repository.py</code></li>
+<li><code>src/pywats/domains/production/async_service.py</code></li>
+<li><code>src/pywats/domains/production/repository_internal.py</code> <em>(deprecated)</em></li>
+</ul>
+
+<h4 id="internal-endpoints-used-5">Internal Endpoints Used</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Endpoint</th>
+  <th>Method</th>
+  <th>Purpose</th>
+  <th>Public Alternative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>GET /api/internal/Production/isConnected</code></td>
+  <td><code>is_connected()</code></td>
+  <td>Check module availability</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/GetUnit</code></td>
+  <td><code>get_unit_internal()</code></td>
+  <td>Flexible unit lookup</td>
+  <td>✅ <code>/api/Production/Unit/{sn}/{pn}</code></td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/GetUnitInfo</code></td>
+  <td><code>get_unit_info()</code></td>
+  <td>Unit extended info</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/GetUnitHierarchy</code></td>
+  <td><code>get_unit_hierarchy()</code></td>
+  <td>Full unit tree</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/GetUnitStateHistory</code></td>
+  <td><code>get_unit_state_history()</code></td>
+  <td>State change log</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/GetUnitPhase</code></td>
+  <td><code>get_unit_phase()</code></td>
+  <td>Current phase</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/GetUnitProcess</code></td>
+  <td><code>get_unit_process()</code></td>
+  <td>Current process</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/GetUnitContents</code></td>
+  <td><code>get_unit_contents()</code></td>
+  <td>Unit BOM/components</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Production/CreateUnit</code></td>
+  <td><code>create_unit()</code></td>
+  <td>Create new unit</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Production/AddChildUnit</code></td>
+  <td><code>add_child_unit()</code></td>
+  <td>Box build assembly</td>
+  <td>✅ <code>/api/Production/AddChildUnit</code></td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Production/RemoveChildUnit</code></td>
+  <td><code>remove_child_unit()</code></td>
+  <td>Box build disassembly</td>
+  <td>✅ <code>/api/Production/RemoveChildUnit</code></td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Production/RemoveAllChildUnits</code></td>
+  <td><code>remove_all_children()</code></td>
+  <td>Clear all children</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/CheckChildUnits</code></td>
+  <td><code>check_child_units()</code></td>
+  <td>Validate box build</td>
+  <td>✅ <code>/api/Production/CheckChildUnits</code></td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/SerialNumbers</code></td>
+  <td><code>find_serial_numbers()</code></td>
+  <td>Search in range</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/SerialNumbers/Count</code></td>
+  <td><code>count_serial_numbers()</code></td>
+  <td>Count in range</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>PUT /api/internal/Production/SerialNumbers/Free</code></td>
+  <td><code>free_serial_numbers()</code></td>
+  <td>Free reserved</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>DELETE /api/internal/Production/SerialNumbers/Free</code></td>
+  <td><code>delete_free_serials()</code></td>
+  <td>Delete free serials</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/SerialNumbers/Ranges</code></td>
+  <td><code>get_serial_ranges()</code></td>
+  <td>Get defined ranges</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/SerialNumbers/Statistics</code></td>
+  <td><code>get_serial_statistics()</code></td>
+  <td>Usage statistics</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Production/GetSites</code></td>
+  <td><code>get_sites()</code></td>
+  <td>Production sites</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Mes/GetUnitPhases</code></td>
+  <td><code>get_unit_phases()</code></td>
+  <td>MES phase definitions</td>
+  <td>✅ <code>/api/Production/Phases</code></td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="why-internal-api-is-necessary-5">Why Internal API is Necessary</h4>
+
+<ol>
+<li><p><strong>Unit Hierarchy &amp; State</strong> - Core production tracking features:</p>
+
+<ul>
+<li><code>GetUnitHierarchy</code> - Full parent/child tree for box build products</li>
+<li><code>GetUnitStateHistory</code> - Audit trail of state changes</li>
+<li><code>GetUnitContents</code> - What components are in a unit</li>
+</ul></li>
+<li><p><strong>Unit Creation</strong> - The <code>CreateUnit</code> endpoint creates units with validation. Public API only implicitly creates units via report submission.</p></li>
+<li><p><strong>Serial Number Management</strong> - Complete serial number lifecycle:</p>
+
+<ul>
+<li>Range management (get defined ranges)</li>
+<li>Search within ranges</li>
+<li>Free/delete reserved serial numbers</li>
+<li>Statistics (usage, available counts)</li>
+<li>Public API only has Take and ByRange</li>
+</ul></li>
+<li><p><strong>Sites</strong> - Production site definitions have no public endpoint.</p></li>
+</ol>
+
+<h4 id="recommended-public-api-extensions-5">Recommended Public API Extensions</h4>
+
+<pre><code># Proposed public endpoint extensions:
+
+# Unit Management
+GET    /api/Production/Unit/{sn}                      # Get unit (flexible lookup)
+GET    /api/Production/Unit/{sn}/Hierarchy            # Get unit hierarchy
+GET    /api/Production/Unit/{sn}/StateHistory         # Get state change history
+GET    /api/Production/Unit/{sn}/Contents             # Get unit BOM contents
+POST   /api/Production/Unit                           # Create unit explicitly
+DELETE /api/Production/Unit/{sn}/{pn}/Children        # Remove all children
+
+# Serial Number Management  
+GET    /api/Production/SerialNumbers/Search           # Search in range
+GET    /api/Production/SerialNumbers/Count            # Count in range
+PUT    /api/Production/SerialNumbers/Free             # Free reserved serials
+DELETE /api/Production/SerialNumbers/Free             # Delete free serials
+GET    /api/Production/SerialNumbers/Ranges           # Get all defined ranges
+GET    /api/Production/SerialNumbers/Statistics       # Get usage statistics
+
+# Sites
+GET    /api/Production/Sites                          # Get production sites
+</code></pre>
+
+<hr />
+
+<h3 id="26-software-module">2.6 Software Module</h3>
+
+<p><strong>Files</strong>:</p>
+
+<ul>
+<li><code>src/pywats/domains/software/async_repository.py</code></li>
+<li><code>src/pywats/domains/software/async_service.py</code></li>
+<li><code>src/pywats/domains/software/service_internal.py</code></li>
+</ul>
+
+<h4 id="internal-endpoints-used-6">Internal Endpoints Used</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Endpoint</th>
+  <th>Method</th>
+  <th>Purpose</th>
+  <th>Public Alternative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>GET /api/internal/Software/isConnected</code></td>
+  <td><code>is_connected()</code></td>
+  <td>Check module availability</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Software/File/{id}</code></td>
+  <td><code>get_file()</code></td>
+  <td>File metadata by ID</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Software/CheckFile</code></td>
+  <td><code>check_file()</code></td>
+  <td>Pre-upload deduplication</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Software/PostPackageFolder</code></td>
+  <td><code>create_folder()</code></td>
+  <td>Create package folder</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Software/UpdatePackageFolder</code></td>
+  <td><code>update_folder()</code></td>
+  <td>Update folder metadata</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Software/DeletePackageFolder</code></td>
+  <td><code>delete_folder()</code></td>
+  <td>Delete package folder</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>POST /api/internal/Software/DeletePackageFolderFiles</code></td>
+  <td><code>delete_files()</code></td>
+  <td>Delete files from folder</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Software/GetPackageHistory</code></td>
+  <td><code>get_history()</code></td>
+  <td>Version history by tags</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Software/GetPackageDownloadHistory</code></td>
+  <td><code>get_download_history()</code></td>
+  <td>Client download log</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Software/GetRevokedPackages</code></td>
+  <td><code>get_revoked()</code></td>
+  <td>Check for revoked packages</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Software/GetAvailablePackages</code></td>
+  <td><code>check_updates()</code></td>
+  <td>Check for new versions</td>
+  <td>❌ None</td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Software/GetSoftwareEntityDetails</code></td>
+  <td><code>get_details()</code></td>
+  <td>Full package details</td>
+  <td>✅ <code>/api/Software/Package/{id}</code></td>
+</tr>
+<tr>
+  <td><code>GET /api/internal/Software/Log</code></td>
+  <td><code>log_download()</code></td>
+  <td>Log download event</td>
+  <td>❌ None</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="why-internal-api-is-necessary-6">Why Internal API is Necessary</h4>
+
+<ol>
+<li><p><strong>Package Folder Management</strong> - The public API only manages packages at the top level. Internal API handles:</p>
+
+<ul>
+<li>Creating folder structure within packages</li>
+<li>Updating folder metadata</li>
+<li>Deleting folders and files</li>
+</ul></li>
+<li><p><strong>File Operations</strong> - Pre-upload file checking and metadata retrieval not in public API.</p></li>
+<li><p><strong>Client Update Management</strong> - Critical for WATS Client:</p>
+
+<ul>
+<li><code>GetAvailablePackages</code> - Check if client needs updates</li>
+<li><code>GetRevokedPackages</code> - Check if installed packages have been revoked</li>
+<li><code>GetDownloadHistory</code> - Track what was downloaded when</li>
+<li><code>Log</code> - Record download events for auditing</li>
+</ul></li>
+<li><p><strong>Package History</strong> - Version history and changelog tracking.</p></li>
+</ol>
+
+<h4 id="recommended-public-api-extensions-6">Recommended Public API Extensions</h4>
+
+<pre><code># Proposed public endpoint extensions:
+
+# Package Structure
+POST   /api/Software/Package/{id}/Folders             # Create folder
+PUT    /api/Software/Package/{id}/Folders/{folderId}  # Update folder
+DELETE /api/Software/Package/{id}/Folders/{folderId}  # Delete folder
+DELETE /api/Software/Package/{id}/Files               # Delete files (body: fileIds[])
+
+# Package Metadata
+GET    /api/Software/Package/{id}/History             # Get version history
+GET    /api/Software/File/{id}                        # Get file metadata
+
+# Client Update Management
+GET    /api/Software/CheckUpdates                     # Check for available updates
+GET    /api/Software/CheckRevoked                     # Check for revoked packages
+GET    /api/Software/DownloadHistory                  # Get download history
+POST   /api/Software/LogDownload                      # Log download event
+</code></pre>
+
+<hr />
+
+<h2 id="3-public-api-extension-recommendations">3. Public API Extension Recommendations</h2>
+
+<h3 id="prioritization">Prioritization</h3>
+
+<p>Based on feature importance and usage frequency:</p>
+
+<h4 id="priority-1-critical-blocks-core-functionality">Priority 1 - Critical (Blocks core functionality)</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Module</th>
+  <th>Feature</th>
+  <th>Proposed Endpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Production</strong></td>
+  <td>Serial Number Management</td>
+  <td><code>/api/Production/SerialNumbers/*</code></td>
+</tr>
+<tr>
+  <td><strong>Production</strong></td>
+  <td>Unit Hierarchy</td>
+  <td><code>/api/Production/Unit/{sn}/Hierarchy</code></td>
+</tr>
+<tr>
+  <td><strong>Product</strong></td>
+  <td>Box Build Relations</td>
+  <td><code>/api/Product/{pn}/Relations/*</code></td>
+</tr>
+<tr>
+  <td><strong>Asset</strong></td>
+  <td>File Attachments</td>
+  <td><code>/api/Asset/{id}/Files/*</code></td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="priority-2-high-important-for-advanced-features">Priority 2 - High (Important for advanced features)</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Module</th>
+  <th>Feature</th>
+  <th>Proposed Endpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Analytics</strong></td>
+  <td>Unit Flow</td>
+  <td><code>/api/Analytics/UnitFlow/*</code></td>
+</tr>
+<tr>
+  <td><strong>Analytics</strong></td>
+  <td>Measurement Filtering</td>
+  <td>Enhanced <code>/api/Analytics/Measurements</code></td>
+</tr>
+<tr>
+  <td><strong>Software</strong></td>
+  <td>Client Updates</td>
+  <td><code>/api/Software/CheckUpdates</code>, <code>/api/Software/CheckRevoked</code></td>
+</tr>
+<tr>
+  <td><strong>Process</strong></td>
+  <td>Repair Operations</td>
+  <td><code>/api/Process/RepairOperations/*</code></td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="priority-3-nice-to-have">Priority 3 - Nice to Have</h4>
+
+<table>
+<thead>
+<tr>
+  <th>Module</th>
+  <th>Feature</th>
+  <th>Proposed Endpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Product</strong></td>
+  <td>Categories &amp; Tags</td>
+  <td><code>/api/Product/Categories</code>, <code>/api/Product/{pn}/Tags</code></td>
+</tr>
+<tr>
+  <td><strong>Software</strong></td>
+  <td>Package Structure</td>
+  <td><code>/api/Software/Package/{id}/Folders/*</code></td>
+</tr>
+<tr>
+  <td><strong>Production</strong></td>
+  <td>Sites</td>
+  <td><code>/api/Production/Sites</code></td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="backward-compatibility-guidelines">Backward Compatibility Guidelines</h3>
+
+<ol>
+<li><strong>Extend, don't replace</strong> - Add new optional parameters to existing endpoints where possible</li>
+<li><strong>POST for complex queries</strong> - Add POST variants with filter bodies alongside existing GET endpoints</li>
+<li><strong>Version in Accept header</strong> - Use <code>Accept: application/vnd.wats.v2+json</code> for enhanced responses</li>
+<li><strong>Deprecation path</strong> - Keep internal endpoints working during migration period</li>
+</ol>
+
+<hr />
+
+<h2 id="4-current-warning-implementation">4. Current Warning Implementation</h2>
+
+<h3 id="standard-warning-pattern">Standard Warning Pattern</h3>
+
+<p>All internal methods follow this documentation pattern:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">internal_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="o">...</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Method description.</span>
+
+<span class="sd">    GET /api/internal/Module/Endpoint</span>
+
+<span class="sd">    ⚠️ INTERNAL API - SUBJECT TO CHANGE ⚠️</span>
+
+<span class="sd">    This method uses an undocumented internal endpoint that may change</span>
+<span class="sd">    without notice in future WATS server versions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ...</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre>
+</div>
+
+<h3 id="routes-organization">Routes Organization</h3>
+
+<p>Internal routes are isolated in nested <code>Internal</code> classes:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Routes</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Production</span><span class="p">:</span>
+        <span class="c1"># Public routes</span>
+        <span class="n">UNIT</span> <span class="o">=</span> <span class="s2">&quot;/api/Production/Unit&quot;</span>
+
+        <span class="k">class</span><span class="w"> </span><span class="nc">Internal</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;⚠️ Internal Production API routes.&quot;&quot;&quot;</span>
+            <span class="n">GET_UNIT</span> <span class="o">=</span> <span class="s2">&quot;/api/internal/Production/GetUnit&quot;</span>
+</code></pre>
+</div>
+
+<h3 id="verification-status">Verification Status</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Module</th>
+  <th>Docstring Warning</th>
+  <th>Route Isolation</th>
+  <th>Helper Methods</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Analytics</td>
+  <td>✅ All methods</td>
+  <td>✅ <code>Routes.Analytics.Internal</code></td>
+  <td>✅ <code>_internal_get/post</code></td>
+</tr>
+<tr>
+  <td>Asset</td>
+  <td>✅ All methods</td>
+  <td>✅ <code>Routes.Asset.Internal</code></td>
+  <td>✅ <code>_internal_get/post</code></td>
+</tr>
+<tr>
+  <td>Process</td>
+  <td>✅ All methods</td>
+  <td>✅ <code>Routes.Process.Internal</code></td>
+  <td>✅ <code>_internal_get</code></td>
+</tr>
+<tr>
+  <td>Product</td>
+  <td>✅ All methods</td>
+  <td>✅ <code>Routes.Product.Internal</code></td>
+  <td>✅ <code>_internal_get/post</code></td>
+</tr>
+<tr>
+  <td>Production</td>
+  <td>✅ All methods</td>
+  <td>✅ <code>Routes.Production.Internal</code></td>
+  <td>✅ <code>_internal_get/post</code></td>
+</tr>
+<tr>
+  <td>Software</td>
+  <td>✅ All methods</td>
+  <td>✅ <code>Routes.Software.Internal</code></td>
+  <td>✅ <code>_internal_get/post</code></td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2 id="5-technical-implementation-notes">5. Technical Implementation Notes</h2>
+
+<h3 id="referer-header-requirement">Referer Header Requirement</h3>
+
+<p>All internal API calls require the <code>Referer</code> header set to the WATS server base URL:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_internal_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_http_client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="n">endpoint</span><span class="p">,</span>
+        <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+        <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Referer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_url</span><span class="p">}</span>  <span class="c1"># Required!</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">data</span> <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">is_success</span> <span class="k">else</span> <span class="kc">None</span>
+</code></pre>
+</div>
+
+<h3 id="error-handling-differences">Error Handling Differences</h3>
+
+<p>Internal endpoints may return different error formats:</p>
+
+<ul>
+<li>Public API: Standardized error responses with error codes</li>
+<li>Internal API: May return raw exceptions or different status codes</li>
+</ul>
+
+<h3 id="authentication">Authentication</h3>
+
+<p>Internal endpoints use the same authentication as public API (API token or session cookie), but some may require additional permissions not exposed in the public RBAC model.</p>
+
+<hr />
+
+<h2 id="6-action-items">6. Action Items</h2>
+
+<h3 id="for-pywats-development">For pyWATS Development</h3>
+
+<ol>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Keep internal warning documentation up to date</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Add deprecation warnings when public alternatives become available</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Document any breaking changes to internal endpoints in CHANGELOG</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Consider feature flags for internal API usage</li>
+</ol>
+
+<h3 id="for-wats-backend-team-recommendations">For WATS Backend Team (Recommendations)</h3>
+
+<ol>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Review Priority 1 endpoints for public API promotion</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Define versioning strategy for new public endpoints</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Consider OpenAPI/Swagger documentation for promoted endpoints</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Establish deprecation timeline for internal endpoints</li>
+</ol>
+
+<hr />
+
+<h2 id="appendix-complete-internal-endpoint-inventory">Appendix: Complete Internal Endpoint Inventory</h2>
+
+<h3 id="a-production-module-20-endpoints">A. Production Module (20 endpoints)</h3>
+
+<pre><code>GET  /api/internal/Production/isConnected
+GET  /api/internal/Production/GetUnit
+GET  /api/internal/Production/GetUnitInfo
+GET  /api/internal/Production/GetUnitHierarchy
+GET  /api/internal/Production/GetUnitStateHistory
+GET  /api/internal/Production/GetUnitPhase
+GET  /api/internal/Production/GetUnitProcess
+GET  /api/internal/Production/GetUnitContents
+POST /api/internal/Production/CreateUnit
+POST /api/internal/Production/AddChildUnit
+POST /api/internal/Production/RemoveChildUnit
+POST /api/internal/Production/RemoveAllChildUnits
+GET  /api/internal/Production/CheckChildUnits
+GET  /api/internal/Production/SerialNumbers
+GET  /api/internal/Production/SerialNumbers/Count
+PUT  /api/internal/Production/SerialNumbers/Free
+DELETE /api/internal/Production/SerialNumbers/Free
+GET  /api/internal/Production/SerialNumbers/Ranges
+GET  /api/internal/Production/SerialNumbers/Statistics
+GET  /api/internal/Production/GetSites
+GET  /api/internal/Mes/GetUnitPhases
+</code></pre>
+
+<h3 id="b-product-module-14-endpoints">B. Product Module (14 endpoints)</h3>
+
+<pre><code>GET  /api/internal/Product/Bom
+PUT  /api/internal/Product/BOM
+GET  /api/internal/Product/GetProductInfo
+GET  /api/internal/Product/GetProductByPN
+POST /api/internal/Product/PostProductRevisionRelation
+PUT  /api/internal/Product/PutProductRevisionRelation
+DELETE /api/internal/Product/DeleteProductRevisionRelation
+GET  /api/internal/Product/GetProductCategories
+PUT  /api/internal/Product/PutProductCategories
+GET  /api/internal/Product/GetProductTags
+PUT  /api/internal/Product/PutProductTags
+GET  /api/internal/Product/GetRevisionTags
+PUT  /api/internal/Product/PutRevisionTags
+GET  /api/internal/Product/GetGroupsForProduct
+</code></pre>
+
+<h3 id="c-software-module-13-endpoints">C. Software Module (13 endpoints)</h3>
+
+<pre><code>GET  /api/internal/Software/isConnected
+GET  /api/internal/Software/File/{id}
+GET  /api/internal/Software/CheckFile
+POST /api/internal/Software/PostPackageFolder
+POST /api/internal/Software/UpdatePackageFolder
+POST /api/internal/Software/DeletePackageFolder
+POST /api/internal/Software/DeletePackageFolderFiles
+GET  /api/internal/Software/GetPackageHistory
+GET  /api/internal/Software/GetPackageDownloadHistory
+GET  /api/internal/Software/GetRevokedPackages
+GET  /api/internal/Software/GetAvailablePackages
+GET  /api/internal/Software/GetSoftwareEntityDetails
+GET  /api/internal/Software/Log
+</code></pre>
+
+<h3 id="d-analytics-module-13-endpoints">D. Analytics Module (13 endpoints)</h3>
+
+<pre><code>POST /api/internal/UnitFlow
+GET  /api/internal/UnitFlow/Links
+GET  /api/internal/UnitFlow/Nodes
+POST /api/internal/UnitFlow/SN
+POST /api/internal/UnitFlow/SplitBy
+POST /api/internal/UnitFlow/UnitOrder
+GET  /api/internal/UnitFlow/Units
+GET  /api/internal/App/MeasurementList
+POST /api/internal/App/MeasurementList
+GET  /api/internal/App/StepStatusList
+POST /api/internal/App/StepStatusList
+GET  /api/internal/App/TopFailed
+POST /api/internal/App/TopFailed
+</code></pre>
+
+<h3 id="e-asset-module-4-endpoints">E. Asset Module (4 endpoints)</h3>
+
+<pre><code>POST /api/internal/Blob/Asset/{id}
+GET  /api/internal/Blob/Asset/{id}/{fileName}
+GET  /api/internal/Blob/Asset/List/{assetId}
+DELETE /api/internal/Blob/Assets
+</code></pre>
+
+<h3 id="f-process-module-4-endpoints">F. Process Module (4 endpoints)</h3>
+
+<pre><code>GET  /api/internal/Process/GetProcesses
+GET  /api/internal/Process/GetProcess/{id}
+GET  /api/internal/Process/GetRepairOperations
+GET  /api/internal/Process/GetRepairOperation/{id}
+</code></pre>
+
+    
+    <div class="footer">
+        <p>Generated from pyWATS project documentation</p>
+        <p>Branch: feature/separate-service-gui-mode | January 2026</p>
+    </div>
+</body>
+</html>
