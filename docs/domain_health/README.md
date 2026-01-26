@@ -29,9 +29,9 @@ This directory contains **unified health checks** for all pyWATS domains, replac
 | [Software](software.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
 | [Asset](asset.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
 | [Process](process.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
-| [Report](report.md) | 41/50 | B+ | ✅ Good | 2026-01-26 |
+| [Report](report.md) | 44/50 | A- | ✅ Good | 2026-01-26 |
 
-**Overall Average:** 46.0/50 (A) ✅
+**Overall Average:** 46.4/50 (A) ✅
 
 ---
 
