@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Raises Documentation** - Comprehensive exception documentation across all domains:
+  - All 8 domain services now have consistent Raises sections (147 methods total)
+  - Documented: `AuthenticationError`, `ValidationError`, `NotFoundError`, `APIError`, `PyWATSError`
+  - Process service: 33 methods, Asset service: 3 core methods, Product service: 38 methods
+  - Analytics service: 20 methods, Software service: 17 methods
+  - RootCause service: 12 methods, Production service: 24 methods
+  - Enables IDE intellisense and proper try/except handling
+
+- **Practical Code Examples** - Real-world usage patterns added to documentation:
+  - Asset domain: Serial lookup with error handling, deep hierarchy traversal, concurrent bulk operations
+  - Process domain: Operation type filtering, smart cache with prefetch, workflow validation
+
+- **Analytics Models Documentation** - Enhanced module docstring with edge cases:
+  - Common pitfalls for RepairStatistics, UnitFlowFilter, MeasurementData, YieldData, OeeAnalysisResult
+  - Date field handling notes, backward compatibility guidance
+  - Field naming convention documentation
+
+- **Report Refactoring Plan** - Documented in `docs/internal_documentation/WIP/to_do/REPORT_REFACTORING.md`:
+  - Phase 1: Extract `filter_builders.py` (low risk)
+  - Phase 2: Extract `query_helpers.py` (low risk)
+  - Phase 3-4: Service split and UURReport refactoring (deferred)
+  - Clear "do not touch" list for critical factory methods
+
 - **Documentation Reorganization** - Improved structure and discoverability:
   - Created `docs/modules/` directory for domain-specific documentation (9 modules)
   - Created `docs/installation/` directory for platform and deployment guides (5 guides)
