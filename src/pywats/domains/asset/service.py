@@ -57,7 +57,23 @@ class AssetService:
         top: Optional[int] = None,
         skip: Optional[int] = None
     ) -> List[Asset]:
-        """Get all assets with optional filtering."""
+        """Get all assets with optional filtering.
+        
+        Args:
+            filter_str: OData filter string
+            orderby: OData orderby string
+            top: Maximum number of results to return
+            skip: Number of results to skip
+            
+        Returns:
+            List of Asset objects matching the filter
+            
+        Raises:
+            AuthenticationError: If API authentication fails
+            ValidationError: If filter or orderby syntax is invalid
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_assets(filter_str, orderby, top, skip))
 
     def get_asset(
@@ -65,11 +81,37 @@ class AssetService:
         asset_id: Optional[str] = None,
         serial_number: Optional[str] = None
     ) -> Optional[Asset]:
-        """Get an asset by ID or serial number."""
+        """Get an asset by ID or serial number.
+        
+        Args:
+            asset_id: The unique asset identifier
+            serial_number: The asset serial number
+            
+        Returns:
+            Asset if found, None otherwise
+            
+        Raises:
+            ValidationError: If neither asset_id nor serial_number is provided
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_asset(asset_id, serial_number))
 
     def get_asset_by_serial(self, serial_number: str) -> Optional[Asset]:
-        """Get an asset by its serial number."""
+        """Get an asset by its serial number.
+        
+        Args:
+            serial_number: The asset serial number
+            
+        Returns:
+            Asset if found, None otherwise
+            
+        Raises:
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_asset_by_serial(serial_number))
 
     def create_asset(

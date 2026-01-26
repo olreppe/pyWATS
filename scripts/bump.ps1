@@ -281,6 +281,37 @@ try {
         }
     }
 
+    Write-Step "Checking Domain Health"
+
+    $healthDir = "$RepoRoot\docs\internal_documentation\domain_health"
+    if (Test-Path $healthDir) {
+        $staleHealthChecks = Get-ChildItem "$healthDir\*.md" -Exclude "README.md","TEMPLATE.md" | 
+            Where-Object { $_.LastWriteTime -lt (Get-Date).AddMonths(-3) }
+        
+        if ($staleHealthChecks) {
+            Write-Host ""
+            Write-Host "  ⚠️  WARNING: Some domain health checks are outdated (>3 months)!" -ForegroundColor Yellow
+            Write-Host ""
+            $staleHealthChecks | ForEach-Object {
+                $age = [int]((Get-Date) - $_.LastWriteTime).TotalDays
+                Write-Host "    - $($_.BaseName): $age days old" -ForegroundColor Yellow
+            }
+            Write-Host ""
+            Write-Host "  Run: .\scripts\domain_health_check.ps1 -FindStale" -ForegroundColor Gray
+            Write-Host ""
+            $response = Read-Host "Continue anyway? (y/N)"
+            if ($response -ne 'y' -and $response -ne 'Y') {
+                throw "Release cancelled - please update domain health checks first"
+            }
+        }
+        else {
+            Write-Success "All domain health checks are current"
+        }
+    }
+    else {
+        Write-Info "Domain health checks not found (skipping)"
+    }
+
     Write-Step "Checking CHANGELOG"
 
     $changelogPath = "$RepoRoot\CHANGELOG.md"
