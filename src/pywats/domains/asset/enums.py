@@ -65,3 +65,24 @@ class AssetLogType(IntEnum):
     CREATED = 1
     COUNT_RESET = 3
     COMMENT = 0
+
+
+class IntervalMode(IntEnum):
+    """
+    Interval mode for calibration and maintenance intervals.
+    
+    Used in AssetType to configure how calibration/maintenance
+    scheduling is handled:
+    
+        NORMAL (0): Standard interval-based scheduling.
+            Next date calculated from interval in days.
+        UNLIMITED (-1): No limit/scheduling required.
+            Asset never requires calibration/maintenance.
+        EXTERNAL (-2): Managed by external system.
+            Dates set via External calibration/maintenance endpoints.
+    
+    New in WATS 25.3.
+    """
+    NORMAL = 0
+    UNLIMITED = -1
+    EXTERNAL = -2

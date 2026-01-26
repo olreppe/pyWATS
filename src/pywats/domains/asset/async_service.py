@@ -401,6 +401,60 @@ class AsyncAssetService:
         """
         return await self._repository.reset_running_count(asset_id, serial_number, comment)
 
+    async def set_running_count(
+        self,
+        value: int,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
+    ) -> bool:
+        """
+        Set the running count to a specific value.
+
+        New in WATS 25.3. Requires 'Edit Total count' permission on the server.
+
+        Args:
+            value: New running count value
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+
+        Returns:
+            True if successful
+
+        Example:
+            >>> await service.set_running_count(
+            ...     value=100,
+            ...     serial_number="ASSET-001"
+            ... )
+        """
+        return await self._repository.set_running_count(value, asset_id, serial_number)
+
+    async def set_total_count(
+        self,
+        value: int,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
+    ) -> bool:
+        """
+        Set the total count to a specific value.
+
+        New in WATS 25.3. Requires 'Edit Total count' permission on the server.
+
+        Args:
+            value: New total count value
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+
+        Returns:
+            True if successful
+
+        Example:
+            >>> await service.set_total_count(
+            ...     value=5000,
+            ...     serial_number="ASSET-001"
+            ... )
+        """
+        return await self._repository.set_total_count(value, asset_id, serial_number)
+
     # =========================================================================
     # Calibration and Maintenance
     # =========================================================================
@@ -449,6 +503,80 @@ class AsyncAssetService:
         """
         return await self._repository.post_maintenance(
             asset_id, serial_number, date_time, comment
+        )
+
+    async def record_calibration_external(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+        comment: Optional[str] = None
+    ) -> bool:
+        """
+        Record external calibration with custom date range.
+
+        New in WATS 25.3. Use when calibration is managed by an external system.
+        Allows setting both 'last calibration' and 'next calibration' dates.
+
+        Args:
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+            from_date: Date calibration was performed (lastCalibrationDate)
+            to_date: Date next calibration is due (nextCalibrationDate)
+            comment: Log message
+
+        Returns:
+            True if successful
+
+        Example:
+            >>> from datetime import datetime, timedelta
+            >>> await service.record_calibration_external(
+            ...     serial_number="ASSET-001",
+            ...     from_date=datetime.now(),
+            ...     to_date=datetime.now() + timedelta(days=365),
+            ...     comment="Calibrated by external lab"
+            ... )
+        """
+        return await self._repository.post_calibration_external(
+            asset_id, serial_number, from_date, to_date, comment
+        )
+
+    async def record_maintenance_external(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+        comment: Optional[str] = None
+    ) -> bool:
+        """
+        Record external maintenance with custom date range.
+
+        New in WATS 25.3. Use when maintenance is managed by an external system.
+        Allows setting both 'last maintenance' and 'next maintenance' dates.
+
+        Args:
+            asset_id: Asset ID
+            serial_number: Asset serial number (alternative)
+            from_date: Date maintenance was performed (lastMaintenanceDate)
+            to_date: Date next maintenance is due (nextMaintenanceDate)
+            comment: Log message
+
+        Returns:
+            True if successful
+
+        Example:
+            >>> from datetime import datetime, timedelta
+            >>> await service.record_maintenance_external(
+            ...     serial_number="ASSET-001",
+            ...     from_date=datetime.now(),
+            ...     to_date=datetime.now() + timedelta(days=90),
+            ...     comment="Scheduled maintenance by vendor"
+            ... )
+        """
+        return await self._repository.post_maintenance_external(
+            asset_id, serial_number, from_date, to_date, comment
         )
 
     # =========================================================================

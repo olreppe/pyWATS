@@ -515,6 +515,38 @@ print(f"Running count after reset: {asset.running_count}")  # Should be 0
 print(f"Total count: {asset.total_count}")  # Unchanged
 ```
 
+### Set Running Count (WATS 25.3)
+
+Set the running count to a specific value. Requires 'Edit Total count' permission.
+
+```python
+# Set running count to a specific value
+success = api.asset.set_running_count(
+    value=500,
+    serial_number="DMM-001"
+)
+
+# Verify the change
+asset = api.asset.get_asset_by_serial("DMM-001")
+print(f"Running count: {asset.running_count}")  # 500
+```
+
+### Set Total Count (WATS 25.3)
+
+Set the total count to a specific value. Requires 'Edit Total count' permission.
+
+```python
+# Set total count to a specific value
+success = api.asset.set_total_count(
+    value=10000,
+    serial_number="DMM-001"
+)
+
+# Verify the change
+asset = api.asset.get_asset_by_serial("DMM-001")
+print(f"Total count: {asset.total_count}")  # 10000
+```
+
 ---
 
 ## Calibration Management
@@ -542,6 +574,31 @@ success = api.asset.record_calibration(
 )
 
 # Check updated dates
+asset = api.asset.get_asset_by_serial("DMM-001")
+print(f"Last calibration: {asset.last_calibration_date}")
+print(f"Next calibration: {asset.next_calibration_date}")
+```
+
+### External Calibration (WATS 25.3)
+
+For assets with calibration managed by external systems, use `record_calibration_external`
+to set both the calibration date and the next calibration due date directly.
+
+```python
+from datetime import datetime, timedelta, timezone
+
+# External calibration with custom date range
+from_date = datetime.now(timezone.utc)
+to_date = from_date + timedelta(days=365)  # Next calibration in 1 year
+
+success = api.asset.record_calibration_external(
+    serial_number="DMM-001",
+    from_date=from_date,
+    to_date=to_date,
+    comment="Calibrated by external metrology service"
+)
+
+# Verify the dates
 asset = api.asset.get_asset_by_serial("DMM-001")
 print(f"Last calibration: {asset.last_calibration_date}")
 print(f"Next calibration: {asset.next_calibration_date}")
@@ -648,6 +705,31 @@ success = api.asset.record_maintenance(
 )
 
 # Check dates
+asset = api.asset.get_asset_by_serial("ICT-STATION-01")
+print(f"Last maintenance: {asset.last_maintenance_date}")
+print(f"Next maintenance: {asset.next_maintenance_date}")
+```
+
+### External Maintenance (WATS 25.3)
+
+For assets with maintenance managed by external systems, use `record_maintenance_external`
+to set both the maintenance date and the next maintenance due date directly.
+
+```python
+from datetime import datetime, timedelta, timezone
+
+# External maintenance with custom date range
+from_date = datetime.now(timezone.utc)
+to_date = from_date + timedelta(days=90)  # Next maintenance in 3 months
+
+success = api.asset.record_maintenance_external(
+    serial_number="ICT-STATION-01",
+    from_date=from_date,
+    to_date=to_date,
+    comment="Maintenance by vendor service contract"
+)
+
+# Verify the dates
 asset = api.asset.get_asset_by_serial("ICT-STATION-01")
 print(f"Last maintenance: {asset.last_maintenance_date}")
 print(f"Next maintenance: {asset.next_maintenance_date}")

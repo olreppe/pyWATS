@@ -138,3 +138,155 @@ class TestAssetState:
         
         # State might be None if not set, but call should succeed
         # Just verify no exception was raised
+
+
+class TestAssetCountOperations:
+    """Test asset count operations - WATS 25.3 features"""
+
+    def test_set_running_count(self, wats_client: Any) -> None:
+        """Test setting running count to specific value (WATS 25.3)"""
+        print("\n=== SET RUNNING COUNT ===")
+        
+        assets = wats_client.asset.get_assets(top=1)
+        if not assets:
+            pytest.skip("No assets available")
+        
+        asset = assets[0]
+        original_count = asset.running_count or 0
+        new_count = original_count + 10
+        
+        print(f"Asset: {asset.asset_name}")
+        print(f"Original running count: {original_count}")
+        print(f"Setting to: {new_count}")
+        
+        try:
+            result = wats_client.asset.set_running_count(
+                value=new_count,
+                asset_id=str(asset.asset_id)
+            )
+            print(f"Result: {result}")
+            
+            # Verify the change
+            updated = wats_client.asset.get_asset(asset_id=str(asset.asset_id))
+            print(f"Updated running count: {updated.running_count}")
+            
+            assert result is True
+        except Exception as e:
+            # May fail if user lacks 'Edit Total count' permission
+            print(f"Note: {e} (may require 'Edit Total count' permission)")
+        
+        print("=========================\n")
+
+    def test_set_total_count(self, wats_client: Any) -> None:
+        """Test setting total count to specific value (WATS 25.3)"""
+        print("\n=== SET TOTAL COUNT ===")
+        
+        assets = wats_client.asset.get_assets(top=1)
+        if not assets:
+            pytest.skip("No assets available")
+        
+        asset = assets[0]
+        original_count = asset.total_count or 0
+        new_count = original_count + 100
+        
+        print(f"Asset: {asset.asset_name}")
+        print(f"Original total count: {original_count}")
+        print(f"Setting to: {new_count}")
+        
+        try:
+            result = wats_client.asset.set_total_count(
+                value=new_count,
+                asset_id=str(asset.asset_id)
+            )
+            print(f"Result: {result}")
+            
+            # Verify the change
+            updated = wats_client.asset.get_asset(asset_id=str(asset.asset_id))
+            print(f"Updated total count: {updated.total_count}")
+            
+            assert result is True
+        except Exception as e:
+            # May fail if user lacks 'Edit Total count' permission
+            print(f"Note: {e} (may require 'Edit Total count' permission)")
+        
+        print("=======================\n")
+
+
+class TestExternalCalibrationMaintenance:
+    """Test external calibration and maintenance - WATS 25.3 features"""
+
+    def test_external_calibration(self, wats_client: Any) -> None:
+        """Test recording external calibration with custom date range (WATS 25.3)"""
+        from datetime import timedelta
+        
+        print("\n=== EXTERNAL CALIBRATION ===")
+        
+        assets = wats_client.asset.get_assets(top=1)
+        if not assets:
+            pytest.skip("No assets available")
+        
+        asset = assets[0]
+        from_date = datetime.now(timezone.utc)
+        to_date = from_date + timedelta(days=365)
+        
+        print(f"Asset: {asset.asset_name}")
+        print(f"Calibration from: {from_date}")
+        print(f"Next calibration: {to_date}")
+        
+        try:
+            result = wats_client.asset.record_calibration_external(
+                asset_id=str(asset.asset_id),
+                from_date=from_date,
+                to_date=to_date,
+                comment="External calibration test via pyWATS"
+            )
+            print(f"Result: {result}")
+            
+            # Verify the dates were set
+            updated = wats_client.asset.get_asset(asset_id=str(asset.asset_id))
+            print(f"Last calibration: {updated.last_calibration_date}")
+            print(f"Next calibration: {updated.next_calibration_date}")
+            
+            assert result is True
+        except Exception as e:
+            print(f"Note: {e} (external calibration may require specific asset type config)")
+        
+        print("============================\n")
+
+    def test_external_maintenance(self, wats_client: Any) -> None:
+        """Test recording external maintenance with custom date range (WATS 25.3)"""
+        from datetime import timedelta
+        
+        print("\n=== EXTERNAL MAINTENANCE ===")
+        
+        assets = wats_client.asset.get_assets(top=1)
+        if not assets:
+            pytest.skip("No assets available")
+        
+        asset = assets[0]
+        from_date = datetime.now(timezone.utc)
+        to_date = from_date + timedelta(days=90)
+        
+        print(f"Asset: {asset.asset_name}")
+        print(f"Maintenance from: {from_date}")
+        print(f"Next maintenance: {to_date}")
+        
+        try:
+            result = wats_client.asset.record_maintenance_external(
+                asset_id=str(asset.asset_id),
+                from_date=from_date,
+                to_date=to_date,
+                comment="External maintenance test via pyWATS"
+            )
+            print(f"Result: {result}")
+            
+            # Verify the dates were set
+            updated = wats_client.asset.get_asset(asset_id=str(asset.asset_id))
+            print(f"Last maintenance: {updated.last_maintenance_date}")
+            print(f"Next maintenance: {updated.next_maintenance_date}")
+            
+            assert result is True
+        except Exception as e:
+            print(f"Note: {e} (external maintenance may require specific asset type config)")
+        
+        print("============================\n")

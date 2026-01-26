@@ -334,6 +334,60 @@ class AsyncAssetRepository:
         )
         return response.is_success
 
+    async def set_running_count(
+        self,
+        value: int,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
+    ) -> bool:
+        """
+        Set the running count to a specific value.
+
+        PUT /api/Asset/SetRunningCount
+
+        New in WATS 25.3. Requires 'Edit Total count' permission.
+        """
+        params: Dict[str, Any] = {"runningCount": value}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        response = await self._http_client.put(
+            Routes.Asset.SET_RUNNING_COUNT,
+            params=params
+        )
+        self._error_handler.handle_response(
+            response, operation="set_running_count", allow_empty=True
+        )
+        return response.is_success
+
+    async def set_total_count(
+        self,
+        value: int,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
+    ) -> bool:
+        """
+        Set the total count to a specific value.
+
+        PUT /api/Asset/SetTotalCount
+
+        New in WATS 25.3. Requires 'Edit Total count' permission.
+        """
+        params: Dict[str, Any] = {"totalCount": value}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        response = await self._http_client.put(
+            Routes.Asset.SET_TOTAL_COUNT,
+            params=params
+        )
+        self._error_handler.handle_response(
+            response, operation="set_total_count", allow_empty=True
+        )
+        return response.is_success
+
     # =========================================================================
     # Calibration and Maintenance
     # =========================================================================
@@ -389,6 +443,78 @@ class AsyncAssetRepository:
         response = await self._http_client.post(Routes.Asset.MAINTENANCE, params=params)
         self._error_handler.handle_response(
             response, operation="post_maintenance", allow_empty=True
+        )
+        return response.is_success
+
+    async def post_calibration_external(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+        comment: Optional[str] = None
+    ) -> bool:
+        """
+        Inform that an asset has been calibrated with external date range.
+
+        POST /api/Asset/Calibration/External
+
+        New in WATS 25.3. Use when calibration is managed by an external system.
+        Allows setting both 'last calibration' and 'next calibration' dates.
+        """
+        params: Dict[str, Any] = {}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        if from_date:
+            params["fromDate"] = from_date.isoformat()
+        if to_date:
+            params["toDate"] = to_date.isoformat()
+        if comment:
+            params["comment"] = comment
+        response = await self._http_client.post(
+            Routes.Asset.CALIBRATION_EXTERNAL,
+            params=params
+        )
+        self._error_handler.handle_response(
+            response, operation="post_calibration_external", allow_empty=True
+        )
+        return response.is_success
+
+    async def post_maintenance_external(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+        comment: Optional[str] = None
+    ) -> bool:
+        """
+        Inform that an asset has had maintenance with external date range.
+
+        POST /api/Asset/Maintenance/External
+
+        New in WATS 25.3. Use when maintenance is managed by an external system.
+        Allows setting both 'last maintenance' and 'next maintenance' dates.
+        """
+        params: Dict[str, Any] = {}
+        if asset_id:
+            params["id"] = asset_id
+        if serial_number:
+            params["serialNumber"] = serial_number
+        if from_date:
+            params["fromDate"] = from_date.isoformat()
+        if to_date:
+            params["toDate"] = to_date.isoformat()
+        if comment:
+            params["comment"] = comment
+        response = await self._http_client.post(
+            Routes.Asset.MAINTENANCE_EXTERNAL,
+            params=params
+        )
+        self._error_handler.handle_response(
+            response, operation="post_maintenance_external", allow_empty=True
         )
         return response.is_success
 

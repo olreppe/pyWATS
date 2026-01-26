@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **WATS 25.3 Asset Module Enhancements** - New calibration/maintenance and count management features:
+  - `set_running_count(asset_id, count)` - Set running count to specific value (PUT /api/Asset/SetRunningCount)
+  - `set_total_count(asset_id, count)` - Set total count to specific value (PUT /api/Asset/SetTotalCount)
+  - `record_calibration_external(asset_id, from_date, to_date, comment)` - External calibration with custom date range (POST /api/Asset/Calibration/External)
+  - `record_maintenance_external(asset_id, from_date, to_date, comment)` - External maintenance with custom date range (POST /api/Asset/Maintenance/External)
+  - New `IntervalMode` enum: `NORMAL (0)`, `UNLIMITED (-1)`, `EXTERNAL (-2)` for calibration/maintenance interval modes
+  - Integration tests for all new endpoints
+  - Documentation updated in `docs/modules/asset.md`
+
 - **Layered Event Architecture** - Protocol-agnostic event system with IPC-CFX support:
   - **pywats_events** core package: Event models, EventBus, handlers, policies
     - `Event` and `EventMetadata` dataclasses with correlation/tracing support

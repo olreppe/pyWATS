@@ -246,6 +246,32 @@ class AssetService:
         """Reset the running count to 0."""
         return run_sync(self._async_service.reset_running_count(asset_id, serial_number, comment))
 
+    def set_running_count(
+        self,
+        value: int,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
+    ) -> bool:
+        """
+        Set the running count to a specific value.
+        
+        New in WATS 25.3. Requires 'Edit Total count' permission.
+        """
+        return run_sync(self._async_service.set_running_count(value, asset_id, serial_number))
+
+    def set_total_count(
+        self,
+        value: int,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None
+    ) -> bool:
+        """
+        Set the total count to a specific value.
+        
+        New in WATS 25.3. Requires 'Edit Total count' permission.
+        """
+        return run_sync(self._async_service.set_total_count(value, asset_id, serial_number))
+
     # =========================================================================
     # Calibration and Maintenance
     # =========================================================================
@@ -272,6 +298,40 @@ class AssetService:
         """Record that an asset has had maintenance."""
         return run_sync(self._async_service.record_maintenance(
             asset_id, serial_number, date_time, comment
+        ))
+
+    def record_calibration_external(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+        comment: Optional[str] = None
+    ) -> bool:
+        """
+        Record external calibration with custom date range.
+        
+        New in WATS 25.3. Use when calibration is managed by an external system.
+        """
+        return run_sync(self._async_service.record_calibration_external(
+            asset_id, serial_number, from_date, to_date, comment
+        ))
+
+    def record_maintenance_external(
+        self,
+        asset_id: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+        comment: Optional[str] = None
+    ) -> bool:
+        """
+        Record external maintenance with custom date range.
+        
+        New in WATS 25.3. Use when maintenance is managed by an external system.
+        """
+        return run_sync(self._async_service.record_maintenance_external(
+            asset_id, serial_number, from_date, to_date, comment
         ))
 
     # =========================================================================
