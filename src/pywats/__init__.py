@@ -104,7 +104,7 @@ from .domains.report.enums import DateGrouping
 # Discovery helpers for API exploration (LLM/Agent-friendly)
 from .shared import discover
 
-__version__ = "0.1.0b37"
+__version__ = "0.1.0b38"
 __wats_server_version__ = "2025.3.9.824"  # Minimum required WATS server version
 __all__ = [
     # Main classes
