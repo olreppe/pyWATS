@@ -52,7 +52,7 @@ prune scripts
 prune .github
 prune packages
 prune referenced_code
-prune docs/internal
+prune docs/internal_documentation
 prune docs/archive
 prune docs/refactoring
 prune docs/project
