@@ -16,6 +16,7 @@ Test Equipment Converters:
 - SeicaXMLConverter: Seica Flying Probe XML format
 - TeradyneICTConverter: Teradyne i3070 ICT format (classic and new)
 - TeradyneSpectrumICTConverter: Teradyne Spectrum ICT format
+- KeysightTestExecSLConverter: Keysight TestExec SL functional test format
 - KlippelConverter: Klippel audio/acoustic test equipment
 - SPEAConverter: SPEA automated test equipment
 - XJTAGConverter: XJTAG boundary scan test equipment
@@ -28,6 +29,7 @@ from .atml_converter import ATMLConverter
 from .seica_xml_converter import SeicaXMLConverter
 from .teradyne_ict_converter import TeradyneICTConverter
 from .teradyne_spectrum_ict_converter import TeradyneSpectrumICTConverter
+from .keysight_testexec_sl_converter import KeysightTestExecSLConverter
 from .wats_standard_text_converter import WATSStandardTextConverter
 from .wats_standard_json_converter import WATSStandardJsonConverter
 from .wats_standard_xml_converter import WATSStandardXMLConverter
@@ -47,6 +49,7 @@ __all__ = [
     "SeicaXMLConverter",
     "TeradyneICTConverter",
     "TeradyneSpectrumICTConverter",
+    "KeysightTestExecSLConverter",
     "KlippelConverter",
     "SPEAConverter",
     "XJTAGConverter",

@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Layered Event Architecture** - Protocol-agnostic event system with IPC-CFX support:
+  - **pywats_events** core package: Event models, EventBus, handlers, policies
+    - `Event` and `EventMetadata` dataclasses with correlation/tracing support
+    - `EventType` enumeration for 20+ domain event types (test, asset, material, production)
+    - `EventBus` (sync) and `AsyncEventBus` with worker threads/queues
+    - `BaseHandler`, `SyncHandler`, `FilteringHandler` abstract classes
+    - `HandlerRegistry` for efficient event type → handler routing
+    - `HandlerChain` for middleware-style processing pipelines
+    - `RetryPolicy` with exponential backoff, jitter, exception filtering
+    - `ErrorPolicy` with dead letter queue and circuit breaker
+    - `EventRouter` and `EventFilter` for content-based routing
+    - `EventMetrics` and `EventTracer` for telemetry/observability
+    - `BaseTransport` and `MockTransport` for external message sources
+    - `LifecycleManager` for coordinated startup/shutdown
+  - **pywats_cfx** IPC-CFX adapter package:
+    - Pydantic models for CFX messages: UnitsTested, UnitsInspected, MaterialsInstalled, etc.
+    - `CFXTransport` for AMQP broker connectivity
+    - Adapters: `CFXTestResultAdapter`, `CFXMaterialAdapter`, `CFXProductionAdapter`, `CFXResourceAdapter`
+    - Configuration: `CFXConfig`, `AMQPConfig`, `EndpointConfig` with validation
+    - Message parsing with `parse_cfx_message()` and `serialize_cfx_message()`
+  - **CFX Sample Data & Explorer** - Tools for understanding CFX message formats:
+    - Realistic sample messages for all major CFX types (test, production, materials, faults)
+    - `CFXSampleGenerator` class for programmatic sample creation
+    - `python -m pywats_cfx.explorer` CLI tool to list, view, and convert samples
+    - WATS mapping hints showing how CFX events route to pyWATS services
+  - Domain event models: `TestResultEvent`, `AssetFaultEvent`, `MaterialInstalledEvent`, etc.
+  - Unit tests for both packages: `test_pywats_events.py`, `test_pywats_cfx.py`
+
 - **Internal Backend Endpoints Analysis** - Comprehensive audit of all internal API usage:
   - Documented 68 internal endpoints across 6 modules (Analytics, Asset, Process, Product, Production, Software)
   - Verified all endpoints properly flagged with `⚠️ INTERNAL` warnings
