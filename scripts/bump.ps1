@@ -337,41 +337,20 @@ try {
     Set-PyprojectVersion -PyprojectPath "$RepoRoot\pyproject.toml" -NewVersion $newVersion
     Set-PythonInitVersion -InitPyPath "$RepoRoot\src\pywats\__init__.py" -NewVersion $newVersion
 
-    Write-Step "Building Sphinx API documentation"
+    Write-Step "Updating Sphinx API documentation version"
     
     if ($DryRun) {
-        Write-DryRunMsg "Would build Sphinx docs: sphinx-build docs/api docs/api/_build/html"
+        Write-DryRunMsg "Would update Sphinx conf.py version to $newVersion"
     }
     else {
-        # Update version in Sphinx conf.py
+        # Update version in Sphinx conf.py (GitHub Actions will build the docs)
         $confPath = "$RepoRoot\docs\api\conf.py"
         $confContent = Get-Content $confPath -Raw
         $confContent = $confContent -replace "release\s*=\s*'[^']+'", "release = '$newVersion'"
         $confContent = $confContent -replace "version\s*=\s*'[^']+'", "version = '$($newVersion -replace 'b.*$', '')'"
         Set-Content -Path $confPath -Value $confContent -NoNewline
         Write-Success "Updated Sphinx conf.py version"
-        
-        # Build the docs
-        Push-Location "$RepoRoot\docs\api"
-        try {
-            Write-Info "Installing sphinx dependencies if needed..."
-            python -m pip install --quiet sphinx sphinx-rtd-theme myst-parser sphinx-autodoc-typehints 2>&1 | Out-Null
-            
-            Write-Info "Building HTML documentation..."
-            sphinx-build -b html -q . _build/html
-            
-            if ($LASTEXITCODE -eq 0) {
-                Write-Success "Sphinx documentation built successfully"
-                Write-Info "Docs location: docs/api/_build/html/index.html"
-            }
-            else {
-                Write-Host "  ⚠️  WARNING: Sphinx build had warnings or errors" -ForegroundColor Yellow
-                Write-Info "Continuing with release..."
-            }
-        }
-        finally {
-            Pop-Location
-        }
+        Write-Info "Sphinx documentation will be built by GitHub Actions during publish"
     }
 
     Write-Step "Committing + tagging"
