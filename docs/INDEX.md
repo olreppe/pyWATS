@@ -5,10 +5,18 @@ Official documentation for pyWATS - Python API library for WATS.
 ## Getting Started
 
 - **[Getting Started Guide](getting-started.md)** - Complete installation, configuration, and initialization guide
-- **[Client Installation](installation/client.md)** - End-user client installation for test stations
 - **[Quick Reference](quick-reference.md)** - Common patterns and code snippets
 - **[README](../README.md)** - Package overview and quick start
 - **[CHANGELOG](../CHANGELOG.md)** - Version history and release notes
+
+## Installation
+
+**Choose the right installation for your needs:**
+
+- **[Installation Overview](installation/)** - Decision tree and comparison
+- **[API Installation](installation/api.md)** - Python SDK only (~5 MB) - for scripts and direct integration
+- **[Client Service](installation/client.md)** - Background service with queue and converters
+- **[GUI Application](installation/gui.md)** - Desktop app for monitoring and configuration
 
 ## Architecture & Design
 

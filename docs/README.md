@@ -6,11 +6,24 @@ This folder contains **official, user-facing documentation** that ships with `pi
 
 ### Getting Started
 - **[getting-started.md](getting-started.md)** - Complete installation, configuration, logging, and error handling guide
+- **[INDEX.md](INDEX.md)** - Documentation index and navigation
+
+### Installation Guides
+
+Choose by component and use case:
+
+- **[installation/](installation/)** - Installation overview with decision tree
+  - **[installation/api.md](installation/api.md)** - Python SDK only
+  - **[installation/client.md](installation/client.md)** - Client service with queue
+  - **[installation/gui.md](installation/gui.md)** - Desktop GUI application
+  - **[installation/docker.md](installation/docker.md)** - Container deployment
+  - **[installation/windows-service.md](installation/windows-service.md)** - Windows service
+  - **[installation/linux-service.md](installation/linux-service.md)** - Linux systemd
+  - **[installation/macos-service.md](installation/macos-service.md)** - macOS launchd
 
 ### Domain API Documentation
 These files are included in the PyPI package:
 
-- **[INDEX.md](INDEX.md)** - Documentation index and navigation
 - **[modules/product.md](modules/product.md)** - Product domain API reference
 - **[modules/asset.md](modules/asset.md)** - Asset domain API reference
 - **[modules/production.md](modules/production.md)** - Production domain API reference

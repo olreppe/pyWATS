@@ -26,6 +26,17 @@ exclude src/pywats/domains/report/report_models/uur/UUR_IMPLEMENTATION_INSTRUCTI
 include docs/INDEX.md
 include docs/README.md
 include docs/getting-started.md
+include docs/architecture.md
+include docs/client-architecture.md
+include docs/integration-patterns.md
+include docs/quick-reference.md
+include docs/error-catalog.md
+include docs/env-variables.md
+include docs/wats-domain-knowledge.md
+include docs/llm-converter-guide.md
+
+# Include installation documentation
+recursive-include docs/installation *.md
 
 # Include domain module documentation
 recursive-include docs/modules *.md
