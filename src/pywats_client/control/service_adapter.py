@@ -128,7 +128,7 @@ class ServiceAdapter(ABC):
 class WindowsNativeServiceAdapter(ServiceAdapter):
     """Windows Service using pywin32 - appears in Task Manager"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         # Lazy import to avoid loading pywin32 on non-Windows
         from .windows_native_service import (
             install_service, uninstall_service, start_service,
@@ -359,7 +359,7 @@ class LinuxSystemdAdapter(ServiceAdapter):
 class MacOSLaunchdAdapter(ServiceAdapter):
     """macOS Service using launchd"""
     
-    def __init__(self, user_agent: bool = False):
+    def __init__(self, user_agent: bool = False) -> None:
         """
         Args:
             user_agent: If True, use LaunchAgent (user-level), else LaunchDaemon (system-level)

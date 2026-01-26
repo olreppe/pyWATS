@@ -56,7 +56,7 @@ class PendingWatcher:
         api_client,
         reports_directory: Path,
         initialize_async: bool = False
-    ):
+    ) -> None:
         """
         Initialize pending watcher.
         

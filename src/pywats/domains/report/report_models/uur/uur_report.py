@@ -42,7 +42,7 @@ class UURReport(Report):
     # UUR Specific  
     uur_info: UURInfo = Field(default_factory=UURInfo, validation_alias="uur", serialization_alias="uur")
     
-    def __init__(self, **data):
+    def __init__(self, **data) -> None:
         """Initialize UUR report"""
         super().__init__(**data)
         

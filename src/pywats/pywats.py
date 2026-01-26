@@ -61,7 +61,7 @@ class SyncServiceWrapper:
     to run synchronously.
     """
     
-    def __init__(self, async_service: Any):
+    def __init__(self, async_service: Any) -> None:
         """
         Initialize with an async service instance.
         
@@ -195,7 +195,7 @@ class pyWATS:
         retry_enabled: bool = True,
         instance_id: str = "default",
         settings: Optional['APISettings'] = None,
-    ):
+    ) -> None:
         """
         Initialize the pyWATS API.
         

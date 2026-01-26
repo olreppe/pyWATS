@@ -8,7 +8,7 @@ import pytest
 from datetime import datetime
 
 from pywats.tools.report_builder import ReportBuilder, quick_report
-from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 
 class TestReportBuilder:

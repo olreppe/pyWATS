@@ -48,7 +48,7 @@ class AsyncAnalyticsService:
     Includes internal API methods for Unit Flow and measurement filtering.
     """
 
-    def __init__(self, repository: AsyncAnalyticsRepository):
+    def __init__(self, repository: AsyncAnalyticsRepository) -> None:
         """
         Initialize with AsyncAnalyticsRepository.
 

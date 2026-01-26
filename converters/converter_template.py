@@ -76,7 +76,7 @@ from pywats.domains.report.report_models.uut.uut_info import UUTInfo
 from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
 
 # Comparison operators for limit checking
-from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 # Optional: Import step status enum for type hints
 from pywats.domains.report.report_models.uut.step import StepStatus

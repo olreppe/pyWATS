@@ -38,7 +38,7 @@ class AsyncProcessRepository:
         http_client: "AsyncHttpClient",
         error_handler: Optional["ErrorHandler"] = None,
         base_url: Optional[str] = None
-    ):
+    ) -> None:
         """
         Initialize repository with async HTTP client.
         

@@ -64,7 +64,7 @@ class ProcessRepositoryInternal:
         http_client: HttpClient, 
         base_url: str,
         error_handler: Optional["ErrorHandler"] = None
-    ):
+    ) -> None:
         """
         Initialize repository with HTTP client and base URL.
         

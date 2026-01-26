@@ -373,7 +373,7 @@ class NewConverterDialog(QDialog):
         self, 
         converters_folder: str = "",
         parent=None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.converters_folder = Path(converters_folder) if converters_folder else None
         self.created_path: Optional[Path] = None

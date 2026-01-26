@@ -32,7 +32,7 @@ class AsyncScimRepository:
         self, 
         http_client: "AsyncHttpClient",
         error_handler: Optional["ErrorHandler"] = None
-    ):
+    ) -> None:
         """
         Initialize the async SCIM repository.
         

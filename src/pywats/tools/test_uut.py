@@ -17,7 +17,7 @@ import math
 from ..domains.report.report_models.uut.uut_report import UUTReport
 from ..domains.report.report_models.uut.uut_info import UUTInfo
 from ..domains.report.report_models.uut.steps.sequence_call import SequenceCall, SequenceCallInfo
-from ..domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 from ..domains.report.report_models.uut.steps.generic_step import FlowType
 from ..domains.report.report_models.chart import Chart, ChartSeries, ChartType
 from ..domains.report.report_models.misc_info import MiscInfo

@@ -2,7 +2,7 @@ from typing import Optional, Union, Literal, TYPE_CHECKING
 from uuid import UUID
 from pydantic import Field, field_serializer, model_serializer, model_validator
 
-from .comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 from ..step import Step
 from .measurement import BooleanMeasurement, MultiBooleanMeasurement

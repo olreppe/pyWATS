@@ -5,7 +5,7 @@ from pydantic import Field, model_validator, root_validator
 from pydantic_core.core_schema import FieldPlainInfoSerializerFunction
 
 from ...wats_base import WATSBase
-from .comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 class Measurement(WATSBase):
     parent_step: Optional[Any] = Field(default=None, exclude=True)

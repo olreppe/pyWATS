@@ -51,7 +51,7 @@ class ClientService:
         service.start()  # Blocks until stopped
     """
     
-    def __init__(self, instance_id: str = "default"):
+    def __init__(self, instance_id: str = "default") -> None:
         """
         Initialize service.
         

@@ -23,7 +23,7 @@ class AsyncSoftwareService:
     Provides high-level async operations for managing software packages.
     """
 
-    def __init__(self, repository: AsyncSoftwareRepository):
+    def __init__(self, repository: AsyncSoftwareRepository) -> None:
         """
         Initialize with AsyncSoftwareRepository.
 

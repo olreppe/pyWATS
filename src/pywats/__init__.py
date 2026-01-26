@@ -96,19 +96,13 @@ from .shared import Result, Success, Failure, ErrorCode, failure_from_exception
 
 # Type-safe enums and path utilities for query building
 from .shared import (
-    StatusFilter, RunFilter, StepType, CompOperator, SortDirection,
+    StatusFilter, RunFilter, StepType, CompOp, CompOperator, SortDirection,
     StepPath, MeasurementPath, normalize_path, display_path, normalize_paths,
 )
 from .domains.report.enums import DateGrouping
 
 # Discovery helpers for API exploration (LLM/Agent-friendly)
 from .shared import discover
-
-# Comparison operator for step limits (convenient top-level import)
-from .domains.report.report_models.uut.steps.comp_operator import CompOp
-
-# UUT/UUR Report models (import separately to avoid name conflicts)
-# from pywats.models import UUTReport, UURReport, Step, etc.
 
 __version__ = "0.1.0b36"
 __wats_server_version__ = "2025.3.9.824"  # Minimum required WATS server version

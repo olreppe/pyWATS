@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 class StatusIndicator(QFrame):
     """Visual status indicator widget"""
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setFixedSize(16, 16)
         self._status = "unknown"
@@ -80,7 +80,7 @@ class DashboardPage(BasePage):
         config: ClientConfig,
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         self._main_window = main_window
         super().__init__(config, parent)
         

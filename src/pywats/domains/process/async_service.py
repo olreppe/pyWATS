@@ -14,6 +14,7 @@ import logging
 from .async_repository import AsyncProcessRepository
 from .models import ProcessInfo, RepairOperationConfig, RepairCategory
 from ...core.cache import AsyncTTLCache
+from ...shared.stats import CacheStats
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class AsyncProcessService:
         repository: AsyncProcessRepository,
         cache_ttl: float = DEFAULT_CACHE_TTL,
         max_cache_size: int = 10000
-    ):
+    ) -> None:
         """
         Initialize service with repository and enhanced caching.
         
@@ -115,16 +116,24 @@ class AsyncProcessService:
         return None
 
     @property
-    def cache_stats(self) -> Dict[str, Any]:
-        """Get cache statistics."""
-        stats = self._cache.stats
-        return {
-            'hits': stats.hits,
-            'misses': stats.misses,
-            'hit_rate': f"{stats.hit_rate:.1%}",
-            'evictions': stats.evictions,
-            'cache_size': self._cache.size
-        }
+    def cache_stats(self) -> CacheStats:
+        """
+        Get cache statistics.
+        
+        Returns:
+            CacheStats with hit/miss counts and rates
+            
+        Example:
+            >>> stats = service.cache_stats
+            >>> print(f"Hit rate: {stats.hit_rate:.1f}%")
+        """
+        internal_stats = self._cache.stats
+        return CacheStats(
+            hits=internal_stats.hits,
+            misses=internal_stats.misses,
+            size=self._cache.size,
+            max_size=None  # TTL cache doesn't have max size
+        )
 
     async def refresh(self) -> None:
         """

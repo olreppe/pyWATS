@@ -6,7 +6,7 @@ from ...common_types import Field, model_validator, field_serializer, Optional, 
 
 from ..step import Step, StepStatus
 from .measurement import LimitMeasurement
-from .comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 class NumericMeasurement(LimitMeasurement):
     value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)

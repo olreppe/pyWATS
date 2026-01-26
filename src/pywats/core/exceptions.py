@@ -257,7 +257,7 @@ class ErrorHandler:
         return Product.model_validate(data)
     """
     
-    def __init__(self, mode: ErrorMode = ErrorMode.STRICT):
+    def __init__(self, mode: ErrorMode = ErrorMode.STRICT) -> None:
         self.mode = mode
         logger.debug(f"ErrorHandler initialized with mode: {mode.value}")
     

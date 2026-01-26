@@ -25,7 +25,7 @@ class AsyncRootCauseService:
     Provides high-level async operations for issue tracking and resolution.
     """
 
-    def __init__(self, repository: AsyncRootCauseRepository):
+    def __init__(self, repository: AsyncRootCauseRepository) -> None:
         """
         Initialize with AsyncRootCauseRepository.
 

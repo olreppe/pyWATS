@@ -53,7 +53,7 @@ class HeadlessService:
         instance_id: str = "default",
         client_config: Optional["ClientConfig"] = None,
         service_config: Optional[ServiceConfig] = None
-    ):
+    ) -> None:
         """
         Initialize headless service.
         

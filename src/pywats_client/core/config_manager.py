@@ -42,7 +42,7 @@ class ConfigManager:
     
     DEFAULT_CONFIG_FILENAME = "pywats_api.json"
     
-    def __init__(self, config_path: Optional[Path] = None, instance_id: str = "default"):
+    def __init__(self, config_path: Optional[Path] = None, instance_id: str = "default") -> None:
         """
         Initialize the config manager.
         

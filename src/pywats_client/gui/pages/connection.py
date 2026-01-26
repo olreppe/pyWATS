@@ -27,7 +27,7 @@ class ConnectionPage(BasePage):
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         self._main_window = main_window
         super().__init__(config, parent)
         self._setup_ui()

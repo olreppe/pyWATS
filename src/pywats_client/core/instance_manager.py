@@ -25,7 +25,7 @@ class InstanceLock:
     instances can read to identify running clients.
     """
     
-    def __init__(self, instance_id: str, base_path: Optional[Path] = None):
+    def __init__(self, instance_id: str, base_path: Optional[Path] = None) -> None:
         self.instance_id = instance_id
         self.base_path = base_path or self._get_default_lock_path()
         self.lock_file = self.base_path / f"instance_{instance_id}.lock"
@@ -137,7 +137,7 @@ class InstanceManager:
     - Create new instance configurations
     """
     
-    def __init__(self, base_path: Optional[Path] = None):
+    def __init__(self, base_path: Optional[Path] = None) -> None:
         self.base_path = base_path or self._get_default_path()
     
     def _get_default_path(self) -> Path:

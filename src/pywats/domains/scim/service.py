@@ -24,7 +24,7 @@ class ScimService:
     All business logic is in AsyncScimService.
     """
 
-    def __init__(self, async_service: AsyncScimService = None, *, repository=None):
+    def __init__(self, async_service: AsyncScimService = None, *, repository=None) -> None:
         """
         Initialize with AsyncScimService or repository.
 

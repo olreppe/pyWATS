@@ -240,7 +240,7 @@ class StationRegistry:
             print(f"{key}: {station}")
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize empty registry."""
         self._stations: Dict[str, Station] = {}
         self._active_key: Optional[str] = None

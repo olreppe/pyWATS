@@ -6,6 +6,6 @@ class ContextType(Enum):
     LegacyData = "LegacyData"
 
 class DeserializationContext:
-    def __init__(self, type: ContextType, defaults: dict):
+    def __init__(self, type: ContextType, defaults: dict) -> None:
         self.type = type
         self.defaults = defaults

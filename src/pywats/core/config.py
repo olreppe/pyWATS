@@ -163,7 +163,7 @@ class APISettings(BaseModel):
     retry_delay_seconds: int = Field(default=1, description="Delay between retries")
     
     # Error handling
-    error_mode: str = Field(default="strict", description="Error mode: 'strict' or 'lenient'")
+    error_mode: ErrorMode = Field(default=ErrorMode.STRICT, description="Error mode: STRICT or LENIENT")
     
     # Logging
     log_requests: bool = Field(default=False, description="Log HTTP requests")
@@ -188,7 +188,7 @@ class APISettings(BaseModel):
             "timeout_seconds": self.timeout_seconds,
             "max_retries": self.max_retries,
             "retry_delay_seconds": self.retry_delay_seconds,
-            "error_mode": self.error_mode,
+            "error_mode": self.error_mode.value if isinstance(self.error_mode, ErrorMode) else self.error_mode,
             "log_requests": self.log_requests,
             "log_responses": self.log_responses,
             "verify_ssl": self.verify_ssl,
@@ -210,11 +210,18 @@ class APISettings(BaseModel):
         """Create from dictionary."""
         domains = data.pop("domains", {})
         
+        # Handle error_mode as string or enum
+        error_mode_value = data.get("error_mode", "strict")
+        if isinstance(error_mode_value, str):
+            error_mode = ErrorMode(error_mode_value)
+        else:
+            error_mode = error_mode_value
+        
         settings = cls(
             timeout_seconds=data.get("timeout_seconds", 30),
             max_retries=data.get("max_retries", 3),
             retry_delay_seconds=data.get("retry_delay_seconds", 1),
-            error_mode=data.get("error_mode", "strict"),
+            error_mode=error_mode,
             log_requests=data.get("log_requests", False),
             log_responses=data.get("log_responses", False),
             verify_ssl=data.get("verify_ssl", True),

@@ -99,7 +99,7 @@ class PythonSyntaxHighlighter(QSyntaxHighlighter):
         'str', 'sum', 'super', 'tuple', 'type', 'vars', 'zip'
     ]
     
-    def __init__(self, document: QTextDocument):
+    def __init__(self, document: QTextDocument) -> None:
         super().__init__(document)
         self._setup_formats()
         self._setup_rules()
@@ -212,7 +212,7 @@ class CodeParser:
         'on_convert_error': {'type': 'method', 'required': False, 'params': 'source: ConverterSource, error: Exception, context: ConverterContext', 'return_type': 'None'},
     }
     
-    def __init__(self, source_code: str = ""):
+    def __init__(self, source_code: str = "") -> None:
         self.source_code = source_code
         self.lines = source_code.split('\n') if source_code else []
     
@@ -471,7 +471,7 @@ class ScriptEditorWidget(QWidget):
     # Emitted when a function is saved
     function_saved = Signal(str, str)  # function_name, new_source
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         
         self._file_path: Optional[Path] = None

@@ -21,7 +21,7 @@ class AsyncScimService:
     Provides high-level async methods for managing SCIM users in WATS.
     """
 
-    def __init__(self, repository: AsyncScimRepository):
+    def __init__(self, repository: AsyncScimRepository) -> None:
         """
         Initialize the async SCIM service.
         

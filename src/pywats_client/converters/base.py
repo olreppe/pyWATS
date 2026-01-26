@@ -13,143 +13,9 @@ from pathlib import Path
 from enum import Enum
 import mimetypes
 
-# Optional: python-magic for advanced file type detection
-try:
-    import magic  # type: ignore
-    HAS_MAGIC = True
-except ImportError:
-    HAS_MAGIC = False
-
-
-class ConversionStatus(Enum):
-    """Status of a conversion operation"""
-    SUCCESS = "success"
-    FAILED = "failed"
-    SUSPENDED = "suspended"  # Conversion suspended, will retry later
-    SKIPPED = "skipped"  # File doesn't qualify for this converter
-
-
-class PostProcessAction(Enum):
-    """Post-processing action after successful conversion"""
-    DELETE = "delete"  # Delete the source file
-    MOVE = "move"      # Move to Done folder
-    ZIP = "zip"        # Zip and move to Done folder
-    KEEP = "keep"      # Keep file in place (no action)
-
-
-class FileInfo:
-    """
-    Information about the file being converted.
-    
-    Provides access to file metadata, path, name, extension, etc.
-    """
-    
-    def __init__(self, file_path: Path):
-        self.path = file_path
-        self.name = file_path.name
-        self.stem = file_path.stem  # Filename without extension
-        self.extension = file_path.suffix
-        self.size = file_path.stat().st_size if file_path.exists() else 0
-        self.parent = file_path.parent
-        
-        # Detect MIME type
-        self.mime_type, _ = mimetypes.guess_type(str(file_path))
-        
-        # Try to detect file signature (magic number) if available
-        self.file_type = None
-        if HAS_MAGIC:
-            try:
-                if file_path.exists():
-                    self.file_type = magic.from_file(str(file_path), mime=True)
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).debug(f"Could not detect file type for {file_path}: {e}")
-    
-    def __str__(self) -> str:
-        return f"FileInfo({self.name}, {self.size} bytes, {self.mime_type or 'unknown'})"
-
-
-@dataclass
-class ConverterResult:
-    """
-    Result of a conversion operation.
-    
-    Attributes:
-        status: Conversion status (success, failed, suspended, skipped)
-        report: The converted UUT/UUR report data (if successful)
-        error: Error message (if failed)
-        warnings: List of warning messages
-        metadata: Additional metadata about the conversion
-        suspend_reason: Reason for suspension (if status=SUSPENDED)
-        post_action: Post-processing action (delete, move, zip, keep)
-    """
-    status: ConversionStatus
-    report: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    warnings: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    suspend_reason: Optional[str] = None
-    post_action: PostProcessAction = PostProcessAction.MOVE
-    
-    @property
-    def success(self) -> bool:
-        """Backward compatibility property"""
-        return self.status == ConversionStatus.SUCCESS
-    
-    @classmethod
-    def success_result(
-        cls,
-        report: Dict[str, Any],
-        post_action: PostProcessAction = PostProcessAction.MOVE,
-        warnings: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> "ConverterResult":
-        """Create a successful conversion result"""
-        return cls(
-            status=ConversionStatus.SUCCESS,
-            report=report,
-            warnings=warnings or [],
-            metadata=metadata or {},
-            post_action=post_action
-        )
-    
-    @classmethod
-    def failed_result(
-        cls,
-        error: str,
-        post_action: PostProcessAction = PostProcessAction.KEEP,
-        warnings: Optional[List[str]] = None
-    ) -> "ConverterResult":
-        """Create a failed conversion result"""
-        return cls(
-            status=ConversionStatus.FAILED,
-            error=error,
-            warnings=warnings or [],
-            post_action=post_action
-        )
-    
-    @classmethod
-    def suspended_result(
-        cls,
-        reason: str,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> "ConverterResult":
-        """Create a suspended conversion result (will retry later)"""
-        return cls(
-            status=ConversionStatus.SUSPENDED,
-            suspend_reason=reason,
-            metadata=metadata or {},
-            post_action=PostProcessAction.KEEP
-        )
-    
-    @classmethod
-    def skipped_result(cls, reason: str) -> "ConverterResult":
-        """Create a skipped conversion result (file doesn't qualify)"""
-        return cls(
-            status=ConversionStatus.SKIPPED,
-            error=reason,
-            post_action=PostProcessAction.KEEP
-        )
+# Import canonical models from models.py to avoid duplication
+# These are re-exported for backward compatibility
+from .models import ConversionStatus, PostProcessAction, FileInfo, ConverterResult
 
 
 @dataclass
@@ -603,7 +469,7 @@ class CSVConverter(ConverterBase):
         part_number_column: int = 0,
         serial_number_column: int = 1,
         result_column: int = 2
-    ):
+    ) -> None:
         super().__init__()
         self.delimiter = delimiter
         self.encoding = encoding

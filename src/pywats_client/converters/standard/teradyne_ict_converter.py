@@ -66,7 +66,7 @@ class Event(Enum):
 class PrefixUnit:
     """Unit prefix with conversion factor"""
     
-    def __init__(self, symbol: str, factor: float):
+    def __init__(self, symbol: str, factor: float) -> None:
         self.symbol = symbol
         self.factor = factor
     

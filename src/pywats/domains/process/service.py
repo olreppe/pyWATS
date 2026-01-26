@@ -28,7 +28,7 @@ class ProcessService:
     DEFAULT_TEST_PROCESS_CODE = 100
     DEFAULT_REPAIR_PROCESS_CODE = 500
 
-    def __init__(self, async_service: AsyncProcessService = None, *, repository=None):
+    def __init__(self, async_service: AsyncProcessService = None, *, repository=None) -> None:
         """
         Initialize with AsyncProcessService or repository.
 

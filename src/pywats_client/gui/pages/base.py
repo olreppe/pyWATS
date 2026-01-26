@@ -77,7 +77,7 @@ class BasePage(QWidget, ErrorHandlingMixin):
         self, 
         config: ClientConfig, 
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.config = config
         self._event_subscriptions: List[tuple[AppEvent, Callable]] = []

@@ -22,7 +22,7 @@ class AssetService:
     All business logic is in AsyncAssetService.
     """
 
-    def __init__(self, async_service: AsyncAssetService = None, *, repository=None):
+    def __init__(self, async_service: AsyncAssetService = None, *, repository=None) -> None:
         """
         Initialize with AsyncAssetService or repository.
 

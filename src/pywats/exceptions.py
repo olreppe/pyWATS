@@ -8,12 +8,12 @@ from typing import Optional, Dict, Any
 class PyWATSError(Exception):
     """Base exception for all pyWATS errors."""
     
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(message)
         self.message = message
         self.details = details or {}
     
-    def __str__(self):
+    def __str__(self) -> str:
         if self.details:
             return f"{self.message} - Details: {self.details}"
         return self.message
@@ -27,7 +27,7 @@ class AuthenticationError(PyWATSError):
 class NotFoundError(PyWATSError):
     """Raised when a requested resource is not found."""
     
-    def __init__(self, resource_type: str, identifier: str, message: Optional[str] = None):
+    def __init__(self, resource_type: str, identifier: str, message: Optional[str] = None) -> None:
         self.resource_type = resource_type
         self.identifier = identifier
         msg = message or f"{resource_type} '{identifier}' not found"
@@ -37,7 +37,7 @@ class NotFoundError(PyWATSError):
 class ValidationError(PyWATSError):
     """Raised when data validation fails."""
     
-    def __init__(self, message: str, field: Optional[str] = None, value: Optional[Any] = None):
+    def __init__(self, message: str, field: Optional[str] = None, value: Optional[Any] = None) -> None:
         self.field = field
         self.value = value
         details: Dict[str, Any] = {}
@@ -51,7 +51,7 @@ class ValidationError(PyWATSError):
 class ServerError(PyWATSError):
     """Raised when the server returns an error."""
     
-    def __init__(self, status_code: int, message: str, response_body: Optional[str] = None):
+    def __init__(self, status_code: int, message: str, response_body: Optional[str] = None) -> None:
         self.status_code = status_code
         self.response_body = response_body
         super().__init__(

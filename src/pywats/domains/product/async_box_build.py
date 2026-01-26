@@ -50,7 +50,7 @@ class AsyncBoxBuildTemplate:
         parent_revision: ProductRevision,
         service: "AsyncProductService",
         existing_relations: Optional[List[ProductRevisionRelation]] = None
-    ):
+    ) -> None:
         """
         Initialize box build template.
         

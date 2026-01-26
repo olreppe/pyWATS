@@ -25,7 +25,7 @@ class ProductService:
     ⚠️ INTERNAL API methods are marked and may change without notice.
     """
 
-    def __init__(self, async_service: AsyncProductService = None, *, repository=None):
+    def __init__(self, async_service: AsyncProductService = None, *, repository=None) -> None:
         """
         Initialize with AsyncProductService or repository.
 

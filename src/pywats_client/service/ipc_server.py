@@ -23,7 +23,7 @@ class IPCServer:
     Uses Qt LocalSocket (cross-platform alternative to named pipes/domain sockets).
     """
     
-    def __init__(self, instance_id: str, service: 'ClientService'):
+    def __init__(self, instance_id: str, service: 'ClientService') -> None:
         """
         Initialize IPC server.
         

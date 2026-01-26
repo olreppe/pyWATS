@@ -166,7 +166,7 @@ class FailCodes:
     Based on C# FailCodes class specification.
     """
     
-    def __init__(self, root_fail_codes: List[FailCode]):
+    def __init__(self, root_fail_codes: List[FailCode]) -> None:
         """
         Initialize with root fail codes.
         

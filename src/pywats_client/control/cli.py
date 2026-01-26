@@ -40,7 +40,7 @@ from dataclasses import fields
 class ConfigCLI:
     """CLI interface for configuration management"""
     
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Optional[Path] = None) -> None:
         """
         Initialize CLI with config path.
         

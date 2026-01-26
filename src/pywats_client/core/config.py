@@ -15,8 +15,10 @@ import socket
 import uuid
 from pathlib import Path
 from dataclasses import dataclass, field, asdict, fields
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
+
+from .constants import ConverterType, FolderName
 
 
 @dataclass
@@ -43,7 +45,7 @@ class ConverterConfig:
     pending_folder: str = ""     # Folder for suspended files (retry)
     
     # Converter type
-    converter_type: str = "file"  # "file", "folder", or "scheduled"
+    converter_type: Union[ConverterType, str] = ConverterType.FILE
     
     # State
     enabled: bool = True
@@ -94,17 +96,17 @@ class ConverterConfig:
     @property
     def is_file_converter(self) -> bool:
         """True if this is a file-based converter"""
-        return self.converter_type == "file"
+        return self.converter_type == ConverterType.FILE or self.converter_type == "file"
     
     @property
     def is_folder_converter(self) -> bool:
         """True if this is a folder-based converter"""
-        return self.converter_type == "folder"
+        return self.converter_type == ConverterType.FOLDER or self.converter_type == "folder"
     
     @property
     def is_scheduled_converter(self) -> bool:
         """True if this is a scheduled converter"""
-        return self.converter_type == "scheduled"
+        return self.converter_type == ConverterType.SCHEDULED or self.converter_type == "scheduled"
     
     def validate(self) -> List[str]:
         """
@@ -121,15 +123,21 @@ class ConverterConfig:
         if not self.module_path:
             errors.append("module_path is required")
         
-        if self.converter_type not in ("file", "folder", "scheduled"):
-            errors.append(f"Invalid converter_type: {self.converter_type}")
+        # Normalize converter_type for validation
+        ct = self.converter_type
+        if isinstance(ct, str):
+            try:
+                ct = ConverterType(ct)
+            except ValueError:
+                errors.append(f"Invalid converter_type: {self.converter_type}")
+                return errors  # Can't continue validation without valid type
         
         # File/folder converters need a watch folder
-        if self.converter_type in ("file", "folder") and not self.watch_folder:
+        if ct in (ConverterType.FILE, ConverterType.FOLDER) and not self.watch_folder:
             errors.append("watch_folder is required for file/folder converters")
         
         # Scheduled converters need a schedule
-        if self.converter_type == "scheduled":
+        if ct == ConverterType.SCHEDULED:
             if not self.schedule_interval_seconds and not self.cron_expression:
                 errors.append("Scheduled converters need schedule_interval_seconds or cron_expression")
         

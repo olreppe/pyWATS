@@ -355,7 +355,7 @@ class ConverterResult:
     
     Example with UUTReport (RECOMMENDED):
         from pywats.domains.report.report_models import UUTReport
-        from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+        from pywats.shared.enums import CompOp
         
         report = UUTReport(
             pn="PART-001", sn="SN-001", rev="A",

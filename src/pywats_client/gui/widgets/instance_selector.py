@@ -33,7 +33,7 @@ class InstanceSelector(QWidget):
     
     instance_selected = Signal(str)  # instance_id
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initialize instance selector.
         

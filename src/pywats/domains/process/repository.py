@@ -28,7 +28,7 @@ class ProcessRepository:
         self, 
         http_client: "HttpClient",
         error_handler: Optional["ErrorHandler"] = None
-    ):
+    ) -> None:
         """
         Initialize with HTTP client.
 

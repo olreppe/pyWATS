@@ -179,7 +179,7 @@ class MiscUURInfoCollection:
     Based on C# MiscUURInfoColletion class specification.
     """
     
-    def __init__(self, misc_infos: Optional[List[MiscUURInfo]] = None):
+    def __init__(self, misc_infos: Optional[List[MiscUURInfo]] = None) -> None:
         """
         Initialize collection.
         

@@ -16,14 +16,14 @@ from .boolean_step import BooleanStep, MultiBooleanStep
 from .generic_step import GenericStep, FlowType
 from .chart_step import ChartStep
 from .action_step import ActionStep
-from .comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 # ------------------------------------------------------------------------
 # Custom list class with parent reference
 class StepList(List[StepType]):
     """Custom list that behaves like a list but has a parent reference."""
 
-    def __init__(self, items=None, parent: Optional["SequenceCall"] = None):  # Use string reference
+    def __init__(self, items=None, parent: Optional["SequenceCall"] = None) -> None:  # Use string reference
         super().__init__(items or [])
         self.parent = parent
 

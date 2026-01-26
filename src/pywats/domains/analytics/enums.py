@@ -347,7 +347,7 @@ class DimensionBuilder:
         >>> filter = WATSFilter(dimensions=dims, period_count=30)
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Create an empty DimensionBuilder."""
         self._parts: List[str] = []
     

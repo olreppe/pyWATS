@@ -39,7 +39,7 @@ import random
 from pywats.domains.product import Product, ProductRevision, BomItem, ProductRevisionRelation
 from pywats.domains.product.enums import ProductState
 from pywats.domains.production import Unit
-from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 from pywats.shared import Setting
 from pywats.core.exceptions import NotFoundError
 

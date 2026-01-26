@@ -13,6 +13,7 @@ from .models import WATSFilter, ReportHeader
 from .report_models import UUTReport, UURReport
 from .enums import ReportType
 from ...core.sync_runner import run_sync
+from ...shared.stats import QueueProcessingResult
 
 
 class ReportService:
@@ -29,7 +30,7 @@ class ReportService:
         *,
         repository: AsyncReportRepository = None,
         station_provider: Optional[Callable[[], StationInfo]] = None
-    ):
+    ) -> None:
         """
         Initialize with AsyncReportService or repository.
 
@@ -291,7 +292,7 @@ class ReportService:
         self,
         queue_dir: Optional[str] = None,
         include_errors: bool = True
-    ) -> Dict[str, int]:
+    ) -> QueueProcessingResult:
         """
         Process all queued reports.
 
@@ -300,11 +301,12 @@ class ReportService:
             include_errors: Also retry error reports (default: True)
 
         Returns:
-            Dictionary with success/failure counts
+            QueueProcessingResult with success/failure counts
 
         Example:
-            >>> results = api.report.process_queue()
-            >>> print(f"Success: {results['success']}, Failed: {results['failed']}")
+            >>> result = api.report.process_queue()
+            >>> print(f"Success: {result.success}, Failed: {result.failed}")
+            >>> print(f"Success rate: {result.success_rate:.1f}%")
         """
         return run_sync(self._async_service.process_queue(
             queue_dir=queue_dir,

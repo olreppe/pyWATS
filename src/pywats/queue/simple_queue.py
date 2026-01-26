@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .formats import WSJFConverter
+from ..shared.stats import QueueProcessingResult
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +100,7 @@ class SimpleQueue:
         queue_dir: Union[str, Path],
         max_retries: int = 3,
         delete_completed: bool = True,
-    ):
+    ) -> None:
         """
         Initialize the queue.
         
@@ -212,7 +213,7 @@ class SimpleQueue:
         """Get count of error reports."""
         return len(list(self._queue_dir.glob("*.error.wsjf")))
     
-    def process_all(self, include_errors: bool = True) -> Dict[str, int]:
+    def process_all(self, include_errors: bool = True) -> QueueProcessingResult:
         """
         Process all reports in the queue.
         
@@ -220,34 +221,35 @@ class SimpleQueue:
             include_errors: Also retry error reports (default: True)
             
         Returns:
-            Dictionary with success/failure counts
+            QueueProcessingResult with success/failure counts
             
         Example:
-            >>> results = queue.process_all()
-            >>> print(f"Success: {results['success']}, Failed: {results['failed']}")
+            >>> result = queue.process_all()
+            >>> print(f"Success: {result.success}, Failed: {result.failed}")
+            >>> print(f"Success rate: {result.success_rate:.1f}%")
         """
-        results = {"success": 0, "failed": 0, "skipped": 0}
+        result = QueueProcessingResult()
         
         # Process pending reports
         for queued_report in self.list_pending():
             if self._process_single(queued_report):
-                results["success"] += 1
+                result.success += 1
             else:
-                results["failed"] += 1
+                result.failed += 1
         
         # Process error reports if requested
         if include_errors:
             for queued_report in self.list_errors():
                 if queued_report.attempts < self._max_retries:
                     if self._process_single(queued_report):
-                        results["success"] += 1
+                        result.success += 1
                     else:
-                        results["failed"] += 1
+                        result.failed += 1
                 else:
-                    results["skipped"] += 1
+                    result.skipped += 1
                     logger.warning(f"Skipping {queued_report.file_name} (max retries exceeded)")
         
-        return results
+        return result
     
     def _process_single(self, queued_report: QueuedReport) -> bool:
         """
@@ -311,7 +313,7 @@ class SimpleQueue:
             logger.error(f"Failed to submit {file_path.name}: {ex}")
             return False
     
-    def start_auto_process(self, interval_seconds: int = 300):
+    def start_auto_process(self, interval_seconds: int = 300) -> None:
         """
         Start automatic background processing of the queue.
         
@@ -339,14 +341,14 @@ class SimpleQueue:
         self._auto_process_task = asyncio.create_task(auto_process_loop())
         logger.info(f"Started auto-process (interval: {interval_seconds}s)")
     
-    def stop_auto_process(self):
+    def stop_auto_process(self) -> None:
         """Stop automatic background processing."""
         if self._auto_process_task is not None:
             self._auto_process_task.cancel()
             self._auto_process_task = None
             logger.info("Stopped auto-process")
     
-    def clear_completed(self):
+    def clear_completed(self) -> None:
         """Remove all completed reports."""
         count = 0
         for file_path in self._queue_dir.glob("*.completed.wsjf"):
@@ -354,7 +356,7 @@ class SimpleQueue:
             count += 1
         logger.info(f"Cleared {count} completed reports")
     
-    def clear_errors(self):
+    def clear_errors(self) -> None:
         """Remove all error reports."""
         count = 0
         for file_path in self._queue_dir.glob("*.error.wsjf"):

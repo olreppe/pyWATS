@@ -238,7 +238,7 @@ class ConverterSettingsDialogV2(QDialog):
         config: Optional[ConverterConfig] = None,
         user_folder: str = "",
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.converter_info = converter_info
         self.converter_config = config
@@ -666,7 +666,7 @@ class ConverterEditorDialogV2(QDialog):
         converter_info: ConverterInfo,
         user_folder: Path,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.converter_info = converter_info
         self.user_folder = user_folder
@@ -958,7 +958,7 @@ class ConvertersPageV2(BasePage):
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         self._main_window = main_window
         super().__init__(config, parent)
         self._setup_ui()

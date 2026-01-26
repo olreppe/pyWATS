@@ -32,7 +32,7 @@ class ServiceTrayIcon(QObject):
       - Exit Tray Icon
     """
     
-    def __init__(self, instance_id: str = "default", parent=None):
+    def __init__(self, instance_id: str = "default", parent=None) -> None:
         super().__init__(parent)
         
         self.instance_id = instance_id

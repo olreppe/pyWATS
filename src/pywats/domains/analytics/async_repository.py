@@ -55,7 +55,7 @@ class AsyncAnalyticsRepository:
         http_client: "AsyncHttpClient",
         error_handler: Optional["ErrorHandler"] = None,
         base_url: Optional[str] = None
-    ):
+    ) -> None:
         """
         Initialize with async HTTP client.
 

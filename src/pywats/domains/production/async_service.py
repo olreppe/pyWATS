@@ -32,7 +32,7 @@ class AsyncProductionService:
         self, 
         repository: AsyncProductionRepository, 
         base_url: str = ""
-    ):
+    ) -> None:
         """
         Initialize with async repository.
 

@@ -24,6 +24,8 @@ from enum import Enum
 from collections import deque
 import uuid
 
+from ..shared.stats import QueueStats
+
 logger = logging.getLogger(__name__)
 
 
@@ -254,7 +256,7 @@ class MemoryQueue(BaseQueue):
         self,
         max_size: Optional[int] = None,
         default_max_attempts: int = 3,
-    ):
+    ) -> None:
         """
         Initialize the memory queue.
         
@@ -530,18 +532,28 @@ class MemoryQueue(BaseQueue):
                 if item := self._items.get(item_id):
                     yield item
     
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> QueueStats:
         """
         Get queue statistics.
         
         Returns:
-            Dictionary with counts per status
+            QueueStats with counts per status
+            
+        Example:
+            >>> stats = queue.get_stats()
+            >>> print(f"Pending: {stats.pending}, Processing: {stats.processing}")
         """
         with self._lock:
-            stats = {status.value: 0 for status in QueueItemStatus}
+            stats = QueueStats()
             for item in self._items.values():
-                stats[item.status.value] += 1
-            stats["total"] = len(self._items)
+                if item.status == QueueItemStatus.PENDING:
+                    stats.pending += 1
+                elif item.status == QueueItemStatus.PROCESSING:
+                    stats.processing += 1
+                elif item.status == QueueItemStatus.COMPLETED:
+                    stats.completed += 1
+                elif item.status == QueueItemStatus.FAILED:
+                    stats.failed += 1
             return stats
     
     # Async support

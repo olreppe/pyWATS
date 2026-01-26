@@ -20,7 +20,7 @@ from ..domains.report.report_models import (
 )
 
 # Comparison operator (convenient import without deep path)
-from ..domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 __all__ = [
     # UUT/UUR Report models (WSJF format)

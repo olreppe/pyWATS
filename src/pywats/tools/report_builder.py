@@ -38,7 +38,7 @@ from dataclasses import dataclass, field
 from ..domains.report.report_models.uut.uut_report import UUTReport
 from ..domains.report.report_models.uut.uut_info import UUTInfo
 from ..domains.report.report_models.uut.steps.sequence_call import SequenceCall
-from ..domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 
 @dataclass

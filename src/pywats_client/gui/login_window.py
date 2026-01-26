@@ -61,7 +61,7 @@ class LoginWindow(QDialog):
     # Signal emitted when authentication successful
     authenticated = Signal(ClientConfig)  # Emits config to use
     
-    def __init__(self, config: Optional[ClientConfig] = None, parent=None):
+    def __init__(self, config: Optional[ClientConfig] = None, parent=None) -> None:
         super().__init__(parent)
         
         self.config = config or ClientConfig()

@@ -9,13 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Queue Architecture Refactoring** - Clean separation between memory and file operations:
-  - **MemoryQueue** (`pywats.queue`): Pure in-memory queue with NO file operations
+- **Type Safety - Return Type Hints** - Comprehensive `-> None` hints added:
+  - All `__init__` methods in domain services and repositories (45+ files)
+  - All `__init__` methods in domain models (UUT/UUR report models)
+  - All `__init__` methods in client modules (50+ methods):
+    - Core: ConfigManager, EventBus, AsyncTaskRunner, InstanceManager
+    - Service: ClientService, ConverterPool, PendingWatcher, IPC
+    - GUI: All pages, widgets, dialogs
+    - Control: CLI, HeadlessService, platform adapters
+  - Queue control methods (`start_auto_process`, `stop_auto_process`, etc.)
+  - Main `pyWATS` class and wrapper classes
+  - Exception classes
+
+- **Type Safety - Statistics Models** - New typed models for queue/cache statistics:
+  - `QueueProcessingResult` - Result of processing queued reports
+  - `QueueStats` - Queue state statistics (pending/processing/completed/failed)
+  - `CacheStats` - Cache performance statistics (hits/misses/hit_rate)
+  - `BatchResult` - Result of batch operations
+  - All models have computed properties (total, success_rate, etc.)
+  - Located in `pywats.shared.stats`
+
+- **Type Safety - Client Constants** - Type-safe enums for client configuration:
+  - `FolderName` - Standard folder names (Done, Error, Pending, etc.)
+  - `LogLevel` - Log levels for configuration
+  - `ServiceMode` - Service operating modes (service, gui, cli)
+  - `ConverterType` - Converter types (file, folder, scheduled)
+  - `ErrorHandling` - Error handling strategies
+  - Located in `pywats_client.core.constants`
+
+- **Type Safety - Enum Consolidation** - Eliminated duplicate enum definitions:
+  - **CompOp** now canonical in `pywats.shared.enums` with all 18 operators
+    - Includes: `get_limits_requirement()`, `validate_limits()`, `evaluate()`
+    - `CompOperator` alias available for consistency
+  - **Converter models** consolidated in `pywats_client.converters.models`
+    - `ConversionStatus`, `PostProcessAction`, `FileInfo`, `ConverterResult`
+
+- **Queue Architecture Refactoring** - Clean separation between memory and file:
+  - **MemoryQueue** (`pywats.queue`): Pure in-memory queue, NO file operations
     - Thread-safe with RLock
     - Async-compatible with wait_for_item()
     - Abstract BaseQueue for custom implementations
     - QueueItem data class for queue entries
-  - **PersistentQueue** (`pywats_client.queue`): File-backed queue extending MemoryQueue
+  - **PersistentQueue** (`pywats_client.queue`): File-backed queue
     - Uses atomic writes via file_utils
     - Automatic crash recovery (processing → pending)
     - WSJF format storage with metadata
@@ -23,8 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - SafeFileWriter: Atomic writes (temp file + rename)
     - SafeFileReader: Safe reads with backup recovery
     - File locking for multi-process safety
-    - Consistent error handling
-  - Design principle: API (`pywats/`) is "memory-only", file I/O in client (`pywats_client/`)
+  - Design: API (`pywats/`) is "memory-only", file I/O in client (`pywats_client/`)
 
 - **Configuration Architecture Refactoring** - API layer is now pure (no file I/O):
   - **APISettings** (`pywats.core.config`): Pure configuration model, no file operations
@@ -61,6 +95,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Documentation: See docstrings in validation module
 
 ### Changed
+
+- **Queue/Cache Return Types** - Methods now return typed models instead of dicts:
+  - `queue.process_all()` → returns `QueueProcessingResult` (was `Dict[str, int]`)
+  - `queue.get_stats()` → returns `QueueStats` (was `Dict[str, int]`)
+  - `service.cache_stats` → returns `CacheStats` (was `Dict[str, Any]`)
+  - `api.report.process_queue()` → returns `QueueProcessingResult`
+  - All models have `.to_dict()` for backward compatibility if needed
+
+- **Configuration Enum Types** - Config fields now use type-safe enums:
+  - `APISettings.error_mode` - Now uses `ErrorMode` enum instead of string
+    - Values: `ErrorMode.STRICT`, `ErrorMode.LENIENT`
+    - Backward compatible serialization (to_dict/from_dict handle string conversion)
+  - `ConverterConfig.converter_type` - Now uses `ConverterType` enum
+    - Values: `ConverterType.FILE`, `ConverterType.FOLDER`, `ConverterType.SCHEDULED`
+    - Union type `Union[ConverterType, str]` for backward compatibility
+
+- **CompOp Import Location** (BREAKING):
+  - Old: `from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp`
+  - New: `from pywats.shared.enums import CompOp`
+  - Or: `from pywats import CompOp`
+  - The `comp_operator.py` file has been removed
+
+- **Converter Models Import Location** (BREAKING):
+  - Canonical location is now `pywats_client.converters.models`
+  - `ConversionStatus`, `PostProcessAction`, `FileInfo`, `ConverterResult` should be imported from there
+  - `base.py` no longer defines these classes (imports from `models.py`)
 
 - **Configuration Moved to Client Layer** - File I/O removed from API:
   - `APIConfigManager` moved from `pywats.core.config` to `pywats_client.core.ConfigManager`

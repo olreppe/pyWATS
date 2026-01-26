@@ -31,7 +31,7 @@ class RootCauseService:
         self,
         async_service: Optional[AsyncRootCauseService] = None,
         repository: Optional[AsyncRootCauseRepository] = None,
-    ):
+    ) -> None:
         """
         Initialize with async_service or repository (backward compat).
 

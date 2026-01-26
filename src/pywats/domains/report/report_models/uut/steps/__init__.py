@@ -9,7 +9,7 @@ from .generic_step import GenericStep, FlowType
 from .chart_step import ChartStep
 from .message_popup_step import MessagePopUpStep
 from .unknown_step import UnknownStep
-from .comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 # Re-export the step classes for easier access
 __all__ = [

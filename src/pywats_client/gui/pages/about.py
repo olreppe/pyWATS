@@ -20,7 +20,7 @@ from ... import __version__
 class AboutPage(BasePage):
     """About page showing version and credits"""
     
-    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None):
+    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
         super().__init__(config, parent)
         self._setup_ui()
     

@@ -35,7 +35,7 @@ class SettingsPanel(QWidget):
     # Signal emitted when settings change
     settings_changed = Signal()
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._modified = False
         self.setup_ui()
@@ -1011,7 +1011,7 @@ class SettingsDialog(QDialog):
         self,
         client_config: ClientConfig,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.client_config = client_config
         self._api_config: Optional["APISettings"] = None

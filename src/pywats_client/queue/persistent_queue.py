@@ -95,7 +95,7 @@ class PersistentQueue(MemoryQueue):
         default_max_attempts: int = 3,
         delete_completed: bool = True,
         auto_load: bool = True,
-    ):
+    ) -> None:
         """
         Initialize the persistent queue.
         

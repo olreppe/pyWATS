@@ -37,7 +37,7 @@ from pywats.domains.rootcause import (
     TicketView,
     TicketUpdateType,
 )
-from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 from pywats.shared.common_types import Setting
 
 

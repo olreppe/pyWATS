@@ -16,7 +16,7 @@ from ...core.config import ClientConfig
 class GeneralPage(BasePage):
     """General settings page"""
     
-    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None):
+    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
         super().__init__(config, parent)
         self._setup_ui()
         self.load_config()

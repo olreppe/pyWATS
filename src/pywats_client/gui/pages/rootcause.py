@@ -39,7 +39,7 @@ class TicketDialog(QDialog):
         teams: List[str] = None,
         ticket: Dict[str, Any] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.teams = teams or []
         self.ticket = ticket
@@ -163,7 +163,7 @@ class RootCausePage(BasePage):
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         self._tickets: List[Dict[str, Any]] = []
         self._teams: List[str] = []
         super().__init__(config, parent)

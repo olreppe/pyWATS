@@ -6,7 +6,7 @@ from typing import Any, Dict
 from datetime import datetime
 from pywats.domains.report import UUTReport, WATSFilter
 from pywats.domains.report.report_models import Attachment
-from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
 from pywats.tools.test_uut import create_test_uut_report
 

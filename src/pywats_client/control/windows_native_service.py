@@ -81,7 +81,7 @@ class PyWATSService(win32serviceutil.ServiceFramework if HAS_PYWIN32 else object
     # Instance ID for multi-station support (default is single station)
     _instance_id = "default"
     
-    def __init__(self, args):
+    def __init__(self, args) -> None:
         """Initialize the Windows Service"""
         if not HAS_PYWIN32:
             raise RuntimeError("pywin32 is required for native Windows service")

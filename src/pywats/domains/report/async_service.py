@@ -14,6 +14,7 @@ from .report_models.uur.uur_info import UURInfo
 from .report_models.uur.uur_sub_unit import UURSubUnit
 from .async_repository import AsyncReportRepository
 from .enums import ReportType
+from ...shared.stats import QueueProcessingResult
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class AsyncReportService:
         self,
         repository: AsyncReportRepository,
         station_provider: Optional[Callable[[], StationInfo]] = None
-    ):
+    ) -> None:
         """
         Initialize with async repository.
 
@@ -696,7 +697,7 @@ class AsyncReportService:
         self,
         queue_dir: Optional[str] = None,
         include_errors: bool = True
-    ) -> Dict[str, int]:
+    ) -> QueueProcessingResult:
         """
         Process all queued reports.
 
@@ -705,11 +706,12 @@ class AsyncReportService:
             include_errors: Also retry error reports (default: True)
 
         Returns:
-            Dictionary with success/failure counts
+            QueueProcessingResult with success/failure counts
 
         Example:
-            >>> results = await service.process_queue()
-            >>> print(f"Success: {results['success']}, Failed: {results['failed']}")
+            >>> result = await service.process_queue()
+            >>> print(f"Success: {result.success}, Failed: {result.failed}")
+            >>> print(f"Success rate: {result.success_rate:.1f}%")
         """
         from ...queue import SimpleQueue
         from pathlib import Path

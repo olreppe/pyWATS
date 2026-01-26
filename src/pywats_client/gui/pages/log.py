@@ -47,7 +47,7 @@ class QTextEditLogger(logging.Handler, QObject):
 class LogPage(BasePage):
     """Log viewer page with real-time log display"""
     
-    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None):
+    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
         super().__init__(config, parent)
         self._log_handler: Optional[QTextEditLogger] = None
         self._auto_scroll = True

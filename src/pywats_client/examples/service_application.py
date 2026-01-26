@@ -40,7 +40,7 @@ class ServiceApplication:
     - A foreground console application
     """
     
-    def __init__(self, instance_id: str = "default"):
+    def __init__(self, instance_id: str = "default") -> None:
         """
         Initialize service application.
         
@@ -50,7 +50,7 @@ class ServiceApplication:
         self.instance_id = instance_id
         self.service: Optional[ClientService] = None
         self._running = False
-    
+
     def start(self) -> None:
         """Start the service"""
         if self._running:
@@ -106,7 +106,7 @@ class IPCControlExample:
     from another process (e.g., GUI, CLI, or web interface).
     """
     
-    def __init__(self, instance_id: str = "default"):
+    def __init__(self, instance_id: str = "default") -> None:
         """
         Initialize IPC controller.
         

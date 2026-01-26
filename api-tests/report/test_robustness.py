@@ -363,7 +363,7 @@ class TestMultiNumericStepValidation:
         multi_step = root.add_multi_numeric_step(name='MultiTest', status='P')
         
         # Add measurements with different limits
-        from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+        from pywats.shared.enums import CompOp
         multi_step.add_measurement(
             name='M1',
             value=5.0,
@@ -409,7 +409,7 @@ class TestMultiNumericStepValidation:
         root = report.get_root_sequence_call()
         multi_step = root.add_multi_numeric_step(name='MultiTest', status='P')
         
-        from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+        from pywats.shared.enums import CompOp
         # Add measurement with invalid limits (low > high)
         multi_step.add_measurement(
             name='M1',

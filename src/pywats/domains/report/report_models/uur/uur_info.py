@@ -103,7 +103,7 @@ class UURInfo(ReportInfo):
     children: Optional[list[UUID]] = Field(default=None)
     """Child UUR GUIDs (for hierarchical repairs)"""
     
-    def __init__(self, **data):
+    def __init__(self, **data) -> None:
         """Initialize UURInfo with dual process code mapping"""
         super().__init__(**data)
         

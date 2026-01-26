@@ -32,7 +32,7 @@ class SyncBoxBuildTemplate:
             template.add_subunit("PCBA-001", "A", quantity=2)
     """
     
-    def __init__(self, async_template: "AsyncBoxBuildTemplate"):
+    def __init__(self, async_template: "AsyncBoxBuildTemplate") -> None:
         """
         Initialize with an async template.
         

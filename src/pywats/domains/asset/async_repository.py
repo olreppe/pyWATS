@@ -35,7 +35,7 @@ class AsyncAssetRepository:
         http_client: "AsyncHttpClient",
         base_url: str = "",
         error_handler: Optional["ErrorHandler"] = None
-    ):
+    ) -> None:
         """
         Initialize with async HTTP client.
 

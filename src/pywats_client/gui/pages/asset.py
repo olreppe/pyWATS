@@ -42,7 +42,7 @@ class AssetDialog(QDialog):
         asset_types: List[Dict[str, Any]] = None,
         asset: Dict[str, Any] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.asset_types = asset_types or []
         self.asset = asset
@@ -168,7 +168,7 @@ class AssetPage(BasePage):
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         self._assets: List[Dict[str, Any]] = []
         self._asset_types: List[Dict[str, Any]] = []
         super().__init__(config, parent)

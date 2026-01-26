@@ -1,6 +1,6 @@
 from ...common_types import *
 
-from .comp_operator import CompOp
+from pywats.shared.enums import CompOp
 
 from ..step import Step, StepStatus
 from .measurement import BooleanMeasurement, MultiBooleanMeasurement

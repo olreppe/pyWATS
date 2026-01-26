@@ -40,7 +40,7 @@ class ServiceIPCClient(QObject):
             print(status)
     """
     
-    def __init__(self, instance_id: str = "default"):
+    def __init__(self, instance_id: str = "default") -> None:
         """
         Initialize IPC client.
         

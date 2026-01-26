@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 class StationManagerDialog(QDialog):
     """Dialog for managing multiple station presets."""
     
-    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None):
+    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.config = config
         self._current_key: Optional[str] = None
@@ -302,7 +302,7 @@ class SetupPage(BasePage):
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         self._main_window = main_window
         self._is_connected = False
         super().__init__(config, parent)

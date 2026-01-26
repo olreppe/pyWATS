@@ -29,7 +29,7 @@ class AsyncAssetService:
         self, 
         repository: AsyncAssetRepository,
         base_url: str = ""
-    ):
+    ) -> None:
         """
         Initialize with async repository.
 

@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         self, 
         config: ClientConfig, 
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         
         self.config = config

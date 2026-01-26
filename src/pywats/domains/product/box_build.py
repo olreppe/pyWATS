@@ -99,7 +99,7 @@ class BoxBuildTemplate:
         parent_revision: ProductRevision,
         service: "ProductServiceInternal",
         existing_relations: Optional[List[ProductRevisionRelation]] = None
-    ):
+    ) -> None:
         """
         Initialize box build template.
         

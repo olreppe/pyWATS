@@ -23,7 +23,7 @@ class SoftwareService:
     All business logic is in AsyncSoftwareService.
     """
 
-    def __init__(self, async_service: AsyncSoftwareService = None, *, repository=None):
+    def __init__(self, async_service: AsyncSoftwareService = None, *, repository=None) -> None:
         """
         Initialize with AsyncSoftwareService or repository.
 

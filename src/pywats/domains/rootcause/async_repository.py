@@ -26,7 +26,7 @@ class AsyncRootCauseRepository:
         self, 
         http_client: "AsyncHttpClient",
         error_handler: Optional["ErrorHandler"] = None
-    ):
+    ) -> None:
         """
         Initialize with async HTTP client.
 

@@ -38,7 +38,7 @@ class ProductDialog(QDialog):
         self,
         product: Optional[Dict[str, Any]] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.product = product
         self._setup_ui()
@@ -126,7 +126,7 @@ class ProductDialog(QDialog):
 class AddSubunitDialog(QDialog):
     """Dialog for adding a subunit to a box build template"""
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._setup_ui()
     
@@ -202,7 +202,7 @@ class ProductPage(BasePage):
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         self._products: List[Dict[str, Any]] = []
         self._selected_product: Optional[Dict[str, Any]] = None
         self._selected_revision: Optional[str] = None

@@ -41,7 +41,7 @@ class AnalyticsService:
     All business logic is in AsyncAnalyticsService.
     """
 
-    def __init__(self, async_service: AsyncAnalyticsService = None, *, repository=None):
+    def __init__(self, async_service: AsyncAnalyticsService = None, *, repository=None) -> None:
         """
         Initialize with AsyncAnalyticsService or repository.
 

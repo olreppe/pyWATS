@@ -26,7 +26,7 @@ class ProductionService:
     All business logic is in AsyncProductionService.
     """
 
-    def __init__(self, async_service: AsyncProductionService = None, *, repository=None):
+    def __init__(self, async_service: AsyncProductionService = None, *, repository=None) -> None:
         """
         Initialize with AsyncProductionService or repository.
 

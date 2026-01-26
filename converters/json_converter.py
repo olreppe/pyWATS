@@ -41,7 +41,7 @@ from typing import Any, Dict, List, Optional
 from pywats.domains.report.report_models import UUTReport
 from pywats.domains.report.report_models.uut.uut_info import UUTInfo
 from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
-from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+from pywats.shared.enums import CompOp
 from pywats.domains.report.report_models.misc_info import MiscInfo
 from pywats.domains.report.report_models.sub_unit import SubUnit
 

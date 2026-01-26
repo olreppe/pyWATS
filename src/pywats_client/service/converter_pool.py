@@ -58,7 +58,7 @@ class ConverterWorkerClass(threading.Thread):
     Auto-terminates after 120 seconds idle.
     """
     
-    def __init__(self, pool: 'ConverterPool', worker_id: int):
+    def __init__(self, pool: 'ConverterPool', worker_id: int) -> None:
         super().__init__(daemon=True, name=f"ConverterWorker-{worker_id}")
         self.pool = pool
         self.worker_id = worker_id
@@ -177,7 +177,7 @@ class Converter:
         converter_args: dict,
         pool: 'ConverterPool',
         post_process_action: PostProcessAction = PostProcessAction.DELETE
-    ):
+    ) -> None:
         self.name = name
         self.watch_path = Path(watch_folder)
         self.file_patterns = file_pattern
@@ -417,7 +417,7 @@ class ConverterPool:
     Manages converters, queue, and worker pool.
     """
     
-    def __init__(self, config, api_client):
+    def __init__(self, config, api_client) -> None:
         """
         Initialize converter pool.
         

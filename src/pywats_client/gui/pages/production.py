@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 class UnitLookupDialog(QDialog):
     """Dialog for looking up a specific unit"""
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._setup_ui()
     
@@ -91,7 +91,7 @@ class UnitCreateDialog(QDialog):
         self, 
         phases: List[Dict[str, Any]] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         super().__init__(parent)
         self.phases = phases or []
         self._setup_ui()
@@ -173,7 +173,7 @@ class ProductionPage(BasePage):
         config: ClientConfig, 
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
-    ):
+    ) -> None:
         self._units: List[Dict[str, Any]] = []
         self._phases: List[Dict[str, Any]] = []
         self._current_unit: Optional[Dict[str, Any]] = None

@@ -152,7 +152,7 @@ class AsyncTaskRunner(QObject):
         self, 
         parent: Optional[QObject] = None,
         max_workers: int = 4
-    ):
+    ) -> None:
         """
         Initialize the async task runner.
         
