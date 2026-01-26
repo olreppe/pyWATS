@@ -9,6 +9,9 @@ WATS Standard Formats:
 - WATSStandardJSONConverter: WATS Standard JSON Format (WSJF)
 - WATSStandardXMLConverter: WATS Standard XML Format (WSXF/WRML)
 
+Industry Standard Formats:
+- ATMLConverter: IEEE ATML (IEEE 1671/1636.1) test results with TestStand AddOn support
+
 Test Equipment Converters:
 - SeicaXMLConverter: Seica Flying Probe XML format
 - TeradyneICTConverter: Teradyne i3070 ICT format (classic and new)
@@ -21,6 +24,7 @@ Special Converters:
 - AIConverter: Auto-selection converter that detects file type and delegates
 """
 
+from .atml_converter import ATMLConverter
 from .seica_xml_converter import SeicaXMLConverter
 from .teradyne_ict_converter import TeradyneICTConverter
 from .teradyne_spectrum_ict_converter import TeradyneSpectrumICTConverter
@@ -37,6 +41,8 @@ __all__ = [
     "WATSStandardTextConverter",
     "WATSStandardJsonConverter",
     "WATSStandardXMLConverter",
+    # Industry Standards
+    "ATMLConverter",
     # Test Equipment
     "SeicaXMLConverter",
     "TeradyneICTConverter",

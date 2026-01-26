@@ -226,6 +226,12 @@ Converters transform test equipment output into WATS format.
 | `WATSStandardJsonConverter` | WSJF | `*.json` |
 | `WATSStandardTextConverter` | WSTF | `*.txt` |
 
+**Industry Standards:**
+
+| Converter | Standard | File Patterns | Notes |
+|-----------|----------|---------------|-------|
+| `ATMLConverter` | IEEE ATML (1671/1636.1) | `*.xml`, `*.atml` | ATML 2.02, 5.00, 6.01 + TestStand AddOn |
+
 **Test Equipment:**
 
 | Converter | Equipment | File Patterns |

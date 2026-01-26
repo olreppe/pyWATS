@@ -140,20 +140,53 @@ def convert_from_atml(atml_data: str) -> Dict[str, Any]:
         Report dictionary in WSJF-compatible format
         
     Note:
-        ATML is an IEEE standard (IEEE 1671). This is a basic converter.
-        For production use, implement a custom converter.
+        ATML is an IEEE standard (IEEE 1671/1636.1). This function provides
+        basic format detection. For full ATML conversion with support for
+        ATML 2.02, 5.00, 6.01, and TestStand WATS AddOn extensions, use
+        the ATMLConverter from pywats_client.converters.standard:
+        
+            from pywats_client.converters.standard import ATMLConverter
+        
+        The ATMLConverter properly handles:
+        - All ATML versions (2.02, 5.00, 6.01)
+        - TestStand WATS AddOn custom namespaces
+        - TSStepProperties (StepType, StepGroup, TotalTime, etc.)
+        - TSResultSetProperties (BatchSerialNumber, TestSocketIndex)
+        - All limit types (LimitPair, SingleLimit, Expected with thresholds)
+        - Complex step hierarchies (TestGroup, SessionAction, Test)
     """
-    # Parse ATML XML
+    # Parse ATML XML to verify structure
     root = ET.fromstring(atml_data)
     
-    # Basic structure extraction
-    report = {}
+    # Detect version from namespace
+    version = "unknown"
+    root_tag = root.tag
+    if "IEEE-1636.1:2013" in root_tag:
+        version = "6.01"
+    elif "IEEE-1636.1:2011" in root_tag:
+        version = "5.00"
+    elif "IEEE-1636.1:2006" in root_tag:
+        version = "2.02"
+    else:
+        # Check xmlns attributes
+        for attr, value in root.attrib.items():
+            if "IEEE-1636.1:2013" in value:
+                version = "6.01"
+                break
+            elif "IEEE-1636.1:2011" in value:
+                version = "5.00"
+                break
+            elif "IEEE-1636.1:2006" in value:
+                version = "2.02"
+                break
     
-    # Extract ATML fields (simplified)
-    # ATML has a complex nested structure that would need
-    # proper handling in a production converter
-    
-    return report
+    # Return basic structure with detection info
+    # Full conversion should use ATMLConverter class
+    return {
+        "_format": "atml",
+        "_version": version,
+        "_note": "Use ATMLConverter from pywats_client.converters.standard for full conversion",
+    }
 
 
 def detect_format(data: str) -> str:
@@ -186,10 +219,13 @@ def detect_format(data: str) -> str:
                 return 'wsxf'
             elif 'TestStand' in (root.tag or ''):
                 return 'wstf'
-            elif 'ATML' in (root.tag or '') or '1671' in (root.tag or ''):
+            elif 'ATML' in (root.tag or '') or '1636' in (root.tag or '') or '1671' in (root.tag or ''):
                 return 'atml'
-            else:
-                return 'xml'
+            # Check xmlns for IEEE ATML namespaces
+            for attr, value in root.attrib.items():
+                if 'IEEE-1636' in value or 'IEEE-1671' in value:
+                    return 'atml'
+            return 'xml'
         except:
             pass
     
