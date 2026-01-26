@@ -11,14 +11,14 @@ This folder contains **official, user-facing documentation** that ships with `pi
 These files are included in the PyPI package:
 
 - **[INDEX.md](INDEX.md)** - Documentation index and navigation
-- **[PRODUCT.md](PRODUCT.md)** - Product domain API reference
-- **[ASSET.md](ASSET.md)** - Asset domain API reference
-- **[PRODUCTION.md](PRODUCTION.md)** - Production domain API reference
-- **[REPORT.md](REPORT.md)** - Report domain API reference
-- **[ANALYTICS.md](ANALYTICS.md)** - Analytics domain API reference
-- **[SOFTWARE.md](SOFTWARE.md)** - Software domain API reference
-- **[ROOTCAUSE.md](ROOTCAUSE.md)** - RootCause domain API reference
-- **[PROCESS.md](PROCESS.md)** - Process domain API reference
+- **[modules/product.md](modules/product.md)** - Product domain API reference
+- **[modules/asset.md](modules/asset.md)** - Asset domain API reference
+- **[modules/production.md](modules/production.md)** - Production domain API reference
+- **[modules/report.md](modules/report.md)** - Report domain API reference
+- **[modules/analytics.md](modules/analytics.md)** - Analytics domain API reference
+- **[modules/software.md](modules/software.md)** - Software domain API reference
+- **[modules/rootcause.md](modules/rootcause.md)** - RootCause domain API reference
+- **[modules/process.md](modules/process.md)** - Process domain API reference
 
 ### Module Usage Guides
 Detailed guides with comprehensive examples:

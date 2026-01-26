@@ -1284,6 +1284,6 @@ print(f"Last cal: {asset.last_calibration_date}")
 
 ## See Also
 
-- [Production Domain](PRODUCTION.md) - Using assets in production tests
-- [Report Domain](REPORT.md) - Including station info in test reports
-- [Process Domain](PROCESS.md) - Defining test operations that use assets
+- [Production Domain](production.md) - Using assets in production tests
+- [Report Domain](report.md) - Including station info in test reports
+- [Process Domain](process.md) - Defining test operations that use assets

@@ -1015,6 +1015,6 @@ else:
 
 ## See Also
 
-- [Production Domain](PRODUCTION.md) - Managing units in production
-- [Report Domain](REPORT.md) - Querying test results
-- [Asset Domain](ASSET.md) - Managing test equipment and tools
+- [Production Domain](production.md) - Managing units in production
+- [Report Domain](report.md) - Querying test results
+- [Asset Domain](asset.md) - Managing test equipment and tools

@@ -611,6 +611,6 @@ Supported. systemd 237.
 ## See Also
 
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Basic client usage
-- [CLIENT_INSTALLATION.md](CLIENT_INSTALLATION.md) - Installation guide
+- [client.md](client.md) - Installation guide
 - [docs/refactoring/SEPARATE_SERVICE_GUI_MODE.md](refactoring/SEPARATE_SERVICE_GUI_MODE.md) - Architecture design
 - [systemd documentation](https://www.freedesktop.org/software/systemd/man/systemd.service.html)

@@ -660,6 +660,6 @@ aging_report(days_threshold=60)
 
 ## See Also
 
-- [Report Domain](REPORT.md) - Link tickets to failed test reports
-- [Production Domain](PRODUCTION.md) - Track units with defects
-- [Analytics Domain](ANALYTICS.md) - Analyze failure trends
+- [Report Domain](report.md) - Link tickets to failed test reports
+- [Production Domain](production.md) - Track units with defects
+- [Analytics Domain](analytics.md) - Analyze failure trends

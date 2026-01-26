@@ -4,12 +4,13 @@ Comprehensive test suite for pyWATS Client application.
 
 ## Test Results
 
-**Total Tests: 71**
+**Total Tests: 85** (All Passing)
 - ✅ Configuration Tests: 18 passing
-- ✅ Queue Manager Tests: 26 passing  
-- ✅ Connection Tests: 7 passing
-- ✅ Converter Tests: 10 passing
-- ✅ Integration Tests: 10 passing
+- ✅ Converter Tests: 10 passing  
+- ✅ Queue Tests: 21 passing
+- ✅ Service Tests: 17 passing
+- ✅ IPC Tests: 10 passing
+- ✅ Integration Tests: 9 passing
 
 ## Test Structure
 
@@ -18,10 +19,11 @@ api-tests/client/
 ├── conftest.py              # Shared fixtures and configuration
 ├── __init__.py              # Package documentation
 ├── test_config.py           # Configuration tests (✅ 18 tests)
-├── test_queue.py            # Queue manager tests (✅ 26 tests)
-├── test_connection.py       # Connection service tests (✅ 7 tests)
 ├── test_converters.py       # Converter base tests (✅ 10 tests)
-├── test_integration.py      # End-to-end tests (✅ 10 tests)
+├── test_queue.py            # PersistentQueue tests (✅ 21 tests)
+├── test_service.py          # Service component tests (✅ 17 tests)
+├── test_ipc.py              # IPC communication tests (✅ 10 tests)
+├── test_integration.py      # End-to-end workflow tests (✅ 9 tests)
 └── README.md                # This file
 ```
 

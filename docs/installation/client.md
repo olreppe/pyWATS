@@ -49,9 +49,9 @@ pip install pywats-api[client]
 - 200 MB disk space
 
 **For Production Installations:**
-- **Windows**: [WINDOWS_SERVICE.md](WINDOWS_SERVICE.md) - Install as Windows Service (auto-start on boot)
-- **Linux**: [LINUX_SERVICE.md](LINUX_SERVICE.md) - Install as systemd service (Ubuntu, RHEL, Debian)
-- **macOS**: [MACOS_SERVICE.md](MACOS_SERVICE.md) - Install as launchd daemon (auto-start on boot)
+- **Windows**: [windows-service.md](windows-service.md) - Install as Windows Service (auto-start on boot)
+- **Linux**: [linux-service.md](linux-service.md) - Install as systemd service (Ubuntu, RHEL, Debian)
+- **macOS**: [macos-service.md](macos-service.md) - Install as launchd daemon (auto-start on boot)
 
 ### Option 2: Headless (Servers, Raspberry Pi)
 

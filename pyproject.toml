@@ -104,6 +104,8 @@ exclude = '''
   | buck-out
   | build
   | dist
+  | docs
+  | .*\.md$
 )/
 '''
 

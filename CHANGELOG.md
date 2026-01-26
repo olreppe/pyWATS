@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Documentation Reorganization** - Improved structure and discoverability:
+  - Created `docs/modules/` directory for domain-specific documentation (9 modules)
+  - Created `docs/installation/` directory for platform and deployment guides (5 guides)
+  - Added `ARCHITECTURE.md` - System architecture overview with 3-layer design
+  - Added `CLIENT_ARCHITECTURE.md` - Client service internals (IPC, queue, converters)
+  - Added `INTEGRATION_PATTERNS.md` - Practical integration workflows and scenarios
+  - Added README.md navigation guides in each subdirectory
+  - Updated INDEX.md with Architecture & Design and For Developers sections
+  - All cross-references updated to use new paths
+  - Standardized naming: lowercase, hyphenated filenames
+
 - **Type Safety - Return Type Hints** - Comprehensive `-> None` hints added:
   - All `__init__` methods in domain services and repositories (45+ files)
   - All `__init__` methods in domain models (UUT/UUR report models)

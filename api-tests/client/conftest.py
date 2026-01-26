@@ -112,6 +112,25 @@ def sample_test_data():
     }
 
 
+@pytest.fixture
+def sample_report():
+    """Sample report dictionary for queue testing"""
+    return {
+        "serial_number": "SN-12345",
+        "part_number": "PN-WIDGET-100",
+        "part_revision": "A",
+        "status": "Passed",
+        "start_time": "2024-01-15T10:00:00Z",
+        "end_time": "2024-01-15T10:05:00Z",
+        "station_name": "Test Station 1",
+        "operator": "TestOperator",
+        "measurements": [
+            {"step_name": "Voltage Test", "measurement_name": "VCC", "value": 3.3, "unit": "V", "status": "Passed"},
+            {"step_name": "Current Test", "measurement_name": "ICC", "value": 0.5, "unit": "A", "status": "Passed"},
+        ]
+    }
+
+
 # Pytest configuration
 def pytest_configure(config):
     """Configure pytest markers"""

@@ -572,6 +572,6 @@ package_distribution_report()
 
 ## See Also
 
-- [Product Domain](PRODUCT.md) - Products and revisions
-- [Production Domain](PRODUCTION.md) - Unit production and assembly
-- [Asset Domain](ASSET.md) - Equipment and calibration
+- [Product Domain](product.md) - Products and revisions
+- [Production Domain](production.md) - Unit production and assembly
+- [Asset Domain](asset.md) - Equipment and calibration

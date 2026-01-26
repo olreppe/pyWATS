@@ -971,6 +971,6 @@ For querying report headers, use OData filter syntax or the helper methods.
 
 ## See Also
 
-- [Production Domain](PRODUCTION.md) - Managing units and updating status
-- [Analytics Domain](ANALYTICS.md) - Analyzing test results and yield
-- [Process Domain](PROCESS.md) - Defining operation types
+- [Production Domain](production.md) - Managing units and updating status
+- [Analytics Domain](analytics.md) - Analyzing test results and yield
+- [Process Domain](process.md) - Defining operation types

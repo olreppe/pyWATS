@@ -1174,7 +1174,7 @@ api.production.remove_child_from_assembly(old_parent_sn, old_parent_pn, child_sn
 
 ## See Also
 
-- [Product Domain](PRODUCT.md) - Defining products and box build templates
-- [Report Domain](REPORT.md) - Creating test reports for units
-- [Process Domain](PROCESS.md) - Defining operation types and workflows
-- [Analytics Domain](ANALYTICS.md) - Analyzing unit flow and yield
+- [Product Domain](product.md) - Defining products and box build templates
+- [Report Domain](report.md) - Creating test reports for units
+- [Process Domain](process.md) - Defining operation types and workflows
+- [Analytics Domain](analytics.md) - Analyzing unit flow and yield

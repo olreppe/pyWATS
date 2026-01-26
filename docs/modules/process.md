@@ -562,6 +562,6 @@ cache.clear_cache()
 
 ## See Also
 
-- [Report Domain](REPORT.md) - Use operation codes in test reports
-- [Production Domain](PRODUCTION.md) - Track operations performed on units
-- [Analytics Domain](ANALYTICS.md) - Analyze data by operation type
+- [Report Domain](report.md) - Use operation codes in test reports
+- [Production Domain](production.md) - Track operations performed on units
+- [Analytics Domain](analytics.md) - Analyze data by operation type
