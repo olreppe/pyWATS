@@ -70,7 +70,16 @@ class AnalyticsService:
     # =========================================================================
 
     def get_version(self) -> Optional[str]:
-        """Get WATS API version information."""
+        """Get WATS API version information.
+
+        Returns:
+            Version string or None if not available.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_version())
 
     def get_processes(
@@ -80,7 +89,22 @@ class AnalyticsService:
         include_wip_operations: Optional[bool] = None,
         include_inactive_processes: Optional[bool] = None,
     ) -> List[ProcessInfo]:
-        """Get all defined test processes/operations."""
+        """Get all defined test processes/operations.
+
+        Args:
+            include_test_operations: Include test operations (default: True).
+            include_repair_operations: Include repair operations.
+            include_wip_operations: Include WIP operations.
+            include_inactive_processes: Include inactive processes.
+
+        Returns:
+            List of ProcessInfo objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_processes(
             include_test_operations=include_test_operations,
             include_repair_operations=include_repair_operations,
@@ -89,14 +113,35 @@ class AnalyticsService:
         ))
 
     def get_levels(self) -> List[LevelInfo]:
-        """Get all production levels."""
+        """Get all production levels.
+
+        Returns:
+            List of LevelInfo objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_levels())
 
     def get_product_groups(
         self,
         include_filters: Optional[bool] = None
     ) -> List[ProductGroup]:
-        """Get all product groups."""
+        """Get all product groups.
+
+        Args:
+            include_filters: Whether to include filter definitions.
+
+        Returns:
+            List of ProductGroup objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_product_groups(include_filters=include_filters))
 
     # =========================================================================
@@ -106,7 +151,20 @@ class AnalyticsService:
     def get_dynamic_yield(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[YieldData]:
-        """Get dynamic yield statistics by custom dimensions (PREVIEW)."""
+        """Get dynamic yield statistics by custom dimensions (PREVIEW).
+
+        Args:
+            filter_data: WATSFilter or dict with query parameters.
+
+        Returns:
+            List of YieldData with statistics by requested dimensions.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid or missing required fields.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_dynamic_yield(filter_data))
 
     def get_yield_summary(
@@ -115,7 +173,23 @@ class AnalyticsService:
         revision: Optional[str] = None,
         days: int = 30,
     ) -> List[YieldData]:
-        """Get yield summary for a product over a time period."""
+        """Get yield summary for a product over a time period.
+
+        Args:
+            part_number: Product part number.
+            revision: Optional revision filter.
+            days: Number of days to look back (default: 30).
+
+        Returns:
+            List of YieldData for the product.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If part_number is empty.
+            NotFoundError: If product not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_yield_summary(
             part_number=part_number,
             revision=revision,
@@ -127,7 +201,21 @@ class AnalyticsService:
         station_name: str,
         days: int = 7,
     ) -> List[YieldData]:
-        """Get yield statistics for a specific test station."""
+        """Get yield statistics for a specific test station.
+
+        Args:
+            station_name: Name of the test station.
+            days: Number of days to look back (default: 7).
+
+        Returns:
+            List of YieldData for the station.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If station_name is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_station_yield(
             station_name=station_name,
             days=days,
@@ -136,7 +224,20 @@ class AnalyticsService:
     def get_dynamic_repair(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[RepairStatistics]:
-        """Get dynamic repair statistics by custom dimensions (PREVIEW)."""
+        """Get dynamic repair statistics by custom dimensions (PREVIEW).
+
+        Args:
+            filter_data: WATSFilter or dict with query parameters.
+
+        Returns:
+            List of RepairStatistics with repair data by dimensions.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_dynamic_repair(filter_data))
 
     def get_volume_yield(
@@ -145,7 +246,21 @@ class AnalyticsService:
         product_group: Optional[str] = None,
         level: Optional[str] = None,
     ) -> List[YieldData]:
-        """Get volume/yield statistics."""
+        """Get volume/yield statistics.
+
+        Args:
+            filter_data: Optional WATSFilter for custom filtering.
+            product_group: Filter by product group name.
+            level: Filter by production level.
+
+        Returns:
+            List of YieldData with volume statistics.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_volume_yield(
             filter_data=filter_data,
             product_group=product_group,
@@ -158,7 +273,21 @@ class AnalyticsService:
         product_group: Optional[str] = None,
         level: Optional[str] = None,
     ) -> List[YieldData]:
-        """Get worst yield statistics (products with lowest yield)."""
+        """Get worst yield statistics (products with lowest yield).
+
+        Args:
+            filter_data: Optional WATSFilter for custom filtering.
+            product_group: Filter by product group name.
+            level: Filter by production level.
+
+        Returns:
+            List of YieldData sorted by worst yield.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_worst_yield(
             filter_data=filter_data,
             product_group=product_group,
@@ -168,7 +297,20 @@ class AnalyticsService:
     def get_worst_yield_by_product_group(
         self, filter_data: WATSFilter
     ) -> List[YieldData]:
-        """Get worst yield statistics grouped by product group."""
+        """Get worst yield statistics grouped by product group.
+
+        Args:
+            filter_data: WATSFilter with query parameters.
+
+        Returns:
+            List of YieldData grouped by product group.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_worst_yield_by_product_group(filter_data))
 
     # =========================================================================
@@ -181,7 +323,21 @@ class AnalyticsService:
         product_group: Optional[str] = None,
         level: Optional[str] = None,
     ) -> List[YieldData]:
-        """Get high volume product list (products with most units tested)."""
+        """Get high volume product list (products with most units tested).
+
+        Args:
+            filter_data: Optional WATSFilter for custom filtering.
+            product_group: Filter by product group name.
+            level: Filter by production level.
+
+        Returns:
+            List of YieldData sorted by volume (highest first).
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_high_volume(
             filter_data=filter_data,
             product_group=product_group,
@@ -191,7 +347,20 @@ class AnalyticsService:
     def get_high_volume_by_product_group(
         self, filter_data: WATSFilter
     ) -> List[YieldData]:
-        """Get yield statistics grouped by product group, sorted by volume."""
+        """Get yield statistics grouped by product group, sorted by volume.
+
+        Args:
+            filter_data: WATSFilter with query parameters.
+
+        Returns:
+            List of YieldData grouped by product group, sorted by volume.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_high_volume_by_product_group(filter_data))
 
     # =========================================================================
@@ -208,7 +377,24 @@ class AnalyticsService:
         revision: Optional[str] = None,
         top_count: Optional[int] = None,
     ) -> List[TopFailedStep]:
-        """Get top failed test steps."""
+        """Get top failed test steps.
+
+        Args:
+            filter_data: Optional WATSFilter for custom filtering.
+            product_group: Filter by product group name.
+            level: Filter by production level.
+            part_number: Filter by product part number.
+            revision: Filter by revision.
+            top_count: Maximum number of results to return.
+
+        Returns:
+            List of TopFailedStep sorted by failure count.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_top_failed(
             filter_data=filter_data,
             product_group=product_group,
@@ -221,13 +407,40 @@ class AnalyticsService:
     def get_related_repair_history(
         self, part_number: str, revision: str
     ) -> List[RepairHistoryRecord]:
-        """Get list of repaired failures related to the part number and revision."""
+        """Get list of repaired failures related to the part number and revision.
+
+        Args:
+            part_number: Product part number.
+            revision: Product revision.
+
+        Returns:
+            List of RepairHistoryRecord with repair data.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If part_number or revision is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_related_repair_history(part_number, revision))
 
     def get_test_step_analysis(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[StepAnalysisRow]:
-        """Get step and measurement statistics (PREVIEW)."""
+        """Get step and measurement statistics (PREVIEW).
+
+        Args:
+            filter_data: WATSFilter or dict with query parameters.
+
+        Returns:
+            List of StepAnalysisRow with step statistics.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_test_step_analysis(filter_data))
 
     def get_test_step_analysis_for_operation(
@@ -240,7 +453,25 @@ class AnalyticsService:
         run: int = 1,
         max_count: int = 10000,
     ) -> List[StepAnalysisRow]:
-        """Convenience wrapper for TestStepAnalysis."""
+        """Convenience wrapper for TestStepAnalysis.
+
+        Args:
+            part_number: Product part number.
+            test_operation: Test operation name or code.
+            revision: Optional revision filter.
+            days: Number of days to look back (default: 30).
+            run: Run number (default: 1).
+            max_count: Maximum records to return (default: 10000).
+
+        Returns:
+            List of StepAnalysisRow with step statistics.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If part_number or test_operation is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_test_step_analysis_for_operation(
             part_number=part_number,
             test_operation=test_operation,
@@ -260,7 +491,21 @@ class AnalyticsService:
         *,
         measurement_paths: Optional[str] = None,
     ) -> List[MeasurementData]:
-        """Get numeric measurements by measurement path (PREVIEW)."""
+        """Get numeric measurements by measurement path (PREVIEW).
+
+        Args:
+            filter_data: WATSFilter or dict with query parameters.
+            measurement_paths: Optional measurement path filter.
+
+        Returns:
+            List of MeasurementData with numeric values.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_measurements(
             filter_data,
             measurement_paths=measurement_paths,
@@ -272,7 +517,21 @@ class AnalyticsService:
         *,
         measurement_paths: Optional[str] = None,
     ) -> List[AggregatedMeasurement]:
-        """Get aggregated numeric measurements by measurement path."""
+        """Get aggregated numeric measurements by measurement path.
+
+        Args:
+            filter_data: WATSFilter or dict with query parameters.
+            measurement_paths: Optional measurement path filter.
+
+        Returns:
+            List of AggregatedMeasurement with statistics (avg, min, max, etc.).
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_aggregated_measurements(
             filter_data,
             measurement_paths=measurement_paths,
@@ -285,7 +544,21 @@ class AnalyticsService:
     def get_oee_analysis(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> Optional[OeeAnalysisResult]:
-        """Overall Equipment Effectiveness - analysis."""
+        """Overall Equipment Effectiveness - analysis.
+
+        Args:
+            filter_data: WATSFilter or dict with query parameters.
+
+        Returns:
+            OeeAnalysisResult with availability, performance, quality, and OEE.
+            OEE = (availability * performance * quality) / 10000.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_oee_analysis(filter_data))
 
     # =========================================================================
@@ -295,7 +568,20 @@ class AnalyticsService:
     def get_serial_number_history(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[ReportHeader]:
-        """Serial Number History."""
+        """Serial Number History.
+
+        Args:
+            filter_data: WATSFilter or dict with query parameters.
+
+        Returns:
+            List of ReportHeader for the serial number history.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_serial_number_history(filter_data))
 
     def get_uut_reports(
@@ -310,7 +596,26 @@ class AnalyticsService:
         status: Optional[str] = None,
         top_count: Optional[int] = None,
     ) -> List[ReportHeader]:
-        """Returns UUT report header info."""
+        """Returns UUT report header info.
+
+        Args:
+            filter_data: Optional WATSFilter for custom filtering.
+            product_group: Filter by product group name.
+            level: Filter by production level.
+            part_number: Filter by product part number.
+            revision: Filter by revision.
+            serial_number: Filter by serial number.
+            status: Filter by status (Passed/Failed).
+            top_count: Maximum number of results.
+
+        Returns:
+            List of ReportHeader for matching UUT reports.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_uut_reports(
             filter_data=filter_data,
             product_group=product_group,
@@ -325,7 +630,20 @@ class AnalyticsService:
     def get_uur_reports(
         self, filter_data: Union[WATSFilter, Dict[str, Any]]
     ) -> List[ReportHeader]:
-        """Returns UUR report header info."""
+        """Returns UUR report header info.
+
+        Args:
+            filter_data: WATSFilter or dict with query parameters.
+
+        Returns:
+            List of ReportHeader for matching UUR (repair) reports.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If filter_data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_uur_reports(filter_data))
 
     # =========================================================================

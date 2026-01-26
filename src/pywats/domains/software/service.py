@@ -52,11 +52,33 @@ class SoftwareService:
     # =========================================================================
 
     def get_packages(self) -> List[Package]:
-        """Get all available software packages."""
+        """Get all available software packages.
+
+        Returns:
+            List of Package objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_packages())
 
     def get_package(self, package_id: Union[str, UUID]) -> Optional[Package]:
-        """Get a specific software package by ID."""
+        """Get a specific software package by ID.
+
+        Args:
+            package_id: Package UUID or string ID.
+
+        Returns:
+            Package if found, None otherwise.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package_id format is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_package(package_id))
 
     def get_package_by_name(
@@ -65,11 +87,39 @@ class SoftwareService:
         status: Optional[PackageStatus] = None,
         version: Optional[int] = None,
     ) -> Optional[Package]:
-        """Get a software package by name."""
+        """Get a software package by name.
+
+        Args:
+            name: Package name.
+            status: Optional status filter.
+            version: Optional version filter.
+
+        Returns:
+            Package if found, None otherwise.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If name is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_package_by_name(name, status, version))
 
     def get_released_package(self, name: str) -> Optional[Package]:
-        """Get the released version of a package."""
+        """Get the released version of a package.
+
+        Args:
+            name: Package name.
+
+        Returns:
+            Released Package if found, None otherwise.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If name is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_released_package(name))
 
     def get_packages_by_tag(
@@ -78,7 +128,22 @@ class SoftwareService:
         value: str,
         status: Optional[PackageStatus] = None,
     ) -> List[Package]:
-        """Get packages filtered by tag."""
+        """Get packages filtered by tag.
+
+        Args:
+            tag: Tag name to filter by.
+            value: Tag value to match.
+            status: Optional status filter.
+
+        Returns:
+            List of matching Package objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If tag or value is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_packages_by_tag(tag, value, status))
 
     # =========================================================================
@@ -94,7 +159,25 @@ class SoftwareService:
         priority: Optional[int] = None,
         tags: Optional[List[PackageTag]] = None,
     ) -> Optional[Package]:
-        """Create a new package in Draft status."""
+        """Create a new package in Draft status.
+
+        Args:
+            name: Package name (must be unique).
+            description: Optional description.
+            install_on_root: Whether to install at root level.
+            root_directory: Optional root directory.
+            priority: Optional installation priority.
+            tags: Optional list of tags.
+
+        Returns:
+            Created Package or None if failed.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If name is empty or already exists.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.create_package(
             name=name,
             description=description,
@@ -105,17 +188,60 @@ class SoftwareService:
         ))
 
     def update_package(self, package: Package) -> Optional[Package]:
-        """Update a software package."""
+        """Update a software package.
+
+        Args:
+            package: Package object with updated fields.
+
+        Returns:
+            Updated Package or None if failed.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package data is invalid.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.update_package(package))
 
     def delete_package(self, package_id: Union[str, UUID]) -> bool:
-        """Delete a software package by ID."""
+        """Delete a software package by ID.
+
+        Args:
+            package_id: Package UUID or string ID.
+
+        Returns:
+            True if deleted successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package_id format is invalid.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.delete_package(package_id))
 
     def delete_package_by_name(
         self, name: str, version: Optional[int] = None
     ) -> bool:
-        """Delete a software package by name."""
+        """Delete a software package by name.
+
+        Args:
+            name: Package name.
+            version: Optional version (deletes specific version).
+
+        Returns:
+            True if deleted successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If name is empty.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.delete_package_by_name(name, version))
 
     # =========================================================================
@@ -123,19 +249,75 @@ class SoftwareService:
     # =========================================================================
 
     def submit_for_review(self, package_id: Union[str, UUID]) -> bool:
-        """Submit a draft package for review (Draft -> Pending)."""
+        """Submit a draft package for review (Draft -> Pending).
+
+        Args:
+            package_id: Package UUID or string ID.
+
+        Returns:
+            True if status changed successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package_id format is invalid or package not in Draft status.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.submit_for_review(package_id))
 
     def return_to_draft(self, package_id: Union[str, UUID]) -> bool:
-        """Return a pending package to draft (Pending -> Draft)."""
+        """Return a pending package to draft (Pending -> Draft).
+
+        Args:
+            package_id: Package UUID or string ID.
+
+        Returns:
+            True if status changed successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package_id format is invalid or package not in Pending status.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.return_to_draft(package_id))
 
     def release_package(self, package_id: Union[str, UUID]) -> bool:
-        """Release a pending package (Pending -> Released)."""
+        """Release a pending package (Pending -> Released).
+
+        Args:
+            package_id: Package UUID or string ID.
+
+        Returns:
+            True if status changed successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package_id format is invalid or package not in Pending status.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.release_package(package_id))
 
     def revoke_package(self, package_id: Union[str, UUID]) -> bool:
-        """Revoke a released package (Released -> Revoked)."""
+        """Revoke a released package (Released -> Revoked).
+
+        Args:
+            package_id: Package UUID or string ID.
+
+        Returns:
+            True if status changed successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package_id format is invalid or package not in Released status.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.revoke_package(package_id))
 
     # =========================================================================
@@ -145,7 +327,21 @@ class SoftwareService:
     def get_package_files(
         self, package_id: Union[str, UUID]
     ) -> List[PackageFile]:
-        """Get files associated with a package."""
+        """Get files associated with a package.
+
+        Args:
+            package_id: Package UUID or string ID.
+
+        Returns:
+            List of PackageFile objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package_id format is invalid.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_package_files(package_id))
 
     def upload_zip(
@@ -154,13 +350,44 @@ class SoftwareService:
         zip_content: bytes,
         clean_install: bool = False,
     ) -> bool:
-        """Upload a zip file to a software package."""
+        """Upload a zip file to a software package.
+
+        Args:
+            package_id: Package UUID or string ID.
+            zip_content: Zip file content as bytes.
+            clean_install: If True, removes existing files first.
+
+        Returns:
+            True if upload successful.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If package_id format or zip_content is invalid.
+            NotFoundError: If package not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.upload_zip(package_id, zip_content, clean_install))
 
     def update_file_attribute(
         self, file_id: Union[str, UUID], attributes: str
     ) -> bool:
-        """Update file attributes for a specific file."""
+        """Update file attributes for a specific file.
+
+        Args:
+            file_id: File UUID or string ID.
+            attributes: Attribute string to set.
+
+        Returns:
+            True if update successful.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If file_id format is invalid.
+            NotFoundError: If file not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.update_file_attribute(file_id, attributes))
 
     # =========================================================================
@@ -168,7 +395,16 @@ class SoftwareService:
     # =========================================================================
 
     def get_virtual_folders(self) -> List[VirtualFolder]:
-        """Get all virtual folders registered in Production Manager."""
+        """Get all virtual folders registered in Production Manager.
+
+        Returns:
+            List of VirtualFolder objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_virtual_folders())
 
     # =========================================================================
