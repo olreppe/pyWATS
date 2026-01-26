@@ -14,6 +14,14 @@ from .report_models.uur.uur_info import UURInfo
 from .report_models.uur.uur_sub_unit import UURSubUnit
 from .async_repository import AsyncReportRepository
 from .enums import ReportType
+from .filter_builders import (
+    build_serial_filter,
+    build_part_number_filter,
+    build_date_range_filter,
+    build_subunit_part_filter,
+    build_subunit_serial_filter,
+)
+from .query_helpers import is_uut_report_type, get_expand_fields
 from ...shared.stats import QueueProcessingResult
 
 logger = logging.getLogger(__name__)
@@ -804,13 +812,8 @@ class AsyncReportService:
         Returns:
             List of ReportHeader objects with sub-units
         """
-        # Determine report type value
-        if isinstance(report_type, str):
-            is_uut = report_type.lower() == "uut"
-        else:
-            is_uut = report_type == ReportType.UUT
-            
-        expand_fields = ["subUnits"] if is_uut else ["uurSubUnits"]
+        is_uut = is_uut_report_type(report_type)
+        expand_fields = get_expand_fields(is_uut, include_subunits=True)
 
         return await self._repository.query_headers(
             report_type, expand=expand_fields,
@@ -836,18 +839,9 @@ class AsyncReportService:
         Returns:
             List of ReportHeader objects with sub-units expanded
         """
-        # Determine report type value
-        if isinstance(report_type, str):
-            is_uut = report_type.lower() == "uut"
-        else:
-            is_uut = report_type == ReportType.UUT
-            
-        if is_uut:
-            odata_filter = f"subUnits/any(s: s/partNumber eq '{subunit_part_number}')"
-            expand_fields = ["subUnits"]
-        else:
-            odata_filter = f"uurSubUnits/any(s: s/partNumber eq '{subunit_part_number}')"
-            expand_fields = ["uurSubUnits"]
+        is_uut = is_uut_report_type(report_type)
+        odata_filter = build_subunit_part_filter(subunit_part_number, is_uut)
+        expand_fields = get_expand_fields(is_uut, include_subunits=True)
 
         return await self._repository.query_headers(
             report_type, expand=expand_fields,
@@ -871,18 +865,9 @@ class AsyncReportService:
         Returns:
             List of ReportHeader objects with sub-units expanded
         """
-        # Determine report type value
-        if isinstance(report_type, str):
-            is_uut = report_type.lower() == "uut"
-        else:
-            is_uut = report_type == ReportType.UUT
-            
-        if is_uut:
-            odata_filter = f"subUnits/any(s: s/serialNumber eq '{subunit_serial_number}')"
-            expand_fields = ["subUnits"]
-        else:
-            odata_filter = f"uurSubUnits/any(s: s/serialNumber eq '{subunit_serial_number}')"
-            expand_fields = ["uurSubUnits"]
+        is_uut = is_uut_report_type(report_type)
+        odata_filter = build_subunit_serial_filter(subunit_serial_number, is_uut)
+        expand_fields = get_expand_fields(is_uut, include_subunits=True)
 
         return await self._repository.query_headers(
             report_type, expand=expand_fields,
@@ -931,7 +916,7 @@ class AsyncReportService:
         Returns:
             List of ReportHeader
         """
-        odata_filter = f"serialNumber eq '{serial_number}'"
+        odata_filter = build_serial_filter(serial_number)
         return await self._repository.query_headers(
             report_type, odata_filter=odata_filter, top=top
         )
@@ -953,7 +938,7 @@ class AsyncReportService:
         Returns:
             List of ReportHeader
         """
-        odata_filter = f"partNumber eq '{part_number}'"
+        odata_filter = build_part_number_filter(part_number)
         return await self._repository.query_headers(
             report_type, odata_filter=odata_filter, top=top
         )
@@ -975,10 +960,7 @@ class AsyncReportService:
         Returns:
             List of ReportHeader
         """
-        # Format dates for OData (use 'start' field, not 'startUtc')
-        start_str = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_str = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        odata_filter = f"start ge {start_str} and start le {end_str}"
+        odata_filter = build_date_range_filter(start_date, end_date)
         return await self._repository.query_headers(
             report_type, odata_filter=odata_filter
         )
@@ -1002,9 +984,7 @@ class AsyncReportService:
         """
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
-        start_str = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_str = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        odata_filter = f"start ge {start_str} and start le {end_str}"
+        odata_filter = build_date_range_filter(start_date, end_date)
         return await self._repository.query_headers(
             report_type, odata_filter=odata_filter, top=top
         )
@@ -1026,9 +1006,7 @@ class AsyncReportService:
         """
         today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow = today + timedelta(days=1)
-        start_str = today.strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_str = tomorrow.strftime("%Y-%m-%dT%H:%M:%SZ")
-        odata_filter = f"start ge {start_str} and start le {end_str}"
+        odata_filter = build_date_range_filter(today, tomorrow)
         return await self._repository.query_headers(
             report_type, odata_filter=odata_filter, top=top
         )

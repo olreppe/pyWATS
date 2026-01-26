@@ -22,16 +22,16 @@ This directory contains **unified health checks** for all pyWATS domains, replac
 
 | Domain | Score | Grade | Status | Last Updated |
 |--------|-------|-------|--------|--------------|
-| [Analytics](analytics.md) | 47/50 | A | ✅ Excellent | 2026-01-26 |
-| [Production](production.md) | 47/50 | A | ✅ Excellent | 2026-01-26 |
-| [Product](product.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
-| [RootCause](rootcause.md) | 45/50 | A | ✅ Excellent | 2026-01-26 |
-| [Software](software.md) | 45/50 | A | ✅ Excellent | 2026-01-26 |
-| [Asset](asset.md) | 44/50 | B | ✅ Good | 2026-01-26 |
-| [Process](process.md) | 43/50 | B | ✅ Good | 2026-01-26 |
+| [Analytics](analytics.md) | 48/50 | A | ✅ Excellent | 2026-01-26 |
+| [Production](production.md) | 48/50 | A | ✅ Excellent | 2026-01-26 |
+| [Product](product.md) | 47/50 | A | ✅ Excellent | 2026-01-26 |
+| [RootCause](rootcause.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
+| [Software](software.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
+| [Asset](asset.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
+| [Process](process.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
 | [Report](report.md) | 41/50 | B+ | ✅ Good | 2026-01-26 |
 
-**Overall Average:** 44.75/50 (A-) ✅
+**Overall Average:** 46.0/50 (A) ✅
 
 ---
 
@@ -131,8 +131,8 @@ Each domain is scored across 5 categories (max 10 points each):
 
 | Issue | Affected Domains | Priority |
 |-------|------------------|----------|
-| Missing `Raises:` in docstrings | All | LOW |
-| More code examples needed | Report, Asset, Process | MEDIUM |
+| `Raises:` docstrings | ✅ ALL COMPLETE | ~~LOW~~ DONE |
+| More code examples needed | Report | MEDIUM |
 | Large model files (>500 lines) | Report (UURReport 650+), Analytics (models.py 1802) | LOW |
 
 ---

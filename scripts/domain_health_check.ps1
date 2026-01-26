@@ -42,7 +42,7 @@ function Write-Info { param([string]$msg) Write-Host "  [i] $msg" -ForegroundCol
 function Write-Warn { param([string]$msg) Write-Host "  [!] $msg" -ForegroundColor Yellow }
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$HealthDir = "$RepoRoot\docs\internal_documentation\domain_health"
+$HealthDir = "$RepoRoot\docs\domain_health"
 
 $ValidDomains = @(
     "analytics",

@@ -114,7 +114,7 @@ UURReport --> UURInfo + UURSubUnit + Failure + Attachment
 | Docstrings | 95% | ✅ | Most methods documented |
 | Args documentation | 85% | ✅ | Good parameter docs |
 | Returns documentation | 90% | ✅ | Return types specified |
-| Raises documentation | 50% | ⚠️ | Many missing Raises sections |
+| Raises documentation | 50% | ⚠️ | Deferred - see REPORT_REFACTORING.md |
 | Code examples | 70% | ⚠️ | More examples needed for UUR |
 
 ---
