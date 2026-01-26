@@ -25,16 +25,10 @@ exclude src/pywats/domains/report/report_models/uur/UUR_IMPLEMENTATION_INSTRUCTI
 # Include official domain documentation
 include docs/INDEX.md
 include docs/README.md
-include docs/GETTING_STARTED.md
-include docs/PRODUCT.md
-include docs/ASSET.md
-include docs/PRODUCTION.md
-include docs/REPORT.md
-include docs/ANALYTICS.md
-include docs/SOFTWARE.md
-include docs/ROOTCAUSE.md
-include docs/PROCESS.md
-include docs/SCIM.md
+include docs/getting-started.md
+
+# Include domain module documentation
+recursive-include docs/modules *.md
 
 # Include usage guides (detailed module documentation)
 recursive-include docs/usage *.md

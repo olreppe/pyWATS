@@ -984,11 +984,11 @@ await asyncio.gather(*[
 
 ## See Also
 
-- **[Architecture Overview](ARCHITECTURE.md)** - System design and components
-- **[Client Architecture](CLIENT_ARCHITECTURE.md)** - Client service details
-- **[Error Catalog](ERROR_CATALOG.md)** - Error codes and remediation
+- **[Architecture Overview](architecture.md)** - System design and components
+- **[Client Architecture](client-architecture.md)** - Client service details
+- **[Error Catalog](error-catalog.md)** - Error codes and remediation
 - **[Docker Deployment](installation/docker.md)** - Container deployment guide
-- **[Getting Started](GETTING_STARTED.md)** - Installation and basics
+- **[Getting Started](getting-started.md)** - Installation and basics
 - **Domain Guides:** [Report](modules/report.md), [Product](modules/product.md), [Production](modules/production.md)
 
 ---

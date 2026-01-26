@@ -690,4 +690,4 @@ api.report.send_uut_report(uut)  # ✗ Wrong - uut is factory, not report
 
 - [Production Module](PRODUCTION_MODULE.md) - For serial number management before testing
 - [Product Module](PRODUCT_MODULE.md) - For product/revision setup
-- [Architecture](../ARCHITECTURE.md) - Overall system design
+- [Architecture](../architecture.md) - Overall system design

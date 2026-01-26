@@ -5,7 +5,7 @@ This folder contains **official, user-facing documentation** that ships with `pi
 ## 📚 Published Documentation (in this folder)
 
 ### Getting Started
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete installation, configuration, logging, and error handling guide
+- **[getting-started.md](getting-started.md)** - Complete installation, configuration, logging, and error handling guide
 
 ### Domain API Documentation
 These files are included in the PyPI package:
@@ -23,7 +23,7 @@ These files are included in the PyPI package:
 ### Module Usage Guides
 Detailed guides with comprehensive examples:
 
-- **[usage/](usage/)** - Legacy module guides (REPORT_MODULE.md, PRODUCT_MODULE.md, etc.)
+- **[usage/](usage/)** - Detailed module guides (report-module.md, product-module.md, etc.)
   - Detailed usage patterns
   - Advanced examples
   - Factory method documentation
@@ -38,8 +38,7 @@ Code snippets and examples embedded in documentation:
 
 All internal documentation is in separate folders:
 
-- **[internal/](internal/)** - Architecture, design docs, AI agent knowledge, internal guides
-- **[archive/](archive/)** - Archived working notes and old documentation
+- **[internal_documentation/](internal_documentation/)** - Architecture, design docs, AI agent knowledge, internal guides
 
 **These folders are excluded from the pip package.**
 
@@ -49,48 +48,46 @@ All internal documentation is in separate folders:
 docs/
 ├── INDEX.md              ✅ Published - Documentation index
 ├── README.md             ✅ Published - This file
-├── PRODUCT.md            ✅ Published - Product domain
-├── ASSET.md              ✅ Published - Asset domain
-├── PRODUCTION.md         ✅ Published - Production domain
-├── REPORT.md             ✅ Published - Report domain
-├── ANALYTICS.md          ✅ Published - Analytics domain
-├── SOFTWARE.md           ✅ Published - Software domain
-├── ROOTCAUSE.md          ✅ Published - RootCause domain
-├── PROCESS.md            ✅ Published - Process domain
+├── getting-started.md    ✅ Published - Getting started guide
+├── architecture.md       ✅ Published - System architecture
+├── error-catalog.md      ✅ Published - Error reference
+├── modules/              ✅ Published - Domain API docs
+│   ├── product.md
+│   ├── asset.md
+│   ├── report.md
+│   └── ...
 ├── usage/                ✅ Published - Detailed module guides
-│   ├── REPORT_MODULE.md
-│   ├── PRODUCT_MODULE.md
-│   ├── PRODUCTION_MODULE.md
+│   ├── report-module.md
+│   ├── product-module.md
 │   └── ...
-├── examples/             ✅ Published - Documentation examples
-│   └── basic_usage.py
-├── internal/             ❌ NOT Published - Internal docs
-│   ├── ARCHITECTURE.md
-│   ├── WATS_DOMAIN_KNOWLEDGE.md
-│   ├── api_specs/
+├── installation/         ✅ Published - Installation guides
+│   ├── client.md
+│   ├── docker.md
 │   └── ...
-└── archive/              ❌ NOT Published - Archived notes
-    └── ...
+├── internal_documentation/  ❌ NOT Published - Internal docs
+│   ├── archived/
+│   ├── WIP/
+│   └── ...
+└── domain_health/        ❌ NOT Published - Health tracking
 ```
 
 ## ✅ Rule of Thumb
 
 - **Files/folders in `docs/` root** → Published with pip package
-- **Folders: `usage/`, `examples/`** → Published (user-facing)
-- **Folders: `internal/`, `archive/`** → NOT Published (GitHub only)
+- **Folders: `usage/`, `modules/`, `installation/`** → Published (user-facing)
+- **Folders: `internal_documentation/`, `domain_health/`** → NOT Published (GitHub only)
 
 ## 🔄 Moving Documents
 
 When creating new documentation:
 
-- **User-facing API docs** → Put directly in `docs/`
+- **User-facing API docs** → Put in `docs/modules/`
 - **Detailed usage guides** → Put in `docs/usage/`
-- **Documentation examples** → Put in `docs/examples/`
-- **Internal architecture/design** → Put in `docs/internal/`
-- **Obsolete working notes** → Move to `docs/archive/`
+- **Installation guides** → Put in `docs/installation/`
+- **Internal architecture/design** → Put in `docs/internal_documentation/`
 
 ## 📦 Packaging
 
 Controlled by `MANIFEST.in` in the project root:
-- **Includes:** `docs/*.md`, `docs/usage/`, `docs/examples/`
-- **Excludes:** `docs/internal/`, `docs/archive/`
+- **Includes:** `docs/*.md`, `docs/usage/`, `docs/modules/`, `docs/installation/`
+- **Excludes:** `docs/internal_documentation/`, `docs/domain_health/`
