@@ -63,15 +63,56 @@ class ProductionService:
     # =========================================================================
 
     def get_unit(self, serial_number: str, part_number: str) -> Optional[Unit]:
-        """Get a production unit."""
+        """Get a production unit.
+
+        Args:
+            serial_number: Unit serial number.
+            part_number: Product part number.
+
+        Returns:
+            Unit if found, None otherwise.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If serial_number or part_number is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_unit(serial_number, part_number))
 
     def create_units(self, units: Sequence[Unit]) -> List[Unit]:
-        """Create multiple production units."""
+        """Create multiple production units.
+
+        Args:
+            units: Sequence of Unit objects to create.
+
+        Returns:
+            List of created Unit objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If units list is empty or contains invalid data.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.create_units(units))
 
     def update_unit(self, unit: Unit) -> Optional[Unit]:
-        """Update a production unit."""
+        """Update a production unit.
+
+        Args:
+            unit: Unit object with updated fields.
+
+        Returns:
+            Updated Unit or None if failed.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If unit data is invalid.
+            NotFoundError: If unit not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.update_unit(unit))
 
     # =========================================================================
@@ -84,7 +125,22 @@ class ProductionService:
         part_number: str,
         revision: Optional[str] = None
     ) -> Optional[UnitVerification]:
-        """Verify a unit and get its status."""
+        """Verify a unit and get its status.
+
+        Args:
+            serial_number: Unit serial number.
+            part_number: Product part number.
+            revision: Optional revision filter.
+
+        Returns:
+            UnitVerification with status details, or None if not found.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If serial_number or part_number is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.verify_unit(serial_number, part_number, revision))
 
     def get_unit_grade(
@@ -93,11 +149,40 @@ class ProductionService:
         part_number: str,
         revision: Optional[str] = None
     ) -> Optional[UnitVerificationGrade]:
-        """Get the verification grade for a unit."""
+        """Get the verification grade for a unit.
+
+        Args:
+            serial_number: Unit serial number.
+            part_number: Product part number.
+            revision: Optional revision filter.
+
+        Returns:
+            UnitVerificationGrade with grade details, or None if not found.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If serial_number or part_number is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_unit_grade(serial_number, part_number, revision))
 
     def is_unit_passing(self, serial_number: str, part_number: str) -> bool:
-        """Check if a unit is passing all tests."""
+        """Check if a unit is passing all tests.
+
+        Args:
+            serial_number: Unit serial number.
+            part_number: Product part number.
+
+        Returns:
+            True if unit is passing, False otherwise.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If serial_number or part_number is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.is_unit_passing(serial_number, part_number))
 
     # =========================================================================
@@ -105,7 +190,16 @@ class ProductionService:
     # =========================================================================
 
     def get_serial_number_types(self) -> List[SerialNumberType]:
-        """Get all configured serial number types."""
+        """Get all configured serial number types.
+
+        Returns:
+            List of SerialNumberType objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_serial_number_types())
 
     # =========================================================================
@@ -113,7 +207,19 @@ class ProductionService:
     # =========================================================================
 
     def get_phases(self, force_refresh: bool = False) -> List[UnitPhase]:
-        """Get all available unit phases."""
+        """Get all available unit phases.
+
+        Args:
+            force_refresh: If True, bypass cache and fetch fresh data.
+
+        Returns:
+            List of UnitPhase objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_phases(force_refresh))
 
     def get_phase(
@@ -122,19 +228,68 @@ class ProductionService:
         code: Optional[str] = None,
         name: Optional[str] = None
     ) -> Optional[UnitPhase]:
-        """Get a specific unit phase by ID, code, or name."""
+        """Get a specific unit phase by ID, code, or name.
+
+        Args:
+            phase_id: Phase ID to find.
+            code: Phase code to find.
+            name: Phase name to find.
+
+        Returns:
+            UnitPhase if found, None otherwise.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If no search criteria provided.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_phase(phase_id, code, name))
 
     def get_phase_id(self, phase: Union[int, str, UnitPhaseFlag]) -> Optional[int]:
-        """Resolve a phase identifier to its ID."""
+        """Resolve a phase identifier to its ID.
+
+        Args:
+            phase: Phase ID (int), name/code (str), or UnitPhaseFlag enum.
+
+        Returns:
+            Phase ID if found, None otherwise.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_phase_id(phase))
 
     def get_all_unit_phases(self) -> List[UnitPhase]:
-        """Get all available unit phases (alias for get_phases)."""
+        """Get all available unit phases (alias for get_phases).
+
+        Returns:
+            List of UnitPhase objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_all_unit_phases())
 
     def get_phase_by_name(self, name: str) -> Optional[UnitPhase]:
-        """Get a unit phase by name."""
+        """Get a unit phase by name.
+
+        Args:
+            name: Phase name to find.
+
+        Returns:
+            UnitPhase if found, None otherwise.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If name is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_phase_by_name(name))
 
     # =========================================================================
@@ -146,7 +301,21 @@ class ProductionService:
         serial_number: str,
         part_number: str
     ) -> List[UnitChange]:
-        """Get the change history for a unit."""
+        """Get the change history for a unit.
+
+        Args:
+            serial_number: Unit serial number.
+            part_number: Product part number.
+
+        Returns:
+            List of UnitChange records.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If serial_number or part_number is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_unit_history(serial_number, part_number))
 
     # =========================================================================
@@ -158,23 +327,76 @@ class ProductionService:
         part_number: Optional[str] = None,
         batch_id: Optional[str] = None
     ) -> List[ProductionBatch]:
-        """Get production batches."""
+        """Get production batches.
+
+        Args:
+            part_number: Optional filter by part number.
+            batch_id: Optional filter by batch ID.
+
+        Returns:
+            List of ProductionBatch objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_batches(part_number, batch_id))
 
     def create_batch(
         self, batch: Union[ProductionBatch, Dict[str, Any]]
     ) -> Optional[ProductionBatch]:
-        """Create a new production batch."""
+        """Create a new production batch.
+
+        Args:
+            batch: ProductionBatch object or dict with batch data.
+
+        Returns:
+            Created ProductionBatch or None if failed.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If batch data is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.create_batch(batch))
 
     def update_batch(self, batch: ProductionBatch) -> Optional[ProductionBatch]:
-        """Update an existing production batch."""
+        """Update an existing production batch.
+
+        Args:
+            batch: ProductionBatch object with updated fields.
+
+        Returns:
+            Updated ProductionBatch or None if failed.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If batch data is invalid.
+            NotFoundError: If batch not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.update_batch(batch))
 
     def save_batches(
         self, batches: Sequence[Union[ProductionBatch, Dict[str, Any]]]
     ) -> List[ProductionBatch]:
-        """Add or update batches (bulk)."""
+        """Add or update batches (bulk).
+
+        Args:
+            batches: Sequence of ProductionBatch objects or dicts.
+
+        Returns:
+            List of saved ProductionBatch objects.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If batches is empty or contains invalid data.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.save_batches(batches))
 
     # =========================================================================
@@ -188,7 +410,24 @@ class ProductionService:
         phase: Union[int, str, UnitPhaseFlag],
         comment: Optional[str] = None
     ) -> bool:
-        """Set a unit's current phase."""
+        """Set a unit's current phase.
+
+        Args:
+            serial_number: Unit serial number.
+            part_number: Product part number.
+            phase: Phase ID, name, or UnitPhaseFlag enum.
+            comment: Optional comment for the phase change.
+
+        Returns:
+            True if phase was set successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If serial_number, part_number, or phase is invalid.
+            NotFoundError: If unit not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.set_unit_phase(
             serial_number, part_number, phase, comment
         ))
@@ -200,7 +439,24 @@ class ProductionService:
         process_code: Optional[int] = None,
         comment: Optional[str] = None
     ) -> bool:
-        """Set a unit's process."""
+        """Set a unit's process.
+
+        Args:
+            serial_number: Unit serial number.
+            part_number: Product part number.
+            process_code: Process code to set.
+            comment: Optional comment for the process change.
+
+        Returns:
+            True if process was set successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If serial_number or part_number is empty.
+            NotFoundError: If unit not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.set_unit_process(
             serial_number, part_number, process_code, comment
         ))
@@ -216,17 +472,60 @@ class ProductionService:
         top: Optional[int] = None,
         skip: Optional[int] = None
     ) -> List[UnitChange]:
-        """Get unit change records."""
+        """Get unit change records.
+
+        Args:
+            serial_number: Optional filter by serial number.
+            part_number: Optional filter by part number.
+            top: Maximum number of records to return.
+            skip: Number of records to skip (pagination).
+
+        Returns:
+            List of UnitChange records.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.get_unit_changes(
             serial_number, part_number, top, skip
         ))
 
     def delete_unit_change(self, change_id: str) -> bool:
-        """Delete a unit change record."""
+        """Delete a unit change record.
+
+        Args:
+            change_id: ID of the change record to delete.
+
+        Returns:
+            True if deleted successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If change_id is empty.
+            NotFoundError: If change record not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.delete_unit_change(change_id))
 
     def acknowledge_unit_change(self, change_id: str) -> bool:
-        """Acknowledge and delete a unit change record."""
+        """Acknowledge and delete a unit change record.
+
+        Args:
+            change_id: ID of the change record to acknowledge.
+
+        Returns:
+            True if acknowledged successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If change_id is empty.
+            NotFoundError: If change record not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.acknowledge_unit_change(change_id))
 
     # =========================================================================
@@ -240,7 +539,24 @@ class ProductionService:
         child_serial: str,
         child_part: str
     ) -> bool:
-        """Attach a child unit to a parent assembly."""
+        """Attach a child unit to a parent assembly.
+
+        Args:
+            parent_serial: Parent unit serial number.
+            parent_part: Parent product part number.
+            child_serial: Child unit serial number.
+            child_part: Child product part number.
+
+        Returns:
+            True if child was attached successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If any parameter is empty or invalid.
+            NotFoundError: If parent or child unit not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.add_child_to_assembly(
             parent_serial, parent_part, child_serial, child_part
         ))
@@ -252,7 +568,24 @@ class ProductionService:
         child_serial: str,
         child_part: str
     ) -> bool:
-        """Remove the parent/child relation between two units."""
+        """Remove the parent/child relation between two units.
+
+        Args:
+            parent_serial: Parent unit serial number.
+            parent_part: Parent product part number.
+            child_serial: Child unit serial number.
+            child_part: Child product part number.
+
+        Returns:
+            True if child was removed successfully.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If any parameter is empty or invalid.
+            NotFoundError: If parent or child unit not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.remove_child_from_assembly(
             parent_serial, parent_part, child_serial, child_part
         ))
@@ -263,7 +596,23 @@ class ProductionService:
         part_number: str,
         revision: str
     ) -> Optional[Dict[str, Any]]:
-        """Verify that assembly child units match the box build template."""
+        """Verify that assembly child units match the box build template.
+
+        Args:
+            serial_number: Assembly unit serial number.
+            part_number: Assembly product part number.
+            revision: Product revision.
+
+        Returns:
+            Verification result dict, or None if not applicable.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If any parameter is empty.
+            NotFoundError: If unit not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.verify_assembly(
             serial_number, part_number, revision
         ))
@@ -280,7 +629,25 @@ class ProductionService:
         reference_pn: Optional[str] = None,
         station_name: Optional[str] = None
     ) -> List[str]:
-        """Allocate serial numbers from pool."""
+        """Allocate serial numbers from pool.
+
+        Args:
+            type_name: Serial number type name.
+            count: Number of serial numbers to allocate (default: 1).
+            reference_sn: Optional reference serial number.
+            reference_pn: Optional reference part number.
+            station_name: Optional station name for allocation.
+
+        Returns:
+            List of allocated serial number strings.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If type_name is empty or count < 1.
+            NotFoundError: If serial number type not found.
+            APIError: If the server returns an error (e.g., pool exhausted).
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.allocate_serial_numbers(
             type_name, count, reference_sn, reference_pn, station_name
         ))
@@ -291,7 +658,22 @@ class ProductionService:
         from_serial: str,
         to_serial: str
     ) -> List[Dict[str, Any]]:
-        """Find serial numbers in a range."""
+        """Find serial numbers in a range.
+
+        Args:
+            type_name: Serial number type name.
+            from_serial: Start of range (inclusive).
+            to_serial: End of range (inclusive).
+
+        Returns:
+            List of serial number info dicts.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If type_name or range is invalid.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.find_serial_numbers_in_range(
             type_name, from_serial, to_serial
         ))
@@ -302,7 +684,22 @@ class ProductionService:
         reference_serial: Optional[str] = None,
         reference_part: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Find serial numbers by reference."""
+        """Find serial numbers by reference.
+
+        Args:
+            type_name: Serial number type name.
+            reference_serial: Optional reference serial number.
+            reference_part: Optional reference part number.
+
+        Returns:
+            List of serial number info dicts.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If type_name is empty.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.find_serial_numbers_by_reference(
             type_name, reference_serial, reference_part
         ))
@@ -312,7 +709,21 @@ class ProductionService:
         file_content: bytes,
         content_type: str = "text/csv"
     ) -> bool:
-        """Import serial numbers from file (XML or CSV)."""
+        """Import serial numbers from file (XML or CSV).
+
+        Args:
+            file_content: File content as bytes.
+            content_type: MIME type ("text/csv" or "application/xml").
+
+        Returns:
+            True if import was successful.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If file_content is empty or content_type invalid.
+            APIError: If the server returns an error (e.g., invalid format).
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.import_serial_numbers(file_content, content_type))
 
     def export_serial_numbers(
@@ -321,7 +732,23 @@ class ProductionService:
         state: Optional[str] = None,
         format: str = "csv"
     ) -> Optional[bytes]:
-        """Export serial numbers as file."""
+        """Export serial numbers as file.
+
+        Args:
+            type_name: Serial number type name.
+            state: Optional state filter.
+            format: Export format ("csv" or "xml").
+
+        Returns:
+            File content as bytes, or None if no data.
+
+        Raises:
+            AuthenticationError: If API token is invalid or expired.
+            ValidationError: If type_name is empty or format invalid.
+            NotFoundError: If serial number type not found.
+            APIError: If the server returns an error response.
+            PyWATSError: For other unexpected errors.
+        """
         return run_sync(self._async_service.export_serial_numbers(type_name, state, format))
 
     # =========================================================================
