@@ -618,6 +618,6 @@ tickets = api.rootcause.get_tickets(
 
 ## Related Documentation
 
-- [Product Module](PRODUCT_MODULE.md) - Products involved in issues
-- [Production Module](PRODUCTION_MODULE.md) - Production units with failures
-- [Report Module](REPORT_MODULE.md) - Test reports linked to tickets
+- [Product Module](product-module.md) - Products involved in issues
+- [Production Module](production-module.md) - Production units with failures
+- [Report Module](report-module.md) - Test reports linked to tickets

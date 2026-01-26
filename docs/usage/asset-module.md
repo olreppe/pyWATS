@@ -531,6 +531,6 @@ if asset.state == AssetState.RETIRED:
 
 ## Related Documentation
 
-- [Product Module](PRODUCT_MODULE.md) - Managing products tested by assets
-- [Production Module](PRODUCTION_MODULE.md) - Manufacturing units at stations
-- [Report Module](REPORT_MODULE.md) - Test reports from stations
+- [Product Module](product-module.md) - Managing products tested by assets
+- [Production Module](production-module.md) - Manufacturing units at stations
+- [Report Module](report-module.md) - Test reports from stations

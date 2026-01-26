@@ -898,10 +898,10 @@ api.report.submit_report(...)
 
 ## Further Reading
 
-- **[Getting Started Guide](GETTING_STARTED.md)** - Installation and basic usage
-- **[Client Architecture](CLIENT_ARCHITECTURE.md)** - Detailed client design
-- **[Integration Patterns](INTEGRATION_PATTERNS.md)** - Common scenarios and workflows
-- **[Error Catalog](ERROR_CATALOG.md)** - Error codes and remediation
+- **[Getting Started Guide](getting-started.md)** - Installation and basic usage
+- **[Client Architecture](client-architecture.md)** - Detailed client design
+- **[Integration Patterns](integration-patterns.md)** - Common scenarios and workflows
+- **[Error Catalog](error-catalog.md)** - Error codes and remediation
 - **[Docker Deployment](installation/docker.md)** - Container deployment guide
 - **Domain Guides:** [Report](modules/report.md), [Product](modules/product.md), [Asset](modules/asset.md), etc.
 

@@ -549,6 +549,6 @@ for proc in processes:
 
 ## Related Documentation
 
-- [Report Module](REPORT_MODULE.md) - For creating test reports
-- [Product Module](PRODUCT_MODULE.md) - For product/BOM setup
-- [Architecture](../ARCHITECTURE.md) - Overall system design
+- [Report Module](report-module.md) - For creating test reports
+- [Product Module](product-module.md) - For product/BOM setup
+- [Architecture](../architecture.md) - Overall system design

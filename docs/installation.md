@@ -174,9 +174,9 @@ After installation:
    ```
 
 2. **Read Documentation:**
-   - [README.md](README.md) - Getting started
-   - [CHANGELOG.md](CHANGELOG.md) - Version history
-   - [docs/](docs/) - Detailed documentation
+   - [README.md](../README.md) - Getting started
+   - [CHANGELOG.md](../CHANGELOG.md) - Version history
+   - [INDEX.md](INDEX.md) - Detailed documentation
 
 3. **Run Examples:**
    ```bash

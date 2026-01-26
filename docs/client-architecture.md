@@ -869,7 +869,7 @@ def _is_process_running(pid: int) -> bool:
 
 ## Configuration System
 
-See [Configuration Management](ARCHITECTURE.md#configuration-management) in main architecture doc.
+See [Configuration Management](architecture.md#configuration-management) in main architecture doc.
 
 **Key Points:**
 - JSON-based configuration
@@ -1059,8 +1059,8 @@ python -m pywats_client queue clean --instance-id production
 
 ## See Also
 
-- **[Architecture Overview](ARCHITECTURE.md)** - System-wide architecture
-- **[Integration Patterns](INTEGRATION_PATTERNS.md)** - Common workflows
+- **[Architecture Overview](architecture.md)** - System-wide architecture
+- **[Integration Patterns](integration-patterns.md)** - Common workflows
 - **[Client Installation](installation/client.md)** - Installation guide
 - **[Service Deployment](installation/windows-service.md)** - Service setup
 

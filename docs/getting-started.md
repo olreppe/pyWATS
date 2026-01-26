@@ -1210,8 +1210,6 @@ import asyncio
 asyncio.run(process_production_data())
 ```
 
-For complete documentation, see [PERFORMANCE_OPTIMIZATIONS.md](PERFORMANCE_OPTIMIZATIONS.md).
-
 ---
 
 ## Internal API Usage

@@ -56,11 +56,11 @@ Each installation guide includes:
 
 - **Quick Start**: See [client.md](client.md) for basic installation
 - **Production**: See [docker.md](docker.md) for containerized deployment
-- **Development**: See [../GETTING_STARTED.md](../GETTING_STARTED.md) for developer setup
+- **Development**: See [../getting-started.md](../getting-started.md) for developer setup
 
 ## See Also
 
 - **[../INDEX.md](../INDEX.md)** - Main documentation index
-- **[../CLIENT_ARCHITECTURE.md](../CLIENT_ARCHITECTURE.md)** - Client service internals
-- **[../GETTING_STARTED.md](../GETTING_STARTED.md)** - Developer installation and setup
-- **[../ENV_VARIABLES.md](../ENV_VARIABLES.md)** - Environment variable reference
+- **[../client-architecture.md](../client-architecture.md)** - Client service internals
+- **[../getting-started.md](../getting-started.md)** - Developer installation and setup
+- **[../env-variables.md](../env-variables.md)** - Environment variable reference

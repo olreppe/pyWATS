@@ -431,7 +431,6 @@ Supported. May prompt for security approval on first run.
 
 ## See Also
 
-- [GETTING_STARTED.md](GETTING_STARTED.md) - Basic client usage
-- [client.md](client.md) - Installation guide
-- [docs/refactoring/SEPARATE_SERVICE_GUI_MODE.md](refactoring/SEPARATE_SERVICE_GUI_MODE.md) - Architecture design
+- [Getting Started](../getting-started.md) - Basic client usage
+- [Client Installation](client.md) - Installation guide
 - [Apple launchd documentation](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)

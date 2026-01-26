@@ -520,6 +520,6 @@ if "B" in existing:
 
 ## Related Documentation
 
-- [Production Module](PRODUCTION_MODULE.md) - For manufacturing units from products
-- [Report Module](REPORT_MODULE.md) - For testing products
-- [Architecture](../ARCHITECTURE.md) - Overall system design
+- [Production Module](production-module.md) - For manufacturing units from products
+- [Report Module](report-module.md) - For testing products
+- [Architecture](../architecture.md) - Overall system design

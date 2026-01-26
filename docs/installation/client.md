@@ -546,10 +546,9 @@ chmod 600 ~/.config/pywats_client/config.json
 
 ## See Also
 
-- [GUI Configuration Guide](../src/pywats_client/GUI_CONFIGURATION.md) - Customize tabs and logging
-- [Headless Operation Guide](../src/pywats_client/control/HEADLESS_GUIDE.md) - CLI and HTTP API reference
-- [Converter Architecture](../docs/internal/CONVERTER_ARCHITECTURE.md) - Create custom converters
-- [Getting Started](GETTING_STARTED.md) - PyWATS API library guide
+- [GUI Configuration Guide](../../src/pywats_client/GUI_CONFIGURATION.md) - Customize tabs and logging
+- [Headless Operation Guide](../../src/pywats_client/control/HEADLESS_GUIDE.md) - CLI and HTTP API reference
+- [Getting Started](../getting-started.md) - PyWATS API library guide
 
 ---
 

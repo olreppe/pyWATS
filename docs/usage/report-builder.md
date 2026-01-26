@@ -606,7 +606,6 @@ builder.add_step_from_dict(
 
 ## See Also
 
-- [Report Module Documentation](../REPORT.md)
+- [Report Module Documentation](../modules/report.md)
 - [Converter Template](../../converters/converter_template.py)
-- [Simple Converter Example](../../converters/simple_builder_converter.py)
 - [Examples](../../examples/report/report_builder_examples.py)

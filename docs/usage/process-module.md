@@ -400,6 +400,6 @@ The API provides:
 
 ## Related Documentation
 
-- [Report Module](REPORT_MODULE.md) - Test reports using process codes
-- [Production Module](PRODUCTION_MODULE.md) - Production with process tracking
-- [Software Module](SOFTWARE_MODULE.md) - Software distribution
+- [Report Module](report-module.md) - Test reports using process codes
+- [Production Module](production-module.md) - Production with process tracking
+- [Software Module](software-module.md) - Software distribution

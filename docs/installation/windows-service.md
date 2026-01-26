@@ -394,7 +394,6 @@ The GUI never auto-starts services - they must be started separately (manually o
 
 ## See Also
 
-- [GETTING_STARTED.md](GETTING_STARTED.md) - Basic client usage
-- [client.md](client.md) - Installation guide
-- [docs/refactoring/SEPARATE_SERVICE_GUI_MODE.md](refactoring/SEPARATE_SERVICE_GUI_MODE.md) - Architecture design
+- [Getting Started](../getting-started.md) - Basic client usage
+- [Client Installation](client.md) - Installation guide
 - [NSSM Documentation](https://nssm.cc/usage) - Full NSSM options

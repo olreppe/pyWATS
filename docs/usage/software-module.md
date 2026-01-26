@@ -535,6 +535,6 @@ To access package files, use the WATS web interface or Production Manager.
 
 ## Related Documentation
 
-- [Process Module](PROCESS_MODULE.md) - Test/repair operations
-- [Production Module](PRODUCTION_MODULE.md) - Production units
-- [Asset Module](ASSET_MODULE.md) - Test station assets
+- [Process Module](process-module.md) - Test/repair operations
+- [Production Module](production-module.md) - Production units
+- [Asset Module](asset-module.md) - Test station assets

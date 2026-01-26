@@ -32,6 +32,6 @@ Each domain guide includes:
 ## See Also
 
 - **[../INDEX.md](../INDEX.md)** - Main documentation index
-- **[../ARCHITECTURE.md](../ARCHITECTURE.md)** - System architecture overview
-- **[../GETTING_STARTED.md](../GETTING_STARTED.md)** - Installation and setup
+- **[../architecture.md](../architecture.md)** - System architecture overview
+- **[../getting-started.md](../getting-started.md)** - Installation and setup
 - **[../usage/](../usage/)** - Detailed legacy module guides with comprehensive examples

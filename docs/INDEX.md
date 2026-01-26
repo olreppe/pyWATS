@@ -4,9 +4,9 @@ Official documentation for pyWATS - Python API library for WATS.
 
 ## Getting Started
 
-- **[Getting Started Guide](GETTING_STARTED.md)** - Complete installation, configuration, and initialization guide
+- **[Getting Started Guide](getting-started.md)** - Complete installation, configuration, and initialization guide
 - **[Client Installation](installation/client.md)** - End-user client installation for test stations
-- **[Quick Reference](QUICK_REFERENCE.md)** - Common patterns and code snippets
+- **[Quick Reference](quick-reference.md)** - Common patterns and code snippets
 - **[README](../README.md)** - Package overview and quick start
 - **[CHANGELOG](../CHANGELOG.md)** - Version history and release notes
 
@@ -14,9 +14,9 @@ Official documentation for pyWATS - Python API library for WATS.
 
 **System architecture, integration patterns, and extension points:**
 
-- **[Architecture Overview](ARCHITECTURE.md)** - Complete system design: API, Client, GUI layers; async/sync patterns; deployment modes
-- **[Client Architecture](CLIENT_ARCHITECTURE.md)** - Client service internals: IPC, queue system, converters, multi-instance
-- **[Integration Patterns](INTEGRATION_PATTERNS.md)** - Practical workflows: station setup, multi-process testing, error recovery, performance optimization
+- **[Architecture Overview](architecture.md)** - Complete system design: API, Client, GUI layers; async/sync patterns; deployment modes
+- **[Client Architecture](client-architecture.md)** - Client service internals: IPC, queue system, converters, multi-instance
+- **[Integration Patterns](integration-patterns.md)** - Practical workflows: station setup, multi-process testing, error recovery, performance optimization
 
 **See these guides to understand:**
 - How the three layers (API, Client, GUI) work together
@@ -48,17 +48,17 @@ Complete documentation for each WATS domain with examples and API reference:
 
 ### Detailed Module Guides
 
-Legacy usage guides with comprehensive examples and patterns:
+Usage guides with comprehensive examples and patterns:
 
-- **[Report Module Guide](usage/REPORT_MODULE.md)** - Detailed report creation and querying
-- **[Report Builder](usage/REPORT_BUILDER.md)** - Simple, LLM-friendly report building for converters
-- **[Product Module Guide](usage/PRODUCT_MODULE.md)** - Product and BOM management
-- **[Production Module Guide](usage/PRODUCTION_MODULE.md)** - Serial number and unit tracking
-- **[Asset Module Guide](usage/ASSET_MODULE.md)** - Equipment and calibration management
-- **[Software Module Guide](usage/SOFTWARE_MODULE.md)** - Package distribution
-- **[RootCause Module Guide](usage/ROOTCAUSE_MODULE.md)** - Ticket and defect tracking
-- **[Process Module Guide](usage/PROCESS_MODULE.md)** - Process operations
-- **[Box Build Guide](usage/BOX_BUILD_GUIDE.md)** - Assembly and box build workflows
+- **[Report Module Guide](usage/report-module.md)** - Detailed report creation and querying
+- **[Report Builder](usage/report-builder.md)** - Simple, LLM-friendly report building for converters
+- **[Product Module Guide](usage/product-module.md)** - Product and BOM management
+- **[Production Module Guide](usage/production-module.md)** - Serial number and unit tracking
+- **[Asset Module Guide](usage/asset-module.md)** - Equipment and calibration management
+- **[Software Module Guide](usage/software-module.md)** - Package distribution
+- **[RootCause Module Guide](usage/rootcause-module.md)** - Ticket and defect tracking
+- **[Process Module Guide](usage/process-module.md)** - Process operations
+- **[Box Build Guide](usage/box-build-guide.md)** - Assembly and box build workflows
 
 ## Deployment & Operations
 
@@ -73,10 +73,10 @@ Legacy usage guides with comprehensive examples and patterns:
 
 **Resources for developers extending or troubleshooting pyWATS:**
 
-- **[WATS Domain Knowledge](WATS_DOMAIN_KNOWLEDGE.md)** - Essential domain concepts for AI agents and developers (units, reports, processes, operations)
-- **[LLM Converter Guide](LLM_CONVERTER_GUIDE.md)** - Quick reference template for implementing converters
-- **[Environment Variables](ENV_VARIABLES.md)** - Using env vars for development and debugging
-- **[Error Catalog](ERROR_CATALOG.md)** - Comprehensive error reference with causes, examples, and remediation
+- **[WATS Domain Knowledge](wats-domain-knowledge.md)** - Essential domain concepts for AI agents and developers (units, reports, processes, operations)
+- **[LLM Converter Guide](llm-converter-guide.md)** - Quick reference template for implementing converters
+- **[Environment Variables](env-variables.md)** - Using env vars for development and debugging
+- **[Error Catalog](error-catalog.md)** - Comprehensive error reference with causes, examples, and remediation
 
 **Client GUI Development:**
 - **[GUI Configuration](../src/pywats_client/GUI_CONFIGURATION.md)** - Configure GUI tabs, logging, and settings
@@ -85,7 +85,7 @@ Legacy usage guides with comprehensive examples and patterns:
 ## Quick Reference by Task
 
 ### Async vs Sync Usage
-See [Getting Started - Async Usage](GETTING_STARTED.md#async-usage) - Use `AsyncWATS` for concurrent requests or `pyWATS` for simple blocking calls
+See [Getting Started - Async Usage](getting-started.md#async-usage) - Use `AsyncWATS` for concurrent requests or `pyWATS` for simple blocking calls
 
 ### Creating Test Reports
 Start with [Report Domain](modules/report.md) - Learn how to create UUT reports with all step types
@@ -113,8 +113,7 @@ See [Process Domain](modules/process.md) - Define test/repair operations, proces
 
 ## Tools & Utilities
 
-- **[LLM Converter Guide](LLM_CONVERTER_GUIDE.md)** - Quick reference for LLMs implementing converters
-- **[MCP Recommendations](MCP_RECOMMENDATIONS.md)** - Guide for building MCP servers (if needed in future)
+- **[LLM Converter Guide](llm-converter-guide.md)** - Quick reference for LLMs implementing converters
 
 ## Links
 
