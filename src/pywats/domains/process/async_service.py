@@ -425,12 +425,18 @@ class AsyncProcessService:
             repair_code: Repair operation code (default: 500)
             
         Returns:
-            List of fail code dictionaries
+            List of fail code dictionaries with category, code, description, guid
         """
-        configs = await self.get_repair_operations()
+        configs = await self.get_repair_operation_configs()
         if repair_code in configs:
             return [
-                {"code": fc.code, "name": fc.name, "description": fc.description}
+                {
+                    "category": fc.category,
+                    "code": fc.code,
+                    "description": fc.code,  # code and description are the same
+                    "guid": str(fc.guid),
+                    "category_guid": str(fc.category_guid)
+                }
                 for fc in configs[repair_code].failure_codes
             ]
         return []

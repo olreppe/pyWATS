@@ -156,12 +156,26 @@ Key changes:
 - `failures` property returns main unit's failures (idx=0)
 - Added `add_failure_to_main_unit()` for backward compatibility (deprecated, delegates to `add_failure()`)
 - Model validator ensures main unit always exists
-- 33% reduction in code (644 → 432 lines)
+- 34% reduction in code (644 → 426 lines)
 
-Remaining work (future):
-- Refactor `UURAttachment` to pure Pydantic model (still has `_uur_report` reference)
-- Add fail code validation via ProcessService cache
-- Clean up unused files: `failure.py`, `misc_uur_info.py`, `fail_code.py` (once fully deprecated)
+**Attachment Refactoring (COMPLETED Jan 2026):**
+- Enhanced shared `Attachment` class with `from_file()` and `from_bytes()` class methods
+- UURReport now uses shared `Attachment` instead of `UURAttachment`
+- `UURAttachment` deprecated (kept for backward compatibility)
+- Automatic MIME type detection for common file types
+
+**Fail Code Model (COMPLETED Jan 2026):**
+- Added `FailureCodeInfo` NamedTuple to ProcessService models
+- Fixed `RepairOperationConfig.failure_codes` property to correctly flatten category→fail_codes
+- Added `validate_fail_code()` method for optional client-side validation
+- Server validates fail codes on submission
+
+All deprecated classes kept for backward compatibility, marked for removal in v0.2.0:
+- `UURAttachment` → Use `Attachment`
+- `Failure` → Use `UURFailure`
+- `FailCode`, `FailCodes` → Use `ProcessService.get_fail_codes()`
+- `MiscUURInfo` → Use `Report.misc_infos`
+- `UURPartInfo` → Use `UURSubUnit`
 
 ---
 
@@ -172,8 +186,10 @@ Remaining work (future):
 | 2026-01-26 | Analysis | ✅ Complete | Compared C#, identified bugs |
 | 2026-01-26 | Phase 1 | ✅ Complete | Created uur_report_new.py (400 lines vs 644) |
 | 2026-01-26 | Phase 2 | ✅ Complete | Replaced uur_report.py, all 134 tests pass |
-| | Phase 3 | ✅ Complete | UURSubUnit already had add_failure() |
-| | Phase 4 | ✅ Complete | Tests passed without changes |
+| 2026-01-26 | Phase 3 | ✅ Complete | UURSubUnit already had add_failure() |
+| 2026-01-26 | Phase 4 | ✅ Complete | Tests passed without changes |
+| 2026-01-26 | Attachments | ✅ Complete | Shared Attachment class, UURAttachment deprecated |
+| 2026-01-26 | Fail Codes | ✅ Complete | FailureCodeInfo model, validation methods added |
 
 ---
 

@@ -7,7 +7,7 @@ This module handles the process list which defines:
 - Repair operations (e.g., Repair, RMA repair)
 - WIP operations
 """
-from .models import ProcessInfo, RepairOperationConfig, RepairCategory
+from .models import ProcessInfo, RepairOperationConfig, RepairCategory, FailureCodeInfo
 
 # Async implementations (primary API)
 from .async_repository import AsyncProcessRepository
@@ -22,6 +22,7 @@ __all__ = [
     "ProcessInfo",
     "RepairOperationConfig",
     "RepairCategory",
+    "FailureCodeInfo",
     # Async implementations (primary API)
     "AsyncProcessRepository",
     "AsyncProcessService",

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **UURReport Refactoring (Phase 4 Complete)** - Simplified UUR model to match UUT design:
+  - Reduced UURReport from 644 to 426 lines (34% reduction)
+  - Removed all internal `_xxx` lists (`_failures`, `_part_infos`, `_misc_info`, `_attachments`, `_fail_codes`)
+  - All data now stored in Pydantic fields only - cleaner, serializable model
+  - Model validator ensures main unit (idx=0) always exists
+  - Failures stored on `UURSubUnit.failures`, not duplicated on report
+
+- **Shared Attachment Class** - UUT and UUR now share same attachment model:
+  - Enhanced `Attachment` base class with `from_file()` and `from_bytes()` class methods
+  - Automatic MIME type detection for common file types
+  - `UURAttachment` deprecated - use shared `Attachment` instead
+  - Both report types use identical attachment handling
+
+- **Fail Code Model Enhancement** - Fixed ProcessService fail code structure:
+  - Added `FailureCodeInfo` NamedTuple with `category`, `code`, `guid`, `category_guid`
+  - Fixed `RepairOperationConfig.failure_codes` property to correctly flatten category→fail_codes hierarchy
+  - Added `get_fail_code_by_name()` and `validate_fail_code()` methods for validation
+  - `get_fail_codes()` now returns category info for proper fail code lookup
+
+### Deprecated
+
+- **UUR Legacy Classes** - Marked for removal in v0.2.0:
+  - `UURAttachment` - Use shared `Attachment` class instead
+  - `Failure` - Use `UURFailure` instead
+  - `FailCode`, `FailCodes`, `FailureTypeEnum` - Use `ProcessService.get_fail_codes()`
+  - `MiscUURInfo`, `MiscUURInfoCollection` - Use `Report.misc_infos`
+  - `UURPartInfo` - Use `UURSubUnit`
+
 ## [0.1.0b38] - 2026-01-26
 
 ### Added

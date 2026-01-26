@@ -2,11 +2,23 @@
 
 Models for test operations and repair operations.
 """
-from typing import Optional, List, Any
+from typing import Optional, List, Any, NamedTuple
 from uuid import UUID
 from pydantic import Field
 
 from ...shared.base_model import PyWATSModel
+
+
+class FailureCodeInfo(NamedTuple):
+    """Flattened failure code info for easy lookup."""
+    category: str
+    """Category name (e.g., "Component", "Assembly Process")"""
+    code: str
+    """Failure code description (e.g., "Defect Component")"""
+    guid: UUID
+    """Unique identifier for the fail code"""
+    category_guid: UUID
+    """GUID of the parent category"""
 
 
 class ProcessInfo(PyWATSModel):
@@ -74,6 +86,10 @@ class RepairOperationConfig(PyWATSModel):
     - Required fields (UUT, BOM, vendor)
     - Component reference mask for validation
     - Categories with fail codes
+    
+    Structure:
+        categories: List[RepairCategory]  # Top-level categories
+            └── fail_codes: List[RepairCategory]  # Actual fail codes (one level)
     """
     description: str = Field(validation_alias="Description", serialization_alias="Description")
     uut_required: int = Field(default=1, validation_alias="UUTRequired", serialization_alias="UUTRequired")
@@ -84,3 +100,62 @@ class RepairOperationConfig(PyWATSModel):
     vendor_required: int = Field(default=2, validation_alias="VendorRequired", serialization_alias="VendorRequired")
     categories: List[RepairCategory] = Field(default_factory=list, validation_alias="Categories", serialization_alias="Categories")
     misc_infos: List[Any] = Field(default_factory=list, validation_alias="MiscInfos", serialization_alias="MiscInfos")
+    
+    @property
+    def failure_codes(self) -> List[FailureCodeInfo]:
+        """
+        Get flattened list of all failure codes across all categories.
+        
+        The hierarchy is: category (parent) → fail_codes (children, one level).
+        
+        Returns:
+            List of FailureCodeInfo with category and code info
+        """
+        result = []
+        for category in self.categories:
+            # Each category contains fail_codes (which are also RepairCategory objects)
+            for fail_code in category.fail_codes:
+                if fail_code.selectable:  # Only selectable codes can be used
+                    result.append(FailureCodeInfo(
+                        category=category.description,
+                        code=fail_code.description,
+                        guid=fail_code.guid,
+                        category_guid=category.guid
+                    ))
+        return result
+    
+    def get_fail_code_by_name(
+        self, 
+        category: str, 
+        code: str
+    ) -> Optional[FailureCodeInfo]:
+        """
+        Look up a fail code by category and code name.
+        
+        Args:
+            category: Category description (e.g., "Component")
+            code: Fail code description (e.g., "Defect Component")
+            
+        Returns:
+            FailureCodeInfo if found, None otherwise
+        """
+        for fc in self.failure_codes:
+            if fc.category == category and fc.code == code:
+                return fc
+        return None
+    
+    def validate_fail_code(self, category: str, code: str) -> tuple[bool, str]:
+        """
+        Validate that a category/code combination exists.
+        
+        Args:
+            category: Category description
+            code: Fail code description
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        fc = self.get_fail_code_by_name(category, code)
+        if fc is None:
+            return False, f"Invalid fail code: category='{category}', code='{code}'"
+        return True, ""

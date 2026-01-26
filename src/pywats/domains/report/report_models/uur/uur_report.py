@@ -13,7 +13,7 @@ from pydantic import Field, model_validator
 
 from .uur_info import UURInfo
 from .uur_sub_unit import UURSubUnit, UURFailure
-from .uur_attachment import UURAttachment
+from ..attachment import Attachment  # Shared attachment class
 from ..report import Report
 
 if TYPE_CHECKING:
@@ -67,8 +67,8 @@ class UURReport(Report):
         serialization_alias="subUnits"
     )
     
-    # Attachments (report-level)
-    attachments: List[UURAttachment] = Field(
+    # Attachments (report-level) - uses shared Attachment class
+    attachments: List[Attachment] = Field(
         default_factory=list,
         validation_alias="binaryData",
         serialization_alias="binaryData"
@@ -304,62 +304,56 @@ class UURReport(Report):
         self,
         file_path: str,
         delete_after: bool = False,
-        label: Optional[str] = None,
-        mime_type: Optional[str] = None,
+        name: Optional[str] = None,
+        content_type: Optional[str] = None,
         failure_idx: Optional[int] = None
-    ) -> UURAttachment:
+    ) -> Attachment:
         """
         Attach a file to the repair report.
         
         Args:
             file_path: Path to file
             delete_after: Delete file after attaching
-            label: Custom label (defaults to filename)
-            mime_type: MIME type (auto-detected if not provided)
+            name: Custom name (defaults to filename)
+            content_type: MIME type (auto-detected if not provided)
             failure_idx: Attach to specific failure (None = report-level)
             
         Returns:
-            Created UURAttachment
+            Created Attachment
         """
-        # Note: UURAttachment still uses old pattern requiring report reference
-        # This will be updated in Phase 2
-        attachment = UURAttachment(
-            uur_report=self,  # type: ignore
+        attachment = Attachment.from_file(
             file_path=file_path,
-            label=label,
-            mime_type=mime_type,
-            failure_idx=failure_idx,
-            delete_after_attach=delete_after
+            delete_after=delete_after,
+            name=name,
+            content_type=content_type,
+            failure_idx=failure_idx
         )
         self.attachments.append(attachment)
         return attachment
     
     def attach_bytes(
         self,
-        label: str,
+        name: str,
         content: bytes,
-        mime_type: str = "application/octet-stream",
+        content_type: str = "application/octet-stream",
         failure_idx: Optional[int] = None
-    ) -> UURAttachment:
+    ) -> Attachment:
         """
         Attach binary data to the repair report.
         
         Args:
-            label: Display label
+            name: Display name
             content: Binary content
-            mime_type: MIME type (default: application/octet-stream)
+            content_type: MIME type (default: application/octet-stream)
             failure_idx: Attach to specific failure (None = report-level)
             
         Returns:
-            Created UURAttachment
+            Created Attachment
         """
-        # Note: UURAttachment still uses old pattern requiring report reference
-        # This will be updated in Phase 2
-        attachment = UURAttachment(
-            uur_report=self,  # type: ignore
-            label=label,
+        attachment = Attachment.from_bytes(
+            name=name,
             content=content,
-            mime_type=mime_type,
+            content_type=content_type,
             failure_idx=failure_idx
         )
         self.attachments.append(attachment)
