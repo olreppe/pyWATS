@@ -1054,6 +1054,292 @@ run_test_sequence(api, "FVT-STATION-05", "WIDGET-001-SN12345")
 
 ---
 
+## Practical Examples
+
+### Serial Number Lookup with Error Handling
+
+```python
+from pywats.exceptions import PyWATSError, NotFoundError, AuthenticationError
+
+def safe_asset_lookup(api, serial_number: str) -> dict:
+    """
+    Robust asset lookup with comprehensive error handling.
+    
+    Returns a dict with asset data or error information.
+    """
+    result = {
+        "success": False,
+        "asset": None,
+        "error": None,
+        "error_type": None
+    }
+    
+    try:
+        # Try exact match first
+        asset = api.asset.get_asset_by_serial(serial_number)
+        
+        if asset:
+            result["success"] = True
+            result["asset"] = asset
+            return result
+        
+        # Try case-insensitive search via filter
+        assets = api.asset.get_assets(
+            filter_str=f"tolower(serialNumber) eq tolower('{serial_number}')",
+            top=1
+        )
+        
+        if assets:
+            result["success"] = True
+            result["asset"] = assets[0]
+            result["note"] = "Found via case-insensitive search"
+            return result
+        
+        # Try partial match for fuzzy lookup
+        assets = api.asset.get_assets(
+            filter_str=f"contains(serialNumber, '{serial_number}')",
+            top=5
+        )
+        
+        if assets:
+            result["success"] = False
+            result["error"] = f"Exact match not found. Did you mean: {[a.serial_number for a in assets]}"
+            result["error_type"] = "PARTIAL_MATCH"
+            result["suggestions"] = assets
+            return result
+        
+        result["error"] = f"No asset found with serial number '{serial_number}'"
+        result["error_type"] = "NOT_FOUND"
+        
+    except AuthenticationError as e:
+        result["error"] = "Authentication failed - check API token"
+        result["error_type"] = "AUTH_ERROR"
+    except PyWATSError as e:
+        result["error"] = str(e)
+        result["error_type"] = "API_ERROR"
+    
+    return result
+
+# Usage
+lookup = safe_asset_lookup(api, "DMM-001")
+
+if lookup["success"]:
+    asset = lookup["asset"]
+    print(f"Found: {asset.asset_name} at {asset.location}")
+elif lookup["error_type"] == "PARTIAL_MATCH":
+    print(f"Suggestions: {[a.serial_number for a in lookup['suggestions']]}")
+else:
+    print(f"Error: {lookup['error']}")
+```
+
+### Deep Asset Hierarchy Traversal
+
+```python
+from typing import List, Dict, Any, Optional
+from dataclasses import dataclass
+
+@dataclass
+class AssetNode:
+    """Represents an asset in the hierarchy tree"""
+    asset: Any  # Asset object
+    children: List['AssetNode']
+    depth: int
+    
+def build_asset_tree(api, root_serial: str, max_depth: int = 5) -> Optional[AssetNode]:
+    """
+    Build a complete asset hierarchy tree from a root asset.
+    
+    Useful for:
+    - Visualizing station configurations
+    - Finding all equipment associated with a station
+    - Generating equipment reports
+    
+    Args:
+        api: pyWATS API instance
+        root_serial: Serial number of root asset (e.g., station)
+        max_depth: Maximum depth to traverse (prevent infinite loops)
+        
+    Returns:
+        AssetNode tree or None if root not found
+    """
+    def _build_node(asset, depth: int) -> AssetNode:
+        if depth >= max_depth:
+            return AssetNode(asset=asset, children=[], depth=depth)
+        
+        # Get direct children
+        children = api.asset.get_child_assets(parent_id=str(asset.asset_id))
+        
+        child_nodes = [
+            _build_node(child, depth + 1) 
+            for child in children
+        ]
+        
+        return AssetNode(asset=asset, children=child_nodes, depth=depth)
+    
+    root = api.asset.get_asset_by_serial(root_serial)
+    if not root:
+        return None
+    
+    return _build_node(root, depth=0)
+
+def print_asset_tree(node: AssetNode, indent: str = "") -> None:
+    """Pretty-print the asset hierarchy"""
+    state_emoji = {
+        "OK": "✅",
+        "WARNING": "⚠️",
+        "ALARM": "🚨",
+        "ERROR": "❌"
+    }
+    
+    emoji = state_emoji.get(node.asset.state.value, "❓")
+    print(f"{indent}{emoji} {node.asset.serial_number} - {node.asset.asset_name}")
+    
+    for child in node.children:
+        print_asset_tree(child, indent + "  │ ")
+
+def count_equipment(node: AssetNode) -> Dict[str, int]:
+    """Count equipment by state in the hierarchy"""
+    counts = {"total": 0, "OK": 0, "WARNING": 0, "ALARM": 0, "ERROR": 0}
+    
+    def _count(n: AssetNode):
+        counts["total"] += 1
+        counts[n.asset.state.value] = counts.get(n.asset.state.value, 0) + 1
+        for child in n.children:
+            _count(child)
+    
+    _count(node)
+    return counts
+
+# Usage: Inspect a station and all its equipment
+tree = build_asset_tree(api, "FVT-STATION-05")
+if tree:
+    print("Station Hierarchy:")
+    print_asset_tree(tree)
+    
+    stats = count_equipment(tree)
+    print(f"\nTotal equipment: {stats['total']}")
+    print(f"OK: {stats['OK']}, Warning: {stats['WARNING']}, Alarm: {stats['ALARM']}")
+```
+
+### Concurrent Bulk Asset Operations
+
+```python
+import asyncio
+from typing import List, Tuple
+from pywats import AsyncWATS
+
+async def bulk_create_station_with_instruments(
+    api: AsyncWATS,
+    station_config: dict,
+    instruments: List[dict]
+) -> Tuple[bool, List[str]]:
+    """
+    Create a complete station setup with concurrent instrument creation.
+    
+    Much faster than sequential creation for stations with many instruments.
+    
+    Args:
+        api: AsyncWATS instance
+        station_config: Dict with station parameters
+        instruments: List of instrument configs
+        
+    Returns:
+        Tuple of (success, list of serial numbers created)
+    """
+    errors = []
+    created = []
+    
+    # Get asset types once
+    types = await api.asset.get_asset_types()
+    type_map = {t.type_name.lower(): t.type_id for t in types}
+    
+    # 1. Create station first (required as parent)
+    try:
+        station_type = type_map.get("station") or type_map.get("test station")
+        station = await api.asset.create_asset(
+            serial_number=station_config["serial_number"],
+            type_id=station_type,
+            asset_name=station_config["name"],
+            location=station_config.get("location", ""),
+            description=station_config.get("description", "")
+        )
+        created.append(station.serial_number)
+    except Exception as e:
+        return False, [f"Station creation failed: {e}"]
+    
+    # 2. Create all instruments concurrently
+    async def create_instrument(config: dict):
+        type_id = type_map.get(config.get("type", "instrument").lower())
+        return await api.asset.create_asset(
+            serial_number=config["serial_number"],
+            type_id=type_id,
+            asset_name=config["name"],
+            parent_serial_number=station.serial_number,
+            part_number=config.get("part_number"),
+            description=config.get("description", "")
+        )
+    
+    # Run all instrument creations in parallel
+    results = await asyncio.gather(
+        *[create_instrument(inst) for inst in instruments],
+        return_exceptions=True
+    )
+    
+    for inst_config, result in zip(instruments, results):
+        if isinstance(result, Exception):
+            errors.append(f"{inst_config['serial_number']}: {result}")
+        elif result:
+            created.append(result.serial_number)
+    
+    # 3. Record initial calibrations concurrently
+    calibration_tasks = [
+        api.asset.record_calibration(
+            serial_number=sn,
+            comment="Initial calibration - setup complete"
+        )
+        for sn in created[1:]  # Skip station, calibrate instruments
+    ]
+    await asyncio.gather(*calibration_tasks, return_exceptions=True)
+    
+    return len(errors) == 0, created
+
+# Usage
+async def setup_new_station():
+    async with AsyncWATS(
+        base_url="https://your-wats-server.com",
+        token="your-api-token"
+    ) as api:
+        station = {
+            "serial_number": "ICT-STATION-10",
+            "name": "In-Circuit Test Station 10",
+            "location": "Production Floor - Line 2",
+            "description": "High-volume ICT station"
+        }
+        
+        instruments = [
+            {"serial_number": "DMM-ICT10-01", "name": "Keithley 2000", "type": "instrument", "part_number": "2000"},
+            {"serial_number": "DMM-ICT10-02", "name": "Keithley 2000", "type": "instrument", "part_number": "2000"},
+            {"serial_number": "PSU-ICT10-01", "name": "Agilent E3631A", "type": "instrument", "part_number": "E3631A"},
+            {"serial_number": "RELAY-ICT10-01", "name": "NI PXI-2567", "type": "instrument", "part_number": "PXI-2567"},
+            {"serial_number": "FIX-ICT10-MAIN", "name": "ICT Main Fixture", "type": "fixture"},
+        ]
+        
+        success, created = await bulk_create_station_with_instruments(api, station, instruments)
+        
+        if success:
+            print(f"✅ Created station with {len(created)} assets")
+            for sn in created:
+                print(f"  - {sn}")
+        else:
+            print(f"❌ Errors occurred")
+            for err in created:  # In error case, created contains error messages
+                print(f"  - {err}")
+
+asyncio.run(setup_new_station())
+```
+
+---
+
 ## API Reference
 
 ### AssetService Methods

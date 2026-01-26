@@ -514,6 +514,322 @@ cache.clear_cache()
 
 ---
 
+## Practical Examples
+
+### Operation Type Filtering with Validation
+
+```python
+from typing import List, Optional, Dict, Any
+from pywats.exceptions import PyWATSError
+
+def get_valid_operation_code(
+    api, 
+    operation_type: str,
+    code_or_name: str
+) -> Optional[int]:
+    """
+    Get a validated operation code for the specified type.
+    
+    Useful for report submission where you need to ensure
+    the operation code matches the expected type.
+    
+    Args:
+        api: pyWATS API instance
+        operation_type: "test", "repair", or "wip"
+        code_or_name: Operation code (int) or name (str)
+        
+    Returns:
+        Valid operation code or None if invalid
+        
+    Example:
+        >>> code = get_valid_operation_code(api, "test", "ICT")
+        >>> if code:
+        ...     report.process_code = code
+    """
+    type_methods = {
+        "test": api.process.get_test_operation,
+        "repair": api.process.get_repair_operation,
+        "wip": api.process.get_wip_operation
+    }
+    
+    get_method = type_methods.get(operation_type.lower())
+    if not get_method:
+        raise ValueError(f"Invalid operation_type: {operation_type}. Use 'test', 'repair', or 'wip'")
+    
+    # Handle int or str input
+    identifier = int(code_or_name) if str(code_or_name).isdigit() else code_or_name
+    
+    operation = get_method(identifier)
+    return operation.code if operation else None
+
+def list_operations_by_type(api) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Group all operations by their type for easy reference.
+    
+    Returns dict like:
+    {
+        "test": [{"code": 100, "name": "ICT"}, ...],
+        "repair": [{"code": 500, "name": "Rework"}, ...],
+        "wip": [{"code": 200, "name": "Assembly"}, ...]
+    }
+    """
+    return {
+        "test": [
+            {"code": op.code, "name": op.name} 
+            for op in api.process.get_test_operations()
+        ],
+        "repair": [
+            {"code": op.code, "name": op.name} 
+            for op in api.process.get_repair_operations()
+        ],
+        "wip": [
+            {"code": op.code, "name": op.name} 
+            for op in api.process.get_wip_operations()
+        ]
+    }
+
+# Usage
+ops_by_type = list_operations_by_type(api)
+print("Available Test Operations:")
+for op in ops_by_type["test"]:
+    print(f"  {op['code']}: {op['name']}")
+
+# Validate before report submission
+code = get_valid_operation_code(api, "test", "ICT")
+if code:
+    print(f"Using operation code {code} for test report")
+else:
+    print("Warning: ICT operation not found, using default")
+    code = api.process.get_default_test_code()
+```
+
+### Smart Process Cache with Prefetch
+
+```python
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Set
+import threading
+
+class SmartProcessCache:
+    """
+    Enhanced process cache with prefetch and usage tracking.
+    
+    Features:
+    - Prefetches commonly used operations on init
+    - Tracks usage for analytics
+    - Thread-safe with automatic refresh
+    - Configurable stale threshold
+    """
+    
+    def __init__(self, api, stale_minutes: int = 5):
+        self.api = api
+        self.stale_threshold = timedelta(minutes=stale_minutes)
+        self._cache: Dict[str, tuple] = {}  # key -> (operation, timestamp)
+        self._usage_count: Dict[str, int] = {}
+        self._lock = threading.Lock()
+        self._prefetch_common()
+    
+    def _prefetch_common(self) -> None:
+        """Prefetch common operation types"""
+        common_codes = [100, 500]  # Default test and repair
+        common_names = ["ICT", "FCT", "Rework", "Assembly"]
+        
+        for code in common_codes:
+            self._fetch_and_cache(code)
+        for name in common_names:
+            self._fetch_and_cache(name)
+    
+    def _fetch_and_cache(self, identifier) -> Optional[object]:
+        """Fetch operation and update cache"""
+        op = self.api.process.get_process(identifier)
+        if op:
+            now = datetime.now()
+            with self._lock:
+                # Cache by code and name
+                self._cache[str(op.code)] = (op, now)
+                self._cache[op.name.lower()] = (op, now)
+        return op
+    
+    def _is_stale(self, timestamp: datetime) -> bool:
+        """Check if cached entry is stale"""
+        return datetime.now() - timestamp > self.stale_threshold
+    
+    def get(self, code_or_name) -> Optional[object]:
+        """
+        Get operation with smart caching.
+        
+        Args:
+            code_or_name: Operation code (int) or name (str)
+            
+        Returns:
+            ProcessInfo or None
+        """
+        key = str(code_or_name).lower() if isinstance(code_or_name, str) else str(code_or_name)
+        
+        with self._lock:
+            if key in self._cache:
+                op, timestamp = self._cache[key]
+                
+                # Track usage
+                self._usage_count[key] = self._usage_count.get(key, 0) + 1
+                
+                # Return if fresh
+                if not self._is_stale(timestamp):
+                    return op
+        
+        # Refresh stale or missing entry
+        return self._fetch_and_cache(code_or_name)
+    
+    def get_usage_stats(self) -> Dict[str, int]:
+        """Get operation usage statistics"""
+        with self._lock:
+            return dict(sorted(
+                self._usage_count.items(), 
+                key=lambda x: x[1], 
+                reverse=True
+            ))
+    
+    def refresh_all(self) -> None:
+        """Force refresh of all cached operations"""
+        self.api.process.refresh()
+        with self._lock:
+            keys = list(self._cache.keys())
+        for key in keys:
+            self._fetch_and_cache(key)
+
+# Usage
+cache = SmartProcessCache(api, stale_minutes=10)
+
+# Fast cached access
+op = cache.get("ICT")  # Uses cache if fresh
+op = cache.get(100)    # Also cached
+
+# Check what's being used most
+print("Operation usage stats:")
+for code, count in cache.get_usage_stats().items():
+    print(f"  {code}: {count} lookups")
+```
+
+### Test Workflow with Operation Validation
+
+```python
+from dataclasses import dataclass
+from typing import Optional
+from enum import Enum
+
+class WorkflowStage(Enum):
+    """Standard test workflow stages"""
+    ICT = "ICT"          # In-Circuit Test
+    FCT = "FCT"          # Functional Test
+    BURN_IN = "BURN_IN"  # Burn-in / Stress Test
+    FVT = "FVT"          # Final Verification Test
+    REPAIR = "REPAIR"    # Repair/Rework
+    PACK = "PACK"        # Packaging
+
+@dataclass
+class WorkflowConfig:
+    """Configuration for a test workflow"""
+    stages: list  # List of WorkflowStage
+    operation_codes: dict  # Stage -> operation code mapping
+    
+def build_workflow(api, stages: list) -> WorkflowConfig:
+    """
+    Build a validated workflow configuration.
+    
+    Ensures all specified stages have valid operation codes
+    configured in the WATS system.
+    
+    Args:
+        api: pyWATS API instance
+        stages: List of WorkflowStage values
+        
+    Returns:
+        WorkflowConfig with validated operation codes
+        
+    Raises:
+        ValueError: If any stage doesn't have a matching operation
+    """
+    operation_codes = {}
+    missing = []
+    
+    for stage in stages:
+        # Try to find matching operation
+        if stage == WorkflowStage.REPAIR:
+            op = api.process.get_repair_operation(stage.value)
+        else:
+            op = api.process.get_test_operation(stage.value)
+        
+        if op:
+            operation_codes[stage] = op.code
+        else:
+            # Try by code for common defaults
+            if stage == WorkflowStage.ICT:
+                operation_codes[stage] = 100  # Common ICT code
+            elif stage == WorkflowStage.REPAIR:
+                operation_codes[stage] = 500  # Common repair code
+            else:
+                missing.append(stage.value)
+    
+    if missing:
+        available = [p.name for p in api.process.get_processes()]
+        raise ValueError(
+            f"Missing operations for stages: {missing}. "
+            f"Available: {available}"
+        )
+    
+    return WorkflowConfig(stages=stages, operation_codes=operation_codes)
+
+def run_workflow_stage(
+    api,
+    workflow: WorkflowConfig,
+    stage: WorkflowStage,
+    serial_number: str
+) -> dict:
+    """
+    Execute a workflow stage and return result.
+    
+    Args:
+        api: pyWATS API instance
+        workflow: Validated WorkflowConfig
+        stage: Stage to execute
+        serial_number: Unit under test serial number
+        
+    Returns:
+        Dict with stage execution details
+    """
+    if stage not in workflow.stages:
+        raise ValueError(f"Stage {stage} not in workflow")
+    
+    operation_code = workflow.operation_codes[stage]
+    operation = api.process.get_process_by_code(operation_code)
+    
+    return {
+        "stage": stage.value,
+        "operation_code": operation_code,
+        "operation_name": operation.name if operation else "Unknown",
+        "serial_number": serial_number,
+        "ready": True
+    }
+
+# Usage: Define and validate a workflow
+workflow = build_workflow(api, [
+    WorkflowStage.ICT,
+    WorkflowStage.FCT,
+    WorkflowStage.FVT
+])
+
+print("Workflow Configuration:")
+for stage, code in workflow.operation_codes.items():
+    op = api.process.get_process_by_code(code)
+    print(f"  {stage.value}: Code {code} ({op.name if op else 'N/A'})")
+
+# Execute stage
+result = run_workflow_stage(api, workflow, WorkflowStage.ICT, "UNIT-001")
+print(f"\nReady to run {result['operation_name']} on {result['serial_number']}")
+```
+
+---
+
 ## API Reference
 
 ### ProcessService Methods

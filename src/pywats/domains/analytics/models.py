@@ -19,6 +19,45 @@ TYPE-SAFE ENUMS:
 Fields like step_type, status, and comp_operator accept enum values for
 type safety, but also accept strings for backward compatibility.
 Use enums for IDE autocomplete and compile-time checking.
+
+EDGE CASES & COMMON PITFALLS:
+-----------------------------
+1. RepairStatistics: Has `extra="allow"` to accept unknown fields from new
+   server versions. Check model_extra for any additional fields returned.
+
+2. UnitFlowFilter: 
+   - date_from/date_to must be datetime objects (not strings)
+   - serial_numbers (plural) is for bulk queries; serial_number for single
+   - split_by values are server-dependent; common: "stationName", "operator"
+
+3. MeasurementData:
+   - numeric_value may be None for string measurements
+   - string_value may be None for numeric measurements
+   - Always check measurement_type before accessing values
+
+4. YieldData:
+   - yield_rate is 0-100 (percentage), not 0-1 (ratio)
+   - first_pass_yield and final_yield may differ due to retests
+
+5. OeeAnalysisResult:
+   - availability, performance, quality are 0-100 percentages
+   - oee = (availability * performance * quality) / 10000
+
+6. TopFailedStep:
+   - step_path uses ¶ separator (internal format)
+   - Use step_path_display property for user-friendly / separator
+
+7. Date fields:
+   - All datetime fields accept both datetime objects and ISO strings
+   - Serialization always produces ISO format strings for API calls
+   - Timezone handling depends on server configuration
+
+BACKWARD COMPATIBILITY:
+-----------------------
+Models are designed to be forward-compatible with new server versions:
+- RepairStatistics uses extra="allow" for new fields
+- Optional fields default to None when not present in response
+- Unknown enum values fall back to string representation
 """
 from datetime import datetime
 from typing import List, Optional, Union

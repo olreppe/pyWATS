@@ -63,15 +63,45 @@ class ProductService:
     # =========================================================================
 
     def get_products(self) -> List[ProductView]:
-        """Get all products as simplified views."""
+        """Get all products as simplified views.
+        
+        Returns:
+            List of ProductView objects with basic product info
+            
+        Raises:
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_products())
 
     def get_products_full(self) -> List[Product]:
-        """Get all products with full details."""
+        """Get all products with full details.
+        
+        Returns:
+            List of full Product objects including revisions and metadata
+            
+        Raises:
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_products_full())
 
     def get_product(self, part_number: str) -> Optional[Product]:
-        """Get a product by part number."""
+        """Get a product by part number.
+        
+        Args:
+            part_number: The unique product part number
+            
+        Returns:
+            Product if found, None otherwise
+            
+        Raises:
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_product(part_number))
 
     def create_product(
@@ -85,7 +115,26 @@ class ProductService:
         xml_data: Optional[str] = None,
         product_category_id: Optional[str] = None,
     ) -> Optional[Product]:
-        """Create a new product."""
+        """Create a new product.
+        
+        Args:
+            part_number: Unique product identifier
+            name: Optional product display name
+            description: Optional product description
+            non_serial: Whether product uses non-serial tracking
+            state: Initial product state (default: ACTIVE)
+            xml_data: Optional XML configuration data
+            product_category_id: Optional category UUID
+            
+        Returns:
+            Created Product if successful, None otherwise
+            
+        Raises:
+            ValidationError: If part_number is invalid or already exists
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(
             self._async_service.create_product(
                 part_number, name, description, non_serial, state,
@@ -94,15 +143,51 @@ class ProductService:
         )
 
     def update_product(self, product: Product) -> Optional[Product]:
-        """Update an existing product."""
+        """Update an existing product.
+        
+        Args:
+            product: Product object with updated fields
+            
+        Returns:
+            Updated Product if successful, None otherwise
+            
+        Raises:
+            NotFoundError: If product does not exist
+            ValidationError: If product data is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.update_product(product))
 
     def bulk_save_products(self, products: List[Product]) -> List[Product]:
-        """Bulk create or update products."""
+        """Bulk create or update products.
+        
+        Args:
+            products: List of Product objects to save
+            
+        Returns:
+            List of saved Product objects
+            
+        Raises:
+            ValidationError: If any product data is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.bulk_save_products(products))
 
     def get_active_products(self) -> List[ProductView]:
-        """Get all active products."""
+        """Get all active products.
+        
+        Returns:
+            List of ProductView objects where state is ACTIVE
+            
+        Raises:
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_active_products())
 
     def is_active(self, product: Product) -> bool:
@@ -114,11 +199,37 @@ class ProductService:
     # =========================================================================
 
     def get_revisions(self, part_number: str) -> List[ProductRevision]:
-        """Get all revisions for a product."""
+        """Get all revisions for a product.
+        
+        Args:
+            part_number: The product part number
+            
+        Returns:
+            List of ProductRevision objects for the product
+            
+        Raises:
+            NotFoundError: If product does not exist
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_revisions(part_number))
 
     def get_revision(self, part_number: str, revision: str) -> Optional[ProductRevision]:
-        """Get a specific product revision."""
+        """Get a specific product revision.
+        
+        Args:
+            part_number: The product part number
+            revision: The revision identifier
+            
+        Returns:
+            ProductRevision if found, None otherwise
+            
+        Raises:
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_revision(part_number, revision))
 
     def create_revision(
@@ -129,7 +240,25 @@ class ProductService:
         description: Optional[str] = None,
         state: ProductState = ProductState.ACTIVE
     ) -> Optional[ProductRevision]:
-        """Create a new product revision."""
+        """Create a new product revision.
+        
+        Args:
+            part_number: The product part number
+            revision: The revision identifier
+            name: Optional revision display name
+            description: Optional revision description
+            state: Initial revision state (default: ACTIVE)
+            
+        Returns:
+            Created ProductRevision if successful, None otherwise
+            
+        Raises:
+            NotFoundError: If product does not exist
+            ValidationError: If revision already exists or data is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(
             self._async_service.create_revision(
                 part_number, revision, name, description, state
@@ -137,11 +266,38 @@ class ProductService:
         )
 
     def update_revision(self, revision: ProductRevision) -> Optional[ProductRevision]:
-        """Update an existing product revision."""
+        """Update an existing product revision.
+        
+        Args:
+            revision: ProductRevision object with updated fields
+            
+        Returns:
+            Updated ProductRevision if successful, None otherwise
+            
+        Raises:
+            NotFoundError: If revision does not exist
+            ValidationError: If revision data is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.update_revision(revision))
 
     def bulk_save_revisions(self, revisions: List[ProductRevision]) -> List[ProductRevision]:
-        """Bulk create or update product revisions."""
+        """Bulk create or update product revisions.
+        
+        Args:
+            revisions: List of ProductRevision objects to save
+            
+        Returns:
+            List of saved ProductRevision objects
+            
+        Raises:
+            ValidationError: If any revision data is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.bulk_save_revisions(revisions))
 
     # =========================================================================
@@ -149,7 +305,16 @@ class ProductService:
     # =========================================================================
 
     def get_groups(self) -> List[ProductGroup]:
-        """Get all product groups."""
+        """Get all product groups.
+        
+        Returns:
+            List of all ProductGroup objects
+            
+        Raises:
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_groups())
 
     def create_group(
@@ -157,11 +322,38 @@ class ProductService:
         name: str,
         description: Optional[str] = None
     ) -> Optional[ProductGroup]:
-        """Create a new product group."""
+        """Create a new product group.
+        
+        Args:
+            name: Group name (must be unique)
+            description: Optional group description
+            
+        Returns:
+            Created ProductGroup if successful, None otherwise
+            
+        Raises:
+            ValidationError: If name already exists or is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.create_group(name, description))
 
     def get_groups_for_product(self, part_number: str) -> List[ProductGroup]:
-        """Get product groups that contain a specific product."""
+        """Get product groups that contain a specific product.
+        
+        Args:
+            part_number: The product part number
+            
+        Returns:
+            List of ProductGroup objects containing the product
+            
+        Raises:
+            NotFoundError: If product does not exist
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_groups_for_product(part_number))
 
     # =========================================================================
@@ -169,7 +361,21 @@ class ProductService:
     # =========================================================================
 
     def get_bom(self, part_number: str, revision: str) -> List[BomItem]:
-        """⚠️ INTERNAL: Get BOM (Bill of Materials) for a product revision."""
+        """⚠️ INTERNAL: Get BOM (Bill of Materials) for a product revision.
+        
+        Args:
+            part_number: The product part number
+            revision: The revision identifier
+            
+        Returns:
+            List of BomItem objects
+            
+        Raises:
+            NotFoundError: If product or revision does not exist
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails or endpoint changes
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_bom(part_number, revision))
 
     def upload_bom(
@@ -179,7 +385,24 @@ class ProductService:
         bom_items: List[Dict[str, Any]],
         format: str = "json"
     ) -> bool:
-        """⚠️ INTERNAL: Upload/update BOM items."""
+        """⚠️ INTERNAL: Upload/update BOM items.
+        
+        Args:
+            part_number: The product part number
+            revision: The revision identifier
+            bom_items: List of BOM item dictionaries
+            format: Import format (default: "json")
+            
+        Returns:
+            True if upload successful
+            
+        Raises:
+            NotFoundError: If product or revision does not exist
+            ValidationError: If BOM data format is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails or endpoint changes
+            PyWATSError: For other API-related errors
+        """
         return run_sync(
             self._async_service.upload_bom(part_number, revision, bom_items, format)
         )
@@ -267,7 +490,20 @@ class ProductService:
     # =========================================================================
 
     def get_product_tags(self, part_number: str) -> List[Dict[str, str]]:
-        """Get tags for a product."""
+        """Get tags for a product.
+        
+        Args:
+            part_number: The product part number
+            
+        Returns:
+            List of tag dictionaries with 'name' and 'value' keys
+            
+        Raises:
+            NotFoundError: If product does not exist
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_product_tags(part_number))
 
     def set_product_tags(
@@ -275,7 +511,22 @@ class ProductService:
         part_number: str,
         tags: List[Dict[str, str]]
     ) -> Optional[Product]:
-        """Set tags for a product (replaces existing tags)."""
+        """Set tags for a product (replaces existing tags).
+        
+        Args:
+            part_number: The product part number
+            tags: List of tag dictionaries with 'name' and 'value' keys
+            
+        Returns:
+            Updated Product if successful, None otherwise
+            
+        Raises:
+            NotFoundError: If product does not exist
+            ValidationError: If tag data is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.set_product_tags(part_number, tags))
 
     def add_product_tag(
@@ -284,7 +535,23 @@ class ProductService:
         name: str,
         value: str
     ) -> Optional[Product]:
-        """Add a single tag to a product."""
+        """Add a single tag to a product.
+        
+        Args:
+            part_number: The product part number
+            name: Tag name
+            value: Tag value
+            
+        Returns:
+            Updated Product if successful, None otherwise
+            
+        Raises:
+            NotFoundError: If product does not exist
+            ValidationError: If tag name or value is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.add_product_tag(part_number, name, value))
 
     def get_revision_tags(
@@ -292,7 +559,21 @@ class ProductService:
         part_number: str,
         revision: str
     ) -> List[Dict[str, str]]:
-        """Get tags for a product revision."""
+        """Get tags for a product revision.
+        
+        Args:
+            part_number: The product part number
+            revision: The revision identifier
+            
+        Returns:
+            List of tag dictionaries with 'name' and 'value' keys
+            
+        Raises:
+            NotFoundError: If product or revision does not exist
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(self._async_service.get_revision_tags(part_number, revision))
 
     def set_revision_tags(
@@ -301,7 +582,23 @@ class ProductService:
         revision: str,
         tags: List[Dict[str, str]]
     ) -> Optional[ProductRevision]:
-        """Set tags for a product revision."""
+        """Set tags for a product revision.
+        
+        Args:
+            part_number: The product part number
+            revision: The revision identifier
+            tags: List of tag dictionaries with 'name' and 'value' keys
+            
+        Returns:
+            Updated ProductRevision if successful, None otherwise
+            
+        Raises:
+            NotFoundError: If product or revision does not exist
+            ValidationError: If tag data is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(
             self._async_service.set_revision_tags(part_number, revision, tags)
         )
@@ -313,7 +610,24 @@ class ProductService:
         name: str,
         value: str
     ) -> Optional[ProductRevision]:
-        """Add a single tag to a product revision."""
+        """Add a single tag to a product revision.
+        
+        Args:
+            part_number: The product part number
+            revision: The revision identifier
+            name: Tag name
+            value: Tag value
+            
+        Returns:
+            Updated ProductRevision if successful, None otherwise
+            
+        Raises:
+            NotFoundError: If product or revision does not exist
+            ValidationError: If tag name or value is invalid
+            AuthenticationError: If API authentication fails
+            APIError: If the server request fails
+            PyWATSError: For other API-related errors
+        """
         return run_sync(
             self._async_service.add_revision_tag(part_number, revision, name, value)
         )
