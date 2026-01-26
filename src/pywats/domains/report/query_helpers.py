@@ -19,6 +19,7 @@ Example:
     ... )
     >>> # Result: {"$filter": "...", "$top": 10, "$orderby": "start desc"}
 """
+from datetime import datetime
 from typing import Optional, List, Dict, Any, Union
 
 from .enums import ReportType

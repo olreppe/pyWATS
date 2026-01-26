@@ -13,6 +13,9 @@ from .models import Product, ProductRevision, ProductGroup, ProductView, BomItem
 from .enums import ProductState
 from .async_repository import AsyncProductRepository
 
+if TYPE_CHECKING:
+    from .async_box_build import AsyncBoxBuildTemplate
+
 logger = logging.getLogger(__name__)
 
 

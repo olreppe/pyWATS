@@ -26,11 +26,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Date field handling notes, backward compatibility guidance
   - Field naming convention documentation
 
-- **Report Refactoring Plan** - Documented in `docs/internal_documentation/WIP/to_do/REPORT_REFACTORING.md`:
-  - Phase 1: Extract `filter_builders.py` (low risk)
-  - Phase 2: Extract `query_helpers.py` (low risk)
-  - Phase 3-4: Service split and UURReport refactoring (deferred)
-  - Clear "do not touch" list for critical factory methods
+- **Report Refactoring (Phase 1 & 2 Complete)** - Improved code organization:
+  - **filter_builders.py** - 9 OData filter functions extracted from async_service.py
+  - **query_helpers.py** - 6 query parameter functions extracted from async_service.py
+  - Async service now uses extracted helpers for cleaner, more testable code
+  - All 134 report tests pass after refactoring
+  - Phase 3-4 (service split, UURReport refactoring) documented for future work
+
+- **Domain Health Documentation** - Moved to official docs for release:
+  - Relocated `docs/internal_documentation/domain_health/` → `docs/domain_health/`
+  - All 8 domains now grade A or A- (overall 46.4/50)
+  - Report domain improved from B+ (41/50) to A- (44/50) after refactoring
+  - Updated domain_health_check.ps1 script with new path
 
 - **Documentation Reorganization** - Improved structure and discoverability:
   - Created `docs/modules/` directory for domain-specific documentation (9 modules)
