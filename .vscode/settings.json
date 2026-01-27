@@ -66,5 +66,10 @@
     },
     "markdownlint.config": {
         "MD013": false  // Disable line length rule
+    },
+    
+    // Exclude Downloads folder from workspace indexing
+    "files.exclude": {
+        "**/Downloads/**": true
     }
 }
