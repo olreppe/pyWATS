@@ -56,7 +56,7 @@ git remote -v
 Write-Host ""
 Write-Host "Step 6: Ready to push to GitHub Enterprise" -ForegroundColor Green
 Write-Host "  This will push:" -ForegroundColor Yellow
-Write-Host "    - All branches" -ForegroundColor Yellow
+Write-Host "    - main branch only" -ForegroundColor Yellow
 Write-Host "    - All tags" -ForegroundColor Yellow
 Write-Host "    - History from $FirstReleaseCommit onwards" -ForegroundColor Yellow
 Write-Host ""
@@ -69,8 +69,8 @@ if ($pushConfirm -ne 'y' -and $pushConfirm -ne 'Y') {
 
 Write-Host ""
 Write-Host "Step 7: Pushing to GitHub Enterprise..." -ForegroundColor Green
-Write-Host "  Pushing all branches..." -ForegroundColor Gray
-git push ghe --all
+Write-Host "  Pushing main branch..." -ForegroundColor Gray
+git push ghe main
 
 Write-Host "  Pushing all tags..." -ForegroundColor Gray
 git push ghe --tags
