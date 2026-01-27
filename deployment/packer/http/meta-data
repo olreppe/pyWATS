@@ -1,0 +1,3 @@
+# Empty meta-data file required by cloud-init
+instance-id: pywats-appliance
+local-hostname: pywats-appliance

@@ -34,6 +34,74 @@ class YieldDataType(IntEnum):
     """Rolled throughput yield."""
 
 
+class AlarmType(IntEnum):
+    """
+    Types of WATS alarms and notifications.
+    
+    WATS supports 5 alarm types that can be configured to trigger
+    notifications based on different production events and thresholds.
+    
+    Example:
+        >>> from pywats import AlarmType
+        >>> # Filter alarm logs by type
+        >>> yield_alarms = api.analytics.get_alarm_logs(alarm_type=AlarmType.YIELD_VOLUME)
+        >>> asset_alarms = api.analytics.get_alarm_logs(alarm_type=AlarmType.ASSET)
+    """
+    REPORT = 1
+    """Reports (UUT) - Unit-based alarms triggered by test results.
+    
+    Monitors individual test reports and can trigger on conditions like:
+    - Unit not passed after N retests
+    - Specific failure codes
+    - Station/operator combinations
+    
+    Key fields: reportGuid, serialNumber, stationName, operator, result
+    """
+    
+    YIELD_VOLUME = 2
+    """Yield & volume - Alarms on aggregated yield statistics.
+    
+    Monitors production yield metrics and volume thresholds:
+    - FPY/SPY/TPY/LPY drops below threshold
+    - Yield trend changes (e.g., 10% drop over 7 days)
+    - Volume thresholds
+    
+    Key fields: fpy, spy, tpy, lpy, fpyTrend, uutCount, unitCount
+    """
+    
+    SERIAL_NUMBER = 3
+    """Serial number handler - Serial number pool monitoring.
+    
+    Monitors serial number pool status:
+    - Low available serial numbers
+    - Pool exhaustion warnings
+    
+    Key fields: free (free count), reserved (reserved count), serialNumberType
+    """
+    
+    MEASUREMENT = 4
+    """Measurements - Measurement statistics and SPC alarms.
+    
+    Monitors measurement data for statistical process control:
+    - Cp/Cpk thresholds
+    - Out-of-spec measurements
+    - Statistical trends
+    
+    Key fields: cp, cpk, min, max, avg, stdev, measurementPath
+    """
+    
+    ASSET = 5
+    """Assets - Asset status and maintenance alarms.
+    
+    Monitors asset status and maintenance schedules:
+    - Calibration due
+    - Maintenance required
+    - Asset state changes
+    
+    Key fields: assetname, serialnumber, typeid, state, bubbledstatus, tags
+    """
+
+
 class ProcessType(IntEnum):
     """Process/operation categories."""
     TEST = 1

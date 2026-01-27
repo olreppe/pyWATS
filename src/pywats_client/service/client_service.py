@@ -6,6 +6,7 @@ Manages service lifecycle, coordinates all components, and provides health monit
 """
 
 import logging
+import os
 import signal
 import sys
 import time
@@ -21,6 +22,7 @@ from pywats.core.exceptions import PyWATSError
 from ..core.config import ClientConfig
 from .converter_pool import ConverterPool
 from .pending_watcher import PendingWatcher
+from .health_server import HealthServer
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +79,10 @@ class ClientService:
         self._watchdog_timer: Optional[threading.Timer] = None
         self._ping_timer: Optional[threading.Timer] = None
         self._register_timer: Optional[threading.Timer] = None
+        
+        # Health server for Docker/Kubernetes health checks
+        self._health_server: Optional[HealthServer] = None
+        self._health_port = int(os.environ.get('PYWATS_HEALTH_PORT', '8080'))
         
         # IPC server for GUI communication
         self._ipc_server: Optional[any] = None
@@ -171,13 +177,16 @@ class ClientService:
             # 9. Setup IPC server for GUI communication
             self._setup_ipc_server()
             
+            # 10. Start health server for Docker/Kubernetes
+            self._start_health_server()
+            
             logger.info("WATS Client Service started")
             
-            # 10. Setup signal handlers
+            # 11. Setup signal handlers
             signal.signal(signal.SIGINT, self._signal_handler)
             signal.signal(signal.SIGTERM, self._signal_handler)
             
-            # 11. Run event loop (blocks until stop)
+            # 12. Run event loop (blocks until stop)
             self._run_event_loop()
             
         except Exception as e:
@@ -212,6 +221,11 @@ class ClientService:
         if self._ipc_server:
             self._ipc_server.stop()
             self._ipc_server = None
+        
+        # Stop health server
+        if self._health_server:
+            self._health_server.stop()
+            self._health_server = None
         
         # Disconnect API
         if self.api:
@@ -461,6 +475,38 @@ class ClientService:
         except Exception as e:
             logger.warning(f"Failed to start IPC server: {e}")
             # Not critical - service can run without IPC
+    
+    def _start_health_server(self) -> None:
+        """
+        Start HTTP health server for Docker/Kubernetes health checks.
+        
+        The health server provides endpoints:
+        - GET /health        - Basic health check
+        - GET /health/live   - Liveness probe (process alive?)
+        - GET /health/ready  - Readiness probe (ready to accept work?)
+        - GET /health/details - Detailed health information
+        
+        Port can be configured via PYWATS_HEALTH_PORT environment variable.
+        Disabled if PYWATS_HEALTH_SERVER=false.
+        """
+        # Check if health server is disabled
+        if os.environ.get('PYWATS_HEALTH_SERVER', 'true').lower() == 'false':
+            logger.info("Health server disabled via PYWATS_HEALTH_SERVER=false")
+            return
+        
+        try:
+            self._health_server = HealthServer(port=self._health_port)
+            self._health_server.set_service_reference(self)
+            
+            if self._health_server.start():
+                logger.info(f"Health server started on port {self._health_port}")
+            else:
+                logger.warning(f"Failed to start health server on port {self._health_port}")
+                self._health_server = None
+        except Exception as e:
+            logger.warning(f"Failed to start health server: {e}")
+            self._health_server = None
+            # Not critical - service can run without health server
     
     def _run_event_loop(self) -> None:
         """

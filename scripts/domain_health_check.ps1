@@ -135,7 +135,7 @@ function Update-HealthCheck {
 }
 
 function Show-AllHealthChecks {
-    Write-Step "Domain Health Summary"
+    Write-Step "Domain Health Summary (60-point scale)"
     
     $results = @()
     
@@ -144,10 +144,14 @@ function Show-AllHealthChecks {
         if (Test-Path $file) {
             $content = Get-Content $file -Raw
             
-            # Extract score
+            # Extract score (now 60-point scale)
             $score = "N/A"
-            if ($content -match '\*\*Health Score:\*\*\s+(\d+)/50') {
+            if ($content -match '\*\*Health Score:\*\*\s+(\d+)/60') {
                 $score = $matches[1]
+            }
+            elseif ($content -match '\*\*Health Score:\*\*\s+(\d+)/50') {
+                # Legacy 50-point scale - flag for update
+                $score = "$($matches[1])*"
             }
             
             # Extract grade
@@ -164,7 +168,7 @@ function Show-AllHealthChecks {
             
             $results += [PSCustomObject]@{
                 Domain = $domain.ToUpper()
-                Score = "$score/50"
+                Score = "$score/60"
                 Grade = $grade
                 Age = "$ageInDays days"
                 Status = $status
@@ -182,6 +186,11 @@ function Show-AllHealthChecks {
     }
     
     $results | Format-Table -AutoSize
+    
+    # Grade scale reference
+    Write-Host "Grade Scale: A+ (58-60) | A (54-57) | A- (50-53) | B+ (46-49) | B (42-45) | B- (38-41)" -ForegroundColor Gray
+    Write-Host "             C (30-37) | D (20-29) | F (<20)" -ForegroundColor Gray
+    Write-Host ""
     
     $staleCount = ($results | Where-Object { $_.Status -eq "❌" }).Count
     if ($staleCount -gt 0) {

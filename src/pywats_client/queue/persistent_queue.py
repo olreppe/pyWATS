@@ -45,6 +45,13 @@ from ..core.file_utils import (
     ensure_directory,
 )
 
+# Import client-specific exceptions with troubleshooting hints
+from ..exceptions import (
+    QueueError,
+    QueueFullError,
+    QueueCorruptedError,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -143,12 +150,44 @@ class PersistentQueue(MemoryQueue):
             
         Returns:
             The created QueueItem
+            
+        Raises:
+            QueueFullError: If queue has reached max_size
+            QueueError: If disk persistence fails
         """
-        # Add to memory queue first
-        item = super().add(data, item_id, max_attempts, metadata)
+        # Check capacity first with user-friendly error
+        if self._max_size and len(self._items) >= self._max_size:
+            raise QueueFullError(
+                message=f"Cannot add report: queue is full",
+                current_size=len(self._items),
+                max_size=self._max_size
+            )
+        
+        # Add to memory queue
+        try:
+            item = super().add(data, item_id, max_attempts, metadata)
+        except ValueError as e:
+            # Convert parent's ValueError to our QueueFullError
+            if "full" in str(e).lower():
+                raise QueueFullError(
+                    message=str(e),
+                    current_size=len(self._items),
+                    max_size=self._max_size
+                )
+            raise
         
         # Persist to disk
-        self._save_item(item)
+        try:
+            self._save_item(item)
+        except Exception as ex:
+            # Remove from memory if disk save failed
+            super().remove(item.id)
+            raise QueueError(
+                message=f"Failed to save item to disk: {ex}",
+                queue_path=str(self._queue_dir),
+                item_id=item.id,
+                operation="add"
+            )
         
         return item
     

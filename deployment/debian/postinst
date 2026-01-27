@@ -1,0 +1,80 @@
+#!/bin/bash
+# Post-installation script for pywats-client
+# This runs after the package files are installed
+
+set -e
+
+# Create pywats system user if it doesn't exist
+if ! getent passwd pywats > /dev/null; then
+    echo "Creating pywats system user..."
+    adduser --system --group --home /var/lib/pywats --no-create-home --quiet pywats
+fi
+
+# Set ownership of directories
+chown -R pywats:pywats /var/lib/pywats
+chown -R pywats:pywats /var/log/pywats
+chown -R pywats:pywats /etc/pywats
+
+# Ensure correct permissions
+chmod 750 /var/lib/pywats
+chmod 750 /var/log/pywats
+chmod 755 /etc/pywats
+
+# Create default configuration if it doesn't exist
+if [ ! -f /etc/pywats/config.json ]; then
+    echo "Creating default configuration..."
+    cat > /etc/pywats/config.json << 'EOF'
+{
+    "server": {
+        "url": "",
+        "token": ""
+    },
+    "client": {
+        "watch_folder": "/var/lib/pywats/watch",
+        "archive_folder": "/var/lib/pywats/archive",
+        "failed_folder": "/var/lib/pywats/failed"
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "/var/log/pywats/client.log"
+    }
+}
+EOF
+    chown pywats:pywats /etc/pywats/config.json
+    chmod 640 /etc/pywats/config.json
+fi
+
+# Create watch directories
+mkdir -p /var/lib/pywats/watch
+mkdir -p /var/lib/pywats/archive
+mkdir -p /var/lib/pywats/failed
+chown -R pywats:pywats /var/lib/pywats
+
+# Reload systemd daemon to pick up new service file
+systemctl daemon-reload
+
+# Enable service (but don't start - requires configuration)
+echo ""
+echo "=========================================="
+echo "pyWATS Client installed successfully!"
+echo "=========================================="
+echo ""
+echo "Next steps:"
+echo "1. Edit configuration: /etc/pywats/config.json"
+echo "   - Set 'server.url' to your WATS server URL"
+echo "   - Set 'server.token' to your API token"
+echo ""
+echo "2. Enable and start the service:"
+echo "   sudo systemctl enable pywats-client"
+echo "   sudo systemctl start pywats-client"
+echo ""
+echo "3. Check status:"
+echo "   sudo systemctl status pywats-client"
+echo "   journalctl -u pywats-client -f"
+echo ""
+echo "Health endpoint: http://localhost:8080/health"
+echo ""
+
+#DEBHELPER#
+
+exit 0

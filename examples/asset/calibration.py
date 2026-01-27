@@ -76,10 +76,10 @@ for asset in overdue:
 
 
 # =============================================================================
-# Record Calibration
+# Record Calibration (via API)
 # =============================================================================
 
-# Update calibration date
+# Update calibration date via asset update
 asset = api.asset.get_asset("DMM-001")
 
 if asset:
@@ -89,6 +89,21 @@ if asset:
     
     api.asset.update_asset(asset)
     print(f"Recorded calibration for {asset.sn}")
+
+
+# =============================================================================
+# Record External Calibration (WATS 25.3+)
+# =============================================================================
+# Use this when calibration was performed externally with custom date range
+
+# Example: Record calibration done last week at external lab
+# api.asset.record_calibration_external(
+#     asset_id="DMM-001",
+#     from_date=datetime.now() - timedelta(days=7),
+#     to_date=datetime.now() - timedelta(days=6),
+#     comment="Calibrated at external ISO 17025 lab"
+# )
+# print("Recorded external calibration")
 
 
 # =============================================================================

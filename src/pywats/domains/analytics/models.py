@@ -2104,3 +2104,452 @@ class MeasurementListItem(PyWATSModel):
     )
     # Forward-compatible: allow extra fields from backend
     model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
+
+
+# =============================================================================
+# Alarm and Notification Models
+# =============================================================================
+
+class AlarmLog(PyWATSModel):
+    """
+    Represents a triggered alarm or notification log entry.
+    
+    Returned from POST /api/internal/Trigger/GetAlarmAndNotificationLogs.
+    
+    WATS supports 5 alarm types, each with different fields populated:
+    
+    - Type 1 (REPORT): Unit-based alarms from test results
+    - Type 2 (YIELD_VOLUME): Yield and volume threshold alarms
+    - Type 3 (SERIAL_NUMBER): Serial number pool monitoring alarms
+    - Type 4 (MEASUREMENT): Measurement statistics and SPC alarms
+    - Type 5 (ASSET): Asset status and maintenance alarms
+    
+    Use the AlarmType enum to filter by type or interpret the type field.
+    
+    Attributes:
+        log_id: Unique identifier for this alarm log entry
+        name: Name/description of the alarm rule that triggered
+        log_date: When the alarm was triggered
+        trigger_id: ID of the alarm rule definition
+        type: Alarm type (1-5, use AlarmType enum)
+        state: Alarm state (e.g., 'C' for completed)
+        
+        # Product context
+        part_number: Product part number
+        product_name: Product name
+        process_code: Process code
+        process_name: Process name
+        
+        # Grouping
+        grouping_set: Dimensions used for grouping
+        calculations_string: Calculations performed
+        client_group_ids: Client group IDs
+        product_selection_ids: Product selection IDs
+        
+        # Report/UUT fields (Type 1)
+        report_guid: GUID of the related test report
+        serial_number: Unit serial number
+        revision: Product revision
+        station_name: Test station name
+        operator: Operator
+        result: Test result
+        start_utc: Test start time
+        
+        # Yield fields (Type 2)
+        fpy: First pass yield (0-1)
+        spy: Second pass yield (0-1)
+        tpy: Third pass yield (0-1)
+        lpy: Last pass yield (0-1)
+        test_yield: Overall test yield (0-1)
+        fpy_trend: FPY trend (change rate)
+        spy_trend: SPY trend (change rate)
+        tpy_trend: TPY trend (change rate)
+        lpy_trend: LPY trend (change rate)
+        test_yield_trend: Test yield trend (change rate)
+        uut_count: Number of UUT reports
+        unit_count: Number of unique units
+        fp_count: First pass count
+        lp_count: Last pass count
+        retest_count: Number of retests
+        sequence_count: Sequence count
+        sequential_match: Sequential match count
+        
+        # Serial number fields (Type 3)
+        free: Available serial numbers
+        reserved: Reserved serial numbers
+        serial_number_type: Serial number type
+        
+        # Measurement fields (Type 4)
+        cp: Process capability (Cp)
+        cpk: Process capability index (Cpk)
+        min: Minimum value
+        max: Maximum value
+        avg: Average value
+        stdev: Standard deviation
+        measurement_path: Path to the measurement
+        
+        # Asset fields (Type 5)
+        asset_name: Asset name
+        asset_serial_number: Asset serial number
+        type_id: Asset type ID
+        asset_state: Asset state
+        bubbled_status: Bubbled status
+        tags: Asset tags
+        is_days_since_calibration_unknown: Calibration tracking unknown
+        is_days_since_maintenance_unknown: Maintenance tracking unknown
+        
+    Example:
+        >>> from pywats import AlarmType
+        >>> # Get recent yield alarms
+        >>> alarms = api.analytics.get_alarm_logs(
+        ...     alarm_type=AlarmType.YIELD_VOLUME,
+        ...     top_count=10
+        ... )
+        >>> for alarm in alarms:
+        ...     print(f"{alarm.name}: FPY={alarm.fpy:.1%}, Trend={alarm.fpy_trend:+.1%}")
+    """
+    
+    # Forward-compatible: allow extra fields from new server versions
+    model_config = ConfigDict(**PyWATSModel.model_config, extra="allow")
+    
+    # Core fields (all types)
+    log_id: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("logId", "log_id"),
+        serialization_alias="logId",
+        description="Unique alarm log identifier"
+    )
+    name: Optional[str] = Field(
+        default=None,
+        description="Name of the alarm rule that triggered"
+    )
+    log_date: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("logDate", "log_date"),
+        serialization_alias="logDate",
+        description="When the alarm was triggered"
+    )
+    trigger_id: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("triggerId", "trigger_id"),
+        serialization_alias="triggerId",
+        description="ID of the alarm rule definition"
+    )
+    type: Optional[int] = Field(
+        default=None,
+        description="Alarm type (1=Report, 2=Yield, 3=SerialNumber, 4=Measurement, 5=Asset)"
+    )
+    state: Optional[str] = Field(
+        default=None,
+        description="Alarm state (e.g., 'C' for completed)"
+    )
+    
+    # Grouping/calculation context
+    grouping_set: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("groupingSet", "grouping_set"),
+        serialization_alias="groupingSet",
+        description="Dimensions used for grouping"
+    )
+    calculations_string: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("calculationsString", "calculations_string"),
+        serialization_alias="calculationsString",
+        description="Calculations performed"
+    )
+    client_group_ids: Optional[List[int]] = Field(
+        default=None,
+        validation_alias=AliasChoices("clientGroupIds", "client_group_ids"),
+        serialization_alias="clientGroupIds",
+        description="Client group IDs"
+    )
+    product_selection_ids: Optional[List[int]] = Field(
+        default=None,
+        validation_alias=AliasChoices("productSelectionIds", "product_selection_ids"),
+        serialization_alias="productSelectionIds",
+        description="Product selection IDs"
+    )
+    
+    # Product context (most types)
+    part_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("partNumber", "part_number"),
+        serialization_alias="partNumber",
+        description="Product part number"
+    )
+    product_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("productName", "product_name"),
+        serialization_alias="productName",
+        description="Product name"
+    )
+    process_code: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("processCode", "process_code"),
+        serialization_alias="processCode",
+        description="Process code"
+    )
+    process_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("processName", "process_name"),
+        serialization_alias="processName",
+        description="Process name"
+    )
+    
+    # Report/UUT fields (Type 1: REPORT)
+    report_guid: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("reportGuid", "report_guid"),
+        serialization_alias="reportGuid",
+        description="GUID of the related test report"
+    )
+    serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumber", "serial_number"),
+        serialization_alias="serialNumber",
+        description="Unit serial number"
+    )
+    revision: Optional[str] = Field(
+        default=None,
+        description="Product revision"
+    )
+    station_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("stationName", "station_name"),
+        serialization_alias="stationName",
+        description="Test station name"
+    )
+    operator: Optional[str] = Field(
+        default=None,
+        description="Operator"
+    )
+    result: Optional[str] = Field(
+        default=None,
+        description="Test result"
+    )
+    start_utc: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("startUtc", "start_utc"),
+        serialization_alias="startUtc",
+        description="Test start time"
+    )
+    
+    # Yield fields (Type 2: YIELD_VOLUME)
+    fpy: Optional[float] = Field(
+        default=None,
+        description="First pass yield (0-1)"
+    )
+    spy: Optional[float] = Field(
+        default=None,
+        description="Second pass yield (0-1)"
+    )
+    tpy: Optional[float] = Field(
+        default=None,
+        description="Third pass yield (0-1)"
+    )
+    lpy: Optional[float] = Field(
+        default=None,
+        description="Last pass yield (0-1)"
+    )
+    test_yield: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("testYield", "test_yield"),
+        serialization_alias="testYield",
+        description="Overall test yield (0-1)"
+    )
+    fpy_trend: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("fpyTrend", "fpy_trend"),
+        serialization_alias="fpyTrend",
+        description="FPY trend (change rate)"
+    )
+    spy_trend: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("spyTrend", "spy_trend"),
+        serialization_alias="spyTrend",
+        description="SPY trend (change rate)"
+    )
+    tpy_trend: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("tpyTrend", "tpy_trend"),
+        serialization_alias="tpyTrend",
+        description="TPY trend (change rate)"
+    )
+    lpy_trend: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("lpyTrend", "lpy_trend"),
+        serialization_alias="lpyTrend",
+        description="LPY trend (change rate)"
+    )
+    test_yield_trend: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("testYieldTrend", "test_yield_trend"),
+        serialization_alias="testYieldTrend",
+        description="Test yield trend (change rate)"
+    )
+    uut_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("uutCount", "uut_count"),
+        serialization_alias="uutCount",
+        description="Number of UUT reports"
+    )
+    unit_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("unitCount", "unit_count"),
+        serialization_alias="unitCount",
+        description="Number of unique units"
+    )
+    fp_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("fpCount", "fp_count"),
+        serialization_alias="fpCount",
+        description="First pass count"
+    )
+    lp_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("lpCount", "lp_count"),
+        serialization_alias="lpCount",
+        description="Last pass count"
+    )
+    retest_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("retestCount", "retest_count"),
+        serialization_alias="retestCount",
+        description="Number of retests"
+    )
+    sequence_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("sequenceCount", "sequence_count"),
+        serialization_alias="sequenceCount",
+        description="Sequence count"
+    )
+    sequential_match: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("sequentialMatch", "sequential_match"),
+        serialization_alias="sequentialMatch",
+        description="Sequential match count"
+    )
+    
+    # Serial number fields (Type 3: SERIAL_NUMBER)
+    free: Optional[int] = Field(
+        default=None,
+        description="Available serial numbers in pool"
+    )
+    reserved: Optional[int] = Field(
+        default=None,
+        description="Reserved serial numbers"
+    )
+    serial_number_type: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialNumberType", "serial_number_type"),
+        serialization_alias="serialNumberType",
+        description="Serial number type"
+    )
+    
+    # Measurement fields (Type 4: MEASUREMENT)
+    cp: Optional[float] = Field(
+        default=None,
+        description="Process capability (Cp)"
+    )
+    cpk: Optional[float] = Field(
+        default=None,
+        description="Process capability index (Cpk)"
+    )
+    min: Optional[float] = Field(
+        default=None,
+        description="Minimum value"
+    )
+    max: Optional[float] = Field(
+        default=None,
+        description="Maximum value"
+    )
+    avg: Optional[float] = Field(
+        default=None,
+        description="Average value"
+    )
+    stdev: Optional[float] = Field(
+        default=None,
+        description="Standard deviation"
+    )
+    measurement_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("measurementPath", "measurement_path"),
+        serialization_alias="measurementPath",
+        description="Path to the measurement"
+    )
+    
+    # Asset fields (Type 5: ASSET)
+    asset_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("assetname", "assetName", "asset_name"),
+        serialization_alias="assetname",
+        description="Asset name"
+    )
+    asset_serial_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("serialnumber", "assetSerialNumber", "asset_serial_number"),
+        serialization_alias="serialnumber",
+        description="Asset serial number"
+    )
+    type_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("typeid", "typeId", "type_id"),
+        serialization_alias="typeid",
+        description="Asset type ID"
+    )
+    asset_state: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("assetstate", "assetState", "asset_state"),
+        serialization_alias="assetstate",
+        description="Asset state"
+    )
+    bubbled_status: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("bubbledstatus", "bubbledStatus", "bubbled_status"),
+        serialization_alias="bubbledstatus",
+        description="Bubbled status"
+    )
+    tags: Optional[str] = Field(
+        default=None,
+        description="Asset tags"
+    )
+    is_days_since_calibration_unknown: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "isDaysSinceCalibrationUnknown", 
+            "is_days_since_calibration_unknown"
+        ),
+        serialization_alias="isDaysSinceCalibrationUnknown",
+        description="Whether calibration tracking is unknown"
+    )
+    is_days_since_maintenance_unknown: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "isDaysSinceMaintenanceUnknown", 
+            "is_days_since_maintenance_unknown"
+        ),
+        serialization_alias="isDaysSinceMaintenanceUnknown",
+        description="Whether maintenance tracking is unknown"
+    )
+    
+    @property
+    def alarm_type_name(self) -> str:
+        """Human-readable alarm type name."""
+        type_names = {
+            1: "Report (UUT)",
+            2: "Yield & Volume",
+            3: "Serial Number",
+            4: "Measurement",
+            5: "Asset"
+        }
+        return type_names.get(self.type, f"Unknown ({self.type})")
+    
+    @property  
+    def fpy_percent(self) -> Optional[float]:
+        """First pass yield as percentage (0-100)."""
+        return self.fpy * 100 if self.fpy is not None else None
+    
+    @property
+    def fpy_trend_percent(self) -> Optional[float]:
+        """FPY trend as percentage points."""
+        return self.fpy_trend * 100 if self.fpy_trend is not None else None

@@ -5,7 +5,7 @@ Official documentation for pyWATS - Python API library for WATS.
 ## Getting Started
 
 - **[Getting Started Guide](getting-started.md)** - Complete installation, configuration, and initialization guide
-- **[Quick Reference](quick-reference.md)** - Common patterns and code snippets
+- **[Quick Reference](reference/quick-reference.md)** - Common patterns and code snippets
 - **[README](../README.md)** - Package overview and quick start
 - **[CHANGELOG](../CHANGELOG.md)** - Version history and release notes
 
@@ -22,9 +22,9 @@ Official documentation for pyWATS - Python API library for WATS.
 
 **System architecture, integration patterns, and extension points:**
 
-- **[Architecture Overview](architecture.md)** - Complete system design: API, Client, GUI layers; async/sync patterns; deployment modes
-- **[Client Architecture](client-architecture.md)** - Client service internals: IPC, queue system, converters, multi-instance
-- **[Integration Patterns](integration-patterns.md)** - Practical workflows: station setup, multi-process testing, error recovery, performance optimization
+- **[Architecture Overview](guides/architecture.md)** - Complete system design: API, Client, GUI layers; async/sync patterns; deployment modes
+- **[Client Architecture](guides/client-architecture.md)** - Client service internals: IPC, queue system, converters, multi-instance
+- **[Integration Patterns](guides/integration-patterns.md)** - Practical workflows: station setup, multi-process testing, error recovery, performance optimization
 
 **See these guides to understand:**
 - How the three layers (API, Client, GUI) work together
@@ -38,34 +38,34 @@ Complete documentation for each WATS domain with examples and API reference:
 
 ### Core Domains
 
-- **[Product Domain](modules/product.md)** - Products, revisions, BOMs, box build templates, vendors, categories
-- **[Asset Domain](modules/asset.md)** - Equipment tracking, calibration, maintenance, hierarchy, logs
-- **[Production Domain](modules/production.md)** - Unit lifecycle, serial numbers, assembly, verification, phases
-- **[Report Domain](modules/report.md)** - Test reports (UUT/UUR), all step types, querying, attachments
+- **[Product Domain](domains/product.md)** - Products, revisions, BOMs, box build templates, vendors, categories
+- **[Asset Domain](domains/asset.md)** - Equipment tracking, calibration, maintenance, hierarchy, logs
+- **[Production Domain](domains/production.md)** - Unit lifecycle, serial numbers, assembly, verification, phases
+- **[Report Domain](domains/report.md)** - Test reports (UUT/UUR), all step types, querying, attachments
 
 ### Analysis & Tracking
 
-- **[Analytics Domain](modules/analytics.md)** - Yield analysis, measurements, Cpk statistics, Unit Flow visualization
-- **[Software Domain](modules/software.md)** - Package management, versioning, distribution, tags, virtual folders
-- **[RootCause Domain](modules/rootcause.md)** - Issue tracking, defect management, status workflows, priorities
-- **[Process Domain](modules/process.md)** - Operation types, test/repair processes, caching
+- **[Analytics Domain](domains/analytics.md)** - Yield analysis, measurements, Cpk statistics, Unit Flow visualization
+- **[Software Domain](domains/software.md)** - Package management, versioning, distribution, tags, virtual folders
+- **[RootCause Domain](domains/rootcause.md)** - Issue tracking, defect management, status workflows, priorities
+- **[Process Domain](domains/process.md)** - Operation types, test/repair processes, caching
 
 ### Identity & Administration
 
-- **[SCIM Domain](modules/scim.md)** - User provisioning from Azure AD, SCIM protocol support
+- **[SCIM Domain](domains/scim.md)** - User provisioning from Azure AD, SCIM protocol support
 
-### Detailed Module Guides
+### Detailed Domain Guides
 
 Usage guides with comprehensive examples and patterns:
 
-- **[Report Module Guide](usage/report-module.md)** - Detailed report creation and querying
+- **[Report Domain Guide](usage/report-domain.md)** - Detailed report creation and querying
 - **[Report Builder](usage/report-builder.md)** - Simple, LLM-friendly report building for converters
-- **[Product Module Guide](usage/product-module.md)** - Product and BOM management
-- **[Production Module Guide](usage/production-module.md)** - Serial number and unit tracking
-- **[Asset Module Guide](usage/asset-module.md)** - Equipment and calibration management
-- **[Software Module Guide](usage/software-module.md)** - Package distribution
-- **[RootCause Module Guide](usage/rootcause-module.md)** - Ticket and defect tracking
-- **[Process Module Guide](usage/process-module.md)** - Process operations
+- **[Product Domain Guide](usage/product-domain.md)** - Product and BOM management
+- **[Production Domain Guide](usage/production-domain.md)** - Serial number and unit tracking
+- **[Asset Domain Guide](usage/asset-domain.md)** - Equipment and calibration management
+- **[Software Domain Guide](usage/software-domain.md)** - Package distribution
+- **[RootCause Domain Guide](usage/rootcause-domain.md)** - Ticket and defect tracking
+- **[Process Domain Guide](usage/process-domain.md)** - Process operations
 - **[Box Build Guide](usage/box-build-guide.md)** - Assembly and box build workflows
 
 ## Deployment & Operations
@@ -81,10 +81,14 @@ Usage guides with comprehensive examples and patterns:
 
 **Resources for developers extending or troubleshooting pyWATS:**
 
-- **[WATS Domain Knowledge](wats-domain-knowledge.md)** - Essential domain concepts for AI agents and developers (units, reports, processes, operations)
-- **[LLM Converter Guide](llm-converter-guide.md)** - Quick reference template for implementing converters
-- **[Environment Variables](env-variables.md)** - Using env vars for development and debugging
-- **[Error Catalog](error-catalog.md)** - Comprehensive error reference with causes, examples, and remediation
+- **[WATS Domain Knowledge](guides/wats-domain-knowledge.md)** - Essential domain concepts for AI agents and developers (units, reports, processes, operations)
+- **[LLM Converter Guide](guides/llm-converter-guide.md)** - Quick reference template for implementing converters
+- **[Environment Variables](reference/env-variables.md)** - Using env vars for development and debugging
+- **[Error Catalog](reference/error-catalog.md)** - Comprehensive error reference with causes, examples, and remediation
+
+**Platform Compatibility:**
+- **[Platform Compatibility Guide](platforms/platform-compatibility.md)** - Comprehensive multi-platform deployment matrix
+- **[Windows IoT LTSC Guide](platforms/windows-iot-ltsc.md)** - Windows IoT Enterprise LTSC setup
 
 **Client GUI Development:**
 - **[GUI Configuration](../src/pywats_client/GUI_CONFIGURATION.md)** - Configure GUI tabs, logging, and settings
@@ -96,28 +100,28 @@ Usage guides with comprehensive examples and patterns:
 See [Getting Started - Async Usage](getting-started.md#async-usage) - Use `AsyncWATS` for concurrent requests or `pyWATS` for simple blocking calls
 
 ### Creating Test Reports
-Start with [Report Domain](modules/report.md) - Learn how to create UUT reports with all step types
+Start with [Report Domain](domains/report.md) - Learn how to create UUT reports with all step types
 
 ### Managing Products & BOMs
-See [Product Domain](modules/product.md) - Product creation, revisions, BOMs, box build workflows
+See [Product Domain](domains/product.md) - Product creation, revisions, BOMs, box build workflows
 
 ### Tracking Units Through Production
-See [Production Domain](modules/production.md) - Serial numbers, unit phases, assembly, verification
+See [Production Domain](domains/production.md) - Serial numbers, unit phases, assembly, verification
 
 ### Equipment & Calibration
-See [Asset Domain](modules/asset.md) - Asset tracking, calibration schedules, maintenance
+See [Asset Domain](domains/asset.md) - Asset tracking, calibration schedules, maintenance
 
 ### Analyzing Yield & Quality
-See [Analytics Domain](modules/analytics.md) - Yield calculations, measurement statistics, Cpk analysis
+See [Analytics Domain](domains/analytics.md) - Yield calculations, measurement statistics, Cpk analysis
 
 ### Software Distribution
-See [Software Domain](modules/software.md) - Package management, versioning, releases
+See [Software Domain](domains/software.md) - Package management, versioning, releases
 
 ### Issue Tracking
-See [RootCause Domain](modules/rootcause.md) - Create tickets, track defects, manage workflows
+See [RootCause Domain](domains/rootcause.md) - Create tickets, track defects, manage workflows
 
 ### Operation Types
-See [Process Domain](modules/process.md) - Define test/repair operations, process caching
+See [Process Domain](domains/process.md) - Define test/repair operations, process caching
 
 ## Tools & Utilities
 

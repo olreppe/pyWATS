@@ -22,16 +22,19 @@ This directory contains **unified health checks** for all pyWATS domains, replac
 
 | Domain | Score | Grade | Status | Last Updated |
 |--------|-------|-------|--------|--------------|
-| [Analytics](analytics.md) | 48/50 | A | ✅ Excellent | 2026-01-26 |
-| [Production](production.md) | 48/50 | A | ✅ Excellent | 2026-01-26 |
-| [Product](product.md) | 47/50 | A | ✅ Excellent | 2026-01-26 |
-| [RootCause](rootcause.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
-| [Software](software.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
-| [Asset](asset.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
-| [Process](process.md) | 46/50 | A | ✅ Excellent | 2026-01-26 |
-| [Report](report.md) | 44/50 | A- | ✅ Good | 2026-01-26 |
+| [Analytics](analytics.md) | 54/60 | A | ✅ Excellent | 2026-01-26 |
+| [Production](production.md) | 54/60 | A | ✅ Excellent | 2026-01-26 |
+| [Product](product.md) | 53/60 | A- | ✅ Very Good | 2026-01-26 |
+| [Report](report.md) | 53/60 | A- | ✅ Very Good | 2026-01-26 |
+| [RootCause](rootcause.md) | 52/60 | A- | ✅ Very Good | 2026-01-26 |
+| [Software](software.md) | 52/60 | A- | ✅ Very Good | 2026-01-26 |
+| [Asset](asset.md) | 52/60 | A- | ✅ Very Good | 2026-01-26 |
+| [Process](process.md) | 52/60 | A- | ✅ Very Good | 2026-01-26 |
 
-**Overall Average:** 46.4/50 (A) ✅
+**Overall Average:** 52.8/60 (A-) ✅
+
+> **Scale Change:** Upgraded from 50-point (5 categories) to 60-point (6 categories) system on 2026-01-26.
+> New "API Surface Quality" category added. Previous A grades normalized to new scale.
 
 ---
 
@@ -39,42 +42,78 @@ This directory contains **unified health checks** for all pyWATS domains, replac
 
 | Grade | Score | Description |
 |-------|-------|-------------|
-| **A** | 45-50 | Excellent - Production ready |
-| **B** | 40-44 | Good - Minor improvements needed |
-| **C** | 35-39 | Acceptable - Moderate improvements needed |
-| **D** | 30-34 | Poor - Major improvements needed |
-| **F** | <30 | Critical - Significant refactoring required |
+| **A+** | 58-60 | Elite - Industry benchmark quality |
+| **A** | 54-57 | Excellent - Production ready, highly polished |
+| **A-** | 50-53 | Very Good - Minor refinements possible |
+| **B+** | 46-49 | Good - Some improvements needed |
+| **B** | 42-45 | Acceptable - Notable improvements needed |
+| **B-** | 38-41 | Fair - Multiple areas need work |
+| **C** | 30-37 | Needs Work - Significant improvements required |
+| **D** | 20-29 | Poor - Major refactoring needed |
+| **F** | <20 | Critical - Not production ready |
+
+> **Note:** Grading scale upgraded Jan 2026 from 50-point to 60-point system with stricter criteria.
+> Previous A (45-50) roughly maps to B+ (46-49) in new system.
 
 ---
 
-## Scoring Categories
+## Scoring Categories (60 points total)
 
-Each domain is scored across 5 categories (max 10 points each):
+Each domain is scored across **6 categories** (max 10 points each):
 
 ### 1. Architecture (10 points)
-- Service→Repository→HttpClient pattern compliance
-- Proper layering and separation of concerns
-- Internal API isolation (if applicable)
+| Score | Criteria |
+|-------|----------|
+| 10 | Perfect layering, injectable dependencies, no circular imports, <500 LOC per file |
+| 8-9 | Service→Repository→HttpClient compliant, proper separation, internal API isolation |
+| 6-7 | Minor layering violations, some large files (>800 LOC) |
+| 4-5 | Mixed business logic in repository, inconsistent patterns |
+| <4 | No clear architecture, spaghetti code |
 
 ### 2. Models (10 points)
-- Pydantic model quality and documentation
-- Model size and complexity
-- Field documentation and examples
+| Score | Criteria |
+|-------|----------|
+| 10 | All fields documented, computed properties, validation, examples in docstrings |
+| 8-9 | Pydantic with AliasChoices, good documentation, reasonable file sizes |
+| 6-7 | Models work but documentation sparse, some large model files |
+| 4-5 | Missing validations, poor documentation, >1000 LOC model files |
+| <4 | Incorrect types, no Pydantic, no documentation |
 
 ### 3. Error Handling (10 points)
-- ErrorHandler.handle_response() usage
-- ValueError validations
-- Error message clarity
+| Score | Criteria |
+|-------|----------|
+| 10 | ErrorHandler 100%, custom exceptions for all error types, detailed error context |
+| 8-9 | ErrorHandler consistent, ValueError validations, clear messages |
+| 6-7 | Some raw HTTP errors escape, inconsistent validation |
+| 4-5 | Many unhandled errors, unclear messages |
+| <4 | No error handling, crashes on bad input |
 
 ### 4. Documentation (10 points)
-- Docstring coverage and quality
-- Args/Returns/Raises documentation
-- Code examples
+| Score | Criteria |
+|-------|----------|
+| 10 | 100% docstrings with Args/Returns/Raises/Examples, usage guide in docs/modules/ |
+| 8-9 | >90% docstrings, Raises complete, good examples directory coverage |
+| 6-7 | >80% docstrings, missing some Raises or examples |
+| 4-5 | <80% docstrings, sparse or missing Args/Returns |
+| <4 | No docstrings, no documentation |
 
 ### 5. Testing (10 points)
-- Acceptance test coverage
-- Unit test coverage (target >80%)
-- Test scenario completeness
+| Score | Criteria |
+|-------|----------|
+| 10 | >90% unit coverage, integration tests, edge cases, mocked + live test modes |
+| 8-9 | >80% coverage, main scenarios covered, acceptance tests present |
+| 6-7 | >70% coverage, some gaps in edge cases |
+| 4-5 | <70% coverage, missing critical test scenarios |
+| <4 | <50% coverage or no tests |
+
+### 6. API Surface Quality (10 points) — NEW
+| Score | Criteria |
+|-------|----------|
+| 10 | Intuitive naming, consistent patterns, full type hints, deprecation handled |
+| 8-9 | Good naming, types complete, follows pyWATS conventions |
+| 6-7 | Some naming inconsistencies, missing type hints |
+| 4-5 | Confusing API, mixed naming conventions, incomplete types |
+| <4 | Unpythonic API, no types, breaking changes without deprecation |
 
 ---
 

@@ -70,7 +70,8 @@ examples/
 │   ├── yield_analysis.py     # Yield statistics
 │   ├── failure_analysis.py   # Top failed steps
 │   ├── measurements.py       # Measurement data
-│   └── oee_analysis.py       # OEE metrics
+│   ├── oee_analysis.py       # OEE metrics
+│   └── alarm_monitor.py      # Alarm polling service (production-ready)
 │
 ├── production/               # Production management
 │   ├── unit_tracking.py      # Unit lifecycle

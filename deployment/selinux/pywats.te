@@ -1,0 +1,114 @@
+# SELinux Policy Module for pyWATS Client
+#
+# This module allows pyWATS to run with SELinux in enforcing mode on RHEL/Rocky/Alma.
+#
+# Installation:
+#   1. checkmodule -M -m -o pywats.mod selinux/pywats.te
+#   2. semodule_package -o pywats.pp -m pywats.mod
+#   3. semodule -i pywats.pp
+#
+# Or use the provided install script:
+#   ./selinux/install-selinux.sh
+
+policy_module(pywats, 1.0.0)
+
+########################################
+# Type declarations
+########################################
+
+# Define pywats process type
+type pywats_t;
+type pywats_exec_t;
+
+# Define file types
+type pywats_var_lib_t;
+type pywats_log_t;
+type pywats_etc_t;
+type pywats_tmp_t;
+
+# init_daemon_domain macro defines pywats_t as a daemon domain
+init_daemon_domain(pywats_t, pywats_exec_t)
+
+########################################
+# File context declarations
+########################################
+
+# Executable
+/usr/bin/python3.*              -- gen_context(system_u:object_r:pywats_exec_t,s0)
+
+# Configuration
+/etc/pywats(/.*)?                   gen_context(system_u:object_r:pywats_etc_t,s0)
+
+# Variable data
+/var/lib/pywats(/.*)?               gen_context(system_u:object_r:pywats_var_lib_t,s0)
+
+# Logs
+/var/log/pywats(/.*)?               gen_context(system_u:object_r:pywats_log_t,s0)
+
+########################################
+# pywats policy rules
+########################################
+
+# Allow pywats_t to transition from init
+allow init_t pywats_t:process transition;
+allow init_t pywats_exec_t:file { read execute open getattr };
+
+# Files - general
+files_read_etc_files(pywats_t)
+files_read_etc_runtime_files(pywats_t)
+
+# Configuration files
+allow pywats_t pywats_etc_t:dir { search getattr read open };
+allow pywats_t pywats_etc_t:file { read getattr open };
+
+# Variable data (read/write)
+allow pywats_t pywats_var_lib_t:dir { search getattr read write add_name remove_name create rmdir open };
+allow pywats_t pywats_var_lib_t:file { read write create unlink rename getattr setattr open lock append };
+
+# Log files
+allow pywats_t pywats_log_t:dir { search getattr read write add_name remove_name create open };
+allow pywats_t pywats_log_t:file { read write create append getattr setattr open };
+
+# Temporary files (for PrivateTmp)
+allow pywats_t pywats_tmp_t:dir { search getattr read write add_name remove_name create rmdir open };
+allow pywats_t pywats_tmp_t:file { read write create unlink rename getattr setattr open };
+files_tmp_filetrans(pywats_t, pywats_tmp_t, { file dir })
+
+########################################
+# Network permissions
+########################################
+
+# Allow outbound network connections (HTTPS to WATS server)
+sysnet_dns_name_resolve(pywats_t)
+corenet_tcp_connect_http_port(pywats_t)
+corenet_tcp_connect_http_cache_port(pywats_t)
+
+# Allow binding to health check port (8080)
+allow pywats_t self:tcp_socket { create bind listen accept read write getattr setopt shutdown };
+corenet_tcp_bind_generic_node(pywats_t)
+# Port 8080 is typically http_cache_port_t
+corenet_tcp_bind_http_cache_port(pywats_t)
+
+########################################
+# System permissions
+########################################
+
+# Read system info
+kernel_read_system_state(pywats_t)
+files_read_usr_files(pywats_t)
+
+# Allow reading /proc for process info
+domain_read_all_domains_state(pywats_t)
+
+# Signal handling
+allow pywats_t self:process { signal signull };
+
+# Inotify for file watching
+allow pywats_t self:netlink_kobject_uevent_socket { create read };
+
+########################################
+# Logging
+########################################
+
+# Allow logging to systemd journal
+logging_send_syslog_msg(pywats_t)

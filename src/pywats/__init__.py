@@ -42,7 +42,10 @@ from .exceptions import (
     NotFoundError,
     ValidationError,
     ServerError,
-    ConnectionError
+    ConnectionError,
+    TimeoutError,
+    ConfigurationError,
+    ServiceError,
 )
 from .core.logging import enable_debug_logging
 from .core.station import Station, StationRegistry, StationConfig, Purpose
@@ -84,6 +87,8 @@ from .domains.analytics import (
     UnitFlowNode, UnitFlowLink, UnitFlowUnit, UnitFlowFilter, UnitFlowResult,
     # Step/Measurement filter models (internal API)
     StepStatusItem, MeasurementListItem,
+    # Alarm models (internal API)
+    AlarmLog, AlarmType,
     # Dimension query enums and builder
     Dimension, RepairDimension, KPI, RepairKPI, DimensionBuilder,
 )
@@ -135,6 +140,9 @@ __all__ = [
     "ValidationError",
     "ServerError",
     "ConnectionError",
+    "TimeoutError",
+    "ConfigurationError",
+    "ServiceError",
     # Product models
     "Product",
     "ProductRevision",
@@ -185,6 +193,9 @@ __all__ = [
     # Step/Measurement filter models (internal API)
     "StepStatusItem",
     "MeasurementListItem",
+    # Alarm models (internal API)
+    "AlarmLog",
+    "AlarmType",
     # Analytics dimension/KPI enums
     "Dimension",
     "RepairDimension",

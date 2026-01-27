@@ -1,0 +1,17 @@
+[Unit]
+Description=pyWATS First Boot Configuration
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/var/lib/pywats/.configured
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/first-boot-setup.sh
+ExecStartPost=/bin/touch /var/lib/pywats/.configured
+RemainAfterExit=yes
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty1
+
+[Install]
+WantedBy=multi-user.target

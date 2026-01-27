@@ -496,6 +496,5 @@ print(client.connect())  # Should be True
 
 ## References
 
-- C# WATS Client: `referenced_code/WATS Client Service/`
-- Architecture Analysis: `docs/CLIENT_ANALYSIS_REPORT.md`
+- Architecture: `docs/guides/client-architecture.md`
 - Original pyWATS: `src/pywats/` (REST API wrapper)

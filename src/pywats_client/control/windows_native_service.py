@@ -60,6 +60,7 @@ class PyWATSService(win32serviceutil.ServiceFramework if HAS_PYWIN32 else object
     - Registers with Windows Service Control Manager (SCM)
     - Appears in Task Manager and services.msc
     - Supports standard service commands (start, stop, pause, continue)
+    - Handles pre-shutdown for graceful cleanup on system restart
     - Auto-starts on system boot (if configured)
     - Runs under SYSTEM or specified user account
     
@@ -77,6 +78,14 @@ class PyWATSService(win32serviceutil.ServiceFramework if HAS_PYWIN32 else object
         "WATS Test Report Management - Background service for monitoring "
         "test result files, converting reports, and uploading to WATS server."
     )
+    
+    # Accept pre-shutdown notifications for graceful shutdown on system restart
+    # This gives us extra time to complete pending operations before Windows shuts down
+    _svc_deps_ = []  # No dependencies
+    
+    # Controls we accept - include PRESHUTDOWN for graceful system shutdown handling
+    if HAS_PYWIN32:
+        _svc_reg_class_ = win32serviceutil.ServiceFramework._svc_reg_class_
     
     # Instance ID for multi-station support (default is single station)
     _instance_id = "default"
@@ -99,6 +108,38 @@ class PyWATSService(win32serviceutil.ServiceFramework if HAS_PYWIN32 else object
         self._instance_id = os.environ.get('PYWATS_INSTANCE_ID', 'default')
         
         socket.setdefaulttimeout(60)
+        
+        # Accept additional service controls including pre-shutdown
+        if HAS_PYWIN32:
+            self.accepted_controls = (
+                win32service.SERVICE_ACCEPT_STOP |
+                win32service.SERVICE_ACCEPT_SHUTDOWN |
+                win32service.SERVICE_ACCEPT_PRESHUTDOWN
+            )
+    
+    def SvcOtherEx(self, control: int, event_type: int, data) -> None:
+        """
+        Handle extended service control requests.
+        
+        This method handles SERVICE_CONTROL_PRESHUTDOWN which is sent
+        before system shutdown/restart, giving us more time for cleanup.
+        
+        Args:
+            control: The service control code
+            event_type: Event type (usually 0)
+            data: Additional data (usually None)
+        """
+        if control == win32service.SERVICE_CONTROL_PRESHUTDOWN:
+            # Pre-shutdown: System is about to restart/shutdown
+            # We have up to 3 minutes (default) for graceful cleanup
+            logger.info("Received pre-shutdown notification - initiating graceful shutdown")
+            servicemanager.LogMsg(
+                servicemanager.EVENTLOG_INFORMATION_TYPE,
+                0xF000,  # Custom event ID for pre-shutdown
+                (self._svc_name_, "Pre-shutdown notification received")
+            )
+            # Trigger the same shutdown as SvcStop
+            self.SvcStop()
     
     def SvcStop(self):
         """
@@ -452,6 +493,9 @@ def install_service(
         if startup == "auto":
             _configure_delayed_start(service_name, silent=silent)
         
+        # Configure pre-shutdown timeout for graceful shutdown on system restart
+        _configure_preshutdown_timeout(service_name, timeout_ms=180000, silent=silent)
+        
         # Register Windows Event Log source
         register_event_source(silent=silent)
         
@@ -558,6 +602,46 @@ def _configure_delayed_start(service_name: str, silent: bool = False) -> bool:
             
     except Exception as e:
         _print(f"  Warning: Could not configure delayed start: {e}")
+        return False
+
+
+def _configure_preshutdown_timeout(service_name: str, timeout_ms: int = 180000, silent: bool = False) -> bool:
+    """
+    Configure pre-shutdown timeout for graceful shutdown on system restart.
+    
+    When Windows is shutting down or restarting, services receive a pre-shutdown
+    notification. This timeout specifies how long the service has to complete
+    cleanup before being forcefully terminated.
+    
+    Args:
+        service_name: Name of the Windows service
+        timeout_ms: Timeout in milliseconds (default: 180000 = 3 minutes)
+        silent: If True, suppress output
+        
+    Returns:
+        True if configuration successful
+    """
+    import subprocess
+    
+    def _print(msg: str) -> None:
+        if not silent:
+            print(msg)
+    
+    try:
+        # Use registry to set SERVICE_CONFIG_PRESHUTDOWN_INFO
+        # Path: HKLM\SYSTEM\CurrentControlSet\Services\<service>\PreshutdownTimeout
+        import winreg
+        
+        key_path = f"SYSTEM\\CurrentControlSet\\Services\\{service_name}"
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE) as key:
+            winreg.SetValueEx(key, "PreshutdownTimeout", 0, winreg.REG_DWORD, timeout_ms)
+        
+        timeout_sec = timeout_ms // 1000
+        _print(f"  ✓ Pre-shutdown timeout configured ({timeout_sec}s for graceful shutdown)")
+        return True
+        
+    except Exception as e:
+        _print(f"  Warning: Could not configure pre-shutdown timeout: {e}")
         return False
 
 

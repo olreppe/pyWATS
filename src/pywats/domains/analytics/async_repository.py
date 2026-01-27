@@ -36,7 +36,9 @@ from .models import (
     UnitFlowResult,
     MeasurementListItem,
     StepStatusItem,
+    AlarmLog,
 )
+from .enums import AlarmType
 from ..report.models import WATSFilter, ReportHeader
 
 
@@ -1387,4 +1389,83 @@ class AsyncAnalyticsRepository:
         
         if data and isinstance(data, list):
             return [TopFailedStep.model_validate(item) for item in data]
+        return []
+
+    # =========================================================================
+    # Alarm and Notification Logs (Internal API)
+    # =========================================================================
+
+    async def get_alarm_logs(
+        self,
+        alarm_type: Optional[AlarmType] = None,
+        top_count: Optional[int] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        product_group: Optional[str] = None,
+        level: Optional[str] = None,
+    ) -> List[AlarmLog]:
+        """
+        Get alarm and notification logs.
+        
+        ⚠️ INTERNAL: Uses internal API endpoint which may change without notice.
+        
+        POST /api/internal/Trigger/GetAlarmAndNotificationLogs
+        
+        Retrieves triggered alarm logs from WATS. Alarms are configured in the
+        WATS web interface and trigger based on various conditions (yield drops,
+        measurement thresholds, asset status, etc.).
+        
+        Args:
+            alarm_type: Filter by alarm type (use AlarmType enum):
+                - AlarmType.REPORT (1): Unit test result alarms
+                - AlarmType.YIELD_VOLUME (2): Yield/volume threshold alarms
+                - AlarmType.SERIAL_NUMBER (3): Serial number pool alarms
+                - AlarmType.MEASUREMENT (4): Measurement/SPC alarms
+                - AlarmType.ASSET (5): Asset status alarms
+            top_count: Maximum number of results to return
+            date_from: Start date filter (ISO format string)
+            date_to: End date filter (ISO format string)
+            product_group: Filter by product group
+            level: Filter by alarm level
+            
+        Returns:
+            List of AlarmLog objects containing alarm details.
+            Different fields are populated based on alarm type.
+            
+        Example:
+            >>> from pywats.domains.analytics import AlarmType
+            >>> # Get recent yield alarms
+            >>> alarms = await repo.get_alarm_logs(
+            ...     alarm_type=AlarmType.YIELD_VOLUME,
+            ...     top_count=50
+            ... )
+            >>> for alarm in alarms:
+            ...     print(f"{alarm.name}: FPY={alarm.fpy:.1%}")
+        """
+        # Build request body
+        body: Dict[str, Any] = {}
+        
+        if top_count is not None:
+            body["topCount"] = top_count
+        if date_from is not None:
+            body["dateFrom"] = date_from
+        if date_to is not None:
+            body["dateTo"] = date_to
+        if product_group is not None:
+            body["productGroup"] = product_group
+        if level is not None:
+            body["level"] = level
+        
+        data = await self._internal_post(
+            Routes.Analytics.Internal.ALARM_LOGS, 
+            data=body if body else None
+        )
+        
+        if data and isinstance(data, list):
+            # Filter by alarm type if specified
+            if alarm_type is not None:
+                type_value = int(alarm_type)
+                data = [item for item in data if item.get("type") == type_value]
+            
+            return [AlarmLog.model_validate(item) for item in data]
         return []

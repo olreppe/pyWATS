@@ -219,8 +219,15 @@ def _run_headless_mode(config):
 def main():
     """Main entry point"""
     # Check if this is a CLI subcommand or service mode
-    # CLI commands: config, status, test-connection, converters, service, gui, tray
-    cli_commands = ["config", "status", "test-connection", "converters", "service", "gui", "tray"]
+    # CLI commands: config, status, test-connection, converters, service, gui, tray, diagnose
+    cli_commands = ["config", "status", "test-connection", "converters", "service", "gui", "tray", "diagnose"]
+    
+    # Handle 'diagnose' command - run system diagnostics
+    if len(sys.argv) > 1 and sys.argv[1] == "diagnose":
+        from .diagnostics import main as diagnose_main
+        sys.argv = [sys.argv[0]] + sys.argv[2:]  # Remove 'diagnose' from argv
+        diagnose_main()
+        return
     
     # Handle 'service' command - run background service
     if len(sys.argv) > 1 and sys.argv[1] == "service":

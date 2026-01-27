@@ -13,6 +13,23 @@ A Python library for interacting with the [WATS](https://servername.wats.com) te
 - **Python 3.10** or later
 - **WATS Server 2025.3.9.824** or later
 
+## Platform Support
+
+| Platform | Library | GUI Client | Headless Client | Service/Daemon |
+|----------|---------|------------|-----------------|----------------|
+| Windows 10/11, Server 2019+ | ✅ | ✅ | ✅ | ✅ Native Service |
+| Windows IoT Enterprise LTSC | ✅ | ⚠️ | ✅ | ✅ Native Service |
+| Ubuntu 22.04/24.04 LTS | ✅ | ✅ | ✅ | ✅ systemd |
+| Debian 11/12 | ✅ | ✅ | ✅ | ✅ systemd |
+| RHEL/Rocky/Alma 8/9 | ✅ | ✅ | ✅ | ✅ systemd + SELinux |
+| macOS 12+ (Intel & Apple Silicon) | ✅ | ✅ | ✅ | ✅ launchd |
+| Raspberry Pi (64-bit) | ✅ | ⚠️ | ✅ | ✅ systemd |
+| Docker (amd64/arm64) | ✅ | ❌ | ✅ | ✅ Container |
+
+✅ Full support  ⚠️ Limited  ❌ Not available
+
+See [Platform Compatibility Guide](docs/platforms/platform-compatibility.md) for detailed requirements.
+
 ## Features
 
 - **PyWATS Library** - Core API library for WATS integration
@@ -376,12 +393,8 @@ Complete guides shipped with the package:
 
 ### Additional Resources
 
-Documentation available in the GitHub repository (not shipped with package):
-
-- [Internal Documentation](docs/internal/) - Architecture, design docs, AI agent knowledge
-- [Internal: Architecture Overview](docs/internal/ARCHITECTURE.md) - System design and architecture
-- [Internal: WATS Domain Knowledge](docs/internal/WATS_DOMAIN_KNOWLEDGE.md) - Core WATS concepts
-- [Logging Strategy](LOGGING_STRATEGY.md) - Logging configuration and best practices
+- [Changelog](CHANGELOG.md) - Version history and release notes
+- [Error Catalog](docs/ERROR_CATALOG.md) - Comprehensive error reference
 
 ## Testing
 

@@ -50,7 +50,7 @@ for asset, remaining in approaching_limit:
 
 
 # =============================================================================
-# Record Maintenance
+# Record Maintenance (via API)
 # =============================================================================
 
 asset = api.asset.get_asset("FIXTURE-001")
@@ -62,6 +62,35 @@ if asset:
     
     api.asset.update_asset(asset)
     print(f"Recorded maintenance for {asset.sn}")
+
+
+# =============================================================================
+# Record External Maintenance (WATS 25.3+)
+# =============================================================================
+# Use this when maintenance was performed externally with custom date range
+
+# Example: Record maintenance done during factory shutdown
+# api.asset.record_maintenance_external(
+#     asset_id="FIXTURE-001",
+#     from_date=datetime.now() - timedelta(days=3),
+#     to_date=datetime.now() - timedelta(days=1),
+#     comment="Scheduled preventive maintenance during plant shutdown"
+# )
+# print("Recorded external maintenance")
+
+
+# =============================================================================
+# Set Counter Values (WATS 25.3+)
+# =============================================================================
+# Use these to directly set running or total counts (e.g., after counter reset)
+
+# Set running count (cycles since last maintenance)
+# api.asset.set_running_count("FIXTURE-001", 0)  # Reset after maintenance
+# print("Reset running count")
+
+# Set total count (lifetime cycles)
+# api.asset.set_total_count("FIXTURE-001", 50000)  # Set specific value
+# print("Set total count")
 
 
 # =============================================================================

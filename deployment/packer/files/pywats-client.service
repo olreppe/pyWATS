@@ -1,0 +1,48 @@
+[Unit]
+Description=pyWATS Client Service
+Documentation=https://github.com/virinco/pyWATS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pywats
+Group=pywats
+ExecStart=/opt/pywats/.venv/bin/python -m pywats_client service --config /etc/pywats/config.json
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+Environment="PYTHONUNBUFFERED=1"
+Environment="PYWATS_CONFIG_DIR=/etc/pywats"
+Environment="PYWATS_DATA_DIR=/var/lib/pywats"
+Environment="PYWATS_LOG_DIR=/var/log/pywats"
+Environment="PYWATS_HEALTH_PORT=8080"
+
+WorkingDirectory=/var/lib/pywats
+RuntimeDirectory=pywats
+StateDirectory=pywats
+LogsDirectory=pywats
+
+WatchdogSec=60s
+LimitNOFILE=65535
+MemoryMax=512M
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pywats-client
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/pywats /var/log/pywats
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

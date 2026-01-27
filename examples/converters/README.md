@@ -79,5 +79,5 @@ class MyConverter(FileConverter):
 
 ## See Also
 
-- [LLM Converter Guide](../../docs/llm-converter-guide.md) - Quick reference for implementing converters
+- [LLM Converter Guide](../../docs/guides/llm-converter-guide.md) - Quick reference for implementing converters
 - [Client Service Guide](../../docs/installation/client.md) - Installing and configuring converters

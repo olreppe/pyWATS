@@ -57,6 +57,13 @@ api-tests/
 examples/
 scripts/
 .github/
+deployment/
+
+# Internal documentation and reference code (not for distribution)
+referenced_code/
+referenced_code_net_core/
+docs/internal_documentation/
+docs/domain_health/
 
 # Local config and data
 config/

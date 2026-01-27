@@ -1,0 +1,206 @@
+name: Platform Tests
+
+# Cross-platform testing matrix for pyWATS
+# Tests on Windows, Ubuntu, macOS, and RHEL-compatible Linux
+
+on:
+  push:
+    branches: [main, release, 'feature/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ==========================================================================
+  # Core platform tests - Windows, Ubuntu, macOS
+  # ==========================================================================
+  test-platforms:
+    name: Test ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, windows-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
+        exclude:
+          # Reduce matrix size - skip some combinations
+          - os: macos-latest
+            python-version: '3.10'
+          - os: ubuntu-24.04
+            python-version: '3.10'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run unit tests
+        run: |
+          pytest api-tests/ -v --tb=short -x -m "not server"
+        env:
+          WATS_BASE_URL: "https://demo.wats.com"
+          WATS_AUTH_TOKEN: "dGVzdDp0ZXN0"
+
+      - name: Test diagnose command
+        run: |
+          python -m pywats_client diagnose --json
+        continue-on-error: true
+
+  # ==========================================================================
+  # RHEL/Rocky Linux tests in container
+  # ==========================================================================
+  test-rhel:
+    name: Test Rocky Linux 9 / Python 3.11
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux:9
+    
+    steps:
+      - name: Install Git
+        run: dnf install -y git
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Python and dependencies
+        run: |
+          dnf install -y python3.11 python3.11-pip python3.11-devel
+          python3.11 -m pip install --upgrade pip
+
+      - name: Install pyWATS
+        run: |
+          python3.11 -m pip install -e ".[dev]"
+
+      - name: Run unit tests
+        run: |
+          python3.11 -m pytest api-tests/ -v --tb=short -x -m "not server"
+        env:
+          WATS_BASE_URL: "https://demo.wats.com"
+          WATS_AUTH_TOKEN: "dGVzdDp0ZXN0"
+
+      - name: Test diagnose command
+        run: |
+          python3.11 -m pywats_client diagnose --json
+        continue-on-error: true
+
+      - name: Validate SELinux policy syntax
+        run: |
+          dnf install -y selinux-policy-devel
+          cd selinux/
+          checkmodule -M -m -o pywats.mod pywats.te
+          echo "SELinux policy compiles successfully"
+        continue-on-error: true
+
+  # ==========================================================================
+  # Package validation (lint only, no actual build)
+  # ==========================================================================
+  validate-packages:
+    name: Validate Package Files
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck lintian
+
+      - name: Validate shell scripts
+        run: |
+          shellcheck debian/postinst debian/prerm debian/postrm || true
+          shellcheck selinux/install-selinux.sh || true
+          shellcheck packer/files/first-boot-setup.sh || true
+
+      - name: Validate DEB control files
+        run: |
+          # Check for required fields
+          grep -q "^Package:" debian/control
+          grep -q "^Version:" debian/control
+          grep -q "^Architecture:" debian/control
+          grep -q "^Depends:" debian/control
+          echo "DEB control file valid"
+
+      - name: Validate RPM spec file (syntax only)
+        run: |
+          docker run --rm -v $PWD:/src fedora:39 \
+            bash -c "dnf install -y rpmlint 2>/dev/null && rpmlint /src/rpm/pywats.spec" || true
+
+      - name: Validate systemd units (INI syntax)
+        run: |
+          python3 -c "
+          import configparser
+          for f in ['debian/pywats-client.service', 'rpm/pywats-client.service', 'packer/files/pywats-client.service']:
+              try:
+                  cp = configparser.ConfigParser()
+                  cp.read(f)
+                  print(f'{f}: Valid INI syntax')
+              except Exception as e:
+                  print(f'{f}: INVALID - {e}')
+          "
+
+  # ==========================================================================
+  # Docker multi-architecture validation
+  # ==========================================================================
+  validate-docker:
+    name: Validate Docker Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (native arch only)
+        run: |
+          docker build -t pywats-test -f Dockerfile .
+
+      - name: Test Docker image
+        run: |
+          docker run --rm pywats-test python -c "import pywats; print('pyWATS import OK')"
+
+      - name: Test health endpoint in Docker
+        run: |
+          docker run -d --name pywats-health -p 8080:8080 pywats-test
+          sleep 5
+          curl -f http://localhost:8080/health || echo "Health endpoint not available (expected if service not started)"
+          docker stop pywats-health || true
+          docker rm pywats-health || true
+        continue-on-error: true
+
+  # ==========================================================================
+  # ARM64 emulation test (slower, but validates cross-platform)
+  # ==========================================================================
+  test-arm64:
+    name: Test ARM64 (QEMU emulation)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ARM64 image
+        run: |
+          docker buildx build --platform linux/arm64 -t pywats-arm64 --load .
+
+      - name: Test ARM64 image
+        run: |
+          docker run --rm --platform linux/arm64 pywats-arm64 python -c "import pywats; print('ARM64 OK')"

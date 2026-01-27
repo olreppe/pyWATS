@@ -3,7 +3,7 @@
 **Last Updated:** {Date}  
 **Version:** v{X.X.XbX}  
 **Reviewer:** {AI/Human}  
-**Health Score:** {X}/50 ({Grade})
+**Health Score:** {X}/60 ({Grade})
 
 ---
 
@@ -11,19 +11,24 @@
 
 | Category | Score | Status | Notes |
 |----------|-------|--------|-------|
-| Architecture | {0-10} | ✅/⚠️/❌ | Service→Repository→HttpClient compliance |
-| Models | {0-10} | ✅/⚠️/❌ | Pydantic quality, documentation |
-| Error Handling | {0-10} | ✅/⚠️/❌ | ErrorHandler usage, validations |
-| Documentation | {0-10} | ✅/⚠️/❌ | Docstrings, examples, raises |
-| Testing | {0-10} | ✅/⚠️/❌ | Acceptance test coverage |
-| **Total** | **{X}/50** | **{Grade}** | Overall domain health |
+| Architecture | {0-10} | ✅/⚠️/❌ | Service→Repository→HttpClient compliance, file sizes |
+| Models | {0-10} | ✅/⚠️/❌ | Pydantic quality, documentation, validation |
+| Error Handling | {0-10} | ✅/⚠️/❌ | ErrorHandler usage, custom exceptions, context |
+| Documentation | {0-10} | ✅/⚠️/❌ | Docstrings, examples, Raises complete |
+| Testing | {0-10} | ✅/⚠️/❌ | Coverage %, acceptance tests, edge cases |
+| API Surface | {0-10} | ✅/⚠️/❌ | Naming, types, consistency, deprecation |
+| **Total** | **{X}/60** | **{Grade}** | Overall domain health |
 
 **Grade Scale:**
-- A (45-50): Excellent - Production ready
-- B (40-44): Good - Minor improvements needed
-- C (35-39): Acceptable - Moderate improvements needed
-- D (30-34): Poor - Major improvements needed
-- F (<30): Critical - Significant refactoring required
+- A+ (58-60): Elite - Industry benchmark
+- A (54-57): Excellent - Production ready, highly polished
+- A- (50-53): Very Good - Minor refinements possible
+- B+ (46-49): Good - Some improvements needed
+- B (42-45): Acceptable - Notable improvements needed
+- B- (38-41): Fair - Multiple areas need work
+- C (30-37): Needs Work - Significant improvements required
+- D (20-29): Poor - Major refactoring needed
+- F (<20): Critical - Not production ready
 
 ---
 

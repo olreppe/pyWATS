@@ -1,0 +1,28 @@
+Source: pywats-client
+Section: python
+Priority: optional
+Maintainer: Virinco <support@virinco.com>
+Build-Depends: debhelper (>= 10), dh-python, python3-all (>= 3.10), python3-setuptools, python3-pip
+Standards-Version: 4.5.1
+Homepage: https://github.com/virinco/pyWATS
+Vcs-Browser: https://github.com/virinco/pyWATS
+Vcs-Git: https://github.com/virinco/pyWATS.git
+
+Package: pywats-client
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3 (>= 3.10), python3-pip
+Recommends: python3-pyside6
+Suggests: python3-venv
+Description: WATS Test Data Management Client
+ pyWATS Client is a background service that monitors test result files,
+ converts them to WATS format, and uploads them to the WATS server.
+ .
+ Features:
+  - File monitoring (watchdog) for automatic processing
+  - Multiple converter support (CSV, JSON, XML, etc.)
+  - Offline queue with automatic retry
+  - HTTP health endpoint for monitoring
+  - Multi-instance support for multiple stations
+ .
+ This package installs the headless client suitable for servers
+ and embedded systems. For GUI support, install python3-pyside6.

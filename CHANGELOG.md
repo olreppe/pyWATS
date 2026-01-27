@@ -7,7 +7,139 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Documentation Reorganization** - Complete restructuring of documentation for better organization:
+  - Created structured folder hierarchy:
+    - `docs/guides/` - Architecture, integration patterns, client architecture, LLM converter guide, WATS domain knowledge
+    - `docs/reference/` - Quick reference, environment variables, error catalog
+    - `docs/platforms/` - Platform compatibility, Windows IoT LTSC
+    - `docs/domains/` - Domain API documentation (renamed from `modules/`)
+    - `docs/usage/` - Detailed domain usage guides
+  - Standardized file naming to lowercase with hyphens
+  - Merged duplicate quick-reference files
+  - Updated all internal documentation links
+  - Moved deployment files to `deployment/` folder (DEB, RPM, SELinux, Packer, Docker)
+  - Updated `MANIFEST.in` to use recursive includes and prune deployment folder
+- **Terminology Standardization** - Unified "Module" → "Domain" terminology across all documentation:
+  - Renamed `docs/modules/` → `docs/domains/`
+  - Renamed usage guides: `*-module.md` → `*-domain.md`
+  - Updated all cross-references in navigation, headers, and links
+  - Consistent with code structure (`pywats.domains.*`)
+- **Test Suite Reorganization** - Restructured entire test suite for better discoverability:
+  - Created organized structure:
+    - `tests/domains/` - Domain-specific API tests (analytics, asset, product, production, report, rootcause, software)
+    - `tests/client/` - Client service and converter tests
+    - `tests/infrastructure/` - Core library tests (CFX, events)
+    - `tests/integration/` - Cross-cutting integration tests
+    - `tests/fixtures/` - Shared test data and scenarios
+  - Migrated from scattered `api-tests/` and `tests/` folders
+  - Created comprehensive `tests/README.md` with running instructions
+  - Improved test organization aligned with domain-driven architecture
+
 ### Added
+
+- **Enhanced Error Messages with Troubleshooting Hints** - User-facing exceptions now include actionable guidance:
+  - **Core API Exceptions** (`pywats.exceptions`):
+    - `ConnectionError` - Network/server connectivity issues
+    - `TimeoutError` - Request timeout with endpoint context
+    - `AuthenticationError` - Auth failures with token validation hints
+    - `ServerError` - HTTP error codes with status-specific guidance
+    - `ConfigurationError` - Config file/settings issues
+    - `ServiceError` - Background service problems
+  - **Client Exceptions** (`pywats_client.exceptions`):
+    - `ConverterError` - General converter failures
+    - `FileFormatError` - Invalid/unsupported file formats
+    - `FileAccessError` - File permission/access issues
+    - `ConverterConfigError` - Converter settings problems
+    - `QueueError` - Queue operation failures
+    - `QueueFullError` - Queue capacity reached
+    - `QueueCorruptedError` - Queue data corruption
+    - `OfflineError` - Network connectivity for offline mode
+    - `ServiceInstallError` - Service installation failures
+    - `ServiceStartError` - Service startup problems
+    - `ServicePermissionError` - Elevated privilege requirements
+    - `ConfigurationError` - Config file validation errors
+    - `ConfigurationMissingError` - Missing config file
+  - Each exception includes contextual details and 5+ troubleshooting hints
+  - All exceptions reference `pywats-client diagnose` for detailed diagnostics
+
+- **Multi-Platform Deployment Infrastructure** - Complete cross-platform packaging and deployment:
+  - **Windows Service Hardening**:
+    - `SERVICE_CONTROL_PRESHUTDOWN` support for graceful shutdown during OS restart
+    - Configurable pre-shutdown timeout (default 30 seconds)
+    - Auto-recovery options (restart on failure)
+    - Delayed auto-start configuration
+    - Windows Event Log integration
+  - **HTTP Health Endpoint** (`src/pywats_client/service/health_server.py`):
+    - Lightweight HTTP server on port 8080
+    - Endpoints: `/health`, `/health/live`, `/health/ready`, `/health/details`
+    - Integration with systemd, Docker, and Kubernetes health checks
+  - **Debian/Ubuntu Packaging** (`debian/` folder):
+    - Full DEB package structure with `debhelper 10`
+    - `postinst/prerm/postrm` scripts for clean lifecycle
+    - Security-hardened systemd unit file
+    - Automatic user/group creation, directory setup
+  - **RHEL/Rocky/AlmaLinux Packaging** (`rpm/` folder):
+    - Complete RPM spec file for `rpmbuild`
+    - systemd integration with security hardening
+    - Support for RHEL 8/9, Rocky Linux 8/9, AlmaLinux 8/9
+  - **SELinux Policy Module** (`selinux/` folder):
+    - Custom `pywats_t` domain for process isolation
+    - File contexts for config, data, and log directories
+    - Network permissions for API communication
+    - Installation script for `semodule`
+  - **Docker Multi-Architecture** (`.github/workflows/docker.yml`):
+    - Builds for `linux/amd64` and `linux/arm64`
+    - GitHub Container Registry (ghcr.io) publishing
+    - Trivy security scanning in CI pipeline
+    - Separate images for API and headless client
+  - **VM Appliance** (`packer/` folder):
+    - Packer template for OVA/QCOW2/VHD output
+    - Ubuntu 22.04 LTS base image
+    - Cloud-init autoinstall configuration
+    - Interactive first-boot configuration wizard
+    - Support for VMware, VirtualBox, Hyper-V, KVM, Proxmox
+
+- **Platform Compatibility Documentation**:
+  - `docs/platforms/platform-compatibility.md` - Comprehensive compatibility matrix
+  - `docs/platforms/windows-iot-ltsc.md` - Windows IoT Enterprise LTSC guide
+  - Updated README with platform support table
+  - Updated quick reference with deployment options
+
+- **Documentation Cleanup** - Ensure internal docs are not exposed in published package:
+  - Removed internal documentation links from README.md
+  - Updated MANIFEST.in to exclude `referenced_code_net_core/` and `docs/domain_health/`
+  - Updated .dockerignore to exclude internal folders from Docker builds
+  - Cleaned service README.md to not reference internal `referenced_code/` folder
+  - All internal documentation remains in `docs/internal_documentation/` (GitHub only)
+  - Reference code folders (`referenced_code/`, `referenced_code_net_core/`) kept internal only
+
+- **MQTT/IoT Integration Brainstorming** - Planning document for future IoT device integration:
+  - Explores MQTT as complementary transport to CFX/AMQP for edge devices
+  - Proposes data types: Asset telemetry, Software versioning, Self-test Reports, Production events
+  - Architecture proposal for `pywats_mqtt` package
+  - AWS IoT Core and Azure IoT Hub integration considerations
+  - Five-phase implementation roadmap
+
+- **Alarm and Notification Logs API** - New endpoint to retrieve triggered WATS alarms:
+  - `get_alarm_logs()` method in AnalyticsService (sync and async)
+  - Supports filtering by alarm type, date range, product group, and level
+  - `AlarmType` enum with 5 alarm types:
+    - `REPORT (1)` - Unit test result alarms
+    - `YIELD_VOLUME (2)` - Yield/volume threshold alarms
+    - `SERIAL_NUMBER (3)` - Serial number pool monitoring
+    - `MEASUREMENT (4)` - Measurement/SPC alarms
+    - `ASSET (5)` - Asset status and maintenance alarms
+  - `AlarmLog` model with comprehensive fields for all alarm types
+  - Helper properties: `alarm_type_name`, `fpy_percent`, `fpy_trend_percent`
+  - Comprehensive example: `examples/analytics/alarm_monitor.py`
+    - Production-ready polling service with handler pattern
+    - Example handlers: Console, Email, Slack, Teams
+    - Configurable poll interval, filtering, retry logic
+  - Documentation in `docs/modules/analytics.md`
+  - Integration tests for all alarm functionality
+  - Note: Uses internal API endpoint (`/api/internal/Trigger/GetAlarmAndNotificationLogs`)
 
 - **WATS 25.3 Asset Module Enhancements** - New calibration/maintenance and count management features:
   - `set_running_count(asset_id, count)` - Set running count to specific value (PUT /api/Asset/SetRunningCount)
@@ -51,7 +183,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verified all endpoints properly flagged with `⚠️ INTERNAL` warnings
   - Mapped each internal endpoint to missing public API features
   - Prioritized recommendations for public API extensions
-  - See: `docs/internal_documentation/WIP/completed/internal_backend_analysis/`
 
 - **UURReport Refactoring (Phase 4 Complete)** - Simplified UUR model to match UUT design:
   - Reduced UURReport from 644 to 426 lines (34% reduction)
@@ -71,6 +202,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed `RepairOperationConfig.failure_codes` property to correctly flatten category→fail_codes hierarchy
   - Added `get_fail_code_by_name()` and `validate_fail_code()` methods for validation
   - `get_fail_codes()` now returns category info for proper fail code lookup
+
+### Changed
+
+- **Domain Health Grading System Upgraded** - Stricter 60-point scale:
+  - Upgraded from 50-point (5 categories) to 60-point (6 categories)
+  - New "API Surface Quality" category evaluates naming, types, consistency, deprecation handling
+  - Grade scale refined: A+ (58-60), A (54-57), A- (50-53), B+ (46-49), B (42-45), etc.
+  - Previous A grades (45-50 on old scale) now map to A-/A on stricter scale
+  - Current scores: Analytics/Production at A (54/60), others at A- (52-53/60)
+  - Overall average: 52.8/60 (A-)
+  - Updated `scripts/domain_health_check.ps1` for new scale
+  - Updated all domain health files with new scoring
+
+- **Asset Examples Updated for WATS 25.3** - New counter/calibration methods:
+  - `examples/asset/calibration.py` - Added `record_calibration_external()` example
+  - `examples/asset/maintenance.py` - Added `record_maintenance_external()`, `set_running_count()`, `set_total_count()` examples
 
 ### Deprecated
 
@@ -108,10 +255,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Phase 4**: UURReport model simplified (644→433 lines, 33% reduction)
   - Phase 3 (service split) deferred - current structure maintainable
   - All 134 report tests pass
-  - See: `docs/internal_documentation/WIP/completed/REPORT_REFACTORING.md`
 
 - **Domain Health Documentation** - Moved to official docs for release:
-  - Relocated `docs/internal_documentation/domain_health/` → `docs/domain_health/`
   - All 8 domains now grade A or A- (overall 46.4/50)
   - Report domain improved from B+ (41/50) to A- (44/50) after refactoring
   - Updated domain_health_check.ps1 script with new path

@@ -23,6 +23,28 @@ __version__ = "1.0.0"
 # Core configuration
 from .core.config import ClientConfig, get_default_config_path
 
+# Exceptions (user-facing errors with troubleshooting hints)
+from .exceptions import (
+    ClientError,
+    # Converter errors
+    ConverterError,
+    FileFormatError,
+    FileAccessError,
+    ConverterConfigError,
+    # Queue errors
+    QueueError,
+    QueueFullError,
+    QueueCorruptedError,
+    OfflineError,
+    # Service errors
+    ServiceInstallError,
+    ServiceStartError,
+    ServicePermissionError,
+    # Configuration errors
+    ConfigurationError,
+    ConfigurationMissingError,
+)
+
 # Service layer (NEW architecture)
 from .service.client_service import ClientService, ServiceStatus
 from .service.converter_pool import ConverterPool, ConversionItem
@@ -76,4 +98,20 @@ __all__ = [
     # CLI
     "ConfigCLI",
     "cli_main",
+    
+    # Exceptions
+    "ClientError",
+    "ConverterError",
+    "FileFormatError",
+    "FileAccessError",
+    "ConverterConfigError",
+    "QueueError",
+    "QueueFullError",
+    "QueueCorruptedError",
+    "OfflineError",
+    "ServiceInstallError",
+    "ServiceStartError",
+    "ServicePermissionError",
+    "ConfigurationError",
+    "ConfigurationMissingError",
 ]

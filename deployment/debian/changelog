@@ -1,0 +1,8 @@
+pywats-client (1.0.0-1) unstable; urgency=medium
+
+  * Initial Debian package release
+  * Includes headless client with systemd integration
+  * HTTP health endpoint for monitoring
+  * Security-hardened systemd service configuration
+
+ -- Virinco <support@virinco.com>  Sun, 26 Jan 2026 12:00:00 +0100

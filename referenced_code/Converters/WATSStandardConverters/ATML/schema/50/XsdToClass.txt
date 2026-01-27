@@ -1,6 +1,0 @@
-﻿DO NOT USE Xsd2Code. Xsd2Code will generate conflicting members.
-
-Use xsd.exe (VS2013):
-xsd.exe Common.xsd SimicaCommon.xsd TestResults.xsd TestResultsCollection.xsd TestResultsTSExtension.xsd /c /n:Virinco.WATS.Interface.Converter.ATML50.schema
-
-

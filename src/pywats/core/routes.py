@@ -426,6 +426,10 @@ class Routes:
             MEASUREMENT_LIST = f"{APP_BASE}/MeasurementList"
             STEP_STATUS_LIST = f"{APP_BASE}/StepStatusList"
             TOP_FAILED = f"{APP_BASE}/TopFailed"
+            
+            # Alarm/Notification routes (uses Trigger controller internally)
+            TRIGGER_BASE = "/api/internal/Trigger"
+            ALARM_LOGS = f"{TRIGGER_BASE}/GetAlarmAndNotificationLogs"
     
     # =========================================================================
     # RootCause Domain

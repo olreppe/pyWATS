@@ -1,9 +1,9 @@
 # Asset Domain Health Check
 
 **Last Updated:** 2026-01-26  
-**Version:** v0.1.0b37  
+**Version:** v0.1.0b39  
 **Reviewer:** AI Assistant  
-**Health Score:** 46/50 (A)
+**Health Score:** 52/60 (A-)
 
 ---
 
@@ -11,12 +11,13 @@
 
 | Category | Score | Status | Notes |
 |----------|-------|--------|-------|
-| Architecture | 9/10 | ✅ | Good compliance |
-| Models | 8/10 | ✅ | Solid equipment/calibration models |
-| Error Handling | 10/10 | ✅ | ErrorHandler 100% |
-| Documentation | 9/10 | ✅ | Good docs, Raises complete, examples added |
-| Testing | 9/10 | ✅ | Good coverage |
-| **Total** | **46/50** | **A** | Excellent - Production ready |
+| Architecture | 9/10 | ✅ | Good compliance, proper layering |
+| Models | 8/10 | ✅ | Solid equipment/calibration/maintenance models |
+| Error Handling | 10/10 | ✅ | ErrorHandler 100%, good context |
+| Documentation | 9/10 | ✅ | Good docs, Raises complete, examples updated for 25.3 |
+| Testing | 8/10 | ✅ | Good coverage, new 25.3 endpoints tested |
+| API Surface | 8/10 | ✅ | Good naming, types complete, WATS 25.3 additions |
+| **Total** | **52/60** | **A-** | Very Good - Production ready, minor polish possible |
 
 ---
 

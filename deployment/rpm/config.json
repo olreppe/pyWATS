@@ -1,0 +1,15 @@
+{
+    "server": {
+        "url": "",
+        "token": ""
+    },
+    "client": {
+        "watch_folder": "/var/lib/pywats/watch",
+        "archive_folder": "/var/lib/pywats/archive",
+        "failed_folder": "/var/lib/pywats/failed"
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "/var/log/pywats/client.log"
+    }
+}

@@ -44,6 +44,8 @@ from .enums import (
     KPI,
     RepairKPI,
     DimensionBuilder,
+    # Alarm type enum
+    AlarmType,
 )
 from .models import (
     YieldData,
@@ -67,6 +69,8 @@ from .models import (
     # Step/Measurement filter models (internal API)
     StepStatusItem,
     MeasurementListItem,
+    # Alarm models (internal API)
+    AlarmLog,
 )
 
 # Async implementations (primary API)
@@ -87,6 +91,8 @@ __all__ = [
     "KPI",
     "RepairKPI",
     "DimensionBuilder",
+    # Alarm type enum
+    "AlarmType",
     # Models
     "YieldData",
     "ProcessInfo",
@@ -109,6 +115,8 @@ __all__ = [
     # Step/Measurement filter models (internal API)
     "StepStatusItem",
     "MeasurementListItem",
+    # Alarm models (internal API)
+    "AlarmLog",
     # Async implementations (primary API)
     "AsyncAnalyticsRepository",
     "AsyncAnalyticsService",

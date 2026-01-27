@@ -77,6 +77,14 @@ from .standard import (
 from .base import ConverterBase
 from .base import ConverterResult as LegacyConverterResult
 
+# Exceptions (user-facing errors with troubleshooting hints)
+from ..exceptions import (
+    ConverterError,
+    FileFormatError,
+    FileAccessError,
+    ConverterConfigError,
+)
+
 __all__ = [
     # Enums
     "SourceType",
@@ -106,4 +114,9 @@ __all__ = [
     "WATSStandardXMLConverter",
     # Legacy support
     "ConverterBase",
+    # Exceptions
+    "ConverterError",
+    "FileFormatError",
+    "FileAccessError",
+    "ConverterConfigError",
 ]

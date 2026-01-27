@@ -561,3 +561,7 @@ src/pywats_client/converters/C#ConvertersToBeConvertertedTo_pyWATS/
 
 src/pywats_client/converters/WATS Standard Converters/
 src/pywats_client/converters/example_files_to_be_converted/
+
+# C# reference code (internal only, not for distribution)
+referenced_code/
+referenced_code_net_core/

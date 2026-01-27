@@ -266,7 +266,7 @@ api = pyWATS(
 
 - **[Getting Started Guide](../getting-started.md)** - Comprehensive tutorial
 - **[Quick Reference](../quick-reference.md)** - Common patterns and snippets
-- **[Domain Documentation](../modules/)** - Detailed API reference
+- **[Domain Documentation](../domains/)** - Detailed API reference
 
 ---
 

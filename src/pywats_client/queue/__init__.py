@@ -55,6 +55,14 @@ from pywats.queue import (
     convert_to_wsjf,
 )
 
+# Exceptions (user-facing errors with troubleshooting hints)
+from ..exceptions import (
+    QueueError,
+    QueueFullError,
+    QueueCorruptedError,
+    OfflineError,
+)
+
 __all__ = [
     # Persistent queue (file-backed)
     "PersistentQueue",
@@ -67,4 +75,10 @@ __all__ = [
     # Format converters
     "WSJFConverter",
     "convert_to_wsjf",
+    # Exceptions
+    "QueueError",
+    "QueueFullError",
+    "QueueCorruptedError",
+    "OfflineError",
 ]
+

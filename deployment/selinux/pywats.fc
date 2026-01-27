@@ -1,0 +1,17 @@
+# pyWATS SELinux File Contexts
+#
+# This file defines the security contexts for pyWATS files.
+# Apply with: semanage fcontext -a -t <type> <path>
+# Then: restorecon -Rv <path>
+
+# Configuration
+/etc/pywats(/.*)?                   system_u:object_r:pywats_etc_t:s0
+
+# Variable data (watch folders, queue)
+/var/lib/pywats(/.*)?               system_u:object_r:pywats_var_lib_t:s0
+
+# Log files
+/var/log/pywats(/.*)?               system_u:object_r:pywats_log_t:s0
+
+# Python executable (if using venv)
+/opt/pywats/.venv/bin/python        --  system_u:object_r:pywats_exec_t:s0

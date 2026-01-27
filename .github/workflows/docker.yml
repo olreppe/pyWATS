@@ -1,0 +1,175 @@
+# Docker Build and Push Workflow
+#
+# Builds multi-architecture Docker images and pushes to GitHub Container Registry.
+# Supports: linux/amd64, linux/arm64
+#
+# Triggers:
+# - Push to main branch (builds latest tag)
+# - Release published (builds version tag)
+# - Manual dispatch (for testing)
+
+name: Docker Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'pyproject.toml'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      push:
+        description: 'Push images to registry'
+        required: true
+        default: 'false'
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        target:
+          - api
+          - client-headless
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+      
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.target }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push == 'true') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ steps.meta.outputs.version }}
+      
+      - name: Test image
+        if: matrix.target == 'client-headless'
+        run: |
+          # Build for local testing (single arch)
+          docker build --target ${{ matrix.target }} -t test-image .
+          
+          # Test that Python imports work
+          docker run --rm test-image python -c "import pywats; print(f'pyWATS {pywats.__version__}')"
+          docker run --rm test-image python -c "import pywats_client; print('pywats_client OK')"
+          
+          # Test health server module
+          docker run --rm test-image python -c "from pywats_client.service.health_server import HealthServer; print('HealthServer OK')"
+
+  # Create combined manifest for main images
+  manifest:
+    name: Create Multi-arch Manifest
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'pull_request'
+    permissions:
+      packages: write
+    
+    steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create and push manifest (client-headless as default)
+        run: |
+          # Create manifest for the default image (client-headless)
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION} \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-client-headless:${VERSION}
+            docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}
+          fi
+          
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-client-headless:latest
+            docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          fi
+
+  # Scan for vulnerabilities
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'pull_request'
+    permissions:
+      security-events: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Build image for scanning
+        run: docker build --target client-headless -t scan-image .
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'scan-image'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'

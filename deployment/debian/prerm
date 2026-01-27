@@ -1,0 +1,21 @@
+#!/bin/bash
+# Pre-removal script for pywats-client
+# This runs before the package files are removed
+
+set -e
+
+# Stop service if running
+if systemctl is-active --quiet pywats-client 2>/dev/null; then
+    echo "Stopping pywats-client service..."
+    systemctl stop pywats-client
+fi
+
+# Disable service
+if systemctl is-enabled --quiet pywats-client 2>/dev/null; then
+    echo "Disabling pywats-client service..."
+    systemctl disable pywats-client
+fi
+
+#DEBHELPER#
+
+exit 0

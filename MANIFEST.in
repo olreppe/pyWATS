@@ -26,22 +26,14 @@ exclude src/pywats/domains/report/report_models/uur/UUR_IMPLEMENTATION_INSTRUCTI
 include docs/INDEX.md
 include docs/README.md
 include docs/getting-started.md
-include docs/architecture.md
-include docs/client-architecture.md
-include docs/integration-patterns.md
-include docs/quick-reference.md
-include docs/error-catalog.md
-include docs/env-variables.md
-include docs/wats-domain-knowledge.md
-include docs/llm-converter-guide.md
+include docs/pyWATS_Documentation.html
 
-# Include installation documentation
+# Include organized documentation folders
+recursive-include docs/guides *.md
+recursive-include docs/reference *.md
+recursive-include docs/platforms *.md
 recursive-include docs/installation *.md
-
-# Include domain module documentation
 recursive-include docs/modules *.md
-
-# Include usage guides (detailed module documentation)
 recursive-include docs/usage *.md
 
 # Include comprehensive domain examples
@@ -55,8 +47,11 @@ prune api-tests
 prune scripts
 prune .github
 prune packages
+prune deployment
 prune referenced_code
+prune referenced_code_net_core
 prune docs/internal_documentation
+prune docs/domain_health
 prune docs/archive
 prune docs/refactoring
 prune docs/project

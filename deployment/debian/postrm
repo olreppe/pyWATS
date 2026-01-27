@@ -1,0 +1,56 @@
+#!/bin/bash
+# Post-removal script for pywats-client
+# This runs after the package files are removed
+
+set -e
+
+case "$1" in
+    purge)
+        # Remove configuration and data on purge
+        echo "Purging pyWATS Client data and configuration..."
+        
+        # Remove configuration
+        rm -rf /etc/pywats
+        
+        # Remove data directories
+        rm -rf /var/lib/pywats
+        
+        # Remove log files
+        rm -rf /var/log/pywats
+        
+        # Remove pywats user (optional - commented out by default)
+        # if getent passwd pywats > /dev/null; then
+        #     deluser --quiet --system pywats
+        # fi
+        # if getent group pywats > /dev/null; then
+        #     delgroup --quiet --system pywats
+        # fi
+        
+        echo "pyWATS Client purged."
+        ;;
+    
+    remove)
+        echo "pyWATS Client removed."
+        echo "Configuration preserved in /etc/pywats"
+        echo "Data preserved in /var/lib/pywats"
+        echo "Logs preserved in /var/log/pywats"
+        echo ""
+        echo "To completely remove all data, run:"
+        echo "  sudo apt purge pywats-client"
+        ;;
+    
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+    
+    *)
+        echo "postrm called with unknown argument: $1" >&2
+        exit 1
+        ;;
+esac
+
+# Reload systemd daemon
+systemctl daemon-reload 2>/dev/null || true
+
+#DEBHELPER#
+
+exit 0

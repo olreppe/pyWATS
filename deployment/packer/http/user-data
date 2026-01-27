@@ -1,0 +1,73 @@
+#cloud-config
+# Ubuntu Server Autoinstall configuration for pyWATS Appliance
+# This file is served via HTTP during the Packer build
+
+autoinstall:
+  version: 1
+  
+  # Locale settings
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  
+  # Network configuration (DHCP by default, can be changed on first boot)
+  network:
+    version: 2
+    ethernets:
+      id0:
+        match:
+          driver: "*"
+        dhcp4: true
+  
+  # Storage configuration (simple layout)
+  storage:
+    layout:
+      name: direct
+  
+  # User configuration
+  identity:
+    hostname: pywats-appliance
+    username: pywats
+    password: "$6$rounds=4096$xyz$h9e0ycQPF.7E8R8/TdUeSQNLcAB2bPqIYKPF3qXXJLvQJFPH8hL4k8MfD6TqOh8qQdYs5sSF3Kp9sQYhKQXpT0"
+    # Password: pywats (CHANGE ON FIRST LOGIN!)
+  
+  # SSH configuration
+  ssh:
+    install-server: true
+    allow-pw: true
+  
+  # Packages to install
+  packages:
+    - python3
+    - python3-pip
+    - python3-venv
+    - curl
+    - wget
+    - htop
+    - nano
+    - vim
+    - net-tools
+    - openssh-server
+  
+  # Late commands (run after installation)
+  late-commands:
+    - echo 'pywats ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/pywats
+    - chmod 440 /target/etc/sudoers.d/pywats
+    
+    # Enable password authentication for SSH (for first-boot configuration)
+    - sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /target/etc/ssh/sshd_config
+    
+    # Set timezone
+    - curtin in-target --target=/target -- timedatectl set-timezone UTC
+    
+    # Create MOTD
+    - |
+      cat > /target/etc/motd << 'EOF'
+      ===============================================
+       pyWATS Virtual Appliance
+       
+       First-time setup: sudo first-boot-setup.sh
+       
+       Documentation: https://github.com/virinco/pyWATS
+      ===============================================
+      EOF

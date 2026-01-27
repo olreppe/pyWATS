@@ -2,7 +2,8 @@
 
 **Document**: pyWATS Client Deployment Roadmap  
 **Objective**: Out-of-the-box installation for non-technical factory floor users  
-**Reference**: `target_platforms_for_non_technical_out_of_the_box_installation.md`
+**Reference**: `target_platforms_for_non_technical_out_of_the_box_installation.md`  
+**Last Updated**: 2026-01-26
 
 ---
 
@@ -14,89 +15,102 @@ This plan maps the pyWATS client's current implementation against target platfor
 
 | Platform | Status | Gap Level | Notes |
 |----------|--------|-----------|-------|
-| Windows Server 2019/2022 | 🟡 Partial | Medium | Native service works, needs hardening |
-| Windows IoT LTSC | 🟡 Partial | Medium | Untested, likely works |
-| Ubuntu LTS | 🟢 Good | Low | systemd support exists |
-| Debian Stable | 🟢 Good | Low | Same as Ubuntu (systemd) |
-| RHEL/Rocky/Alma | 🟠 Basic | Medium | systemd works, needs RPM |
-| VM Appliance | 🔴 Missing | High | No pre-built images |
-| Docker | 🟢 Good | Low | Multi-stage Dockerfile exists |
+| Windows Server 2019/2022 | 🟢 **Complete** | ✅ Done | Pre-shutdown, recovery, event log |
+| Windows IoT LTSC | 🟢 **Documented** | ✅ Done | Full guide with UWF/AppLocker workarounds |
+| Ubuntu LTS | 🟢 **Complete** | ✅ Done | DEB package structure created |
+| Debian Stable | 🟢 **Complete** | ✅ Done | Same package as Ubuntu |
+| RHEL/Rocky/Alma | 🟢 **Complete** | ✅ Done | RPM spec + SELinux policy |
+| VM Appliance | 🟢 **Complete** | ✅ Done | Packer template + first-boot wizard |
+| Docker | 🟢 **Complete** | ✅ Done | Multi-arch, health endpoint, GHCR |
 
 ---
 
-## Phase 1: Windows Server & IoT Hardening (Priority 1)
+## Implementation Progress
 
-**Goal**: First-class Windows service experience that IT departments trust
+### ✅ Phase 1: Windows Server & IoT Hardening - COMPLETE
 
-### 1.1 Windows Native Service Improvements
+| Task | Status | Implementation |
+|------|--------|----------------|
+| Service recovery options | ✅ Done | `_configure_service_recovery()` in windows_native_service.py |
+| Event Log integration | ✅ Done | `write_event_log()` using win32evtlogutil |
+| Service account support | ✅ Done | `install_service(username, password)` params |
+| Delayed auto-start | ✅ Done | `_configure_delayed_start()` |
+| Pre-shutdown notification | ✅ Done | `SvcOtherEx()` handles SERVICE_CONTROL_PRESHUTDOWN |
+| Silent install mode | ✅ Done | `--silent`, `--server-url`, `--api-token`, `--watch-folder` |
+| Exit codes | ✅ Done | `exit_codes.py` module (0-49 range) |
+| Pre-flight checks | ✅ Done | Network, admin, Python version checks |
+| Windows IoT LTSC docs | ✅ Done | `docs/WINDOWS_IOT_LTSC.md` |
 
-**Current State**: `windows_native_service.py` using pywin32  
-**Gap**: Needs production hardening for enterprise environments
+### ✅ Phase 2: Ubuntu LTS Excellence - COMPLETE
 
-#### Tasks
+| Task | Status | Implementation |
+|------|--------|----------------|
+| systemd unit file | ✅ Done | Security-hardened with watchdog |
+| Security hardening | ✅ Done | NoNewPrivileges, ProtectSystem, SystemCallFilter |
+| Silent install | ✅ Done | `silent` parameter throughout |
+| DEB package | ✅ Done | `debian/` folder with full structure |
+| HTTP health endpoint | ✅ Done | `health_server.py` - /health, /health/live, /health/ready |
 
-- [ ] **Service recovery options** - Auto-restart on failure
-  ```python
-  # Add to windows_native_service.py
-  def configure_service_recovery(service_name: str):
-      """Configure service to auto-restart on failure."""
-      # sc.exe failure pyWATS_Service reset= 86400 actions= restart/5000/restart/5000/restart/5000
-  ```
+### ✅ Phase 3: Enterprise Linux - COMPLETE
 
-- [ ] **Event Log integration** - Write to Windows Event Log, not just files
-  ```python
-  # Add Windows Event Log handler alongside file logging
-  import win32evtlogutil
-  win32evtlogutil.ReportEvent(...)
-  ```
+| Task | Status | Implementation |
+|------|--------|----------------|
+| RPM spec file | ✅ Done | `rpm/pywats.spec` |
+| systemd service | ✅ Done | `rpm/pywats-client.service` |
+| SELinux policy | ✅ Done | `selinux/pywats.te`, `pywats.fc`, install script |
 
-- [ ] **Service account support** - Run as `NT SERVICE\pyWATS` or dedicated service account
-  ```python
-  # Allow --service-account flag during install
-  python -m pywats_client install-service --service-account "NT SERVICE\pyWATS"
-  ```
+### ✅ Phase 4: Deployment Multipliers - COMPLETE
 
-- [ ] **Delayed auto-start** - Start after network services are ready
-  ```python
-  # Set SERVICE_DELAYED_AUTO_START in service config
-  ```
+| Task | Status | Implementation |
+|------|--------|----------------|
+| Docker health endpoint | ✅ Done | HTTP health check with curl |
+| Multi-arch builds | ✅ Done | `.github/workflows/docker.yml` (amd64/arm64) |
+| Container registry | ✅ Done | GitHub Container Registry (ghcr.io) |
+| Security scanning | ✅ Done | Trivy vulnerability scanner in CI |
+| Packer template | ✅ Done | `packer/pywats-appliance.pkr.hcl` |
+| First-boot wizard | ✅ Done | `packer/files/first-boot-setup.sh` |
 
-- [ ] **Pre-shutdown notification** - Clean shutdown on Windows restart
-  ```python
-  # Handle SERVICE_CONTROL_PRESHUTDOWN for graceful cleanup
-  ```
+---
 
-### 1.2 Silent/Unattended Installation
+## New Files Created
 
-**Current State**: Interactive `python -m pywats_client install-service`  
-**Gap**: IT departments need silent installs for deployment scripts
+### Phase 1: Windows
+- `src/pywats_client/control/windows_native_service.py` - Enhanced with pre-shutdown
+- `docs/WINDOWS_IOT_LTSC.md` - IoT LTSC installation guide
 
-#### Tasks
+### Phase 2: Ubuntu/Debian
+- `src/pywats_client/service/health_server.py` - HTTP health endpoint
+- `debian/control` - Package metadata
+- `debian/rules` - Build rules
+- `debian/postinst` - Post-install script
+- `debian/prerm` - Pre-removal script
+- `debian/postrm` - Post-removal script
+- `debian/pywats-client.service` - systemd unit file
+- `debian/compat` - debhelper compatibility
+- `debian/copyright` - License info
+- `debian/changelog` - Package changelog
 
-- [ ] **Silent install mode** - No prompts, all config via flags/env vars
-  ```powershell
-  # Target usage for IT deployment scripts
-  python -m pywats_client install-service `
-      --silent `
-      --server-url "https://wats.company.com" `
-      --api-token "$env:WATS_TOKEN" `
-      --watch-folder "C:\TestReports"
-  ```
+### Phase 3: Enterprise Linux
+- `rpm/pywats.spec` - RPM spec file
+- `rpm/pywats-client.service` - systemd unit file
+- `rpm/config.json` - Default configuration
+- `selinux/pywats.te` - SELinux type enforcement
+- `selinux/pywats.fc` - SELinux file contexts
+- `selinux/install-selinux.sh` - Installation script
 
-- [ ] **Exit codes** - Proper return codes for scripted deployment
-  | Code | Meaning |
-  |------|---------|
-  | 0 | Success |
-  | 1 | General error |
-  | 2 | Missing requirements (Python version, privileges) |
-  | 3 | Configuration error |
-  | 4 | Service already installed |
+### Phase 4: Docker & VM
+- `.github/workflows/docker.yml` - Multi-arch build workflow
+- `packer/pywats-appliance.pkr.hcl` - VM appliance template
+- `packer/http/user-data` - Cloud-init autoinstall
+- `packer/http/meta-data` - Cloud-init metadata
+- `packer/files/first-boot-setup.sh` - Configuration wizard
+- `packer/files/pywats-firstboot.service` - First-boot service
+- `packer/files/pywats-client.service` - systemd unit
+- `packer/files/config.json` - Default configuration
 
-- [ ] **Pre-flight checks** - Validate before attempting install
-  - Python version ≥ 3.10
-  - Admin privileges
-  - Network connectivity to WATS server
-  - Disk space for logs/queue
+---
+
+## Original Plan (Reference)
 
 ### 1.3 Windows IoT Enterprise LTSC Testing
 
