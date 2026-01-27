@@ -1,5 +1,16 @@
 # Git Repository Migration Guide
 
+**Status: ✅ MIGRATION COMPLETED** (January 27, 2026)
+
+The pyWATS repository has been successfully migrated to GitHub Enterprise:
+- **Source**: `https://github.com/olreppe/pyWATS.git` (origin)
+- **Target**: `https://wats.ghe.com/WATS/pyWATS.git` (ghe)
+- **Method**: Direct Migration (Option A) - full history preserved
+- **Tags**: All 30+ version tags migrated
+- **Sync**: Both remotes kept for continued development
+
+---
+
 This document outlines the steps to migrate the pyWATS repository from `olreppe/pyWATS` to the company's official GitHub organization.
 
 ## Pre-Migration Status
@@ -226,23 +237,23 @@ Search and replace repository URLs in:
 ## Migration Checklist
 
 ### Before Migration
-- [ ] Company org name and repo URL confirmed
-- [ ] Personal Access Token created
-- [ ] Empty repository created in company org
-- [ ] Decided on migration option (A, B, or C)
+- [x] Company org name and repo URL confirmed (`wats.ghe.com/WATS/pyWATS`)
+- [x] Personal Access Token created
+- [x] Empty repository created in company org
+- [x] Decided on migration option (A, B, or C) → **Option A: Direct Migration**
 
 ### During Migration
-- [ ] Added company remote
-- [ ] Pushed main branch
-- [ ] Pushed all tags
-- [ ] Verified push completed successfully
+- [x] Added company remote (`ghe`)
+- [x] Pushed main branch
+- [x] Pushed all tags
+- [x] Verified push completed successfully
 
 ### After Migration
-- [ ] PyPI trusted publishing reconfigured
-- [ ] CI/CD workflows tested
-- [ ] Local remote updated
-- [ ] Old repository archived
-- [ ] Documentation URLs updated
+- [x] CI/CD workflows tested (fixed path issues Jan 27, 2026)
+- [x] Local remote updated (both `origin` and `ghe` configured)
+- [ ] PyPI trusted publishing reconfigured (if publishing from GHE)
+- [ ] Old repository archived (optional - keeping for backup)
+- [ ] Documentation URLs updated (review needed)
 - [ ] Team notified of new repository location
 
 ---
@@ -281,4 +292,5 @@ git config --global credential.helper manager
 
 ---
 
-*Last updated: January 25, 2026*
+*Migration completed: January 27, 2026*
+*Last updated: January 27, 2026*
