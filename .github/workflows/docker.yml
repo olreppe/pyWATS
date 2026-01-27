@@ -16,8 +16,8 @@ on:
       - main
     paths:
       - 'src/**'
-      - 'Dockerfile'
-      - 'docker-compose.yml'
+      - 'deployment/docker/Dockerfile'
+      - 'deployment/docker/docker-compose.yml'
       - 'pyproject.toml'
   release:
     types: [published]
@@ -86,6 +86,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: deployment/docker/Dockerfile
           target: ${{ matrix.target }}
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push == 'true') }}
@@ -102,7 +103,7 @@ jobs:
         if: matrix.target == 'client-headless'
         run: |
           # Build for local testing (single arch)
-          docker build --target ${{ matrix.target }} -t test-image .
+          docker build -f deployment/docker/Dockerfile --target ${{ matrix.target }} -t test-image .
           
           # Test that Python imports work
           docker run --rm test-image python -c "import pywats; print(f'pyWATS {pywats.__version__}')"
@@ -158,7 +159,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Build image for scanning
-        run: docker build --target client-headless -t scan-image .
+        run: docker build -f deployment/docker/Dockerfile --target client-headless -t scan-image .
       
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
