@@ -1,10 +1,29 @@
 # IPC-CFX Integration Architecture Investigation
 
 **Created:** 2026-01-26  
-**Updated:** 2026-01-26  
-**Status:** 📋 Investigation/Analysis  
-**Priority:** Medium (strategic integration decision)  
+**Updated:** 2026-01-27  
+**Status:** ✅ Architecture Study Complete  
+**Priority:** Future (implement when customer demand exists)  
 **Related:** [ADDITIONAL_STANDARD_CONVERTERS.md](ADDITIONAL_STANDARD_CONVERTERS.md)
+
+---
+
+## Status Summary (2026-01-27)
+
+**Architecture Study:** ✅ Complete
+
+**Key Decisions:**
+1. ❌ **CFX is NOT a file converter** - It's a real-time AMQP messaging system
+2. 💡 **Implement as separate project** - `pywats_cfx` when customer need arises
+3. ⏱️ **Estimated effort:** 6-9 weeks for full implementation
+4. 📋 **All architecture documented** - Ready to implement when needed
+
+**When to Implement:**
+- Customer specifically requests CFX integration
+- Multiple customers using CFX-compatible equipment  
+- Strategic partnership with CFX equipment vendor
+
+**See:** ROADMAP.md Priority 4 for implementation phases
 
 ---
 
