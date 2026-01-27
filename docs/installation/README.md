@@ -80,10 +80,26 @@ Install the client as a system service for automatic startup:
 
 | Platform | Guide | Method |
 |----------|-------|--------|
-| **Windows** | [windows-service.md](windows-service.md) | NSSM / sc.exe |
+| **Windows** | [windows-service.md](windows-service.md) | Native Service / NSSM |
 | **Linux** | [linux-service.md](linux-service.md) | systemd |
 | **macOS** | [macos-service.md](macos-service.md) | launchd |
 | **Docker** | [docker.md](docker.md) | Container |
+
+---
+
+## 📦 Native Installers
+
+Pre-built installers are available for systems without Python:
+
+| Platform | Format | Download |
+|----------|--------|----------|
+| **Windows** | `.msi` | [GitHub Releases](https://github.com/olreppe/pyWATS/releases) |
+| **macOS** | `.dmg` / `.pkg` | [GitHub Releases](https://github.com/olreppe/pyWATS/releases) |
+| **Ubuntu/Debian** | `.deb` | [GitHub Releases](https://github.com/olreppe/pyWATS/releases) |
+| **RHEL/Rocky/Alma** | `.rpm` | [GitHub Releases](https://github.com/olreppe/pyWATS/releases) |
+| **Linux (any)** | AppImage | [GitHub Releases](https://github.com/olreppe/pyWATS/releases) |
+
+**Building from source:** See [deployment/README.md](../../deployment/README.md)
 
 ---
 

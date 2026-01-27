@@ -24,9 +24,22 @@ deployment/
 ├── packer/                     # VM appliance templates
 │   ├── template.pkr.hcl
 │   └── autoinstall.yaml
-└── docker/                     # Docker deployment
-    ├── Dockerfile
-    └── docker-compose.yml
+├── docker/                     # Docker deployment
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── windows/                    # Windows MSI installer
+│   ├── build_frozen.py         # cx_Freeze bundling
+│   ├── build_msi.py            # WiX MSI generation
+│   └── README.md
+├── macos/                      # macOS PKG/DMG installer
+│   ├── setup_app.py            # py2app bundling
+│   ├── build_macos.sh          # Build automation
+│   ├── entitlements.plist      # Code signing
+│   ├── com.virinco.pywats-client.plist  # launchd service
+│   └── README.md
+└── standalone/                 # Cross-platform standalone executables
+    ├── build_standalone.py     # PyInstaller builds
+    └── README.md
 ```
 
 ## Platform Packaging
@@ -58,6 +71,67 @@ rpmbuild -ba pywats-client.spec
 - RHEL 8/9
 - Rocky Linux 8/9
 - AlmaLinux 8/9
+
+### Windows (.msi)
+
+Build MSI installer for Windows:
+
+```bash
+cd deployment/windows
+python build_frozen.py    # Bundle with cx_Freeze
+python build_msi.py       # Generate MSI with WiX
+```
+
+**Supports:**
+- Windows 10/11
+- Windows Server 2019/2022
+- Windows IoT Enterprise LTSC
+
+**Features:**
+- Silent install support (`/quiet`)
+- Windows Service integration
+- Start Menu shortcuts
+- Uninstall via Add/Remove Programs
+
+See [deployment/windows/README.md](windows/README.md) for details.
+
+### macOS (.pkg / .dmg)
+
+Build PKG/DMG installer for macOS:
+
+```bash
+cd deployment/macos
+./build_macos.sh --all    # Build PKG and DMG
+```
+
+**Supports:**
+- macOS 12+ (Monterey and later)
+- Intel and Apple Silicon (Universal Binary)
+
+**Features:**
+- Code signing and notarization support
+- launchd service integration
+- Applications folder installation
+
+See [deployment/macos/README.md](macos/README.md) for details.
+
+### Standalone Executables
+
+Build standalone executables using PyInstaller:
+
+```bash
+cd deployment/standalone
+python build_standalone.py --gui        # GUI mode
+python build_standalone.py --headless   # Headless mode
+python build_standalone.py --appimage   # Linux AppImage
+```
+
+**Supports:**
+- Windows (single .exe)
+- macOS (app bundle or single file)
+- Linux (single file or AppImage)
+
+See [deployment/standalone/README.md](standalone/README.md) for details.
 
 ### SELinux Policy
 
@@ -117,11 +191,14 @@ Deployment workflows are defined in `.github/workflows/`:
 
 ### Building Packages in CI
 
-All platform packages are built automatically on release:
-1. DEB packages for Ubuntu/Debian
-2. RPM packages for RHEL/Rocky/Alma
-3. Docker images for amd64/arm64
-4. VM appliances for hypervisors
+All platform packages are built automatically on release via `.github/workflows/build-installers.yml`:
+
+1. **Windows** - MSI installer (x64)
+2. **macOS** - PKG and DMG (Universal Binary)
+3. **Linux** - DEB (Ubuntu/Debian), RPM (RHEL/Rocky), standalone, AppImage
+4. **Docker** - Multi-arch images (amd64/arm64)
+
+Release artifacts are automatically uploaded to GitHub Releases.
 
 ## Packaging Configuration
 

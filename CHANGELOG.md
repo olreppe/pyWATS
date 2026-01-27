@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Platform Native Installers** - Complete installer infrastructure for all supported platforms:
+  - **Windows MSI Installer** (`deployment/windows/`)
+    - cx_Freeze bundling with Windows Service support
+    - WiX Toolset MSI generation
+    - Silent install support (`/quiet`)
+    - Start Menu shortcuts and Add/Remove Programs integration
+  - **macOS PKG/DMG Installer** (`deployment/macos/`)
+    - py2app bundling with Universal Binary support (Intel + Apple Silicon)
+    - Code signing and notarization via `build_macos.sh`
+    - launchd service integration
+  - **Standalone Executables** (`deployment/standalone/`)
+    - PyInstaller-based builds for all platforms
+    - GUI and headless modes
+    - Linux AppImage support
+- **Windows Service Entry Point** - `src/pywats_client/service/windows_service.py` for frozen executables
+- **CI/CD Build Pipeline** - `.github/workflows/build-installers.yml` for automated release builds
+  - Multi-platform matrix builds (Windows, macOS, Linux)
+  - Automatic artifact upload to GitHub Releases
+  - Docker multi-arch builds (amd64/arm64)
+- **Troubleshooting Guide** - `docs/TROUBLESHOOTING.md` with platform-specific solutions
+  - Windows, Linux, macOS, Docker, Raspberry Pi, SELinux issues
+
 ### Fixed
 
 - **GitHub Workflow Path References** - Fixed all stale path references in CI workflows after reorganization:

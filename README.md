@@ -74,6 +74,19 @@ pip install pywats-api[client]
 pip install pywats-api[client-headless]
 ```
 
+### Native Installers
+
+Pre-built installers are available on the [Releases](https://github.com/olreppe/pyWATS/releases) page:
+
+| Platform | Installer | Notes |
+|----------|-----------|-------|
+| Windows | `.msi` | Silent install: `msiexec /i pyWATS-x.x.x.msi /quiet` |
+| macOS | `.dmg` / `.pkg` | Universal Binary (Intel + Apple Silicon) |
+| Linux | `.deb` / `.rpm` | Ubuntu/Debian and RHEL/Rocky/Alma |
+| Linux | AppImage | Portable, no install required |
+
+See [deployment/README.md](deployment/README.md) for building installers from source.
+
 ### From Source (Development)
 
 ```bash

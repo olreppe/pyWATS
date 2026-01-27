@@ -43,6 +43,18 @@ For servers, Raspberry Pi, and embedded systems (no Qt/GUI):
 pip install pywats-api[client-headless]
 ```
 
+### Native Installers
+
+Pre-built installers are available for systems without Python:
+
+| Platform | Installer | Download |
+|----------|-----------|----------|
+| Windows | `.msi` | [GitHub Releases](https://github.com/olreppe/pyWATS/releases) |
+| macOS | `.dmg` / `.pkg` | [GitHub Releases](https://github.com/olreppe/pyWATS/releases) |
+| Linux | `.deb` / `.rpm` / AppImage | [GitHub Releases](https://github.com/olreppe/pyWATS/releases) |
+
+See [deployment/README.md](../deployment/README.md) for building installers from source.
+
 ### Development Installation
 
 From source for development:
