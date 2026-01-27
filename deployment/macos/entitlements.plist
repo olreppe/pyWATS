@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Allow Python to allocate executable memory -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    
+    <!-- Allow JIT for performance (needed by some Python extensions) -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    
+    <!-- Network access for HTTPS connections to WATS server -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    
+    <!-- File access for reading test results and writing logs -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    
+    <!-- Access to user's home directory for config/data -->
+    <key>com.apple.security.files.home-relative-paths.read-write</key>
+    <array>
+        <string>/Library/Application Support/pyWATS</string>
+        <string>/.pywats_client</string>
+    </array>
+    
+    <!-- Automation for service management (optional) -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+</dict>
+</plist>
