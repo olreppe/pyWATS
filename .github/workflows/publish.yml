@@ -81,3 +81,41 @@ jobs:
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       # Uses trusted publishing - configure at https://pypi.org/manage/account/publishing/
+
+  sync-to-ghe:
+    name: Sync to GitHub Enterprise
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    if: success()
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for proper sync
+        fetch-tags: true
+    
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+    
+    - name: Add GHE remote
+      run: |
+        git remote add ghe https://wats.ghe.com/WATS/pyWATS.git
+        git remote -v
+    
+    - name: Push to GitHub Enterprise
+      env:
+        GHE_TOKEN: ${{ secrets.GHE_TOKEN }}
+      run: |
+        # Configure authentication
+        git config --global url."https://oauth2:${GHE_TOKEN}@wats.ghe.com/".insteadOf "https://wats.ghe.com/"
+        
+        echo "Pushing main branch to GHE..."
+        git push ghe main
+        
+        echo "Pushing tags to GHE..."
+        git push ghe --tags
+        
+        echo "✅ Successfully synced to GitHub Enterprise"
