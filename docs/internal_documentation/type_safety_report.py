@@ -747,19 +747,19 @@ class ServiceState(str, Enum):
 SUMMARY = {
     "total_issues": {
         "missing_return_types": "200+ methods",
-        "dict_returns_should_be_models": "~45 instances",
+        "dict_returns_should_be_models": "~40 instances",
         "any_returns": "~50 instances",
-        "duplicate_enums": "8 duplicate/overlapping enums",
+        "duplicate_enums": "5 duplicate/overlapping enums",
         "string_constants_needing_enums": "6 categories",
     },
     
     "priority_actions": {
         "HIGH": [
-            "1. Fix pywats.version property return type (-> dict should be -> str)",
-            "2. Consolidate ConversionStatus enum (delete from base.py)",
-            "3. Consolidate PostConversionAction enum (create shared)",
-            "4. Consolidate ConversionResult class (keep converter_pool.py version)",
-            "5. Create QueueProcessingResult model (replace dict returns)",
+            "1. ✅ FIXED: pywats.get_version() return type (-> dict → -> Optional[str])",
+            "2. ✅ DONE: ConversionStatus enum (already consolidated in models.py)",
+            "3. ✅ FIXED: PostProcessAction enum (removed nested class from converter_pool.py)",
+            "4. ✅ DONE: ConverterResult class (already consolidated in models.py)",
+            "5. ✅ DONE: QueueProcessingResult model (already exists in shared/stats.py)",
         ],
         "MEDIUM": [
             "6. Add -> None to all __init__ methods (200+ methods)",
@@ -778,12 +778,12 @@ SUMMARY = {
     },
     
     "files_with_most_issues": [
-        ("pywats_client/service/converter_pool.py", "25+ issues"),
+        ("pywats_client/service/converter_pool.py", "20+ issues (reduced from 25+)"),
         ("pywats_client/service/pending_watcher.py", "20+ issues"),
         ("pywats_client/service/client_service.py", "20+ issues"),
         ("pywats_client/gui/settings_dialog.py", "20+ issues"),
         ("pywats_client/gui/pages/*.py", "100+ issues (combined)"),
-        ("pywats/pywats.py", "15+ issues"),
+        ("pywats/pywats.py", "14+ issues (reduced from 15+)"),
         ("pywats/domains/*/async_repository.py", "15+ issues each"),
     ],
     

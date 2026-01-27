@@ -694,12 +694,12 @@ class pyWATS:
             logger.debug(f"Connection test failed: {e}")
             return False
     
-    def get_version(self) -> dict:
+    def get_version(self) -> Optional[str]:
         """
         Get WATS server version information.
         
         Returns:
-            Version information dictionary
+            Version string (e.g., "24.1.0") or None if not available
         """
         return self.analytics.get_version()
     

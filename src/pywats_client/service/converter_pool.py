@@ -18,6 +18,8 @@ from queue import Queue, Empty
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+from ..converters.models import PostProcessAction
+
 logger = logging.getLogger(__name__)
 
 
@@ -160,13 +162,6 @@ class Converter:
     Equivalent to Converter.cs.
     Manages FileSystemWatcher, converter class loading, and post-processing.
     """
-    
-    class PostProcessAction(Enum):
-        """Post-processing actions (like C# enum)"""
-        MOVE = "Move"
-        ARCHIVE = "Archive"
-        ERROR = "Error"
-        DELETE = "Delete"
     
     def __init__(
         self,
@@ -348,11 +343,11 @@ class Converter:
                 return
             
             if success:
-                if self.post_process_action == self.PostProcessAction.DELETE:
+                if self.post_process_action == PostProcessAction.DELETE:
                     file_path.unlink()
                     logger.debug(f"Deleted: {file_path.name}")
                 
-                elif self.post_process_action == self.PostProcessAction.MOVE:
+                elif self.post_process_action == PostProcessAction.MOVE:
                     done_folder = self.watch_path / "Done"
                     done_folder.mkdir(exist_ok=True)
                     dest = done_folder / file_path.name
