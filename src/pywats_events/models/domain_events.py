@@ -273,6 +273,17 @@ class AssetStateChangedEvent:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     reason: Optional[str] = None
     custom_data: Dict[str, Any] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "asset_id": self.asset_id,
+            "new_state": self.new_state.value if self.new_state else None,
+            "previous_state": self.previous_state.value if self.previous_state else None,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "reason": self.reason,
+            "custom_data": self.custom_data,
+        }
 
 
 @dataclass
@@ -376,6 +387,18 @@ class WorkStartedEvent:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     lane: Optional[int] = None
     custom_data: Dict[str, Any] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "unit_id": self.unit_id,
+            "station_id": self.station_id,
+            "work_order_id": self.work_order_id,
+            "operator_id": self.operator_id,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "lane": self.lane,
+            "custom_data": self.custom_data,
+        }
 
 
 @dataclass
@@ -400,6 +423,19 @@ class WorkCompletedEvent:
         if self.start_time and self.end_time:
             return (self.end_time - self.start_time).total_seconds() * 1000
         return None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "unit_id": self.unit_id,
+            "station_id": self.station_id,
+            "result": self.result,
+            "work_order_id": self.work_order_id,
+            "operator_id": self.operator_id,
+            "start_time": self.start_time.isoformat() if self.start_time else None,
+            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "custom_data": self.custom_data,
+        }
 
 
 @dataclass

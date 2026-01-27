@@ -25,8 +25,12 @@ import os
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any, Literal
+from typing import Optional, Dict, Any, Literal, TYPE_CHECKING
 from dataclasses import dataclass
+
+if TYPE_CHECKING:
+    from pywats import pyWATS
+    from pywats_client.core.config import ClientConfig
 
 logger = logging.getLogger(__name__)
 

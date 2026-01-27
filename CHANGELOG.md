@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **GitHub Workflow Path References** - Fixed all stale path references in CI workflows after reorganization:
+  - `.github/workflows/test.yml`: Updated `api-tests/` → `tests/`
+  - `.github/workflows/test-platforms.yml`: Updated test paths and deployment folder references
+    - `api-tests/` → `tests/`
+    - `Dockerfile` → `deployment/docker/Dockerfile`
+    - `debian/`, `selinux/`, `packer/`, `rpm/` → `deployment/*/`
+- **Test Suite Path References** - Fixed stale `api-tests/` references in test fixtures and documentation:
+  - Updated `tests/conftest.py` docstrings
+  - Updated `tests/client/__init__.py` usage examples
+  - Deleted duplicate `tests/integration/test_instances.py`
+- **Missing Test Package Init Files** - Added `__init__.py` to `tests/domains/` and `tests/infrastructure/`
+- **Type Hints in test_instances.py** - Added `TYPE_CHECKING` imports for `pyWATS` and `ClientConfig`
+
+### Added
+
+- **Load-Balanced Test Client Fixture** - New pytest fixtures to reduce API rate limiting during test runs:
+  - `wats_client_balanced` - Automatically alternates between Client A and B tokens
+  - `wats_client_pool` - Pool with round-robin client selection for manual control
+  - `LoadBalancedClientPool` class for distributing API requests across tokens
+
 ### Changed
 
 - **Documentation Reorganization** - Complete restructuring of documentation for better organization:

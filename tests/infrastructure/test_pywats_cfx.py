@@ -253,12 +253,11 @@ class TestCFXTestResultAdapter:
         assert events[0].event_type == EventType.TEST_RESULT
         payload = events[0].payload
         assert payload["unit_id"] == "SN-001"
-        assert payload["passed"] == True
-        assert payload["test_type"] == "ICT"
+        assert payload["result"] == "pass"  # TestResult.PASS.value
         
         # Check second event  
         assert events[1].payload["unit_id"] == "SN-002"
-        assert events[1].payload["passed"] == False
+        assert events[1].payload["result"] == "fail"  # TestResult.FAIL.value
     
     def test_adapt_with_measurements(self):
         """Should convert measurements correctly."""
@@ -349,7 +348,7 @@ class TestCFXMaterialAdapter:
         comp = payload["components"][0]
         assert comp["reference_designator"] == "U1"
         assert comp["part_number"] == "MCU-123"
-        assert comp["manufacturer"] == "STMicro"
+        # Note: manufacturer not in InstalledComponent domain model
 
 
 class TestCFXProductionAdapter:
@@ -395,7 +394,7 @@ class TestCFXProductionAdapter:
         
         assert len(events) == 1
         assert events[0].event_type == EventType.WORK_COMPLETED
-        assert events[0].payload["result"] == "PASSED"
+        assert events[0].payload["result"] == "completed"  # Domain model uses lowercase
 
 
 class TestCFXResourceAdapter:
@@ -440,8 +439,9 @@ class TestCFXResourceAdapter:
         assert event.event_type == EventType.ASSET_STATE_CHANGED
         
         payload = event.payload
-        assert payload["old_state"] == "standby"
-        assert payload["new_state"] == "processing"
+        # Domain model uses AssetState enum values
+        assert payload["previous_state"] == "idle"  # STANDBY maps to IDLE
+        assert payload["new_state"] == "busy"  # PROCESSING maps to BUSY
 
 
 # =============================================================================

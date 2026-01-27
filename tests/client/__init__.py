@@ -10,19 +10,19 @@ Test Organization:
 - test_integration.py: End-to-end integration tests
 
 Run all client tests:
-    pytest api-tests/client/
+    pytest tests/client/
 
 Run specific test file:
-    pytest api-tests/client/test_config.py
+    pytest tests/client/test_config.py
 
 Run with coverage:
-    pytest api-tests/client/ --cov=pywats_client --cov-report=html
+    pytest tests/client/ --cov=pywats_client --cov-report=html
 
 Run only unit tests:
-    pytest api-tests/client/ -m unit
+    pytest tests/client/ -m unit
 
 Run only integration tests:
-    pytest api-tests/client/ -m integration
+    pytest tests/client/ -m integration
 """
 
 __version__ = "0.1.0b34"

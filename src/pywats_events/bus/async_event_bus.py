@@ -142,7 +142,7 @@ class AsyncEventBus:
     
     def register_transport(self, transport: "BaseTransport") -> None:
         """Register a transport adapter."""
-        transport.set_event_bus(self)
+        transport.set_async_event_bus(self)
         self._transports.append(transport)
         self._logger.info(f"Registered transport: {transport.name}")
     

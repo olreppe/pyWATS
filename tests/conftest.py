@@ -1,25 +1,30 @@
-"""
-Pytest configuration and providers for PyWATS tests
+"""Pytest configuration and fixtures for PyWATS tests
 
-This module provides pytest providers for testing the PyWATS library and client.
+This module provides pytest fixtures for testing the PyWATS library and client.
 
 Test Instance Architecture:
 --------------------------
 Two persistent test instances are available (ClientA and ClientB) that:
-- Store configs in api-tests/instances/ (version controlled)
-- Store data in api-tests/instances/data/ (gitignored)
+- Store configs in tests/fixtures/instances/ (version controlled)
+- Store data in tests/fixtures/instances/data/ (gitignored)
 - Can be customized independently for different test scenarios
+- Have separate API tokens for load distribution (reduces rate limiting)
 
-Provider Usage:
+Fixture Usage:
 --------------
 API-level testing (PyWATS client only):
     def test_api_call(wats_client):
-        # Uses the default wats_client provider (Client A)
+        # Uses the default wats_client fixture (Client A)
         products = wats_client.product.get_products()
-    
+
     def test_with_client_b(wats_client_b):
         # Explicitly use Client B
         products = wats_client_b.product.get_products()
+
+    def test_with_load_balance(wats_client_balanced):
+        # Automatically alternates between Client A and B tokens
+        # Reduces rate limiting during large test runs
+        products = wats_client_balanced.product.get_products()
 
 Client configuration testing:
     def test_client_config(client_config_a):
@@ -27,18 +32,18 @@ Client configuration testing:
         assert client_config_a.instance_name == "Test Client A"
 
 Running GUI with test instances:
-    python -m api-tests.test_instances --client A --gui
-    python -m api-tests.test_instances --client B --gui
+    python -m tests.cross_cutting.test_instances --client A --gui
+    python -m tests.cross_cutting.test_instances --client B --gui
 """
 from typing import Generator, Dict, TYPE_CHECKING
 from pathlib import Path
 import sys
 import pytest
 
-# Add api-tests directory to path for imports
-_api_tests_dir = Path(__file__).parent
-if str(_api_tests_dir) not in sys.path:
-    sys.path.insert(0, str(_api_tests_dir))
+# Add tests directory to path for imports
+_tests_dir = Path(__file__).parent
+if str(_tests_dir) not in sys.path:
+    sys.path.insert(0, str(_tests_dir))
 
 from pywats import pyWATS
 
@@ -67,7 +72,7 @@ def wats_config() -> Dict[str, str]:
     WATS configuration for Client A.
     
     This is the primary test configuration used by most tests.
-    Configuration is stored in api-tests/instances/client_a_config.json
+    Configuration is stored in tests/fixtures/instances/client_a_config.json
     """
     from cross_cutting.test_instances import get_test_instance_manager
     manager = get_test_instance_manager()
@@ -121,7 +126,7 @@ def wats_config_b() -> Dict[str, str]:
     WATS configuration for Client B.
     
     This is the secondary test configuration for comparison testing.
-    Configuration is stored in api-tests/instances/client_b_config.json
+    Configuration is stored in tests/fixtures/instances/client_b_config.json
     """
     from cross_cutting.test_instances import get_test_instance_manager
     manager = get_test_instance_manager()
@@ -219,3 +224,75 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: mark test as slow running"
     )
+
+
+# =============================================================================
+# Load-Balanced Client (Reduces Rate Limiting)
+# =============================================================================
+
+class LoadBalancedClientPool:
+    """
+    A pool that alternates between Client A and B tokens to distribute API load.
+    
+    This helps avoid rate limiting (HTTP 429) during large test runs by spreading
+    requests across two separate API tokens with independent rate limit counters.
+    """
+    
+    def __init__(self, client_a: pyWATS, client_b: pyWATS):
+        self._clients = [client_a, client_b]
+        self._index = 0
+    
+    def get_client(self) -> pyWATS:
+        """Get the next client in round-robin fashion."""
+        client = self._clients[self._index]
+        self._index = (self._index + 1) % len(self._clients)
+        return client
+    
+    @property
+    def current(self) -> pyWATS:
+        """Get current client without advancing."""
+        return self._clients[self._index]
+    
+    @property
+    def client_a(self) -> pyWATS:
+        """Direct access to Client A."""
+        return self._clients[0]
+    
+    @property
+    def client_b(self) -> pyWATS:
+        """Direct access to Client B."""
+        return self._clients[1]
+
+
+@pytest.fixture(scope="session")
+def wats_client_pool(wats_client: pyWATS, wats_client_b: pyWATS) -> LoadBalancedClientPool:
+    """
+    Get a load-balanced pool of WATS clients.
+    
+    The pool alternates between Client A and B tokens to distribute
+    API requests and reduce rate limiting during large test runs.
+    
+    Usage:
+        def test_something(wats_client_pool):
+            client = wats_client_pool.get_client()  # Alternates A/B
+            result = client.product.get_products()
+    """
+    return LoadBalancedClientPool(wats_client, wats_client_b)
+
+
+@pytest.fixture
+def wats_client_balanced(wats_client_pool: LoadBalancedClientPool) -> pyWATS:
+    """
+    Get a WATS client from the load-balanced pool.
+    
+    Each test that uses this fixture gets a client from the pool,
+    automatically alternating between Client A and B tokens.
+    This distributes API calls across tokens, reducing rate limiting.
+    
+    Usage:
+        def test_something(wats_client_balanced):
+            # Automatically uses alternating tokens
+            result = wats_client_balanced.product.get_products()
+    """
+    return wats_client_pool.get_client()
+

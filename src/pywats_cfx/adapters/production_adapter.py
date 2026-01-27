@@ -69,16 +69,16 @@ class CFXProductionAdapter:
         for unit in message.Units:
             domain_event = WorkStartedEvent(
                 unit_id=unit.UnitIdentifier or f"Position-{unit.PositionNumber}",
-                serial_number=unit.UnitIdentifier,
+                station_id="",  # Will be set by handler if available
                 work_order_id=None,  # Not in CFX message
-                station_id=None,
                 operator_id=None,
                 lane=message.Lane,
-                stage=message.Stage,
-                attributes={
+                custom_data={
                     "cfx_transaction_id": str(message.TransactionId),
                     "position_number": unit.PositionNumber,
                     "position_name": unit.PositionName,
+                    "serial_number": unit.UnitIdentifier,
+                    "stage": message.Stage,
                 },
             )
             
@@ -114,19 +114,22 @@ class CFXProductionAdapter:
         correlation = correlation_id or str(message.TransactionId)
         
         for unit in message.Units:
+            # Handle Result being either an enum or a string
+            result_value = message.Result.value if hasattr(message.Result, 'value') else str(message.Result) if message.Result else None
+            
             domain_event = WorkCompletedEvent(
                 unit_id=unit.UnitIdentifier or f"Position-{unit.PositionNumber}",
-                serial_number=unit.UnitIdentifier,
+                station_id="",  # Will be set by handler if available
                 work_order_id=None,
-                station_id=None,
                 operator_id=None,
-                result="PASSED" if message.Result == WorkResultState.COMPLETED else "FAILED",
-                lane=message.Lane,
-                stage=message.Stage,
-                attributes={
+                result="completed" if result_value == "Completed" else "failed",
+                custom_data={
                     "cfx_transaction_id": str(message.TransactionId),
-                    "cfx_result": message.Result.value if message.Result else None,
+                    "cfx_result": result_value,
                     "position_number": unit.PositionNumber,
+                    "serial_number": unit.UnitIdentifier,
+                    "lane": message.Lane,
+                    "stage": message.Stage,
                 },
             )
             

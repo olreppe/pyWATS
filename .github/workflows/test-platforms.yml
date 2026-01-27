@@ -44,7 +44,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest api-tests/ -v --tb=short -x -m "not server"
+          pytest tests/ -v --tb=short -x -m "not server"
         env:
           WATS_BASE_URL: "https://demo.wats.com"
           WATS_AUTH_TOKEN: "dGVzdDp0ZXN0"
@@ -81,7 +81,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          python3.11 -m pytest api-tests/ -v --tb=short -x -m "not server"
+          python3.11 -m pytest tests/ -v --tb=short -x -m "not server"
         env:
           WATS_BASE_URL: "https://demo.wats.com"
           WATS_AUTH_TOKEN: "dGVzdDp0ZXN0"
@@ -94,7 +94,7 @@ jobs:
       - name: Validate SELinux policy syntax
         run: |
           dnf install -y selinux-policy-devel
-          cd selinux/
+          cd deployment/selinux/
           checkmodule -M -m -o pywats.mod pywats.te
           echo "SELinux policy compiles successfully"
         continue-on-error: true
@@ -117,29 +117,29 @@ jobs:
 
       - name: Validate shell scripts
         run: |
-          shellcheck debian/postinst debian/prerm debian/postrm || true
-          shellcheck selinux/install-selinux.sh || true
-          shellcheck packer/files/first-boot-setup.sh || true
+          shellcheck deployment/debian/postinst deployment/debian/prerm deployment/debian/postrm || true
+          shellcheck deployment/selinux/install-selinux.sh || true
+          shellcheck deployment/packer/files/first-boot-setup.sh || true
 
       - name: Validate DEB control files
         run: |
           # Check for required fields
-          grep -q "^Package:" debian/control
-          grep -q "^Version:" debian/control
-          grep -q "^Architecture:" debian/control
-          grep -q "^Depends:" debian/control
+          grep -q "^Package:" deployment/debian/control
+          grep -q "^Version:" deployment/debian/control
+          grep -q "^Architecture:" deployment/debian/control
+          grep -q "^Depends:" deployment/debian/control
           echo "DEB control file valid"
 
       - name: Validate RPM spec file (syntax only)
         run: |
           docker run --rm -v $PWD:/src fedora:39 \
-            bash -c "dnf install -y rpmlint 2>/dev/null && rpmlint /src/rpm/pywats.spec" || true
+            bash -c "dnf install -y rpmlint 2>/dev/null && rpmlint /src/deployment/rpm/pywats.spec" || true
 
       - name: Validate systemd units (INI syntax)
         run: |
           python3 -c "
           import configparser
-          for f in ['debian/pywats-client.service', 'rpm/pywats-client.service', 'packer/files/pywats-client.service']:
+          for f in ['deployment/debian/pywats-client.service', 'deployment/rpm/pywats-client.service', 'deployment/packer/files/pywats-client.service']:
               try:
                   cp = configparser.ConfigParser()
                   cp.read(f)
@@ -164,7 +164,7 @@ jobs:
 
       - name: Build Docker image (native arch only)
         run: |
-          docker build -t pywats-test -f Dockerfile .
+          docker build -t pywats-test -f deployment/docker/Dockerfile .
 
       - name: Test Docker image
         run: |
@@ -199,7 +199,7 @@ jobs:
 
       - name: Build ARM64 image
         run: |
-          docker buildx build --platform linux/arm64 -t pywats-arm64 --load .
+          docker buildx build --platform linux/arm64 -t pywats-arm64 -f deployment/docker/Dockerfile --load .
 
       - name: Test ARM64 image
         run: |

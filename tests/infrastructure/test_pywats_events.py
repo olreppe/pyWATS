@@ -20,7 +20,7 @@ from pywats_events import (
     HandlerRegistry,
 )
 from pywats_events.policies.retry_policy import RetryPolicy, RetryConfig
-from pywats_events.policies.error_policy import ErrorPolicy, DeadLetterQueue, CircuitBreaker
+from pywats_events.policies.error_policy import ErrorPolicy, DeadLetterQueue, CircuitBreaker, CircuitState
 from pywats_events.transports import MockTransport
 
 
@@ -72,7 +72,7 @@ class TestEvent:
         
         assert "event_id" in data
         assert "timestamp" in data
-        assert data["event_type"] == "test_result"  # or similar
+        assert data["event_type"] == "material.installed"
         assert data["payload"] == {"component": "IC123"}
     
     def test_event_from_dict(self):
@@ -166,7 +166,7 @@ class TestEventBus:
             def handle(self, event: Event) -> None:
                 received_events.append(event)
         
-        bus.subscribe(TestHandler())
+        bus.register_handler(TestHandler())
         
         event = Event(
             event_type=EventType.TEST_RESULT,
@@ -195,6 +195,8 @@ class TestEventBus:
             def handle(self, event: Event) -> None:
                 test_events.append(event)
         
+        bus.register_handler(TestHandler())
+        
         class FaultHandler(BaseHandler):
             @property
             def event_types(self) -> list[EventType]:
@@ -203,8 +205,7 @@ class TestEventBus:
             def handle(self, event: Event) -> None:
                 fault_events.append(event)
         
-        bus.subscribe(TestHandler())
-        bus.subscribe(FaultHandler())
+        bus.register_handler(FaultHandler())
         
         bus.publish(Event(event_type=EventType.TEST_RESULT, payload={}))
         bus.publish(Event(event_type=EventType.ASSET_FAULT, payload={}))
@@ -247,7 +248,7 @@ class TestAsyncEventBus:
             async def handle(self, event: Event) -> None:
                 received.append(event)
         
-        bus.subscribe(AsyncHandler())
+        bus.register_handler(AsyncHandler())
         await bus.start()
         
         event = Event(event_type=EventType.TEST_RESULT, payload={"async": True})
@@ -273,7 +274,7 @@ class TestAsyncEventBus:
                 call_times.append(datetime.now())
                 await asyncio.sleep(0.05)
         
-        bus.subscribe(SlowHandler())
+        bus.register_handler(SlowHandler())
         await bus.start()
         
         # Publish multiple events
@@ -300,49 +301,38 @@ class TestRetryPolicy:
         assert policy.config.max_retries == 3
         assert policy.config.initial_delay > 0
     
-    def test_execute_success_no_retry(self):
-        """Successful operation should not retry."""
-        policy = RetryPolicy()
-        call_count = 0
+    def test_should_retry_within_limit(self):
+        """Should allow retry when within retry limit."""
+        policy = RetryPolicy(max_retries=3)
         
-        def operation():
-            nonlocal call_count
-            call_count += 1
-            return "success"
+        event = Event(event_type=EventType.TEST_RESULT, payload={})
+        error = ValueError("Temporary error")
         
-        result = policy.execute(operation)
-        
-        assert result == "success"
-        assert call_count == 1
+        assert policy.should_retry(event, error) is True
     
-    def test_execute_retries_on_failure(self):
-        """Should retry on failure."""
-        config = RetryConfig(max_retries=3, initial_delay=0.01, max_delay=0.1)
-        policy = RetryPolicy(config)
-        call_count = 0
+    def test_should_not_retry_after_max_retries(self):
+        """Should not retry after max retries exceeded."""
+        policy = RetryPolicy(max_retries=2)
         
-        def operation():
-            nonlocal call_count
-            call_count += 1
-            if call_count < 3:
-                raise ValueError("Temporary error")
-            return "success"
+        event = Event(event_type=EventType.TEST_RESULT, payload={})
+        # Simulate event that has already been retried 2 times
+        event.metadata.retry_count = 2
+        error = ValueError("Temporary error")
         
-        result = policy.execute(operation)
-        
-        assert result == "success"
-        assert call_count == 3
+        assert policy.should_retry(event, error) is False
     
-    def test_execute_raises_after_max_retries(self):
-        """Should raise after max retries exceeded."""
-        config = RetryConfig(max_retries=2, initial_delay=0.01, max_delay=0.1)
-        policy = RetryPolicy(config)
+    def test_get_delay_increases_exponentially(self):
+        """Should calculate exponential backoff delay."""
+        policy = RetryPolicy(initial_delay=1.0, exponential_base=2.0, jitter=False)
         
-        def operation():
-            raise ValueError("Permanent error")
+        event = Event(event_type=EventType.TEST_RESULT, payload={})
+        delay1 = policy.get_delay(event)
         
-        with pytest.raises(ValueError):
-            policy.execute(operation)
+        event.metadata.retry_count = 1
+        delay2 = policy.get_delay(event)
+        
+        # Second delay should be larger due to exponential backoff
+        assert delay2 > delay1
 
 
 # =============================================================================
@@ -361,9 +351,9 @@ class TestDeadLetterQueue:
         
         dlq.add(event, error)
         
-        assert dlq.size() == 1
+        assert dlq.size == 1
         
-        items = dlq.get_all()
+        items = dlq.get_entries()
         assert items[0].event == event
         assert "Test error" in str(items[0].error)
     
@@ -375,7 +365,7 @@ class TestDeadLetterQueue:
             event = Event(event_type=EventType.TEST_RESULT, payload={"i": i})
             dlq.add(event, ValueError(f"Error {i}"))
         
-        assert dlq.size() == 3
+        assert dlq.size == 3
 
 
 class TestCircuitBreaker:
@@ -384,53 +374,59 @@ class TestCircuitBreaker:
     def test_starts_closed(self):
         """Circuit should start in closed state."""
         cb = CircuitBreaker()
-        assert cb.is_closed()
+        assert cb.is_closed
     
     def test_opens_after_failures(self):
         """Circuit should open after failure threshold."""
         cb = CircuitBreaker(failure_threshold=2, reset_timeout=1.0)
         
         cb.record_failure()
-        assert cb.is_closed()
+        assert cb.is_closed
         
         cb.record_failure()
-        assert cb.is_open()
+        assert cb.is_open
     
     def test_allows_call_when_closed(self):
         """Should allow calls when closed."""
         cb = CircuitBreaker()
-        assert cb.allow_request()
+        assert cb.can_proceed()
     
     def test_blocks_call_when_open(self):
         """Should block calls when open."""
         cb = CircuitBreaker(failure_threshold=1)
         
         cb.record_failure()
-        assert not cb.allow_request()
+        assert not cb.can_proceed()
     
     def test_transitions_to_half_open(self):
         """Should transition to half-open after timeout."""
         cb = CircuitBreaker(failure_threshold=1, reset_timeout=0.05)
         
         cb.record_failure()
-        assert cb.is_open()
+        assert cb.is_open
         
         import time
         time.sleep(0.1)
         
-        assert cb.is_half_open()
-        assert cb.allow_request()  # Single test request allowed
+        # After timeout, state should allow requests (half-open)
+        assert cb.state == CircuitState.HALF_OPEN
+        assert cb.can_proceed()  # Single test request allowed
     
     def test_closes_on_success_from_half_open(self):
         """Should close on success from half-open state."""
-        cb = CircuitBreaker(failure_threshold=1, reset_timeout=0.01)
+        # success_threshold defaults to 2, so we need to set it to 1
+        cb = CircuitBreaker(failure_threshold=1, success_threshold=1, reset_timeout=0.01)
         
         cb.record_failure()
         import time
         time.sleep(0.02)
         
+        # Access state to trigger the transition to HALF_OPEN
+        assert cb.state == CircuitState.HALF_OPEN
+        
+        # Now in half-open state, record success to close
         cb.record_success()
-        assert cb.is_closed()
+        assert cb.is_closed
 
 
 # =============================================================================
@@ -440,55 +436,46 @@ class TestCircuitBreaker:
 class TestMockTransport:
     """Tests for MockTransport."""
     
-    @pytest.mark.asyncio
-    async def test_connect_disconnect(self):
-        """Should support connect/disconnect lifecycle."""
+    def test_start_stop_lifecycle(self):
+        """Should support start/stop lifecycle."""
         transport = MockTransport()
         
-        await transport.connect()
+        transport.start()
         assert transport._state.value == "connected"
         
-        await transport.disconnect()
+        transport.stop()
         assert transport._state.value == "disconnected"
     
-    @pytest.mark.asyncio
-    async def test_inject_event_triggers_callback(self):
-        """Injected events should trigger callback."""
-        received = []
-        
-        def on_event(event):
-            received.append(event)
-        
-        transport = MockTransport(on_event=on_event)
-        await transport.connect()
+    def test_inject_event_publishes_to_bus(self):
+        """Injected events should be recorded and published."""
+        transport = MockTransport()
+        transport.start()
         
         event = Event(event_type=EventType.TEST_RESULT, payload={})
         transport.inject_event(event)
         
-        assert len(received) == 1
-        assert received[0] == event
+        assert len(transport.injected_events) == 1
+        assert transport.injected_events[0] == event
     
-    @pytest.mark.asyncio
-    async def test_sent_events_are_recorded(self):
-        """Sent events should be recorded."""
+    def test_published_events_are_recorded(self):
+        """Published events should be recorded."""
         transport = MockTransport()
-        await transport.connect()
+        transport.start()
         
         event = Event(event_type=EventType.TEST_RESULT, payload={"test": 1})
-        await transport.send(event)
+        transport.inject_event(event)
         
-        assert len(transport.sent_events) == 1
-        assert transport.sent_events[0] == event
+        assert len(transport.published_events) == 1
+        assert transport.published_events[0] == event
     
-    @pytest.mark.asyncio
-    async def test_simulate_disconnect(self):
-        """Should simulate disconnect."""
-        transport = MockTransport()
-        await transport.connect()
+    def test_not_connected_raises(self):
+        """Should raise when injecting without connection."""
+        transport = MockTransport(auto_connect=False)
+        transport.start()  # Will be in CONNECTING state
         
-        transport.simulate_disconnect()
-        
-        assert transport._state.value == "disconnected"
+        event = Event(event_type=EventType.TEST_RESULT, payload={})
+        with pytest.raises(RuntimeError, match="not connected"):
+            transport.inject_event(event)
 
 
 # =============================================================================
@@ -500,7 +487,7 @@ class TestEventBusWithTransport:
     
     @pytest.mark.asyncio
     async def test_transport_events_reach_handlers(self):
-        """Events from transport should reach handlers."""
+        """Events from transport should reach handlers via event bus."""
         bus = AsyncEventBus()
         received = []
         
@@ -512,11 +499,14 @@ class TestEventBusWithTransport:
             async def handle(self, event: Event) -> None:
                 received.append(event)
         
-        bus.subscribe(TestHandler())
+        bus.register_handler(TestHandler())
         
-        transport = MockTransport(on_event=lambda e: asyncio.create_task(bus.publish(e)))
-        await transport.connect()
+        # Register transport with event bus
+        transport = MockTransport()
+        bus.register_transport(transport)
+        
         await bus.start()
+        await bus.start_transport(transport)
         
         # Inject event through transport
         event = Event(event_type=EventType.TEST_RESULT, payload={"from": "transport"})

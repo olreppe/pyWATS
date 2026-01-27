@@ -12,7 +12,9 @@ from uuid import uuid4
 from pywats_events.models import Event, EventMetadata, EventType
 from pywats_events.models.domain_events import (
     AssetFaultEvent,
+    AssetState,
     AssetStateChangedEvent,
+    SeverityLevel,
 )
 
 from ..models.cfx_messages import (
@@ -64,28 +66,27 @@ class CFXResourceAdapter:
         """
         fault_data = message.Fault
         
-        # Map severity
+        # Map severity to SeverityLevel enum
         severity_map = {
-            "Error": "error",
-            "Warning": "warning", 
-            "Information": "info",
+            "Error": SeverityLevel.ERROR,
+            "Warning": SeverityLevel.WARNING, 
+            "Information": SeverityLevel.INFO,
         }
-        severity = severity_map.get(fault_data.get("Severity", "Error"), "error")
+        severity = severity_map.get(fault_data.get("Severity", "Error"), SeverityLevel.ERROR)
         
         domain_event = AssetFaultEvent(
             asset_id=self.source_endpoint,
             fault_code=fault_data.get("FaultCode") or fault_data.get("Cause", "UNKNOWN"),
             fault_message=fault_data.get("Description") or fault_data.get("Cause", ""),
             severity=severity,
-            station_id=None,
-            lane=message.Lane,
-            stage=message.Stage,
             cleared=False,
-            attributes={
+            custom_data={
                 "fault_occurrence_id": fault_data.get("FaultOccurrenceId"),
                 "occurrence_type": fault_data.get("OccurrenceType"),
                 "component_of_interest": fault_data.get("ComponentOfInterest"),
                 "related_units": fault_data.get("RelatedUnits", []),
+                "lane": message.Lane,
+                "stage": message.Stage,
             },
         )
         
@@ -151,33 +152,34 @@ class CFXResourceAdapter:
             AssetStateChangedEvent for the state transition.
         """
         # Normalize state names
+        # Map CFX states to AssetState enum
         state_map = {
-            "On": "online",
-            "Off": "offline",
-            "Standby": "standby",
-            "Engineering": "engineering",
-            "ReadyProcessing": "ready",
-            "Processing": "processing",
-            "ProcessingExecutingRecipe": "processing",
-            "Blocked": "blocked",
-            "Starved": "starved",
-            "Maintenance": "maintenance",
-            "ScheduledMaintenance": "scheduled_maintenance",
-            "UnscheduledMaintenance": "unscheduled_maintenance",
-            "MachineError": "error",
-            "Setup": "setup",
-            "Teardown": "teardown",
+            "On": AssetState.ONLINE,
+            "Off": AssetState.OFFLINE,
+            "Standby": AssetState.IDLE,
+            "Engineering": AssetState.IDLE,
+            "ReadyProcessing": AssetState.IDLE,
+            "Processing": AssetState.BUSY,
+            "ProcessingExecutingRecipe": AssetState.BUSY,
+            "Blocked": AssetState.BUSY,
+            "Starved": AssetState.IDLE,
+            "Maintenance": AssetState.MAINTENANCE,
+            "ScheduledMaintenance": AssetState.MAINTENANCE,
+            "UnscheduledMaintenance": AssetState.MAINTENANCE,
+            "MachineError": AssetState.ERROR,
+            "Setup": AssetState.BUSY,
+            "Teardown": AssetState.BUSY,
         }
         
-        old_state_val = message.OldState.value if message.OldState else "unknown"
-        new_state_val = message.NewState.value if message.NewState else "unknown"
+        # Handle state being either an enum or a string
+        old_state_val = message.OldState.value if hasattr(message.OldState, 'value') else str(message.OldState) if message.OldState else "unknown"
+        new_state_val = message.NewState.value if hasattr(message.NewState, 'value') else str(message.NewState) if message.NewState else "unknown"
         
         domain_event = AssetStateChangedEvent(
             asset_id=self.source_endpoint,
-            old_state=state_map.get(old_state_val, old_state_val.lower()),
-            new_state=state_map.get(new_state_val, new_state_val.lower()),
-            station_id=None,
-            attributes={
+            new_state=state_map.get(new_state_val, AssetState.OFFLINE),
+            previous_state=state_map.get(old_state_val, None),
+            custom_data={
                 "cfx_old_state": old_state_val,
                 "cfx_new_state": new_state_val,
                 "old_state_duration_seconds": message.OldStateDuration,

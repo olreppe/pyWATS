@@ -38,7 +38,7 @@ jobs:
 
     - name: Run unit tests (no server required)
       run: |
-        pytest api-tests/ -v \
+        pytest tests/ -v \
           --tb=short \
           -x \
           -m "not server"

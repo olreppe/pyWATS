@@ -98,11 +98,9 @@ class CFXMaterialAdapter:
         
         return MaterialInstalledEvent(
             unit_id=material.UnitIdentifier,
-            serial_number=material.UnitIdentifier,
             components=components,
             station_id=None,  # Not in CFX message
-            operator_id=None,  # Not in CFX message
-            attributes={
+            custom_data={
                 "cfx_transaction_id": str(message.TransactionId),
                 "unit_position": material.UnitPositionNumber,
             },
@@ -113,12 +111,8 @@ class CFXMaterialAdapter:
         return InstalledComponent(
             reference_designator=comp_data.get("ReferenceDesignator", ""),
             part_number=comp_data.get("InternalPartNumber") or comp_data.get("PartNumber", ""),
-            manufacturer=comp_data.get("Manufacturer"),
-            lot_code=comp_data.get("LotCode") or comp_data.get("ManufacturerLotCode"),
-            date_code=comp_data.get("DateCode"),
             serial_number=comp_data.get("ComponentSerialNumber"),
-            supplier=comp_data.get("Supplier") or comp_data.get("Vendor"),
-            quantity=comp_data.get("Quantity", 1),
+            lot_number=comp_data.get("LotCode") or comp_data.get("ManufacturerLotCode"),
         )
 
 
