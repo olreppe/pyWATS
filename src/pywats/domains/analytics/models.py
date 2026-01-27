@@ -64,7 +64,7 @@ from typing import List, Optional, Union
 from pydantic import Field, AliasChoices, ConfigDict, field_serializer, field_validator
 
 from ...shared.base_model import PyWATSModel
-from ...shared.enums import StatusFilter, StepType, CompOperator
+from ...shared.enums import StatusFilter, StepType, CompOp
 from ...shared.paths import StepPath, display_path
 
 
@@ -1078,17 +1078,6 @@ class ProcessInfo(PyWATSModel):
         description="Process order index"
     )
     state: Optional[int] = Field(default=None, description="Process state")
-    
-    # Backward compatibility aliases
-    @property
-    def process_code(self) -> Optional[int]:
-        """Alias for code (backward compatibility)"""
-        return self.code
-    
-    @property
-    def process_name(self) -> Optional[str]:
-        """Alias for name (backward compatibility)"""
-        return self.name
 
 
 class LevelInfo(PyWATSModel):
@@ -1275,11 +1264,11 @@ class StepAnalysisRow(PyWATSModel):
         validation_alias=AliasChoices("limit2Wof", "limit2_wof"),
         serialization_alias="limit2Wof"
     )
-    comp_operator: Optional[Union[CompOperator, str]] = Field(
+    comp_operator: Optional[Union[CompOp, str]] = Field(
         default=None,
         validation_alias=AliasChoices("compOperator", "comp_operator"),
         serialization_alias="compOperator",
-        description="Comparison operator (CompOperator enum)"
+        description="Comparison operator (CompOp enum)"
     )
     
     @property

@@ -2,16 +2,14 @@
 """
 Attachment model for report attachments.
 
-Shared base for both UUT and UUR reports. Provides file loading,
-MIME type detection, and base64 encoding.
+Shared base for both UUT and UUR reports. Memory-only operations -
+for file I/O use pywats_client.io.AttachmentIO.
 """
 
 from __future__ import annotations
 
 import base64
 import mimetypes
-import os
-from pathlib import Path
 from typing import Optional, ClassVar
 from uuid import UUID, uuid4
 
@@ -25,15 +23,21 @@ class Attachment(WATSBase):
     
     Used by both UUT (step-level) and UUR (report/failure-level) reports.
     
+    Note:
+        This class is memory-only. For file operations, use:
+        - pywats_client.io.AttachmentIO.from_file() to load from file
+        - pywats_client.io.AttachmentIO.save() to save to file
+    
     Example:
-        >>> # From file
-        >>> attachment = Attachment.from_file("report.pdf")
-        >>> 
-        >>> # From bytes
+        >>> # From bytes (memory-only)
         >>> attachment = Attachment.from_bytes("data.bin", b"\\x00\\x01\\x02")
         >>> 
         >>> # Manual construction
         >>> attachment = Attachment(name="test.txt", data="SGVsbG8=", content_type="text/plain")
+        >>>
+        >>> # With pywats_client for file operations
+        >>> from pywats_client.io import AttachmentIO
+        >>> attachment = AttachmentIO.from_file("report.pdf")
     """
     
     # Default max size (10 MB)
@@ -66,75 +70,6 @@ class Attachment(WATSBase):
     # Internal tracking
     binary_data_guid: Optional[UUID] = Field(default_factory=uuid4, exclude=True)
     """Unique identifier for this binary data."""
-    
-    @classmethod
-    def from_file(
-        cls,
-        file_path: str,
-        delete_after: bool = False,
-        name: Optional[str] = None,
-        content_type: Optional[str] = None,
-        failure_idx: Optional[int] = None,
-        max_size: Optional[int] = None
-    ) -> "Attachment":
-        """
-        Create an attachment from a file.
-        
-        Args:
-            file_path: Path to the file
-            delete_after: Delete the file after reading
-            name: Custom name (defaults to filename)
-            content_type: MIME type (auto-detected if not provided)
-            failure_idx: Failure index (UUR only)
-            max_size: Maximum file size in bytes (default: 10 MB)
-            
-        Returns:
-            Attachment instance
-            
-        Raises:
-            FileNotFoundError: If file doesn't exist
-            ValueError: If file exceeds max size
-        """
-        path = Path(file_path)
-        
-        if not path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
-        
-        # Check size
-        file_size = path.stat().st_size
-        max_allowed = max_size or cls.DEFAULT_MAX_SIZE
-        if file_size > max_allowed:
-            raise ValueError(
-                f"File size ({file_size} bytes) exceeds maximum ({max_allowed} bytes)"
-            )
-        
-        # Read and encode
-        with open(path, 'rb') as f:
-            content = f.read()
-        data_b64 = base64.b64encode(content).decode('utf-8')
-        
-        # Auto-detect MIME type
-        if not content_type:
-            content_type, _ = mimetypes.guess_type(str(path))
-            content_type = content_type or "application/octet-stream"
-        
-        # Use filename if name not provided
-        if not name:
-            name = path.name
-        
-        # Delete if requested
-        if delete_after:
-            try:
-                path.unlink()
-            except OSError:
-                pass  # Best effort deletion
-        
-        return cls(
-            name=name,
-            data=data_b64,
-            content_type=content_type,
-            failure_idx=failure_idx
-        )
     
     @classmethod
     def from_bytes(

@@ -26,7 +26,7 @@ Path Utilities:
 from .base_model import PyWATSModel
 from .common_types import Setting, ChangeType
 from .result import Result, Success, Failure, ErrorCode, failure_from_exception
-from .enums import StatusFilter, RunFilter, StepType, CompOp, CompOperator, SortDirection, QueueItemStatus
+from .enums import StatusFilter, RunFilter, StepType, CompOp, SortDirection, QueueItemStatus
 from .paths import StepPath, MeasurementPath, normalize_path, display_path, normalize_paths
 from .stats import QueueProcessingResult, QueueStats, CacheStats, BatchResult
 from . import discovery as discover
@@ -48,9 +48,8 @@ __all__ = [
     "RunFilter",
     "StepType",
     "CompOp",
-    "CompOperator",  # Alias for CompOp
     "SortDirection",
-    "QueueItemStatus",  # Unified queue status enum
+    "QueueItemStatus",
     # Path utilities
     "StepPath",
     "MeasurementPath",

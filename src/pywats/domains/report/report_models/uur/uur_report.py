@@ -300,37 +300,6 @@ class UURReport(Report):
     # Attachment Methods
     # =========================================================================
     
-    def attach_file(
-        self,
-        file_path: str,
-        delete_after: bool = False,
-        name: Optional[str] = None,
-        content_type: Optional[str] = None,
-        failure_idx: Optional[int] = None
-    ) -> Attachment:
-        """
-        Attach a file to the repair report.
-        
-        Args:
-            file_path: Path to file
-            delete_after: Delete file after attaching
-            name: Custom name (defaults to filename)
-            content_type: MIME type (auto-detected if not provided)
-            failure_idx: Attach to specific failure (None = report-level)
-            
-        Returns:
-            Created Attachment
-        """
-        attachment = Attachment.from_file(
-            file_path=file_path,
-            delete_after=delete_after,
-            name=name,
-            content_type=content_type,
-            failure_idx=failure_idx
-        )
-        self.attachments.append(attachment)
-        return attachment
-    
     def attach_bytes(
         self,
         name: str,
@@ -340,6 +309,13 @@ class UURReport(Report):
     ) -> Attachment:
         """
         Attach binary data to the repair report.
+        
+        Note:
+            For file attachments, use pywats_client.io.AttachmentIO:
+            
+            >>> from pywats_client.io import AttachmentIO
+            >>> content, name, mime_type = AttachmentIO.read_file("report.pdf")
+            >>> report.attach_bytes(name, content, mime_type)
         
         Args:
             name: Display name

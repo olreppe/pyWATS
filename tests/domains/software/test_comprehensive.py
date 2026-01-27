@@ -20,8 +20,7 @@ from pywats.domains.software import (
     PackageTag,
     PackageStatus,
     VirtualFolder,
-    SoftwareService,
-    SoftwareRepository,
+    AsyncSoftwareService,
 )
 
 

@@ -32,9 +32,6 @@ Key Features:
 - Individual failures don't break the parallel run
 - Progress callback support
 - Type-safe Result[T] return type
-
-Backward Compatibility:
-    batch_execute and BatchConfig are still available as aliases.
 """
 from typing import TypeVar, Callable, List, Optional, Any, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -356,21 +353,10 @@ def _is_retryable(failure: Failure) -> bool:
 
 
 __all__ = [
-    # New names (preferred)
     "parallel_execute",
     "parallel_execute_with_retry",
     "ParallelConfig",
-    # Backward compatibility aliases (deprecated)
-    "batch_execute",
-    "batch_execute_with_retry",
-    "BatchConfig",
-    # Utilities
     "collect_successes",
     "collect_failures",
     "partition_results",
 ]
-
-# Backward compatibility aliases
-BatchConfig = ParallelConfig
-batch_execute = parallel_execute
-batch_execute_with_retry = parallel_execute_with_retry

@@ -3,16 +3,19 @@
 The main async entry point for the pyWATS library.
 Use this for GUI applications (with qasync) or async code.
 
-For synchronous scripts, use SyncWATS from pywats.sync instead.
+For synchronous scripts, use the pyWATS class instead.
 """
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from .core.async_client import AsyncHttpClient
 from .core.station import Station, StationRegistry
 from .core.retry import RetryConfig
 from .core.throttle import RateLimiter
 from .core.exceptions import ErrorMode, ErrorHandler
+
+if TYPE_CHECKING:
+    from .core.config import APISettings
 
 # Import async services
 from .domains.product import AsyncProductService, AsyncProductRepository
@@ -80,38 +83,97 @@ class AsyncWATS:
     
     def __init__(
         self,
-        base_url: str,
-        token: str,
+        base_url: Optional[str] = None,
+        token: Optional[str] = None,
         station: Optional[Station] = None,
-        timeout: float = 30.0,
-        verify_ssl: bool = True,
-        error_mode: ErrorMode = ErrorMode.STRICT,
+        timeout: Optional[float] = None,
+        verify_ssl: Optional[bool] = None,
+        error_mode: Optional[ErrorMode] = None,
         rate_limiter: Optional[RateLimiter] = None,
         enable_throttling: bool = True,
         retry_config: Optional[RetryConfig] = None,
         retry_enabled: bool = True,
+        instance_id: str = "default",
+        settings: Optional['APISettings'] = None,
     ):
         """
         Initialize the async pyWATS API.
         
+        Credentials can be provided explicitly, via settings injection, or 
+        auto-discovered from a running pyWATS Client service.
+        
+        Configuration priority (highest to lowest):
+        1. Explicit parameters (base_url, token, timeout, etc.)
+        2. Injected settings object
+        3. Auto-discovered from running service
+        4. Built-in constant defaults
+        
         Args:
             base_url: Base URL of the WATS server (e.g., "https://your-wats.com")
+                     If None, attempts to discover from running service.
             token: API token (Base64-encoded credentials)
+                   If None, attempts to discover from running service.
             station: Default station configuration for reports
-            timeout: Request timeout in seconds (default: 30)
-            verify_ssl: Whether to verify SSL certificates (default: True)
+            timeout: Request timeout in seconds. If None, uses settings or default (30).
+            verify_ssl: Whether to verify SSL certificates. If None, uses settings or default (True).
             error_mode: Error handling mode (STRICT or LENIENT). Default is STRICT.
             rate_limiter: Custom RateLimiter instance (default: global limiter)
             enable_throttling: Enable/disable rate limiting (default: True)
             retry_config: Custom retry configuration. If None, uses defaults.
             retry_enabled: Enable/disable retry (default: True).
+            instance_id: pyWATS Client instance ID for auto-discovery (default: "default")
+            settings: APISettings object for injected configuration. Settings from this
+                     object are used as defaults, but can be overridden by explicit parameters.
+        
+        Raises:
+            ValueError: If credentials not provided and service discovery fails
+            
+        Examples:
+            # Explicit credentials
+            async with AsyncWATS(base_url="https://wats.com", token="abc123") as api:
+                products = await api.product.get_products()
+            
+            # Auto-discover from running service
+            async with AsyncWATS() as api:  # Uses default instance
+                products = await api.product.get_products()
         """
+        # Import APISettings for type checking and defaults
+        from .core.config import APISettings, get_default_settings
+        
+        # Use injected settings or get defaults (no file I/O)
+        if settings is None:
+            settings = get_default_settings()
+        
+        # Auto-discover credentials from running service if not provided
+        if not base_url or not token:
+            discovered = self._discover_credentials(instance_id)
+            if discovered:
+                base_url = base_url or discovered["base_url"]
+                token = token or discovered["token"]
+                logger.info(f"Auto-discovered credentials from service instance '{instance_id}'")
+            elif not base_url or not token:
+                raise ValueError(
+                    "Credentials required. Either provide base_url and token, "
+                    f"or ensure pyWATS Client service is running (instance: {instance_id})"
+                )
+        
+        # Apply configuration: explicit params > settings > defaults
         self._base_url = base_url.rstrip("/")
         self._token = token
-        self._timeout = timeout
-        self._verify_ssl = verify_ssl
-        self._error_mode = error_mode
-        self._error_handler = ErrorHandler(error_mode)
+        self._timeout = timeout if timeout is not None else settings.timeout_seconds
+        self._verify_ssl = verify_ssl if verify_ssl is not None else settings.verify_ssl
+        
+        # Error mode: explicit > settings > default
+        if error_mode is not None:
+            self._error_mode = error_mode
+        elif settings.error_mode:
+            self._error_mode = ErrorMode(settings.error_mode)
+        else:
+            self._error_mode = ErrorMode.STRICT
+        self._error_handler = ErrorHandler(self._error_mode)
+        
+        # Store settings for domain-specific config access
+        self._settings = settings
         
         # Retry configuration
         if retry_config is not None:
@@ -148,6 +210,50 @@ class AsyncWATS:
         self._rootcause: Optional[AsyncRootCauseService] = None
         self._scim: Optional[AsyncScimService] = None
         self._process: Optional[AsyncProcessService] = None
+    
+    @staticmethod
+    def _discover_credentials(instance_id: str = "default") -> Optional[dict]:
+        """
+        Attempt to discover credentials from running pyWATS Client service.
+        
+        Args:
+            instance_id: Instance ID to connect to (defaults to "default")
+            
+        Returns:
+            Dictionary with 'base_url' and 'token' or None if not found
+        """
+        try:
+            # Import here to avoid circular dependency
+            from pywats_client.service.ipc_client import ServiceIPCClient
+            
+            client = ServiceIPCClient(instance_id)
+            if client.connect(timeout_ms=500):
+                credentials = client.get_credentials()
+                client.disconnect()
+                
+                if credentials and credentials.get("base_url") and credentials.get("token"):
+                    return credentials
+        except ImportError:
+            # pywats_client not installed - that's ok
+            pass
+        except Exception as e:
+            logger.debug(f"Service discovery failed: {e}")
+        
+        return None
+    
+    # -------------------------------------------------------------------------
+    # Configuration Access
+    # -------------------------------------------------------------------------
+    
+    @property
+    def settings(self) -> 'APISettings':
+        """
+        Get the API settings being used.
+        
+        Returns:
+            APISettings instance (pure model, no file I/O)
+        """
+        return self._settings
     
     # -------------------------------------------------------------------------
     # Context Manager Support

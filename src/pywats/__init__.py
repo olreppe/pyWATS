@@ -35,7 +35,6 @@ Usage (Asynchronous - for GUI/async applications):
 
 from .pywats import pyWATS
 from .async_wats import AsyncWATS
-from .sync import SyncWATS
 from .exceptions import (
     PyWATSError,
     AuthenticationError,
@@ -77,7 +76,7 @@ from .domains.scim import (
     ScimToken, ScimUser, ScimUserName, ScimUserEmail,
     ScimPatchRequest, ScimPatchOperation, ScimListResponse
 )
-from .domains.report import WATSFilter, ReportHeader, Attachment
+from .domains.report import WATSFilter, ReportHeader, Attachment, AttachmentMetadata
 from .domains.analytics import (
     YieldData, ProcessInfo, LevelInfo,
     # New typed models for analytics
@@ -101,7 +100,7 @@ from .shared import Result, Success, Failure, ErrorCode, failure_from_exception
 
 # Type-safe enums and path utilities for query building
 from .shared import (
-    StatusFilter, RunFilter, StepType, CompOp, CompOperator, SortDirection,
+    StatusFilter, RunFilter, StepType, CompOp, SortDirection,
     StepPath, MeasurementPath, normalize_path, display_path, normalize_paths,
 )
 from .domains.report.enums import DateGrouping
@@ -174,6 +173,7 @@ __all__ = [
     "ReportHeader",
     "WATSFilter",
     "Attachment",
+    "AttachmentMetadata",
     "YieldData",
     "ProcessInfo",
     "LevelInfo",
@@ -223,7 +223,7 @@ __all__ = [
     "StatusFilter",
     "RunFilter",
     "StepType",
-    "CompOperator",
+    "CompOp",
     "SortDirection",
     "DateGrouping",
     # Path utilities (seamless / <-> ¶ conversion)
@@ -234,6 +234,4 @@ __all__ = [
     "normalize_paths",
     # Discovery helpers
     "discover",
-    # Comparison operator for limits
-    "CompOp",
 ]

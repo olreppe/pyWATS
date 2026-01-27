@@ -9,16 +9,12 @@ Memory Queue (Pure API - No File I/O):
     - BaseQueue: Abstract base for custom implementations
     - QueueItemStatus: Unified status enum (from pywats.shared.enums)
 
-File Queue (Legacy - File-Based):
-    - SimpleQueue: File-based queue with WSJF format
-    - Note: Consider using PersistentQueue from pywats_client instead
-
-For production deployments, use pywats_client.ClientService,
-which provides robust file watching, converter framework, and retry logic.
+For file-based persistence, use pywats_client:
+    - pywats_client.queue.PersistentQueue for file-based queue operations
 
 Design Principles:
-    The pywats API should be "memory-only" with minimal file operations.
-    For file-based persistence, use pywats_client.queue.PersistentQueue.
+    The pywats API is "memory-only" with NO file operations.
+    All file I/O belongs in pywats_client.
 """
 
 # Unified status enum (canonical source: pywats.shared.enums)
@@ -32,10 +28,7 @@ from .memory_queue import (
     QueueHooks,
 )
 
-# File-based queue (has file operations - consider using pywats_client instead)
-from .simple_queue import SimpleQueue, QueuedReport, QueueStatus
-
-# Format converters
+# Format converters (in-memory transformations)
 from .formats import WSJFConverter, convert_to_wsjf, convert_from_wsxf, convert_from_wstf
 
 __all__ = [
@@ -46,10 +39,6 @@ __all__ = [
     "BaseQueue",
     "QueueItem",
     "QueueHooks",
-    # File-based queue (legacy)
-    "SimpleQueue",
-    "QueuedReport",
-    "QueueStatus",  # Legacy alias, use QueueItemStatus
     # Format converters
     "WSJFConverter",
     "convert_to_wsjf",

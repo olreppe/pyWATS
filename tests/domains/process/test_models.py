@@ -17,8 +17,7 @@ import time
 
 from pywats.domains.process import (
     ProcessInfo,
-    ProcessService,
-    ProcessRepository,
+    AsyncProcessService,
 )
 from pywats.domains.process.models import RepairCategory, RepairOperationConfig
 

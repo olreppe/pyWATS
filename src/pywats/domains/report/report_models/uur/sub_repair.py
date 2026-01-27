@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from .failure import Failure
+from .uur_sub_unit import UURFailure
 from ..sub_unit import SubUnit
 
 class SubRepair(SubUnit):
@@ -24,7 +24,7 @@ class SubRepair(SubUnit):
     """
     The index of the sub unit that replaced this unit. Only for UUR reports.
     """
-    failures: Optional[list[Failure]] = Field(default=None)
+    failures: Optional[list[UURFailure]] = Field(default=None)
     """
     A list of failures on this sub unit. Only for UUR reports.
     """

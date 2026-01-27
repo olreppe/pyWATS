@@ -182,7 +182,3 @@ class SyncBoxBuildTemplate:
     
     def __str__(self) -> str:
         return str(self._async)
-
-
-# Alias for backward compatibility
-BoxBuildTemplate = SyncBoxBuildTemplate

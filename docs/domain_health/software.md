@@ -26,7 +26,8 @@
 **Pattern Compliance:** ✅ EXCELLENT
 
 **Service Layer:**
-- Location: `src/pywats/domains/software/service.py`
+- Location: `src/pywats/domains/software/async_service.py`
+- Class: `AsyncSoftwareService` (async-first architecture)
 - Compliance: Perfect delegation
 - Business logic: Package management, versioning, distribution, tags, virtual folders
 - Issues: None
@@ -38,8 +39,8 @@
 
 **Class Diagram:**
 ```
-SoftwareService --> SoftwareRepository --> HttpClient
-SoftwareService --> SoftwarePackage, PackageVersion, Distribution
+AsyncSoftwareService --> AsyncSoftwareRepository --> HttpClient
+AsyncSoftwareService --> SoftwarePackage, PackageVersion, Distribution
 ```
 
 ---

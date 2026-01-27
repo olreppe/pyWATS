@@ -13,20 +13,13 @@ from .models import ProcessInfo, RepairOperationConfig, RepairCategory, FailureC
 from .async_repository import AsyncProcessRepository
 from .async_service import AsyncProcessService
 
-# Backward-compatible aliases
-ProcessRepository = AsyncProcessRepository
-ProcessService = AsyncProcessService
-
 __all__ = [
     # Models
     "ProcessInfo",
     "RepairOperationConfig",
     "RepairCategory",
     "FailureCodeInfo",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncProcessRepository",
     "AsyncProcessService",
-    # Backward-compatible aliases
-    "ProcessRepository",
-    "ProcessService",
 ]

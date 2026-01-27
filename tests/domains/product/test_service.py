@@ -5,7 +5,7 @@ import pytest
 
 from pywats.domains.product.enums import ProductState
 from pywats.domains.product.models import Product, ProductRevision
-from pywats.domains.product import ProductService
+from pywats.domains.product import AsyncProductService
 
 
 class DummyProductRepository:
@@ -38,13 +38,13 @@ class DummyProductRepository:
 
 
 @pytest.fixture
-def product_service() -> ProductService:
+def product_service() -> AsyncProductService:
     repository = DummyProductRepository()
-    return ProductService(repository=repository)
+    return AsyncProductService(repository=repository)
 
 
 @pytest.mark.asyncio
-async def test_create_product_persists_via_repository(product_service: ProductService) -> None:
+async def test_create_product_persists_via_repository(product_service: AsyncProductService) -> None:
     repo = product_service._repository
 
     created = await product_service.create_product(
@@ -58,7 +58,7 @@ async def test_create_product_persists_via_repository(product_service: ProductSe
 
 
 @pytest.mark.asyncio
-async def test_create_revision_attaches_product(product_service: ProductService) -> None:
+async def test_create_revision_attaches_product(product_service: AsyncProductService) -> None:
     repository = product_service._repository
 
     revision = await product_service.create_revision(
@@ -75,7 +75,7 @@ async def test_create_revision_attaches_product(product_service: ProductService)
 
 
 @pytest.mark.asyncio
-async def test_get_products_returns_views(product_service: ProductService) -> None:
+async def test_get_products_returns_views(product_service: AsyncProductService) -> None:
     views = await product_service.get_products()
 
     assert len(views) == 1

@@ -54,10 +54,6 @@ from .models import (
 from .async_repository import AsyncScimRepository
 from .async_service import AsyncScimService
 
-# Backward-compatible aliases
-ScimRepository = AsyncScimRepository
-ScimService = AsyncScimService
-
 __all__ = [
     # Models
     "ScimToken",
@@ -67,10 +63,7 @@ __all__ = [
     "ScimPatchRequest",
     "ScimPatchOperation",
     "ScimListResponse",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncScimRepository",
     "AsyncScimService",
-    # Backward-compatible aliases
-    "ScimRepository",
-    "ScimService",
 ]

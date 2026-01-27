@@ -12,10 +12,6 @@ from .enums import SerialNumberIdentifier, UnitPhaseFlag
 from .async_repository import AsyncProductionRepository
 from .async_service import AsyncProductionService
 
-# Backward-compatible aliases
-ProductionRepository = AsyncProductionRepository
-ProductionService = AsyncProductionService
-
 # Rebuild Unit model to resolve forward references to Product/ProductRevision
 from ..product.models import Product, ProductRevision
 Unit.model_rebuild()
@@ -32,10 +28,7 @@ __all__ = [
     # Enums
     "SerialNumberIdentifier",
     "UnitPhaseFlag",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncProductionService",
     "AsyncProductionRepository",
-    # Backward-compatible aliases
-    "ProductionRepository",
-    "ProductionService",
 ]

@@ -9,10 +9,6 @@ from .enums import AssetState, AssetLogType, AssetAlarmState, IntervalMode
 from .async_repository import AsyncAssetRepository
 from .async_service import AsyncAssetService
 
-# Backward-compatible aliases
-AssetRepository = AsyncAssetRepository
-AssetService = AsyncAssetService
-
 __all__ = [
     # Models
     "Asset",
@@ -23,10 +19,7 @@ __all__ = [
     "AssetLogType",
     "AssetAlarmState",
     "IntervalMode",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncAssetRepository",
     "AsyncAssetService",
-    # Backward-compatible aliases
-    "AssetRepository",
-    "AssetService",
 ]

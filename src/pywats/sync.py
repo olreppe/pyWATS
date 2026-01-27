@@ -1,38 +1,17 @@
 """
-Synchronous wrapper for async pyWATS API.
+Synchronous wrapper utilities for async pyWATS services.
 
-This module provides a synchronous interface to the async pyWATS API,
-making it easy to use in scripts, test frameworks (like pytest without 
-async fixtures), and other environments that don't have an event loop.
+This module provides the SyncServiceWrapper class used internally by pyWATS
+to wrap async services for synchronous usage.
 
-Usage:
-    from pywats.sync import SyncWATS
-    
-    client = SyncWATS(base_url="https://wats.example.com", token="...")
-    
-    # Use just like the sync API
-    unit = client.production.get_unit("SN-001", "PN-001")
-    products = client.product.get_products()
-    
-    # Cleanup when done
-    client.close()
-
-Or with context manager:
-    with SyncWATS(base_url="...", token="...") as client:
-        unit = client.production.get_unit("SN-001", "PN-001")
+Note: For most use cases, use the main pyWATS class instead of these utilities:
+    from pywats import pyWATS
+    api = pyWATS(base_url="...", token="...")
 """
 import asyncio
-from typing import Optional, Any, TypeVar, Callable, Coroutine
+from typing import Any, TypeVar, Coroutine
 from functools import wraps
-import logging
 import inspect
-
-from .core.async_client import AsyncHttpClient
-from .core.retry import RetryConfig
-from .core.throttle import RateLimiter
-from .core.exceptions import ErrorMode, ErrorHandler
-
-logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
@@ -40,11 +19,11 @@ T = TypeVar('T')
 def _run_sync(coro: Coroutine[Any, Any, T]) -> T:
     """Run a coroutine synchronously, creating an event loop if needed."""
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
         # If there's already a running loop, we can't use run_until_complete
         # This would happen in Jupyter notebooks or async contexts
         raise RuntimeError(
-            "Cannot use SyncWATS from within an async context. "
+            "Cannot use sync API from within an async context. "
             "Use the async API directly instead."
         )
     except RuntimeError:
@@ -99,7 +78,8 @@ class SyncServiceWrapper:
         return attr
 
 
-class SyncWATS:
+# SyncWATS class removed - use pyWATS instead which provides the same functionality
+# with additional features like auto-discovery and settings management.
     """
     Synchronous wrapper for async pyWATS API.
     

@@ -1,18 +1,15 @@
 """Unit tests for parallel operations.
 
 Tests the parallel execution utilities in pywats.core.parallel.
-Note: Tests use legacy alias names (batch_execute, BatchConfig) to verify
-backward compatibility. New code should use parallel_execute, ParallelConfig.
 """
 import pytest
 from unittest.mock import Mock, patch
 import time
 
-# Using legacy aliases to test backward compatibility
 from pywats.core.parallel import (
-    batch_execute,  # Legacy alias for parallel_execute
-    batch_execute_with_retry,  # Legacy alias for parallel_execute_with_retry
-    BatchConfig,  # Legacy alias for ParallelConfig
+    parallel_execute,
+    parallel_execute_with_retry,
+    ParallelConfig,
     collect_successes,
     collect_failures,
     partition_results,
@@ -20,12 +17,12 @@ from pywats.core.parallel import (
 from pywats.shared.result import Success, Failure
 
 
-class TestBatchExecute:
-    """Tests for batch_execute function."""
+class TestParallelExecute:
+    """Tests for parallel_execute function."""
 
     def test_empty_keys_returns_empty_list(self):
         """Empty input returns empty output."""
-        results = batch_execute(
+        results = parallel_execute(
             keys=[],
             operation=lambda x: x,
         )
@@ -33,7 +30,7 @@ class TestBatchExecute:
 
     def test_single_key_success(self):
         """Single key operation succeeds."""
-        results = batch_execute(
+        results = parallel_execute(
             keys=["key1"],
             operation=lambda x: f"value_{x}",
         )
@@ -44,7 +41,7 @@ class TestBatchExecute:
     def test_multiple_keys_preserve_order(self):
         """Results preserve input order."""
         keys = ["a", "b", "c", "d", "e"]
-        results = batch_execute(
+        results = parallel_execute(
             keys=keys,
             operation=lambda x: f"value_{x}",
             max_workers=2,
@@ -56,7 +53,7 @@ class TestBatchExecute:
 
     def test_operation_returning_none_is_failure(self):
         """Operations returning None become failures."""
-        results = batch_execute(
+        results = parallel_execute(
             keys=["key1"],
             operation=lambda x: None,
         )
@@ -69,7 +66,7 @@ class TestBatchExecute:
         def failing_operation(x):
             raise ValueError(f"Error for {x}")
 
-        results = batch_execute(
+        results = parallel_execute(
             keys=["key1", "key2"],
             operation=failing_operation,
         )
@@ -84,7 +81,7 @@ class TestBatchExecute:
                 raise ValueError("Intentional failure")
             return f"value_{x}"
 
-        results = batch_execute(
+        results = parallel_execute(
             keys=["ok1", "fail", "ok2"],
             operation=mixed_operation,
         )
@@ -106,7 +103,7 @@ class TestBatchExecute:
             active_count -= 1
             return x
 
-        batch_execute(
+        parallel_execute(
             keys=list(range(10)),
             operation=tracking_operation,
             max_workers=3,
@@ -121,7 +118,7 @@ class TestBatchExecute:
         def on_progress(completed, total):
             progress_calls.append((completed, total))
 
-        batch_execute(
+        parallel_execute(
             keys=["a", "b", "c"],
             operation=lambda x: x,
             on_progress=on_progress,
@@ -131,11 +128,11 @@ class TestBatchExecute:
         # Final call should show all completed
         assert progress_calls[-1] == (3, 3)
 
-    def test_batch_config_used(self):
-        """BatchConfig is applied correctly."""
-        config = BatchConfig(max_workers=2, fail_fast=False)
+    def test_parallel_config_used(self):
+        """ParallelConfig is applied correctly."""
+        config = ParallelConfig(max_workers=2, fail_fast=False)
         
-        results = batch_execute(
+        results = parallel_execute(
             keys=["a", "b"],
             operation=lambda x: x,
             config=config,
@@ -143,7 +140,7 @@ class TestBatchExecute:
         assert len(results) == 2
 
 
-class TestBatchHelpers:
+class TestParallelHelpers:
     """Tests for batch helper functions."""
 
     def test_collect_successes(self):
@@ -180,12 +177,12 @@ class TestBatchHelpers:
         assert len(failures) == 1
 
 
-class TestBatchConfig:
-    """Tests for BatchConfig."""
+class TestParallelConfig:
+    """Tests for ParallelConfig."""
 
     def test_default_values(self):
         """Default config values are sensible."""
-        config = BatchConfig()
+        config = ParallelConfig()
         assert config.max_workers == 10
         assert config.fail_fast == False
         assert config.timeout is None
@@ -193,11 +190,11 @@ class TestBatchConfig:
     def test_invalid_max_workers_raises(self):
         """max_workers < 1 raises ValueError."""
         with pytest.raises(ValueError):
-            BatchConfig(max_workers=0)
+            ParallelConfig(max_workers=0)
 
     def test_high_max_workers_warns(self, caplog):
         """High max_workers logs warning."""
         import logging
         with caplog.at_level(logging.WARNING):
-            BatchConfig(max_workers=150)
+            ParallelConfig(max_workers=150)
         assert "rate limiting" in caplog.text.lower()

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 
 from pywats.domains.analytics.models import ProcessInfo, YieldData, StepAnalysisRow
-from pywats.domains.analytics import AnalyticsService
+from pywats.domains.analytics import AsyncAnalyticsService
 from pywats.domains.report.models import WATSFilter, ReportHeader
 
 
@@ -62,13 +62,13 @@ class DummyAnalyticsRepository:
 
 
 @pytest.fixture
-def analytics_service() -> AnalyticsService:
+def analytics_service() -> AsyncAnalyticsService:
     repository = DummyAnalyticsRepository()
-    return AnalyticsService(repository=repository)
+    return AsyncAnalyticsService(repository=repository)
 
 
 @pytest.mark.asyncio
-async def test_get_processes_uses_repository(analytics_service: AnalyticsService) -> None:
+async def test_get_processes_uses_repository(analytics_service: AsyncAnalyticsService) -> None:
     repo = analytics_service._repository
 
     processes = await analytics_service.get_processes()
@@ -79,7 +79,7 @@ async def test_get_processes_uses_repository(analytics_service: AnalyticsService
 
 
 @pytest.mark.asyncio
-async def test_get_dynamic_yield_passes_filters(analytics_service: AnalyticsService) -> None:
+async def test_get_dynamic_yield_passes_filters(analytics_service: AsyncAnalyticsService) -> None:
     repo = analytics_service._repository
     filter_data = WATSFilter(part_number="PN-1")
 
@@ -90,7 +90,7 @@ async def test_get_dynamic_yield_passes_filters(analytics_service: AnalyticsServ
 
 
 @pytest.mark.asyncio
-async def test_get_serial_number_history_forwards_filters(analytics_service: AnalyticsService) -> None:
+async def test_get_serial_number_history_forwards_filters(analytics_service: AsyncAnalyticsService) -> None:
     filter_data = WATSFilter(serial_number="SN-ABC")
 
     headers = await analytics_service.get_serial_number_history(filter_data)

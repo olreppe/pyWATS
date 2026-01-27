@@ -6,12 +6,13 @@ Supports conversion between various WATS report formats:
 - WSXF: WATS XML Format (legacy)
 - WSTF: WATS TestStand Format (TestStand-specific XML)
 - ATML: Automatic Test Markup Language (IEEE standard)
+
+All operations are memory-only (string/dict transformations).
 """
 
 import json
 import xml.etree.ElementTree as ET
 from typing import Dict, Any, Union
-from pathlib import Path
 
 
 class WSJFConverter:

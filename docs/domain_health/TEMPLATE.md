@@ -37,7 +37,8 @@
 **Pattern Compliance:** ✅/⚠️/❌
 
 **Service Layer:**
-- Location: `src/pywats/domains/{domain}/service.py`
+- Location: `src/pywats/domains/{domain}/async_service.py`
+- Class: `Async{Domain}Service` (async-first architecture)
 - Compliance: {notes on delegation, business logic}
 - Issues: {any architectural problems}
 

@@ -54,10 +54,10 @@
 
 **Class Diagram:**
 ```
-ReportService --> ReportRepository --> HttpClient
-ReportService --> filter_builders (OData filters)
-ReportService --> query_helpers (query params)
-ReportService --> UUTReport / UURReport
+AsyncReportService --> AsyncReportRepository --> HttpClient
+AsyncReportService --> filter_builders (OData filters)
+AsyncReportService --> query_helpers (query params)
+AsyncReportService --> UUTReport / UURReport
 Report --> WATSBase
 UUTReport --> SequenceCall (step tree) + UUTInfo
 UURReport --> UURInfo + UURSubUnit + UURFailure
@@ -80,7 +80,7 @@ Attachment (shared) <-- UUTReport, UURReport
 | WATSFilter | 27 | ~200 | ✅ | Excellent wildcard examples |
 | UUTReport | 10+ | ~150 | ✅ | Clean factory pattern |
 | UURReport | 15 | ~426 | ✅ | Refactored - pure Pydantic model |
-| Attachment | 4 | ~210 | ✅ | Shared by UUT/UUR, from_file/from_bytes |
+| Attachment | 4 | ~210 | ✅ | Shared by UUT/UUR, memory-only (from_bytes) |
 | QueryFilter | 14 | ~100 | ✅ | Good filtering model |
 | SequenceCall | Many | ~200 | ✅ | Well-structured step tree |
 
@@ -91,12 +91,12 @@ Attachment (shared) <-- UUTReport, UURReport
   - Comprehensive Pydantic models with AliasChoices
   - UURReport refactored to pure Pydantic model (426 lines)
   - Shared Attachment class with factory methods
-  - ProcessService provides fail code validation
+  - AsyncProcessService provides fail code validation
   
 - ✅ **Resolved Issues:**
   - ~~UURReport (650+ lines) mixes domain logic with schema~~ → Refactored to 426 lines
   - ~~Fail code navigation~~ → Moved to ProcessService
-  - ~~Attachment bookkeeping~~ → Shared Attachment class with from_file/from_bytes
+  - ~~Attachment bookkeeping~~ → Shared Attachment class (memory-only via from_bytes, file I/O via pywats_client.io)
 
 **Model Size Analysis:**
 - All models now appropriately sized

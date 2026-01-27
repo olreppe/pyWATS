@@ -26,7 +26,8 @@
 **Pattern Compliance:** ✅ EXCELLENT
 
 **Service Layer:**
-- Location: `src/pywats/domains/product/service.py`
+- Location: `src/pywats/domains/product/async_service.py`
+- Class: `AsyncProductService` (async-first architecture)
 - Compliance: Perfect delegation to repository
 - Business logic: Product creation, BOM management, box build templates
 - Issues: None
@@ -42,8 +43,8 @@
 
 **Class Diagram:**
 ```
-ProductService --> ProductRepository --> HttpClient
-ProductService --> Product, PartRevision, BOM, BoxBuildTemplate
+AsyncProductService --> AsyncProductRepository --> HttpClient
+AsyncProductService --> Product, PartRevision, BOM, BoxBuildTemplate
 ```
 
 ---

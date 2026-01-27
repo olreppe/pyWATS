@@ -10,11 +10,17 @@ Attachments can include:
 - Text logs (test logs, repair notes)
 
 The attachment API is identical for UUT and UUR reports.
+
+File I/O Architecture:
+- pywats (API layer) is memory-only - use attach_bytes() with pre-loaded content
+- pywats_client.io provides AttachmentIO for file operations
+- See examples/attachment_io_example.py for file I/O patterns
 """
 import os
 from pathlib import Path
 from pywats import pyWATS
 from pywats.core import Station
+from pywats_client.io import AttachmentIO  # For file operations
 
 # =============================================================================
 # Setup
@@ -30,14 +36,15 @@ api = pyWATS(
 
 
 # =============================================================================
-# Attaching Files
+# Attaching Files (via pywats_client.io)
 # =============================================================================
 
 def attach_file_example():
     """
-    Attach a file from disk to a report.
+    Attach a file from disk to a report using pywats_client.io.
     
     The MIME type is automatically detected from the file extension.
+    File I/O is handled by AttachmentIO, then content is passed to the API.
     """
     # Create a sample report
     report = api.report.create_uut_report(
@@ -46,17 +53,17 @@ def attach_file_example():
         serial_number="SN-2024-001"
     )
     
-    # Attach a file - content type auto-detected
-    # report.attach_file("test_photo.jpg")
+    # Load file using AttachmentIO, then attach bytes to report
+    # info = AttachmentIO.read_file("test_photo.jpg")
+    # report.attach_bytes(name=info.name, content=info.content, content_type=info.mime_type)
     
-    # Attach with explicit content type
-    # report.attach_file("data.bin", content_type="application/octet-stream")
+    # With explicit content type
+    # info = AttachmentIO.read_file("data.bin")
+    # report.attach_bytes(name=info.name, content=info.content, content_type="application/octet-stream")
     
-    # Attach and delete original after submission
-    # report.attach_file("temp_log.txt", delete_after=True)
-    
-    # Attach with custom name (different from filename)
-    # report.attach_file("IMG_20240126_103000.jpg", name="Repair Photo")
+    # With custom name
+    # info = AttachmentIO.read_file("IMG_20240126_103000.jpg")
+    # report.attach_bytes(name="Repair Photo", content=info.content, content_type=info.mime_type)
     
     return report
 
@@ -120,6 +127,7 @@ def uur_attachments_example(failed_uut):
     Attach files to a UUR (repair) report.
     
     The attachment API is identical for UUT and UUR reports.
+    Use pywats_client.io.AttachmentIO to load files from disk.
     """
     uur = api.report.create_uur_report(
         failed_uut,
@@ -133,12 +141,14 @@ def uur_attachments_example(failed_uut):
         comment="Capacitor C12 failed"
     )
     
-    # Attach repair documentation
+    # Attach repair documentation using AttachmentIO
     # Before photo
-    # uur.attach_file("before_repair.jpg", name="Before Repair")
+    # info = AttachmentIO.read_file("before_repair.jpg")
+    # uur.attach_bytes(name="Before Repair", content=info.content, content_type=info.mime_type)
     
-    # After photo
-    # uur.attach_file("after_repair.jpg", name="After Repair")
+    # After photo  
+    # info = AttachmentIO.read_file("after_repair.jpg")
+    # uur.attach_bytes(name="After Repair", content=info.content, content_type=info.mime_type)
     
     # Repair log
     repair_notes = """
@@ -216,22 +226,34 @@ Attachment Best Practices:
    - Good: "Failed Component Photo"
 
 2. Choose appropriate content type
-   - Let auto-detection handle common types
+   - Let AttachmentIO auto-detection handle common types
    - Specify explicitly for custom formats
 
 3. Size considerations
    - Keep attachments reasonable size (<10MB typical)
    - Compress large files if possible
 
-4. Use delete_after for temp files
-   - report.attach_file("temp.log", delete_after=True)
-   - File removed after successful submission
+4. File I/O separation
+   - pywats API is memory-only for testability and async-safety
+   - Use pywats_client.io.AttachmentIO for file operations
+   - Load files first, then pass bytes to the API
 
 5. Organize multiple attachments
    - Use clear naming conventions
    - Group related attachments with prefixes
 
-6. Binary vs File
-   - Use attach_bytes() for generated content
-   - Use attach_file() for existing files
+6. Pattern for file attachments
+   ```python
+   from pywats_client.io import AttachmentIO
+   
+   # Load file and attach to report
+   info = AttachmentIO.read_file("screenshot.png")
+   report.attach_bytes(
+       name="Test Screenshot",
+       content=info.content,
+       content_type=info.mime_type
+   )
+   ```
+
+7. See examples/attachment_io_example.py for more file I/O patterns
 """

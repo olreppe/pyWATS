@@ -411,18 +411,25 @@ products = run_sync(fetch_data())
 
 ### Service Architecture
 
-All domains follow the same pattern:
+pyWATS uses an async-first architecture with two main entry points:
 
 | Component | Description |
 |-----------|-------------|
-| `AsyncXxxService` | Source of truth - all business logic |
-| `XxxService` | Thin sync wrapper using `run_sync()` |
+| `pyWATS` | Synchronous API entry point (auto-discovers credentials) |
+| `AsyncWATS` | Asynchronous API entry point (also supports auto-discovery) |
+| `AsyncXxxService` | All business logic lives here (async) |
 | `AsyncXxxRepository` | Async data access layer |
 
 ```python
-# Both use the same underlying logic
-from pywats.domains.product.service import ProductService           # Sync
-from pywats.domains.product.async_service import AsyncProductService  # Async
+# Synchronous usage (most common)
+from pywats import pyWATS
+api = pyWATS()  # Auto-discovers credentials from pywats_client
+products = api.product.get_products()
+
+# Asynchronous usage (high performance)
+from pywats import AsyncWATS
+async with AsyncWATS() as api:  # Also supports auto-discovery
+    products = await api.product.get_products()
 ```
 
 ---

@@ -26,7 +26,8 @@
 **Pattern Compliance:** ✅ GOOD
 
 **Service Layer:**
-- Location: `src/pywats/domains/process/service.py`
+- Location: `src/pywats/domains/process/async_service.py`
+- Class: `AsyncProcessService` (async-first architecture)
 - Compliance: Proper delegation
 - Business logic: Operation types, test/repair processes, caching
 - Issues: None
@@ -38,8 +39,8 @@
 
 **Class Diagram:**
 ```
-ProcessService --> ProcessRepository --> HttpClient
-ProcessService --> OperationType, ProcessDefinition
+AsyncProcessService --> AsyncProcessRepository --> HttpClient
+AsyncProcessService --> OperationType, ProcessDefinition
 ```
 
 ---

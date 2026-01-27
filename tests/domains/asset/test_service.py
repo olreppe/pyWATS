@@ -5,7 +5,7 @@ import pytest
 
 from pywats.domains.asset.enums import AssetState
 from pywats.domains.asset.models import Asset
-from pywats.domains.asset import AssetService
+from pywats.domains.asset import AsyncAssetService
 
 
 class DummyAssetRepository:
@@ -49,13 +49,13 @@ class DummyAssetRepository:
 
 
 @pytest.fixture
-def asset_service() -> AssetService:
+def asset_service() -> AsyncAssetService:
     repository = DummyAssetRepository()
-    return AssetService(repository=repository)
+    return AsyncAssetService(repository=repository)
 
 
 @pytest.mark.asyncio
-async def test_create_asset_calls_repository(asset_service: AssetService) -> None:
+async def test_create_asset_calls_repository(asset_service: AsyncAssetService) -> None:
     serial_number = "SN-123"
 
     asset = await asset_service.create_asset(
@@ -71,7 +71,7 @@ async def test_create_asset_calls_repository(asset_service: AssetService) -> Non
 
 
 @pytest.mark.asyncio
-async def test_get_asset_returns_asset(asset_service: AssetService) -> None:
+async def test_get_asset_returns_asset(asset_service: AsyncAssetService) -> None:
     repo = asset_service._repository
     # Pre-populate repository
     test_asset = Asset(
@@ -88,7 +88,7 @@ async def test_get_asset_returns_asset(asset_service: AssetService) -> None:
 
 
 @pytest.mark.asyncio
-async def test_delete_asset_calls_repository(asset_service: AssetService) -> None:
+async def test_delete_asset_calls_repository(asset_service: AsyncAssetService) -> None:
     repo = asset_service._repository
 
     deleted = await asset_service.delete_asset(asset_id="ID-DEL")

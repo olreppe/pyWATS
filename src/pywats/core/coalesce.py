@@ -18,9 +18,6 @@ Note:
     and combines them into a single bulk API call. This is different from:
     - pywats.core.parallel: Concurrent execution of multiple operations
     - Production batches: Manufacturing batch tracking in WATS
-
-Backward Compatibility:
-    BatchConfig and RequestBatcher are still available with original names.
 """
 from typing import TypeVar, Generic, List, Callable, Awaitable, Optional, Dict, Any
 from dataclasses import dataclass, field
@@ -48,20 +45,12 @@ class CoalesceConfig:
     max_concurrent_batches: int = 5
 
 
-# Backward compatibility alias
-BatchConfig = CoalesceConfig
-
-
 @dataclass
 class CoalesceItem(Generic[T, R]):
     """Single item in a coalesced request."""
     item: T
     future: asyncio.Future[R] = field(default_factory=asyncio.Future)
     timestamp: datetime = field(default_factory=datetime.now)
-
-
-# Backward compatibility alias
-BatchItem = CoalesceItem
 
 
 class RequestCoalescer(Generic[T, R]):
@@ -270,10 +259,6 @@ class RequestCoalescer(Generic[T, R]):
         await self.stop()
 
 
-# Backward compatibility alias
-RequestBatcher = RequestCoalescer
-
-
 class ChunkedProcessor(Generic[T, R]):
     """
     Process large lists in chunks to avoid overwhelming the server.
@@ -403,21 +388,10 @@ async def batch_map(
     return results
 
 
-# Backward compatibility alias
-ChunkedBatcher = ChunkedProcessor
-
-
 __all__ = [
-    # New names (preferred)
     "CoalesceConfig",
     "CoalesceItem",
     "RequestCoalescer",
     "ChunkedProcessor",
-    # Backward compatibility aliases (deprecated)
-    "BatchConfig",
-    "BatchItem", 
-    "RequestBatcher",
-    "ChunkedBatcher",
-    # Utilities
     "batch_map",
 ]

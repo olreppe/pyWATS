@@ -712,6 +712,8 @@ repairs = api.report.query_headers(
 ### Add Attachment to Report
 
 ```python
+from pywats_client.io import AttachmentIO
+
 # Create report
 report = api.report.create_uut_report(
     operator="Tester",
@@ -725,18 +727,17 @@ report = api.report.create_uut_report(
 root = report.get_root_sequence_call()
 root.add_pass_fail_step(name="Test", status="Passed")
 
-# Add attachment (e.g., screenshot, log file)
-with open("test_screenshot.png", "rb") as f:
-    file_data = f.read()
+# Add attachment from file (using pywats_client.io)
+attachment = AttachmentIO.from_file("test_screenshot.png")
+report.add_attachment(attachment)
 
-from pywats.domains.report.report_models import Attachment
-
-attachment = Attachment(
-    file_name="test_screenshot.png",
-    mime_type="image/png",
-    data=file_data
+# Or from bytes (memory-only in pywats)
+from pywats import Attachment
+attachment = Attachment.from_bytes(
+    name="data.bin",
+    content=b"\x00\x01\x02",
+    content_type="application/octet-stream"
 )
-
 report.add_attachment(attachment)
 
 # Submit with attachment
@@ -758,17 +759,17 @@ if headers:
     attachments = api.report.get_attachments(str(header.uuid))
     
     for att in attachments:
-        print(f"Attachment: {att.name} ({att.size} bytes)")
+        print(f"Attachment: {att.file_name} ({att.size} bytes)")
         
         # Download attachment data
         data = api.report.download_attachment(
             str(header.uuid),
-            att.name
+            att.file_name
         )
         
-        # Save to file
-        with open(f"downloaded_{att.name}", "wb") as f:
-            f.write(data)
+        # Save to file using pathlib (in your client code)
+        from pathlib import Path
+        Path(f"downloaded_{att.file_name}").write_bytes(data)
 ```
 
 ---

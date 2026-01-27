@@ -190,8 +190,10 @@ def repair_with_attachments(failed_uut):
         comment="Replaced damaged IC"
     )
     
-    # Attach a photo of the repair
-    # uur.attach_file("repair_photo.jpg")
+    # Attach a photo of the repair using pywats_client.io
+    # from pywats_client.io import AttachmentIO
+    # info = AttachmentIO.read_file("repair_photo.jpg")
+    # uur.attach_bytes(name="Repair Photo", content=info.content, content_type=info.mime_type)
     
     # Attach binary data (e.g., oscilloscope capture)
     measurement_data = b"\x00\x01\x02\x03"  # Example binary data

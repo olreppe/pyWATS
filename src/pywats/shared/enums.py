@@ -310,10 +310,6 @@ class CompOp(str, Enum):
         return True
 
 
-# Backward compatibility alias
-CompOperator = CompOp
-
-
 class SortDirection(str, Enum):
     """
     Sort direction for dimension queries.

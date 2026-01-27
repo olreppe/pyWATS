@@ -109,18 +109,26 @@ def mixed_example():
 # =============================================================================
 
 def service_architecture_example():
-    """Understanding the sync/async service architecture."""
+    """Understanding the pyWATS architecture.
     
-    # All domains have both sync and async services
-    from pywats.domains.product.service import ProductService           # Sync
-    from pywats.domains.product.async_service import AsyncProductService  # Async
+    pyWATS uses an async-first architecture with two main entry points:
+    - pyWATS: Synchronous API (uses SyncServiceWrapper internally)
+    - AsyncWATS: Asynchronous API (direct async access)
     
-    # The sync service is a thin wrapper around the async service
-    # Both share the same business logic (in AsyncProductService)
+    Both share the same underlying AsyncXxxService classes which contain
+    all the business logic.
+    """
+    from pywats import pyWATS, AsyncWATS
     
-    print("Service Architecture:")
-    print("  AsyncProductService - Source of truth (all business logic)")
-    print("  ProductService      - Thin sync wrapper using run_sync()")
+    print("pyWATS Architecture:")
+    print()
+    print("Entry Points:")
+    print("  pyWATS    - Sync API (auto-discovers credentials from pywats_client)")
+    print("  AsyncWATS - Async API (also supports auto-discovery)")
+    print()
+    print("Internal Structure (per domain):")
+    print("  AsyncXxxService    - All business logic (async)")
+    print("  AsyncXxxRepository - Data access layer (async)")
     print()
     print("Available domains:")
     domains = [
@@ -128,8 +136,7 @@ def service_architecture_example():
         "production", "report", "rootcause", "scim", "software"
     ]
     for domain in domains:
-        print(f"  - {domain}/async_service.py (async)")
-        print(f"  - {domain}/service.py (sync wrapper)")
+        print(f"  - api.{domain}  (accessed via pyWATS or AsyncWATS)")
 
 
 # =============================================================================

@@ -534,9 +534,16 @@ class HeaderAsset(PyWATSModel):
     )
 
 
-class Attachment(PyWATSModel):
+class AttachmentMetadata(PyWATSModel):
     """
-    Represents a report attachment.
+    Metadata for a report attachment from API responses.
+    
+    This is a read-only DTO returned when querying reports. It contains
+    metadata about attachments but NOT the actual content.
+    
+    For creating attachments with content, use:
+    - pywats.domains.report.Attachment (memory-only, base64 encoded)
+    - pywats_client.io.AttachmentIO (for file operations)
 
     Attributes:
         attachment_id: Attachment ID

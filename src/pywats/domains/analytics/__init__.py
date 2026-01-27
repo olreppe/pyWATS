@@ -77,10 +77,6 @@ from .models import (
 from .async_repository import AsyncAnalyticsRepository
 from .async_service import AsyncAnalyticsService
 
-# Backward-compatible aliases
-AnalyticsRepository = AsyncAnalyticsRepository
-AnalyticsService = AsyncAnalyticsService
-
 __all__ = [
     # Enums
     "YieldDataType",
@@ -117,10 +113,7 @@ __all__ = [
     "MeasurementListItem",
     # Alarm models (internal API)
     "AlarmLog",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncAnalyticsRepository",
     "AsyncAnalyticsService",
-    # Backward-compatible aliases
-    "AnalyticsRepository",
-    "AnalyticsService",
 ]

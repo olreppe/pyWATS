@@ -293,7 +293,7 @@ pywats_cfx/                 # New: CFX Integration Module
 ┌───────────────────────────────────────────────────────────────────────┐
 │                         pywats Core                                    │
 │  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐              │
-│  │ReportService │   │ProductService│   │AssetService  │              │
+│  │ api.report   │   │ api.product  │   │  api.asset   │              │
 │  │  .submit()   │   │  .update()   │   │  .create()   │              │
 │  └──────────────┘   └──────────────┘   └──────────────┘              │
 │                            │                                           │
@@ -439,7 +439,7 @@ This could enable:
 
 3. **Add first handler**: `TestResultsHandler`
    - Map `UnitsTested` to `UUTReport`
-   - Submit via `ReportService`
+   - Submit via `api.report.submit()`
 
 ### 6.2 Phase 2: Domain Handlers (2-3 weeks)
 
@@ -535,9 +535,9 @@ Building CFX tightly coupled to WATS would mean **rewriting core infrastructure*
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         LAYER 4: pywats Domain Services                      │
+│                         LAYER 4: pywats API (pyWATS/AsyncWATS)               │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐       │
-│  │ReportService │ │ AssetService │ │ProductService│ │ProductionSvc │       │
+│  │ api.report   │ │  api.asset   │ │ api.product  │ │api.production│       │
 │  │  .submit()   │ │  .create()   │ │  .update()   │ │  .start()    │       │
 │  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘       │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -654,15 +654,15 @@ class ReportDomainHandler(BaseHandler):
     
     event_types = [EventType.TEST_RESULT, EventType.INSPECTION_RESULT]
     
-    def __init__(self, report_service: ReportService):
-        self.report_service = report_service
+    def __init__(self, api: AsyncWATS):
+        self.api = api
     
     async def handle(self, event: TestResultEvent) -> None:
         # Convert normalized event to UUTReport
         report = self._build_report(event)
         
         # Submit via existing pyWATS infrastructure
-        await self.report_service.submit(report)
+        await self.api.report.submit(report)
     
     def _build_report(self, event: TestResultEvent) -> UUTReport:
         report = UUTReport(

@@ -14,10 +14,6 @@ from .models import Ticket, TicketUpdate, TicketAttachment
 from .async_repository import AsyncRootCauseRepository
 from .async_service import AsyncRootCauseService
 
-# Backward-compatible aliases
-RootCauseRepository = AsyncRootCauseRepository
-RootCauseService = AsyncRootCauseService
-
 __all__ = [
     # Enums
     "TicketStatus",
@@ -28,10 +24,7 @@ __all__ = [
     "Ticket",
     "TicketUpdate",
     "TicketAttachment",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncRootCauseRepository",
     "AsyncRootCauseService",
-    # Backward-compatible aliases
-    "RootCauseRepository",
-    "RootCauseService",
 ]

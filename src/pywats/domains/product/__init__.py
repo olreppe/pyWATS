@@ -18,10 +18,6 @@ from .box_build import BoxBuildTemplate
 from .async_repository import AsyncProductRepository
 from .async_service import AsyncProductService
 
-# Backward-compatible aliases
-ProductRepository = AsyncProductRepository
-ProductService = AsyncProductService
-
 __all__ = [
     # Models
     "Product",
@@ -35,10 +31,7 @@ __all__ = [
     "BoxBuildTemplate",
     # Enums
     "ProductState",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncProductRepository",
     "AsyncProductService",
-    # Backward-compatible aliases
-    "ProductRepository",
-    "ProductService",
 ]

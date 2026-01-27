@@ -211,20 +211,20 @@ def convert_sample(name: str) -> None:
         print("\n" + "=" * 60)
         print("🎯 WATS Mapping Hints:")
         if "TEST_RESULT" in str(event.event_type) or "INSPECTION" in str(event.event_type):
-            print("   → Create UUTReport via ReportService.submit()")
+            print("   → Create UUTReport via api.report.submit()")
             print("   → payload['unit_id'] → serial_number")
             print("   → payload['part_number'] → part_number")
             print("   → payload['result'] → status (Passed/Failed)")
             print("   → payload['steps'] → add_numeric_limit_step() etc.")
         elif "MATERIAL" in str(event.event_type):
-            print("   → Link components via ProductService")
+            print("   → Link components via api.product")
             print("   → payload['components'] → component traceability")
         elif "FAULT" in str(event.event_type):
-            print("   → Create asset fault via AssetService.create_fault()")
+            print("   → Create asset fault via api.asset.create_fault()")
             print("   → payload['fault_code'] → fault identifier")
             print("   → payload['severity'] → priority")
         elif "WORK" in str(event.event_type):
-            print("   → Track production via ProductionService")
+            print("   → Track production via api.production")
             print("   → payload['unit_id'] → serial tracking")
         
     except Exception as e:

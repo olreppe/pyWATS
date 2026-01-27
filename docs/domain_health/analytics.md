@@ -33,8 +33,9 @@
 **Pattern Compliance:** ✅ EXCELLENT
 
 **Service Layer:**
-- Location: `src/pywats/domains/analytics/service.py` (829 lines)
-- Compliance: All 22 methods delegate to repository
+- Location: `src/pywats/domains/analytics/async_service.py`
+- Class: `AsyncAnalyticsService` (async-first architecture)
+- Compliance: All methods delegate to repository
 - Business logic: Convenience wrappers for common filter patterns
 - Issues: None - clean separation of concerns
 
@@ -54,9 +55,9 @@
 
 **Class Diagram:**
 ```
-AnalyticsService --> AnalyticsRepository --> HttpClient (GET/POST /api/App/*)
-AnalyticsService --> WATSFilter (from report domain)
-AnalyticsService --> YieldData, ProcessInfo, LevelInfo, ProductGroup
+AsyncAnalyticsService --> AsyncAnalyticsRepository --> HttpClient (GET/POST /api/App/*)
+AsyncAnalyticsService --> WATSFilter (from report domain)
+AsyncAnalyticsService --> YieldData, ProcessInfo, LevelInfo, ProductGroup
 
 AnalyticsServiceInternal --> AnalyticsRepositoryInternal --> HttpClient (GET /api/internal/App/*)
 ```

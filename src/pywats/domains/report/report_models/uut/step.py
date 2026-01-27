@@ -2,7 +2,6 @@ from __future__ import annotations  # Enable forward references
 from abc import ABC
 import base64
 from enum import Enum
-import os
 from typing import Any, ClassVar, Optional, Union, Literal, Annotated
 
 try:
@@ -141,32 +140,22 @@ class Step(WATSBase, ABC):
         self.chart = Chart(chart_type=chart_type, label=chart_label, xLabel=x_label, yLabel=y_label, xUnit=x_unit, yUnit=y_unit)
         return self.chart
     
-    # Attach a file to the step        
-    def attach_file(self, file_name: str, delete_after_upload: bool = False) -> None:
+    def add_attachment(self, attachment: Attachment) -> None:
         """
-        Reads a file, encodes its contents in base64, and stores it in the data property.
-        Optionally deletes the file after reading it.
+        Add an attachment to this step.
         
-        :param file_name: The name or path of the file to attach
-        :param delete_after_upload: Whether to delete the file after attaching it (default is True)
+        The pywats API is memory-only. To load attachments from files,
+        use pywats_client.io.AttachmentIO:
+        
+            from pywats_client.io import AttachmentIO
+            attachment = AttachmentIO.from_file("screenshot.png")
+            step.add_attachment(attachment)
+        
+        Args:
+            attachment: An Attachment object created via Attachment.from_bytes()
+                       or AttachmentIO.from_file()
         """
-        if self.attachment is None:
-            self.attachment = Attachment(name="New attachment")
-        try:
-            with open(file_name, 'rb') as file:
-                # Read the file and encode it in base64
-                binary_content = file.read()
-                self.attachment.data = base64.b64encode(binary_content).decode('utf-8')
-                # Optionally delete the file
-                if delete_after_upload:
-                    os.remove(file_name)
-        except (OSError, IOError) as e:
-            raise ValueError(f"Failed to attach file '{file_name}': {e}") from e
-        
-        # Set the name of the attachment as the filename
-        self.attachment.name = os.path.basename(file_name)
-        import mimetypes
-        self.attachment.content_type, _ = mimetypes.guess_type(file_name, strict=False)
+        self.attachment = attachment
 
 
         

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import pytest
 
-from pywats.domains.report import ReportService
+from pywats.domains.report import AsyncReportService
 from pywats.domains.report.models import WATSFilter, ReportHeader
 from pywats.domains.report.report_models import UUTReport, UURReport
 
@@ -16,7 +16,7 @@ class DummyStation:
 
 
 class DummyReportRepository:
-    """Mock repository for testing ReportService."""
+    """Mock repository for testing AsyncReportService."""
     
     def __init__(self):
         self.wsjf_calls: List[Any] = []
@@ -68,13 +68,13 @@ class DummyReportRepository:
 
 
 @pytest.fixture
-def report_service() -> ReportService:
+def report_service() -> AsyncReportService:
     repo = DummyReportRepository()
     station = DummyStation(name="Line1", location="PlantA", purpose="Production")
-    return ReportService(repository=repo, station_provider=lambda: station)
+    return AsyncReportService(repository=repo, station_provider=lambda: station)
 
 
-def test_create_uut_report_resolves_station(report_service: ReportService):
+def test_create_uut_report_resolves_station(report_service: AsyncReportService):
     """Create report is sync since it doesn't call repository."""
     report = report_service.create_uut_report(
         operator="TestOp",
@@ -91,7 +91,7 @@ def test_create_uut_report_resolves_station(report_service: ReportService):
     assert report.info.operator == "TestOp"
 
 
-def test_create_uur_report_from_uut_copies_sub_units(report_service: ReportService):
+def test_create_uur_report_from_uut_copies_sub_units(report_service: AsyncReportService):
     """Create report is sync since it doesn't call repository."""
     uut = report_service.create_uut_report(
         operator="Operator",
@@ -111,7 +111,7 @@ def test_create_uur_report_from_uut_copies_sub_units(report_service: ReportServi
 
 
 @pytest.mark.asyncio
-async def test_submit_report_uses_repository(report_service: ReportService):
+async def test_submit_report_uses_repository(report_service: AsyncReportService):
     uut = report_service.create_uut_report(
         operator="TestOp",
         part_number="PN-321",
@@ -120,6 +120,7 @@ async def test_submit_report_uses_repository(report_service: ReportService):
         operation_type=200
     )
 
+    # AsyncReportService.submit_report is async
     report_id = await report_service.submit_report(uut)
 
     assert report_id == "FAKE-ID"

@@ -65,6 +65,14 @@ from .converters.base import (
 # Control interfaces
 from .control.cli import ConfigCLI, cli_main
 
+# File I/O utilities
+from .io import (
+    AttachmentIO,
+    FileInfo as AttachmentFileInfo,
+    load_attachment,
+    save_attachment,
+)
+
 __all__ = [
     # Version
     "__version__",
@@ -98,6 +106,12 @@ __all__ = [
     # CLI
     "ConfigCLI",
     "cli_main",
+    
+    # File I/O
+    "AttachmentIO",
+    "AttachmentFileInfo",
+    "load_attachment",
+    "save_attachment",
     
     # Exceptions
     "ClientError",

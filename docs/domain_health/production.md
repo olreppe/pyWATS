@@ -26,7 +26,8 @@
 **Pattern Compliance:** ✅ EXCELLENT
 
 **Service Layer:**
-- Location: `src/pywats/domains/production/service.py`
+- Location: `src/pywats/domains/production/async_service.py`
+- Class: `AsyncProductionService` (async-first architecture)
 - Compliance: Perfect delegation
 - Business logic: Unit lifecycle, serial numbers, assembly, verification, phases
 - Issues: None
@@ -41,8 +42,8 @@
 
 **Class Diagram:**
 ```
-ProductionService --> ProductionRepository --> HttpClient
-ProductionService --> Unit, SerialNumber, Assembly, VerificationInfo
+AsyncProductionService --> AsyncProductionRepository --> HttpClient
+AsyncProductionService --> Unit, SerialNumber, Assembly, VerificationInfo
 ```
 
 ---

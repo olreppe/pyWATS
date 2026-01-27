@@ -26,7 +26,8 @@
 **Pattern Compliance:** ✅ GOOD
 
 **Service Layer:**
-- Location: `src/pywats/domains/asset/service.py`
+- Location: `src/pywats/domains/asset/async_service.py`
+- Class: `AsyncAssetService` (async-first architecture)
 - Compliance: Proper delegation
 - Business logic: Equipment tracking, calibration, maintenance, hierarchy, logs
 - Issues: None
@@ -38,8 +39,8 @@
 
 **Class Diagram:**
 ```
-AssetService --> AssetRepository --> HttpClient
-AssetService --> Asset, CalibrationRecord, MaintenanceLog
+AsyncAssetService --> AsyncAssetRepository --> HttpClient
+AsyncAssetService --> Asset, CalibrationRecord, MaintenanceLog
 ```
 
 ---

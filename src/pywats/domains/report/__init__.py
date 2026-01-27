@@ -23,14 +23,17 @@ from .report_models import (
     ChartSeries,
     ChartType,
     SubUnit,
-    Attachment as ReportAttachment,
+    Attachment,  # Primary Attachment class for creating report content
     DeserializationContext,
 )
 from .report_models.uut.steps.sequence_call import SequenceCall, StepList
 
+# Backward compatibility alias
+ReportAttachment = Attachment
+
 # Import query-related models
 from .enums import DateGrouping, ImportMode, ReportType
-from .models import WATSFilter, ReportHeader, Attachment
+from .models import WATSFilter, ReportHeader, AttachmentMetadata
 
 # Filter and query helpers (Phase 1 & 2 refactoring)
 from .filter_builders import (
@@ -56,10 +59,6 @@ from .query_helpers import (
 # Async implementations (primary API)
 from .async_repository import AsyncReportRepository
 from .async_service import AsyncReportService
-
-# Backward-compatible aliases
-ReportRepository = AsyncReportRepository
-ReportService = AsyncReportService
 
 __all__ = [
     # Report Models (UUT/UUR)
@@ -108,10 +107,7 @@ __all__ = [
     "build_orderby_clause",
     "build_query_params",
     "get_default_query_params",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncReportRepository",
     "AsyncReportService",
-    # Backward-compatible aliases
-    "ReportRepository",
-    "ReportService",
 ]

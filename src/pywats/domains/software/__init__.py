@@ -9,10 +9,6 @@ from .models import Package, PackageFile, PackageTag, VirtualFolder
 from .async_repository import AsyncSoftwareRepository
 from .async_service import AsyncSoftwareService
 
-# Backward-compatible aliases
-SoftwareRepository = AsyncSoftwareRepository
-SoftwareService = AsyncSoftwareService
-
 __all__ = [
     # Enums
     "PackageStatus",
@@ -21,10 +17,7 @@ __all__ = [
     "PackageFile",
     "PackageTag",
     "VirtualFolder",
-    # Async implementations (primary API)
+    # Async implementations
     "AsyncSoftwareRepository",
     "AsyncSoftwareService",
-    # Backward-compatible aliases
-    "SoftwareRepository",
-    "SoftwareService",
 ]

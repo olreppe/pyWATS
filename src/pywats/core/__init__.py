@@ -57,15 +57,9 @@ from .retry_handler import (
     RetryContext,
 )
 from .parallel import (
-    # New names (preferred)
     parallel_execute,
     parallel_execute_with_retry,
     ParallelConfig,
-    # Backward compatibility aliases
-    batch_execute,
-    batch_execute_with_retry,
-    BatchConfig,
-    # Utilities
     collect_successes,
     collect_failures,
     partition_results,
@@ -128,10 +122,6 @@ __all__ = [
     "parallel_execute",
     "parallel_execute_with_retry",
     "ParallelConfig",
-    # Backward compatibility aliases for parallel execution
-    "batch_execute",
-    "batch_execute_with_retry",
-    "BatchConfig",
     "collect_successes",
     "collect_failures",
     "partition_results",

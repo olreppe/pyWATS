@@ -26,7 +26,8 @@
 **Pattern Compliance:** ✅ EXCELLENT
 
 **Service Layer:**
-- Location: `src/pywats/domains/rootcause/service.py`
+- Location: `src/pywats/domains/rootcause/async_service.py`
+- Class: `AsyncRootCauseService` (async-first architecture)
 - Compliance: Perfect delegation
 - Business logic: Issue tracking, defect management, status workflows, priorities
 - Issues: None
@@ -38,8 +39,8 @@
 
 **Class Diagram:**
 ```
-RootCauseService --> RootCauseRepository --> HttpClient
-RootCauseService --> Issue, Defect, WorkflowStatus
+AsyncRootCauseService --> AsyncRootCauseRepository --> HttpClient
+AsyncRootCauseService --> Issue, Defect, WorkflowStatus
 ```
 
 ---

@@ -25,7 +25,7 @@ from .uut.steps.sequence_call import SequenceCall
 # UUR classes  
 from .uur.uur_report import UURReport
 from .uur.uur_info import UURInfo
-from .uur.failure import *
+from .uur.uur_sub_unit import UURSubUnit, UURFailure
 from .uur.sub_repair import SubRepair
 
 __all__ = [
@@ -34,5 +34,5 @@ __all__ = [
     'Asset', 'AssetStats', 'Chart', 'ChartSeries', 'ChartType',
     'SubUnit', 'Attachment', 'DeserializationContext',
     'UUTReport', 'UUTInfo', 'Step', 'StepStatus', 'SequenceCall',
-    'UURReport', 'UURInfo', 'SubRepair'
+    'UURReport', 'UURInfo', 'UURSubUnit', 'UURFailure', 'SubRepair'
 ]
