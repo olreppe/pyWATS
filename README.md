@@ -175,7 +175,7 @@ Use caching, batching, and connection pooling for high-performance applications:
 ```python
 import asyncio
 from pywats import AsyncWATS
-from pywats.core.batching import batch_map
+from pywats.core.coalesce import coalesce_map
 
 async def main():
     async with AsyncWATS(

@@ -52,10 +52,20 @@ from .retry import (
     RETRYABLE_STATUS_CODES,
     IDEMPOTENT_METHODS,
 )
-from .batch import (
+from .retry_handler import (
+    RetryHandler,
+    RetryContext,
+)
+from .parallel import (
+    # New names (preferred)
+    parallel_execute,
+    parallel_execute_with_retry,
+    ParallelConfig,
+    # Backward compatibility aliases
     batch_execute,
     batch_execute_with_retry,
     BatchConfig,
+    # Utilities
     collect_successes,
     collect_failures,
     partition_results,
@@ -110,9 +120,15 @@ __all__ = [
     # Retry
     "RetryConfig",
     "RetryExhaustedError",
+    "RetryHandler",
+    "RetryContext",
     "RETRYABLE_STATUS_CODES",
     "IDEMPOTENT_METHODS",
-    # Batch operations
+    # Parallel execution (renamed from batch to avoid WATS production batch confusion)
+    "parallel_execute",
+    "parallel_execute_with_retry",
+    "ParallelConfig",
+    # Backward compatibility aliases for parallel execution
     "batch_execute",
     "batch_execute_with_retry",
     "BatchConfig",

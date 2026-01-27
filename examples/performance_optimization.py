@@ -4,7 +4,7 @@ Performance Optimization Examples for pyWATS.
 Demonstrates usage of:
 1. Enhanced TTL caching for static data
 2. Connection pooling (automatic in HTTP client)
-3. Request batching for bulk operations
+3. Request coalescing for bulk operations
 4. MessagePack serialization for large datasets
 """
 
@@ -14,7 +14,7 @@ from typing import List
 
 from pywats import pyWATS
 from pywats.core.cache import AsyncTTLCache
-from pywats.core.batching import ChunkedBatcher, batch_map
+from pywats.core.coalesce import ChunkedProcessor, coalesce_map
 from pywats.core.performance import Serializer, benchmark_serialization
 
 
@@ -88,13 +88,13 @@ async def example_connection_pooling():
 
 
 # =============================================================================
-# Example 3: Request Batching for Bulk Operations
+# Example 3: Request Coalescing for Bulk Operations
 # =============================================================================
 
-async def example_request_batching():
-    """Demonstrate request batching for bulk operations."""
+async def example_request_coalescing():
+    """Demonstrate request coalescing for bulk operations."""
     print("\n" + "="*60)
-    print("Example 3: Request Batching")
+    print("Example 3: Request Coalescing")
     print("="*60)
     
     api = pyWATS()
@@ -102,8 +102,8 @@ async def example_request_batching():
     # Generate list of part numbers
     part_numbers = [f"PART-{i:05d}" for i in range(100)]
     
-    # Method 1: ChunkedBatcher - process known list in chunks
-    print("\nMethod 1: ChunkedBatcher (100 items in chunks of 20)")
+    # Method 1: ChunkedProcessor - process known list in chunks
+    print("\nMethod 1: ChunkedProcessor (100 items in chunks of 20)")
     
     async def fetch_products_chunk(pns: List[str]) -> List:
         """Fetch multiple products in one call."""
@@ -112,28 +112,28 @@ async def example_request_batching():
         tasks = [api.product.get_product(pn) for pn in pns]
         return await asyncio.gather(*tasks, return_exceptions=True)
     
-    batcher = ChunkedBatcher(
+    processor = ChunkedProcessor(
         process_func=fetch_products_chunk,
         chunk_size=20,
         max_concurrent=5
     )
     
     start = datetime.now()
-    results = await batcher.process_all(part_numbers)
+    results = await processor.process_all(part_numbers)
     duration = (datetime.now() - start).total_seconds()
     
     print(f"✓ Processed {len(part_numbers)} items in {duration:.1f}s")
     print(f"  Chunks: 5 (20 items each)")
     print(f"  Max concurrent chunks: 5")
     
-    # Method 2: batch_map - simple batch mapping
-    print("\nMethod 2: batch_map (with concurrency control)")
+    # Method 2: coalesce_map - simple concurrent mapping
+    print("\nMethod 2: coalesce_map (with concurrency control)")
     
     async def fetch_single_product(pn: str):
         return await api.product.get_product(pn)
     
     start = datetime.now()
-    results = await batch_map(
+    results = await coalesce_map(
         part_numbers[:50],  # First 50
         fetch_single_product,
         batch_size=10,

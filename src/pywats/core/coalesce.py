@@ -1,13 +1,26 @@
 """
-Request batching utilities for bulk operations.
+Request coalescing utilities for bulk operations.
 
-Provides batching support to reduce network round-trips when performing
+Provides request coalescing to reduce network round-trips when performing
 bulk operations like:
 - Querying multiple reports
 - Submitting multiple units
 - Fetching multiple products
 
-This improves performance by combining multiple requests into fewer calls.
+This improves performance by combining multiple individual requests into
+fewer bulk API calls, using a time-based collection window.
+
+Note:
+    This module was renamed from batching.py to coalesce.py to avoid confusion
+    with WATS "production batches" which are a manufacturing concept.
+    
+    Request coalescing collects individual requests over a short time window
+    and combines them into a single bulk API call. This is different from:
+    - pywats.core.parallel: Concurrent execution of multiple operations
+    - Production batches: Manufacturing batch tracking in WATS
+
+Backward Compatibility:
+    BatchConfig and RequestBatcher are still available with original names.
 """
 from typing import TypeVar, Generic, List, Callable, Awaitable, Optional, Dict, Any
 from dataclasses import dataclass, field
@@ -22,66 +35,80 @@ R = TypeVar('R')
 
 
 @dataclass
-class BatchConfig:
-    """Configuration for batch processing."""
+class CoalesceConfig:
+    """Configuration for request coalescing.
+    
+    Attributes:
+        max_batch_size: Maximum items per coalesced request (default: 100)
+        max_wait_time: Maximum time to wait for more items in seconds (default: 0.1)
+        max_concurrent_batches: Maximum concurrent bulk requests (default: 5)
+    """
     max_batch_size: int = 100
     max_wait_time: float = 0.1  # seconds
     max_concurrent_batches: int = 5
 
 
+# Backward compatibility alias
+BatchConfig = CoalesceConfig
+
+
 @dataclass
-class BatchItem(Generic[T, R]):
-    """Single item in a batch request."""
+class CoalesceItem(Generic[T, R]):
+    """Single item in a coalesced request."""
     item: T
     future: asyncio.Future[R] = field(default_factory=asyncio.Future)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
-class RequestBatcher(Generic[T, R]):
+# Backward compatibility alias
+BatchItem = CoalesceItem
+
+
+class RequestCoalescer(Generic[T, R]):
     """
-    Batch multiple individual requests into bulk operations.
+    Coalesce multiple individual requests into bulk operations.
     
     Collects requests over a short time window and processes them
     as a single bulk operation, reducing network overhead.
     
     Example:
-        >>> # Create batcher for product lookups
+        >>> # Create coalescer for product lookups
         >>> async def bulk_get_products(part_numbers: List[str]) -> List[Product]:
         ...     return await api.product.get_products_batch(part_numbers)
         >>>
-        >>> batcher = RequestBatcher(
+        >>> coalescer = RequestCoalescer(
         ...     bulk_func=bulk_get_products,
-        ...     config=BatchConfig(max_batch_size=50, max_wait_time=0.1)
+        ...     config=CoalesceConfig(max_batch_size=50, max_wait_time=0.1)
         ... )
         >>>
-        >>> # Start batcher
-        >>> await batcher.start()
+        >>> # Start coalescer
+        >>> await coalescer.start()
         >>>
-        >>> # Individual requests get automatically batched
-        >>> product1 = await batcher.add("PART-001")
-        >>> product2 = await batcher.add("PART-002")
+        >>> # Individual requests get automatically coalesced
+        >>> product1 = await coalescer.add("PART-001")
+        >>> product2 = await coalescer.add("PART-002")
         >>> # Both requests processed in same bulk call
         >>>
-        >>> await batcher.stop()
+        >>> await coalescer.stop()
     """
     
     def __init__(
         self,
         bulk_func: Callable[[List[T]], Awaitable[List[R]]],
-        config: Optional[BatchConfig] = None
+        config: Optional[CoalesceConfig] = None
     ):
         """
-        Initialize request batcher.
+        Initialize request coalescer.
         
         Args:
-            bulk_func: Async function that processes a batch of items
+            bulk_func: Async function that processes items in bulk
                        and returns results in the same order
-            config: Batch configuration (default: BatchConfig())
+            config: Coalesce configuration (default: CoalesceConfig())
         """
         self._bulk_func = bulk_func
-        self._config = config or BatchConfig()
+        self._config = config or CoalesceConfig()
         
-        self._pending: List[BatchItem[T, R]] = []
+        self._pending: List[CoalesceItem[T, R]] = []
         self._lock = asyncio.Lock()
         self._task: Optional[asyncio.Task] = None
         self._running = False
@@ -94,17 +121,17 @@ class RequestBatcher(Generic[T, R]):
         }
     
     async def start(self) -> None:
-        """Start the batch processor."""
+        """Start the coalescer."""
         if self._running:
-            logger.warning("Batcher already running")
+            logger.warning("Coalescer already running")
             return
         
         self._running = True
         self._task = asyncio.create_task(self._process_loop())
-        logger.info("Request batcher started")
+        logger.info("Request coalescer started")
     
     async def stop(self) -> None:
-        """Stop the batch processor and flush pending items."""
+        """Stop the coalescer and flush pending items."""
         if not self._running:
             return
         
@@ -119,29 +146,29 @@ class RequestBatcher(Generic[T, R]):
             except asyncio.CancelledError:
                 pass
         
-        logger.info(f"Request batcher stopped. Stats: {self._stats}")
+        logger.info(f"Request coalescer stopped. Stats: {self._stats}")
     
     async def add(self, item: T) -> R:
         """
-        Add item to batch queue and wait for result.
+        Add item to coalesce queue and wait for result.
         
         Args:
-            item: Item to add to batch
+            item: Item to add to queue
             
         Returns:
             Result from bulk processing
         """
         if not self._running:
-            raise RuntimeError("Batcher not started. Call start() first.")
+            raise RuntimeError("Coalescer not started. Call start() first.")
         
-        batch_item = BatchItem[T, R](item=item)
+        coalesce_item = CoalesceItem[T, R](item=item)
         
         async with self._lock:
-            self._pending.append(batch_item)
+            self._pending.append(coalesce_item)
             self._stats['total_items'] += 1
         
         # Wait for result
-        return await batch_item.future
+        return await coalesce_item.future
     
     async def _flush(self) -> None:
         """Process all pending items immediately."""
@@ -180,14 +207,14 @@ class RequestBatcher(Generic[T, R]):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in batch processing loop: {e}")
+                logger.error(f"Error in coalesce processing loop: {e}")
     
-    async def _process_batch(self, batch: List[BatchItem[T, R]]) -> None:
+    async def _process_batch(self, batch: List[CoalesceItem[T, R]]) -> None:
         """
-        Process a batch of items.
+        Process a coalesced batch of items.
         
         Args:
-            batch: List of batch items to process
+            batch: List of coalesced items to process
         """
         if not batch:
             return
@@ -207,9 +234,9 @@ class RequestBatcher(Generic[T, R]):
                 )
             
             # Set results on futures
-            for batch_item, result in zip(batch, results):
-                if not batch_item.future.done():
-                    batch_item.future.set_result(result)
+            for coalesce_item, result in zip(batch, results):
+                if not coalesce_item.future.done():
+                    coalesce_item.future.set_result(result)
             
             # Update stats
             self._stats['total_batches'] += 1
@@ -218,22 +245,22 @@ class RequestBatcher(Generic[T, R]):
                 batch_size
             )
             
-            logger.debug(f"Processed batch of {batch_size} items")
+            logger.debug(f"Processed coalesced batch of {batch_size} items")
             
         except Exception as e:
             # Set exception on all futures
-            for batch_item in batch:
-                if not batch_item.future.done():
-                    batch_item.future.set_exception(e)
+            for coalesce_item in batch:
+                if not coalesce_item.future.done():
+                    coalesce_item.future.set_exception(e)
             
-            logger.error(f"Error processing batch: {e}")
+            logger.error(f"Error processing coalesced batch: {e}")
     
     @property
     def stats(self) -> Dict[str, Any]:
-        """Get batcher statistics."""
+        """Get coalescer statistics."""
         return dict(self._stats)
     
-    async def __aenter__(self) -> "RequestBatcher[T, R]":
+    async def __aenter__(self) -> "RequestCoalescer[T, R]":
         """Context manager entry."""
         await self.start()
         return self
@@ -243,11 +270,15 @@ class RequestBatcher(Generic[T, R]):
         await self.stop()
 
 
-class ChunkedBatcher(Generic[T, R]):
+# Backward compatibility alias
+RequestBatcher = RequestCoalescer
+
+
+class ChunkedProcessor(Generic[T, R]):
     """
     Process large lists in chunks to avoid overwhelming the server.
     
-    Unlike RequestBatcher which batches over time, ChunkedBatcher
+    Unlike RequestCoalescer which coalesces over time, ChunkedProcessor
     splits a known list into manageable chunks.
     
     Example:
@@ -370,3 +401,23 @@ async def batch_map(
         results.extend(chunk_results)
     
     return results
+
+
+# Backward compatibility alias
+ChunkedBatcher = ChunkedProcessor
+
+
+__all__ = [
+    # New names (preferred)
+    "CoalesceConfig",
+    "CoalesceItem",
+    "RequestCoalescer",
+    "ChunkedProcessor",
+    # Backward compatibility aliases (deprecated)
+    "BatchConfig",
+    "BatchItem", 
+    "RequestBatcher",
+    "ChunkedBatcher",
+    # Utilities
+    "batch_map",
+]

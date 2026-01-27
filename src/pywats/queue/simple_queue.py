@@ -6,6 +6,11 @@ All reports are stored in WSJF (WATS JSON Format).
 
 For production deployments with robust file watching, converters,
 and advanced retry logic, use pywats_client.ClientService instead.
+
+.. deprecated::
+    SimpleQueue has file operations in the API layer which violates
+    the "memory-only" design principle. Use pywats.queue.MemoryQueue
+    or pywats_client.queue.PersistentQueue instead.
 """
 
 import json
@@ -15,20 +20,34 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Union
 from dataclasses import dataclass
-from enum import Enum
+import warnings
 
 from .formats import WSJFConverter
 from ..shared.stats import QueueProcessingResult
+from ..shared.enums import QueueItemStatus
 
 logger = logging.getLogger(__name__)
 
 
-class QueueStatus(Enum):
-    """Status of a queued report."""
-    PENDING = "pending"      # Waiting to be submitted
-    SUBMITTING = "submitting"  # Currently being submitted
-    ERROR = "error"          # Submission failed
-    COMPLETED = "completed"  # Successfully submitted
+# Legacy alias for backward compatibility - maps to unified QueueItemStatus
+# SUBMITTING maps to PROCESSING, ERROR maps to FAILED
+class QueueStatus:
+    """
+    Legacy status enum for SimpleQueue compatibility.
+    
+    .. deprecated::
+        Use QueueItemStatus from pywats.shared.enums instead.
+        
+    Mapping:
+        QueueStatus.PENDING → QueueItemStatus.PENDING
+        QueueStatus.SUBMITTING → QueueItemStatus.PROCESSING  
+        QueueStatus.ERROR → QueueItemStatus.FAILED
+        QueueStatus.COMPLETED → QueueItemStatus.COMPLETED
+    """
+    PENDING = QueueItemStatus.PENDING
+    SUBMITTING = QueueItemStatus.PROCESSING  # Legacy name
+    ERROR = QueueItemStatus.FAILED  # Legacy name
+    COMPLETED = QueueItemStatus.COMPLETED
 
 
 @dataclass
@@ -36,7 +55,7 @@ class QueuedReport:
     """Represents a report in the queue."""
     
     file_path: Path
-    status: QueueStatus
+    status: QueueItemStatus  # Use unified enum (QueueStatus is legacy alias)
     created_at: datetime
     attempts: int = 0
     last_error: Optional[str] = None
@@ -50,12 +69,12 @@ class QueuedReport:
     @property
     def is_pending(self) -> bool:
         """Check if report is pending."""
-        return self.status == QueueStatus.PENDING
+        return self.status == QueueItemStatus.PENDING
     
     @property
     def is_error(self) -> bool:
         """Check if report has errors."""
-        return self.status == QueueStatus.ERROR
+        return self.status == QueueItemStatus.FAILED
 
 
 class SimpleQueue:

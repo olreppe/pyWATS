@@ -1,15 +1,18 @@
-"""Unit tests for batch operations.
+"""Unit tests for parallel operations.
 
-Tests the batch execution utilities in pywats.core.batch.
+Tests the parallel execution utilities in pywats.core.parallel.
+Note: Tests use legacy alias names (batch_execute, BatchConfig) to verify
+backward compatibility. New code should use parallel_execute, ParallelConfig.
 """
 import pytest
 from unittest.mock import Mock, patch
 import time
 
-from pywats.core.batch import (
-    batch_execute,
-    batch_execute_with_retry,
-    BatchConfig,
+# Using legacy aliases to test backward compatibility
+from pywats.core.parallel import (
+    batch_execute,  # Legacy alias for parallel_execute
+    batch_execute_with_retry,  # Legacy alias for parallel_execute_with_retry
+    BatchConfig,  # Legacy alias for ParallelConfig
     collect_successes,
     collect_failures,
     partition_results,

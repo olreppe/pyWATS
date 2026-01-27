@@ -1091,31 +1091,31 @@ async with AsyncWATS(base_url="https://...", token="...") as api:
 
 **Performance Impact:** 3-5x faster for bulk operations, automatic connection reuse.
 
-### Request Batching
+### Request Coalescing
 
-Process multiple items efficiently with built-in batching utilities:
+Process multiple items efficiently with built-in coalescing utilities:
 
 ```python
 from pywats import AsyncWATS
-from pywats.core.batching import ChunkedBatcher, batch_map
+from pywats.core.coalesce import ChunkedProcessor, coalesce_map
 
 async def main():
     async with AsyncWATS(base_url="https://...", token="...") as api:
         serial_numbers = [f"SN-{i:05d}" for i in range(1000)]
         
-        # Method 1: ChunkedBatcher for size-based batching
-        async with ChunkedBatcher(
+        # Method 1: ChunkedProcessor for size-based processing
+        async with ChunkedProcessor(
             processor=lambda sns: api.production.get_units_batch(sns),
             chunk_size=50,  # Process 50 at a time
             max_concurrent=5  # Up to 5 concurrent batches
         ) as batcher:
             units = await batcher.process(serial_numbers)
         
-        # Method 2: batch_map for simple concurrent mapping
+        # Method 2: coalesce_map for simple concurrent mapping
         async def fetch_unit(sn: str):
             return await api.production.get_unit(sn, "WIDGET-001")
         
-        units = await batch_map(
+        units = await coalesce_map(
             items=serial_numbers,
             func=fetch_unit,
             batch_size=50,
@@ -1179,7 +1179,7 @@ Use all optimizations together for maximum performance:
 ```python
 from pywats import AsyncWATS
 from pywats.core.cache import AsyncTTLCache
-from pywats.core.batching import batch_map
+from pywats.core.coalesce import coalesce_map
 
 async def process_production_data():
     async with AsyncWATS(base_url="https://...", token="...") as api:
@@ -1207,7 +1207,7 @@ async def process_production_data():
                 return unit
             
             # Process in batches with concurrency control
-            units = await batch_map(
+            units = await coalesce_map(
                 items=serial_numbers,
                 func=fetch_with_cache,
                 batch_size=100,
@@ -1363,19 +1363,19 @@ def get_box_build_template(api, part_number, revision):
 
 ---
 
-## Batch Operations & Pagination
+## Parallel Operations & Pagination
 
-### Batch Operations
+### Parallel Operations
 
 Execute multiple API calls concurrently for better performance:
 
 ```python
-from pywats.core import batch_execute, collect_successes, collect_failures
+from pywats.core import parallel_execute, collect_successes, collect_failures
 
 # Fetch multiple products in parallel
 part_numbers = ["PN-001", "PN-002", "PN-003", "PN-004", "PN-005"]
 
-results = batch_execute(
+results = parallel_execute(
     keys=part_numbers,
     operation=lambda pn: api.product.get_product(pn),
     max_workers=5  # Concurrent threads (default: 10)

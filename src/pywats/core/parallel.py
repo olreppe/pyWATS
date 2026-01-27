@@ -1,13 +1,18 @@
-"""Batch execution utilities for concurrent operations.
+"""Parallel execution utilities for concurrent operations.
 
 This module provides utilities for executing multiple operations concurrently
 with configurable concurrency limits and comprehensive error handling.
 
+Note:
+    This module was renamed from batch.py to parallel.py to avoid confusion
+    with WATS "production batches" which are a manufacturing concept.
+    The functions here perform PARALLEL EXECUTION, not production batching.
+
 Usage:
-    from pywats.core.batch import batch_execute, BatchConfig
+    from pywats.core.parallel import parallel_execute, ParallelConfig
 
     # Execute multiple operations concurrently
-    results = batch_execute(
+    results = parallel_execute(
         keys=["PN-001", "PN-002", "PN-003"],
         operation=lambda pn: api.product.get_product(pn),
         max_workers=10,
@@ -24,9 +29,12 @@ Key Features:
 - Concurrent execution using ThreadPoolExecutor
 - Configurable concurrency limits (default: 10)
 - Results preserve input order
-- Individual failures don't break the batch
+- Individual failures don't break the parallel run
 - Progress callback support
 - Type-safe Result[T] return type
+
+Backward Compatibility:
+    batch_execute and BatchConfig are still available as aliases.
 """
 from typing import TypeVar, Callable, List, Optional, Any, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -41,8 +49,8 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class BatchConfig:
-    """Configuration for batch operations.
+class ParallelConfig:
+    """Configuration for parallel operations.
     
     Attributes:
         max_workers: Maximum concurrent operations (default: 10)
@@ -50,8 +58,8 @@ class BatchConfig:
         timeout: Timeout per operation in seconds (default: None)
         
     Example:
-        >>> config = BatchConfig(max_workers=5, fail_fast=True)
-        >>> results = batch_execute(keys, operation, config=config)
+        >>> config = ParallelConfig(max_workers=5, fail_fast=True)
+        >>> results = parallel_execute(keys, operation, config=config)
     """
     max_workers: int = 10
     fail_fast: bool = False
@@ -67,14 +75,14 @@ class BatchConfig:
             )
 
 
-def batch_execute(
+def parallel_execute(
     keys: List[K],
     operation: Callable[[K], T],
     max_workers: int = 10,
     on_progress: Optional[Callable[[int, int], None]] = None,
-    config: Optional[BatchConfig] = None,
+    config: Optional["ParallelConfig"] = None,
 ) -> List[Result[T]]:
-    """Execute batch operations concurrently with error handling.
+    """Execute operations concurrently with error handling.
     
     Executes the given operation for each key concurrently using a thread pool.
     Results are returned in the same order as the input keys.
@@ -84,7 +92,7 @@ def batch_execute(
         operation: Function to call for each key, returns T
         max_workers: Maximum concurrent operations (default: 10, overridden by config)
         on_progress: Optional callback (completed, total) for progress tracking
-        config: Optional BatchConfig for advanced settings
+        config: Optional ParallelConfig for advanced settings
         
     Returns:
         List of Result[T] in same order as input keys.
@@ -94,7 +102,7 @@ def batch_execute(
         >>> def get_product(part_number: str) -> Product:
         ...     return api.product.get_product(part_number)
         ...
-        >>> results = batch_execute(
+        >>> results = parallel_execute(
         ...     keys=["PN-001", "PN-002", "PN-003"],
         ...     operation=get_product,
         ...     max_workers=5,
@@ -115,7 +123,7 @@ def batch_execute(
         return []
     
     # Use config if provided, otherwise use max_workers parameter
-    effective_config = config or BatchConfig(max_workers=max_workers)
+    effective_config = config or ParallelConfig(max_workers=max_workers)
     workers = effective_config.max_workers
     
     # Pre-allocate results list to maintain order
@@ -193,20 +201,20 @@ def batch_execute(
             )
     
     logger.debug(
-        f"Batch completed: {sum(1 for r in results if r.is_success)}/{len(keys)} succeeded"
+        f"Parallel execution completed: {sum(1 for r in results if r.is_success)}/{len(keys)} succeeded"
     )
     
     return results
 
 
-def batch_execute_with_retry(
+def parallel_execute_with_retry(
     keys: List[K],
     operation: Callable[[K], T],
     max_workers: int = 10,
     max_retries: int = 3,
     on_progress: Optional[Callable[[int, int], None]] = None,
 ) -> List[Result[T]]:
-    """Execute batch operations with automatic retry for failed items.
+    """Execute operations concurrently with automatic retry for failed items.
     
     First attempts all operations. Then retries failed operations up to
     max_retries times with exponential backoff.
@@ -222,7 +230,7 @@ def batch_execute_with_retry(
         List of Result[T] in same order as input keys
         
     Example:
-        >>> results = batch_execute_with_retry(
+        >>> results = parallel_execute_with_retry(
         ...     keys=part_numbers,
         ...     operation=api.product.get_product,
         ...     max_retries=3,
@@ -230,7 +238,7 @@ def batch_execute_with_retry(
     """
     import time
     
-    results = batch_execute(keys, operation, max_workers, on_progress)
+    results = parallel_execute(keys, operation, max_workers, on_progress)
     
     for attempt in range(max_retries):
         # Find failed indices
@@ -252,7 +260,7 @@ def batch_execute_with_retry(
         
         # Retry failed items
         failed_keys = [keys[i] for i in failed_indices]
-        retry_results = batch_execute(failed_keys, operation, max_workers)
+        retry_results = parallel_execute(failed_keys, operation, max_workers)
         
         # Update results
         for idx, retry_result in zip(failed_indices, retry_results):
@@ -262,16 +270,16 @@ def batch_execute_with_retry(
 
 
 def collect_successes(results: List[Result[T]]) -> List[T]:
-    """Extract successful values from batch results.
+    """Extract successful values from parallel results.
     
     Args:
-        results: List of Result[T] from batch_execute
+        results: List of Result[T] from parallel_execute
         
     Returns:
         List of successful values (failures are excluded)
         
     Example:
-        >>> results = batch_execute(keys, operation)
+        >>> results = parallel_execute(keys, operation)
         >>> products = collect_successes(results)
         >>> print(f"Got {len(products)} products")
     """
@@ -279,16 +287,16 @@ def collect_successes(results: List[Result[T]]) -> List[T]:
 
 
 def collect_failures(results: List[Result[T]]) -> List[Failure]:
-    """Extract failures from batch results.
+    """Extract failures from parallel results.
     
     Args:
-        results: List of Result[T] from batch_execute
+        results: List of Result[T] from parallel_execute
         
     Returns:
         List of Failure objects
         
     Example:
-        >>> results = batch_execute(keys, operation)
+        >>> results = parallel_execute(keys, operation)
         >>> failures = collect_failures(results)
         >>> for f in failures:
         ...     print(f"Error: {f.error_code} - {f.message}")
@@ -302,13 +310,13 @@ def partition_results(
     """Partition results into successes and failures.
     
     Args:
-        results: List of Result[T] from batch_execute
+        results: List of Result[T] from parallel_execute
         
     Returns:
         Tuple of (successes, failures)
         
     Example:
-        >>> results = batch_execute(keys, operation)
+        >>> results = parallel_execute(keys, operation)
         >>> successes, failures = partition_results(results)
         >>> print(f"Success: {len(successes)}, Failed: {len(failures)}")
     """
@@ -348,10 +356,21 @@ def _is_retryable(failure: Failure) -> bool:
 
 
 __all__ = [
+    # New names (preferred)
+    "parallel_execute",
+    "parallel_execute_with_retry",
+    "ParallelConfig",
+    # Backward compatibility aliases (deprecated)
     "batch_execute",
     "batch_execute_with_retry",
     "BatchConfig",
+    # Utilities
     "collect_successes",
     "collect_failures",
     "partition_results",
 ]
+
+# Backward compatibility aliases
+BatchConfig = ParallelConfig
+batch_execute = parallel_execute
+batch_execute_with_retry = parallel_execute_with_retry

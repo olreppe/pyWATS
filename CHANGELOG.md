@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Unified Queue Status Enum** - `QueueItemStatus` in `pywats.shared.enums` consolidates queue states:
+  - Single source of truth for PENDING, PROCESSING, COMPLETED, FAILED, SUSPENDED states
+  - Helper properties: `is_terminal`, `is_active`, `can_process`
+  - Backward compatible with legacy `QueueStatus` names (SUBMITTING→PROCESSING, ERROR→FAILED)
+
+- **Retry Handler** - `RetryHandler` class in `pywats.core.retry_handler` provides unified retry execution:
+  - `execute_sync()` and `execute_async()` methods for consistent retry behavior
+  - `RetryContext` for tracking attempt state, delays, and timing
+  - Encapsulates retry decision logic, exponential backoff, and logging
+
 - **Platform Native Installers** - Complete installer infrastructure for all supported platforms:
   - **Windows MSI Installer** (`deployment/windows/`)
     - cx_Freeze bundling with Windows Service support
@@ -72,6 +82,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated all internal documentation links
   - Moved deployment files to `deployment/` folder (DEB, RPM, SELinux, Packer, Docker)
   - Updated `MANIFEST.in` to use recursive includes and prune deployment folder
+- **Renamed Core Modules for Clarity** - Avoid confusion with WATS production "batch" concept:
+  - `pywats.core.batch` → `pywats.core.parallel` (concurrent execution with ThreadPoolExecutor)
+  - `pywats.core.batching` → `pywats.core.coalesce` (time-based request coalescing)
+  - **Function renames**: `batch_execute` → `parallel_execute`, `BatchConfig` → `ParallelConfig`
+  - **Class renames**: `RequestBatcher` → `RequestCoalescer`, `ChunkedBatcher` → `ChunkedProcessor`
+  - **Full backward compatibility**: All old names work as aliases
+
 - **Terminology Standardization** - Unified "Module" → "Domain" terminology across all documentation:
   - Renamed `docs/modules/` → `docs/domains/`
   - Renamed usage guides: `*-module.md` → `*-domain.md`

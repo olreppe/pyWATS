@@ -329,3 +329,52 @@ class SortDirection(str, Enum):
     
     DESC = "desc"
     """Descending order (largest first)."""
+
+
+class QueueItemStatus(str, Enum):
+    """
+    Unified status for queue items across all queue implementations.
+    
+    This is the single source of truth for queue item states, used by:
+    - pywats.queue.MemoryQueue (in-memory API queue)
+    - pywats_client.queue.PersistentQueue (file-backed client queue)
+    - pywats_client.service.PendingWatcher (report submission)
+    
+    State transitions:
+        PENDING → PROCESSING → COMPLETED (success)
+                            → FAILED (error, may retry)
+                            → SUSPENDED (paused, will retry)
+    
+    Example:
+        >>> from pywats.shared import QueueItemStatus
+        >>> item.status = QueueItemStatus.PROCESSING
+    """
+    PENDING = "pending"
+    """Item is waiting to be processed."""
+    
+    PROCESSING = "processing"
+    """Item is currently being processed."""
+    
+    COMPLETED = "completed"
+    """Item was successfully processed."""
+    
+    FAILED = "failed"
+    """Item processing failed (may be retried based on policy)."""
+    
+    SUSPENDED = "suspended"
+    """Item is temporarily suspended (will retry after delay)."""
+    
+    @property
+    def is_terminal(self) -> bool:
+        """Check if this is a terminal state (no more transitions)."""
+        return self in (QueueItemStatus.COMPLETED, QueueItemStatus.FAILED)
+    
+    @property
+    def is_active(self) -> bool:
+        """Check if item is active (pending or processing)."""
+        return self in (QueueItemStatus.PENDING, QueueItemStatus.PROCESSING)
+    
+    @property
+    def can_process(self) -> bool:
+        """Check if item can be picked up for processing."""
+        return self in (QueueItemStatus.PENDING, QueueItemStatus.SUSPENDED)

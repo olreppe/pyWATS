@@ -20,22 +20,18 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Union, Callable, Iterator
 from dataclasses import dataclass, field
-from enum import Enum
 from collections import deque
 import uuid
 
 from ..shared.stats import QueueStats
+from ..shared.enums import QueueItemStatus
 
 logger = logging.getLogger(__name__)
 
 
-class QueueItemStatus(Enum):
-    """Status of a queued item."""
-    PENDING = "pending"          # Waiting to be processed
-    PROCESSING = "processing"    # Currently being processed
-    COMPLETED = "completed"      # Successfully processed
-    FAILED = "failed"            # Processing failed
-    SUSPENDED = "suspended"      # Temporarily suspended (will retry)
+# Re-export QueueItemStatus for backward compatibility
+# New code should import from pywats.shared.enums
+__all__ = ["QueueItemStatus", "QueueItem", "BaseQueue", "MemoryQueue", "QueueHooks"]
 
 
 @dataclass
