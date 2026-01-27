@@ -47,7 +47,6 @@ from pywats.domains.report.report_models import (
     StepStatus, 
     ReportStatus, 
     SequenceCall,
-    StepGroup,
 )
 from pywats.domains.report.report_models.uut.steps import CompOp
 
@@ -62,6 +61,13 @@ from pywats_client.converters.models import (
     ArgumentDefinition,
     ArgumentType,
 )
+
+
+class StepGroup(str, Enum):
+    """Step group types for ATML conversion."""
+    MAIN = "Main"
+    SETUP = "Setup"
+    CLEANUP = "Cleanup"
 
 
 class ATMLVersion(Enum):

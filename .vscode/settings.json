@@ -39,7 +39,7 @@
     ],
     "cSpell.language": "en",
     "python.testing.pytestArgs": [
-        "api-tests"
+        "tests"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
