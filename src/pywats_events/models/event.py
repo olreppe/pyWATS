@@ -228,6 +228,11 @@ class Event:
         return self.metadata.event_id
     
     @property
+    def event_id(self) -> str:
+        """Alias for id property (for compatibility)."""
+        return self.metadata.event_id
+    
+    @property
     def source(self) -> str:
         """Shortcut to source in metadata."""
         return self.metadata.source
@@ -240,6 +245,8 @@ class Event:
     def to_dict(self) -> Dict[str, Any]:
         """Convert event to dictionary for serialization."""
         return {
+            "event_id": self.event_id,
+            "timestamp": self.timestamp.isoformat(),
             "event_type": str(self.event_type),
             "payload": self.payload,
             "metadata": self.metadata.to_dict(),

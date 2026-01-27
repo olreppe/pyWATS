@@ -326,6 +326,8 @@ class TestQueueManagement:
     
     def test_queue_max_size(self, tmp_path, sample_report):
         """Test queue size limit enforcement"""
+        from pywats_client.exceptions import QueueFullError
+        
         queue = PersistentQueue(queue_dir=tmp_path / "queue", auto_load=False, max_size=10)
         
         # Add items up to limit
@@ -335,8 +337,8 @@ class TestQueueManagement:
         # Verify at limit
         assert queue.size == 10
         
-        # Try to exceed limit
-        with pytest.raises(ValueError):  # Should raise ValueError for full queue
+        # Try to exceed limit - should raise QueueFullError
+        with pytest.raises(QueueFullError):
             queue.add(sample_report)
     
     def test_delete_completed_items(self, tmp_path, sample_report):
