@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 project = 'pyWATS'
 copyright = '2024-2026, Virinco AS'
 author = 'Virinco AS'
-release = '0.1.0b37'
+release = '0.1.0b39'
 version = '0.1.0'
 
 # -- General configuration ---------------------------------------------------
