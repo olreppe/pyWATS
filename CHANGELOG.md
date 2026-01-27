@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Type Safety - High Priority Fixes**
+  - `pyWATS.get_version()` return type corrected from `dict` to `Optional[str]`
+  - Removed nested `PostProcessAction` enum from `converter_pool.py` - now imports canonical version from `converters/models.py`
+  - Verified `ConversionStatus`, `ConverterResult`, `QueueProcessingResult` already consolidated
+
 - **GitHub Workflow Path References** - Fixed all stale path references in CI workflows after reorganization:
   - `.github/workflows/test.yml`: Updated `api-tests/` → `tests/`
   - `.github/workflows/test-platforms.yml`: Updated test paths and deployment folder references

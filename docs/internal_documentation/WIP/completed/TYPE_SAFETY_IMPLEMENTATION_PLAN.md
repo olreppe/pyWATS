@@ -30,7 +30,7 @@ This implementation plan addresses all type safety issues identified in the TYPE
   - `FileInfo` - Dataclass with file metadata
   - `ConverterResult` - Full version with retry support
 - **Backward Compatibility:** ✅ All imports from `base.py` still work
-- **Note:** `converter_pool.py` has intentionally different internal `PostProcessAction` (C# compatible values)
+- **Note:** `converter_pool.py` nested `PostProcessAction` removed (January 27, 2026) - now imports from `models.py`
 
 ### 1.2 Consolidate CompOp/CompOperator Enum ✅ COMPLETED
 - [x] **Status:** Completed - January 26, 2026

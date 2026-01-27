@@ -16,8 +16,8 @@ class DummyAnalyticsRepository:
         self.last_filter: Optional[WATSFilter] = None
         self.headers_requested: bool = False
 
-    async def get_version(self) -> Dict[str, Any]:
-        return {"build": "1.0"}
+    async def get_version(self) -> Optional[str]:
+        return "1.0.0"
 
     async def get_processes(
         self,
