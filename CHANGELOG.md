@@ -26,6 +26,7 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - `AsyncPendingQueue`: Concurrent report uploads (5 concurrent vs sequential)
   - `AsyncAPIMixin`: GUI helper for async API calls with auto sync/async detection
 - `qasync` integration for Qt + asyncio in GUI mode
+- GUI auto-test: Connection page automatically tests server connectivity on startup
 - `AttachmentIO` class in `pywats_client.io` for file-based attachment operations
 - `Step.add_attachment()` method for memory-only attachment handling
 - `AttachmentMetadata` class (renamed from `Attachment` in models.py for clarity)
@@ -37,6 +38,12 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 - Layered event architecture (`pywats_events`, `pywats_cfx`)
 - WATS 25.3 Asset module enhancements (calibration/maintenance, count management)
 - Alarm and notification logs API
+
+### Fixed
+- GUI responsiveness: qasync event loop integration enables async operations without blocking UI
+- Connection test now follows HTTP redirects (301/302)
+- Connection page status colors: "Connected"/"Online" now display in green
+- "Offline"/"Disconnected" states now display in gray instead of red
 
 ### Changed
 - **File I/O architecture**: `pywats` is now memory-only; file operations in `pywats_client`

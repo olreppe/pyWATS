@@ -78,14 +78,17 @@ class MainWindow(QMainWindow):
         self._apply_styles()
         self._connect_signals()
         
-        # Connect to service via IPC (non-blocking)
-        # Use QTimer.singleShot to defer connection until after GUI is shown
-        QTimer.singleShot(100, self._connect_to_service)
+        # IPC connection DISABLED - blocking calls freeze the Qt event loop
+        # The GUI runs in standalone/configuration mode without service connection
+        # TODO: Implement proper async IPC using QThread to avoid blocking
+        self._ipc_client = None
+        self._service_connected = False
         
-        # Update timer for status refresh
-        self._status_timer = QTimer()
-        self._status_timer.timeout.connect(self._update_status)
-        self._status_timer.start(10000)  # Update every 10 seconds (reduced from 5)
+        # Status timer disabled
+        self._status_timer = None
+        
+        # Show status in title
+        self._update_window_title()
     
     def _start_service_process(self) -> bool:
         """

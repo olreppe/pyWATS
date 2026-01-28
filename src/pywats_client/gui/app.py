@@ -1,7 +1,7 @@
 """
 Qt Application Entry Point
 
-Provides the main GUI application runner.
+Provides the main GUI application runner with asyncio integration via qasync.
 """
 
 import sys
@@ -13,6 +13,12 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtNetwork import QLocalSocket, QLocalServer
+
+try:
+    import qasync
+    HAS_QASYNC = True
+except ImportError:
+    HAS_QASYNC = False
 
 from .main_window import MainWindow
 from .login_window import LoginWindow
@@ -138,5 +144,14 @@ def run_gui(config: Optional[ClientConfig] = None, config_path: Optional[Path] =
     
     window.show()
     
-    # Run event loop
-    return qt_app.exec()
+    # Run event loop with asyncio integration
+    if HAS_QASYNC:
+        # Use qasync for asyncio integration - this enables asyncio.create_task() in GUI code
+        loop = qasync.QEventLoop(qt_app)
+        asyncio.set_event_loop(loop)
+        
+        with loop:
+            return loop.run_forever()
+    else:
+        # Fallback to standard Qt event loop (no async support)
+        return qt_app.exec()

@@ -437,23 +437,63 @@ await pool.run()
 
 ### GUI Integration (qasync)
 
-For GUI mode, the async service integrates with Qt using `qasync`:
+The GUI uses `qasync` to integrate Python's asyncio event loop with Qt's event loop,
+enabling non-blocking async operations directly in the GUI without freezing the UI.
+
+**Application Startup (`gui/app.py`):**
 
 ```python
 import qasync
 from PySide6.QtWidgets import QApplication
 
-app = QApplication(sys.argv)
-loop = qasync.QEventLoop(app)
-asyncio.set_event_loop(loop)
+def run_gui(config):
+    qt_app = QApplication(sys.argv)
+    
+    # Setup window, config, etc.
+    window = MainWindow(config)
+    window.show()
+    
+    # Use qasync for asyncio integration
+    loop = qasync.QEventLoop(qt_app)
+    asyncio.set_event_loop(loop)
+    
+    with loop:
+        return loop.run_forever()
+```
 
-# Run async service alongside Qt
-async def main():
-    service = AsyncClientService()
-    await service.run()
+**GUI Pages with Async Operations:**
 
-with loop:
-    loop.run_until_complete(main())
+GUI pages can use `asyncio.create_task()` directly for non-blocking operations:
+
+```python
+class ConnectionPage(BasePage):
+    def _on_test_connection(self) -> None:
+        """Handle test button click"""
+        self._test_btn.setEnabled(False)
+        self._test_btn.setText("Testing...")
+        
+        # Run async test - doesn't block UI
+        asyncio.create_task(self._run_connection_test())
+    
+    async def _run_connection_test(self) -> None:
+        """Test connection asynchronously"""
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(f"{url}/api/Report/wats/info")
+            # Update UI based on response
+            self._show_test_result(response.status_code == 200)
+```
+
+**Auto-Test on Startup:**
+
+The Connection page automatically tests the connection when first displayed:
+
+```python
+def showEvent(self, event) -> None:
+    """Called when page becomes visible"""
+    super().showEvent(event)
+    if self._auto_test_pending and self.config.service_address:
+        self._auto_test_pending = False
+        asyncio.create_task(self._run_connection_test(auto=True))
 ```
 
 #### AsyncAPIMixin

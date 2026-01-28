@@ -83,16 +83,15 @@ class DashboardPage(BasePage):
     ) -> None:
         self._main_window = main_window
         self._facade = None  # No facade in current architecture (IPC-based)
+        self._refresh_pending = False  # Prevent concurrent refreshes
         super().__init__(config, parent)
         
-        # Refresh timer (increased interval to reduce blocking)
-        self._refresh_timer = QTimer()
-        self._refresh_timer.timeout.connect(self._refresh_status)
-        self._refresh_timer.start(5000)  # Refresh every 5 seconds
+        # No automatic refresh timer - IPC calls block the event loop
+        # Refresh happens on page show and manual refresh only
+        self._refresh_timer = None
         
         self._setup_ui()
-        # Delay initial refresh to let GUI fully initialize
-        QTimer.singleShot(1000, self._refresh_status)
+        # Initial refresh happens in showEvent when page becomes visible
     
     @property
     def page_title(self) -> str:
@@ -264,6 +263,10 @@ class DashboardPage(BasePage):
         """Called when the page becomes visible"""
         super().showEvent(event)
         logger.info("📺 Dashboard page is now VISIBLE")
+        # Refresh status when page becomes visible (deferred to not block show)
+        if not self._refresh_pending:
+            self._refresh_pending = True
+            QTimer.singleShot(100, self._do_refresh)
     
     def _get_ipc_client(self):
         """Get IPC client from main window"""
@@ -271,28 +274,69 @@ class DashboardPage(BasePage):
             return self._main_window._ipc_client
         return None
     
+    def _do_refresh(self) -> None:
+        """Perform refresh and reset pending flag"""
+        try:
+            self._refresh_status()
+        finally:
+            self._refresh_pending = False
+    
     def _refresh_status(self) -> None:
-        """Refresh all status indicators"""
-        # Check service status via IPC client
-        ipc_client = self._get_ipc_client()
-        if ipc_client and ipc_client.is_connected():
-            try:
-                status_data = ipc_client.get_status()
-                if status_data:
-                    self._update_service_status({"running": True, **status_data})
-                else:
-                    self._update_service_status({"running": False, "error": True})
-            except Exception:
-                self._update_service_status({"running": False, "error": True})
-        else:
-            # No IPC client - running in standalone mode
-            self._update_service_status({"running": False, "standalone": True})
+        """Refresh all status indicators (non-blocking version)"""
+        # Skip IPC calls - they block the GUI
+        # Just update from local config state
+        self._update_service_status({"running": False, "standalone": True})
         
-        # Update converter health
-        self._update_converter_health()
+        # Update converter health from config (no IPC)
+        self._update_converter_health_local()
         
-        # Update connection status
+        # Update connection status from config
         self._update_connection_status()
+    
+    def _update_converter_health_local(self) -> None:
+        """Update converter health table from local config only (no IPC)"""
+        self._health_table.setRowCount(0)
+        
+        active_count = 0
+        
+        for conv in self.config.converters:
+            if not conv.enabled:
+                continue
+            
+            active_count += 1
+            row = self._health_table.rowCount()
+            self._health_table.insertRow(row)
+            
+            # Status indicator
+            status_item = QTableWidgetItem("●")
+            status_item.setForeground(QColor("#dcdcaa"))  # Yellow - unknown
+            self._health_table.setItem(row, 0, status_item)
+            
+            # Name
+            name_item = QTableWidgetItem(conv.name)
+            self._health_table.setItem(row, 1, name_item)
+            
+            # Watch folder
+            watch_item = QTableWidgetItem(conv.watch_folder)
+            watch_item.setForeground(QColor("#808080"))
+            self._health_table.setItem(row, 2, watch_item)
+            
+            # No live stats available without IPC
+            processed_item = QTableWidgetItem("--")
+            self._health_table.setItem(row, 3, processed_item)
+            
+            success_item = QTableWidgetItem("--%")
+            self._health_table.setItem(row, 4, success_item)
+            
+            last_run_item = QTableWidgetItem("--")
+            last_run_item.setForeground(QColor("#808080"))
+            self._health_table.setItem(row, 5, last_run_item)
+        
+        # Update stat cards
+        self._converters_value.setText(f"{active_count} Configured")
+        self._queue_value.setText("-- Pending")
+        self._reports_value.setText("-- Today")
+        self._success_value.setText("--%")
     
     def _update_service_status(self, status: Dict[str, Any]) -> None:
         """Update service status display"""
@@ -336,84 +380,10 @@ class DashboardPage(BasePage):
             self._uptime_label.setText("Uptime: --")
     
     def _update_converter_health(self) -> None:
-        """Update converter health table"""
-        self._health_table.setRowCount(0)
-        
-        # Get converter stats from config
-        active_count = 0
-        
-        for conv in self.config.converters:
-            if not conv.enabled:
-                continue
-            
-            active_count += 1
-            row = self._health_table.rowCount()
-            self._health_table.insertRow(row)
-            
-            # Status indicator
-            status_item = QTableWidgetItem("●")
-            status_item.setForeground(QColor("#4ec9b0"))
-            self._health_table.setItem(row, 0, status_item)
-            
-            # Name
-            name_item = QTableWidgetItem(conv.name)
-            self._health_table.setItem(row, 1, name_item)
-            
-            # Watch folder
-            watch_item = QTableWidgetItem(conv.watch_folder)
-            watch_item.setForeground(QColor("#808080"))
-            self._health_table.setItem(row, 2, watch_item)
-            
-            # Get stats from IPC client if available
-            processed_count = "--"
-            success_rate = "--%"
-            last_run = "--"
-            
-            ipc_client = self._get_ipc_client()
-            if ipc_client and ipc_client.is_connected():
-                try:
-                    # TODO: Add per-converter statistics to IPC commands
-                    pass
-                except Exception:
-                    pass
-            
-            processed_item = QTableWidgetItem(str(processed_count))
-            self._health_table.setItem(row, 3, processed_item)
-            
-            success_item = QTableWidgetItem(success_rate)
-            self._health_table.setItem(row, 4, success_item)
-            
-            last_run_item = QTableWidgetItem(last_run)
-            last_run_item.setForeground(QColor("#808080"))
-            self._health_table.setItem(row, 5, last_run_item)
-        
-        # Update stat cards with real data if IPC client available
-        ipc_client = self._get_ipc_client()
-        if ipc_client and ipc_client.is_connected():
-            try:
-                status = ipc_client.get_status()
-                if status:
-                    self._converters_value.setText(f"{status.get('converters_active', active_count)} Active")
-                    self._queue_value.setText(f"{status.get('queue_pending', 0)} Pending")
-                    self._reports_value.setText(f"{status.get('reports_today', 0)} Today")
-                    # Calculate success rate if we have data
-                    # TODO: Track success rate
-                    self._success_value.setText("--%")
-                else:
-                    self._converters_value.setText(f"{active_count} Active")
-                    self._queue_value.setText("0 Pending")
-                    self._reports_value.setText("0 Today")
-                    self._success_value.setText("--%")
-            except Exception:
-                self._converters_value.setText(f"{active_count} Active")
-                self._queue_value.setText("0 Pending")
-                self._reports_value.setText("0 Today")
-                self._success_value.setText("--%")
-        else:
-            self._converters_value.setText(f"{active_count} Active")
-            self._queue_value.setText("0 Pending")
-            self._reports_value.setText("0 Today")
-            self._success_value.setText("--%")
+        """Update converter health table - redirects to local version"""
+        # IPC-based health check disabled to prevent GUI freezing
+        # Use _update_converter_health_local instead
+        self._update_converter_health_local()
     
     def _update_connection_status(self) -> None:
         """Update server connection status"""

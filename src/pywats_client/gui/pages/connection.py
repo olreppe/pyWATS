@@ -5,6 +5,7 @@ Matches the WATS Client Connection page layout.
 """
 
 import asyncio
+import logging
 from typing import Optional, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -17,6 +18,8 @@ from ...core.config import ClientConfig
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionPage(BasePage):
@@ -180,20 +183,33 @@ class ConnectionPage(BasePage):
         self._sync_interval_edit.setText(str(self.config.sync_interval_seconds))
         self._identifier_label.setText(self.config.formatted_identifier)
         
-        # Status will be updated via IPC from main window
-        self.update_status("Offline")
+        # Status will be updated after auto-test
+        self.update_status("Checking...")
+        self._auto_test_pending = True
+    
+    def showEvent(self, event) -> None:
+        """Called when page becomes visible"""
+        super().showEvent(event)
+        # Run auto-test on first show if service address is configured
+        if self._auto_test_pending and self.config.service_address:
+            self._auto_test_pending = False
+            asyncio.create_task(self._run_connection_test(auto=True))
+        elif self._auto_test_pending:
+            self._auto_test_pending = False
+            self.update_status("Not configured")
     
     def update_status(self, status: str) -> None:
         """Update connection status display"""
         self._client_status_label.setText(status)
         
-        if status == "Online":
+        # Green for online/connected states
+        if status in ("Online", "Connected", "Online - Test OK"):
             self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
             self._service_status_label.setText("Running")
             self._service_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
-        elif status == "Connecting":
+        elif status in ("Connecting", "Starting service...", "Checking..."):
             self._client_status_label.setStyleSheet("font-weight: bold; color: #dcdcaa;")
-            self._service_status_label.setText("Starting")
+            self._service_status_label.setText("Checking...")
             self._service_status_label.setStyleSheet("font-weight: bold; color: #dcdcaa;")
         elif "Error" in status or "already running" in status.lower():
             self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
@@ -203,107 +219,202 @@ class ConnectionPage(BasePage):
             else:
                 self._service_status_label.setText("Error")
                 self._service_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
+        elif status in ("Offline", "Disconnected", "Service not running"):
+            # Gray for disconnected/offline states
+            self._client_status_label.setStyleSheet("font-weight: bold; color: #808080;")
+            self._service_status_label.setText("Stopped")
+            self._service_status_label.setStyleSheet("font-weight: bold; color: #808080;")
         else:
+            # Default: red for unknown states
             self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
             self._service_status_label.setText("Stopped")
             self._service_status_label.setStyleSheet("font-weight: bold;")
     
     def _on_disconnect(self) -> None:
         """Handle disconnect button click"""
-        if self._main_window:
-            asyncio.create_task(self._main_window.disconnect())
+        # Clear credentials
+        self._address_edit.clear()
+        self._token_edit.clear()
+        self.update_status("Offline")
+        self._emit_changed()
     
     def _on_test_connection(self) -> None:
         """Handle test connection button click"""
         self._test_btn.setEnabled(False)
         self._test_btn.setText("Testing...")
         
-        # Run test in background
-        asyncio.create_task(self._run_test())
+        # Save current values to config first
+        self.save_config()
+        
+        # Run test in background using asyncio
+        asyncio.create_task(self._run_connection_test(auto=False))
     
-    async def _run_test(self) -> None:
-        """Run connection test"""
+    async def _run_connection_test(self, auto: bool = False) -> None:
+        """Run connection test asynchronously
+        
+        Args:
+            auto: If True, this is an automatic test at startup (don't touch button state)
+        """
         try:
-            if self._main_window:
-                result = await self._main_window.test_connection()
-                if result:
-                    self._client_status_label.setText("Online")
-                    self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
+            import httpx
+            
+            url = self.config.service_address.rstrip('/')
+            if not url:
+                self._show_test_result(False, "No service address configured", auto)
+                return
+            
+            # Test the API endpoint
+            test_url = f"{url}/api/Report/wats/info"
+            headers = {}
+            if self.config.api_token:
+                headers["Authorization"] = f"Bearer {self.config.api_token}"
+            
+            # Enable redirect following
+            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                response = await client.get(test_url, headers=headers)
+                
+                if response.status_code == 200:
+                    self._show_test_result(True, "Online", auto)
+                elif response.status_code == 401:
+                    self._show_test_result(False, "Authentication failed (401)", auto)
+                elif response.status_code == 403:
+                    self._show_test_result(False, "Access denied (403)", auto)
+                elif response.status_code == 404:
+                    # Try alternative endpoint
+                    alt_url = f"{url}/api/report/wats/info"
+                    response = await client.get(alt_url, headers=headers)
+                    if response.status_code == 200:
+                        self._show_test_result(True, "Online", auto)
+                    else:
+                        self._show_test_result(False, f"API not found (404)", auto)
                 else:
-                    self._client_status_label.setText("Connection failed")
-                    self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
+                    self._show_test_result(False, f"Server returned {response.status_code}", auto)
+                    
+        except httpx.ConnectError:
+            self._show_test_result(False, "Connection failed", auto)
+        except httpx.TimeoutException:
+            self._show_test_result(False, "Connection timeout", auto)
         except Exception as e:
-            self._client_status_label.setText(f"Error: {str(e)[:30]}")
-            self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
-        finally:
+            logger.exception("Connection test error")
+            self._show_test_result(False, f"Error: {str(e)[:30]}", auto)
+    
+    def _show_test_result(self, success: bool, message: str, auto: bool = False) -> None:
+        """Show test result and re-enable button
+        
+        Args:
+            success: Whether the test passed
+            message: Status message to display
+            auto: If True, don't touch button state (auto-test at startup)
+        """
+        if not auto:
             self._test_btn.setEnabled(True)
             self._test_btn.setText("Run test")
+        
+        if success:
+            self._client_status_label.setText(message)
+            self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
+            self._service_status_label.setText("Available")
+            self._service_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
+        else:
+            self._client_status_label.setText(message)
+            self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
 
     def _on_test_send_uut(self) -> None:
         """Handle test send UUT button click"""
         self._test_uut_btn.setEnabled(False)
         self._test_uut_btn.setText("Sending...")
         
-        # Run test in background
+        # Save config first
+        self.save_config()
+        
+        # Run async test
         asyncio.create_task(self._run_send_uut_test())
     
     async def _run_send_uut_test(self) -> None:
         """Run test UUT send operation"""
         try:
-            if self._main_window:
-                result = await self._main_window.send_test_uut()
-                if result.get("success"):
-                    report_id = result.get("report_id", "Unknown")
+            import httpx
+            from datetime import datetime
+            import uuid
+            
+            url = self.config.service_address.rstrip('/')
+            if not url:
+                QMessageBox.warning(self, "Error", "No service address configured")
+                return
+            
+            headers = {"Content-Type": "application/json"}
+            if self.config.api_token:
+                headers["Authorization"] = f"Bearer {self.config.api_token}"
+            
+            # Create a minimal test UUT report
+            test_report = {
+                "pn": "TEST-PART-001",
+                "sn": f"TEST-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                "rev": "1.0",
+                "processCode": 10,
+                "result": "P",  # Passed
+                "start": datetime.utcnow().isoformat() + "Z",
+                "root": {
+                    "status": "P",
+                    "steps": [
+                        {
+                            "name": "pyWATS GUI Connection Test",
+                            "status": "P",
+                            "steps": [
+                                {
+                                    "name": "Test Step",
+                                    "status": "P",
+                                    "numericMeas": [{
+                                        "name": "Test Value",
+                                        "status": "P",
+                                        "value": 42.0,
+                                        "unit": "units"
+                                    }]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+            
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                response = await client.post(
+                    f"{url}/api/Report/wats",
+                    json=test_report,
+                    headers=headers
+                )
+                
+                if response.status_code in (200, 201):
+                    result = response.json() if response.content else {}
+                    report_id = result.get("id", "Unknown")
                     QMessageBox.information(
                         self,
                         "Test Report Sent",
                         f"Test UUT report submitted successfully!\n\n"
                         f"Report ID: {report_id}\n"
-                        f"Serial: {result.get('serial_number', 'Unknown')}\n"
-                        f"Part Number: {result.get('part_number', 'Unknown')}"
+                        f"Serial: {test_report['sn']}\n"
+                        f"Part Number: {test_report['pn']}"
                     )
                     self._client_status_label.setText("Online - Test OK")
                     self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
+                elif response.status_code == 401:
+                    QMessageBox.warning(self, "Authentication Failed", "Invalid or expired API token (401)")
+                elif response.status_code == 403:
+                    QMessageBox.warning(self, "Access Denied", "You don't have permission to submit reports (403)")
                 else:
-                    error = result.get("error", "Unknown error")
                     QMessageBox.warning(
                         self,
                         "Test Report Failed",
-                        f"Failed to submit test UUT report.\n\nError: {error}"
+                        f"Server returned status {response.status_code}\n\n{response.text[:200]}"
                     )
-                    self._client_status_label.setText("Send failed")
-                    self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
+                    
+        except httpx.ConnectError:
+            QMessageBox.critical(self, "Connection Error", "Could not connect to server")
+        except httpx.TimeoutException:
+            QMessageBox.critical(self, "Timeout", "Request timed out")
         except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Error sending test report:\n{str(e)}"
-            )
-            self._client_status_label.setText(f"Error: {str(e)[:20]}")
-            self._client_status_label.setStyleSheet("font-weight: bold; color: #f14c4c;")
-        finally:
-            self._test_uut_btn.setEnabled(True)
-            self._test_uut_btn.setText("Send test report")
-
-    def _on_test_send_uut(self) -> None:
-        """Handle test send UUT button click"""
-        self._test_uut_btn.setEnabled(False)
-        self._test_uut_btn.setText("Sending...")
-
-        # Run test in background
-        asyncio.create_task(self._run_send_uut_test())
-
-    async def _run_send_uut_test(self) -> None:
-        """Run send UUT test"""
-        try:
-            if self._main_window:
-                result = await self._main_window.test_send_uut()
-                if result:
-                    QMessageBox.information(self, "Success", "Test UUT report sent successfully!")
-                else:
-                    QMessageBox.warning(self, "Failed", "Failed to send test UUT report.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error sending test UUT: {str(e)}")
+            logger.exception("Test UUT send error")
+            QMessageBox.critical(self, "Error", f"Error sending test report:\n{str(e)}")
         finally:
             self._test_uut_btn.setEnabled(True)
             self._test_uut_btn.setText("Send test report")
