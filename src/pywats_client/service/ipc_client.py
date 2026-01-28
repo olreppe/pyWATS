@@ -52,12 +52,12 @@ class ServiceIPCClient(QObject):
         self.socket_name = f"pyWATS_Service_{instance_id}"
         self._socket: Optional[QLocalSocket] = None
     
-    def connect(self, timeout_ms: int = 500) -> bool:
+    def connect(self, timeout_ms: int = 100) -> bool:
         """
         Connect to service.
         
         Args:
-            timeout_ms: Connection timeout in milliseconds (default: 500ms)
+            timeout_ms: Connection timeout in milliseconds (default: 100ms)
             
         Returns:
             True if connected successfully
@@ -119,8 +119,8 @@ class ServiceIPCClient(QObject):
             self._socket.write(data)
             self._socket.flush()
             
-            # Wait for response
-            if not self._socket.waitForReadyRead(5000):
+            # Wait for response (reduced timeout to avoid blocking GUI)
+            if not self._socket.waitForReadyRead(1000):
                 logger.error(f"Timeout waiting for response to {command}")
                 return None
             

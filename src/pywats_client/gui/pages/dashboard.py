@@ -85,13 +85,14 @@ class DashboardPage(BasePage):
         self._facade = None  # No facade in current architecture (IPC-based)
         super().__init__(config, parent)
         
-        # Refresh timer
+        # Refresh timer (increased interval to reduce blocking)
         self._refresh_timer = QTimer()
         self._refresh_timer.timeout.connect(self._refresh_status)
-        self._refresh_timer.start(2000)  # Refresh every 2 seconds
+        self._refresh_timer.start(5000)  # Refresh every 5 seconds
         
         self._setup_ui()
-        self._refresh_status()
+        # Delay initial refresh to let GUI fully initialize
+        QTimer.singleShot(1000, self._refresh_status)
     
     @property
     def page_title(self) -> str:
