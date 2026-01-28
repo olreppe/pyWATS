@@ -9,8 +9,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from .base import BasePage
-from ...core.config import ClientConfig
+from ..base import BasePage
+from ....core.config import ClientConfig
 
 
 class GeneralPage(BasePage):

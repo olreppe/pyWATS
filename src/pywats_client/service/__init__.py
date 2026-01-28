@@ -39,6 +39,16 @@ from .async_pending_queue import (
     AsyncPendingQueueState,
 )
 
+# Async IPC (pure Python, no Qt dependency)
+from .async_ipc_server import AsyncIPCServer
+from .async_ipc_client import (
+    AsyncIPCClient,
+    ServiceStatus as IPCServiceStatus,
+    InstanceInfo,
+    discover_services_async,
+    ServiceDiscoveryAsync,
+)
+
 # Aliases for cleaner imports (async is the default)
 ConverterPool = AsyncConverterPool
 PendingQueue = AsyncPendingQueue
@@ -55,6 +65,13 @@ __all__ = [
     'AsyncConversionItemState',
     'AsyncPendingQueue',
     'AsyncPendingQueueState',
+    # Async IPC (pure Python)
+    'AsyncIPCServer',
+    'AsyncIPCClient',
+    'IPCServiceStatus',
+    'InstanceInfo',
+    'discover_services_async',
+    'ServiceDiscoveryAsync',
     # Aliases
     'ConverterPool',
     'PendingQueue',

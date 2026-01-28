@@ -193,7 +193,11 @@ class ConnectionPage(BasePage):
         # Run auto-test on first show if service address is configured
         if self._auto_test_pending and self.config.service_address:
             self._auto_test_pending = False
-            asyncio.create_task(self._run_connection_test(auto=True))
+            try:
+                asyncio.create_task(self._run_connection_test(auto=True))
+            except RuntimeError:
+                # Event loop not running yet - skip auto-test
+                pass
         elif self._auto_test_pending:
             self._auto_test_pending = False
             self.update_status("Not configured")
@@ -247,7 +251,13 @@ class ConnectionPage(BasePage):
         self.save_config()
         
         # Run test in background using asyncio
-        asyncio.create_task(self._run_connection_test(auto=False))
+        try:
+            asyncio.create_task(self._run_connection_test(auto=False))
+        except RuntimeError as e:
+            logger.warning(f"Could not start async test: {e}")
+            self._test_btn.setEnabled(True)
+            self._test_btn.setText("Run test")
+            self.update_status("Error: No event loop")
     
     async def _run_connection_test(self, auto: bool = False) -> None:
         """Run connection test asynchronously
@@ -328,7 +338,13 @@ class ConnectionPage(BasePage):
         self.save_config()
         
         # Run async test
-        asyncio.create_task(self._run_send_uut_test())
+        try:
+            asyncio.create_task(self._run_send_uut_test())
+        except RuntimeError as e:
+            logger.warning(f"Could not start async UUT test: {e}")
+            self._test_uut_btn.setEnabled(True)
+            self._test_uut_btn.setText("Send test report")
+            QMessageBox.warning(self, "Error", "Event loop not running")
     
     async def _run_send_uut_test(self) -> None:
         """Run test UUT send operation"""
@@ -339,7 +355,7 @@ class ConnectionPage(BasePage):
             
             url = self.config.service_address.rstrip('/')
             if not url:
-                QMessageBox.warning(self, "Error", "No service address configured")
+                self._show_message("Error", "No service address configured", "warning")
                 return
             
             headers = {"Content-Type": "application/json"}
@@ -385,36 +401,68 @@ class ConnectionPage(BasePage):
                 )
                 
                 if response.status_code in (200, 201):
-                    result = response.json() if response.content else {}
-                    report_id = result.get("id", "Unknown")
-                    QMessageBox.information(
-                        self,
+                    # Try to parse JSON response, handle empty or non-JSON responses
+                    result = {}
+                    if response.content and response.content.strip():
+                        try:
+                            result = response.json()
+                        except Exception:
+                            # Response wasn't JSON - that's okay for success
+                            pass
+                    report_id = result.get("id", "Submitted")
+                    self._show_message(
                         "Test Report Sent",
                         f"Test UUT report submitted successfully!\n\n"
                         f"Report ID: {report_id}\n"
                         f"Serial: {test_report['sn']}\n"
-                        f"Part Number: {test_report['pn']}"
+                        f"Part Number: {test_report['pn']}",
+                        "info"
                     )
                     self._client_status_label.setText("Online - Test OK")
                     self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
                 elif response.status_code == 401:
-                    QMessageBox.warning(self, "Authentication Failed", "Invalid or expired API token (401)")
+                    self._show_message("Authentication Failed", "Invalid or expired API token (401)", "warning")
                 elif response.status_code == 403:
-                    QMessageBox.warning(self, "Access Denied", "You don't have permission to submit reports (403)")
+                    self._show_message("Access Denied", "You don't have permission to submit reports (403)", "warning")
                 else:
-                    QMessageBox.warning(
-                        self,
+                    self._show_message(
                         "Test Report Failed",
-                        f"Server returned status {response.status_code}\n\n{response.text[:200]}"
+                        f"Server returned status {response.status_code}\n\n{response.text[:200]}",
+                        "warning"
                     )
                     
         except httpx.ConnectError:
-            QMessageBox.critical(self, "Connection Error", "Could not connect to server")
+            self._show_message("Connection Error", "Could not connect to server", "critical")
         except httpx.TimeoutException:
-            QMessageBox.critical(self, "Timeout", "Request timed out")
+            self._show_message("Timeout", "Request timed out", "critical")
         except Exception as e:
             logger.exception("Test UUT send error")
-            QMessageBox.critical(self, "Error", f"Error sending test report:\n{str(e)}")
+            self._show_message("Error", f"Error sending test report:\n{str(e)}", "critical")
         finally:
             self._test_uut_btn.setEnabled(True)
             self._test_uut_btn.setText("Send test report")
+    
+    def _show_message(self, title: str, message: str, level: str = "info") -> None:
+        """Show a message box in a way that works with async code.
+        
+        Args:
+            title: Dialog title
+            message: Message text
+            level: 'info', 'warning', or 'critical'
+        """
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        
+        if level == "critical":
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+        elif level == "warning":
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+        else:
+            msg_box.setIcon(QMessageBox.Icon.Information)
+        
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.setModal(True)
+        msg_box.show()
+        msg_box.raise_()
+        msg_box.activateWindow()

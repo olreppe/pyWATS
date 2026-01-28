@@ -80,21 +80,23 @@ GUI pages now use `AsyncAPIPageMixin` for non-blocking API calls.
 
 ```python
 # Before: Blocking API calls froze the UI
-def _lookup_unit(self, part_number: str):
-    result = self.api.production.lookup_production_unit(part_number)
+def _fetch_data(self, query: str):
+    result = self.api.some_domain.query(query)
     self._display_result(result)
 
 # After: Non-blocking calls with callbacks
 from pywats_client.gui.async_api_mixin import AsyncAPIPageMixin
 
-class ProductionPage(AsyncAPIPageMixin, BasePage):
-    def _lookup_unit(self, part_number: str):
+class MyPage(AsyncAPIPageMixin, BasePage):
+    def _fetch_data(self, query: str):
         self.run_api_call(
-            api_call=lambda api: api.production.lookup_production_unit(part_number),
-            on_success=self._on_lookup_success,
-            on_error=self._on_lookup_error
+            api_call=lambda api: api.some_domain.query(query),
+            on_success=self._on_success,
+            on_error=self._on_error
         )
 ```
+
+> **Note:** Example domain pages are available in `pywats_client.gui.pages.unused/` for reference.
 
 ### New Dependencies
 

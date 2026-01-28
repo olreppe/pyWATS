@@ -4,7 +4,7 @@ Example: pyWATS Async Service Application
 This example shows how to use the pyWATS Client async service architecture
 to build a service application with:
 - AsyncClientService (background processing with asyncio)
-- IPC communication via ServiceIPCClient
+- IPC communication via AsyncIPCClient
 - File monitoring
 - Graceful shutdown
 """
@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional
 
 from pywats_client.service import AsyncClientService, ServiceStatus
-from pywats_client.service.ipc_client import ServiceIPCClient
+from pywats_client.service.async_ipc_client import AsyncIPCClient
 
 # Configure logging
 logging.basicConfig(
@@ -110,6 +110,8 @@ class IPCControlExample:
     
     This shows how to communicate with an already-running AsyncClientService
     from another process (e.g., GUI, CLI, or web interface).
+    
+    Uses AsyncIPCClient which is pure asyncio (no Qt dependency).
     """
     
     def __init__(self, instance_id: str = "default") -> None:
@@ -120,43 +122,50 @@ class IPCControlExample:
             instance_id: Instance ID of the service to control
         """
         self.instance_id = instance_id
-        self.client: Optional[ServiceIPCClient] = None
+        self.client: Optional[AsyncIPCClient] = None
     
-    def connect(self) -> bool:
+    async def connect(self) -> bool:
         """Connect to a running service"""
         try:
-            self.client = ServiceIPCClient(self.instance_id)
-            self.client.connect()
-            logger.info(f"Connected to service [instance: {self.instance_id}]")
-            return True
+            self.client = AsyncIPCClient(self.instance_id)
+            connected = await self.client.connect()
+            if connected:
+                logger.info(f"Connected to service [instance: {self.instance_id}]")
+            return connected
         except Exception as e:
             logger.error(f"Failed to connect: {e}")
             return False
     
-    def disconnect(self) -> None:
+    async def disconnect(self) -> None:
         """Disconnect from the service"""
         if self.client:
-            self.client.disconnect()
+            await self.client.disconnect()
             self.client = None
     
-    def get_status(self) -> Optional[dict]:
+    async def get_status(self) -> Optional[dict]:
         """Get status from the running service"""
         if not self.client:
             return None
         
         try:
-            return self.client.get_status()
+            status = await self.client.get_status()
+            return {
+                'status': status.status,
+                'api_status': status.api_status,
+                'pending_count': status.pending_count,
+                'instance_id': status.instance_id
+            }
         except Exception as e:
             logger.error(f"Failed to get status: {e}")
             return None
     
-    def request_shutdown(self) -> bool:
+    async def request_shutdown(self) -> bool:
         """Request the service to shut down"""
         if not self.client:
             return False
         
         try:
-            self.client.shutdown()
+            await self.client.stop_service()
             return True
         except Exception as e:
             logger.error(f"Failed to request shutdown: {e}")
@@ -173,18 +182,23 @@ def run_service():
     asyncio.run(service.start())
 
 
-def control_service():
-    """Example of controlling a running service via IPC"""
+async def control_service_async():
+    """Example of controlling a running service via IPC (async)"""
     controller = IPCControlExample(instance_id="default")
     
-    if controller.connect():
+    if await controller.connect():
         # Get status
-        status = controller.get_status()
+        status = await controller.get_status()
         if status:
             print(f"Service status: {status}")
         
         # Disconnect
-        controller.disconnect()
+        await controller.disconnect()
+
+
+def control_service():
+    """Example of controlling a running service via IPC"""
+    asyncio.run(control_service_async())
 
 
 def main():

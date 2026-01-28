@@ -34,7 +34,7 @@ from typing import (
 
 if TYPE_CHECKING:
     from pywats import pyWATS, AsyncWATS
-    from ..pages.base import BasePage
+    from .pages.base import BasePage
 
 logger = logging.getLogger(__name__)
 

@@ -25,10 +25,10 @@ from .styles import DARK_STYLESHEET
 from .settings_dialog import SettingsDialog
 from .pages import (
     BasePage, DashboardPage, SetupPage, ConnectionPage, APISettingsPage,
-    ConvertersPage, SNHandlerPage, SoftwarePage, AboutPage, LogPage
+    ConvertersPage, SNHandlerPage, SoftwarePage, LogPage
 )
 from ..core.config import ClientConfig
-from ..service.ipc_client import ServiceIPCClient, discover_services
+from ..service.async_ipc_client import AsyncIPCClient, discover_services_async
 
 
 class SidebarMode(Enum):
@@ -66,8 +66,8 @@ class MainWindow(QMainWindow):
         
         self.config = config
         
-        # IPC client for communicating with service
-        self._ipc_client: Optional[ServiceIPCClient] = None
+        # Async IPC client for communicating with service (pure asyncio, no Qt dependency)
+        self._ipc_client: Optional[AsyncIPCClient] = None
         self._current_instance_id: str = config.instance_id
         self._service_connected = False
         self._tray_icon = None  # System tray icon (optional)
@@ -78,17 +78,37 @@ class MainWindow(QMainWindow):
         self._apply_styles()
         self._connect_signals()
         
-        # IPC connection DISABLED - blocking calls freeze the Qt event loop
-        # The GUI runs in standalone/configuration mode without service connection
-        # TODO: Implement proper async IPC using QThread to avoid blocking
-        self._ipc_client = None
+        # Start async IPC connection on init
+        # Uses asyncio.create_task() which works with qasync event loop
+        self._ipc_client = AsyncIPCClient(self._current_instance_id)
         self._service_connected = False
+        self._connection_pending = True  # Will connect when event loop starts
         
-        # Status timer disabled
-        self._status_timer = None
+        # Status timer for periodic updates
+        self._status_timer = QTimer()
+        self._status_timer.timeout.connect(self._on_status_timer)
+        self._status_timer.start(5000)  # Every 5 seconds
         
         # Show status in title
         self._update_window_title()
+    
+    def showEvent(self, event):
+        """Handle window show event - start async connection when event loop is running."""
+        super().showEvent(event)
+        
+        # Start async connection on first show (event loop is running at this point)
+        if self._connection_pending:
+            self._connection_pending = False
+            # Use QTimer.singleShot to schedule after event loop is fully ready
+            QTimer.singleShot(0, self._start_async_connection)
+    
+    def _start_async_connection(self):
+        """Start the async IPC connection (called from event loop)."""
+        try:
+            asyncio.create_task(self._async_connect_to_service())
+        except RuntimeError as e:
+            logger.warning(f"Could not start async connection: {e}")
+            # Fallback: try again later via status timer
     
     def _start_service_process(self) -> bool:
         """
@@ -127,17 +147,26 @@ class MainWindow(QMainWindow):
     
     def _connect_to_service(self) -> None:
         """
-        Connect to the service process via IPC.
+        Connect to the service process via IPC (sync wrapper).
+        
+        Triggers async connection - actual connection happens asynchronously.
+        """
+        asyncio.create_task(self._async_connect_to_service())
+    
+    async def _async_connect_to_service(self) -> None:
+        """
+        Async connection to the service process via IPC.
         
         If service is not running, automatically starts it and retries connection.
         """
-        self._ipc_client = ServiceIPCClient(self._current_instance_id)
+        if self._ipc_client is None:
+            self._ipc_client = AsyncIPCClient(self._current_instance_id)
         
-        if self._ipc_client.connect():
+        if await self._ipc_client.connect():
             logger.info(f"Connected to service instance: {self._current_instance_id}")
             self._service_connected = True
             self._update_window_title()
-            self._update_status()
+            await self._async_update_status()
         else:
             # Service not running - try to start it
             logger.info(f"Service not running for instance: {self._current_instance_id}, starting...")
@@ -146,7 +175,8 @@ class MainWindow(QMainWindow):
             
             if self._start_service_process():
                 # Wait for service to start and retry connection
-                QTimer.singleShot(2000, self._retry_connect_to_service)
+                await asyncio.sleep(2.0)
+                await self._async_retry_connect(0)
             else:
                 logger.error("Failed to start service process")
                 self._service_connected = False
@@ -154,25 +184,26 @@ class MainWindow(QMainWindow):
                 self.connection_status_changed.emit("Failed to start service")
                 self.application_status_changed.emit("Error")
     
-    def _retry_connect_to_service(self, attempts: int = 0) -> None:
+    async def _async_retry_connect(self, attempts: int = 0) -> None:
         """
-        Retry connecting to service after starting it.
+        Async retry connecting to service after starting it.
         
         Args:
             attempts: Number of attempts made so far
         """
         max_attempts = 5
         
-        if self._ipc_client.connect():
+        if await self._ipc_client.connect():
             logger.info(f"Connected to service after {attempts + 1} attempt(s)")
             self._service_connected = True
             self._update_window_title()
-            self._update_status()
+            await self._async_update_status()
             self.connection_status_changed.emit("Connected")
         elif attempts < max_attempts:
             # Retry after delay
             logger.debug(f"Service not ready, retrying... (attempt {attempts + 1}/{max_attempts})")
-            QTimer.singleShot(1000, lambda: self._retry_connect_to_service(attempts + 1))
+            await asyncio.sleep(1.0)
+            await self._async_retry_connect(attempts + 1)
         else:
             # Give up
             logger.error(f"Could not connect to service after {max_attempts} attempts")
@@ -180,6 +211,26 @@ class MainWindow(QMainWindow):
             self._update_window_title()
             self.connection_status_changed.emit("Service not responding")
             self.application_status_changed.emit("Error")
+    
+    def _on_status_timer(self) -> None:
+        """Handle status timer tick - triggers async update"""
+        try:
+            asyncio.create_task(self._async_update_status())
+        except RuntimeError:
+            # No event loop running yet - skip this tick
+            pass
+    
+    def _retry_connect_to_service(self, attempts: int = 0) -> None:
+        """
+        Retry connecting to service after starting it (sync wrapper - deprecated).
+        
+        Note: Use _async_retry_connect() for new code.
+        """
+        try:
+            asyncio.create_task(self._async_retry_connect(attempts))
+        except RuntimeError:
+            # No event loop running - skip
+            pass
     
     def _setup_window(self) -> None:
         """Configure window properties"""
@@ -413,37 +464,43 @@ class MainWindow(QMainWindow):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            try:
-                result = self._ipc_client.send_command("stop")
-                if result and result.get("status") == "ok":
-                    QMessageBox.information(
-                        self,
-                        "Service Stopped",
-                        "Service stopped successfully."
-                    )
-                    self._service_connected = False
-                    self._update_window_title()
-                    self.connection_status_changed.emit("Service stopped")
-                    self.application_status_changed.emit("Stopped")
-                else:
-                    QMessageBox.warning(
-                        self,
-                        "Stop Failed",
-                        f"Failed to stop service: {result}"
-                    )
-            except Exception as e:
-                QMessageBox.critical(
+            asyncio.create_task(self._async_stop_service())
+    
+    async def _async_stop_service(self) -> None:
+        """Async stop service via IPC"""
+        try:
+            success = await self._ipc_client.request_stop()
+            if success:
+                QMessageBox.information(
                     self,
-                    "Error",
-                    f"Error stopping service: {e}"
+                    "Service Stopped",
+                    "Service stopped successfully."
                 )
+                self._service_connected = False
+                self._update_window_title()
+                self.connection_status_changed.emit("Service stopped")
+                self.application_status_changed.emit("Stopped")
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Stop Failed",
+                    "Failed to stop service."
+                )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Error stopping service: {e}"
+            )
     
     def _build_nav_items(self) -> list:
         """Build list of all navigation items based on config"""
         # Core navigation items that are always shown
         nav_items = [
+            "Dashboard",
             "General",
             "Connection",
+            "API Settings",
             "Log",
         ]
         
@@ -641,9 +698,9 @@ class MainWindow(QMainWindow):
             if hasattr(page, 'config_changed'):
                 page.config_changed.connect(self._on_config_changed)
         
-        # Connect setup page connection signal
-        if "Setup" in self._pages:
-            setup_page = cast(SetupPage, self._pages["Setup"])
+        # Connect setup page connection signal (page is named "General" in navigation)
+        if "General" in self._pages:
+            setup_page = cast(SetupPage, self._pages["General"])
             setup_page.connection_changed.connect(self._on_connection_request)
             # Connect station change signal to update status bar
             if hasattr(setup_page, 'station_changed'):
@@ -722,12 +779,7 @@ class MainWindow(QMainWindow):
             return
         
         if action == "stop":
-            try:
-                self._ipc_client.stop_service()
-                self.connection_status_changed.emit("Service stopping...")
-            except Exception as e:
-                logger.error(f"Failed to stop service: {e}")
-                QMessageBox.critical(self, "Error", f"Failed to stop service: {e}")
+            asyncio.create_task(self._async_stop_service_action())
         elif action == "start":
             # Service should already be running if we have IPC connection
             QMessageBox.information(
@@ -737,6 +789,15 @@ class MainWindow(QMainWindow):
             )
         else:
             logger.warning(f"Unknown service action: {action}")
+    
+    async def _async_stop_service_action(self) -> None:
+        """Async stop service action"""
+        try:
+            await self._ipc_client.request_stop()
+            self.connection_status_changed.emit("Service stopping...")
+        except Exception as e:
+            logger.error(f"Failed to stop service: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to stop service: {e}")
     
     def _save_config(self) -> None:
         """Save configuration from all pages"""
@@ -753,11 +814,8 @@ class MainWindow(QMainWindow):
         """Update UI for connection status change"""
         self._status_label.setText(status)
         
-        # Update connection page
-        if "Connection" in self._pages:
-            connection_page = self._pages["Connection"]
-            if isinstance(connection_page, ConnectionPage):
-                connection_page.update_status(status)
+        # Note: Don't update Connection page here - that page shows API status
+        # which is separate from the service/IPC status shown in main window
     
     @Slot(str)
     def _on_application_status_ui(self, status: str) -> None:
@@ -769,34 +827,49 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
     
     def _update_status(self) -> None:
-        """Periodic status update via IPC"""
+        """Periodic status update via IPC (sync wrapper)"""
+        asyncio.create_task(self._async_update_status())
+    
+    async def _async_update_status(self) -> None:
+        """Async periodic status update via IPC"""
         if not self._ipc_client:
             # No IPC client - try to reconnect
-            self._connect_to_service()
+            await self._async_connect_to_service()
             if not self._ipc_client or not self._service_connected:
                 self.connection_status_changed.emit("Service not running")
                 self.application_status_changed.emit("Stopped")
                 return
         
         try:
+            # Check if connected
+            if not self._ipc_client.connected:
+                # Try to reconnect
+                if not await self._ipc_client.connect():
+                    self._service_connected = False
+                    self.connection_status_changed.emit("Service not running")
+                    self.application_status_changed.emit("Stopped")
+                    return
+                self._service_connected = True
+            
             # Ping service first to check if still alive
-            if not self._ipc_client.ping():
+            if not await self._ipc_client.ping():
                 # Service died, try to reconnect
                 logger.warning("Service not responding, attempting reconnect...")
                 self._service_connected = False
-                self._connect_to_service()
+                await self._ipc_client.disconnect()
+                await self._async_connect_to_service()
                 return
             
             # Get status from service via IPC
-            status_data = self._ipc_client.get_status()
+            status = await self._ipc_client.get_status()
             
-            if status_data:
+            if status:
                 # Update application status
-                app_status = status_data.get("status", "unknown")
+                app_status = status.status
                 self.application_status_changed.emit(app_status)
                 
                 # Update API connection status
-                api_status = status_data.get("api_status", "unknown")
+                api_status = status.api_status
                 if api_status.lower() == "online":
                     self.connection_status_changed.emit("Online")
                 elif api_status.lower() == "offline":
@@ -805,7 +878,7 @@ class MainWindow(QMainWindow):
                     self.connection_status_changed.emit(api_status)
                 
                 # Update queue status if available
-                queue_size = status_data.get("queue_size", 0)
+                queue_size = status.pending_count
                 if queue_size > 0:
                     self._status_label.setToolTip(f"{queue_size} reports queued")
                 else:
@@ -846,9 +919,16 @@ class MainWindow(QMainWindow):
         
         # Disconnect from service (but don't stop it - service runs independently)
         if self._ipc_client:
-            self._ipc_client = None
+            # Use create_task for async disconnect
+            asyncio.create_task(self._async_disconnect())
         
         QApplication.quit()
+    
+    async def _async_disconnect(self) -> None:
+        """Async disconnect from IPC"""
+        if self._ipc_client:
+            await self._ipc_client.disconnect()
+            self._ipc_client = None
     
     # Public methods for pages
     

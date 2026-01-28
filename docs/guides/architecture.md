@@ -326,8 +326,8 @@ The client uses an **async-first architecture** with asyncio for efficient concu
 │  └──────────────────────────────────────────────────┘       │
 │                                                              │
 │  ┌──────────────────────────────────────────────────┐       │
-│  │               IPCServer                          │       │
-│  │  • Qt LocalSocket server                         │       │
+│  │               AsyncIPCServer                     │       │
+│  │  • Pure asyncio TCP server (no Qt dependency)    │       │
 │  │  • JSON command/response protocol                │       │
 │  │  • Commands: get_status, get_config, stop, etc.  │       │
 │  └──────────────────────────────────────────────────┘       │
@@ -340,8 +340,9 @@ The client uses an **async-first architecture** with asyncio for efficient concu
 │  (Optional, separate process)                                │
 │                                                              │
 │  ┌──────────────────────────────────────────────────┐       │
-│  │             ServiceIPCClient                     │       │
-│  │  • Connects to service via LocalSocket           │       │
+│  │             AsyncIPCClient                       │       │
+│  │  • Connects to service via TCP socket            │       │
+│  │  • Pure asyncio (uses qasync in GUI)             │       │
 │  │  • Sends commands, receives updates              │       │
 │  └──────────────────────────────────────────────────┘       │
 │                                                              │
@@ -376,10 +377,11 @@ The client uses an **async-first architecture** with asyncio for efficient concu
    - Automatic crash recovery (processing → pending on restart)
    - Retry logic with configurable attempts
 
-5. **IPCServer** - Inter-process communication
+5. **AsyncIPCServer** - Inter-process communication
+   - Pure asyncio (TCP on Windows, Unix sockets on Linux/macOS)
    - Socket name: `pyWATS_Service_{instance_id}`
    - JSON protocol for commands and responses
-   - Service/GUI separation enables headless mode
+   - No Qt dependency - enables true headless mode
 
 6. **AsyncAPIPageMixin** - GUI async helper
    - Non-blocking API calls via `run_api_call()`
@@ -537,7 +539,7 @@ src/pywats_client/gui/
 
 ### Communication with Service
 
-**IPC Protocol (Qt LocalSocket):**
+**IPC Protocol (Pure asyncio TCP/Unix sockets):**
 ```python
 # GUI → Service (Commands)
 {
@@ -555,7 +557,9 @@ src/pywats_client/gui/
 }
 ```
 
-**ServiceIPCClient** in GUI connects to **IPCServer** in service using socket name `pyWATS_Service_{instance_id}`.
+**AsyncIPCClient** in GUI connects to **AsyncIPCServer** in service.
+- Windows: TCP localhost on deterministic port (derived from instance_id hash)
+- Linux/macOS: Unix domain sockets at `/tmp/pywats_service_{instance_id}.sock`
 
 ### User Workflow
 
@@ -571,7 +575,7 @@ src/pywats_client/gui/
    - LoginWindow only if authentication fails
 
 3. **Main window:**
-   - Sidebar navigation (Setup, Converters, S/N Handler, etc.)
+   - Sidebar navigation (Dashboard, General, Connection, API Settings, Log, Converters, SN Handler, Software)
    - Page content area (QStackedWidget)
    - Status bar (connection status, instance info)
    - System tray icon (minimize to tray option)

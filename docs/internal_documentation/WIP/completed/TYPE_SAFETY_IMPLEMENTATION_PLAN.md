@@ -162,8 +162,10 @@ This implementation plan addresses all type safety issues identified in the TYPE
 - [x] **Status:** Completed - January 26, 2026
 - **Files updated (36 methods):**
   - [x] `login_window.py`, `main_window.py`, `settings_dialog.py`
-  - [x] All pages: about, api_settings, asset, base, connection, converters, dashboard, general, location, log, product, production, proxy_settings, rootcause, setup, sn_handler, software
-  - [x] All widgets: instance_selector, new_converter_dialog, script_editor
+  - [x] All active pages: api_settings, base, connection, converters, dashboard, location, log, proxy_settings, setup, sn_handler, software, about
+  - [x] All widgets: new_converter_dialog, script_editor
+  - [x] Unused pages (in `pages/unused/`): asset, product, production, rootcause, general
+  - Note: `instance_selector.py` was removed (never used)
 
 ### 4.4 pywats_client/control/ Module ✅ COMPLETED
 - [x] **Status:** Completed - January 26, 2026

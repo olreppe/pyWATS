@@ -34,7 +34,7 @@ For current changes, see [CHANGELOG.md](CHANGELOG.md).
 - APIConfigManager (use pywats_client.core.ConfigManager)
 
 ### Removed
-- Unused GUI pages (asset, product, production, rootcause)
+- Unused GUI pages (asset, product, production, rootcause) - moved to `gui/pages/unused/`
 - Legacy application architecture (pyWATSApplication, AppFacade, Client, HTTP Control API)
 
 ### Added (continued)

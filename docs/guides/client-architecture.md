@@ -503,15 +503,19 @@ Helper mixin for GUI pages to make async API calls without blocking the UI:
 ```python
 from pywats_client.gui.async_api_mixin import AsyncAPIPageMixin
 
-class ProductionPage(AsyncAPIPageMixin, BasePage):
-    def _lookup_unit(self, part_number: str):
+# Example: a page using async API calls
+class MyDomainPage(AsyncAPIPageMixin, BasePage):
+    def _fetch_data(self, query: str):
         # Automatically handles async/sync detection
         self.run_api_call(
-            api_call=lambda api: api.production.lookup_production_unit(part_number),
-            on_success=self._on_lookup_success,
-            on_error=self._on_lookup_error
+            api_call=lambda api: api.some_domain.query(query),
+            on_success=self._on_fetch_success,
+            on_error=self._on_fetch_error
         )
 ```
+
+> **Note:** Domain-specific pages (Asset, Product, Production, RootCause) are available
+> in `pywats_client.gui.pages.unused` for reference but are not currently active in the UI.
 
 ### Migration Path
 
@@ -1279,21 +1283,31 @@ python -m pywats_client unlock --instance-id production
 python -m pywats_client status --instance-id production
 ```
 
-**Check socket name:**
+**Check socket address:**
 ```python
-# Should be: pyWATS_Service_{instance_id}
-# Windows: \\.\pipe\pyWATS_Service_production
-# Linux: /tmp/pyWATS_Service_production
+from pywats_client.service.async_ipc_server import get_socket_address
+
+# Windows: TCP localhost on port 50000-59999 (derived from instance_id hash)
+# Linux/macOS: Unix socket at /tmp/pywats_service_{instance_id}.sock
+addr = get_socket_address("production")
+print(f"Socket address: {addr}")
 ```
 
 **Test IPC manually:**
 ```python
-from pywats_client.gui.ipc_client import ServiceIPCClient
+import asyncio
+from pywats_client.service.async_ipc_client import AsyncIPCClient
 
-client = ServiceIPCClient("production")
-if client.connect_to_service():
-    response = client.send_command("ping")
-    print(response)  # Should be "pong"
+async def test_ipc():
+    client = AsyncIPCClient("production")
+    if await client.connect():
+        status = await client.get_status()
+        print(f"Status: {status}")
+        pong = await client.ping()
+        print(f"Ping: {pong}")  # Should be True
+        await client.disconnect()
+
+asyncio.run(test_ipc())
 ```
 
 ### Queue Growing Too Large

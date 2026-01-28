@@ -50,7 +50,15 @@ from .service.client_service import ClientService, ServiceStatus
 from .service.async_client_service import AsyncClientService, AsyncServiceStatus
 from .service.async_converter_pool import AsyncConverterPool, AsyncConversionItem
 from .service.async_pending_queue import AsyncPendingQueue, AsyncPendingQueueState
-from .service.ipc_client import ServiceIPCClient, ServiceDiscovery, InstanceInfo, discover_services
+
+# Async IPC (pure Python, no Qt dependency)
+from .service.async_ipc_server import AsyncIPCServer
+from .service.async_ipc_client import (
+    AsyncIPCClient,
+    InstanceInfo,
+    discover_services_async,
+    ServiceDiscoveryAsync,
+)
 
 # Aliases for cleaner imports
 ConverterPool = AsyncConverterPool
@@ -99,11 +107,12 @@ __all__ = [
     "ConverterPool",
     "PendingQueue",
     
-    # IPC
-    "ServiceIPCClient",
-    "ServiceDiscovery",
+    # IPC (async - pure Python, no Qt)
+    "AsyncIPCServer",
+    "AsyncIPCClient",
     "InstanceInfo",
-    "discover_services",
+    "discover_services_async",
+    "ServiceDiscoveryAsync",
     
     # Converters
     "ConverterBase",

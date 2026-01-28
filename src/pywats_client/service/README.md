@@ -169,19 +169,25 @@ Simple IPC server for GUI↔Service communication.
 
 ---
 
-#### **ipc_client.py** - IPC Client
-Client for GUI to connect to service.
+#### **async_ipc_client.py** - Async IPC Client
+Pure asyncio client for GUI to connect to service. No Qt dependency.
 
 **Usage:**
 ```python
-from pywats_client.service.ipc_client import ServiceIPCClient
+from pywats_client.service.async_ipc_client import AsyncIPCClient
 
-client = ServiceIPCClient("default")
-if client.connect():
-    status = client.get_status()
-    print(f"Service status: {status['status']}")
-    print(f"Queue size: {status['queue_size']}")
+async def check_service():
+    client = AsyncIPCClient("default")
+    if await client.connect():
+        status = await client.get_status()
+        print(f"Service status: {status.status}")
+        print(f"Queue size: {status.pending_count}")
+        await client.disconnect()
 ```
+
+**Platform Support:**
+- Windows: TCP localhost on deterministic port (50000-59999, derived from instance_id hash)
+- Linux/macOS: Unix domain sockets at `/tmp/pywats_service_{instance_id}.sock`
 
 ---
 
@@ -189,7 +195,8 @@ if client.connect():
 
 The GUI has been **simplified** to only handle UI and configuration:
 - **No embedded services** - Removed pyWATSApplication from GUI
-- **IPC communication only** - Connects to service via IPC
+- **Async IPC communication** - Connects to service via AsyncIPCClient
+- **qasync integration** - Bridges Qt event loop with asyncio
 - **AsyncAPIPageMixin** - Non-blocking API calls from GUI pages
 - **Can launch/exit freely** - Doesn't affect background operations
 - **Service discovery** - Finds running service instances
@@ -219,8 +226,10 @@ class ProductionPage(AsyncAPIPageMixin, BasePage):
 - ❌ Removed: `AppFacade` wrapper
 - ❌ Removed: Embedded services (ConnectionService, etc.)
 - ❌ Removed: ThreadPoolExecutor-based API calls
-- ✅ Added: `ServiceIPCClient` for communication
+- ❌ Removed: Qt-based IPC (QLocalSocket/QLocalServer)
+- ✅ Added: `AsyncIPCClient` for communication (pure asyncio)
 - ✅ Added: `AsyncAPIPageMixin` for non-blocking API calls
+- ✅ Added: `qasync` for Qt/asyncio integration
 - ✅ Added: Service discovery and auto-connect
 - ✅ Added: "Start Service" button if not running
 
@@ -409,14 +418,17 @@ window = MainWindow(config, pywats_app)
 service = ClientService(instance_id)
 service.start()  # Blocks, runs 24/7
 
-# GUI connects via IPC
-client = ServiceIPCClient(instance_id)
-client.connect()
-status = client.get_status()
+# GUI connects via async IPC
+async def check_service():
+    client = AsyncIPCClient(instance_id)
+    await client.connect()
+    status = await client.get_status()
+    print(status)
 
 # Benefits:
 # - Service independent of GUI
 # - Clean separation
+# - No Qt dependency in service
 # - Simple and reliable
 ```
 
@@ -431,7 +443,7 @@ status = client.get_status()
 | `AsyncConverterPool` | `Conversion` | Converter orchestration |
 | `Converter` | `Converter` | Individual converter |
 | `AsyncPendingQueue` | `PendingWatcher` | Report queue |
-| `IPCServer` | `ClientIPC` / WCF | Service communication |
+| `AsyncIPCServer` | `ClientIPC` / WCF | Service communication |
 
 > **Note:** `ConverterPool` and `PendingQueue` are aliases to their async versions.
 
@@ -463,9 +475,18 @@ ps aux | grep pywats
 
 **Test IPC connection:**
 ```python
-from pywats_client.service.ipc_client import ServiceIPCClient
-client = ServiceIPCClient("default")
-print(client.connect())  # Should be True
+import asyncio
+from pywats_client.service.async_ipc_client import AsyncIPCClient
+
+async def test():
+    client = AsyncIPCClient("default")
+    connected = await client.connect()
+    print(f"Connected: {connected}")
+    if connected:
+        status = await client.get_status()
+        print(f"Status: {status}")
+
+asyncio.run(test())
 ```
 
 ### Converters not processing files

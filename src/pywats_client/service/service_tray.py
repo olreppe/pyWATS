@@ -3,8 +3,12 @@ Service System Tray Icon
 
 Provides system tray functionality for the pyWATS Client service.
 Shows service status, pending uploads, and provides quick actions.
+
+Note: This is a GUI component that legitimately requires Qt (PySide6).
+It uses the async IPC client for communication with the headless service.
 """
 
+import asyncio
 import logging
 import sys
 from pathlib import Path
@@ -13,7 +17,7 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
 from PySide6.QtCore import QTimer, Signal, QObject
 from PySide6.QtGui import QAction, QIcon
 
-from .ipc_client import ServiceIPCClient
+from .async_ipc_client import AsyncIPCClient
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +40,12 @@ class ServiceTrayIcon(QObject):
         super().__init__(parent)
         
         self.instance_id = instance_id
-        self._ipc_client = ServiceIPCClient(instance_id)
+        self._ipc_client = AsyncIPCClient(instance_id)
         self._tray_icon: Optional[QSystemTrayIcon] = None
         
         # Status update timer
         self._status_timer = QTimer()
-        self._status_timer.timeout.connect(self._update_status)
+        self._status_timer.timeout.connect(self._on_status_timer)
         
         # Last known status
         self._service_connected = False
@@ -105,59 +109,76 @@ class ServiceTrayIcon(QObject):
     
     def start(self) -> None:
         """Start the tray icon with status updates"""
-        # Connect to service
-        self._connect_to_service()
+        # Connect to service (async)
+        asyncio.create_task(self._async_connect_to_service())
         
         # Start status update timer (5s)
         self._status_timer.start(5000)
-        
-        # Initial status update
-        self._update_status()
     
-    def _connect_to_service(self) -> None:
-        """Connect to the service via IPC"""
-        if self._ipc_client.connect(timeout_ms=500):
+    def _on_status_timer(self) -> None:
+        """Handle status timer - trigger async update"""
+        asyncio.create_task(self._async_update_status())
+    
+    async def _async_connect_to_service(self) -> None:
+        """Connect to the service via async IPC"""
+        if await self._ipc_client.connect(timeout=0.5):
             self._service_connected = True
             logger.info(f"Connected to service instance: {self.instance_id}")
+            # Initial status update
+            await self._async_update_status()
         else:
             self._service_connected = False
             logger.warning(f"Service not running for instance: {self.instance_id}")
-            self._tray_icon.setToolTip("pyWATS Client - Service Not Running")
+            if self._tray_icon:
+                self._tray_icon.setToolTip("pyWATS Client - Service Not Running")
     
-    def _update_status(self) -> None:
+    async def _async_update_status(self) -> None:
         """Update tray icon tooltip with current status"""
         if not self._service_connected:
             # Try reconnecting
-            self._connect_to_service()
+            await self._async_connect_to_service()
             if not self._service_connected:
                 return
         
         try:
-            status = self._ipc_client.get_status()
+            status = await self._ipc_client.get_status()
             if status:
-                self._last_status = status
+                self._last_status = {
+                    "api_status": status.api_status,
+                    "service_status": status.status,
+                    "pending_count": status.pending_count
+                }
                 
                 # Build tooltip with status info
-                api_status = status.get("api_status", "Unknown")
-                service_status = status.get("service_status", "Unknown")
-                
-                # TODO: Get converter statistics when implemented
-                pending = 0  # Will come from status
-                uploaded = 0  # Will come from status
+                api_status = status.api_status
+                service_status = status.status
+                pending = status.pending_count
                 
                 tooltip = (
                     f"pyWATS Client - {service_status}\n"
                     f"API: {api_status}\n"
-                    f"Pending: {pending} | Uploaded: {uploaded}"
+                    f"Pending: {pending}"
                 )
-                self._tray_icon.setToolTip(tooltip)
+                if self._tray_icon:
+                    self._tray_icon.setToolTip(tooltip)
             else:
                 self._service_connected = False
-                self._tray_icon.setToolTip("pyWATS Client - Connection Lost")
+                await self._ipc_client.disconnect()
+                if self._tray_icon:
+                    self._tray_icon.setToolTip("pyWATS Client - Connection Lost")
         except Exception as e:
             logger.debug(f"Status update failed: {e}")
             self._service_connected = False
-            self._tray_icon.setToolTip("pyWATS Client - Connection Lost")
+            if self._tray_icon:
+                self._tray_icon.setToolTip("pyWATS Client - Connection Lost")
+    
+    def _connect_to_service(self) -> None:
+        """Connect to the service via IPC (sync wrapper - deprecated)"""
+        asyncio.create_task(self._async_connect_to_service())
+
+    def _update_status(self) -> None:
+        """Update status (sync wrapper - deprecated)"""
+        asyncio.create_task(self._async_update_status())
     
     def _on_tray_activated(self, reason) -> None:
         """Handle tray icon activation (click)"""
@@ -281,28 +302,33 @@ class ServiceTrayIcon(QObject):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            try:
-                result = self._ipc_client.send_command("stop")
-                if result and result.get("status") == "ok":
-                    QMessageBox.information(
-                        None,
-                        "Service Stopped",
-                        "Service stopped successfully."
-                    )
-                    self._service_connected = False
-                    self._tray_icon.setToolTip("pyWATS Client - Service Stopped")
-                else:
-                    QMessageBox.warning(
-                        None,
-                        "Stop Failed",
-                        f"Failed to stop service: {result}"
-                    )
-            except Exception as e:
-                QMessageBox.critical(
+            asyncio.create_task(self._async_stop_service())
+    
+    async def _async_stop_service(self) -> None:
+        """Async stop service implementation"""
+        try:
+            success = await self._ipc_client.request_stop()
+            if success:
+                QMessageBox.information(
                     None,
-                    "Error",
-                    f"Error stopping service: {e}"
+                    "Service Stopped",
+                    "Service stopped successfully."
                 )
+                self._service_connected = False
+                if self._tray_icon:
+                    self._tray_icon.setToolTip("pyWATS Client - Service Stopped")
+            else:
+                QMessageBox.warning(
+                    None,
+                    "Stop Failed",
+                    "Failed to stop service."
+                )
+        except Exception as e:
+            QMessageBox.critical(
+                None,
+                "Error",
+                f"Error stopping service: {e}"
+            )
     
     def _exit_tray(self) -> None:
         """Exit the tray icon application"""
@@ -333,10 +359,23 @@ def main(instance_id: str = "default"):
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)  # Keep running with no windows
     
+    # Setup qasync for async IPC
+    try:
+        import qasync
+        loop = qasync.QEventLoop(app)
+        asyncio.set_event_loop(loop)
+    except ImportError:
+        logger.warning("qasync not available, IPC status updates may not work")
+        loop = None
+    
     tray = ServiceTrayIcon(instance_id)
     tray.start()
     
-    return app.exec()
+    if loop:
+        with loop:
+            return loop.run_forever()
+    else:
+        return app.exec()
 
 
 if __name__ == "__main__":

@@ -554,22 +554,22 @@ class AsyncClientService:
     # =========================================================================
     
     async def _setup_ipc_server(self) -> None:
-        """Setup IPC server for GUI communication"""
+        """Setup IPC server for GUI communication (pure asyncio, no Qt)"""
         try:
-            from .ipc_server import ServiceIPCServer
-            self._ipc_server = ServiceIPCServer(self.instance_id, self)
-            await self._ipc_server.start_async()
-            logger.info(f"IPC server started [instance: {self.instance_id}]")
-        except ImportError:
-            logger.warning("IPC server not available")
+            from .async_ipc_server import AsyncIPCServer
+            self._ipc_server = AsyncIPCServer(self.instance_id, self)
+            if await self._ipc_server.start():
+                logger.info(f"Async IPC server started [instance: {self.instance_id}]")
+            else:
+                logger.warning("Async IPC server failed to start")
         except Exception as e:
-            logger.error(f"IPC server setup failed: {e}")
+            logger.error(f"Async IPC server setup failed: {e}")
     
     async def _stop_ipc_server(self) -> None:
         """Stop IPC server"""
         if self._ipc_server:
             try:
-                await self._ipc_server.stop_async()
+                await self._ipc_server.stop()
             except Exception as e:
                 logger.error(f"IPC server stop failed: {e}")
             self._ipc_server = None
@@ -638,6 +638,14 @@ class AsyncClientService:
             "pending_queue": self._pending_queue.stats if self._pending_queue else {},
             "converter_pool": self._converter_pool.stats if self._converter_pool else {}
         }
+    
+    async def get_status_async(self) -> Dict[str, Any]:
+        """Get service status for async IPC (same as get_service_status)"""
+        return self.get_service_status()
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Alias for get_service_status (used by IPC server)"""
+        return self.get_service_status()
     
     def get_credentials(self) -> Optional[Dict[str, str]]:
         """Get API credentials for auto-discovery"""

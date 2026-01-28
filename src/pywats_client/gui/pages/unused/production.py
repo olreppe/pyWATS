@@ -22,11 +22,12 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
-from .base import BasePage
-from ...core.config import ClientConfig
+from ..base import BasePage
+from ...async_api_mixin import AsyncAPIPageMixin
+from ....core.config import ClientConfig
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from ...main_window import MainWindow
 
 
 class UnitLookupDialog(QDialog):

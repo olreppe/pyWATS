@@ -44,9 +44,12 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 - Connection test now follows HTTP redirects (301/302)
 - Connection page status colors: "Connected"/"Online" now display in green
 - "Offline"/"Disconnected" states now display in gray instead of red
+- **GUI navigation**: Dashboard and API Settings pages now visible in sidebar menu
+- **GUI signal connection**: Fixed "Setup" vs "General" page name mismatch
 
 ### Changed
 - **File I/O architecture**: `pywats` is now memory-only; file operations in `pywats_client`
+- **GUI pages reorganized**: Unused domain pages (Asset, Product, Production, RootCause) moved to `pages/unused/`
 - Documentation reorganized into `docs/guides/`, `docs/reference/`, `docs/platforms/`, `docs/domains/`
 - Core modules renamed: `batch` → `parallel`, `batching` → `coalesce`
 - Terminology standardized: "Module" → "Domain"
@@ -60,6 +63,7 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 - `SimpleQueue` - Use `pywats_client.ClientService` for queuing
 - `AsyncReportService` offline methods (`submit_offline`, `process_queue`, `offline_fallback`)
 - Legacy UUR classes: `UURAttachment`, `Failure`, `UURPartInfo`, `FailCode`, `MiscUURInfo` ([migration](MIGRATION.md#v010b40---deprecated-uur-classes-removed))
+- `gui/widgets/instance_selector.py` - Unused widget removed
 
 ### Deprecated
 - UUR legacy classes marked for removal (now removed - see above)

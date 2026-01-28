@@ -23,13 +23,13 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
-from .base import BasePage
-from ..async_api_mixin import AsyncAPIPageMixin
-from ...core.config import ClientConfig
-from ...core import TaskResult
+from ..base import BasePage
+from ...async_api_mixin import AsyncAPIPageMixin
+from ....core.config import ClientConfig
+from ....core import TaskResult
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from ...main_window import MainWindow
 
 
 class ProductDialog(QDialog):
