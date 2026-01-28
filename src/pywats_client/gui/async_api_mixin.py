@@ -55,6 +55,8 @@ class AsyncAPIMixin:
     - self._facade exists (or will be set)
     - self.run_async() is available from BasePage
     - self.handle_error() is available from ErrorHandlingMixin
+    
+    Raises TypeError if required methods are not available.
     """
     
     # Type hints for the mixing context
@@ -63,10 +65,29 @@ class AsyncAPIMixin:
     handle_error: Callable
     set_loading: Callable
     
+    def _validate_mixin_dependencies(self) -> None:
+        """
+        Validate that required methods exist.
+        
+        Raises:
+            TypeError: If required methods are missing
+        """
+        missing = []
+        if not hasattr(self, 'run_async') or not callable(getattr(self, 'run_async', None)):
+            missing.append('run_async')
+        if not hasattr(self, 'handle_error') or not callable(getattr(self, 'handle_error', None)):
+            missing.append('handle_error')
+        
+        if missing:
+            raise TypeError(
+                f"{self.__class__.__name__} must inherit from BasePage to use AsyncAPIMixin. "
+                f"Missing: {', '.join(missing)}"
+            )
+    
     @property
     def has_api(self) -> bool:
         """Check if API is available"""
-        return bool(self._facade and self._facade.has_api)
+        return bool(getattr(self, '_facade', None) and self._facade.has_api)
     
     @property
     def has_async_api(self) -> bool:
@@ -156,6 +177,9 @@ class AsyncAPIMixin:
             if on_error:
                 on_error(RuntimeError("Not connected to WATS server"))
             return None
+        
+        # Validate mixin dependencies on first use
+        self._validate_mixin_dependencies()
         
         # Prefer async API
         if self.has_async_api:
@@ -257,14 +281,17 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
             return False
         return True
     
-    def run_async_chain(
+    def run_async_parallel(
         self,
         *calls: tuple[Callable, str],
         on_all_complete: Optional[Callable[[list], None]] = None,
         on_error: Optional[Callable[[Exception], None]] = None
     ) -> None:
         """
-        Run multiple API calls in sequence.
+        Run multiple API calls in PARALLEL (all start at once).
+        
+        Use this when calls are independent and can run concurrently.
+        Results are returned in the same order as the calls.
         
         Args:
             *calls: Tuples of (api_call, task_name)
@@ -272,18 +299,20 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
             on_error: Called if any fails
         
         Example:
-            self.run_async_chain(
+            self.run_async_parallel(
                 (lambda api: api.asset.get_types(), "Loading types..."),
                 (lambda api: api.asset.get_assets(), "Loading assets..."),
                 on_all_complete=self._on_data_loaded
             )
         """
-        results = []
+        results = [None] * len(calls)  # Pre-allocate to preserve order
+        completed = [0]  # Use list to allow mutation in closure
         
         def make_success_handler(idx, total):
             def handler(result):
-                results.append(result)
-                if len(results) == total and on_all_complete:
+                results[idx] = result
+                completed[0] += 1
+                if completed[0] == total and on_all_complete:
                     on_all_complete(results)
             return handler
         
@@ -294,3 +323,67 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
                 on_error=on_error,
                 task_name=name
             )
+    
+    def run_async_sequence(
+        self,
+        *calls: tuple[Callable, str],
+        on_all_complete: Optional[Callable[[list], None]] = None,
+        on_error: Optional[Callable[[Exception], None]] = None
+    ) -> None:
+        """
+        Run multiple API calls in SEQUENCE (one after another).
+        
+        Use this when later calls depend on earlier results,
+        or when you need guaranteed ordering.
+        
+        Args:
+            *calls: Tuples of (api_call, task_name)
+            on_all_complete: Called when all complete with list of results
+            on_error: Called if any fails (stops the sequence)
+        
+        Example:
+            self.run_async_sequence(
+                (lambda api: api.product.get_products(), "Loading products..."),
+                (lambda api: api.product.get_bom(self._selected_product), "Loading BOM..."),
+                on_all_complete=self._on_data_loaded
+            )
+        """
+        if not calls:
+            if on_all_complete:
+                on_all_complete([])
+            return
+        
+        results = []
+        calls_list = list(calls)  # Convert to list for indexing
+        
+        def run_next(idx: int):
+            if idx >= len(calls_list):
+                # All done
+                if on_all_complete:
+                    on_all_complete(results)
+                return
+            
+            call, name = calls_list[idx]
+            
+            def on_success(result):
+                results.append(result)
+                # Run next call
+                run_next(idx + 1)
+            
+            def on_err(e):
+                if on_error:
+                    on_error(e)
+                # Stop sequence on error (don't run remaining calls)
+            
+            self.run_api_call(
+                call,
+                on_success=on_success,
+                on_error=on_err,
+                task_name=name
+            )
+        
+        # Start the sequence
+        run_next(0)
+    
+    # Backwards compatibility alias
+    run_async_chain = run_async_parallel

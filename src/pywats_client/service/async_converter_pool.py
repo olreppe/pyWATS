@@ -112,6 +112,10 @@ class AsyncConverterPool:
         # Processing queue and semaphore
         self._queue: asyncio.Queue[AsyncConversionItem] = asyncio.Queue()
         self._semaphore = asyncio.Semaphore(max_concurrent)
+        self._active_count = 0  # Track active conversions explicitly (not _semaphore._value)
+        
+        # Event loop reference (for thread-safe signaling from watchdog)
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
         
         # Converter instances
         self._converters: List['Converter'] = []
@@ -139,7 +143,7 @@ class AsyncConverterPool:
     def stats(self) -> Dict[str, Any]:
         """Get pool statistics"""
         self._stats["queue_size"] = self._queue.qsize()
-        self._stats["active_conversions"] = self._max_concurrent - self._semaphore._value
+        self._stats["active_conversions"] = self._active_count
         return self._stats.copy()
     
     @property
@@ -163,6 +167,9 @@ class AsyncConverterPool:
         
         self._running = True
         self._stop_event.clear()
+        
+        # Store loop reference for thread-safe signaling from watchdog
+        self._loop = asyncio.get_running_loop()
         
         logger.info("AsyncConverterPool starting...")
         
@@ -234,6 +241,7 @@ class AsyncConverterPool:
                     task.cancel()
         
         self._active_tasks.clear()
+        self._loop = None  # Clear loop reference
         self._running = False
         logger.info("AsyncConverterPool stopped")
     
@@ -351,19 +359,28 @@ class AsyncConverterPool:
         file_path: Path,
         converter: 'Converter'
     ) -> None:
-        """Handle new file detected (called from watcher)"""
+        """Handle new file detected (called from watchdog thread - NOT async safe!)"""
         # Validate file matches converter pattern
         if not converter.matches_file(file_path):
             return
         
-        # Queue for conversion
+        # Queue for conversion - use thread-safe method
         item = AsyncConversionItem(file_path, converter)
         
-        try:
-            self._queue.put_nowait(item)
-            logger.debug(f"Queued: {file_path.name}")
-        except asyncio.QueueFull:
-            logger.warning(f"Queue full, cannot queue: {file_path.name}")
+        # IMPORTANT: This is called from watchdog's thread, not the asyncio thread.
+        # We must use call_soon_threadsafe to safely add to the asyncio queue
+        if self._loop is not None and self._loop.is_running():
+            self._loop.call_soon_threadsafe(
+                lambda: self._queue.put_nowait(item) if not self._queue.full() else logger.warning(f"Queue full, cannot queue: {file_path.name}")
+            )
+            logger.debug(f"Queued (thread-safe): {file_path.name}")
+        else:
+            # Fallback for edge cases
+            try:
+                self._queue.put_nowait(item)
+                logger.debug(f"Queued: {file_path.name}")
+            except asyncio.QueueFull:
+                logger.warning(f"Queue full, cannot queue: {file_path.name}")
     
     # =========================================================================
     # Conversion Processing
@@ -372,7 +389,11 @@ class AsyncConverterPool:
     async def _process_with_limit(self, item: AsyncConversionItem) -> None:
         """Process conversion item with semaphore limiting"""
         async with self._semaphore:
-            await self._process_item(item)
+            self._active_count += 1
+            try:
+                await self._process_item(item)
+            finally:
+                self._active_count -= 1
     
     async def _process_item(self, item: AsyncConversionItem) -> None:
         """

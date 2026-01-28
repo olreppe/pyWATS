@@ -100,11 +100,15 @@ class AsyncPendingQueue:
         
         # Concurrency control
         self._semaphore = asyncio.Semaphore(max_concurrent)
+        self._active_count = 0  # Track active uploads explicitly (not _semaphore._value)
         
         # State
         self.state = AsyncPendingQueueState.CREATED
         self._stop_event = asyncio.Event()
-        self._active_uploads: List[asyncio.Task] = []
+        self._active_uploads: set[asyncio.Task] = set()  # Use set to avoid race conditions
+        
+        # Event loop reference (for thread-safe signaling from watchdog)
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
         
         # File watcher
         self._observer: Optional[Observer] = None
@@ -156,6 +160,9 @@ class AsyncPendingQueue:
         
         self.state = AsyncPendingQueueState.RUNNING
         self._stop_event.clear()
+        
+        # Store loop reference for thread-safe signaling from watchdog
+        self._loop = asyncio.get_running_loop()
         
         logger.info("AsyncPendingQueue starting...")
         
@@ -211,19 +218,21 @@ class AsyncPendingQueue:
             self._observer = None
         
         # Wait for active uploads (with timeout)
-        if self._active_uploads:
-            logger.info(f"Waiting for {len(self._active_uploads)} uploads...")
+        active_tasks = list(self._active_uploads)  # Copy to avoid modification during iteration
+        if active_tasks:
+            logger.info(f"Waiting for {len(active_tasks)} uploads...")
             try:
                 await asyncio.wait_for(
-                    asyncio.gather(*self._active_uploads, return_exceptions=True),
+                    asyncio.gather(*active_tasks, return_exceptions=True),
                     timeout=30.0
                 )
             except asyncio.TimeoutError:
                 logger.warning("Upload tasks timed out, cancelling...")
-                for task in self._active_uploads:
+                for task in active_tasks:
                     task.cancel()
         
         self._active_uploads.clear()
+        self._loop = None  # Clear loop reference
         self.state = AsyncPendingQueueState.STOPPED
         logger.info("AsyncPendingQueue stopped")
     
@@ -245,9 +254,15 @@ class AsyncPendingQueue:
         logger.debug("File watcher started")
     
     def _on_file_queued(self, file_path: Path) -> None:
-        """Handle new queued file (called from watcher)"""
+        """Handle new queued file (called from watchdog thread - NOT async safe!)"""
         if file_path.suffix == '.queued':
-            self._new_file_event.set()
+            # IMPORTANT: This is called from watchdog's thread, not the asyncio thread.
+            # asyncio.Event.set() is NOT thread-safe, so we must use call_soon_threadsafe
+            if self._loop is not None and self._loop.is_running():
+                self._loop.call_soon_threadsafe(self._new_file_event.set)
+            else:
+                # Fallback for edge cases (loop not yet running)
+                self._new_file_event.set()
     
     # =========================================================================
     # Submission
@@ -271,24 +286,26 @@ class AsyncPendingQueue:
             asyncio.create_task(self._submit_with_limit(f))
             for f in queued_files
         ]
-        self._active_uploads.extend(tasks)
+        
+        # Add tasks to tracking set
+        for task in tasks:
+            self._active_uploads.add(task)
+            # Auto-remove when done (avoids race condition)
+            task.add_done_callback(lambda t: self._active_uploads.discard(t))
         
         # Wait for all to complete
         await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Clean up completed tasks
-        self._active_uploads = [t for t in self._active_uploads if not t.done()]
     
     async def _submit_with_limit(self, file_path: Path) -> None:
         """Submit single report with semaphore limiting"""
         async with self._semaphore:
-            self._stats["active_uploads"] = (
-                self._max_concurrent - self._semaphore._value
-            )
-            await self._submit_report(file_path)
-            self._stats["active_uploads"] = (
-                self._max_concurrent - self._semaphore._value
-            )
+            self._active_count += 1
+            self._stats["active_uploads"] = self._active_count
+            try:
+                await self._submit_report(file_path)
+            finally:
+                self._active_count -= 1
+                self._stats["active_uploads"] = self._active_count
     
     async def _submit_report(self, file_path: Path) -> None:
         """

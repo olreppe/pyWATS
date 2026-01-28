@@ -316,9 +316,12 @@ class AsyncClientService:
         if self._health_server:
             await self._stop_health_server()
         
-        # Close API connection
+        # Close API connection properly via context manager exit
         if self.api:
-            await self.api.close()
+            try:
+                await self.api.__aexit__(None, None, None)
+            except Exception as e:
+                logger.warning(f"API cleanup error (non-fatal): {e}")
             self.api = None
         
         self._set_status(AsyncServiceStatus.STOPPED)
@@ -380,23 +383,29 @@ class AsyncClientService:
         - API connection is alive
         - Components are healthy
         """
-        await asyncio.sleep(self.WATCHDOG_INTERVAL)  # Initial delay
-        
-        while not self._shutdown_event.is_set():
-            try:
-                await self._on_watchdog_elapsed()
-            except Exception as e:
-                logger.error(f"Watchdog error: {e}")
-                self._stats["errors"] += 1
+        try:
+            await asyncio.sleep(self.WATCHDOG_INTERVAL)  # Initial delay
             
-            try:
-                await asyncio.wait_for(
-                    self._shutdown_event.wait(),
-                    timeout=self.WATCHDOG_INTERVAL
-                )
-                break  # Shutdown requested
-            except asyncio.TimeoutError:
-                pass  # Continue loop
+            while not self._shutdown_event.is_set():
+                try:
+                    await self._on_watchdog_elapsed()
+                except asyncio.CancelledError:
+                    raise  # Always re-raise CancelledError
+                except Exception as e:
+                    logger.error(f"Watchdog error: {e}")
+                    self._stats["errors"] += 1
+                
+                try:
+                    await asyncio.wait_for(
+                        self._shutdown_event.wait(),
+                        timeout=self.WATCHDOG_INTERVAL
+                    )
+                    break  # Shutdown requested
+                except asyncio.TimeoutError:
+                    pass  # Continue loop
+        except asyncio.CancelledError:
+            logger.debug("Watchdog loop cancelled")
+            raise
     
     async def _on_watchdog_elapsed(self) -> None:
         """Handle watchdog timer tick"""
@@ -425,22 +434,28 @@ class AsyncClientService:
         
         Verifies server is reachable and updates status.
         """
-        await asyncio.sleep(self.PING_INTERVAL)  # Initial delay
-        
-        while not self._shutdown_event.is_set():
-            try:
-                await self._on_ping_elapsed()
-            except Exception as e:
-                logger.error(f"Ping error: {e}")
+        try:
+            await asyncio.sleep(self.PING_INTERVAL)  # Initial delay
             
-            try:
-                await asyncio.wait_for(
-                    self._shutdown_event.wait(),
-                    timeout=self.PING_INTERVAL
-                )
-                break
-            except asyncio.TimeoutError:
-                pass
+            while not self._shutdown_event.is_set():
+                try:
+                    await self._on_ping_elapsed()
+                except asyncio.CancelledError:
+                    raise  # Always re-raise CancelledError
+                except Exception as e:
+                    logger.error(f"Ping error: {e}")
+                
+                try:
+                    await asyncio.wait_for(
+                        self._shutdown_event.wait(),
+                        timeout=self.PING_INTERVAL
+                    )
+                    break
+                except asyncio.TimeoutError:
+                    pass
+        except asyncio.CancelledError:
+            logger.debug("Ping loop cancelled")
+            raise
     
     async def _on_ping_elapsed(self) -> None:
         """Handle ping timer tick"""
@@ -458,22 +473,28 @@ class AsyncClientService:
         
         Registers/updates client status with server.
         """
-        await asyncio.sleep(60)  # Initial delay (1 minute)
-        
-        while not self._shutdown_event.is_set():
-            try:
-                await self._on_register_elapsed()
-            except Exception as e:
-                logger.error(f"Registration error: {e}")
+        try:
+            await asyncio.sleep(60)  # Initial delay (1 minute)
             
-            try:
-                await asyncio.wait_for(
-                    self._shutdown_event.wait(),
-                    timeout=self.REGISTER_INTERVAL
-                )
-                break
-            except asyncio.TimeoutError:
-                pass
+            while not self._shutdown_event.is_set():
+                try:
+                    await self._on_register_elapsed()
+                except asyncio.CancelledError:
+                    raise  # Always re-raise CancelledError
+                except Exception as e:
+                    logger.error(f"Registration error: {e}")
+                
+                try:
+                    await asyncio.wait_for(
+                        self._shutdown_event.wait(),
+                        timeout=self.REGISTER_INTERVAL
+                    )
+                    break
+                except asyncio.TimeoutError:
+                    pass
+        except asyncio.CancelledError:
+            logger.debug("Register loop cancelled")
+            raise
     
     async def _on_register_elapsed(self) -> None:
         """Handle registration timer tick"""
@@ -489,25 +510,31 @@ class AsyncClientService:
         config_path = self.config.config_path
         last_mtime = config_path.stat().st_mtime if config_path.exists() else 0
         
-        while not self._shutdown_event.is_set():
-            try:
-                if config_path.exists():
-                    current_mtime = config_path.stat().st_mtime
-                    if current_mtime > last_mtime:
-                        logger.info("Config file changed, reloading...")
-                        await self._reload_config()
-                        last_mtime = current_mtime
-            except Exception as e:
-                logger.error(f"Config watch error: {e}")
-            
-            try:
-                await asyncio.wait_for(
-                    self._shutdown_event.wait(),
-                    timeout=5.0  # Check every 5 seconds
-                )
-                break
-            except asyncio.TimeoutError:
-                pass
+        try:
+            while not self._shutdown_event.is_set():
+                try:
+                    if config_path.exists():
+                        current_mtime = config_path.stat().st_mtime
+                        if current_mtime > last_mtime:
+                            logger.info("Config file changed, reloading...")
+                            await self._reload_config()
+                            last_mtime = current_mtime
+                except asyncio.CancelledError:
+                    raise  # Always re-raise CancelledError
+                except Exception as e:
+                    logger.error(f"Config watch error: {e}")
+                
+                try:
+                    await asyncio.wait_for(
+                        self._shutdown_event.wait(),
+                        timeout=5.0  # Check every 5 seconds
+                    )
+                    break
+                except asyncio.TimeoutError:
+                    pass
+        except asyncio.CancelledError:
+            logger.debug("Config watch loop cancelled")
+            raise
     
     async def _reload_config(self) -> None:
         """Reload configuration from file"""
