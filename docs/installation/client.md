@@ -82,31 +82,37 @@ pywats-client status
 
 ## Architecture
 
-### Background Services
+### Async-First Design (v1.4+)
 
-The client runs several background services:
+The client uses an **async-first architecture** with asyncio for efficient concurrent I/O:
 
-| Service | Purpose |
-|---------|---------|
-| **Connection Monitor** | Watches WATS server connectivity |
-| **Queue Manager** | Manages report queue lifecycle |
-| **File Watcher** | Detects new files in watch folders |
-| **Upload Service** | Sends reports to WATS |
-| **Software Service** | Downloads software packages (optional) |
+| Component | Purpose | Concurrency |
+|-----------|---------|-------------|
+| **AsyncClientService** | Main service controller | Single asyncio event loop |
+| **AsyncPendingQueue** | Report upload queue | 5 concurrent uploads |
+| **AsyncConverterPool** | File conversion | 10 concurrent conversions |
+| **File Watcher** | Detects new files in watch folders | Async events |
+| **IPC Server** | GUI communication | Qt LocalSocket |
 
 ### Report Processing Flow
 
 ```
 Test Equipment → [File Created] → [File Watcher]
                                        ↓
-                                 [Converter]
+                          [AsyncConverterPool]
+                           (10 concurrent)
                                        ↓
-                                   [Queue]
+                          [AsyncPendingQueue]
+                           (5 concurrent)
                                        ↓
-                             [Upload Service]
-                                       ↓
-                              [WATS Server]
+                           [WATS Server]
 ```
+
+**Benefits of async architecture:**
+- **5x faster uploads** - Concurrent report submission
+- **Lower memory** - Single thread vs multiple workers
+- **Responsive GUI** - Non-blocking API calls
+- **Efficient I/O** - asyncio multiplexing
 
 ---
 

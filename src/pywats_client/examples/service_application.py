@@ -1,19 +1,20 @@
 """
-Example: pyWATS Service Application
+Example: pyWATS Async Service Application
 
-This example shows how to use the pyWATS Client service architecture
+This example shows how to use the pyWATS Client async service architecture
 to build a service application with:
-- ClientService (background processing)
+- AsyncClientService (background processing with asyncio)
 - IPC communication via ServiceIPCClient
 - File monitoring
 - Graceful shutdown
 """
 
+import asyncio
 import logging
 from pathlib import Path
 from typing import Optional
 
-from pywats_client import ClientService, ServiceStatus
+from pywats_client.service import AsyncClientService, ServiceStatus
 from pywats_client.service.ipc_client import ServiceIPCClient
 
 # Configure logging
@@ -26,18 +27,23 @@ logger = logging.getLogger(__name__)
 
 class ServiceApplication:
     """
-    Service application using the pyWATS ClientService.
+    Service application using the pyWATS AsyncClientService.
     
     This demonstrates:
-    1. Starting the background ClientService
+    1. Starting the async background service
     2. Communicating with it via IPC
     3. Monitoring status and controlling the service
     
-    The ClientService can run as:
+    The AsyncClientService can run as:
     - A Windows Service
     - A systemd service
     - A standalone daemon
     - A foreground console application
+    
+    The async architecture provides:
+    - Non-blocking I/O with AsyncWATS
+    - Concurrent uploads (5 simultaneous via AsyncPendingQueue)
+    - Concurrent conversions (10 simultaneous via AsyncConverterPool)
     """
     
     def __init__(self, instance_id: str = "default") -> None:
@@ -48,40 +54,40 @@ class ServiceApplication:
             instance_id: Instance ID for multi-station support
         """
         self.instance_id = instance_id
-        self.service: Optional[ClientService] = None
+        self.service: Optional[AsyncClientService] = None
         self._running = False
 
-    def start(self) -> None:
-        """Start the service"""
+    async def start(self) -> None:
+        """Start the async service"""
         if self._running:
             logger.warning("Service already running")
             return
         
-        logger.info(f"Starting service application [instance: {self.instance_id}]")
+        logger.info(f"Starting async service application [instance: {self.instance_id}]")
         
-        # Create and start the ClientService
-        self.service = ClientService(self.instance_id)
+        # Create and start the AsyncClientService
+        self.service = AsyncClientService()
         self._running = True
         
         try:
-            # Start blocks until service stops
-            self.service.start()
-        except KeyboardInterrupt:
-            logger.info("Service interrupted by user")
+            # Run blocks until service stops
+            await self.service.run()
+        except asyncio.CancelledError:
+            logger.info("Service cancelled")
         except Exception as e:
             logger.error(f"Service error: {e}")
         finally:
             self._running = False
     
-    def stop(self) -> None:
+    async def stop(self) -> None:
         """Stop the service gracefully"""
         if not self._running:
             return
         
-        logger.info("Stopping service application...")
+        logger.info("Stopping async service application...")
         
         if self.service:
-            self.service.stop()
+            await self.service.stop()
         
         self._running = False
         logger.info("Service application stopped")
@@ -102,7 +108,7 @@ class IPCControlExample:
     """
     Example of controlling a running service via IPC.
     
-    This shows how to communicate with an already-running ClientService
+    This shows how to communicate with an already-running AsyncClientService
     from another process (e.g., GUI, CLI, or web interface).
     """
     
@@ -162,9 +168,9 @@ class IPCControlExample:
 # ============================================================================
 
 def run_service():
-    """Run the service in foreground"""
+    """Run the async service in foreground"""
     service = ServiceApplication(instance_id="default")
-    service.start()
+    asyncio.run(service.start())
 
 
 def control_service():
@@ -182,7 +188,7 @@ def control_service():
 
 
 def main():
-    """Main entry point - run the service"""
+    """Main entry point - run the async service"""
     run_service()
 
 

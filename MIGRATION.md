@@ -5,6 +5,7 @@ For a summary of all changes, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Table of Contents
 
+- [v0.1.0b40 - Async-First Client Architecture](#v010b40---async-first-client-architecture)
 - [v0.1.0b40 - File I/O Separation](#v010b40---file-io-separation)
 - [v0.1.0b40 - Deprecated UUR Classes Removed](#v010b40---deprecated-uur-classes-removed)
 - [v0.1.0b38 - CompOp Import Location](#v010b38---compop-import-location)
@@ -12,6 +13,98 @@ For a summary of all changes, see [CHANGELOG.md](CHANGELOG.md).
 - [v0.1.0b38 - Configuration Moved to Client](#v010b38---configuration-moved-to-client)
 - [v0.1.0b34 - Report Query API](#v010b34---report-query-api)
 - [v0.1.0b32 - Unified API Pattern](#v010b32---unified-api-pattern)
+
+---
+
+## v0.1.0b40 - Async-First Client Architecture
+
+The client service now uses an **async-first architecture** for better performance and concurrency.
+
+### ClientService → AsyncClientService
+
+```python
+# Before
+from pywats_client.service import ClientService
+service = ClientService(instance_id="default")
+service.start()  # Blocking call
+
+# After
+from pywats_client.service import AsyncClientService
+import asyncio
+
+service = AsyncClientService()
+asyncio.run(service.run())  # Async entry point
+```
+
+### PendingWatcher → AsyncPendingQueue
+
+The pending queue now supports concurrent uploads (5 simultaneous by default).
+
+```python
+# Before: Sequential uploads with locks
+# PendingWatcher processed one report at a time
+
+# After: Concurrent uploads with semaphore
+from pywats_client.service import AsyncPendingQueue
+
+queue = AsyncPendingQueue(
+    api=async_wats,
+    reports_dir=reports_path,
+    max_concurrent=5  # 5 concurrent uploads
+)
+await queue.run()
+```
+
+### ConverterPool → AsyncConverterPool
+
+The converter pool now supports concurrent conversions (10 simultaneous by default).
+
+```python
+# Before: ThreadPoolExecutor with fixed workers
+# ConverterPool used threads for each conversion
+
+# After: asyncio.Semaphore for bounded concurrency
+from pywats_client.service import AsyncConverterPool
+
+pool = AsyncConverterPool(
+    config=client_config,
+    api=async_wats,
+    max_concurrent=10  # 10 concurrent conversions
+)
+await pool.run()
+```
+
+### GUI Pages: AsyncAPIPageMixin
+
+GUI pages now use `AsyncAPIPageMixin` for non-blocking API calls.
+
+```python
+# Before: Blocking API calls froze the UI
+def _lookup_unit(self, part_number: str):
+    result = self.api.production.lookup_production_unit(part_number)
+    self._display_result(result)
+
+# After: Non-blocking calls with callbacks
+from pywats_client.gui.async_api_mixin import AsyncAPIPageMixin
+
+class ProductionPage(AsyncAPIPageMixin, BasePage):
+    def _lookup_unit(self, part_number: str):
+        self.run_api_call(
+            api_call=lambda api: api.production.lookup_production_unit(part_number),
+            on_success=self._on_lookup_success,
+            on_error=self._on_lookup_error
+        )
+```
+
+### New Dependencies
+
+The async architecture requires new dependencies:
+
+```bash
+# In requirements.txt / pyproject.toml:
+aiofiles>=23.0.0  # Async file I/O
+qasync>=0.27.0    # Qt + asyncio integration (for GUI)
+```
 
 ---
 
@@ -55,7 +148,7 @@ attachment = AttachmentIO.from_file("path/to/file.pdf")
 report.attach_bytes(attachment.content, attachment.filename, attachment.mime_type)
 ```
 
-### SimpleQueue → ClientService
+### SimpleQueue → AsyncClientService
 
 ```python
 # Before
@@ -63,11 +156,19 @@ from pywats.queue import SimpleQueue
 queue = SimpleQueue(data_path="./queue")
 queue.add(report)
 
-# After
-# Use pywats_client.ClientService for file-based queuing
-from pywats_client import ClientService
-service = ClientService(config)
-service.queue.add(report)
+# After (v1.4+)
+# Use AsyncClientService for async file-based queuing
+from pywats_client.service import AsyncClientService
+import asyncio
+
+async def main():
+    service = AsyncClientService()
+    await service.run()  # Service handles queue automatically
+
+asyncio.run(main())
+
+# Or for sync usage, the queue directory is still available:
+# Reports placed in {queue_dir}/pending/*.json are auto-uploaded
 ```
 
 ---

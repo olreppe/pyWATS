@@ -1,22 +1,23 @@
 # pyWATS Client Service Architecture
 
-**New architecture implemented**: Service/Client separation (like C# WATS Client)
+**Architecture version**: v1.4.0 - Async-First Architecture
 
 ## Overview
 
-The pyWATS Client now follows a **clean service/GUI architecture** similar to the proven C# WATS Client design:
+The pyWATS Client uses an **async-first architecture** built on Python's `asyncio` for efficient concurrent I/O. The service and GUI are separated with IPC communication:
 
 ```
 ┌─────────────────────────────────────┐
 │  Service Process (Background)        │
 │  python -m pywats_client service    │
 │                                      │
-│  - ClientService (main controller)  │
-│  - ConverterPool (worker threads)   │
-│  - PendingWatcher (report queue)    │
+│  - AsyncClientService (controller)  │
+│  - AsyncConverterPool (10 concurrent)│
+│  - AsyncPendingQueue (5 concurrent) │
 │  - IPC Server (GUI communication)   │
 │                                      │
 │  Runs independently, 24/7           │
+│  Single asyncio event loop          │
 └─────────────────────────────────────┘
               ⬍ IPC (Qt LocalSocket) ⬍
 ┌─────────────────────────────────────┐
@@ -24,6 +25,7 @@ The pyWATS Client now follows a **clean service/GUI architecture** similar to th
 │  python -m pywats_client gui        │
 │                                      │
 │  - MainWindow (PySide6 UI)          │
+│  - AsyncAPIPageMixin (non-blocking) │
 │  - IPC Client (service connection)  │
 │  - Configuration & Monitoring       │
 │                                      │
@@ -35,14 +37,14 @@ The pyWATS Client now follows a **clean service/GUI architecture** similar to th
 
 ### Service Process (src/pywats_client/service/)
 
-#### **client_service.py** - Main Service Controller
-Equivalent to `ClientSvc.cs` in C# implementation.
+#### **async_client_service.py** - Main Async Service Controller
+Main service controller using asyncio.
 
 **Responsibilities:**
-- Service lifecycle (start/stop)
-- API connection management
+- Service lifecycle (start/stop) via asyncio tasks
+- AsyncWATS API connection (non-blocking)
 - Component coordination
-- Timer management (watchdog, ping, registration)
+- Timer management via asyncio.Task (not QTimer)
 - Config file monitoring (hot-reload)
 - IPC server for GUI communication
 
@@ -50,7 +52,7 @@ Equivalent to `ClientSvc.cs` in C# implementation.
 - Watchdog timer (60s) - Health checks for all components
 - Ping timer (5min) - Server connectivity checks
 - Registration timer (1hr) - Status updates to server
-- Graceful shutdown handling
+- Graceful shutdown with task cancellation
 - Signal handling (SIGINT, SIGTERM)
 
 **Usage:**
@@ -58,45 +60,54 @@ Equivalent to `ClientSvc.cs` in C# implementation.
 python -m pywats_client service --instance-id default
 ```
 
+```python
+from pywats_client.service import AsyncClientService
+
+service = AsyncClientService()
+asyncio.run(service.run())  # Blocks until shutdown
+```
+
 ---
 
-#### **converter_pool.py** - Converter Pool with Auto-Scaling
-Equivalent to `Conversion.cs` in C# implementation.
+#### **async_converter_pool.py** - Concurrent File Conversion
+Converts files using bounded concurrency with asyncio.Semaphore.
 
 **Architecture:**
-- **ConverterPool**: Manages converters and worker threads
+- **AsyncConverterPool**: Manages converters with semaphore-bounded concurrency
 - **Converter**: Individual converter watching a folder
-- **ConverterWorkerClass**: Worker thread processing files
-- **ConversionItem**: File queued for conversion
+- **asyncio.Semaphore(10)**: Limits to 10 concurrent conversions
 
 **Key Features:**
-- **Auto-scaling worker pool**: 1 worker per 10 pending files
-- **Max workers**: Configurable (default: 10, max: 50)
-- **Auto-shutdown**: Workers terminate after 120s idle
-- **Timeout recovery**: Reset items stuck >10 minutes
-- **File system watching**: Per-converter folder monitoring
+- **Bounded concurrency**: Up to 10 simultaneous conversions
+- **Non-blocking I/O**: Uses aiofiles for file operations
+- **File system watching**: Monitors input directories
 - **Post-processing**: Move/Delete/Archive/Error handling
 
-**Worker Pool Behavior:**
+**Concurrency Model:**
 ```python
-# Pending files: 0-10  -> 1 worker
-# Pending files: 11-20 -> 2 workers
-# Pending files: 21-30 -> 3 workers
-# ... up to max_workers
+# Up to 10 files process simultaneously
+# Additional files wait for semaphore
+async with self._semaphore:  # Semaphore(10)
+    result = await self._convert_file(file_path)
 ```
 
 **State Machine:**
 ```
-File arrives → PENDING → Worker picks up → PROCESSING
+File arrives → PENDING → Semaphore acquired → PROCESSING
                             ↓
-                    Success: Post-process (move/delete)
+                    Success: Move to pending queue
                     Failure: Move to Error folder
 ```
 
 ---
 
-#### **pending_watcher.py** - Offline Report Queue
-Equivalent to `PendingWatcher.cs` in C# implementation.
+#### **async_pending_queue.py** - Concurrent Report Upload Queue
+Uploads reports to WATS with bounded concurrency.
+
+**Architecture:**
+- **AsyncPendingQueue**: Manages upload queue with semaphore
+- **asyncio.Semaphore(5)**: Limits to 5 concurrent uploads
+- **aiofiles**: Async file reading
 
 **File-Based State Machine:**
 - `.queued` - Ready to upload
@@ -105,13 +116,20 @@ Equivalent to `PendingWatcher.cs` in C# implementation.
 - `.completed` - Successfully uploaded
 
 **Key Features:**
+- **Bounded concurrency**: Up to 5 simultaneous uploads
 - **File system watching**: Monitors for .queued files
-- **Periodic checking**: Every 5 minutes
+- **Periodic checking**: Every 60 seconds
 - **Timeout recovery**:
   - `.processing` > 30 min → back to `.queued`
   - `.error` > 5 min → retry as `.queued`
 - **Atomic state transitions**: File rename = state change
 - **Crash-proof**: State persisted in file system
+
+**Concurrency Model:**
+```python
+async with self._semaphore:  # Semaphore(5)
+    await self._submit_report(report_path)
+```
 
 **Why file extensions for state?**
 - Simple and reliable
@@ -172,14 +190,37 @@ if client.connect():
 The GUI has been **simplified** to only handle UI and configuration:
 - **No embedded services** - Removed pyWATSApplication from GUI
 - **IPC communication only** - Connects to service via IPC
+- **AsyncAPIPageMixin** - Non-blocking API calls from GUI pages
 - **Can launch/exit freely** - Doesn't affect background operations
 - **Service discovery** - Finds running service instances
+
+**Async GUI Integration:**
+GUI pages use `AsyncAPIPageMixin` for non-blocking API calls:
+```python
+from pywats_client.gui.async_api_mixin import AsyncAPIPageMixin
+
+class ProductionPage(AsyncAPIPageMixin, BasePage):
+    def _lookup_unit(self, part_number: str):
+        self.run_api_call(
+            api_call=lambda api: api.production.lookup_production_unit(part_number),
+            on_success=self._on_lookup_success,
+            on_error=self._on_lookup_error
+        )
+```
+
+**Migrated GUI Pages:**
+- ✅ Production page (`production.py`)
+- ✅ Asset page (`asset.py`)
+- ✅ Product page (`product.py`)
+- ✅ RootCause page (`rootcause.py`)
 
 **Changes from old architecture:**
 - ❌ Removed: `pyWATSApplication` instance in MainWindow
 - ❌ Removed: `AppFacade` wrapper
 - ❌ Removed: Embedded services (ConnectionService, etc.)
+- ❌ Removed: ThreadPoolExecutor-based API calls
 - ✅ Added: `ServiceIPCClient` for communication
+- ✅ Added: `AsyncAPIPageMixin` for non-blocking API calls
 - ✅ Added: Service discovery and auto-connect
 - ✅ Added: "Start Service" button if not running
 

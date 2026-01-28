@@ -301,22 +301,22 @@ current = registry.get_active()  # Station("ICT-01", ...)
 
 ## pyWATS Client Layer
 
-### Service Architecture (New in v1.3)
+### Service Architecture (New in v1.4 - Async-First)
 
-The client has been refactored into **separate service and GUI** with IPC communication:
+The client uses an **async-first architecture** with asyncio for efficient concurrent I/O:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    Client Service                            │
+│                 AsyncClientService                           │
 │  (Background process, headless-capable)                      │
 │                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ClientService │  │PendingWatcher│  │ ConverterPool│      │
-│  │              │  │              │  │              │      │
-│  │• Lifecycle   │  │• File monitor│  │• Workers     │      │
-│  │• Status      │  │• Periodic    │  │• Converters  │      │
-│  │• API client  │  │• Submit queue│  │• Queue       │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│  ┌───────────────┐  ┌─────────────────┐  ┌───────────────┐  │
+│  │AsyncClientSvc │  │AsyncPendingQueue│  │AsyncConverter │  │
+│  │               │  │                 │  │    Pool       │  │
+│  │• Lifecycle    │  │• 5 concurrent   │  │• 10 concurrent│  │
+│  │• Status       │  │• File watching  │  │• Semaphore    │  │
+│  │• AsyncWATS    │  │• Retry logic    │  │• Converters   │  │
+│  └───────────────┘  └─────────────────┘  └───────────────┘  │
 │                                                              │
 │  ┌──────────────────────────────────────────────────┐       │
 │  │              PersistentQueue                     │       │
@@ -331,6 +331,8 @@ The client has been refactored into **separate service and GUI** with IPC commun
 │  │  • JSON command/response protocol                │       │
 │  │  • Commands: get_status, get_config, stop, etc.  │       │
 │  └──────────────────────────────────────────────────┘       │
+│                                                              │
+│         ↓ asyncio event loop (single thread, concurrent I/O)│
 └──────────────────────────────────────────────────────────────┘
                           ↕ IPC
 ┌──────────────────────────────────────────────────────────────┐
@@ -342,23 +344,32 @@ The client has been refactored into **separate service and GUI** with IPC commun
 │  │  • Connects to service via LocalSocket           │       │
 │  │  • Sends commands, receives updates              │       │
 │  └──────────────────────────────────────────────────┘       │
+│                                                              │
+│  ┌──────────────────────────────────────────────────┐       │
+│  │          AsyncAPIPageMixin (GUI Pages)           │       │
+│  │  • Non-blocking API calls via run_api_call()     │       │
+│  │  • Auto sync/async detection                     │       │
+│  └──────────────────────────────────────────────────┘       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 **Key components:**
 
-1. **ClientService** - Main service controller
-   - ServiceStatus states: STOPPED, START_PENDING, RUNNING, STOP_PENDING, PAUSED
-   - Manages lifecycle and coordinates components
+1. **AsyncClientService** - Main async service controller
+   - AsyncServiceStatus states: STOPPED, START_PENDING, RUNNING, STOP_PENDING, PAUSED, ERROR
+   - Uses AsyncWATS for non-blocking API calls
+   - Manages lifecycle with asyncio tasks
 
-2. **PendingWatcher** - Report queue manager
-   - Monitors pending reports directory
-   - Periodic check (5 minutes) + file system events
-   - Submission lock to prevent concurrent uploads
+2. **AsyncPendingQueue** - Concurrent report uploads
+   - 5 concurrent uploads (configurable via semaphore)
+   - Async file watching for new reports
+   - Automatic retry with exponential backoff
+   - Graceful shutdown (completes in-flight uploads)
 
-3. **ConverterPool** - Converter worker management
-   - 1-50 workers (configurable, default: 10)
-   - Manages converter list and pending queue
+3. **AsyncConverterPool** - Concurrent file conversion
+   - 10 concurrent conversions (configurable via semaphore)
+   - Uses asyncio.to_thread() for CPU-bound converter code
+   - Async file I/O for efficiency
 
 4. **PersistentQueue** - SQLite-backed queue
    - States: pending, processing, completed, failed
@@ -369,6 +380,11 @@ The client has been refactored into **separate service and GUI** with IPC commun
    - Socket name: `pyWATS_Service_{instance_id}`
    - JSON protocol for commands and responses
    - Service/GUI separation enables headless mode
+
+6. **AsyncAPIPageMixin** - GUI async helper
+   - Non-blocking API calls via `run_api_call()`
+   - Auto-detects sync/async API client
+   - Callback-based result handling
 
 ### Core Services
 

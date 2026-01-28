@@ -1,6 +1,6 @@
 # pyWATS Client Architecture
 
-**Version:** 1.3.0 (Service/GUI Separation)  
+**Version:** 1.4.0 (Async-First Architecture)  
 **Last Updated:** January 2026  
 **Audience:** Client developers, advanced users, troubleshooters
 
@@ -8,9 +8,10 @@
 
 ## Overview
 
-The pyWATS Client is a **background service** with optional **GUI frontend** for managing test station automation. Starting with v1.3.0, the client uses a **separate service and GUI architecture** with inter-process communication (IPC), enabling true headless operation and better reliability.
+The pyWATS Client is a **background service** with optional **GUI frontend** for managing test station automation. Starting with v1.4.0, the client uses an **async-first architecture** with Python's `asyncio` for efficient concurrent I/O. The service and GUI remain separate with inter-process communication (IPC), enabling true headless operation and better reliability.
 
 **Key Features:**
+- **Async-first:** Non-blocking I/O with asyncio, concurrent uploads/conversions
 - **Headless operation:** Service runs independently without GUI
 - **IPC communication:** GUI communicates with service via Qt LocalSocket
 - **Multi-instance:** Run multiple isolated clients on same machine
@@ -45,24 +46,26 @@ The pyWATS Client is a **background service** with optional **GUI frontend** for
 │  • PySide6/Qt application                                  │
 │  • ServiceIPCClient                                        │
 │  • Sends commands, receives updates                        │
+│  • AsyncAPIPageMixin for non-blocking API calls            │
 └────────────────────────────────────────────────────────────┘
                          ↕ IPC (LocalSocket)
 ┌────────────────────────────────────────────────────────────┐
 │                    Service Process                         │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │              ClientService                           │  │
+│  │            AsyncClientService                        │  │
 │  │  • ServiceStatus management                          │  │
-│  │  • Lifecycle coordination                            │  │
-│  │  • pyWATS API client                                 │  │
+│  │  • Lifecycle coordination (asyncio.Task)             │  │
+│  │  • AsyncWATS API client (non-blocking)               │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                                                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐  │
-│  │PendingWatcher│  │ConverterPool │  │PersistentQueue │  │
-│  │              │  │              │  │                │  │
-│  │• File monitor│  │• Worker mgmt │  │• SQLite DB     │  │
-│  │• Periodic    │  │• 1-50 workers│  │• Crash recovery│  │
-│  │• Submit queue│  │• Converters  │  │• Retry logic   │  │
-│  └──────────────┘  └──────────────┘  └────────────────┘  │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────┐ │
+│  │AsyncPendingQueue │  │AsyncConverterPool│  │Persistent│ │
+│  │                  │  │                  │  │  Queue   │ │
+│  │• Semaphore(5)    │  │• Semaphore(10)   │  │          │ │
+│  │• 5 concurrent    │  │• 10 concurrent   │  │• SQLite  │ │
+│  │  uploads         │  │  conversions     │  │• Crash   │ │
+│  │• File watcher    │  │• File watcher    │  │  recovery│ │
+│  └──────────────────┘  └──────────────────┘  └──────────┘ │
 │                                                            │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │              IPCServer                               │  │
@@ -99,11 +102,11 @@ GUI                Service           Queue              WATS
 
 ## Service Components
 
-### ClientService
+### AsyncClientService
 
-**Purpose:** Main service controller and lifecycle manager
+**Purpose:** Main async service controller and lifecycle manager
 
-**Location:** `src/pywats_client/service/client_service.py`
+**Location:** `src/pywats_client/service/async_client_service.py`
 
 **ServiceStatus States:**
 - `STOPPED` - Not running
@@ -113,75 +116,83 @@ GUI                Service           Queue              WATS
 - `PAUSED` - Temporarily paused (reserved for future use)
 
 **Key Responsibilities:**
-1. Initialize and coordinate all components
-2. Manage service lifecycle
-3. Provide pyWATS API client access
+1. Initialize and coordinate all components using asyncio
+2. Manage service lifecycle with async context managers
+3. Provide AsyncWATS API client access (non-blocking)
 4. Track connection status
 5. Handle start/stop/pause commands
 
 **Code Structure:**
 ```python
-class ClientService:
+class AsyncClientService:
     def __init__(self, config: ClientConfig):
         self.config = config
         self.status = ServiceStatus.STOPPED
-        self._api_client: Optional[pyWATS] = None
-        self._pending_watcher: Optional[PendingWatcher] = None
-        self._converter_pool: Optional[ConverterPool] = None
+        self._api: Optional[AsyncWATS] = None
+        self._pending_queue: Optional[AsyncPendingQueue] = None
+        self._converter_pool: Optional[AsyncConverterPool] = None
+        self._tasks: List[asyncio.Task] = []
     
-    async def start(self):
-        """Start the service and all components"""
+    async def run(self):
+        """Run the service (blocks until shutdown)"""
         self.status = ServiceStatus.START_PENDING
         
-        # Initialize API client
-        self._api_client = self._create_api_client()
+        # Initialize async API client
+        self._api = AsyncWATS(
+            url=self.config.wats_url,
+            token=self.config.token
+        )
         
-        # Start queue watcher
-        self._pending_watcher = PendingWatcher(...)
-        await self._pending_watcher.async_init()
+        # Start concurrent components
+        self._pending_queue = AsyncPendingQueue(api=self._api, ...)
+        self._converter_pool = AsyncConverterPool(api=self._api, ...)
         
-        # Start converter pool
-        self._converter_pool = ConverterPool(...)
+        self._tasks = [
+            asyncio.create_task(self._pending_queue.run()),
+            asyncio.create_task(self._converter_pool.run()),
+            asyncio.create_task(self._api_status_loop()),
+        ]
         
         self.status = ServiceStatus.RUNNING
+        
+        # Wait until stopped
+        await asyncio.gather(*self._tasks, return_exceptions=True)
     
     async def stop(self):
         """Stop the service gracefully"""
         self.status = ServiceStatus.STOP_PENDING
         
-        # Stop components in reverse order
-        if self._pending_watcher:
-            await self._pending_watcher.dispose()
+        # Cancel all tasks
+        for task in self._tasks:
+            task.cancel()
         
         self.status = ServiceStatus.STOPPED
 ```
 
 **API Status Tracking:**
 ```python
-def get_api_status(self) -> str:
-    """Get current API connection status"""
-    if not self._api_client:
-        return "Disconnected"
-    
-    try:
-        # Test connection with quick API call
-        version = self._api_client.app.get_version()
-        return "Online"
-    except Exception:
-        return "Offline"
+async def _api_status_loop(self):
+    """Periodically check API connection"""
+    while True:
+        try:
+            version = await self._api.app.get_version()
+            self._api_status = "Online"
+        except Exception:
+            self._api_status = "Offline"
+        await asyncio.sleep(60)
 ```
 
-### PendingWatcher
+### AsyncPendingQueue
 
-**Purpose:** Monitor and submit queued reports
+**Purpose:** Monitor and submit queued reports with concurrent uploads
 
-**Location:** `src/pywats_client/service/pending_watcher.py`
+**Location:** `src/pywats_client/service/async_pending_queue.py`
 
 **Key Features:**
 1. **File system monitoring:** Watches pending reports directory
-2. **Periodic checking:** Timer-based check every 5 minutes
-3. **Submission lock:** Prevents concurrent uploads
-4. **Async initialization:** Non-blocking startup
+2. **Concurrent uploads:** Up to 5 simultaneous uploads via semaphore
+3. **Periodic checking:** Timer-based check every 60 seconds
+4. **Non-blocking:** All I/O operations are async
 
 **Workflow:**
 ```
@@ -189,122 +200,142 @@ def get_api_status(self) -> str:
 │ Pending Directory   │
 │ - report1.json      │
 │ - report2.json      │
+│ - report3.json      │
+│ - ...               │
 └─────────────────────┘
           │
           ▼
-┌─────────────────────┐      ┌──────────────────┐
-│  File System Event  │─────▶│ Submission Lock  │
-│  or Periodic Timer  │      │ (Prevent overlap)│
-└─────────────────────┘      └──────────────────┘
-          │                           │
-          ▼                           ▼
-┌─────────────────────┐      ┌──────────────────┐
-│ Read Report JSON    │      │  Submit to WATS  │
-└─────────────────────┘      └──────────────────┘
-          │                           │
-          ▼                           ▼
-┌─────────────────────┐      ┌──────────────────┐
-│ Move to Processing  │─────▶│  On Success:     │
-│                     │      │  Move to Complete│
-└─────────────────────┘      └──────────────────┘
+┌─────────────────────┐
+│  Semaphore(5)       │
+│  Bounded concurrency│
+└─────────────────────┘
+          │
+   ┌──────┼──────┐
+   ▼      ▼      ▼
+┌─────┐┌─────┐┌─────┐
+│Task1││Task2││Task3│──▶ WATS API (concurrent)
+└─────┘└─────┘└─────┘
+          │
+          ▼
+┌─────────────────────┐
+│ Move to Complete    │
+│ or Retry on failure │
+└─────────────────────┘
 ```
 
 **Code Structure:**
 ```python
-class PendingWatcher:
-    def __init__(self, queue_dir: Path, api_client: pyWATS):
-        self.queue_dir = queue_dir
-        self.api_client = api_client
-        self._timer = None
-        self._submission_lock = asyncio.Lock()
-        self._disposed = False
+class AsyncPendingQueue:
+    def __init__(self, api: AsyncWATS, reports_dir: Path, max_concurrent: int = 5):
+        self._api = api
+        self._reports_dir = reports_dir
+        self._semaphore = asyncio.Semaphore(max_concurrent)
+        self._stopped = False
     
-    async def async_init(self):
-        """Initialize file watcher and start timer"""
-        # Set up file system watcher
-        self._observer = Observer()
-        self._observer.schedule(
-            self._event_handler,
-            str(self.queue_dir / "pending"),
-            recursive=False
-        )
-        self._observer.start()
-        
-        # Start periodic check
-        self._timer = asyncio.create_task(self._periodic_check())
+    async def run(self):
+        """Main run loop"""
+        tasks = [
+            asyncio.create_task(self._watch_directory()),
+            asyncio.create_task(self._periodic_scan()),
+        ]
+        await asyncio.gather(*tasks)
     
-    async def _periodic_check(self):
-        """Check for pending reports every 5 minutes"""
-        while not self._disposed:
-            await asyncio.sleep(300)  # 5 minutes
-            await self._submit_pending_reports()
+    async def _submit_report(self, report_path: Path):
+        """Submit a single report (respects semaphore)"""
+        async with self._semaphore:  # Limits to max_concurrent
+            async with aiofiles.open(report_path) as f:
+                data = json.loads(await f.read())
+            
+            await self._api.report.create_report(data)
+            
+            # Move to completed
+            report_path.rename(self._reports_dir / "completed" / report_path.name)
     
-    async def _submit_pending_reports(self):
-        """Submit all pending reports with lock"""
-        async with self._submission_lock:
-            # Process pending reports...
-            pass
-    
-    async def dispose(self):
-        """Clean shutdown"""
-        self._disposed = True
-        if self._observer:
-            self._observer.stop()
-            self._observer.join()
+    async def stop(self):
+        """Signal shutdown"""
+        self._stopped = True
 ```
 
-### ConverterPool
+### AsyncConverterPool
 
-**Purpose:** Manage converter workers and execution
+**Purpose:** Manage concurrent file conversions with bounded parallelism
 
-**Location:** `src/pywats_client/service/converter_pool.py`
+**Location:** `src/pywats_client/service/async_converter_pool.py`
 
 **Configuration:**
-- `max_converter_workers`: 1-50 (default: 10)
-- Worker count bounded to prevent resource exhaustion
+- `max_concurrent`: 1-50 (default: 10)
+- Concurrency bounded via `asyncio.Semaphore` to prevent resource exhaustion
 
 **Responsibilities:**
-1. Manage worker threads/processes
-2. Distribute converter tasks
-3. Maintain converter registry
-4. Handle pending conversion queue
+1. Watch input directories for new files
+2. Execute converters concurrently (up to max_concurrent)
+3. Move converted files to pending queue
+4. Handle converter errors and retries
 
 **Code Structure:**
 ```python
-class ConverterPool:
-    def __init__(self, max_workers: int = 10):
-        self.max_workers = max(1, min(50, max_workers))
-        self._executor = ThreadPoolExecutor(max_workers=self.max_workers)
+class AsyncConverterPool:
+    def __init__(self, config: ClientConfig, api: AsyncWATS, max_concurrent: int = 10):
+        self._config = config
+        self._api = api
+        self._semaphore = asyncio.Semaphore(max_concurrent)
         self._converters: List[Converter] = []
-        self._pending_queue: Queue = Queue()
-        self._dispose_flag = False
+        self._stopped = False
     
     def add_converter(self, converter: Converter):
         """Register a converter"""
         self._converters.append(converter)
     
-    def submit_conversion(self, file_path: Path, converter: Converter):
-        """Submit file for conversion"""
-        future = self._executor.submit(
-            self._convert_file,
-            file_path,
-            converter
-        )
-        return future
+    async def run(self):
+        """Main run loop - watch and convert files"""
+        tasks = [
+            asyncio.create_task(self._watch_input()),
+            asyncio.create_task(self._periodic_scan()),
+        ]
+        await asyncio.gather(*tasks)
     
-    def _convert_file(self, file_path: Path, converter: Converter):
-        """Execute conversion (runs in worker thread)"""
-        try:
-            source = ConverterSource(file_path)
-            result = converter.convert(source, context={})
-            return result
-        except Exception as e:
-            return ConverterResult.failure(str(e))
+    async def _convert_file(self, file_path: Path, converter: Converter):
+        """Execute conversion (respects semaphore)"""
+        async with self._semaphore:  # Limits concurrent conversions
+            try:
+                # Run converter (may be sync, use run_in_executor)
+                loop = asyncio.get_event_loop()
+                result = await loop.run_in_executor(
+                    None,
+                    lambda: converter.convert(ConverterSource(file_path), {})
+                )
+                
+                if result.success:
+                    # Move to pending queue
+                    await self._move_to_pending(result.report)
+                return result
+            except Exception as e:
+                return ConverterResult.failure(str(e))
     
-    def dispose(self):
-        """Shutdown pool"""
-        self._dispose_flag = True
-        self._executor.shutdown(wait=True)
+    async def stop(self):
+        """Signal shutdown"""
+        self._stopped = True
+```
+
+**Concurrency Model:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   AsyncConverterPool                         │
+│                                                              │
+│  Input Files                  Semaphore(10)                  │
+│  ┌─────────┐                 ┌─────────────────────────────┐ │
+│  │ file1   │──┐              │ Task1: converter.convert()  │ │
+│  │ file2   │──┤              │ Task2: converter.convert()  │ │
+│  │ file3   │──┼──────────────│ Task3: converter.convert()  │ │
+│  │ ...     │──┤              │ ...                         │ │
+│  │ file20  │──┘              │ Task10: converter.convert() │ │
+│  └─────────┘                 └─────────────────────────────┘ │
+│                                         │                    │
+│  [waiting]: file11-file20               ▼                    │
+│                              ┌─────────────────────────────┐ │
+│                              │   Pending Queue (output)    │ │
+│                              └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
