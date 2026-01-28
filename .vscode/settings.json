@@ -68,6 +68,25 @@
         "MD013": false  // Disable line length rule
     },
     
+    // Markdown Preview Configuration
+    "markdown.preview.breaks": true,
+    "markdown.preview.fontSize": 14,
+    "markdown.preview.lineHeight": 1.6,
+    "markdown.preview.scrollPreviewWithEditor": true,
+    "markdown.preview.scrollEditorWithPreview": true,
+    "markdown.preview.markEditorSelection": true,
+    "markdown.styles": [
+        ".vscode/markdown-preview.css"
+    ],
+    
+    // Auto-open preview for markdown files
+    "workbench.editorAssociations": {
+        "*.md": "vscode.markdown.preview.editor"
+    },
+    
+    // Mermaid diagram support
+    "markdown.mermaid.theme": "dark",
+    
     // Exclude Downloads folder from workspace indexing
     "files.exclude": {
         "**/Downloads/**": true
