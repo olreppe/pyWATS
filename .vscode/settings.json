@@ -79,13 +79,16 @@
         ".vscode/markdown-preview.css"
     ],
     
+    // Mermaid diagram support - ensure it's enabled
+    "markdown-mermaid.lightModeTheme": "default",
+    "markdown-mermaid.darkModeTheme": "dark",
+    "markdown-preview-enhanced.mermaidTheme": "dark",
+    "markdown-preview-enhanced.codeBlockTheme": "atom-dark.css",
+    
     // Auto-open preview for markdown files
     "workbench.editorAssociations": {
         "*.md": "vscode.markdown.preview.editor"
     },
-    
-    // Mermaid diagram support
-    "markdown.mermaid.theme": "dark",
     
     // Exclude Downloads folder from workspace indexing
     "files.exclude": {
