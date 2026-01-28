@@ -184,18 +184,20 @@ def _run_service_mode(instance_id: str = "default"):
     
     This is the recommended way to run pyWATS Client.
     Service runs independently and can be controlled via IPC from GUI.
+    
+    Uses Qt event loop integration for IPC server support.
     """
-    from .service.client_service import ClientService
+    from .service.async_client_service import run_async_service_with_qt
     
     print(f"Starting pyWATS Client Service [instance: {instance_id}]")
-    service = ClientService(instance_id)
     
     try:
-        service.start()  # Blocks until stopped
+        run_async_service_with_qt(instance_id)
     except KeyboardInterrupt:
         print("\nShutting down...")
-    finally:
-        service.stop()
+    except Exception as e:
+        print(f"Service error: {e}")
+        raise
 
 
 def _run_headless_mode(config):
@@ -203,17 +205,15 @@ def _run_headless_mode(config):
     print("Note: Headless mode now uses service mode.")
     print()
     
-    from .service.client_service import ClientService
-    
-    # Use default instance
-    service = ClientService("default")
+    from .service.async_client_service import run_async_service_with_qt
     
     try:
-        service.start()  # Blocks until stopped
+        run_async_service_with_qt("default")
     except KeyboardInterrupt:
         print("\nShutting down...")
-    finally:
-        service.stop()
+    except Exception as e:
+        print(f"Service error: {e}")
+        raise
 
 
 def main():
