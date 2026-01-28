@@ -256,6 +256,35 @@ class AsyncWATS:
         return self._settings
     
     # -------------------------------------------------------------------------
+    # Connection Testing
+    # -------------------------------------------------------------------------
+    
+    async def test_connection(self) -> bool:
+        """
+        Test if the connection to the WATS server is working.
+        
+        Makes a simple API call to verify connectivity.
+        
+        Returns:
+            True if connection is successful, False otherwise
+        """
+        try:
+            version = await self.analytics.get_version()
+            return version is not None
+        except Exception as e:
+            logger.debug(f"Connection test failed: {e}")
+            return False
+    
+    async def get_version(self) -> Optional[str]:
+        """
+        Get WATS server version information.
+        
+        Returns:
+            Version string (e.g., "24.1.0") or None if not available
+        """
+        return await self.analytics.get_version()
+    
+    # -------------------------------------------------------------------------
     # Context Manager Support
     # -------------------------------------------------------------------------
     

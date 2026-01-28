@@ -582,12 +582,12 @@ class AsyncClientService:
         """Start health check server"""
         try:
             from .health_server import HealthServer
-            self._health_server = HealthServer(
-                port=self._health_port,
-                status_callback=self._get_health_status
-            )
-            await self._health_server.start_async()
+            self._health_server = HealthServer(port=self._health_port)
+            self._health_server.set_health_check(self._get_health_status)
+            self._health_server.start()
             logger.info(f"Health server started on port {self._health_port}")
+        except Exception as e:
+            logger.warning(f"Health server not started: {e}")
         except Exception as e:
             logger.warning(f"Health server not started: {e}")
     
@@ -595,20 +595,24 @@ class AsyncClientService:
         """Stop health server"""
         if self._health_server:
             try:
-                await self._health_server.stop_async()
+                self._health_server.stop()
             except Exception as e:
                 logger.error(f"Health server stop failed: {e}")
             self._health_server = None
     
-    def _get_health_status(self) -> Dict[str, Any]:
+    def _get_health_status(self) -> 'HealthStatus':
         """Get health status for health endpoint"""
-        return {
-            "status": "healthy" if self.is_running else "unhealthy",
-            "service_status": self._status.value,
-            "api_status": self._stats.get("api_status", "Unknown"),
-            "uptime_seconds": self._get_uptime_seconds(),
-            "instance_id": self.instance_id
-        }
+        from .health_server import HealthStatus
+        return HealthStatus(
+            healthy=self.is_running,
+            status="running" if self.is_running else "stopped",
+            details={
+                "service_status": self._status.value,
+                "api_status": self._stats.get("api_status", "Unknown"),
+                "uptime_seconds": self._get_uptime_seconds(),
+                "instance_id": self.instance_id
+            }
+        )
     
     def _get_uptime_seconds(self) -> float:
         """Calculate uptime in seconds"""

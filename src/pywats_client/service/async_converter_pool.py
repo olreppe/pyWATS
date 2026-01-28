@@ -269,8 +269,8 @@ class AsyncConverterPool:
         self._converters.clear()
         
         try:
-            # Get converter configs
-            converter_configs = self.config.get_converters()
+            # Get converter configs from config.converters property
+            converter_configs = self.config.converters
             
             for conv_config in converter_configs:
                 try:

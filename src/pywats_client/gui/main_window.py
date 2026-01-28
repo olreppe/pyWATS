@@ -70,6 +70,7 @@ class MainWindow(QMainWindow):
         self._ipc_client: Optional[ServiceIPCClient] = None
         self._current_instance_id: str = config.instance_id
         self._service_connected = False
+        self._tray_icon = None  # System tray icon (optional)
         
         # Setup UI
         self._setup_window()
