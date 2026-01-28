@@ -125,21 +125,22 @@ asyncio.run(main())
 
 ## Architecture
 
-```
-┌─────────────────────┐
-│  GUI (Optional)     │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ pyWATSApplication   │
-└──────────┬──────────┘
-           │
-    ┌──────┴───────┬──────────┬──────────┐
-    │              │          │          │
-  Settings      Serials    Monitor    Services
-  Manager       Manager    Monitor    Layer
-    │              │          │
-    └──────────────┴──────────┴─────────→ WATS API
+```mermaid
+flowchart TD
+    GUI["<b>GUI (Optional)</b>"]
+    App["<b>pyWATSApplication</b>"]
+    
+    GUI --> App
+    
+    App --> Settings["<b>Settings Manager</b>"]
+    App --> Serials["<b>Serials Manager</b>"]
+    App --> Monitor["<b>Monitor Monitor</b>"]
+    App --> Services["<b>Services Layer</b>"]
+    
+    Settings --> WATS[WATS API]
+    Serials --> WATS
+    Monitor --> WATS
+    Services --> WATS
 ```
 
 ## Configuration (settings.json)

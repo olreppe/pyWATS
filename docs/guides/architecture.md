@@ -10,37 +10,16 @@
 
 pyWATS is a **three-layer Python system** for connecting manufacturing test stations to WATS (Web-based Automatic Test System) servers. It provides both a programmatic API for test automation and a client application for test station deployment.
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    pyWATS Client GUI                           │
-│  (PySide6/Qt - Optional Desktop Application)                   │
-│  • User interface for configuration and monitoring             │
-│  • System tray integration                                     │
-│  • Multi-page navigation                                       │
-└────────────────────────────────────────────────────────────────┘
-                              ↕ IPC (LocalSocket)
-┌────────────────────────────────────────────────────────────────┐
-│                    pyWATS Client Service                       │
-│  (pywats_client - Headless-capable background service)         │
-│  • File monitoring (Watchdog)                                  │
-│  • Converter processing                                        │
-│  • Offline report queue with retry                             │
-│  • Multi-instance support                                      │
-└────────────────────────────────────────────────────────────────┘
-                              ↓ Uses
-┌────────────────────────────────────────────────────────────────┐
-│                       pyWATS API                               │
-│  (pywats - Core library)                                       │
-│  • Async & sync HTTP client                                    │
-│  • 8 domain services (Report, Product, Asset, etc.)            │
-│  • Pydantic models & validation                                │
-│  • Rate limiting, retry, error handling                        │
-└────────────────────────────────────────────────────────────────┘
-                              ↓ HTTPS/REST
-┌────────────────────────────────────────────────────────────────┐
-│                      WATS Server                               │
-│  (Cloud or On-Premise)                                         │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    GUI["<b>pyWATS Client GUI</b><br/>(PySide6/Qt - Optional Desktop Application)<br/>• User interface for configuration and monitoring<br/>• System tray integration<br/>• Multi-page navigation"]
+    Service["<b>pyWATS Client Service</b><br/>(pywats_client - Headless-capable background service)<br/>• File monitoring (Watchdog)<br/>• Converter processing<br/>• Offline report queue with retry<br/>• Multi-instance support"]
+    API["<b>pyWATS API</b><br/>(pywats - Core library)<br/>• Async & sync HTTP client<br/>• 8 domain services (Report, Product, Asset, etc.)<br/>• Pydantic models & validation<br/>• Rate limiting, retry, error handling"]
+    WATS["<b>WATS Server</b><br/>(Cloud or On-Premise)"]
+    
+    GUI <-->|IPC (LocalSocket)| Service
+    Service -->|Uses| API
+    API -->|HTTPS/REST| WATS
 ```
 
 **Key Features:**
@@ -121,23 +100,14 @@ pyWATS is a **three-layer Python system** for connecting manufacturing test stat
 
 Each domain follows a **three-layer pattern**:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Service Layer                            │
-│  (Business logic, orchestration, validation)                │
-│  Example: ReportService, ProductService                     │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│                  Repository Layer                           │
-│  (Data access, HTTP calls, error handling)                  │
-│  Example: ReportRepository, ProductRepository               │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    HttpClient                               │
-│  (Low-level HTTP, rate limiting, retry)                     │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    Service["<b>Service Layer</b><br/>(Business logic, orchestration, validation)<br/>Example: ReportService, ProductService"]
+    Repository["<b>Repository Layer</b><br/>(Data access, HTTP calls, error handling)<br/>Example: ReportRepository, ProductRepository"]
+    HttpClient["<b>HttpClient</b><br/>(Low-level HTTP, rate limiting, retry)"]
+    
+    Service --> Repository
+    Repository --> HttpClient
 ```
 
 ### Core Components
@@ -305,53 +275,37 @@ current = registry.get_active()  # Station("ICT-01", ...)
 
 The client uses an **async-first architecture** with asyncio for efficient concurrent I/O:
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                 AsyncClientService                           │
-│  (Background process, headless-capable)                      │
-│                                                              │
-│  ┌───────────────┐  ┌─────────────────┐  ┌───────────────┐  │
-│  │AsyncClientSvc │  │AsyncPendingQueue│  │AsyncConverter │  │
-│  │               │  │                 │  │    Pool       │  │
-│  │• Lifecycle    │  │• 5 concurrent   │  │• 10 concurrent│  │
-│  │• Status       │  │• File watching  │  │• Semaphore    │  │
-│  │• AsyncWATS    │  │• Retry logic    │  │• Converters   │  │
-│  └───────────────┘  └─────────────────┘  └───────────────┘  │
-│                                                              │
-│  ┌──────────────────────────────────────────────────┐       │
-│  │              PersistentQueue                     │       │
-│  │  • SQLite-backed queue                           │       │
-│  │  • Crash recovery                                │       │
-│  │  • Retry logic (3 attempts)                      │       │
-│  └──────────────────────────────────────────────────┘       │
-│                                                              │
-│  ┌──────────────────────────────────────────────────┐       │
-│  │               AsyncIPCServer                     │       │
-│  │  • Pure asyncio TCP server (no Qt dependency)    │       │
-│  │  • JSON command/response protocol                │       │
-│  │  • Commands: get_status, get_config, stop, etc.  │       │
-│  └──────────────────────────────────────────────────┘       │
-│                                                              │
-│         ↓ asyncio event loop (single thread, concurrent I/O)│
-└──────────────────────────────────────────────────────────────┘
-                          ↕ IPC
-┌──────────────────────────────────────────────────────────────┐
-│                      GUI Process                             │
-│  (Optional, separate process)                                │
-│                                                              │
-│  ┌──────────────────────────────────────────────────┐       │
-│  │             AsyncIPCClient                       │       │
-│  │  • Connects to service via TCP socket            │       │
-│  │  • Pure asyncio (uses qasync in GUI)             │       │
-│  │  • Sends commands, receives updates              │       │
-│  └──────────────────────────────────────────────────┘       │
-│                                                              │
-│  ┌──────────────────────────────────────────────────┐       │
-│  │          AsyncAPIPageMixin (GUI Pages)           │       │
-│  │  • Non-blocking API calls via run_api_call()     │       │
-│  │  • Auto sync/async detection                     │       │
-│  └──────────────────────────────────────────────────┘       │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph ServiceProcess["AsyncClientService (Background process, headless-capable)"]
+        direction TB
+        
+        subgraph CoreComponents[" "]
+            direction LR
+            AsyncClientSvc["<b>AsyncClientSvc</b><br/>• Lifecycle<br/>• Status<br/>• AsyncWATS"]
+            AsyncPendingQueue["<b>AsyncPendingQueue</b><br/>• 5 concurrent<br/>• File watching<br/>• Retry logic"]
+            AsyncConverterPool["<b>AsyncConverter Pool</b><br/>• 10 concurrent<br/>• Semaphore<br/>• Converters"]
+        end
+        
+        PersistentQueue["<b>PersistentQueue</b><br/>• SQLite-backed queue<br/>• Crash recovery<br/>• Retry logic (3 attempts)"]
+        
+        AsyncIPCServer["<b>AsyncIPCServer</b><br/>• Pure asyncio TCP server (no Qt dependency)<br/>• JSON command/response protocol<br/>• Commands: get_status, get_config, stop, etc."]
+        
+        EventLoop["asyncio event loop<br/>(single thread, concurrent I/O)"]
+        
+        CoreComponents --> PersistentQueue
+        CoreComponents --> AsyncIPCServer
+        PersistentQueue --> EventLoop
+        AsyncIPCServer --> EventLoop
+    end
+    
+    subgraph GUIProcess["GUI Process (Optional, separate process)"]
+        direction TB
+        AsyncIPCClient["<b>AsyncIPCClient</b><br/>• Connects to service via TCP socket<br/>• Pure asyncio (uses qasync in GUI)<br/>• Sends commands, receives updates"]
+        AsyncAPIPageMixin["<b>AsyncAPIPageMixin (GUI Pages)</b><br/>• Non-blocking API calls via run_api_call()<br/>• Auto sync/async detection"]
+    end
+    
+    ServiceProcess <-->|IPC| GUIProcess
 ```
 
 **Key components:**

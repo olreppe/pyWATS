@@ -256,17 +256,23 @@ docker run -d \
 
 #### Architecture
 
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ ICT Station │───▶│ FCT Station │───▶│ EOL Station │
-│ Converter 1 │    │ Converter 2 │    │ Converter 3 │
-└─────────────┘    └─────────────┘    └─────────────┘
-       │                  │                  │
-       ▼                  ▼                  ▼
-┌────────────────────────────────────────────────────┐
-│                    WATS Server                     │
-│  Report 1 (ICT)   Report 2 (FCT)   Report 3 (EOL) │
-└────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    ICT["<b>ICT Station</b><br/>Converter 1"]
+    FCT["<b>FCT Station</b><br/>Converter 2"]
+    EOL["<b>EOL Station</b><br/>Converter 3"]
+    
+    ICT --> FCT --> EOL
+    
+    subgraph WATS["WATS Server"]
+        Report1["Report 1 (ICT)"]
+        Report2["Report 2 (FCT)"]
+        Report3["Report 3 (EOL)"]
+    end
+    
+    ICT -.-> Report1
+    FCT -.-> Report2
+    EOL -.-> Report3
 ```
 
 #### Implementation

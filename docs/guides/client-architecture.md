@@ -78,24 +78,26 @@ The pyWATS Client is a **background service** with optional **GUI frontend** for
 
 ### Component Interactions
 
-```
-GUI                Service           Queue              WATS
- │                    │                │                  │
- │──Start Command────▶│                │                  │
- │                    │──Initialize───▶│                  │
- │                    │                │                  │
- │                    │◀─Queue Ready───│                  │
- │◀─Status Update────│                │                  │
- │                    │                │                  │
- │                    │   [File appears in watch folder]   │
- │                    │                │                  │
- │                    │──Add Report───▶│                  │
- │◀─File Processed───│                │                  │
- │                    │                │                  │
- │                    │                │──Submit Report──▶│
- │                    │                │◀─Success─────────│
- │                    │◀─Complete──────│                  │
- │◀─Status Update────│                │                  │
+```mermaid
+sequenceDiagram
+    participant GUI
+    participant Service
+    participant Queue
+    participant WATS
+    
+    GUI->>Service: Start Command
+    Service->>Queue: Initialize
+    Queue-->>Service: Queue Ready
+    Service-->>GUI: Status Update
+    
+    Note over Service: File appears in watch folder
+    
+    Service->>Queue: Add Report
+    Service-->>GUI: File Processed
+    Queue->>WATS: Submit Report
+    WATS-->>Queue: Success
+    Queue-->>Service: Complete
+    Service-->>GUI: Status Update
 ```
 
 ---
@@ -195,32 +197,19 @@ async def _api_status_loop(self):
 4. **Non-blocking:** All I/O operations are async
 
 **Workflow:**
-```
-┌─────────────────────┐
-│ Pending Directory   │
-│ - report1.json      │
-│ - report2.json      │
-│ - report3.json      │
-│ - ...               │
-└─────────────────────┘
-          │
-          ▼
-┌─────────────────────┐
-│  Semaphore(5)       │
-│  Bounded concurrency│
-└─────────────────────┘
-          │
-   ┌──────┼──────┐
-   ▼      ▼      ▼
-┌─────┐┌─────┐┌─────┐
-│Task1││Task2││Task3│──▶ WATS API (concurrent)
-└─────┘└─────┘└─────┘
-          │
-          ▼
-┌─────────────────────┐
-│ Move to Complete    │
-│ or Retry on failure │
-└─────────────────────┘
+```mermaid
+flowchart TD
+    PendingDir["<b>Pending Directory</b><br/>- report1.json<br/>- report2.json<br/>- report3.json<br/>- ..."] --> Semaphore["<b>Semaphore(5)</b><br/>Bounded concurrency"]
+    
+    Semaphore --> Task1[Task1]
+    Semaphore --> Task2[Task2]
+    Semaphore --> Task3[Task3]
+    
+    Task1 -->|concurrent| WATS[WATS API]
+    Task2 -->|concurrent| WATS
+    Task3 -->|concurrent| WATS
+    
+    WATS --> MoveComplete["<b>Move to Complete</b><br/>or Retry on failure"]
 ```
 
 **Code Structure:**
@@ -318,24 +307,36 @@ class AsyncConverterPool:
 ```
 
 **Concurrency Model:**
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   AsyncConverterPool                         │
-│                                                              │
-│  Input Files                  Semaphore(10)                  │
-│  ┌─────────┐                 ┌─────────────────────────────┐ │
-│  │ file1   │──┐              │ Task1: converter.convert()  │ │
-│  │ file2   │──┤              │ Task2: converter.convert()  │ │
-│  │ file3   │──┼──────────────│ Task3: converter.convert()  │ │
-│  │ ...     │──┤              │ ...                         │ │
-│  │ file20  │──┘              │ Task10: converter.convert() │ │
-│  └─────────┘                 └─────────────────────────────┘ │
-│                                         │                    │
-│  [waiting]: file11-file20               ▼                    │
-│                              ┌─────────────────────────────┐ │
-│                              │   Pending Queue (output)    │ │
-│                              └─────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph AsyncConverterPool[" "]
+        direction TB
+        
+        subgraph InputFiles["Input Files"]
+            file1[file1]
+            file2[file2]
+            file3[file3]
+            files[...]
+            file20[file20]
+        end
+        
+        InputFiles --> Semaphore["<b>Semaphore(10)</b>"]
+        
+        subgraph Workers[" "]
+            direction TB
+            Task1["Task1: converter.convert()"]
+            Task2["Task2: converter.convert()"]
+            Task3["Task3: converter.convert()"]
+            TaskMore[...]
+            Task10["Task10: converter.convert()"]
+        end
+        
+        Semaphore --> Workers
+        
+        Workers --> Output["<b>Pending Queue (output)</b>"]
+        
+        Waiting["[waiting]: file11-file20"]
+    end
 ```
 
 ---
@@ -394,22 +395,31 @@ await queue.run()
 ```
 
 **Concurrency Model:**
-```
-┌─────────────────────────────────────────────────────────┐
-│                  AsyncPendingQueue                       │
-│                                                          │
-│  ┌───────────────┐   ┌─────────────────────────────┐    │
-│  │ File Watcher  │──▶│  asyncio.Semaphore(5)       │    │
-│  │ (watchfiles)  │   │                              │    │
-│  └───────────────┘   │  Task 1: submit_report()    │    │
-│                      │  Task 2: submit_report()    │────▶│ WATS
-│  ┌───────────────┐   │  Task 3: submit_report()    │    │  API
-│  │ Periodic Scan │──▶│  Task 4: submit_report()    │    │
-│  │ (60s timer)   │   │  Task 5: submit_report()    │    │
-│  └───────────────┘   └─────────────────────────────┘    │
-│                                                          │
-│  [waiting]: report6.json, report7.json, ...              │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph AsyncPendingQueue[" "]
+        direction TB
+        
+        FileWatcher["<b>File Watcher</b><br/>(watchfiles)"]
+        PeriodicScan["<b>Periodic Scan</b><br/>(60s timer)"]
+        
+        FileWatcher --> Semaphore["<b>asyncio.Semaphore(5)</b>"]
+        PeriodicScan --> Semaphore
+        
+        Semaphore --> Task1["Task 1: submit_report()"]
+        Semaphore --> Task2["Task 2: submit_report()"]
+        Semaphore --> Task3["Task 3: submit_report()"]
+        Semaphore --> Task4["Task 4: submit_report()"]
+        Semaphore --> Task5["Task 5: submit_report()"]
+        
+        Task1 --> WATS[WATS API]
+        Task2 --> WATS
+        Task3 --> WATS
+        Task4 --> WATS
+        Task5 --> WATS
+        
+        Waiting["[waiting]: report6.json, report7.json, ..."]
+    end
 ```
 
 #### AsyncConverterPool
@@ -770,27 +780,31 @@ CREATE INDEX idx_created_at ON reports(created_at);
 
 ### Queue States
 
-```
-┌────────────┐
-│  pending   │  Initial state, awaiting upload
-└─────┬──────┘
-      │
-      ▼
-┌────────────┐
-│processing  │  Currently being uploaded
-└─────┬──────┘
-      │
-      ├─Success─────▶┌───────────┐
-      │              │ completed │  Successfully uploaded
-      │              └───────────┘
-      │
-      └─Failure─────▶┌───────────┐
-                     │  pending  │  Retry (if attempts < max)
-                     └─────┬─────┘
-                           │
-                           └─Max retries───▶┌────────┐
-                                            │ failed │  Permanent failure
-                                            └────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Initial state
+    pending --> processing: Upload starts
+    processing --> completed: Success
+    processing --> pending: Failure (retry if attempts < max)
+    pending --> failed: Max retries exceeded
+    completed --> [*]
+    failed --> [*]
+    
+    note right of pending
+        Awaiting upload
+    end note
+    
+    note right of processing
+        Currently being uploaded
+    end note
+    
+    note right of completed
+        Successfully uploaded
+    end note
+    
+    note right of failed
+        Permanent failure
+    end note
 ```
 
 ### Crash Recovery
@@ -924,32 +938,20 @@ def calculate_retry_delay(attempt: int) -> int:
 
 ### Converter Lifecycle
 
-```
-1. Configuration Load
-   ↓
-2. Module Import (dynamic)
-   ↓
-3. Class Instantiation
-   ↓
-4. File Pattern Registration
-   ↓
-5. Watch Folder Setup
-   ↓
-[File appears in watch folder]
-   ↓
-6. Event Triggered
-   ↓
-7. Debounce Wait (500ms)
-   ↓
-8. Pattern Match Check
-   ↓
-9. Converter.convert() Call
-   ↓
-10. Result Validation
-   ↓
-11. Queue Submission or Direct Upload
-   ↓
-12. Post-Processing (move/delete/archive)
+```mermaid
+flowchart TD
+    A[1. Configuration Load] --> B[2. Module Import - dynamic]
+    B --> C[3. Class Instantiation]
+    C --> D[4. File Pattern Registration]
+    D --> E[5. Watch Folder Setup]
+    E --> F{File appears in watch folder}
+    F --> G[6. Event Triggered]
+    G --> H[7. Debounce Wait - 500ms]
+    H --> I[8. Pattern Match Check]
+    I --> J[9. Converter.convert Call]
+    J --> K[10. Result Validation]
+    K --> L[11. Queue Submission or Direct Upload]
+    L --> M[12. Post-Processing - move/delete/archive]
 ```
 
 ### FileConverter Base Class
