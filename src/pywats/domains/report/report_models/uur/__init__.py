@@ -14,7 +14,7 @@ from .uur_sub_unit import UURSubUnit, UURFailure
 # Shared attachment (same as UUT)
 from ..attachment import Attachment
 
-# Legacy SubRepair for deserialization compatibility
+# SubRepair model for server deserialization (server returns subRepairs in JSON)
 from .sub_repair import SubRepair
 
 __all__ = [

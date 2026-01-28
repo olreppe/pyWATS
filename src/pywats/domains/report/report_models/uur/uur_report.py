@@ -200,8 +200,8 @@ class UURReport(Report):
         """
         Add a failure to the main unit.
         
-        .. deprecated::
-            Use `add_failure()` instead. This method exists for backward compatibility.
+        Note:
+            This is an alias for `add_failure()` for clarity when working with multi-unit repairs.
         
         Args:
             category: Failure category

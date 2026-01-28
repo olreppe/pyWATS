@@ -15,7 +15,7 @@ NOTE: Module naming vs Backend API naming
 The 'analytics' module maps to the WATS backend '/api/App/*' endpoints.
 We chose 'analytics' as the Python module name because it better describes
 the functionality (yield analysis, KPIs, statistics) while 'App' is the
-legacy backend controller name. This is purely a naming choice for better
+server's controller name. This is purely a naming choice for better
 developer experience - all API calls go to /api/App/*.
 """
 from . import analytics

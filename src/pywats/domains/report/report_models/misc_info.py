@@ -22,15 +22,15 @@ class MiscInfo(WATSBase):
                                         validation_alias="text",
                                         serialization_alias="text",  
                                         description="The misc info value as string.")
-    # Numeric value - depricated
+    # Numeric value - server does not use for analytics (deprecated in WATS API)
     numeric_value: Optional[int] = Field(default=None,
-                                         deprecated=True, 
+                                         deprecated=True,  # Server-side deprecation
                                          validation_alias = "numeric",
                                          serialization_alias = "numeric",
                                          description="Numeric value. Not available for analysis - use string_value")
     
     type_def: Optional[str] = Field(default=None, max_length=30, min_length=0, validation_alias="typedef", serialization_alias="typedef",
                                     description="??????????????????????????????????????????????")    
-    numeric_normat: Optional[str] = Field(default=None, deprecated=True, validation_alias="numericFormat", serialization_alias="numericFormat",
+    numeric_normat: Optional[str] = Field(default=None, deprecated=True, validation_alias="numericFormat", serialization_alias="numericFormat",  # Server-side deprecation
                                           description="?????????????????????????????")
 

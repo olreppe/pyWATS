@@ -36,7 +36,7 @@ class UURInfo(ReportInfo):
     test_operation_guid: Optional[UUID] = Field(default=None, validation_alias="testOperationGuid", serialization_alias="testOperationGuid")
     """The test operation GUID"""
     
-    # Legacy fields (API requires processCode in uur object)
+    # API-required fields (server requires processCode in uur object)
     # Note: exclude=False ensures these fields are ALWAYS serialized (even if None)
     process_code: Optional[int] = Field(
         default=None, 
@@ -282,7 +282,7 @@ class UURInfo(ReportInfo):
             'execution_time': self.exec_time,
             'active': self.active,
             
-            # Legacy compatibility
+            # API-required fields
             'process_code': self.process_code,
             'process_name': self.process_name,
             'process_code_format': self.process_code_format

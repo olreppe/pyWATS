@@ -14,8 +14,8 @@ class WATSBase(BaseModel):
     '''
     Base class for Report Model
     -
-    Sets model configutation for all models
-    Handles incoming deserialization-context for loading legacy-data by injecting default values
+    Sets model configuration for all models.
+    Handles incoming deserialization-context by injecting default values.
     '''
     # Injects default values sent in validation-context.
     @model_validator(mode="before")

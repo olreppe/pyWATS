@@ -334,7 +334,7 @@ class QueueItemStatus(str, Enum):
     This is the single source of truth for queue item states, used by:
     - pywats.queue.MemoryQueue (in-memory API queue)
     - pywats_client.queue.PersistentQueue (file-backed client queue)
-    - pywats_client.service.PendingWatcher (report submission)
+    - pywats_client.service.AsyncClientService (report submission)
     
     State transitions:
         PENDING → PROCESSING → COMPLETED (success)

@@ -31,13 +31,13 @@ class ReportStatus(Enum):
     F = Failed (1)
     E = Error (2)
     T = Terminated (3)
-    S = Skipped (legacy, maps to Terminated on server)
+    S = Skipped (maps to Terminated on server)
     """
     Passed = 'P'
     Failed = 'F'
     Error = 'E'
     Terminated = 'T'
-    Skipped = 'S'  # Legacy - kept for backward compatibility
+    Skipped = 'S'  # Maps to Terminated on server
 
 class Report(WATSBase):
     """

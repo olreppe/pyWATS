@@ -17,7 +17,7 @@ Always use the Python field names when creating or accessing these models.
 TYPE-SAFE ENUMS:
 ----------------
 Fields like step_type, status, and comp_operator accept enum values for
-type safety, but also accept strings for backward compatibility.
+type safety, but also accept strings for flexibility.
 Use enums for IDE autocomplete and compile-time checking.
 
 EDGE CASES & COMMON PITFALLS:
@@ -52,8 +52,8 @@ EDGE CASES & COMMON PITFALLS:
    - Serialization always produces ISO format strings for API calls
    - Timezone handling depends on server configuration
 
-BACKWARD COMPATIBILITY:
------------------------
+FORWARD COMPATIBILITY:
+----------------------
 Models are designed to be forward-compatible with new server versions:
 - RepairStatistics uses extra="allow" for new fields
 - Optional fields default to None when not present in response
@@ -239,7 +239,7 @@ class RepairStatistics(PyWATSModel):
         repair_count: Number of repairs (KPI)
         total_count: Total units
         repair_rate: Repair rate (0-100)
-        fail_code: Failure code (legacy/deprecated)
+        fail_code: Failure code (server may not populate this field)
         
     Example:
         >>> stats = RepairStatistics(part_number="WIDGET-001", repair_count=5)
@@ -488,7 +488,7 @@ class RepairStatistics(PyWATSModel):
         default=None,
         validation_alias=AliasChoices("failCode", "fail_code"),
         serialization_alias="failCode",
-        description="Failure code (legacy/deprecated)"
+        description="Failure code (server may not populate this field)"
     )
     repair_code: Optional[str] = Field(
         default=None,

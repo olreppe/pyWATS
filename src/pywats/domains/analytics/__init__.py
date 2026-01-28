@@ -7,7 +7,7 @@ BACKEND API MAPPING
 This module maps to the WATS backend '/api/App/*' endpoints.
 We chose 'analytics' as the Python module name because it better describes
 the functionality (yield analysis, KPIs, statistics, OEE) while 'App' is the
-legacy backend controller name.
+server's controller name.
 
 All API calls in this module target /api/App/* endpoints:
 - GET/POST /api/App/DynamicYield

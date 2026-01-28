@@ -3,7 +3,7 @@ WATS Report Format Converters
 
 Supports conversion between various WATS report formats:
 - WSJF: WATS JSON Format (standard, used for queueing)
-- WSXF: WATS XML Format (legacy)
+- WSXF: WATS XML Format (older server format)
 - WSTF: WATS TestStand Format (TestStand-specific XML)
 - ATML: Automatic Test Markup Language (IEEE standard)
 
