@@ -165,8 +165,13 @@ class UnitCreateDialog(QDialog):
         }
 
 
-class ProductionPage(BasePage):
-    """Production Units page - track units and assemblies"""
+class ProductionPage(BasePage, AsyncAPIPageMixin):
+    """
+    Production Units page - track units and assemblies.
+    
+    Uses async API calls for non-blocking GUI operations.
+    All API calls show loading indicators and handle errors gracefully.
+    """
     
     def __init__(
         self, 
@@ -184,17 +189,6 @@ class ProductionPage(BasePage):
     @property
     def page_title(self) -> str:
         return "Production Units"
-    
-    def _get_api_client(self):
-        """
-        Get API client via facade.
-        
-        Returns:
-            pyWATS client or None if not available
-        """
-        if self._facade and self._facade.has_api:
-            return self._facade.api
-        return None
     
     def _setup_ui(self) -> None:
         """Setup page UI for Production Units"""
@@ -346,14 +340,25 @@ class ProductionPage(BasePage):
             self._load_phases()
     
     def _load_phases(self) -> None:
-        """Load unit phases from server"""
-        try:
-            client = self._get_api_client()
-            if client:
-                phases = client.production.get_phases()
-                self._phases = [self._phase_to_dict(p) for p in phases] if phases else []
-        except Exception as e:
-            print(f"[Production] Failed to load phases: {e}")
+        """
+        Load unit phases from server (async).
+        
+        Uses run_api_call for non-blocking operation.
+        """
+        if not self.has_api:
+            return
+        
+        self.run_api_call(
+            lambda api: api.production.get_phases(),
+            on_success=self._on_phases_loaded,
+            on_error=lambda e: print(f"[Production] Failed to load phases: {e}"),
+            task_name="Loading phases...",
+            show_loading=False
+        )
+    
+    def _on_phases_loaded(self, phases: Any) -> None:
+        """Handle phases loaded"""
+        self._phases = [self._phase_to_dict(p) for p in phases] if phases else []
     
     def _phase_to_dict(self, phase: Any) -> Dict[str, Any]:
         """Convert UnitPhase to dict"""
@@ -392,29 +397,46 @@ class ProductionPage(BasePage):
             self._lookup_unit(serial, part)
     
     def _lookup_unit(self, serial_number: str, part_number: str) -> None:
-        """Look up a unit and display details"""
-        client = self._get_api_client()
-        if not client:
-            QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+        """
+        Look up a unit and display details (async).
+        
+        Uses run_api_call for non-blocking operation.
+        """
+        if not self.require_api("look up units"):
             return
         
-        try:
-            self._status_label.setText(f"Looking up unit {serial_number}...")
-            
-            unit = client.production.get_unit(serial_number, part_number)
-            
-            if unit:
-                self._current_unit = self._unit_to_dict(unit)
-                self._display_unit(self._current_unit)
-                self._add_to_recent(serial_number, part_number, "Found")
-                self._status_label.setText(f"Found unit: {serial_number}")
-            else:
-                self._unit_info.setText(f"Unit not found: {serial_number} / {part_number}")
-                self._add_to_recent(serial_number, part_number, "Not Found")
-                self._status_label.setText("Unit not found")
-        except Exception as e:
-            self._status_label.setText(f"Error: {str(e)[:50]}")
-            QMessageBox.warning(self, "Error", f"Failed to look up unit: {e}")
+        self._status_label.setText(f"Looking up unit {serial_number}...")
+        
+        # Store for use in callback
+        self._pending_lookup = (serial_number, part_number)
+        
+        # Run async API call
+        self.run_api_call(
+            lambda api: api.production.get_unit(serial_number, part_number),
+            on_success=self._on_unit_lookup_success,
+            on_error=self._on_unit_lookup_error,
+            task_name=f"Looking up {serial_number}..."
+        )
+    
+    def _on_unit_lookup_success(self, unit: Any) -> None:
+        """Handle successful unit lookup"""
+        serial_number, part_number = self._pending_lookup
+        
+        if unit:
+            self._current_unit = self._unit_to_dict(unit)
+            self._display_unit(self._current_unit)
+            self._add_to_recent(serial_number, part_number, "Found")
+            self._status_label.setText(f"Found unit: {serial_number}")
+        else:
+            self._unit_info.setText(f"Unit not found: {serial_number} / {part_number}")
+            self._add_to_recent(serial_number, part_number, "Not Found")
+            self._status_label.setText("Unit not found")
+    
+    def _on_unit_lookup_error(self, error: Exception) -> None:
+        """Handle unit lookup error"""
+        serial_number, _ = self._pending_lookup
+        self._status_label.setText(f"Error: {str(error)[:50]}")
+        self.handle_error(error, f"looking up unit {serial_number}")
     
     def _unit_to_dict(self, unit: Any) -> Dict[str, Any]:
         """Convert Unit model to dictionary"""
@@ -478,26 +500,35 @@ class ProductionPage(BasePage):
         self._load_verification(unit.get('serialNumber'), unit.get('partNumber'))
     
     def _load_verification(self, serial: str, part: str) -> None:
-        """Load verification status for unit"""
-        try:
-            client = self._get_api_client()
-            if not client:
-                self._verify_info.setText("Not connected to server")
-                return
-            verification = client.production.verify_unit(serial, part)
+        """
+        Load verification status for unit (async).
+        
+        Uses run_api_call for non-blocking operation.
+        """
+        if not self.has_api:
+            self._verify_info.setText("Not connected to server")
+            return
+        
+        self.run_api_call(
+            lambda api: api.production.verify_unit(serial, part),
+            on_success=self._on_verification_loaded,
+            on_error=lambda e: self._verify_info.setText(f"Could not load: {str(e)[:30]}"),
+            task_name="Loading verification...",
+            show_loading=False  # Don't show main loading for this secondary call
+        )
+    
+    def _on_verification_loaded(self, verification: Any) -> None:
+        """Handle verification data loaded"""
+        if verification:
+            grade = getattr(verification, 'grade', 'Unknown') if hasattr(verification, 'grade') else verification.get('grade', 'Unknown')
+            passed = getattr(verification, 'passed', False) if hasattr(verification, 'passed') else verification.get('passed', False)
             
-            if verification:
-                grade = getattr(verification, 'grade', 'Unknown') if hasattr(verification, 'grade') else verification.get('grade', 'Unknown')
-                passed = getattr(verification, 'passed', False) if hasattr(verification, 'passed') else verification.get('passed', False)
-                
-                if passed:
-                    self._verify_info.setText(f"<span style='color: #4CAF50'>✓ PASS</span> - Grade: {grade}")
-                else:
-                    self._verify_info.setText(f"<span style='color: #f44336'>✗ FAIL</span> - Grade: {grade}")
+            if passed:
+                self._verify_info.setText(f"<span style='color: #4CAF50'>✓ PASS</span> - Grade: {grade}")
             else:
-                self._verify_info.setText("No verification data available")
-        except Exception as e:
-            self._verify_info.setText(f"Could not load verification: {str(e)[:30]}")
+                self._verify_info.setText(f"<span style='color: #f44336'>✗ FAIL</span> - Grade: {grade}")
+        else:
+            self._verify_info.setText("No verification data available")
     
     def _add_to_recent(self, serial: str, part: str, status: str) -> None:
         """Add unit to recent lookups table"""
@@ -524,36 +555,51 @@ class ProductionPage(BasePage):
             self._recent_table.removeRow(self._recent_table.rowCount() - 1)
     
     def _on_create_unit(self) -> None:
-        """Show dialog to create new unit"""
-        client = self._get_api_client()
-        if not client:
-            QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
+        """
+        Show dialog to create new unit (async).
+        
+        Uses run_api_call for non-blocking operation.
+        """
+        if not self.require_api("create units"):
             return
         
         dialog = UnitCreateDialog(self._phases, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                data = dialog.get_data()
-                
-                # Create unit using the production service
-                from pywats.domains.production.models import Unit
-                unit = Unit(
-                    serial_number=data['serial_number'],
-                    part_number=data['part_number'],
-                    revision=data.get('revision'),
-                    phase_id=data.get('phase_id'),
-                    comment=data.get('comment'),
-                )
-                
-                result = client.production.create_units([unit])
-                
-                if result:
-                    QMessageBox.information(self, "Success", "Unit created successfully")
-                    self._lookup_unit(data['serial_number'], data['part_number'])
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to create unit")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to create unit: {e}")
+            data = dialog.get_data()
+            
+            # Store for use in callback
+            self._pending_create_data = data
+            
+            # Create unit object
+            from pywats.domains.production.models import Unit
+            unit = Unit(
+                serial_number=data['serial_number'],
+                part_number=data['part_number'],
+                revision=data.get('revision'),
+                phase_id=data.get('phase_id'),
+                comment=data.get('comment'),
+            )
+            
+            # Run async API call
+            self.run_api_call(
+                lambda api: api.production.create_units([unit]),
+                on_success=self._on_unit_created,
+                on_error=self._on_create_error,
+                task_name="Creating unit..."
+            )
+    
+    def _on_unit_created(self, result: Any) -> None:
+        """Handle unit creation success"""
+        if result:
+            self.show_success("Unit created successfully")
+            data = self._pending_create_data
+            self._lookup_unit(data['serial_number'], data['part_number'])
+        else:
+            self.show_warning("Failed to create unit")
+    
+    def _on_create_error(self, error: Exception) -> None:
+        """Handle unit creation error"""
+        self.handle_error(error, "creating unit")
     
     def _on_verify_unit(self) -> None:
         """Verify current unit"""

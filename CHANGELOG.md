@@ -20,6 +20,12 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Async Client Architecture**: Complete async-first implementation for WATS Client
+  - `AsyncClientService`: Main async service controller using asyncio event loop
+  - `AsyncConverterPool`: Concurrent file conversion with asyncio.Semaphore (10 concurrent)
+  - `AsyncPendingQueue`: Concurrent report uploads (5 concurrent vs sequential)
+  - `AsyncAPIMixin`: GUI helper for async API calls with auto sync/async detection
+- `qasync` integration for Qt + asyncio in GUI mode
 - `AttachmentIO` class in `pywats_client.io` for file-based attachment operations
 - `Step.add_attachment()` method for memory-only attachment handling
 - `AttachmentMetadata` class (renamed from `Attachment` in models.py for clarity)
