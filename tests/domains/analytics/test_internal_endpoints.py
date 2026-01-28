@@ -297,7 +297,5 @@ class TestInternalMethodsAvailable:
         """Verify analytics_internal is no longer a separate property"""
         # All internal methods should be on api.analytics now
         # analytics_internal should not exist as a separate accessor
-        # (This test may fail if analytics_internal is kept for backwards compatibility)
-        print("Note: analytics_internal may still exist for backwards compatibility")
-        # We don't assert it doesn't exist - just verify analytics works
+        # Verify analytics works directly
         assert hasattr(wats_client, 'analytics')

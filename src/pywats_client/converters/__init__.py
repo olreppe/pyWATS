@@ -72,8 +72,7 @@ from .standard import (
     WATSStandardXMLConverter,
 )
 
-# Legacy support (ConverterBase from base.py)
-# Note: ConverterBase is deprecated. Use FileConverter instead.
+# Base class for converters (alternative to FileConverter for simple cases)
 from .base import ConverterBase
 from .base import ConverterResult as LegacyConverterResult
 
@@ -112,7 +111,7 @@ __all__ = [
     "WATSStandardTextConverter",
     "WATSStandardJsonConverter",
     "WATSStandardXMLConverter",
-    # Legacy support
+    # Alternative base class
     "ConverterBase",
     # Exceptions
     "ConverterError",

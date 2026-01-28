@@ -399,7 +399,7 @@ class ConverterResult:
     
     @property
     def success(self) -> bool:
-        """Backward compatibility property"""
+        """Check if conversion succeeded"""
         return self.status == ConversionStatus.SUCCESS
     
     @property

@@ -60,7 +60,7 @@ class AsyncProductService:
         """
         Get all products with full details.
         
-        Alias for get_products() for backward compatibility.
+        Alias for get_products().
 
         Returns:
             List of Product objects

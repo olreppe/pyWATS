@@ -170,7 +170,7 @@ pywats/                     # Core API library
 └── core/                   # HTTP client, auth, errors
 
 pywats_client/              # Client application library
-├── service/               # ClientService, file watching
+├── service/               # AsyncClientService, async components
 ├── converters/            # File converter framework
 │   ├── file_converter.py  # Base class
 │   └── standard/          # Built-in converters
@@ -195,16 +195,17 @@ class QueueHooks:
 
 This is a good pattern that could be extended for CFX integration.
 
-#### File System Events (pywats_client/service/pending_watcher.py)
+#### File System Events (pywats_client/service/async_pending_queue.py)
 
 ```python
+# File system events are handled via Watchdog with thread-safe signaling
+# to the async event loop
 class QueuedFileHandler(FileSystemEventHandler):
-    def on_created(self, event): ...
-    def on_modified(self, event): ...
-    def on_moved(self, event): ...
+    def on_created(self, event): 
+        loop.call_soon_threadsafe(event.set)  # Signal async code
 ```
 
-File system event-based processing pattern.
+File system event-based processing pattern (async-first architecture).
 
 ### 3.3 Architecture Gap
 

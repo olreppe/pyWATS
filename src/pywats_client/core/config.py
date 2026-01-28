@@ -260,7 +260,7 @@ class ClientConfig:
     proxy_password: str = ""
     proxy_bypass: str = ""
     
-    # Legacy proxy config (for backward compatibility)
+    # Structured proxy config (alternative format)
     proxy: ProxyConfig = field(default_factory=ProxyConfig)
     
     # Sync settings
@@ -380,15 +380,6 @@ class ClientConfig:
             api_token = os.environ.get('PYWATS_API_TOKEN', '')
         
         return service_address, api_token
-    
-    def _apply_env_overrides(self) -> None:
-        """
-        DEPRECATED: Use get_runtime_credentials() instead.
-        
-        This method modified the config object which caused env vars
-        to be persisted when saving the config.
-        """
-        pass
     
     # =========================================================================
     # Configuration File Path

@@ -1,291 +1,255 @@
 """
 Tests for Client Service Components
 
-Tests ClientService, PendingWatcher, and ConverterPool.
+Tests AsyncClientService and ClientService (sync entry point).
+Architecture: Async-first.
 """
 
 import pytest
-import time
-import threading
+import asyncio
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch, Mock
-from pywats_client.service.client_service import ClientService, ServiceStatus
-from pywats_client.service.pending_watcher import PendingWatcher, PendingWatcherState
-from pywats_client.service.converter_pool import ConverterPool
+from unittest.mock import MagicMock, patch, AsyncMock
 
 # Mock PySide6 before importing modules that use it
 sys.modules['PySide6'] = MagicMock()
 sys.modules['PySide6.QtCore'] = MagicMock()
+sys.modules['PySide6.QtNetwork'] = MagicMock()
+
+from pywats_client.service.client_service import ClientService, ServiceStatus
+from pywats_client.service.async_client_service import AsyncClientService, AsyncServiceStatus
+from pywats_client.service.async_pending_queue import AsyncPendingQueue, AsyncPendingQueueState
+from pywats_client.service.async_converter_pool import AsyncConverterPool
 
 
 class TestClientService:
-    """Test main service controller"""
+    """Test sync entry point for AsyncClientService"""
     
     def test_service_initialization(self, tmp_path, monkeypatch):
-        """Test service creation and initial state"""
-        # Mock config loading
+        """Test sync service creation and initial state"""
         mock_config = MagicMock()
         mock_config.get_reports_path.return_value = tmp_path / "reports"
+        mock_config.config_path = tmp_path / "config.json"
         mock_config.converters = []
         
-        with patch('pywats_client.service.client_service.ClientConfig') as mock_config_class:
+        with patch('pywats_client.service.async_client_service.ClientConfig') as mock_config_class:
             mock_config_class.load_for_instance.return_value = mock_config
             service = ClientService(instance_id="test")
             
             assert service.instance_id == "test"
             assert service.status == ServiceStatus.STOPPED
-            assert service.api is None
-            assert service.converter_pool is None
-            assert service.pending_watcher is None
+            assert service._async is not None
     
-    def test_service_status_property(self, tmp_path):
-        """Test service status tracking"""
+    def test_service_status_mapping(self, tmp_path):
+        """Test status mapping from async to sync"""
         mock_config = MagicMock()
         mock_config.get_reports_path.return_value = tmp_path / "reports"
-        mock_config.converters = []
+        mock_config.config_path = tmp_path / "config.json"
         
-        with patch('pywats_client.service.client_service.ClientConfig') as mock_config_class:
+        with patch('pywats_client.service.async_client_service.ClientConfig') as mock_config_class:
             mock_config_class.load_for_instance.return_value = mock_config
             service = ClientService(instance_id="test")
             
+            # Initial state
             assert service.status == ServiceStatus.STOPPED
-            # Status should update during lifecycle
-            assert service._status == ServiceStatus.STOPPED
+            
+            # Simulate async status change
+            service._async._status = AsyncServiceStatus.RUNNING
+            assert service.status == ServiceStatus.RUNNING
     
     def test_api_status_offline(self, tmp_path):
         """Test API status when not connected"""
         mock_config = MagicMock()
         mock_config.get_reports_path.return_value = tmp_path / "reports"
+        mock_config.config_path = tmp_path / "config.json"
         
-        with patch('pywats_client.service.client_service.ClientConfig') as mock_config_class:
+        with patch('pywats_client.service.async_client_service.ClientConfig') as mock_config_class:
             mock_config_class.load_for_instance.return_value = mock_config
             service = ClientService(instance_id="test")
             
             assert service.api_status == "Offline"
     
-    def test_api_status_online(self, tmp_path):
-        """Test API status when connected"""
+    def test_stop_signals_shutdown(self, tmp_path):
+        """Test that stop() signals the async service to shutdown"""
         mock_config = MagicMock()
         mock_config.get_reports_path.return_value = tmp_path / "reports"
+        mock_config.config_path = tmp_path / "config.json"
         
-        with patch('pywats_client.service.client_service.ClientConfig') as mock_config_class:
-            mock_config_class.load_for_instance.return_value = mock_config
-            service = ClientService(instance_id="test")
-            service.api = MagicMock()
-            
-            assert service.api_status == "Online"
-    
-    def test_service_double_start_protection(self, tmp_path):
-        """Test that service prevents double start"""
-        mock_config = MagicMock()
-        mock_config.get_reports_path.return_value = tmp_path / "reports"
-        mock_config.converters = []
-        
-        with patch('pywats_client.service.client_service.ClientConfig') as mock_config_class:
-            mock_config_class.load_for_instance.return_value = mock_config
-            service = ClientService(instance_id="test")
-            service._running = True
-            
-            # Should not start if already running
-            service.start()  # Should log warning and return
-            
-            # Verify it didn't change state
-            assert service._running == True
-    
-    def test_service_stop_when_not_running(self, tmp_path):
-        """Test stopping service when not running"""
-        mock_config = MagicMock()
-        mock_config.get_reports_path.return_value = tmp_path / "reports"
-        
-        with patch('pywats_client.service.client_service.ClientConfig') as mock_config_class:
+        with patch('pywats_client.service.async_client_service.ClientConfig') as mock_config_class:
             mock_config_class.load_for_instance.return_value = mock_config
             service = ClientService(instance_id="test")
             
-            # Should handle gracefully
+            # Verify shutdown event is not set
+            assert not service._async._shutdown_event.is_set()
+            
+            # Call stop
             service.stop()
             
-            assert service.status == ServiceStatus.STOPPED
+            # Verify shutdown was requested
+            assert service._async._shutdown_event.is_set()
 
 
-class TestPendingWatcher:
-    """Test report queue manager"""
+class TestAsyncClientService:
+    """Test async client service"""
     
-    def test_pending_watcher_creation(self, tmp_path):
-        """Test PendingWatcher initialization"""
-        reports_dir = tmp_path / "reports"
-        mock_api = MagicMock()
+    @pytest.mark.asyncio
+    async def test_async_service_initialization(self, tmp_path):
+        """Test async service creation and initial state"""
+        mock_config = MagicMock()
+        mock_config.get_reports_path.return_value = tmp_path / "reports"
+        mock_config.config_path = tmp_path / "config.json"
+        mock_config.converters = []
+        mock_config.get_converters = MagicMock(return_value=[])
         
-        watcher = PendingWatcher(
-            api_client=mock_api,
-            reports_directory=reports_dir,
-            initialize_async=False
+        with patch('pywats_client.service.async_client_service.ClientConfig') as mock_config_class:
+            mock_config_class.load_for_instance.return_value = mock_config
+            service = AsyncClientService(instance_id="test")
+            
+            assert service.instance_id == "test"
+            assert service.status == AsyncServiceStatus.STOPPED
+            assert service.api is None
+    
+    @pytest.mark.asyncio
+    async def test_async_service_request_shutdown(self, tmp_path):
+        """Test shutdown request mechanism"""
+        mock_config = MagicMock()
+        mock_config.get_reports_path.return_value = tmp_path / "reports"
+        mock_config.config_path = tmp_path / "config.json"
+        
+        with patch('pywats_client.service.async_client_service.ClientConfig') as mock_config_class:
+            mock_config_class.load_for_instance.return_value = mock_config
+            service = AsyncClientService(instance_id="test")
+            
+            assert not service._shutdown_event.is_set()
+            service.request_shutdown()
+            assert service._shutdown_event.is_set()
+    
+    @pytest.mark.asyncio
+    async def test_async_service_stats(self, tmp_path):
+        """Test service statistics"""
+        mock_config = MagicMock()
+        mock_config.get_reports_path.return_value = tmp_path / "reports"
+        mock_config.config_path = tmp_path / "config.json"
+        
+        with patch('pywats_client.service.async_client_service.ClientConfig') as mock_config_class:
+            mock_config_class.load_for_instance.return_value = mock_config
+            service = AsyncClientService(instance_id="test")
+            
+            stats = service.stats
+            assert "start_time" in stats
+            assert "reports_submitted" in stats
+            assert "errors" in stats
+
+
+class TestAsyncPendingQueue:
+    """Test async pending queue"""
+    
+    @pytest.mark.asyncio
+    async def test_queue_initialization(self, tmp_path):
+        """Test AsyncPendingQueue initialization"""
+        reports_dir = tmp_path / "reports"
+        mock_api = AsyncMock()
+        
+        queue = AsyncPendingQueue(
+            api=mock_api,
+            reports_dir=reports_dir,
+            max_concurrent=5
         )
         
-        assert watcher.reports_directory == reports_dir
+        assert queue.reports_dir == reports_dir
         assert reports_dir.exists()
-        assert watcher.api_client == mock_api
-        assert watcher.state in [PendingWatcherState.CREATED, PendingWatcherState.RUNNING]
+        assert queue._max_concurrent == 5
+        assert queue.state == AsyncPendingQueueState.CREATED
     
-    def test_pending_watcher_async_initialization(self, tmp_path):
-        """Test async initialization mode"""
+    @pytest.mark.asyncio
+    async def test_queue_stats(self, tmp_path):
+        """Test queue statistics"""
         reports_dir = tmp_path / "reports"
-        mock_api = MagicMock()
+        mock_api = AsyncMock()
         
-        watcher = PendingWatcher(
-            api_client=mock_api,
-            reports_directory=reports_dir,
-            initialize_async=True
+        queue = AsyncPendingQueue(
+            api=mock_api,
+            reports_dir=reports_dir,
+            max_concurrent=5
         )
         
-        # Give async thread time to start
-        time.sleep(0.5)
-        
-        assert watcher.state == PendingWatcherState.RUNNING
-        assert watcher._running
-        
-        # Cleanup
-        watcher.dispose()
+        stats = queue.stats
+        assert "total_submitted" in stats
+        assert "successful" in stats
+        assert "errors" in stats
+        assert "queued_files" in stats
     
-    def test_pending_watcher_file_monitoring(self, tmp_path):
-        """Test file system watcher for .queued files"""
+    @pytest.mark.asyncio
+    async def test_queue_stop_when_not_running(self, tmp_path):
+        """Test stopping queue when not running"""
         reports_dir = tmp_path / "reports"
-        mock_api = MagicMock()
+        mock_api = AsyncMock()
         
-        watcher = PendingWatcher(
-            api_client=mock_api,
-            reports_directory=reports_dir,
-            initialize_async=False
+        queue = AsyncPendingQueue(
+            api=mock_api,
+            reports_dir=reports_dir,
+            max_concurrent=5
         )
         
-        # Verify observer is set up
-        assert watcher._observer is not None
-        
-        # Cleanup
-        watcher.dispose()
-    
-    def test_pending_watcher_dispose(self, tmp_path):
-        """Test cleanup on dispose"""
-        reports_dir = tmp_path / "reports"
-        mock_api = MagicMock()
-        
-        watcher = PendingWatcher(
-            api_client=mock_api,
-            reports_directory=reports_dir,
-            initialize_async=False
-        )
-        
-        watcher.dispose()
-        
-        assert watcher.state == PendingWatcherState.DISPOSED
-        assert not watcher._running
-    
-    def test_pending_watcher_submission_lock(self, tmp_path):
-        """Test thread-safe submission with lock"""
-        reports_dir = tmp_path / "reports"
-        mock_api = MagicMock()
-        
-        watcher = PendingWatcher(
-            api_client=mock_api,
-            reports_directory=reports_dir,
-            initialize_async=False
-        )
-        
-        # Lock should exist for thread safety
-        assert watcher._submission_lock is not None
-        
-        # Should be able to acquire lock
-        acquired = watcher._submission_lock.acquire(timeout=1)
-        assert acquired
-        watcher._submission_lock.release()
-        
-        # Cleanup
-        watcher.dispose()
+        # Should handle gracefully when not running
+        await queue.stop()
+        # State transitions to STOPPED after stop() regardless of initial state
+        assert queue.state == AsyncPendingQueueState.STOPPED
 
 
-class TestConverterPool:
-    """Test converter pool and worker management"""
+class TestAsyncConverterPool:
+    """Test async converter pool"""
     
-    def test_converter_pool_initialization(self, tmp_path):
-        """Test pool creation"""
+    @pytest.mark.asyncio
+    async def test_pool_initialization(self, tmp_path):
+        """Test AsyncConverterPool initialization"""
         mock_config = MagicMock()
         mock_config.converters = []
-        mock_config.max_converter_workers = 5
-        mock_api = MagicMock()
+        mock_config.get_converters = MagicMock(return_value=[])
+        mock_api = AsyncMock()
         
-        pool = ConverterPool(config=mock_config, api_client=mock_api)
+        pool = AsyncConverterPool(
+            config=mock_config,
+            api=mock_api,
+            max_concurrent=10
+        )
         
         assert pool.config == mock_config
-        assert pool.api_client == mock_api
-        assert pool._max_workers == 5
-        assert len(pool.converter_list) == 0
+        assert pool._max_concurrent == 10
+        assert not pool.is_running
     
-    def test_converter_pool_default_max_workers(self, tmp_path):
-        """Test default worker limit"""
+    @pytest.mark.asyncio
+    async def test_pool_stats(self, tmp_path):
+        """Test pool statistics"""
         mock_config = MagicMock()
         mock_config.converters = []
-        # No max_converter_workers attribute
-        del mock_config.max_converter_workers
-        mock_api = MagicMock()
+        mock_api = AsyncMock()
         
-        pool = ConverterPool(config=mock_config, api_client=mock_api)
+        pool = AsyncConverterPool(
+            config=mock_config,
+            api=mock_api,
+            max_concurrent=10
+        )
         
-        # Should default to 10
-        assert pool._max_workers == 10
+        stats = pool.stats
+        assert "total_processed" in stats
+        assert "successful" in stats
+        assert "errors" in stats
+        assert "queue_size" in stats
     
-    def test_converter_pool_worker_limit_bounds(self, tmp_path):
-        """Test worker limit enforcement"""
+    @pytest.mark.asyncio
+    async def test_pool_stop_when_not_running(self, tmp_path):
+        """Test stopping pool when not running"""
         mock_config = MagicMock()
         mock_config.converters = []
-        mock_api = MagicMock()
+        mock_api = AsyncMock()
         
-        # Test zero workers defaults to 1
-        mock_config.max_converter_workers = 0
-        pool1 = ConverterPool(config=mock_config, api_client=mock_api)
-        assert pool1._max_workers == 1
+        pool = AsyncConverterPool(
+            config=mock_config,
+            api=mock_api,
+            max_concurrent=10
+        )
         
-        # Test > 50 capped to 50
-        mock_config.max_converter_workers = 100
-        pool2 = ConverterPool(config=mock_config, api_client=mock_api)
-        assert pool2._max_workers == 50
-    
-    def test_converter_pool_converter_list(self, tmp_path):
-        """Test converter list management"""
-        mock_config = MagicMock()
-        mock_config.converters = []
-        mock_config.max_converter_workers = 5
-        mock_api = MagicMock()
-        
-        pool = ConverterPool(config=mock_config, api_client=mock_api)
-        
-        assert isinstance(pool.converter_list, list)
-        assert len(pool.converter_list) == 0
-    
-    def test_converter_pool_dispose_flag(self, tmp_path):
-        """Test disposal flag"""
-        mock_config = MagicMock()
-        mock_config.converters = []
-        mock_config.max_converter_workers = 5
-        mock_api = MagicMock()
-        
-        pool = ConverterPool(config=mock_config, api_client=mock_api)
-        
-        assert not pool._disposing
-        
-        # After disposal
-        pool.dispose()
-        assert pool._disposing
-    
-    def test_converter_pool_pending_queue(self, tmp_path):
-        """Test pending conversion queue"""
-        mock_config = MagicMock()
-        mock_config.converters = []
-        mock_config.max_converter_workers = 5
-        mock_api = MagicMock()
-        
-        pool = ConverterPool(config=mock_config, api_client=mock_api)
-        
-        # Verify queue structures exist
-        assert pool._pending is not None
-        assert pool._pending_queue is not None
-        assert pool._pending_lock is not None
+        # Should handle gracefully when not running
+        await pool.stop()
+        assert not pool.is_running

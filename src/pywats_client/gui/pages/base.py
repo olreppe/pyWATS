@@ -3,8 +3,7 @@ Base Page Widget
 
 Base class for all configuration pages.
 
-Supports both legacy (config-only) and new (facade-based) initialization patterns
-to allow gradual migration of existing pages.
+Supports both config-only and facade-based initialization patterns.
 
 Async Support:
     Pages can execute async operations without blocking the UI using the

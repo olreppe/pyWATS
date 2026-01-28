@@ -29,8 +29,7 @@ from ..shared.enums import QueueItemStatus
 logger = logging.getLogger(__name__)
 
 
-# Re-export QueueItemStatus for backward compatibility
-# New code should import from pywats.shared.enums
+# Re-export QueueItemStatus for convenient imports from this module
 __all__ = ["QueueItemStatus", "QueueItem", "BaseQueue", "MemoryQueue", "QueueHooks"]
 
 

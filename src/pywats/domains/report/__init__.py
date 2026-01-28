@@ -28,7 +28,7 @@ from .report_models import (
 )
 from .report_models.uut.steps.sequence_call import SequenceCall, StepList
 
-# Backward compatibility alias
+# Alias for clarity when used alongside domain-specific Attachment types
 ReportAttachment = Attachment
 
 # Import query-related models

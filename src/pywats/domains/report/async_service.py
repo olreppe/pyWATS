@@ -233,7 +233,7 @@ class AsyncReportService:
         location: Optional[str] = None,
         purpose: Optional[str] = None,
         comment: Optional[str] = None,
-        # Legacy parameters (for backward compatibility)
+        # Alternative parameter names
         process_code: Optional[int] = None,
         operation_type: Optional[int] = None,
     ) -> UURReport:
@@ -297,8 +297,8 @@ class AsyncReportService:
             location: Optional location
             purpose: Optional purpose (default "Repair")
             comment: Optional comment for the repair
-            process_code: Legacy - use test_operation_code instead
-            operation_type: Legacy - use test_operation_code instead
+            process_code: Alias for test_operation_code
+            operation_type: Alias for test_operation_code
 
         Returns:
             A new UURReport object ready for adding repair info and submission
@@ -360,7 +360,7 @@ class AsyncReportService:
             sn = serial_number
             rev = revision
 
-        # Legacy fallback: use keyword arguments
+        # Fallback: use keyword arguments
         else:
             if part_number:
                 pn = part_number
@@ -483,7 +483,7 @@ class AsyncReportService:
         Query report headers (unified endpoint for UUT and UUR).
 
         Args:
-            report_type: ReportType.UUT or ReportType.UUR (or legacy "uut"/"uur" strings)
+            report_type: ReportType.UUT or ReportType.UUR (or "uut"/"uur" strings)
             expand: Fields to expand (subUnits, miscInfo, assets, attachments)
             odata_filter: OData filter string (e.g., "serialNumber eq '12345'")
             top: Maximum results ($top)

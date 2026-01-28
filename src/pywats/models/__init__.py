@@ -6,7 +6,7 @@ Domain-specific models are in their respective domains.
 """
 
 # UUT/UUR Report models (WSJF format - full report structure)
-# Re-export from domains for backwards compatibility
+# Re-exported from domains.report.report_models for convenient imports
 from ..domains.report.report_models import (
     # Base classes
     WATSBase, Report, ReportStatus,

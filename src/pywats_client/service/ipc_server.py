@@ -3,14 +3,18 @@ IPC Server for Service Process
 
 Simplified IPC server for GUI communication.
 Uses Qt LocalSocket for cross-platform IPC.
+
+Supports both sync (ClientService) and async (AsyncClientService) usage patterns.
 """
 
+import asyncio
 import json
 import logging
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Any, Union
 
 if TYPE_CHECKING:
     from .client_service import ClientService
+    from .async_client_service import AsyncClientService
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +25,19 @@ class IPCServer:
     
     Runs in service process, handles requests from GUI clients.
     Uses Qt LocalSocket (cross-platform alternative to named pipes/domain sockets).
+    
+    Supports both sync and async service interfaces:
+    - Sync: Use start() and stop()
+    - Async: Use start_async() and stop_async()
     """
     
-    def __init__(self, instance_id: str, service: 'ClientService') -> None:
+    def __init__(self, instance_id: str, service: Union['ClientService', 'AsyncClientService']) -> None:
         """
         Initialize IPC server.
         
         Args:
             instance_id: Instance identifier
-            service: ClientService instance to query
+            service: ClientService or AsyncClientService instance to query
         """
         self.instance_id = instance_id
         self.service = service
@@ -41,7 +49,7 @@ class IPCServer:
     
     def start(self) -> bool:
         """
-        Start IPC server.
+        Start IPC server (sync).
         
         Note: Requires QCoreApplication to exist in main thread.
         
@@ -78,8 +86,23 @@ class IPCServer:
             logger.error(f"Failed to start IPC server: {e}", exc_info=True)
             return False
     
-    def stop(self):
-        """Stop IPC server"""
+    async def start_async(self) -> bool:
+        """
+        Start IPC server (async).
+        
+        Async-compatible wrapper around start() for use with AsyncClientService.
+        The Qt server is inherently event-driven, so this just wraps the sync start.
+        
+        Returns:
+            True if started successfully
+        """
+        # IPC server uses Qt event loop which integrates with qasync
+        # Run in executor to avoid blocking the event loop during startup
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.start)
+    
+    def stop(self) -> None:
+        """Stop IPC server (sync)"""
         if self._server:
             self._server.close()
             logger.info("IPC server stopped")
@@ -87,6 +110,15 @@ class IPCServer:
         for client in self._clients:
             client.disconnectFromServer()
         self._clients.clear()
+    
+    async def stop_async(self) -> None:
+        """
+        Stop IPC server (async).
+        
+        Async-compatible wrapper around stop() for use with AsyncClientService.
+        """
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self.stop)
     
     def _on_connection(self):
         """Handle new client connection"""
@@ -166,3 +198,8 @@ class IPCServer:
         if client in self._clients:
             self._clients.remove(client)
         client.deleteLater()
+
+
+# Alias for async service compatibility
+# AsyncClientService imports ServiceIPCServer, which is just IPCServer with async methods
+ServiceIPCServer = IPCServer

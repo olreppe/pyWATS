@@ -23,7 +23,7 @@ class AssetState(IntEnum):
     IN_STORAGE = 5
     SCRAPPED = 6
     
-    # Aliases for backward compatibility
+    # Alternative name aliases
     OK = 1  # Same as IN_OPERATION
 
 
@@ -60,7 +60,7 @@ class AssetLogType(IntEnum):
     MAINTENANCE = 5
     STATE_CHANGE = 6
     
-    # Aliases for backward compatibility
+    # Alternative name aliases
     UNKNOWN = 0
     CREATED = 1
     COUNT_RESET = 3

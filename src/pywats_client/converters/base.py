@@ -14,7 +14,7 @@ from enum import Enum
 import mimetypes
 
 # Import canonical models from models.py to avoid duplication
-# These are re-exported for backward compatibility
+# Re-exported for convenient imports
 from .models import ConversionStatus, PostProcessAction, FileInfo, ConverterResult
 
 
@@ -345,35 +345,6 @@ class ConverterBase(ABC):
         """
         pass
     
-    # Backward compatibility method (deprecated)
-    def convert(self, file_stream: BinaryIO, filename: str) -> ConverterResult:
-        """
-        DEPRECATED: Use convert_file() instead.
-        
-        This method is kept for backward compatibility.
-        """
-        # Create temp file and call new method
-        import tempfile
-        with tempfile.NamedTemporaryFile(delete=False, suffix=Path(filename).suffix) as tmp:
-            tmp.write(file_stream.read())
-            tmp_path = Path(tmp.name)
-        
-        try:
-            file_info = FileInfo(tmp_path)
-            args = ConverterArguments(
-                api_client=None,
-                file_info=file_info,
-                drop_folder=tmp_path.parent,
-                done_folder=tmp_path.parent,
-                error_folder=tmp_path.parent,
-                user_settings=self.user_settings
-            )
-            
-            result = self.convert_file(tmp_path, args)
-            return result
-        finally:
-            tmp_path.unlink(missing_ok=True)
-    
     def validate_report(self, report: Dict[str, Any]) -> List[str]:
         """
         Validate a report before submission.
@@ -441,11 +412,6 @@ class ConverterBase(ABC):
                 }
         """
         return {}
-    
-    # Backward compatibility
-    def get_parameters(self) -> Dict[str, Any]:
-        """DEPRECATED: Use get_arguments() instead"""
-        return self.get_arguments()
 
 
 class CSVConverter(ConverterBase):

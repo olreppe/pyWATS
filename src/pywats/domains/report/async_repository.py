@@ -89,7 +89,7 @@ class AsyncReportRepository:
         if isinstance(report_type, ReportType):
             rt_value = report_type.value
         else:
-            # Accept legacy string values for backwards compatibility
+            # Accept string values ("uut"/"uur")
             rt_value = "U" if report_type.lower() == "uut" else "R"
         
         params: Dict[str, Any] = {"reportType": rt_value}

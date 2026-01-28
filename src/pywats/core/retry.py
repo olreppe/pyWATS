@@ -162,7 +162,7 @@ class RetryExhaustedError(Exception):
         message: str, 
         attempts: int, 
         last_error: Optional[Exception] = None,
-        last_exception: Optional[Exception] = None  # Alias for backwards compat
+        last_exception: Optional[Exception] = None  # Alternative parameter name
     ):
         super().__init__(message)
         self.attempts = attempts

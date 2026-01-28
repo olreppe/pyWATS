@@ -199,7 +199,7 @@ def _run_service_mode(instance_id: str = "default"):
 
 
 def _run_headless_mode(config):
-    """Run in simple headless mode (deprecated - redirects to service mode)"""
+    """Run in simple headless mode (redirects to service mode)"""
     print("Note: Headless mode now uses service mode.")
     print()
     
@@ -662,7 +662,7 @@ def main():
         from .control.cli import cli_main
         sys.exit(cli_main())
     
-    # Legacy argument parsing for backward compatibility
+    # Argument parsing for direct invocation
     parser = argparse.ArgumentParser(
         description="pyWATS Client - WATS Test Report Management",
         epilog="""

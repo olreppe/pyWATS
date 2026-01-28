@@ -357,10 +357,6 @@ class AssetPage(BasePage, AsyncAPIPageMixin):
         else:
             QMessageBox.warning(self, "Not Connected", "Please connect to WATS server first.")
     
-    def _load_assets(self) -> None:
-        """Load assets from WATS server (sync - for backward compatibility)"""
-        self._load_assets_async()
-    
     def _load_assets_async(self) -> None:
         """Load assets from WATS server asynchronously"""
         client = self._get_api_client()

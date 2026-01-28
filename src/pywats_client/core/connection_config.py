@@ -207,7 +207,7 @@ def migrate_legacy_config(config_dict: Dict[str, Any]) -> Dict[str, Any]:
     # Add connection to config
     config_dict["connection"] = connection.to_dict()
     
-    # Keep legacy fields for backward compatibility
-    # but they will be synced with connection config
+    # Keep original fields synced with connection config
+    # for simpler access patterns
     
     return config_dict

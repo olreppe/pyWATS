@@ -426,55 +426,14 @@ status = client.get_status()
 
 | Python (snake_case) | C# (PascalCase) | Purpose |
 |---------------------|-----------------|---------|
-| `ClientService` | `ClientSvc` | Main service controller |
-| `ConverterPool` | `Conversion` | Converter orchestration |
+| `ClientService` | `ClientSvc` | Sync entry point |
+| `AsyncClientService` | N/A | THE async implementation |
+| `AsyncConverterPool` | `Conversion` | Converter orchestration |
 | `Converter` | `Converter` | Individual converter |
-| `ConverterWorkerClass` | `ConverterWorkerClass` | Worker thread |
-| `ConversionItem` | `ConversionItem` | File to convert |
-| `PendingWatcher` | `PendingWatcher` | Report queue |
+| `AsyncPendingQueue` | `PendingWatcher` | Report queue |
 | `IPCServer` | `ClientIPC` / WCF | Service communication |
 
----
-
-## Migration from Old Code
-
-### For Developers
-
-The old `pyWATSApplication` class still exists but is **deprecated**. New code should:
-
-1. **Run service separately:**
-   ```bash
-   python -m pywats_client service
-   ```
-
-2. **GUI uses IPC only:**
-   ```python
-   from pywats_client.service.ipc_client import ServiceIPCClient
-   client = ServiceIPCClient("default")
-   ```
-
-3. **No embedded services:**
-   - Don't create `pyWATSApplication` in GUI
-   - Don't use `AppFacade`
-   - Use `ServiceIPCClient` instead
-
-### For Users
-
-**Old way (deprecated):**
-```bash
-python -m pywats_client  # Launches GUI with embedded services
-```
-
-**New way (recommended):**
-```bash
-# Terminal 1: Start service
-python -m pywats_client service
-
-# Terminal 2: Launch GUI (connects to service)
-python -m pywats_client gui
-```
-
-Or install as system service for automatic startup.
+> **Note:** `ConverterPool` and `PendingQueue` are aliases to their async versions.
 
 ---
 

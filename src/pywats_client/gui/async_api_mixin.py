@@ -384,6 +384,3 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
         
         # Start the sequence
         run_next(0)
-    
-    # Backwards compatibility alias
-    run_async_chain = run_async_parallel

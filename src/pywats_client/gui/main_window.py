@@ -579,7 +579,7 @@ class MainWindow(QMainWindow):
     def _on_connection_request(self, should_connect: bool) -> None:
         """
         Handle connection request from setup page.
-        Note: This is deprecated in IPC mode - service runs independently.
+        In IPC mode, the service runs independently.
         """
         logger.warning("Connection request received but service runs independently. Use service commands.")
         pass
@@ -841,30 +841,3 @@ class MainWindow(QMainWindow):
         """
         if self._ipc_client and self._service_connected:
             self._update_status()
-
-    async def send_test_uut(self) -> dict:
-        """
-        Send a test UUT report to verify full connectivity.
-        
-        In IPC mode, reports are submitted by the service process.
-        This method is deprecated - use converters or direct API testing.
-        
-        Returns:
-            dict with error indicating IPC mode doesn't support direct report submission
-        """
-        return {
-            "success": False,
-            "error": "Direct report submission not supported in IPC mode. Use converters or service API.",
-            "serial_number": "N/A",
-            "part_number": "N/A"
-        }
-
-    async def test_send_uut(self) -> bool:
-        """
-        Create and submit a test UUT report.
-        
-        In IPC mode, use the service's API for testing.
-        This method is deprecated.
-        """
-        logger.warning("test_send_uut called in IPC mode - not supported")
-        return False

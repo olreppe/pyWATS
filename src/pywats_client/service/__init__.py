@@ -4,20 +4,25 @@ pyWATS Client Service
 Background service for WATS Client operations.
 Runs independently of GUI, provides IPC for remote control.
 
-Provides both sync and async implementations:
-- ClientService: Traditional sync service (uses threading)
-- AsyncClientService: Async-first service (uses asyncio)
+Architecture: Async-first
+- AsyncClientService: The implementation (uses asyncio)
+- ClientService: Sync entry point (runs asyncio.run internally)
 
-For new applications, prefer AsyncClientService for better performance
-and resource utilization.
+Usage (sync - simple):
+    from pywats_client.service import ClientService
+    service = ClientService(instance_id="default")
+    service.start()  # Blocks until stopped
+
+Usage (async - full control):
+    from pywats_client.service import AsyncClientService
+    service = AsyncClientService(instance_id="default")
+    await service.run()
 """
 
-# Sync implementations (legacy)
-from .client_service import ClientService
-from .converter_pool import ConverterPool, ConversionItem
-from .pending_watcher import PendingWatcher
+# Sync entry point
+from .client_service import ClientService, ServiceStatus
 
-# Async implementations (recommended)
+# Async implementation
 from .async_client_service import (
     AsyncClientService,
     AsyncServiceStatus,
@@ -34,13 +39,15 @@ from .async_pending_queue import (
     AsyncPendingQueueState,
 )
 
+# Aliases for cleaner imports (async is the default)
+ConverterPool = AsyncConverterPool
+PendingQueue = AsyncPendingQueue
+
 __all__ = [
-    # Sync (legacy)
+    # Sync entry point
     'ClientService',
-    'ConverterPool',
-    'ConversionItem',
-    'PendingWatcher',
-    # Async (recommended)
+    'ServiceStatus',
+    # Async implementation
     'AsyncClientService',
     'AsyncServiceStatus',
     'AsyncConverterPool',
@@ -48,6 +55,9 @@ __all__ = [
     'AsyncConversionItemState',
     'AsyncPendingQueue',
     'AsyncPendingQueueState',
+    # Aliases
+    'ConverterPool',
+    'PendingQueue',
     # Entry points
     'run_async_service',
     'run_async_service_with_qt',

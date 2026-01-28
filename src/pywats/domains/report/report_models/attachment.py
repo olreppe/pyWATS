@@ -135,7 +135,7 @@ class Attachment(WATSBase):
         """True if attached to a specific failure (UUR), False if report/step level."""
         return self.failure_idx is not None
     
-    # Alias for backward compatibility
+    # Convenience alias
     @property
     def mime_type(self) -> str:
         """MIME type of the attachment (alias for content_type)."""

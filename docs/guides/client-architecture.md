@@ -1167,7 +1167,7 @@ docker run -d ghcr.io/olreppe/pywats:client-headless
 1. **Configuration (18 tests)** - Config validation, serialization, lifecycle
 2. **Converters (10 tests)** - Base classes, validation, results
 3. **Queue (21 tests)** - Persistence, crash recovery, retry
-4. **Service (17 tests)** - ClientService, PendingWatcher, ConverterPool
+4. **Service (17 tests)** - AsyncClientService, AsyncPendingQueue, AsyncConverterPool
 5. **IPC (10 tests)** - Communication, protocols, commands
 6. **Integration (9 tests)** - End-to-end workflows
 

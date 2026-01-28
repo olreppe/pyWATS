@@ -24,7 +24,7 @@ class StatusFilter(str, Enum):
     
     Example:
         >>> filter = WATSFilter(status=StatusFilter.PASSED)
-        >>> # Or with string (backward compatible)
+        >>> # Or with string
         >>> filter = WATSFilter(status="Passed")
     """
     PASSED = "Passed"
@@ -143,7 +143,7 @@ class CompOp(str, Enum):
     Defines how a measured value is compared against limits.
     Inherits from (str, Enum) for JSON serialization compatibility.
     
-    Also available as CompOperator alias for backward compatibility.
+    Also available as CompOperator alias (alternative name).
     
     Example:
         >>> from pywats.shared.enums import CompOp

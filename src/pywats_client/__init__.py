@@ -45,11 +45,16 @@ from .exceptions import (
     ConfigurationMissingError,
 )
 
-# Service layer (NEW architecture)
+# Service layer (async-first architecture)
 from .service.client_service import ClientService, ServiceStatus
-from .service.converter_pool import ConverterPool, ConversionItem
-from .service.pending_watcher import PendingWatcher
+from .service.async_client_service import AsyncClientService, AsyncServiceStatus
+from .service.async_converter_pool import AsyncConverterPool, AsyncConversionItem
+from .service.async_pending_queue import AsyncPendingQueue, AsyncPendingQueueState
 from .service.ipc_client import ServiceIPCClient, ServiceDiscovery, InstanceInfo, discover_services
+
+# Aliases for cleaner imports
+ConverterPool = AsyncConverterPool
+PendingQueue = AsyncPendingQueue
 
 # Converters
 from .converters.base import (
@@ -81,12 +86,18 @@ __all__ = [
     "ClientConfig",
     "get_default_config_path",
     
-    # Service layer
+    # Service layer (async-first)
     "ClientService",
     "ServiceStatus",
+    "AsyncClientService",
+    "AsyncServiceStatus",
+    "AsyncConverterPool",
+    "AsyncConversionItem",
+    "AsyncPendingQueue",
+    "AsyncPendingQueueState",
+    # Aliases
     "ConverterPool",
-    "ConversionItem",
-    "PendingWatcher",
+    "PendingQueue",
     
     # IPC
     "ServiceIPCClient",

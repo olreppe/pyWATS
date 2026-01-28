@@ -317,29 +317,53 @@ class SyncServiceWrapper(Generic[T]):
 src/pywats_client/
 ├── __init__.py
 ├── service/
-│   ├── client_service.py      # ClientService
-│   └── ipc_server.py          # IPCServer
+│   ├── client_service.py         # ClientService (sync wrapper, ~200 lines)
+│   ├── async_client_service.py   # AsyncClientService (THE implementation, ~709 lines)
+│   ├── async_converter_pool.py   # AsyncConverterPool (async implementation)
+│   ├── async_pending_queue.py    # AsyncPendingQueue (async implementation)
+│   └── ipc_server.py             # IPCServer / ServiceIPCServer
 ├── converter/
-│   ├── converter_pool.py      # ConverterPool
-│   └── base_converter.py      # BaseConverter
-├── watcher/
-│   └── pending_watcher.py     # PendingWatcher
+│   └── base_converter.py         # BaseConverter
 └── queue/
-    └── report_queue.py        # ReportQueue
+    └── report_queue.py           # ReportQueue
 ```
 
-### 6.2 Class Inventory
+### 6.2 Architecture Pattern: Async-First with Sync Wrapper
+
+**Pattern:** AsyncClientService is THE implementation. ClientService is a thin sync wrapper.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    ClientService (sync wrapper)             │
+│                        ~200 lines                           │
+│    Uses asyncio.run() to bridge to async implementation     │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ delegates to
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 AsyncClientService (THE impl)               │
+│                        ~709 lines                           │
+│    ├── AsyncConverterPool (async converter management)      │
+│    └── AsyncPendingQueue (async file watching)              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 6.3 Class Inventory
 
 | Class | Purpose |
 |-------|---------|
-| `ClientService` | Main service controller (background service) |
-| `ConverterPool` | Manages file-to-report converters |
+| `ClientService` | Sync entry point wrapper (~200 lines), uses `asyncio.run()` |
+| `AsyncClientService` | THE service implementation (~709 lines, async-first) |
+| `AsyncConverterPool` | Manages file-to-report converters (async) |
+| `AsyncPendingQueue` | Monitors folder + queues reports (async) |
 | `BaseConverter` | Abstract base for custom converters |
-| `PendingWatcher` | Monitors folder for new files |
-| `ReportQueue` | Queues reports for submission |
-| `IPCServer` | Inter-process communication with GUI |
+| `IPCServer` / `ServiceIPCServer` | Inter-process communication with GUI |
 
-### 6.3 Relationship to pyWATS API
+**Aliases for backward compatibility:**
+- `ConverterPool` → `AsyncConverterPool`
+- `PendingQueue` → `AsyncPendingQueue`
+
+### 6.4 Relationship to pyWATS API
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -348,8 +372,13 @@ src/pywats_client/
 │                                                              │
 │  ┌────────────────┐    ┌────────────────┐                   │
 │  │ ClientService  │    │  IPCServer     │◄── GUI/Tools      │
-│  └───────┬────────┘    └────────────────┘                   │
-│          │                                                   │
+│  │ (sync wrapper) │    └────────────────┘                   │
+│  └───────┬────────┘                                         │
+│          │ asyncio.run()                                    │
+│          ▼                                                   │
+│  ┌─────────────────────┐                                    │
+│  │ AsyncClientService  │  ◄── THE implementation            │
+│  └───────┬─────────────┘                                    │
 │          │ uses                                              │
 │          ▼                                                   │
 │  ┌────────────────┐                                         │
@@ -364,7 +393,8 @@ src/pywats_client/
 ```
 
 **Key relationship:**
-- `ClientService` creates and uses a `pyWATS` instance internally
+- `ClientService` is a thin sync wrapper using `asyncio.run()` to run `AsyncClientService`
+- `AsyncClientService` creates and uses a `pyWATS` instance internally
 - `pyWATS` can **auto-discover** credentials from running `ClientService` via IPC
 - They solve different problems: API library vs. file processing service
 
@@ -564,16 +594,19 @@ src/pywats_client/
 | `Settings` | `core/settings.py` | Configuration container |
 | `InstanceManager` | `core/instances.py` | Multi-instance support |
 
-### 8.4 Client Package Classes
+### 8.4 Client Package Classes (Async-First Architecture)
 
 | Class | File | Purpose |
 |-------|------|---------|
-| `ClientService` | `pywats_client/service/client_service.py` | Background service |
+| `ClientService` | `pywats_client/service/client_service.py` | Sync wrapper (~200 lines) |
+| `AsyncClientService` | `pywats_client/service/async_client_service.py` | THE implementation (~709 lines) |
+| `AsyncConverterPool` | `pywats_client/service/async_converter_pool.py` | Converter management (async) |
+| `AsyncPendingQueue` | `pywats_client/service/async_pending_queue.py` | File monitoring + queueing (async) |
 | `IPCServer` | `pywats_client/service/ipc_server.py` | IPC communication |
-| `ConverterPool` | `pywats_client/converter/converter_pool.py` | Converter management |
 | `BaseConverter` | `pywats_client/converter/base_converter.py` | Converter base class |
-| `PendingWatcher` | `pywats_client/watcher/pending_watcher.py` | File monitoring |
-| `ReportQueue` | `pywats_client/queue/report_queue.py` | Report queuing |
+
+> **Note:** `ConverterPool` and `PendingQueue` are aliases to their async implementations.
+> The sync `converter_pool.py` and `pending_watcher.py` files have been deleted.
 
 ---
 

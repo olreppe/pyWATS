@@ -13,7 +13,7 @@ The test submits the report via API, waits for processing,
 and loads it back to verify data integrity.
 
 This test should be run whenever changes are made to the report module
-to ensure backward compatibility and data integrity.
+to ensure data integrity and proper serialization/deserialization.
 """
 import math
 import time

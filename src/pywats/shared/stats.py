@@ -48,7 +48,7 @@ class QueueProcessingResult:
         return (self.success / self.total) * 100
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
+        """Convert to dictionary for serialization."""
         return {
             "success": self.success,
             "failed": self.failed,
@@ -91,7 +91,7 @@ class QueueStats:
         return self.pending + self.processing
     
     def to_dict(self) -> Dict[str, int]:
-        """Convert to dictionary for backward compatibility."""
+        """Convert to dictionary for serialization."""
         return {
             "pending": self.pending,
             "processing": self.processing,
@@ -143,7 +143,7 @@ class CacheStats:
         return (self.size / self.max_size) * 100
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
+        """Convert to dictionary for serialization."""
         return {
             "hits": self.hits,
             "misses": self.misses,
