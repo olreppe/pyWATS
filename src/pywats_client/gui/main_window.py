@@ -86,12 +86,46 @@ class MainWindow(QMainWindow):
         self._status_timer.timeout.connect(self._update_status)
         self._status_timer.start(10000)  # Update every 10 seconds (reduced from 5)
     
+    def _start_service_process(self) -> bool:
+        """
+        Start the service process in the background.
+        
+        Returns:
+            True if process was started, False on error
+        """
+        import subprocess
+        import sys
+        
+        try:
+            logger.info(f"Starting service process for instance: {self._current_instance_id}")
+            
+            if sys.platform == "win32":
+                # Windows: Start detached process
+                subprocess.Popen(
+                    [sys.executable, "-m", "pywats_client", "service", "--instance", self._current_instance_id],
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+            else:
+                # Unix: Start with new session
+                subprocess.Popen(
+                    [sys.executable, "-m", "pywats_client", "service", "--instance", self._current_instance_id],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True
+                )
+            
+            return True
+        except Exception as e:
+            logger.error(f"Failed to start service: {e}")
+            return False
+    
     def _connect_to_service(self) -> None:
         """
         Connect to the service process via IPC.
         
-        If service is not running, the GUI will display a message
-        and allow the user to start it.
+        If service is not running, automatically starts it and retries connection.
         """
         self._ipc_client = ServiceIPCClient(self._current_instance_id)
         
@@ -101,11 +135,47 @@ class MainWindow(QMainWindow):
             self._update_window_title()
             self._update_status()
         else:
-            logger.warning(f"Service not running for instance: {self._current_instance_id}")
+            # Service not running - try to start it
+            logger.info(f"Service not running for instance: {self._current_instance_id}, starting...")
+            self.connection_status_changed.emit("Starting service...")
+            self.application_status_changed.emit("Starting")
+            
+            if self._start_service_process():
+                # Wait for service to start and retry connection
+                QTimer.singleShot(2000, self._retry_connect_to_service)
+            else:
+                logger.error("Failed to start service process")
+                self._service_connected = False
+                self._update_window_title()
+                self.connection_status_changed.emit("Failed to start service")
+                self.application_status_changed.emit("Error")
+    
+    def _retry_connect_to_service(self, attempts: int = 0) -> None:
+        """
+        Retry connecting to service after starting it.
+        
+        Args:
+            attempts: Number of attempts made so far
+        """
+        max_attempts = 5
+        
+        if self._ipc_client.connect():
+            logger.info(f"Connected to service after {attempts + 1} attempt(s)")
+            self._service_connected = True
+            self._update_window_title()
+            self._update_status()
+            self.connection_status_changed.emit("Connected")
+        elif attempts < max_attempts:
+            # Retry after delay
+            logger.debug(f"Service not ready, retrying... (attempt {attempts + 1}/{max_attempts})")
+            QTimer.singleShot(1000, lambda: self._retry_connect_to_service(attempts + 1))
+        else:
+            # Give up
+            logger.error(f"Could not connect to service after {max_attempts} attempts")
             self._service_connected = False
             self._update_window_title()
-            self.connection_status_changed.emit("Service not running")
-            self.application_status_changed.emit("Stopped")
+            self.connection_status_changed.emit("Service not responding")
+            self.application_status_changed.emit("Error")
     
     def _setup_window(self) -> None:
         """Configure window properties"""
