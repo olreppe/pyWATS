@@ -82,6 +82,7 @@ class DashboardPage(BasePage):
         parent: Optional[QWidget] = None
     ) -> None:
         self._main_window = main_window
+        self._facade = None  # No facade in current architecture (IPC-based)
         super().__init__(config, parent)
         
         # Refresh timer
@@ -263,17 +264,27 @@ class DashboardPage(BasePage):
         super().showEvent(event)
         logger.info("📺 Dashboard page is now VISIBLE")
     
+    def _get_ipc_client(self):
+        """Get IPC client from main window"""
+        if self._main_window and hasattr(self._main_window, '_ipc_client'):
+            return self._main_window._ipc_client
+        return None
+    
     def _refresh_status(self) -> None:
         """Refresh all status indicators"""
-        # Check service status via facade
-        if self._facade:
+        # Check service status via IPC client
+        ipc_client = self._get_ipc_client()
+        if ipc_client and ipc_client.is_connected():
             try:
-                status_data = self._facade.get_service_status()
-                self._update_service_status(status_data)
+                status_data = ipc_client.get_status()
+                if status_data:
+                    self._update_service_status({"running": True, **status_data})
+                else:
+                    self._update_service_status({"running": False, "error": True})
             except Exception:
                 self._update_service_status({"running": False, "error": True})
         else:
-            # No facade - running in standalone mode
+            # No IPC client - running in standalone mode
             self._update_service_status({"running": False, "standalone": True})
         
         # Update converter health
@@ -352,14 +363,15 @@ class DashboardPage(BasePage):
             watch_item.setForeground(QColor("#808080"))
             self._health_table.setItem(row, 2, watch_item)
             
-            # Get stats from facade if available
+            # Get stats from IPC client if available
             processed_count = "--"
             success_rate = "--%"
             last_run = "--"
             
-            if self._facade:
+            ipc_client = self._get_ipc_client()
+            if ipc_client and ipc_client.is_connected():
                 try:
-                    # TODO: Add per-converter statistics to facade
+                    # TODO: Add per-converter statistics to IPC commands
                     pass
                 except Exception:
                     pass
@@ -374,16 +386,23 @@ class DashboardPage(BasePage):
             last_run_item.setForeground(QColor("#808080"))
             self._health_table.setItem(row, 5, last_run_item)
         
-        # Update stat cards with real data if facade available
-        if self._facade:
+        # Update stat cards with real data if IPC client available
+        ipc_client = self._get_ipc_client()
+        if ipc_client and ipc_client.is_connected():
             try:
-                status = self._facade.get_service_status()
-                self._converters_value.setText(f"{status.get('converters_active', active_count)} Active")
-                self._queue_value.setText(f"{status.get('queue_pending', 0)} Pending")
-                self._reports_value.setText(f"{status.get('reports_today', 0)} Today")
-                # Calculate success rate if we have data
-                # TODO: Track success rate
-                self._success_value.setText("--%")
+                status = ipc_client.get_status()
+                if status:
+                    self._converters_value.setText(f"{status.get('converters_active', active_count)} Active")
+                    self._queue_value.setText(f"{status.get('queue_pending', 0)} Pending")
+                    self._reports_value.setText(f"{status.get('reports_today', 0)} Today")
+                    # Calculate success rate if we have data
+                    # TODO: Track success rate
+                    self._success_value.setText("--%")
+                else:
+                    self._converters_value.setText(f"{active_count} Active")
+                    self._queue_value.setText("0 Pending")
+                    self._reports_value.setText("0 Today")
+                    self._success_value.setText("--%")
             except Exception:
                 self._converters_value.setText(f"{active_count} Active")
                 self._queue_value.setText("0 Pending")

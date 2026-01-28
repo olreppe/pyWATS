@@ -168,6 +168,8 @@ class RootCausePage(BasePage, AsyncAPIPageMixin):
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
     ) -> None:
+        self._main_window = main_window
+        self._facade = None  # IPC-based architecture - no direct facade
         self._tickets: List[Dict[str, Any]] = []
         self._teams: List[str] = []
         super().__init__(config, parent)

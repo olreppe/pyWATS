@@ -207,6 +207,8 @@ class ProductPage(BasePage, AsyncAPIPageMixin):
         main_window: Optional['MainWindow'] = None,
         parent: Optional[QWidget] = None
     ) -> None:
+        self._main_window = main_window
+        self._facade = None  # IPC-based architecture - no direct facade
         self._products: List[Dict[str, Any]] = []
         self._selected_product: Optional[Dict[str, Any]] = None
         self._selected_revision: Optional[str] = None
