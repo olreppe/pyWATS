@@ -40,40 +40,51 @@ The pyWATS Client is a **background service** with optional **GUI frontend** for
 
 ### Layered Design
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                     GUI Process (Optional)                 │
-│  • PySide6/Qt application                                  │
-│  • ServiceIPCClient                                        │
-│  • Sends commands, receives updates                        │
-│  • AsyncAPIPageMixin for non-blocking API calls            │
-└────────────────────────────────────────────────────────────┘
-                         ↕ IPC (LocalSocket)
-┌────────────────────────────────────────────────────────────┐
-│                    Service Process                         │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │            AsyncClientService                        │  │
-│  │  • ServiceStatus management                          │  │
-│  │  • Lifecycle coordination (asyncio.Task)             │  │
-│  │  • AsyncWATS API client (non-blocking)               │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                            │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────┐ │
-│  │AsyncPendingQueue │  │AsyncConverterPool│  │Persistent│ │
-│  │                  │  │                  │  │  Queue   │ │
-│  │• Semaphore(5)    │  │• Semaphore(10)   │  │          │ │
-│  │• 5 concurrent    │  │• 10 concurrent   │  │• SQLite  │ │
-│  │  uploads         │  │  conversions     │  │• Crash   │ │
-│  │• File watcher    │  │• File watcher    │  │  recovery│ │
-│  └──────────────────┘  └──────────────────┘  └──────────┘ │
-│                                                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              IPCServer                               │  │
-│  │  • Qt LocalSocket server                             │  │
-│  │  • Socket: pyWATS_Service_{instance_id}              │  │
-│  │  • JSON command/response protocol                    │  │
-│  └──────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph GUI["GUI Process - Optional"]
+        direction TB
+        GUI1["PySide6/Qt application
+        ServiceIPCClient
+        Sends commands, receives updates
+        AsyncAPIPageMixin for non-blocking API calls"]
+    end
+    
+    subgraph Service["Service Process"]
+        direction TB
+        
+        AsyncClientService["AsyncClientService
+        • ServiceStatus management
+        • Lifecycle coordination asyncio.Task
+        • AsyncWATS API client non-blocking"]
+        
+        subgraph Components["Components"]
+            direction LR
+            AsyncPendingQueue["AsyncPendingQueue
+            • Semaphore 5
+            • 5 concurrent uploads
+            • File watcher"]
+            
+            AsyncConverterPool["AsyncConverterPool
+            • Semaphore 10
+            • 10 concurrent conversions
+            • File watcher"]
+            
+            PersistentQueue["PersistentQueue
+            • SQLite
+            • Crash recovery"]
+        end
+        
+        IPCServer["IPCServer
+        • Qt LocalSocket server
+        • Socket: pyWATS_Service_ID
+        • JSON command/response protocol"]
+        
+        AsyncClientService --> Components
+        Components --> IPCServer
+    end
+    
+    GUI <-->|IPC LocalSocket| Service
 ```
 
 ### Component Interactions
@@ -199,7 +210,16 @@ async def _api_status_loop(self):
 **Workflow:**
 ```mermaid
 flowchart TD
-    PendingDir["<b>Pending Directory</b><br/>- report1.json<br/>- report2.json<br/>- report3.json<br/>- ..."] --> Semaphore["<b>Semaphore(5)</b><br/>Bounded concurrency"]
+    PendingDir["Pending Directory
+    - report1.json
+    - report2.json
+    - report3.json
+    - ..."]
+    
+    Semaphore["Semaphore 5
+    Bounded concurrency"]
+    
+    PendingDir --> Semaphore
     
     Semaphore --> Task1[Task1]
     Semaphore --> Task2[Task2]
@@ -209,7 +229,8 @@ flowchart TD
     Task2 -->|concurrent| WATS
     Task3 -->|concurrent| WATS
     
-    WATS --> MoveComplete["<b>Move to Complete</b><br/>or Retry on failure"]
+    WATS --> MoveComplete["Move to Complete
+    or Retry on failure"]
 ```
 
 **Code Structure:**
@@ -309,7 +330,7 @@ class AsyncConverterPool:
 **Concurrency Model:**
 ```mermaid
 flowchart TB
-    subgraph AsyncConverterPool[" "]
+    subgraph AsyncConverterPool["AsyncConverterPool"]
         direction TB
         
         subgraph InputFiles["Input Files"]
@@ -320,22 +341,23 @@ flowchart TB
             file20[file20]
         end
         
-        InputFiles --> Semaphore["<b>Semaphore(10)</b>"]
+        Semaphore["Semaphore 10"]
         
-        subgraph Workers[" "]
+        subgraph Workers["Workers"]
             direction TB
-            Task1["Task1: converter.convert()"]
-            Task2["Task2: converter.convert()"]
-            Task3["Task3: converter.convert()"]
+            Task1["Task1: converter.convert"]
+            Task2["Task2: converter.convert"]
+            Task3["Task3: converter.convert"]
             TaskMore[...]
-            Task10["Task10: converter.convert()"]
+            Task10["Task10: converter.convert"]
         end
         
+        Output["Pending Queue output"]
+        Waiting["waiting: file11-file20"]
+        
+        InputFiles --> Semaphore
         Semaphore --> Workers
-        
-        Workers --> Output["<b>Pending Queue (output)</b>"]
-        
-        Waiting["[waiting]: file11-file20"]
+        Workers --> Output
     end
 ```
 
@@ -397,20 +419,25 @@ await queue.run()
 **Concurrency Model:**
 ```mermaid
 flowchart TB
-    subgraph AsyncPendingQueue[" "]
+    subgraph AsyncPendingQueue["AsyncPendingQueue"]
         direction TB
         
-        FileWatcher["<b>File Watcher</b><br/>(watchfiles)"]
-        PeriodicScan["<b>Periodic Scan</b><br/>(60s timer)"]
+        FileWatcher["File Watcher
+        watchfiles"]
         
-        FileWatcher --> Semaphore["<b>asyncio.Semaphore(5)</b>"]
+        PeriodicScan["Periodic Scan
+        60s timer"]
+        
+        Semaphore["asyncio.Semaphore 5"]
+        
+        FileWatcher --> Semaphore
         PeriodicScan --> Semaphore
         
-        Semaphore --> Task1["Task 1: submit_report()"]
-        Semaphore --> Task2["Task 2: submit_report()"]
-        Semaphore --> Task3["Task 3: submit_report()"]
-        Semaphore --> Task4["Task 4: submit_report()"]
-        Semaphore --> Task5["Task 5: submit_report()"]
+        Semaphore --> Task1["Task 1: submit_report"]
+        Semaphore --> Task2["Task 2: submit_report"]
+        Semaphore --> Task3["Task 3: submit_report"]
+        Semaphore --> Task4["Task 4: submit_report"]
+        Semaphore --> Task5["Task 5: submit_report"]
         
         Task1 --> WATS[WATS API]
         Task2 --> WATS
@@ -418,7 +445,7 @@ flowchart TB
         Task4 --> WATS
         Task5 --> WATS
         
-        Waiting["[waiting]: report6.json, report7.json, ..."]
+        Waiting["waiting: report6.json, report7.json, ..."]
     end
 ```
 

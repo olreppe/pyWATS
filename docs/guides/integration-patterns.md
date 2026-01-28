@@ -258,16 +258,21 @@ docker run -d \
 
 ```mermaid
 flowchart LR
-    ICT["<b>ICT Station</b><br/>Converter 1"]
-    FCT["<b>FCT Station</b><br/>Converter 2"]
-    EOL["<b>EOL Station</b><br/>Converter 3"]
+    ICT["ICT Station
+    Converter 1"]
+    
+    FCT["FCT Station
+    Converter 2"]
+    
+    EOL["EOL Station
+    Converter 3"]
     
     ICT --> FCT --> EOL
     
     subgraph WATS["WATS Server"]
-        Report1["Report 1 (ICT)"]
-        Report2["Report 2 (FCT)"]
-        Report3["Report 3 (EOL)"]
+        Report1["Report 1 ICT"]
+        Report2["Report 2 FCT"]
+        Report3["Report 3 EOL"]
     end
     
     ICT -.-> Report1

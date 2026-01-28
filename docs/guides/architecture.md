@@ -12,12 +12,30 @@ pyWATS is a **three-layer Python system** for connecting manufacturing test stat
 
 ```mermaid
 flowchart TB
-    GUI["<b>pyWATS Client GUI</b><br/>(PySide6/Qt - Optional Desktop Application)<br/>• User interface for configuration and monitoring<br/>• System tray integration<br/>• Multi-page navigation"]
-    Service["<b>pyWATS Client Service</b><br/>(pywats_client - Headless-capable background service)<br/>• File monitoring (Watchdog)<br/>• Converter processing<br/>• Offline report queue with retry<br/>• Multi-instance support"]
-    API["<b>pyWATS API</b><br/>(pywats - Core library)<br/>• Async & sync HTTP client<br/>• 8 domain services (Report, Product, Asset, etc.)<br/>• Pydantic models & validation<br/>• Rate limiting, retry, error handling"]
-    WATS["<b>WATS Server</b><br/>(Cloud or On-Premise)"]
+    GUI["pyWATS Client GUI
+    PySide6/Qt - Optional Desktop Application
+    • User interface for configuration
+    • System tray integration
+    • Multi-page navigation"]
     
-    GUI <-->|IPC (LocalSocket)| Service
+    Service["pyWATS Client Service
+    pywats_client - Headless-capable
+    • File monitoring Watchdog
+    • Converter processing
+    • Offline queue with retry
+    • Multi-instance support"]
+    
+    API["pyWATS API
+    pywats - Core library
+    • Async & sync HTTP client
+    • 8 domain services
+    • Pydantic models
+    • Rate limiting, retry"]
+    
+    WATS["WATS Server
+    Cloud or On-Premise"]
+    
+    GUI <-->|IPC LocalSocket| Service
     Service -->|Uses| API
     API -->|HTTPS/REST| WATS
 ```
@@ -102,9 +120,16 @@ Each domain follows a **three-layer pattern**:
 
 ```mermaid
 flowchart TB
-    Service["<b>Service Layer</b><br/>(Business logic, orchestration, validation)<br/>Example: ReportService, ProductService"]
-    Repository["<b>Repository Layer</b><br/>(Data access, HTTP calls, error handling)<br/>Example: ReportRepository, ProductRepository"]
-    HttpClient["<b>HttpClient</b><br/>(Low-level HTTP, rate limiting, retry)"]
+    Service["Service Layer
+    Business logic, orchestration, validation
+    Example: ReportService, ProductService"]
+    
+    Repository["Repository Layer
+    Data access, HTTP calls, error handling
+    Example: ReportRepository, ProductRepository"]
+    
+    HttpClient["HttpClient
+    Low-level HTTP, rate limiting, retry"]
     
     Service --> Repository
     Repository --> HttpClient
@@ -277,21 +302,39 @@ The client uses an **async-first architecture** with asyncio for efficient concu
 
 ```mermaid
 flowchart TB
-    subgraph ServiceProcess["AsyncClientService (Background process, headless-capable)"]
+    subgraph ServiceProcess["AsyncClientService - Background process"]
         direction TB
         
-        subgraph CoreComponents[" "]
+        subgraph CoreComponents["Core Components"]
             direction LR
-            AsyncClientSvc["<b>AsyncClientSvc</b><br/>• Lifecycle<br/>• Status<br/>• AsyncWATS"]
-            AsyncPendingQueue["<b>AsyncPendingQueue</b><br/>• 5 concurrent<br/>• File watching<br/>• Retry logic"]
-            AsyncConverterPool["<b>AsyncConverter Pool</b><br/>• 10 concurrent<br/>• Semaphore<br/>• Converters"]
+            AsyncClientSvc["AsyncClientSvc
+            • Lifecycle
+            • Status
+            • AsyncWATS"]
+            
+            AsyncPendingQueue["AsyncPendingQueue
+            • 5 concurrent
+            • File watching
+            • Retry logic"]
+            
+            AsyncConverterPool["AsyncConverter Pool
+            • 10 concurrent
+            • Semaphore
+            • Converters"]
         end
         
-        PersistentQueue["<b>PersistentQueue</b><br/>• SQLite-backed queue<br/>• Crash recovery<br/>• Retry logic (3 attempts)"]
+        PersistentQueue["PersistentQueue
+        • SQLite-backed queue
+        • Crash recovery
+        • Retry logic"]
         
-        AsyncIPCServer["<b>AsyncIPCServer</b><br/>• Pure asyncio TCP server (no Qt dependency)<br/>• JSON command/response protocol<br/>• Commands: get_status, get_config, stop, etc."]
+        AsyncIPCServer["AsyncIPCServer
+        • Pure asyncio TCP
+        • JSON protocol
+        • Commands API"]
         
-        EventLoop["asyncio event loop<br/>(single thread, concurrent I/O)"]
+        EventLoop["asyncio event loop
+        single thread concurrent I/O"]
         
         CoreComponents --> PersistentQueue
         CoreComponents --> AsyncIPCServer
@@ -299,10 +342,16 @@ flowchart TB
         AsyncIPCServer --> EventLoop
     end
     
-    subgraph GUIProcess["GUI Process (Optional, separate process)"]
+    subgraph GUIProcess["GUI Process - Optional"]
         direction TB
-        AsyncIPCClient["<b>AsyncIPCClient</b><br/>• Connects to service via TCP socket<br/>• Pure asyncio (uses qasync in GUI)<br/>• Sends commands, receives updates"]
-        AsyncAPIPageMixin["<b>AsyncAPIPageMixin (GUI Pages)</b><br/>• Non-blocking API calls via run_api_call()<br/>• Auto sync/async detection"]
+        AsyncIPCClient["AsyncIPCClient
+        • Connects via TCP
+        • Pure asyncio
+        • Sends commands"]
+        
+        AsyncAPIPageMixin["AsyncAPIPageMixin
+        • Non-blocking API calls
+        • Auto sync/async"]
     end
     
     ServiceProcess <-->|IPC| GUIProcess
