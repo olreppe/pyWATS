@@ -24,6 +24,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
 from .base import BasePage
+from ..async_api_mixin import AsyncAPIPageMixin
 from ...core.config import ClientConfig
 from ...core import TaskResult
 
@@ -155,8 +156,11 @@ class TicketDialog(QDialog):
         return data
 
 
-class RootCausePage(BasePage):
-    """RootCause Tickets page - issue tracking and resolution"""
+class RootCausePage(BasePage, AsyncAPIPageMixin):
+    """RootCause Tickets page - issue tracking and resolution
+    
+    Uses AsyncAPIPageMixin for non-blocking API calls to keep UI responsive.
+    """
     
     def __init__(
         self, 

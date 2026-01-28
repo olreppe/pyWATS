@@ -47,6 +47,8 @@ examples/
 │   ├── 03_station_setup.py   # Test station configuration
 │   └── 04_async_usage.py     # Async patterns and run_sync()
 │
+├── async_client_example.py   # Async client service examples (NEW)
+│
 ├── product/                  # Product management
 │   ├── basic_operations.py   # CRUD operations
 │   ├── revisions.py          # Revision management

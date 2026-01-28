@@ -27,6 +27,7 @@ from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QColor
 
 from .base import BasePage
+from ..async_api_mixin import AsyncAPIPageMixin
 from ...core.config import ClientConfig
 from ...core.async_runner import TaskResult
 
@@ -160,8 +161,11 @@ class AssetDialog(QDialog):
         return data
 
 
-class AssetPage(BasePage):
-    """Asset Management page - track equipment, calibration, maintenance"""
+class AssetPage(BasePage, AsyncAPIPageMixin):
+    """Asset Management page - track equipment, calibration, maintenance
+    
+    Uses AsyncAPIPageMixin for non-blocking API calls to keep UI responsive.
+    """
     
     def __init__(
         self, 

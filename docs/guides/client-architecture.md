@@ -23,14 +23,15 @@ The pyWATS Client is a **background service** with optional **GUI frontend** for
 
 1. [Architecture Overview](#architecture-overview)
 2. [Service Components](#service-components)
-3. [IPC Communication](#ipc-communication)
-4. [Queue System](#queue-system)
-5. [Converter System](#converter-system)
-6. [File Monitoring](#file-monitoring)
-7. [Instance Management](#instance-management)
-8. [Configuration System](#configuration-system)
-9. [Service Modes](#service-modes)
-10. [Testing Architecture](#testing-architecture)
+3. [Async Architecture](#async-architecture) *(NEW)*
+4. [IPC Communication](#ipc-communication)
+5. [Queue System](#queue-system)
+6. [Converter System](#converter-system)
+7. [File Monitoring](#file-monitoring)
+8. [Instance Management](#instance-management)
+9. [Configuration System](#configuration-system)
+10. [Service Modes](#service-modes)
+11. [Testing Architecture](#testing-architecture)
 
 ---
 
@@ -305,6 +306,192 @@ class ConverterPool:
         self._dispose_flag = True
         self._executor.shutdown(wait=True)
 ```
+
+---
+
+## Async Architecture
+
+Starting with v1.4.0, pyWATS Client includes an **async-first architecture** as an alternative to the traditional threading-based approach. The async architecture uses Python's `asyncio` for efficient concurrent I/O with a single thread.
+
+### Benefits
+
+| Aspect | Threading (Traditional) | Asyncio (New) |
+|--------|------------------------|---------------|
+| Concurrency | Thread pool (1-50 workers) | Single thread, async tasks |
+| API Calls | Blocking, one per thread | Non-blocking, multiplexed |
+| Resource Usage | Higher (thread overhead) | Lower (coroutines are lightweight) |
+| Complexity | Race conditions, locks | Event loop, no locks |
+| GUI Integration | QThread signals | qasync event loop |
+
+### Async Components
+
+#### AsyncClientService
+
+**Location:** `src/pywats_client/service/async_client_service.py`
+
+The main async service controller, replacing `ClientService` for async-first deployments.
+
+```python
+from pywats_client.service import AsyncClientService
+
+# Create and run the async service
+service = AsyncClientService()
+await service.run()  # Blocks until shutdown
+```
+
+**Key Features:**
+- Uses `AsyncWATS` instead of `pyWATS` for non-blocking API calls
+- All timers run as `asyncio.Task` instead of `QTimer`
+- Configuration hot-reload via async file watcher
+- Graceful shutdown with task cancellation
+
+#### AsyncPendingQueue
+
+**Location:** `src/pywats_client/service/async_pending_queue.py`
+
+Concurrent report upload queue with bounded parallelism.
+
+```python
+from pywats_client.service import AsyncPendingQueue
+
+queue = AsyncPendingQueue(
+    api=async_wats,
+    reports_dir=Path("/var/lib/pywats/pending"),
+    max_concurrent=5  # 5 concurrent uploads
+)
+await queue.run()
+```
+
+**Concurrency Model:**
+```
+┌─────────────────────────────────────────────────────────┐
+│                  AsyncPendingQueue                       │
+│                                                          │
+│  ┌───────────────┐   ┌─────────────────────────────┐    │
+│  │ File Watcher  │──▶│  asyncio.Semaphore(5)       │    │
+│  │ (watchfiles)  │   │                              │    │
+│  └───────────────┘   │  Task 1: submit_report()    │    │
+│                      │  Task 2: submit_report()    │────▶│ WATS
+│  ┌───────────────┐   │  Task 3: submit_report()    │    │  API
+│  │ Periodic Scan │──▶│  Task 4: submit_report()    │    │
+│  │ (60s timer)   │   │  Task 5: submit_report()    │    │
+│  └───────────────┘   └─────────────────────────────┘    │
+│                                                          │
+│  [waiting]: report6.json, report7.json, ...              │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### AsyncConverterPool
+
+**Location:** `src/pywats_client/service/async_converter_pool.py`
+
+Concurrent file conversion with semaphore-limited workers.
+
+```python
+from pywats_client.service import AsyncConverterPool
+
+pool = AsyncConverterPool(
+    config=client_config,
+    api=async_wats,
+    max_concurrent=10  # 10 concurrent conversions
+)
+await pool.run()
+```
+
+**Features:**
+- Watches input directories for new files
+- Runs converters concurrently (up to max_concurrent)
+- Auto-moves converted files to pending queue
+- Supports all converter types (Python, DLL, process)
+
+### GUI Integration (qasync)
+
+For GUI mode, the async service integrates with Qt using `qasync`:
+
+```python
+import qasync
+from PySide6.QtWidgets import QApplication
+
+app = QApplication(sys.argv)
+loop = qasync.QEventLoop(app)
+asyncio.set_event_loop(loop)
+
+# Run async service alongside Qt
+async def main():
+    service = AsyncClientService()
+    await service.run()
+
+with loop:
+    loop.run_until_complete(main())
+```
+
+#### AsyncAPIMixin
+
+Helper mixin for GUI pages to make async API calls without blocking the UI:
+
+```python
+from pywats_client.gui.async_api_mixin import AsyncAPIPageMixin
+
+class ProductionPage(AsyncAPIPageMixin, BasePage):
+    def _lookup_unit(self, part_number: str):
+        # Automatically handles async/sync detection
+        self.run_api_call(
+            api_call=lambda api: api.production.lookup_production_unit(part_number),
+            on_success=self._on_lookup_success,
+            on_error=self._on_lookup_error
+        )
+```
+
+### Migration Path
+
+To migrate from sync to async architecture:
+
+1. **Replace imports:**
+   ```python
+   # Before
+   from pywats import pyWATS
+   from pywats_client.service import ClientService
+   
+   # After
+   from pywats import AsyncWATS
+   from pywats_client.service import AsyncClientService
+   ```
+
+2. **Update entry point:**
+   ```python
+   # Before (threading)
+   service = ClientService()
+   service.start()
+   
+   # After (asyncio)
+   service = AsyncClientService()
+   asyncio.run(service.run())
+   ```
+
+3. **GUI pages:** Use `AsyncAPIPageMixin` for non-blocking API calls
+
+### Migrated GUI Pages
+
+The following GUI pages now use `AsyncAPIPageMixin` for non-blocking API calls:
+
+| Page | File | Status |
+|------|------|--------|
+| Production | `production.py` | ✅ Fully async |
+| Asset | `asset.py` | ✅ Uses mixin |
+| Product | `product.py` | ✅ Uses mixin |
+| RootCause | `rootcause.py` | ✅ Uses mixin |
+
+Pages that don't make API calls (settings pages, dashboard, etc.) don't need async migration.
+
+### When to Use Async
+
+| Use Case | Recommendation |
+|----------|---------------|
+| Headless service | ✅ AsyncClientService |
+| High-volume uploads | ✅ AsyncPendingQueue (5 concurrent) |
+| Many converters | ✅ AsyncConverterPool |
+| GUI application | ✅ With qasync |
+| Legacy integration | Consider traditional ClientService |
 
 ---
 

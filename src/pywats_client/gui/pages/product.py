@@ -24,6 +24,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
 from .base import BasePage
+from ..async_api_mixin import AsyncAPIPageMixin
 from ...core.config import ClientConfig
 from ...core import TaskResult
 
@@ -190,8 +191,11 @@ class AddSubunitDialog(QDialog):
         }
 
 
-class ProductPage(BasePage):
-    """Product Management page - manage products and revisions"""
+class ProductPage(BasePage, AsyncAPIPageMixin):
+    """Product Management page - manage products and revisions
+    
+    Uses AsyncAPIPageMixin for non-blocking API calls to keep UI responsive.
+    """
     
     # Constants for tree item types
     ITEM_TYPE_PRODUCT = 0
