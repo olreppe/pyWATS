@@ -86,7 +86,7 @@ jobs:
     name: Sync to GitHub Enterprise
     runs-on: ubuntu-latest
     needs: build-and-publish
-    if: success()
+    if: success() && vars.GHE_SYNC_ENABLED == 'true'
     
     steps:
     - name: Checkout repository
