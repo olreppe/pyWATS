@@ -281,3 +281,100 @@ class TestAsyncPendingQueueLifecycle:
             await task
         except asyncio.CancelledError:
             pass
+
+
+class TestQueueSizeLimits:
+    """Test queue size limiting functionality"""
+    
+    def test_default_no_limit(self, mock_api, temp_reports_dir):
+        """Test that default max_queue_size is 0 (unlimited)"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir)
+        assert queue._max_queue_size == 0
+        assert not queue.is_queue_full
+    
+    def test_custom_max_queue_size(self, mock_api, temp_reports_dir):
+        """Test custom max_queue_size"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir, max_queue_size=100)
+        assert queue._max_queue_size == 100
+    
+    def test_queue_size_property(self, mock_api, temp_reports_dir):
+        """Test queue_size returns count of queued files"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir)
+        
+        # Initially empty
+        assert queue.queue_size == 0
+        
+        # Add some queued files
+        (temp_reports_dir / "report1.queued").write_text("{}")
+        (temp_reports_dir / "report2.queued").write_text("{}")
+        
+        assert queue.queue_size == 2
+    
+    def test_is_queue_full_unlimited(self, mock_api, temp_reports_dir):
+        """Test is_queue_full returns False when unlimited"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir, max_queue_size=0)
+        
+        # Add many files
+        for i in range(100):
+            (temp_reports_dir / f"report{i}.queued").write_text("{}")
+        
+        assert not queue.is_queue_full
+    
+    def test_is_queue_full_with_limit(self, mock_api, temp_reports_dir):
+        """Test is_queue_full returns True when at limit"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir, max_queue_size=5)
+        
+        # Add files up to limit
+        for i in range(5):
+            (temp_reports_dir / f"report{i}.queued").write_text("{}")
+        
+        assert queue.is_queue_full
+    
+    def test_is_queue_full_below_limit(self, mock_api, temp_reports_dir):
+        """Test is_queue_full returns False when below limit"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir, max_queue_size=10)
+        
+        # Add fewer files than limit
+        for i in range(5):
+            (temp_reports_dir / f"report{i}.queued").write_text("{}")
+        
+        assert not queue.is_queue_full
+    
+    def test_can_accept_report_unlimited(self, mock_api, temp_reports_dir):
+        """Test can_accept_report with unlimited queue"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir, max_queue_size=0)
+        
+        can_accept, reason = queue.can_accept_report()
+        assert can_accept
+        assert reason == ""
+    
+    def test_can_accept_report_below_limit(self, mock_api, temp_reports_dir):
+        """Test can_accept_report when below limit"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir, max_queue_size=10)
+        
+        for i in range(5):
+            (temp_reports_dir / f"report{i}.queued").write_text("{}")
+        
+        can_accept, reason = queue.can_accept_report()
+        assert can_accept
+        assert reason == ""
+    
+    def test_can_accept_report_at_limit(self, mock_api, temp_reports_dir):
+        """Test can_accept_report when at limit"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir, max_queue_size=5)
+        
+        for i in range(5):
+            (temp_reports_dir / f"report{i}.queued").write_text("{}")
+        
+        can_accept, reason = queue.can_accept_report()
+        assert not can_accept
+        assert "Queue full" in reason
+        assert "5/5" in reason
+    
+    def test_stats_includes_max_queue_size(self, mock_api, temp_reports_dir):
+        """Test that stats includes max_queue_size"""
+        queue = AsyncPendingQueue(mock_api, temp_reports_dir, max_queue_size=1000)
+        
+        stats = queue.stats
+        assert "max_queue_size" in stats
+        assert stats["max_queue_size"] == 1000

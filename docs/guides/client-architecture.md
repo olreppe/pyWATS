@@ -47,7 +47,7 @@ flowchart TB
         GUI1["PySide6/Qt application
         ServiceIPCClient
         Sends commands, receives updates
-        AsyncAPIPageMixin for non-blocking API calls"]
+        AsyncAPIRunner for non-blocking API calls"]
     end
     
     subgraph Service["Service Process"]
@@ -533,22 +533,25 @@ def showEvent(self, event) -> None:
         asyncio.create_task(self._run_connection_test(auto=True))
 ```
 
-#### AsyncAPIMixin
+#### AsyncAPIRunner
 
-Helper mixin for GUI pages to make async API calls without blocking the UI:
+Helper class for GUI pages to make async API calls without blocking the UI (composition pattern):
 
 ```python
-from pywats_client.gui.async_api_mixin import AsyncAPIPageMixin
-
 # Example: a page using async API calls
-class MyDomainPage(AsyncAPIPageMixin, BasePage):
+class MyDomainPage(BasePage):
+    def __init__(self, config, main_window=None, parent=None):
+        super().__init__(config, parent, async_api_runner=getattr(main_window, 'async_api_runner', None))
+    
     def _fetch_data(self, query: str):
         # Automatically handles async/sync detection
-        self.run_api_call(
-            api_call=lambda api: api.some_domain.query(query),
-            on_success=self._on_fetch_success,
-            on_error=self._on_fetch_error
-        )
+        if self.async_api:
+            self.async_api.run(
+                self,
+                api_call=lambda api: api.some_domain.query(query),
+                on_success=self._on_fetch_success,
+                on_error=self._on_fetch_error
+            )
 ```
 
 > **Note:** Domain-specific pages (Asset, Product, Production, RootCause) are available
@@ -580,18 +583,18 @@ To migrate from sync to async architecture:
    asyncio.run(service.run())
    ```
 
-3. **GUI pages:** Use `AsyncAPIPageMixin` for non-blocking API calls
+3. **GUI pages:** Use `AsyncAPIRunner` (composition) for non-blocking API calls
 
 ### Migrated GUI Pages
 
-The following GUI pages now use `AsyncAPIPageMixin` for non-blocking API calls:
+The following GUI pages now use `AsyncAPIRunner` for non-blocking API calls:
 
 | Page | File | Status |
 |------|------|--------|
-| Production | `production.py` | ✅ Fully async |
-| Asset | `asset.py` | ✅ Uses mixin |
-| Product | `product.py` | ✅ Uses mixin |
-| RootCause | `rootcause.py` | ✅ Uses mixin |
+| Production | `production.py` | ✅ Uses composition |
+| Asset | `asset.py` | ✅ Uses composition |
+| Product | `product.py` | ✅ Uses composition |
+| RootCause | `rootcause.py` | ✅ Uses composition |
 
 Pages that don't make API calls (settings pages, dashboard, etc.) don't need async migration.
 

@@ -29,6 +29,9 @@ from ...core.event_bus import AppEvent, event_bus
 from ...core.async_runner import TaskResult, AsyncTaskRunner
 from ..error_mixin import ErrorHandlingMixin
 
+if TYPE_CHECKING:
+    from ..async_api_runner import AsyncAPIRunner
+
 T = TypeVar('T')
 
 
@@ -75,10 +78,12 @@ class BasePage(QWidget, ErrorHandlingMixin):
     def __init__(
         self, 
         config: ClientConfig, 
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
+        async_api_runner: Optional['AsyncAPIRunner'] = None
     ) -> None:
         super().__init__(parent)
         self.config = config
+        self.async_api: Optional['AsyncAPIRunner'] = async_api_runner
         self._event_subscriptions: List[tuple[AppEvent, Callable]] = []
         self._running_tasks: Dict[str, str] = {}  # task_id -> name
         self._async_runner: Optional[AsyncTaskRunner] = None

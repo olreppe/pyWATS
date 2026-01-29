@@ -17,6 +17,14 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional, Dict, Any, List
 
 from .async_ipc_server import get_socket_address
+from ..core.security import load_secret
+from .ipc_protocol import (
+    PROTOCOL_VERSION,
+    HelloMessage,
+    is_version_compatible,
+    MIN_SERVER_VERSION,
+    VersionMismatchError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -86,15 +94,31 @@ class AsyncIPCClient:
         self._reader: Optional[asyncio.StreamReader] = None
         self._writer: Optional[asyncio.StreamWriter] = None
         self._connected = False
+        self._authenticated = False
         self._lock = asyncio.Lock()
         
         # Get platform-specific address
         self._is_unix, self._address = get_socket_address(self.socket_name)
+        
+        # Protocol versioning
+        self._protocol_version = PROTOCOL_VERSION
+        self._server_hello: Optional[HelloMessage] = None
+        self._server_capabilities: List[str] = []
     
     @property
     def connected(self) -> bool:
         """Check if connected to service"""
         return self._connected and self._writer is not None
+    
+    @property
+    def server_version(self) -> Optional[str]:
+        """Get server protocol version if connected"""
+        return self._server_hello.protocol_version if self._server_hello else None
+    
+    @property
+    def server_capabilities(self) -> List[str]:
+        """Get server capabilities"""
+        return self._server_capabilities
     
     async def connect(self, timeout: float = 1.0) -> bool:
         """
@@ -105,6 +129,9 @@ class AsyncIPCClient:
             
         Returns:
             True if connected successfully
+            
+        Raises:
+            VersionMismatchError: If server protocol version is incompatible
         """
         try:
             if self._is_unix:
@@ -123,8 +150,19 @@ class AsyncIPCClient:
             
             self._connected = True
             logger.debug(f"Connected to service: {self.socket_name}")
+            
+            # Receive and validate server hello
+            await self._receive_hello(timeout)
+            
+            # Try to authenticate if server requires it
+            await self._authenticate()
+            
             return True
             
+        except VersionMismatchError:
+            # Re-raise version errors
+            await self.disconnect()
+            raise
         except asyncio.TimeoutError:
             logger.debug(f"Connection timeout: {self.socket_name}")
             return False
@@ -139,9 +177,104 @@ class AsyncIPCClient:
             logger.debug(f"Connection error: {e}")
             return False
     
+    async def _receive_hello(self, timeout: float) -> None:
+        """
+        Receive and validate server hello message.
+        
+        Args:
+            timeout: Read timeout
+            
+        Raises:
+            VersionMismatchError: If server version is incompatible
+        """
+        try:
+            # Read hello message length
+            length_bytes = await asyncio.wait_for(
+                self._reader.read(4),
+                timeout=timeout
+            )
+            if len(length_bytes) < 4:
+                logger.warning("Failed to receive hello message")
+                return
+            
+            msg_length = int.from_bytes(length_bytes, 'big')
+            
+            # Read hello message
+            data = await asyncio.wait_for(
+                self._reader.read(msg_length),
+                timeout=timeout
+            )
+            
+            hello_data = json.loads(data.decode('utf-8'))
+            self._server_hello = HelloMessage.from_dict(hello_data)
+            self._server_capabilities = self._server_hello.capabilities
+            
+            logger.debug(
+                f"Received server hello: protocol={self._server_hello.protocol_version}, "
+                f"server={self._server_hello.server_version}, "
+                f"auth_required={self._server_hello.requires_auth}"
+            )
+            
+            # Check protocol version compatibility
+            if not is_version_compatible(self._server_hello.protocol_version, MIN_SERVER_VERSION):
+                raise VersionMismatchError(
+                    client_version=self._protocol_version,
+                    server_version=self._server_hello.protocol_version
+                )
+                
+        except VersionMismatchError:
+            raise
+        except asyncio.TimeoutError:
+            # Older servers don't send hello - treat as version 1.0
+            logger.debug("No hello received (legacy server?)")
+            self._server_hello = HelloMessage(protocol_version="1.0")
+        except Exception as e:
+            logger.warning(f"Error receiving hello: {e}")
+            self._server_hello = HelloMessage(protocol_version="1.0")
+    
+    async def _authenticate(self) -> None:
+        """
+        Authenticate with server.
+        
+        Uses hello message to determine if auth is required.
+        If authentication fails, doesn't raise - just logs warning.
+        Client will discover auth required when making requests.
+        """
+        try:
+            # Check if server requires auth from hello message
+            requires_auth = (
+                self._server_hello and 
+                self._server_hello.requires_auth
+            )
+            
+            if not requires_auth:
+                self._authenticated = True
+                logger.debug("Server does not require authentication")
+                return
+            
+            # Try to load secret and authenticate
+            secret = load_secret(self.instance_id)
+            if not secret:
+                logger.warning(f"No secret found for instance '{self.instance_id}' - auth will fail")
+                return
+            
+            auth_response = await self.send_command("auth", {"token": secret})
+            if auth_response and auth_response.get("success"):
+                self._authenticated = True
+                logger.info(f"Authenticated successfully with instance '{self.instance_id}'")
+            else:
+                error = auth_response.get("error", "Unknown error") if auth_response else "No response"
+                logger.warning(f"Authentication failed: {error}")
+                
+        except Exception as e:
+            logger.warning(f"Error during authentication: {e}")
+    
     async def disconnect(self) -> None:
         """Disconnect from service"""
         self._connected = False
+        self._authenticated = False
+        self._server_hello = None
+        self._server_capabilities = []
         if self._writer:
             try:
                 self._writer.close()
@@ -175,10 +308,11 @@ class AsyncIPCClient:
         
         async with self._lock:
             try:
-                # Build request
+                # Build request with protocol version
                 request = {
                     "command": command,
                     "request_id": str(uuid.uuid4()),
+                    "protocol_version": self._protocol_version,
                     "args": args or {}
                 }
                 

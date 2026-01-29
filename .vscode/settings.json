@@ -68,7 +68,18 @@
         "MD013": false  // Disable line length rule
     },
     
-    // Markdown Preview Configuration
+    // Markdown Preview Enhanced - automatically opens preview with Mermaid support
+    "markdown-preview-enhanced.mermaidTheme": "dark",
+    "markdown-preview-enhanced.codeBlockTheme": "atom-dark.css",
+    "markdown-preview-enhanced.previewTheme": "atom-dark.css",
+    "markdown-preview-enhanced.enableScriptExecution": true,
+    "markdown-preview-enhanced.breakOnSingleNewLine": false,
+    "markdown-preview-enhanced.enableTypographer": true,
+    "markdown-preview-enhanced.usePandocParser": false,
+    "markdown-preview-enhanced.automaticallyShowPreviewOfMarkdownBeingEdited": true,
+    "markdown-preview-enhanced.singlePreview": true,
+    
+    // Also configure regular markdown preview for fallback
     "markdown.preview.breaks": true,
     "markdown.preview.fontSize": 14,
     "markdown.preview.lineHeight": 1.6,
@@ -79,16 +90,7 @@
         ".vscode/markdown-preview.css"
     ],
     
-    // Mermaid diagram support - ensure it's enabled
-    "markdown-mermaid.lightModeTheme": "default",
-    "markdown-mermaid.darkModeTheme": "dark",
-    "markdown-preview-enhanced.mermaidTheme": "dark",
-    "markdown-preview-enhanced.codeBlockTheme": "atom-dark.css",
-    
-    // Auto-open preview for markdown files
-    "workbench.editorAssociations": {
-        "*.md": "vscode.markdown.preview.editor"
-    },
+    // (Markdown Preview Enhanced doesn't support workbench.editorAssociations)
     
     // Exclude Downloads folder from workspace indexing
     "files.exclude": {

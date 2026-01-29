@@ -240,8 +240,9 @@ class TestAsyncClientServiceHealth:
         
         health = service._get_health_status()
         
-        assert health["status"] == "unhealthy"
-        assert health["service_status"] == "Stopped"
+        # HealthStatus has .healthy (bool) and .status (string description)
+        assert health.healthy is False
+        assert health.status == "stopped"
     
     @patch('pywats_client.service.async_client_service.ClientConfig')
     def test_health_status_when_running(self, mock_config_cls, mock_config):
@@ -253,5 +254,6 @@ class TestAsyncClientServiceHealth:
         
         health = service._get_health_status()
         
-        assert health["status"] == "healthy"
-        assert health["service_status"] == "Running"
+        # HealthStatus has .healthy (bool) and .status (string description)
+        assert health.healthy is True
+        assert health.status == "running"

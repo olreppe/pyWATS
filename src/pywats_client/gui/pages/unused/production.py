@@ -23,7 +23,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
 from ..base import BasePage
-from ...async_api_mixin import AsyncAPIPageMixin
 from ....core.config import ClientConfig
 
 if TYPE_CHECKING:
@@ -166,7 +165,7 @@ class UnitCreateDialog(QDialog):
         }
 
 
-class ProductionPage(BasePage, AsyncAPIPageMixin):
+class ProductionPage(BasePage):
     """
     Production Units page - track units and assemblies.
     
@@ -183,7 +182,7 @@ class ProductionPage(BasePage, AsyncAPIPageMixin):
         self._units: List[Dict[str, Any]] = []
         self._phases: List[Dict[str, Any]] = []
         self._current_unit: Optional[Dict[str, Any]] = None
-        super().__init__(config, parent)
+        super().__init__(config, parent, async_api_runner=getattr(main_window, 'async_api_runner', None))
         self._setup_ui()
         self.load_config()
     
@@ -344,12 +343,13 @@ class ProductionPage(BasePage, AsyncAPIPageMixin):
         """
         Load unit phases from server (async).
         
-        Uses run_api_call for non-blocking operation.
+        Uses async_api.run for non-blocking operation.
         """
-        if not self.has_api:
+        if not self.async_api or not self.async_api.has_api:
             return
         
-        self.run_api_call(
+        self.async_api.run(
+            self,
             lambda api: api.production.get_phases(),
             on_success=self._on_phases_loaded,
             on_error=lambda e: print(f"[Production] Failed to load phases: {e}"),
@@ -401,9 +401,9 @@ class ProductionPage(BasePage, AsyncAPIPageMixin):
         """
         Look up a unit and display details (async).
         
-        Uses run_api_call for non-blocking operation.
+        Uses async_api.run for non-blocking operation.
         """
-        if not self.require_api("look up units"):
+        if not self.async_api or not self.async_api.require_api(self, "look up units"):
             return
         
         self._status_label.setText(f"Looking up unit {serial_number}...")
@@ -412,7 +412,8 @@ class ProductionPage(BasePage, AsyncAPIPageMixin):
         self._pending_lookup = (serial_number, part_number)
         
         # Run async API call
-        self.run_api_call(
+        self.async_api.run(
+            self,
             lambda api: api.production.get_unit(serial_number, part_number),
             on_success=self._on_unit_lookup_success,
             on_error=self._on_unit_lookup_error,
@@ -504,13 +505,14 @@ class ProductionPage(BasePage, AsyncAPIPageMixin):
         """
         Load verification status for unit (async).
         
-        Uses run_api_call for non-blocking operation.
+        Uses async_api.run for non-blocking operation.
         """
-        if not self.has_api:
+        if not self.async_api or not self.async_api.has_api:
             self._verify_info.setText("Not connected to server")
             return
         
-        self.run_api_call(
+        self.async_api.run(
+            self,
             lambda api: api.production.verify_unit(serial, part),
             on_success=self._on_verification_loaded,
             on_error=lambda e: self._verify_info.setText(f"Could not load: {str(e)[:30]}"),
@@ -559,9 +561,9 @@ class ProductionPage(BasePage, AsyncAPIPageMixin):
         """
         Show dialog to create new unit (async).
         
-        Uses run_api_call for non-blocking operation.
+        Uses async_api.run for non-blocking operation.
         """
-        if not self.require_api("create units"):
+        if not self.async_api or not self.async_api.require_api(self, "create units"):
             return
         
         dialog = UnitCreateDialog(self._phases, self)
@@ -582,7 +584,8 @@ class ProductionPage(BasePage, AsyncAPIPageMixin):
             )
             
             # Run async API call
-            self.run_api_call(
+            self.async_api.run(
+                self,
                 lambda api: api.production.create_units([unit]),
                 on_success=self._on_unit_created,
                 on_error=self._on_create_error,

@@ -10,6 +10,7 @@ Handles configuration for pyWATS Client instances including:
 """
 
 import json
+import logging
 import os
 import socket
 import uuid
@@ -19,6 +20,9 @@ from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 
 from .constants import ConverterType, FolderName
+from .file_utils import SafeFileWriter, SafeFileReader, locked_file
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -210,7 +214,21 @@ class ClientConfig:
     
     Note: 99% of deployments use a single instance with instance_id="default".
     Multiple instances are an advanced feature for special use cases.
+    
+    Schema Versioning:
+    - schema_version: Tracks the config file format version
+    - Current version: 2.0
+    - Older configs without schema_version are treated as 1.0
     """
+    # Schema version for config file format (for future migrations)
+    # Version 1.0: Original format (implicit)
+    # Version 2.0: Added schema_version, validation, safe file handling
+    CURRENT_SCHEMA_VERSION: str = "2.0"
+    MIN_SCHEMA_VERSION: str = "1.0"  # Minimum supported version
+    
+    # Schema version field - saved to config file
+    schema_version: str = "2.0"
+    
     # Instance identification (the client installation)
     # Default to "default" for single-instance deployments (99% of use cases)
     instance_id: str = "default"
@@ -272,6 +290,10 @@ class ClientConfig:
     offline_queue_enabled: bool = True
     max_retry_attempts: int = 5
     retry_interval_seconds: int = 60
+    
+    # Queue settings
+    max_queue_size: int = 10000  # Maximum reports in queue (0 = unlimited)
+    max_concurrent_uploads: int = 5  # Concurrent upload threads
     
     # Converter settings
     converters_folder: str = "converters"
@@ -537,9 +559,219 @@ class ClientConfig:
             return self._config_path.parent / self.reports_folder
         return Path(self.reports_folder)
     
+    # =========================================================================
+    # Schema Version Helpers
+    # =========================================================================
+    
+    @staticmethod
+    def _parse_version(version_str: str) -> tuple[int, int]:
+        """Parse version string into (major, minor) tuple."""
+        try:
+            parts = version_str.split(".")
+            major = int(parts[0])
+            minor = int(parts[1]) if len(parts) > 1 else 0
+            return (major, minor)
+        except (ValueError, IndexError):
+            return (0, 0)
+    
+    def _is_schema_version_compatible(self, version: str) -> bool:
+        """
+        Check if a schema version is compatible with this config class.
+        
+        Args:
+            version: Schema version string to check
+            
+        Returns:
+            True if version is within supported range
+        """
+        v_major, v_minor = self._parse_version(version)
+        min_major, min_minor = self._parse_version(self.MIN_SCHEMA_VERSION)
+        max_major, max_minor = self._parse_version(self.CURRENT_SCHEMA_VERSION)
+        
+        # Check minimum
+        if v_major < min_major or (v_major == min_major and v_minor < min_minor):
+            return False
+        
+        # Check maximum (allow same major version)
+        if v_major > max_major:
+            return False
+        
+        return True
+    
+    # =========================================================================
+    # Validation and Repair
+    # =========================================================================
+    
+    def validate(self) -> List[str]:
+        """
+        Validate the configuration.
+        
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        errors = []
+        
+        # Schema version validation
+        if not self._is_schema_version_compatible(self.schema_version):
+            errors.append(
+                f"schema_version {self.schema_version} not supported. "
+                f"Minimum: {self.MIN_SCHEMA_VERSION}, Current: {self.CURRENT_SCHEMA_VERSION}"
+            )
+        
+        # Instance validation
+        if not self.instance_id:
+            errors.append("instance_id is required")
+        
+        # Connection validation (warning level - not required for offline use)
+        # These are informational, not errors
+        
+        # Numeric range validation
+        if self.sync_interval_seconds < 0:
+            errors.append("sync_interval_seconds must be non-negative")
+        
+        if self.max_retry_attempts < 0:
+            errors.append("max_retry_attempts must be non-negative")
+        
+        if self.retry_interval_seconds < 0:
+            errors.append("retry_interval_seconds must be non-negative")
+        
+        if self.proxy_port < 0 or self.proxy_port > 65535:
+            errors.append("proxy_port must be between 0 and 65535")
+        
+        if not (0.0 <= self.yield_threshold <= 100.0):
+            errors.append("yield_threshold must be between 0.0 and 100.0")
+        
+        # Validate log level
+        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        if self.log_level.upper() not in valid_log_levels:
+            errors.append(f"log_level must be one of: {', '.join(valid_log_levels)}")
+        
+        # Validate station_name_source
+        valid_sources = {"hostname", "config", "manual"}
+        if self.station_name_source not in valid_sources:
+            errors.append(f"station_name_source must be one of: {', '.join(valid_sources)}")
+        
+        # Validate proxy_mode
+        valid_proxy_modes = {"none", "system", "manual"}
+        if self.proxy_mode not in valid_proxy_modes:
+            errors.append(f"proxy_mode must be one of: {', '.join(valid_proxy_modes)}")
+        
+        # Validate sn_mode
+        valid_sn_modes = {"Manual Entry", "Auto-increment", "Barcode Scanner", "External Source"}
+        if self.sn_mode not in valid_sn_modes:
+            errors.append(f"sn_mode must be one of: {', '.join(valid_sn_modes)}")
+        
+        # Validate converters
+        for i, converter in enumerate(self.converters):
+            converter_errors = converter.validate()
+            for err in converter_errors:
+                errors.append(f"converters[{i}] ({converter.name}): {err}")
+        
+        return errors
+    
+    def is_valid(self) -> bool:
+        """Check if the configuration is valid."""
+        return len(self.validate()) == 0
+    
+    def repair(self) -> List[str]:
+        """
+        Attempt to repair common configuration issues.
+        
+        Returns:
+            List of repairs made
+        """
+        repairs = []
+        
+        # Upgrade schema version from old configs
+        if not self.schema_version or self.schema_version == "1.0":
+            old_version = self.schema_version or "unknown"
+            self.schema_version = self.CURRENT_SCHEMA_VERSION
+            repairs.append(f"Upgraded schema_version from {old_version} to {self.CURRENT_SCHEMA_VERSION}")
+        
+        # Repair missing instance_id
+        if not self.instance_id:
+            self.instance_id = "default"
+            repairs.append("Set missing instance_id to 'default'")
+        
+        # Repair negative values
+        if self.sync_interval_seconds < 0:
+            self.sync_interval_seconds = 300
+            repairs.append("Reset negative sync_interval_seconds to 300")
+        
+        if self.max_retry_attempts < 0:
+            self.max_retry_attempts = 5
+            repairs.append("Reset negative max_retry_attempts to 5")
+        
+        if self.retry_interval_seconds < 0:
+            self.retry_interval_seconds = 60
+            repairs.append("Reset negative retry_interval_seconds to 60")
+        
+        # Repair invalid proxy port
+        if self.proxy_port < 0 or self.proxy_port > 65535:
+            self.proxy_port = 8080
+            repairs.append("Reset invalid proxy_port to 8080")
+        
+        # Repair invalid yield threshold
+        if self.yield_threshold < 0.0:
+            self.yield_threshold = 0.0
+            repairs.append("Reset negative yield_threshold to 0.0")
+        elif self.yield_threshold > 100.0:
+            self.yield_threshold = 100.0
+            repairs.append("Clamped yield_threshold to 100.0")
+        
+        # Repair invalid log level
+        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        if self.log_level.upper() not in valid_log_levels:
+            self.log_level = "INFO"
+            repairs.append("Reset invalid log_level to 'INFO'")
+        
+        # Repair invalid station_name_source
+        valid_sources = {"hostname", "config", "manual"}
+        if self.station_name_source not in valid_sources:
+            self.station_name_source = "hostname"
+            repairs.append("Reset invalid station_name_source to 'hostname'")
+        
+        # Repair invalid proxy_mode
+        valid_proxy_modes = {"none", "system", "manual"}
+        if self.proxy_mode not in valid_proxy_modes:
+            self.proxy_mode = "system"
+            repairs.append("Reset invalid proxy_mode to 'system'")
+        
+        return repairs
+    
+    @classmethod
+    def load_and_repair(cls, path: Path) -> tuple["ClientConfig", List[str]]:
+        """
+        Load configuration and attempt to repair any issues.
+        
+        Args:
+            path: Path to configuration file
+            
+        Returns:
+            Tuple of (config, list of repairs made)
+        """
+        try:
+            config = cls.load(path)
+        except Exception as e:
+            # Create default config if load fails
+            logger.warning(f"Failed to load config, creating default: {e}")
+            config = cls()
+            config._config_path = path
+        
+        repairs = config.repair()
+        
+        if repairs:
+            # Save repaired config
+            config.save()
+            logger.info(f"Config repaired with {len(repairs)} fixes")
+        
+        return config, repairs
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization"""
         data = {
+            # Schema version for future compatibility
+            "schema_version": self.schema_version,
             "instance_id": self.instance_id,
             "instance_name": self.instance_name,
             "service_address": self.service_address,
@@ -581,6 +813,9 @@ class ClientConfig:
             "offline_queue_enabled": self.offline_queue_enabled,
             "max_retry_attempts": self.max_retry_attempts,
             "retry_interval_seconds": self.retry_interval_seconds,
+            # Queue settings
+            "max_queue_size": self.max_queue_size,
+            "max_concurrent_uploads": self.max_concurrent_uploads,
             "converters_folder": self.converters_folder,
             "converters": [c.to_dict() for c in self.converters],
             "converters_enabled": self.converters_enabled,
@@ -614,7 +849,7 @@ class ClientConfig:
         return cls(**filtered_data)
     
     def save(self, path: Optional[Path] = None) -> None:
-        """Save configuration to file"""
+        """Save configuration to file using atomic writes."""
         save_path = path or self._config_path
         if not save_path:
             raise ValueError("No configuration path specified")
@@ -622,23 +857,38 @@ class ClientConfig:
         save_path = Path(save_path)
         save_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(save_path, 'w', encoding='utf-8') as f:
-            json.dump(self.to_dict(), f, indent=2)
+        # Use atomic write with backup for safety
+        result = SafeFileWriter.write_json_atomic(
+            save_path,
+            self.to_dict(),
+            backup=True
+        )
+        
+        if not result.success:
+            raise IOError(f"Failed to save configuration: {result.error}")
         
         self._config_path = save_path
+        logger.debug(f"Saved configuration to {save_path}")
     
     @classmethod
     def load(cls, path: Path) -> "ClientConfig":
-        """Load configuration from file"""
+        """Load configuration from file with backup recovery."""
         path = Path(path)
         if not path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {path}")
+            # Check for backup file
+            backup_path = path.with_suffix(path.suffix + '.bak')
+            if not backup_path.exists():
+                raise FileNotFoundError(f"Configuration file not found: {path}")
         
-        with open(path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        # Use safe reader with backup recovery
+        data = SafeFileReader.read_json_safe(path, try_backup=True)
+        
+        if data is None:
+            raise IOError(f"Failed to load configuration from {path} (no backup available)")
         
         config = cls.from_dict(data)
         config._config_path = path
+        logger.debug(f"Loaded configuration from {path}")
         return config
     
     @classmethod

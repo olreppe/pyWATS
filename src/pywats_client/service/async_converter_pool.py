@@ -9,6 +9,7 @@ Benefits over sync ConverterPool:
 - Concurrent I/O via asyncio
 - Automatic backpressure via semaphore
 - Efficient batch processing
+- **Sandboxed execution** for untrusted converters
 
 See CLIENT_ASYNC_ARCHITECTURE.md for design details.
 """
@@ -28,6 +29,16 @@ except ImportError:
     
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+
+# Import sandbox for secure converter execution
+from ..converters.sandbox import (
+    ConverterSandbox,
+    SandboxConfig,
+    ResourceLimits,
+    SandboxError,
+    SandboxTimeoutError,
+    SandboxSecurityError,
+)
 
 if TYPE_CHECKING:
     from pywats import AsyncWATS
@@ -95,7 +106,9 @@ class AsyncConverterPool:
         self,
         config: 'ClientConfig',
         api: 'AsyncWATS',
-        max_concurrent: int = 10
+        max_concurrent: int = 10,
+        enable_sandbox: bool = True,
+        sandbox_config: Optional[SandboxConfig] = None,
     ) -> None:
         """
         Initialize async converter pool.
@@ -104,10 +117,17 @@ class AsyncConverterPool:
             config: Client configuration
             api: AsyncWATS API client
             max_concurrent: Maximum concurrent conversions
+            enable_sandbox: Enable sandboxed execution for converters (default: True)
+            sandbox_config: Custom sandbox configuration (uses defaults if not provided)
         """
         self.config = config
         self.api = api
         self._max_concurrent = max_concurrent
+        
+        # Sandbox for secure converter execution
+        self._enable_sandbox = enable_sandbox
+        self._sandbox: Optional[ConverterSandbox] = None
+        self._sandbox_config = sandbox_config
         
         # Processing queue and semaphore
         self._queue: asyncio.Queue[AsyncConversionItem] = asyncio.Queue()
@@ -133,11 +153,16 @@ class AsyncConverterPool:
             "total_processed": 0,
             "successful": 0,
             "errors": 0,
+            "sandbox_errors": 0,
             "queue_size": 0,
-            "active_conversions": 0
+            "active_conversions": 0,
+            "sandbox_enabled": enable_sandbox,
         }
         
-        logger.info(f"AsyncConverterPool initialized (max_concurrent={max_concurrent})")
+        logger.info(
+            f"AsyncConverterPool initialized (max_concurrent={max_concurrent}, "
+            f"sandbox={'enabled' if enable_sandbox else 'disabled'})"
+        )
     
     @property
     def stats(self) -> Dict[str, Any]:
@@ -242,6 +267,15 @@ class AsyncConverterPool:
         
         self._active_tasks.clear()
         self._loop = None  # Clear loop reference
+        
+        # Shutdown sandbox if active
+        if self._sandbox:
+            try:
+                await self._sandbox.shutdown()
+            except Exception as e:
+                logger.warning(f"Error shutting down sandbox: {e}")
+            self._sandbox = None
+        
         self._running = False
         logger.info("AsyncConverterPool stopped")
     
@@ -400,8 +434,8 @@ class AsyncConverterPool:
         Process a single conversion item.
         
         Steps:
-        1. Read file (async I/O)
-        2. Convert (in thread pool for CPU-bound work)
+        1. Read file (async I/O) - only for non-sandboxed execution
+        2. Convert (sandboxed subprocess OR thread pool)
         3. Submit to WATS (async HTTP)
         4. Handle post-processing
         """
@@ -411,15 +445,15 @@ class AsyncConverterPool:
         logger.info(f"Processing: {item.file_path.name}")
         
         try:
-            # 1. Read file content (async I/O)
-            content = await self._read_file(item.file_path)
+            # Determine if sandbox should be used for this converter
+            use_sandbox = self._enable_sandbox and self._should_use_sandbox(item.converter)
             
-            # 2. Convert (CPU-bound, run in thread pool)
-            report = await asyncio.to_thread(
-                item.converter.convert,
-                content,
-                item.file_path
-            )
+            if use_sandbox:
+                # Sandboxed execution (secure subprocess)
+                report = await self._convert_sandboxed(item)
+            else:
+                # Legacy execution (thread pool - trusted converters only)
+                report = await self._convert_unsandboxed(item)
             
             if report is None:
                 logger.warning(f"Converter returned no report: {item.file_path.name}")
@@ -457,6 +491,106 @@ class AsyncConverterPool:
             
             # Handle error (move to error folder, etc.)
             await self._handle_error(item, e)
+    
+    def _should_use_sandbox(self, converter: 'Converter') -> bool:
+        """
+        Determine if sandbox should be used for this converter.
+        
+        Returns True unless converter explicitly opts out (trusted_mode=True).
+        """
+        # Check if converter has trusted_mode attribute (opt-out for built-in converters)
+        if hasattr(converter, 'trusted_mode') and converter.trusted_mode:
+            return False
+        
+        # Check if converter has a source file (required for sandbox)
+        if hasattr(converter, 'source_path') and converter.source_path:
+            return True
+        
+        # For dynamically loaded converters, use sandbox
+        return True
+    
+    async def _ensure_sandbox(self) -> ConverterSandbox:
+        """Get or create the sandbox instance."""
+        if self._sandbox is None:
+            self._sandbox = ConverterSandbox(
+                default_config=self._sandbox_config
+            )
+        return self._sandbox
+    
+    async def _convert_sandboxed(self, item: AsyncConversionItem) -> Optional[Dict[str, Any]]:
+        """
+        Execute converter in sandboxed subprocess.
+        
+        Provides:
+        - Process isolation
+        - Resource limits
+        - Filesystem restrictions
+        - Import blocking
+        """
+        sandbox = await self._ensure_sandbox()
+        converter = item.converter
+        
+        # Get converter source path (required for sandboxing)
+        converter_path = getattr(converter, 'source_path', None)
+        if not converter_path:
+            logger.warning(
+                f"Converter {converter.name} has no source_path, "
+                f"falling back to unsandboxed execution"
+            )
+            return await self._convert_unsandboxed(item)
+        
+        converter_class = converter.__class__.__name__
+        
+        try:
+            result = await sandbox.run_converter(
+                converter_path=Path(converter_path),
+                converter_class=converter_class,
+                input_path=item.file_path,
+                args={
+                    "user_settings": getattr(converter, 'user_settings', {}),
+                }
+            )
+            
+            # Extract report from result
+            if result.get("status") == "Success":
+                return result.get("report")
+            else:
+                error = result.get("error", "Unknown error")
+                raise SandboxError(f"Conversion failed: {error}")
+                
+        except SandboxSecurityError as e:
+            self._stats["sandbox_errors"] += 1
+            logger.error(f"Security violation in converter {converter.name}: {e}")
+            raise
+        
+        except SandboxTimeoutError as e:
+            self._stats["sandbox_errors"] += 1
+            logger.error(f"Converter {converter.name} timed out: {e}")
+            raise
+        
+        except SandboxError as e:
+            self._stats["sandbox_errors"] += 1
+            logger.error(f"Sandbox error in converter {converter.name}: {e}")
+            raise
+    
+    async def _convert_unsandboxed(self, item: AsyncConversionItem) -> Optional[Dict[str, Any]]:
+        """
+        Execute converter in thread pool (legacy mode).
+        
+        WARNING: Only use for trusted, built-in converters.
+        This provides no isolation or security.
+        """
+        # Read file content
+        content = await self._read_file(item.file_path)
+        
+        # Run converter in thread pool
+        report = await asyncio.to_thread(
+            item.converter.convert,
+            content,
+            item.file_path
+        )
+        
+        return report
     
     async def _read_file(self, file_path: Path) -> str:
         """Read file content asynchronously"""

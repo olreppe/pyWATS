@@ -76,6 +76,18 @@ from .standard import (
 from .base import ConverterBase
 from .base import ConverterResult as LegacyConverterResult
 
+# Sandbox support for secure converter execution
+from .sandbox import (
+    SandboxCapability,
+    ResourceLimits,
+    SandboxConfig,
+    ConverterValidator,
+    ConverterSandbox,
+    SandboxError,
+    SandboxTimeoutError,
+    SandboxSecurityError,
+)
+
 # Exceptions (user-facing errors with troubleshooting hints)
 from ..exceptions import (
     ConverterError,
@@ -113,6 +125,15 @@ __all__ = [
     "WATSStandardXMLConverter",
     # Alternative base class
     "ConverterBase",
+    # Sandbox support
+    "SandboxCapability",
+    "ResourceLimits",
+    "SandboxConfig",
+    "ConverterValidator",
+    "ConverterSandbox",
+    "SandboxError",
+    "SandboxTimeoutError",
+    "SandboxSecurityError",
     # Exceptions
     "ConverterError",
     "FileFormatError",

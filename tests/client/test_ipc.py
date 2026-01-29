@@ -21,7 +21,8 @@ class TestAsyncIPCServer:
         """Test socket address generation for Windows (TCP localhost)"""
         import sys
         if sys.platform == 'win32':
-            addr = get_socket_address("test")
+            is_unix, addr = get_socket_address("test")
+            assert is_unix is False
             host, port = addr
             assert host == "127.0.0.1"
             assert 50000 <= port <= 59999
@@ -45,7 +46,7 @@ class TestAsyncIPCServer:
         server = AsyncIPCServer(instance_id="test", service=mock_service)
         
         assert server.instance_id == "test"
-        assert server._service == mock_service
+        assert server.service == mock_service
         assert server._running is False
     
     @pytest.mark.asyncio
@@ -69,11 +70,12 @@ class TestAsyncIPCServer:
     async def test_server_client_communication(self):
         """Test server-client communication"""
         mock_service = MagicMock()
-        mock_service.get_status.return_value = {
+        # Server uses get_status_async if available
+        mock_service.get_status_async = AsyncMock(return_value={
             'status': 'Running',
             'api_status': 'Online',
             'pending_count': 5
-        }
+        })
         
         server = AsyncIPCServer(instance_id="test_comm", service=mock_service)
         await server.start()
@@ -184,14 +186,12 @@ class TestServiceStatus:
         status = ServiceStatus(
             status='Running',
             api_status='Online',
-            pending_count=10,
-            instance_id='test'
+            pending_count=10
         )
         
         assert status.status == 'Running'
         assert status.api_status == 'Online'
         assert status.pending_count == 10
-        assert status.instance_id == 'test'
     
     def test_service_status_defaults(self):
         """Test ServiceStatus defaults"""
@@ -200,5 +200,4 @@ class TestServiceStatus:
         assert status.status == 'Unknown'
         assert status.api_status == 'Unknown'
         assert status.pending_count == 0
-        assert status.instance_id == ''
 

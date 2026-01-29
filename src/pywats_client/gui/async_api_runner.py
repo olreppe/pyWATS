@@ -1,33 +1,29 @@
 """
-Async API Mixin - Helper for GUI pages to use AsyncWATS
+Async API Runner - Composition-based async API helper for GUI pages
 
-Provides a clean abstraction for pages to work with either sync or async API,
-with automatic detection and proper async handling via AsyncTaskRunner.
+Provides clean integration between Qt GUI and AsyncWATS via dependency injection.
+Replaces the mixin pattern with explicit composition for better testability.
 
 Usage:
-    class MyPage(BasePage, AsyncAPIMixin):
-        def __init__(self, config, parent=None):
-            super().__init__(config, parent)
-            
-        def _on_refresh(self):
-            # This will automatically use async if available
-            self.run_api_call(
-                lambda api: api.asset.get_assets(),
-                on_success=self._on_assets_loaded,
-                on_error=self._on_error,
-                task_name="Loading assets..."
-            )
-        
-        async def _load_assets_async(self):
-            # Or explicitly use async
-            api = await self.get_async_api()
-            return await api.asset.get_assets()
+    # In MainWindow:
+    runner = AsyncAPIRunner(facade)
+    page = MyPage(config, async_api_runner=runner)
+    
+    # In page:
+    def _on_refresh(self):
+        self.async_api.run(
+            lambda api: api.asset.get_assets(),
+            on_success=self._on_assets_loaded,
+            on_error=self._on_error,
+            task_name="Loading assets..."
+        )
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import weakref
 from typing import (
     Any, Awaitable, Callable, Optional, TypeVar, Union, TYPE_CHECKING
 )
@@ -41,60 +37,52 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T')
 
 
-class AsyncAPIMixin:
+class AsyncAPIRunner:
     """
-    Mixin that provides async API support for GUI pages.
+    Helper for running API calls from GUI pages using composition.
     
     Features:
     - Auto-detect sync vs async API
     - Unified interface for API calls
     - Automatic async-to-sync bridging via AsyncTaskRunner
     - Error handling with loading states
+    - Memory-safe weak references to pages
     
-    This mixin should be used with BasePage and assumes:
-    - self._facade exists (or will be set)
-    - self.run_async() is available from BasePage
-    - self.handle_error() is available from ErrorHandlingMixin
-    
-    Raises TypeError if required methods are not available.
+    This class is injected into pages that need async API access.
+    It requires the page to have:
+    - run_async() method (from BasePage)
+    - handle_error() method (from ErrorHandlingMixin)
     """
     
-    # Type hints for the mixing context
-    _facade: Any
-    run_async: Callable
-    handle_error: Callable
-    set_loading: Callable
+    def __init__(self, facade: Any) -> None:
+        """
+        Initialize runner with service facade.
+        
+        Args:
+            facade: Service facade providing API access
+        """
+        self._facade = facade
+        self._pages: list[weakref.ref] = []  # Track pages for cleanup
     
-    def _validate_mixin_dependencies(self) -> None:
+    def register_page(self, page: 'BasePage') -> None:
         """
-        Validate that required methods exist.
+        Register a page for cleanup tracking.
         
-        Raises:
-            TypeError: If required methods are missing
+        Args:
+            page: Page to register
         """
-        missing = []
-        if not hasattr(self, 'run_async') or not callable(getattr(self, 'run_async', None)):
-            missing.append('run_async')
-        if not hasattr(self, 'handle_error') or not callable(getattr(self, 'handle_error', None)):
-            missing.append('handle_error')
-        
-        if missing:
-            raise TypeError(
-                f"{self.__class__.__name__} must inherit from BasePage to use AsyncAPIMixin. "
-                f"Missing: {', '.join(missing)}"
-            )
+        self._pages.append(weakref.ref(page))
     
     @property
     def has_api(self) -> bool:
         """Check if API is available"""
-        return bool(getattr(self, '_facade', None) and self._facade.has_api)
+        return bool(self._facade and self._facade.has_api)
     
     @property
     def has_async_api(self) -> bool:
         """Check if async API is available"""
         if not self._facade:
             return False
-        # Check if facade provides async API
         return hasattr(self._facade, 'async_api') and self._facade.async_api is not None
     
     def get_sync_api(self) -> Optional['pyWATS']:
@@ -131,8 +119,9 @@ class AsyncAPIMixin:
             raise RuntimeError("Async API not available. Ensure service is connected.")
         return api
     
-    def run_api_call(
+    def run(
         self,
+        page: 'BasePage',
         api_call: Union[Callable[['pyWATS'], T], Callable[['AsyncWATS'], Awaitable[T]]],
         on_success: Optional[Callable[[T], None]] = None,
         on_error: Optional[Callable[[Exception], None]] = None,
@@ -142,7 +131,7 @@ class AsyncAPIMixin:
         """
         Run an API call with automatic sync/async handling.
         
-        This is the preferred way to make API calls from GUI pages.
+        This is the main method pages use to make API calls.
         It will:
         1. Use async API if available (non-blocking)
         2. Fall back to sync API in thread if async not available
@@ -150,6 +139,7 @@ class AsyncAPIMixin:
         4. Handle errors gracefully
         
         Args:
+            page: Page making the call (needs run_async and handle_error methods)
             api_call: Function that takes API client and returns result.
                      Can be sync (for pyWATS) or async (for AsyncWATS)
             on_success: Callback with result on success
@@ -161,39 +151,56 @@ class AsyncAPIMixin:
             Task ID (can be used to cancel) or None if sync
         
         Example:
-            # Simple get call
-            self.run_api_call(
+            self.async_api.run(
+                self,
                 lambda api: api.asset.get_assets(),
-                on_success=self._on_assets_loaded
-            )
-            
-            # Async version (if you know it's async)
-            self.run_api_call(
-                lambda api: api.asset.get_assets(),  # Works for both
                 on_success=self._on_assets_loaded
             )
         """
         if not self.has_api:
+            error = RuntimeError("Not connected to WATS server")
             if on_error:
-                on_error(RuntimeError("Not connected to WATS server"))
+                on_error(error)
             return None
         
-        # Validate mixin dependencies on first use
-        self._validate_mixin_dependencies()
+        # Validate page has required methods
+        self._validate_page(page)
         
         # Prefer async API
         if self.has_async_api:
             return self._run_async_api_call(
-                api_call, on_success, on_error, task_name, show_loading
+                page, api_call, on_success, on_error, task_name, show_loading
             )
         else:
             # Fall back to sync API in thread
             return self._run_sync_api_call(
-                api_call, on_success, on_error, task_name, show_loading
+                page, api_call, on_success, on_error, task_name, show_loading
+            )
+    
+    def _validate_page(self, page: 'BasePage') -> None:
+        """
+        Validate that page has required methods.
+        
+        Args:
+            page: Page to validate
+        
+        Raises:
+            TypeError: If required methods are missing
+        """
+        missing = []
+        if not hasattr(page, 'run_async') or not callable(getattr(page, 'run_async', None)):
+            missing.append('run_async')
+        if not hasattr(page, 'handle_error') or not callable(getattr(page, 'handle_error', None)):
+            missing.append('handle_error')
+        
+        if missing:
+            raise TypeError(
+                f"{page.__class__.__name__} must have {', '.join(missing)} method(s)"
             )
     
     def _run_async_api_call(
         self,
+        page: 'BasePage',
         api_call: Callable[['AsyncWATS'], Awaitable[T]],
         on_success: Optional[Callable[[T], None]],
         on_error: Optional[Callable[[Exception], None]],
@@ -214,9 +221,9 @@ class AsyncAPIMixin:
             elif result.is_error and on_error:
                 on_error(result.error)
             elif result.is_error:
-                self.handle_error(result.error, task_name)
+                page.handle_error(result.error, task_name)
         
-        return self.run_async(
+        return page.run_async(
             _execute(),
             name=task_name,
             on_complete=_on_complete,
@@ -225,6 +232,7 @@ class AsyncAPIMixin:
     
     def _run_sync_api_call(
         self,
+        page: 'BasePage',
         api_call: Callable[['pyWATS'], T],
         on_success: Optional[Callable[[T], None]],
         on_error: Optional[Callable[[Exception], None]],
@@ -246,26 +254,25 @@ class AsyncAPIMixin:
             elif result.is_error and on_error:
                 on_error(result.error)
             elif result.is_error:
-                self.handle_error(result.error, task_name)
+                page.handle_error(result.error, task_name)
         
-        return self.run_async(
+        return page.run_async(
             _execute(),
             name=task_name,
             on_complete=_on_complete,
             show_loading=show_loading
         )
-
-
-class AsyncAPIPageMixin(AsyncAPIMixin):
-    """
-    Extended mixin with additional helper methods for common patterns.
-    """
     
-    def require_api(self, action: str = "perform this action") -> bool:
+    def require_api(
+        self, 
+        page: 'BasePage',
+        action: str = "perform this action"
+    ) -> bool:
         """
         Check if API is available, show message if not.
         
         Args:
+            page: Page requesting API
             action: Description of what user is trying to do
         
         Returns:
@@ -274,15 +281,16 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
         if not self.has_api:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(
-                self,
+                page,
                 "Not Connected",
                 f"Please connect to WATS server to {action}."
             )
             return False
         return True
     
-    def run_async_parallel(
+    def run_parallel(
         self,
+        page: 'BasePage',
         *calls: tuple[Callable, str],
         on_all_complete: Optional[Callable[[list], None]] = None,
         on_error: Optional[Callable[[Exception], None]] = None
@@ -294,12 +302,14 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
         Results are returned in the same order as the calls.
         
         Args:
+            page: Page making the calls
             *calls: Tuples of (api_call, task_name)
             on_all_complete: Called when all complete with list of results
             on_error: Called if any fails
         
         Example:
-            self.run_async_parallel(
+            self.async_api.run_parallel(
+                self,
                 (lambda api: api.asset.get_types(), "Loading types..."),
                 (lambda api: api.asset.get_assets(), "Loading assets..."),
                 on_all_complete=self._on_data_loaded
@@ -317,15 +327,17 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
             return handler
         
         for idx, (call, name) in enumerate(calls):
-            self.run_api_call(
+            self.run(
+                page,
                 call,
                 on_success=make_success_handler(idx, len(calls)),
                 on_error=on_error,
                 task_name=name
             )
     
-    def run_async_sequence(
+    def run_sequence(
         self,
+        page: 'BasePage',
         *calls: tuple[Callable, str],
         on_all_complete: Optional[Callable[[list], None]] = None,
         on_error: Optional[Callable[[Exception], None]] = None
@@ -337,12 +349,14 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
         or when you need guaranteed ordering.
         
         Args:
+            page: Page making the calls
             *calls: Tuples of (api_call, task_name)
             on_all_complete: Called when all complete with list of results
             on_error: Called if any fails (stops the sequence)
         
         Example:
-            self.run_async_sequence(
+            self.async_api.run_sequence(
+                self,
                 (lambda api: api.product.get_products(), "Loading products..."),
                 (lambda api: api.product.get_bom(self._selected_product), "Loading BOM..."),
                 on_all_complete=self._on_data_loaded
@@ -375,7 +389,8 @@ class AsyncAPIPageMixin(AsyncAPIMixin):
                     on_error(e)
                 # Stop sequence on error (don't run remaining calls)
             
-            self.run_api_call(
+            self.run(
+                page,
                 call,
                 on_success=on_success,
                 on_error=on_err,

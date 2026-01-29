@@ -219,7 +219,8 @@ class AsyncClientService:
             self._pending_queue = AsyncPendingQueue(
                 api=self.api,
                 reports_dir=self.config.get_reports_path(),
-                max_concurrent=5
+                max_concurrent=self.config.max_concurrent_uploads,
+                max_queue_size=self.config.max_queue_size
             )
             self._tasks.append(
                 asyncio.create_task(

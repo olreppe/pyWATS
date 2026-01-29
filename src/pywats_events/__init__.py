@@ -29,7 +29,7 @@ from pywats_events.bus.async_event_bus import AsyncEventBus
 from pywats_events.handlers.base_handler import BaseHandler
 from pywats_events.handlers.handler_registry import HandlerRegistry
 
-__version__ = "0.1.0"
+__version__ = "0.2.0b1"
 
 __all__ = [
     # Core classes

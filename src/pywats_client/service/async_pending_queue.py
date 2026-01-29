@@ -80,11 +80,15 @@ class AsyncPendingQueue:
     ERROR_RETRY_DELAY = timedelta(minutes=5)
     PERIODIC_CHECK_INTERVAL = 60.0  # seconds
     
+    # Queue limits
+    DEFAULT_MAX_QUEUE_SIZE = 10000  # Default max reports in queue (0 = unlimited)
+    
     def __init__(
         self,
         api: 'AsyncWATS',
         reports_dir: Path,
-        max_concurrent: int = 5
+        max_concurrent: int = 5,
+        max_queue_size: int = 0
     ) -> None:
         """
         Initialize async pending queue.
@@ -93,9 +97,11 @@ class AsyncPendingQueue:
             api: AsyncWATS API client
             reports_dir: Directory containing queued report files
             max_concurrent: Maximum concurrent uploads
+            max_queue_size: Maximum reports allowed in queue (0 = unlimited)
         """
         self.api = api
         self.reports_dir = Path(reports_dir)
+        self._max_queue_size = max_queue_size
         self._max_concurrent = max_concurrent
         
         # Concurrency control
@@ -122,15 +128,17 @@ class AsyncPendingQueue:
             "retries": 0,
             "queued_files": 0,
             "stuck_files": 0,
-            "active_uploads": 0
+            "active_uploads": 0,
+            "max_queue_size": max_queue_size
         }
         
         # Ensure directory exists
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         
+        limit_info = f", max_queue_size={max_queue_size}" if max_queue_size > 0 else ""
         logger.info(
             f"AsyncPendingQueue initialized "
-            f"(dir={reports_dir}, max_concurrent={max_concurrent})"
+            f"(dir={reports_dir}, max_concurrent={max_concurrent}{limit_info})"
         )
     
     @property
@@ -143,6 +151,33 @@ class AsyncPendingQueue:
     def is_running(self) -> bool:
         """Check if queue is running"""
         return self.state == AsyncPendingQueueState.RUNNING
+    
+    @property
+    def queue_size(self) -> int:
+        """Get current number of queued files"""
+        return len(list(self.reports_dir.glob(self.FILTER_QUEUED)))
+    
+    @property
+    def is_queue_full(self) -> bool:
+        """Check if queue has reached maximum capacity"""
+        if self._max_queue_size <= 0:
+            return False  # No limit
+        return self.queue_size >= self._max_queue_size
+    
+    def can_accept_report(self) -> tuple[bool, str]:
+        """
+        Check if queue can accept a new report.
+        
+        Returns:
+            Tuple of (can_accept, reason_if_not)
+        """
+        if self._max_queue_size <= 0:
+            return True, ""
+        
+        current = self.queue_size
+        if current >= self._max_queue_size:
+            return False, f"Queue full: {current}/{self._max_queue_size} reports"
+        return True, ""
     
     # =========================================================================
     # Lifecycle

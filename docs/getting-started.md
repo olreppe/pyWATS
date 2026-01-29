@@ -2,6 +2,8 @@
 
 Complete guide to installing, configuring, and initializing pyWATS.
 
+> **ℹ️ Beta Release Note**: This is a beta release. Before getting started, please review the [Beta Disclaimer](BETA_DISCLAIMER.md) to understand the current stability levels of the API, client, and GUI components.
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -13,7 +15,7 @@ Complete guide to installing, configuring, and initializing pyWATS.
 - [Performance Optimization](#performance-optimization)
 - [Internal API Usage](#internal-api-usage)
 - [Client Installation](#client-installation)
-- [Batch Operations & Pagination](#batch-operations--pagination)
+- [Batch Operations & Pagination](#parallel-operations--pagination)
 
 ---
 
@@ -279,7 +281,7 @@ else:
 | **Auth Error (401)** | Raises `AuthenticationError` | Raises `AuthenticationError` |
 | **Permission Error (403)** | Raises `AuthorizationError` | Raises `AuthorizationError` |
 | **Conflict (409)** | Raises `ConflictError` | Raises `ConflictError` |
-| **Return Type** | `Model` or raises | `Model | None` |
+| **Return Type** | `Model` or raises | `Model \| None` |
 | **None Checks** | Not needed | Required |
 | **Best For** | Production code | Scripts/exploration |
 
@@ -734,6 +736,7 @@ if product is None:
 | 5xx Server Error | Raises `ServerError` | Raises `ServerError` |
 | Network Failure | Raises `ConnectionError` | Raises `ConnectionError` |
 | Timeout | Raises `TimeoutError` | Raises `TimeoutError` |
+
 ```
 
 ### Retry Logic
@@ -908,17 +911,58 @@ Example:
   "service_address": "https://wats.example.com",
   "api_token": "your_token",
   "station_name": "RASPBERRY-PI-01",
-  "log_level": "INFO"
+  "log_level": "INFO",
+  "max_queue_size": 10000,
+  "max_concurrent_uploads": 5
 }
 ```
+
+#### Queue Configuration
+
+Control report queue behavior with these settings:
+
+```json
+{
+  "max_queue_size": 10000,           // Maximum queued reports (0 = unlimited)
+  "max_concurrent_uploads": 5,       // Number of concurrent uploads
+  "offline_queue_enabled": true,     // Enable local queuing when offline
+  "max_retry_attempts": 5,           // Retry failed uploads
+  "retry_interval_seconds": 60       // Wait between retries
+}
+```
+
+**Parameters:**
+
+- **max_queue_size** (0-∞): Prevents unbounded queue growth
+  - Default: 10,000 reports
+  - Set to 0 to disable limit (careful on limited storage!)
+  - Server will reject new reports when limit reached
+
+- **max_concurrent_uploads** (1-100): Balance speed vs. network load
+  - Default: 5 concurrent uploads
+  - Increase for fast networks, decrease for slow/unreliable connections
+  - Each upload thread consumes ~1-5MB memory
+
+- **offline_queue_enabled** (true/false): Queue reports when server unavailable
+  - Default: true (recommended)
+  - Reports automatically upload when connection restored
+
+- **max_retry_attempts** (1-20): How many times to retry failed uploads
+  - Default: 5 attempts
+  - Each attempt waits `retry_interval_seconds`
 
 #### CLI Commands
 
 ```bash
 # Configuration
 pywats-client config show
-pywats-client config get station_name
-pywats-client config set log_level DEBUG
+pywats-client config get max_queue_size
+pywats-client config set max_concurrent_uploads 10
+
+# Queue status
+pywats-client queue status
+pywats-client queue list
+pywats-client queue clear     # Clear all pending reports (careful!)
 
 # Service control
 pywats-client status

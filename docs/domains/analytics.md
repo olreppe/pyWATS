@@ -746,7 +746,7 @@ All methods are accessed via `api.analytics`. Methods marked with ⚠️ use int
 
 ---
 
-## Alarm and Notification Logs (⚠️ Internal API)
+## Alarm and Notification Logs (Internal API)
 
 WATS provides configurable alarms that trigger email notifications based on production events. The `get_alarm_logs()` method retrieves the history of triggered alarms.
 

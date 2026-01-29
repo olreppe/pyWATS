@@ -17,6 +17,16 @@ import hashlib
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING, Any, Union, Callable, Dict
 
+from ..core.security import load_secret, validate_token, RateLimiter
+from .ipc_protocol import (
+    PROTOCOL_VERSION,
+    HelloMessage,
+    IPCResponse,
+    ServerCapability,
+    is_version_compatible,
+    MIN_CLIENT_VERSION,
+)
+
 if TYPE_CHECKING:
     from .client_service import ClientService
     from .async_client_service import AsyncClientService
@@ -84,6 +94,40 @@ class AsyncIPCServer:
         
         # Get platform-specific address
         self._is_unix, self._address = get_socket_address(self.socket_name)
+        
+        # Security: per-connection auth state and rate limiting
+        self._authenticated_clients: set[asyncio.StreamWriter] = set()
+        self._rate_limiter = RateLimiter(requests_per_minute=100, burst_size=20)
+        self._secret: Optional[str] = None
+        
+        # Protocol versioning
+        self._protocol_version = PROTOCOL_VERSION
+        self._server_version = self._get_server_version()
+        self._capabilities = self._get_capabilities()
+    
+    def _get_server_version(self) -> str:
+        """Get pyWATS version string"""
+        try:
+            from .. import __version__
+            return __version__
+        except ImportError:
+            return "unknown"
+    
+    def _get_capabilities(self) -> list[str]:
+        """Get list of server capabilities"""
+        caps = [
+            ServerCapability.RATE_LIMIT.value,
+            ServerCapability.CONFIG.value,
+        ]
+        # Auth capability depends on whether secret is configured (checked at start)
+        # Converter capability depends on service
+        if hasattr(self.service, 'converter_pool'):
+            caps.append(ServerCapability.CONVERTERS.value)
+        if hasattr(self.service, 'queue'):
+            caps.append(ServerCapability.QUEUE.value)
+        if hasattr(self.service, 'sync_now'):
+            caps.append(ServerCapability.SYNC.value)
+        return caps
     
     async def start(self) -> bool:
         """
@@ -93,6 +137,16 @@ class AsyncIPCServer:
             True if started successfully
         """
         try:
+            # Load shared secret for authentication
+            self._secret = load_secret(self.instance_id)
+            if self._secret:
+                logger.info(f"Loaded IPC authentication secret for instance '{self.instance_id}'")
+                # Add auth capability
+                if ServerCapability.AUTH.value not in self._capabilities:
+                    self._capabilities.append(ServerCapability.AUTH.value)
+            else:
+                logger.warning(f"No IPC secret found for instance '{self.instance_id}' - auth disabled")
+            
             # Clean up stale socket on Unix
             if self._is_unix:
                 socket_path = Path(self._address)
@@ -156,6 +210,26 @@ class AsyncIPCServer:
         
         logger.info("Async IPC server stopped")
     
+    async def _send_hello(self, writer: asyncio.StreamWriter) -> None:
+        """
+        Send hello message to newly connected client.
+        
+        Contains protocol version, capabilities, and auth requirements.
+        """
+        hello = HelloMessage(
+            protocol_version=self._protocol_version,
+            server_version=self._server_version,
+            instance_id=self.instance_id,
+            requires_auth=self._secret is not None,
+            capabilities=self._capabilities
+        )
+        
+        hello_bytes = json.dumps(hello.to_dict()).encode('utf-8')
+        hello_length = len(hello_bytes).to_bytes(4, 'big')
+        writer.write(hello_length + hello_bytes)
+        await writer.drain()
+        logger.debug(f"Sent hello: protocol={self._protocol_version}, auth_required={self._secret is not None}")
+
     async def _handle_client(
         self,
         reader: asyncio.StreamReader,
@@ -167,6 +241,9 @@ class AsyncIPCServer:
         logger.debug(f"IPC client connected: {peer}")
         
         try:
+            # Send hello message with protocol version and capabilities
+            await self._send_hello(writer)
+            
             while self._running:
                 # Read message length (4 bytes, big-endian)
                 length_bytes = await reader.read(4)
@@ -191,7 +268,7 @@ class AsyncIPCServer:
                 # Process request
                 try:
                     request = json.loads(data.decode('utf-8'))
-                    response = await self._process_request(request)
+                    response = await self._process_request(request, writer)
                 except json.JSONDecodeError as e:
                     response = {
                         "success": False,
@@ -214,6 +291,8 @@ class AsyncIPCServer:
         finally:
             if writer in self._clients:
                 self._clients.remove(writer)
+            # Clean up auth state
+            self._authenticated_clients.discard(writer)
             try:
                 writer.close()
                 await writer.wait_closed()
@@ -221,12 +300,17 @@ class AsyncIPCServer:
                 pass
             logger.debug(f"IPC client disconnected: {peer}")
     
-    async def _process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def _process_request(
+        self,
+        request: Dict[str, Any],
+        writer: asyncio.StreamWriter
+    ) -> Dict[str, Any]:
         """
-        Process IPC request.
+        Process IPC request with authentication and rate limiting.
         
         Args:
             request: Request dict with 'command' and optional 'args'
+            writer: Client connection for tracking auth state
             
         Returns:
             Response dict with 'success', 'data', and optional 'error'
@@ -234,8 +318,62 @@ class AsyncIPCServer:
         command = request.get("command", "")
         args = request.get("args", {})
         request_id = request.get("request_id", "")
+        client_version = request.get("protocol_version", "1.0")
+        
+        # Check protocol version compatibility
+        if not is_version_compatible(client_version, MIN_CLIENT_VERSION):
+            logger.warning(f"Client version {client_version} incompatible (min: {MIN_CLIENT_VERSION})")
+            return {
+                "success": False,
+                "error": f"Protocol version {client_version} not supported. Minimum: {MIN_CLIENT_VERSION}",
+                "data": None,
+                "request_id": request_id,
+                "protocol_version": self._protocol_version
+            }
+        
+        # Get client ID for rate limiting (peer address or connection hash)
+        peer = writer.get_extra_info('peername')
+        client_id = str(peer) if peer else str(id(writer))
+        
+        # Rate limiting check (applies to all requests)
+        if not self._rate_limiter.check_rate_limit(client_id):
+            logger.warning(f"Rate limit exceeded for client {client_id}")
+            return {
+                "success": False,
+                "error": "Rate limit exceeded. Try again later.",
+                "data": None,
+                "request_id": request_id,
+                "protocol_version": self._protocol_version
+            }
         
         try:
+            # Handle auth command (always allowed)
+            if command == "auth":
+                return await self._handle_auth(args, writer, request_id)
+            
+            # Ping is allowed without auth (for connection testing)
+            if command == "ping":
+                data = {"pong": True, "authenticated": writer in self._authenticated_clients}
+                return {
+                    "success": True,
+                    "data": data,
+                    "error": None,
+                    "request_id": request_id,
+                    "protocol_version": self._protocol_version
+                }
+            
+            # All other commands require authentication (if secret is configured)
+            if self._secret and writer not in self._authenticated_clients:
+                logger.warning(f"Unauthenticated request for command: {command}")
+                return {
+                    "success": False,
+                    "error": "Authentication required",
+                    "data": None,
+                    "request_id": request_id,
+                    "protocol_version": self._protocol_version
+                }
+            
+            # Process authenticated commands
             if command == "get_status":
                 data = await self._get_status()
             elif command == "get_config":
@@ -251,14 +389,16 @@ class AsyncIPCServer:
                     "success": False,
                     "error": f"Unknown command: {command}",
                     "data": None,
-                    "request_id": request_id
+                    "request_id": request_id,
+                    "protocol_version": self._protocol_version
                 }
             
             return {
                 "success": True,
                 "data": data,
                 "error": None,
-                "request_id": request_id
+                "request_id": request_id,
+                "protocol_version": self._protocol_version
             }
             
         except Exception as e:
@@ -267,7 +407,8 @@ class AsyncIPCServer:
                 "success": False,
                 "error": str(e),
                 "data": None,
-                "request_id": request_id
+                "request_id": request_id,
+                "protocol_version": self._protocol_version
             }
     
     async def _get_status(self) -> Dict[str, Any]:
@@ -314,6 +455,67 @@ class AsyncIPCServer:
             self.service.request_restart()
             return {"requested": True}
         return {"requested": False, "error": "Restart not supported"}
+    
+    async def _handle_auth(
+        self,
+        args: Dict[str, Any],
+        writer: asyncio.StreamWriter,
+        request_id: str
+    ) -> Dict[str, Any]:
+        """
+        Handle authentication request.
+        
+        Args:
+            args: Should contain 'token' key
+            writer: Client connection to mark as authenticated
+            request_id: Request ID for response
+            
+        Returns:
+            Response indicating auth success/failure
+        """
+        # If no secret configured, auth is a no-op success
+        if not self._secret:
+            self._authenticated_clients.add(writer)
+            logger.debug("Auth successful (no secret configured)")
+            return {
+                "success": True,
+                "data": {"authenticated": True, "message": "Auth not required"},
+                "error": None,
+                "request_id": request_id,
+                "protocol_version": self._protocol_version
+            }
+        
+        token = args.get("token", "")
+        if not token:
+            logger.warning("Auth attempt with no token")
+            return {
+                "success": False,
+                "error": "Token required",
+                "data": {"authenticated": False},
+                "request_id": request_id,
+                "protocol_version": self._protocol_version
+            }
+        
+        # Validate token using timing-safe comparison
+        if validate_token(token, self._secret):
+            self._authenticated_clients.add(writer)
+            logger.info("Client authenticated successfully")
+            return {
+                "success": True,
+                "data": {"authenticated": True},
+                "error": None,
+                "request_id": request_id,
+                "protocol_version": self._protocol_version
+            }
+        else:
+            logger.warning("Auth failed: invalid token")
+            return {
+                "success": False,
+                "error": "Invalid token",
+                "data": {"authenticated": False},
+                "request_id": request_id,
+                "protocol_version": self._protocol_version
+            }
 
 
 # For backward compatibility

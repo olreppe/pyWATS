@@ -25,7 +25,7 @@ The pyWATS Client uses an **async-first architecture** built on Python's `asynci
 │  python -m pywats_client gui        │
 │                                      │
 │  - MainWindow (PySide6 UI)          │
-│  - AsyncAPIPageMixin (non-blocking) │
+│  - AsyncAPIRunner (composition) │
 │  - IPC Client (service connection)  │
 │  - Configuration & Monitoring       │
 │                                      │
@@ -197,22 +197,25 @@ The GUI has been **simplified** to only handle UI and configuration:
 - **No embedded services** - Removed pyWATSApplication from GUI
 - **Async IPC communication** - Connects to service via AsyncIPCClient
 - **qasync integration** - Bridges Qt event loop with asyncio
-- **AsyncAPIPageMixin** - Non-blocking API calls from GUI pages
+- **AsyncAPIRunner** - Non-blocking API calls from GUI pages (composition)
 - **Can launch/exit freely** - Doesn't affect background operations
 - **Service discovery** - Finds running service instances
 
 **Async GUI Integration:**
-GUI pages use `AsyncAPIPageMixin` for non-blocking API calls:
+GUI pages use `AsyncAPIRunner` for non-blocking API calls:
 ```python
-from pywats_client.gui.async_api_mixin import AsyncAPIPageMixin
-
-class ProductionPage(AsyncAPIPageMixin, BasePage):
+class ProductionPage(BasePage):
+    def __init__(self, config, main_window=None, parent=None):
+        super().__init__(config, parent, async_api_runner=getattr(main_window, 'async_api_runner', None))
+    
     def _lookup_unit(self, part_number: str):
-        self.run_api_call(
-            api_call=lambda api: api.production.lookup_production_unit(part_number),
-            on_success=self._on_lookup_success,
-            on_error=self._on_lookup_error
-        )
+        if self.async_api:
+            self.async_api.run(
+                self,
+                api_call=lambda api: api.production.lookup_production_unit(part_number),
+                on_success=self._on_lookup_success,
+                on_error=self._on_lookup_error
+            )
 ```
 
 **Migrated GUI Pages:**
@@ -228,7 +231,7 @@ class ProductionPage(AsyncAPIPageMixin, BasePage):
 - ❌ Removed: ThreadPoolExecutor-based API calls
 - ❌ Removed: Qt-based IPC (QLocalSocket/QLocalServer)
 - ✅ Added: `AsyncIPCClient` for communication (pure asyncio)
-- ✅ Added: `AsyncAPIPageMixin` for non-blocking API calls
+- ✅ Added: `AsyncAPIRunner` for non-blocking API calls (composition)
 - ✅ Added: `qasync` for Qt/asyncio integration
 - ✅ Added: Service discovery and auto-connect
 - ✅ Added: "Start Service" button if not running

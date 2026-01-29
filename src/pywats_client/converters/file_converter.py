@@ -113,6 +113,43 @@ class FileConverter(ABC):
     def __init__(self) -> None:
         """Initialize the converter"""
         self._arguments: Dict[str, Any] = {}
+        
+        # Sandbox configuration (see ConverterBase for documentation)
+        self._source_path: Optional[Path] = None
+        self._trusted_mode: bool = False
+    
+    # =========================================================================
+    # Sandbox Configuration
+    # =========================================================================
+    
+    @property
+    def source_path(self) -> Optional[Path]:
+        """
+        Path to the converter source file.
+        
+        Required for sandboxed execution. Set automatically when converter
+        is loaded from a file.
+        """
+        return self._source_path
+    
+    @source_path.setter
+    def source_path(self, path: Optional[Path]) -> None:
+        """Set the converter source path."""
+        self._source_path = path
+    
+    @property
+    def trusted_mode(self) -> bool:
+        """
+        Whether this converter runs without sandbox.
+        
+        WARNING: Only True for built-in, audited converters.
+        """
+        return self._trusted_mode
+    
+    @trusted_mode.setter
+    def trusted_mode(self, value: bool) -> None:
+        """Set trusted mode."""
+        self._trusted_mode = value
     
     # =========================================================================
     # Required Properties (must override)

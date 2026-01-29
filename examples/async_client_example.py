@@ -102,6 +102,7 @@ async def custom_pending_queue_example():
     
     The pending queue handles concurrent report uploads with:
     - Bounded concurrency (default: 5 concurrent uploads)
+    - Queue capacity limits (default: 10,000 queued reports)
     - Automatic retry on failure
     - File system watching for new reports
     """
@@ -112,15 +113,21 @@ async def custom_pending_queue_example():
         url="https://your-wats-server.com",
         token="your-api-token"
     ) as api:
-        # Create queue with custom concurrency
+        # Create queue with custom settings
         queue = AsyncPendingQueue(
             api=api,
             reports_dir=Path("/var/lib/pywats/pending"),
-            max_concurrent=10,  # Increase for high-throughput scenarios
+            max_concurrent=10,      # Increase for high-throughput scenarios
+            max_queue_size=50000,   # Increase for more queued reports
         )
         
+        # Check queue capacity
+        can_accept, reason = queue.can_accept_report()
+        if not can_accept:
+            logger.warning(f"Queue full: {reason}")
+        
         # Run the queue
-        logger.info("Starting pending queue...")
+        logger.info(f"Starting pending queue (capacity: {queue.queue_size}/{queue._max_queue_size})...")
         try:
             await queue.run()
         except asyncio.CancelledError:

@@ -24,7 +24,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
 from ..base import BasePage
-from ...async_api_mixin import AsyncAPIPageMixin
 from ....core.config import ClientConfig
 from ....core import TaskResult
 
@@ -156,10 +155,10 @@ class TicketDialog(QDialog):
         return data
 
 
-class RootCausePage(BasePage, AsyncAPIPageMixin):
+class RootCausePage(BasePage):
     """RootCause Tickets page - issue tracking and resolution
     
-    Uses AsyncAPIPageMixin for non-blocking API calls to keep UI responsive.
+    Uses AsyncAPIRunner for non-blocking API calls to keep UI responsive.
     """
     
     def __init__(
@@ -172,7 +171,7 @@ class RootCausePage(BasePage, AsyncAPIPageMixin):
         self._facade = None  # IPC-based architecture - no direct facade
         self._tickets: List[Dict[str, Any]] = []
         self._teams: List[str] = []
-        super().__init__(config, parent)
+        super().__init__(config, parent, async_api_runner=getattr(main_window, 'async_api_runner', None))
         self._setup_ui()
         self.load_config()
     

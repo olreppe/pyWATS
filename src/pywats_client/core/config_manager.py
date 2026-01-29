@@ -101,16 +101,14 @@ class ConfigManager:
         """
         if self.config_path.exists():
             try:
-                reader = SafeFileReader(self.config_path)
-                content = reader.read()
-                if content:
-                    data = json.loads(content)
+                data = SafeFileReader.read_json_safe(self.config_path, try_backup=True)
+                if data:
                     self._settings = APISettings.from_dict(data)
                     logger.debug(f"Loaded API settings from {self.config_path}")
                 else:
-                    logger.debug("Config file empty, using defaults")
+                    logger.debug("Config file empty or corrupted, using defaults")
                     self._settings = APISettings()
-            except (json.JSONDecodeError, IOError) as e:
+            except Exception as e:
                 logger.warning(f"Failed to load API config, using defaults: {e}")
                 self._settings = APISettings()
         else:
@@ -136,11 +134,16 @@ class ConfigManager:
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         
         try:
-            content = json.dumps(self._settings.to_dict(), indent=2)
-            writer = SafeFileWriter(self.config_path, create_backup=True)
-            writer.write(content)
-            logger.debug(f"Saved API settings to {self.config_path}")
-        except IOError as e:
+            result = SafeFileWriter.write_json_atomic(
+                self.config_path,
+                self._settings.to_dict(),
+                backup=True
+            )
+            if result.success:
+                logger.debug(f"Saved API settings to {self.config_path}")
+            else:
+                raise IOError(result.error)
+        except Exception as e:
             logger.error(f"Failed to save API config: {e}")
             raise
     

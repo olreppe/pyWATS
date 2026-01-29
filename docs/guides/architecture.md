@@ -349,9 +349,10 @@ flowchart TB
         • Pure asyncio
         • Sends commands"]
         
-        AsyncAPIPageMixin["AsyncAPIPageMixin
+        AsyncAPIRunner["AsyncAPIRunner
         • Non-blocking API calls
-        • Auto sync/async"]
+        • Auto sync/async
+        • Composition-based"]
     end
     
     ServiceProcess <-->|IPC| GUIProcess
@@ -386,7 +387,7 @@ flowchart TB
    - JSON protocol for commands and responses
    - No Qt dependency - enables true headless mode
 
-6. **AsyncAPIPageMixin** - GUI async helper
+6. **AsyncAPIRunner** - GUI async helper (composition)
    - Non-blocking API calls via `run_api_call()`
    - Auto-detects sync/async API client
    - Callback-based result handling

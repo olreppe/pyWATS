@@ -117,6 +117,50 @@ class ConverterBase(ABC):
         # Configuration loaded from settings
         self.user_settings: Dict[str, Any] = {}
         self._api_client: Optional[Any] = None
+        
+        # Sandbox configuration
+        self._source_path: Optional[Path] = None  # Path to converter source file
+        self._trusted_mode: bool = False  # If True, runs without sandbox
+    
+    # =========================================================================
+    # Sandbox Configuration
+    # =========================================================================
+    
+    @property
+    def source_path(self) -> Optional[Path]:
+        """
+        Path to the converter source file.
+        
+        Required for sandboxed execution. Set automatically when converter
+        is loaded from a file. Returns None for built-in converters.
+        """
+        return self._source_path
+    
+    @source_path.setter
+    def source_path(self, path: Optional[Path]) -> None:
+        """Set the converter source path."""
+        self._source_path = path
+    
+    @property
+    def trusted_mode(self) -> bool:
+        """
+        Whether this converter runs in trusted mode (no sandbox).
+        
+        WARNING: Only set to True for built-in, fully audited converters.
+        User-provided converters should ALWAYS run sandboxed.
+        
+        Default: False (sandboxed execution)
+        """
+        return self._trusted_mode
+    
+    @trusted_mode.setter
+    def trusted_mode(self, value: bool) -> None:
+        """Set trusted mode."""
+        self._trusted_mode = value
+    
+    # =========================================================================
+    # Abstract Methods
+    # =========================================================================
     
     @property
     @abstractmethod

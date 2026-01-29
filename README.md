@@ -7,6 +7,8 @@
 A Python library for interacting with the [WATS](https://servername.wats.com) test data management platform API.
 
 > **⚠️ Beta Release**: This is a beta version. The API is stabilizing but may have changes before 1.0.
+> 
+> **Please read the [Beta Disclaimer](docs/BETA_DISCLAIMER.md)** to understand the current stability levels of different components.
 
 ## Requirements
 
@@ -49,9 +51,20 @@ See [Platform Compatibility Guide](docs/platforms/platform-compatibility.md) for
     - WSJF format as standard
     - Format conversion from WSXF, WSTF, ATML
     - Automatic retry with configurable max attempts
+    - Queue capacity management (configurable max size)
+    - Concurrent upload control (configurable concurrency)
     - Metadata tracking and statistics
 
 - **PyWATS Client** - Desktop and headless client application
+  - **Security Features** ✅ NEW
+    - IPC authentication with shared secrets
+    - Converter process isolation and sandboxing
+    - Safe file handling with atomic writes and locking
+    - Rate limiting on IPC connections
+  - **Configuration & Versioning** ✅ NEW
+    - Protocol version tracking (2.0+)
+    - Config schema versioning (1.0→2.0 auto-upgrade)
+    - Queue size limits and concurrent upload control
   - Connection management with multi-instance support
   - Converter configuration and management
   - Report queue management

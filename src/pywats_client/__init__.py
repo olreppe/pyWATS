@@ -18,7 +18,7 @@ Usage:
 - Install:       python -m pywats_client install-service
 """
 
-__version__ = "1.0.0"
+__version__ = "0.2.0b1"
 
 # Core configuration
 from .core.config import ClientConfig, get_default_config_path

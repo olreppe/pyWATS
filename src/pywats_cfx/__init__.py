@@ -73,7 +73,7 @@ from pywats_cfx.adapters import (
     adapt_resource_message,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0b1"
 
 __all__ = [
     # Transport
