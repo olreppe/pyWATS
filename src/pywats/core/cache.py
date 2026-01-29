@@ -10,7 +10,7 @@ Provides configurable TTL-based caching for static/semi-static data like:
 
 This reduces server calls and improves performance.
 """
-from typing import TypeVar, Generic, Optional, Callable, Any, Dict
+from typing import TypeVar, Generic, Optional, Callable, Any, Dict, ParamSpec
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from threading import RLock
@@ -20,6 +20,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
+P = ParamSpec('P')
+R = TypeVar('R')
 
 
 @dataclass
@@ -115,7 +117,7 @@ class TTLCache(Generic[T]):
         max_size: int = 1000,
         auto_cleanup: bool = True,
         cleanup_interval: float = 300.0
-    ):
+    ) -> None:
         """
         Initialize TTL cache.
         
@@ -548,7 +550,7 @@ def cached_function(
     cache: TTLCache,
     key_func: Optional[Callable[..., str]] = None,
     ttl: Optional[float] = None
-):
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to cache function results.
     
@@ -564,8 +566,8 @@ def cached_function(
         >>> def get_product(part_number: str) -> Product:
         ...     return fetch_from_server(part_number)
     """
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             # Generate cache key
             if key_func:
                 cache_key = key_func(*args, **kwargs)
@@ -588,11 +590,11 @@ def cached_function(
     return decorator
 
 
-async def cached_async_function(
+def cached_async_function(
     cache: AsyncTTLCache,
     key_func: Optional[Callable[..., str]] = None,
     ttl: Optional[float] = None
-):
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to cache async function results.
     
@@ -608,8 +610,8 @@ async def cached_async_function(
         >>> async def get_product(part_number: str) -> Product:
         ...     return await fetch_from_server(part_number)
     """
-    def decorator(func):
-        async def wrapper(*args, **kwargs):
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             # Generate cache key
             if key_func:
                 cache_key = key_func(*args, **kwargs)
