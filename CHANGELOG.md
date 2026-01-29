@@ -17,6 +17,13 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ---
 
+## [0.2.0b2] - 2026-01-29
+
+### Fixed
+- Python 3.11 typing compatibility: `Result[T]` type alias cannot be subscripted on Union types. Changed `parallel_execute` return type to use `Union[Success[T], Failure]` directly.
+
+---
+
 ## [Unreleased]
 
 ### Added
