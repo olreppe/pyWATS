@@ -26,7 +26,7 @@ exclude src/pywats/domains/report/report_models/uur/UUR_IMPLEMENTATION_INSTRUCTI
 include docs/INDEX.md
 include docs/README.md
 include docs/getting-started.md
-include docs/pyWATS_Documentation.html
+include docs/BETA_DISCLAIMER.md
 
 # Include organized documentation folders
 recursive-include docs/guides *.md
