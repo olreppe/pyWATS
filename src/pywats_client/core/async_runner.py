@@ -172,6 +172,7 @@ class AsyncTaskRunner(QObject):
     def _setup_event_loop(self) -> None:
         """Create a dedicated event loop running in a background thread"""
         self._loop = asyncio.new_event_loop()
+        self._shutting_down = False
         
         # Run the event loop in a background thread
         import threading
@@ -208,6 +209,9 @@ class AsyncTaskRunner(QObject):
         Returns:
             Task ID that can be used to track or cancel the task
             
+        Raises:
+            RuntimeError: If the runner has been shut down
+            
         Example:
             async def fetch():
                 return await api.get_assets()
@@ -218,6 +222,10 @@ class AsyncTaskRunner(QObject):
                 on_complete=lambda r: self._update_table(r.result)
             )
         """
+        # Guard against use after shutdown
+        if self._shutting_down:
+            raise RuntimeError("AsyncTaskRunner has been shut down")
+        
         task_id = str(uuid.uuid4())[:8]
         
         task_info = TaskInfo(
@@ -383,7 +391,14 @@ class AsyncTaskRunner(QObject):
         
         Cancels all running tasks and stops the event loop.
         Called automatically when parent QObject is destroyed.
+        
+        This method is idempotent - safe to call multiple times.
         """
+        if self._shutting_down:
+            return  # Already cleaning up
+        
+        self._shutting_down = True
+        
         # Cancel all running tasks
         self.cancel_all()
         
@@ -391,8 +406,12 @@ class AsyncTaskRunner(QObject):
         if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._loop.stop)
         
-        # Shutdown executor
-        self._executor.shutdown(wait=False)
+        # Shutdown executor (wait briefly for pending tasks)
+        try:
+            self._executor.shutdown(wait=True, cancel_futures=True)
+        except TypeError:
+            # Python 3.8 doesn't support cancel_futures
+            self._executor.shutdown(wait=False)
         
         # Clear task tracking
         self._tasks.clear()
