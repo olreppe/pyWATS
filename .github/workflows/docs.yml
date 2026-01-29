@@ -10,13 +10,9 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
-# Allow only one concurrent deployment
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+# NOTE: GitHub Pages deployment disabled on free account
+# Pages will be deployed from GHE once development is migrated
 
 jobs:
   build:
@@ -48,26 +44,28 @@ jobs:
         # Create .nojekyll to allow files starting with underscore
         touch _build/html/.nojekyll
 
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
       with:
+        name: sphinx-docs
         path: docs/api/_build/html
+        retention-days: 30
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
-    runs-on: ubuntu-latest
-    # Only deploy if GitHub Pages is configured
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
-    steps:
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
-      continue-on-error: true  # Don't fail the workflow if Pages isn't configured
+  # GitHub Pages deployment - disabled on free account
+  # Will be enabled on GHE once development is migrated
+  # deploy:
+  #   name: Deploy to GitHub Pages
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+  #   permissions:
+  #     pages: write
+  #     id-token: write
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   
+  #   steps:
+  #   - name: Deploy to GitHub Pages
+  #     id: deployment
+  #     uses: actions/deploy-pages@v4
