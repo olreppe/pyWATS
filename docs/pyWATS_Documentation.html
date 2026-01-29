@@ -1,0 +1,4772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pyWATS Documentation</title>
+    <style>
+        /* Reset and base */
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        
+        /* Typography */
+        h1 {
+            color: #1a5276;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            page-break-before: always;
+        }
+        
+        h1:first-of-type {
+            page-break-before: avoid;
+        }
+        
+        h2 {
+            color: #2874a6;
+            border-bottom: 1px solid #2874a6;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        
+        h3 {
+            color: #3498db;
+            margin-top: 25px;
+        }
+        
+        h4, h5, h6 {
+            color: #555;
+            margin-top: 20px;
+        }
+        
+        /* Cover page */
+        .cover {
+            text-align: center;
+            padding: 100px 20px;
+            page-break-after: always;
+        }
+        
+        .cover h1 {
+            font-size: 3em;
+            border: none;
+            margin-bottom: 20px;
+            page-break-before: avoid;
+        }
+        
+        .cover .subtitle {
+            font-size: 1.5em;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        .cover .version {
+            font-size: 1.2em;
+            color: #888;
+        }
+        
+        .cover .date {
+            margin-top: 60px;
+            color: #999;
+        }
+        
+        /* Table of Contents */
+        .toc {
+            page-break-after: always;
+        }
+        
+        .toc h2 {
+            border: none;
+            text-align: center;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .toc > ul > li {
+            margin: 15px 0;
+        }
+        
+        .toc > ul > li > a {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .toc ul ul {
+            padding-left: 25px;
+            margin-top: 5px;
+        }
+        
+        .toc ul ul li {
+            margin: 5px 0;
+        }
+        
+        .toc a {
+            color: #2874a6;
+            text-decoration: none;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Section dividers */
+        .section-header {
+            background: #1a5276;
+            color: white;
+            padding: 30px;
+            margin: 40px -20px;
+            text-align: center;
+            page-break-before: always;
+        }
+        
+        .section-header h1 {
+            color: white;
+            border: none;
+            margin: 0;
+            page-break-before: avoid;
+        }
+        
+        /* Code blocks */
+        pre {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        /* Tables */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #1a5276;
+        }
+        
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            color: #555;
+        }
+        
+        /* Links */
+        a {
+            color: #2874a6;
+        }
+        
+        /* Lists */
+        ul, ol {
+            padding-left: 25px;
+        }
+        
+        li {
+            margin: 5px 0;
+        }
+        
+        /* Images */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Horizontal rule */
+        hr {
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 30px 0;
+        }
+        
+        /* Document separator */
+        .doc-separator {
+            border-top: 2px dashed #ccc;
+            margin: 40px 0;
+            padding-top: 20px;
+        }
+        
+        .doc-source {
+            color: #999;
+            font-size: 0.8em;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                max-width: none;
+                padding: 0;
+                font-size: 11pt;
+            }
+            
+            pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            
+            .section-header {
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            a {
+                color: #333;
+                text-decoration: none;
+            }
+            
+            h1, h2, h3, h4 {
+                page-break-after: avoid;
+            }
+            
+            pre, table, blockquote {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Syntax highlighting basic */
+        .highlight .k { color: #008000; font-weight: bold; }
+        .highlight .s { color: #ba2121; }
+        .highlight .c { color: #408080; font-style: italic; }
+        .highlight .n { color: #333; }
+        .highlight .o { color: #666; }
+
+    </style>
+</head>
+<body>
+    <!-- Cover Page -->
+    <div class="cover">
+        <h1>pyWATS</h1>
+        <div class="subtitle">Python API for WATS Test Data Management</div>
+        <div class="version">Official Documentation</div>
+        <div class="date">Generated: 2026-01-29</div>
+    </div>
+    
+    <!-- Table of Contents -->
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+<li><a href="#introduction">Introduction</a>
+<ul>
+<li><a href="#introduction-overview">Overview</a></li>
+</ul>
+</li>
+<li><a href="#getting-started">Getting Started</a>
+<ul>
+<li><a href="#getting-started-getting-started">Getting Started</a></li>
+<li><a href="#getting-started-quick-reference">Quick Reference</a></li>
+</ul>
+</li>
+<li><a href="#installation">Installation</a>
+<ul>
+<li><a href="#installation-overview">Overview</a></li>
+<li><a href="#installation-api">Api</a></li>
+<li><a href="#installation-client">Client</a></li>
+<li><a href="#installation-gui">Gui</a></li>
+<li><a href="#installation-docker">Docker</a></li>
+<li><a href="#installation-windows-service">Windows Service</a></li>
+<li><a href="#installation-linux-service">Linux Service</a></li>
+<li><a href="#installation-macos-service">Macos Service</a></li>
+</ul>
+</li>
+<li><a href="#architecture">Architecture</a>
+<ul>
+<li><a href="#architecture-architecture">Architecture</a></li>
+<li><a href="#architecture-client-architecture">Client Architecture</a></li>
+<li><a href="#architecture-integration-patterns">Integration Patterns</a></li>
+</ul>
+</li>
+<li><a href="#domain-modules">Domain Modules</a>
+<ul>
+<li><a href="#domain-modules-overview">Overview</a></li>
+<li><a href="#domain-modules-report">Report</a></li>
+<li><a href="#domain-modules-asset">Asset</a></li>
+<li><a href="#domain-modules-process">Process</a></li>
+<li><a href="#domain-modules-product">Product</a></li>
+<li><a href="#domain-modules-production">Production</a></li>
+<li><a href="#domain-modules-analytics">Analytics</a></li>
+<li><a href="#domain-modules-rootcause">Rootcause</a></li>
+<li><a href="#domain-modules-software">Software</a></li>
+<li><a href="#domain-modules-scim">Scim</a></li>
+<li><a href="#domain-modules-events">Events</a></li>
+</ul>
+</li>
+<li><a href="#usage-guides">Usage Guides</a>
+<ul>
+<li><a href="#usage-guides-report-module">Report Module</a></li>
+<li><a href="#usage-guides-report-builder">Report Builder</a></li>
+<li><a href="#usage-guides-asset-module">Asset Module</a></li>
+<li><a href="#usage-guides-process-module">Process Module</a></li>
+<li><a href="#usage-guides-product-module">Product Module</a></li>
+<li><a href="#usage-guides-production-module">Production Module</a></li>
+<li><a href="#usage-guides-rootcause-module">Rootcause Module</a></li>
+<li><a href="#usage-guides-software-module">Software Module</a></li>
+<li><a href="#usage-guides-box-build-guide">Box Build Guide</a></li>
+</ul>
+</li>
+<li><a href="#reference">Reference</a>
+<ul>
+<li><a href="#reference-env-variables">Env Variables</a></li>
+<li><a href="#reference-error-catalog">Error Catalog</a></li>
+<li><a href="#reference-wats-domain-knowledge">Wats Domain Knowledge</a></li>
+<li><a href="#reference-llm-converter-guide">Llm Converter Guide</a></li>
+</ul>
+</li>
+</ul>
+    </div>
+    
+    <!-- Content -->
+    
+<div class="section-header" id="introduction">
+    <h1>Introduction</h1>
+</div>
+
+
+<div class="doc-separator" id="introduction-overview">
+    <div class="doc-source">Source: docs/README.md</div>
+    <h1>Documentation Folder Structure</h1>
+<p>This folder contains <strong>official, user-facing documentation</strong> that ships with <code>pip install pywats-api</code>.</p>
+<h2>📚 Published Documentation (in this folder)</h2>
+<h3>Getting Started</h3>
+- <strong><a href="getting-started.md">getting-started.md</a></strong> - Complete installation, configuration, logging, and error handling guide
+- <strong><a href="INDEX.md">INDEX.md</a></strong> - Documentation index and navigation
+<h3>Installation Guides</h3>
+<p>Choose by component and use case:</p>
+<p>- <strong><a href="installation/">installation/</a></strong> - Installation overview with decision tree
+  - <strong><a href="installation/api.md">installation/api.md</a></strong> - Python SDK only
+  - <strong><a href="installation/client.md">installation/client.md</a></strong> - Client service with queue
+  - <strong><a href="installation/gui.md">installation/gui.md</a></strong> - Desktop GUI application
+  - <strong><a href="installation/docker.md">installation/docker.md</a></strong> - Container deployment
+  - <strong><a href="installation/windows-service.md">installation/windows-service.md</a></strong> - Windows service
+  - <strong><a href="installation/linux-service.md">installation/linux-service.md</a></strong> - Linux systemd
+  - <strong><a href="installation/macos-service.md">installation/macos-service.md</a></strong> - macOS launchd</p>
+<h3>Domain API Documentation</h3>
+These files are included in the PyPI package:
+<p>- <strong><a href="domains/product.md">domains/product.md</a></strong> - Product domain API reference
+- <strong><a href="domains/asset.md">domains/asset.md</a></strong> - Asset domain API reference
+- <strong><a href="domains/production.md">domains/production.md</a></strong> - Production domain API reference
+- <strong><a href="domains/report.md">domains/report.md</a></strong> - Report domain API reference
+- <strong><a href="domains/analytics.md">domains/analytics.md</a></strong> - Analytics domain API reference
+- <strong><a href="domains/software.md">domains/software.md</a></strong> - Software domain API reference
+- <strong><a href="domains/rootcause.md">domains/rootcause.md</a></strong> - RootCause domain API reference
+- <strong><a href="domains/process.md">domains/process.md</a></strong> - Process domain API reference</p>
+<h3>Domain Usage Guides</h3>
+Detailed guides with comprehensive examples:
+<p>- <strong><a href="usage/">usage/</a></strong> - Detailed domain guides (report-domain.md, product-domain.md, etc.)
+  - Detailed usage patterns
+  - Advanced examples
+  - Factory method documentation</p>
+<h3>Documentation Examples</h3>
+Code snippets and examples embedded in documentation:
+<p>- <strong><a href="examples/">examples/</a></strong> - Example code referenced in documentation
+  - <code>basic_usage.py</code> - Getting started example</p>
+<h2>🔒 Internal Documentation (NOT published)</h2>
+<p>The following folders are <strong>excluded from the pip package</strong> and only available in the GitHub repository:</p>
+<p>- <code>internal_documentation/</code> - Architecture, design docs, AI agent knowledge, internal guides
+- <code>domain_health/</code> - Domain health tracking and scoring (maintainer use only)</p>
+<p>These folders are for internal development use only.</p>
+<h2>📁 Folder Structure</h2>
+<pre><code>docs/
+├── INDEX.md                    ✅ Published - Documentation index
+├── README.md                   ✅ Published - This file
+├── getting-started.md          ✅ Published - Getting started guide
+├── pyWATS_Documentation.html   ✅ Published - HTML documentation
+├── guides/                     ✅ Published - Comprehensive guides
+│   ├── architecture.md
+│   ├── client-architecture.md
+│   ├── integration-patterns.md
+│   ├── llm-converter-guide.md
+│   └── wats-domain-knowledge.md
+├── reference/                  ✅ Published - Quick references
+│   ├── quick-reference.md
+│   ├── env-variables.md
+│   └── error-catalog.md
+├── platforms/                  ✅ Published - Platform-specific docs
+│   ├── platform-compatibility.md
+│   └── windows-iot-ltsc.md
+├── domains/                    ✅ Published - Domain API docs
+│   ├── product.md
+│   ├── asset.md
+│   ├── report.md
+│   └── ...
+├── usage/                      ✅ Published - Detailed domain guides
+│   ├── report-domain.md
+│   ├── product-domain.md
+│   └── ...
+├── installation/               ✅ Published - Installation guides
+│   ├── client.md
+│   ├── docker.md
+│   └── ...
+├── internal_documentation/     ❌ NOT Published - Internal docs
+│   ├── archived/
+│   ├── WIP/
+│   └── ...
+└── domain_health/              ❌ NOT Published - Health tracking
+</code></pre>
+<h2>✅ Rule of Thumb</h2>
+<p>- <strong>Files/folders in <code>docs/</code> root</strong> → Published with pip package
+- <strong>Folders: <code>guides/</code>, <code>reference/</code>, <code>platforms/</code>, <code>usage/</code>, <code>domains/</code>, <code>installation/</code></strong> → Published (user-facing)
+- <strong>Folders: <code>internal_documentation/</code>, <code>domain_health/</code></strong> → NOT Published (GitHub only)</p>
+<h2>🔄 Moving Documents</h2>
+<p>When creating new documentation:</p>
+<p>- <strong>User-facing API docs</strong> → Put in <code>docs/domains/</code>
+- <strong>Detailed usage guides</strong> → Put in <code>docs/usage/</code>
+- <strong>Installation guides</strong> → Put in <code>docs/installation/</code>
+- <strong>Architecture/patterns</strong> → Put in <code>docs/guides/</code>
+- <strong>Quick references</strong> → Put in <code>docs/reference/</code>
+- <strong>Platform-specific docs</strong> → Put in <code>docs/platforms/</code>
+- <strong>Internal architecture/design</strong> → Put in <code>docs/internal_documentation/</code></p>
+<h2>📦 Packaging</h2>
+<p>Controlled by <code>MANIFEST.in</code> in the project root:
+- <strong>Includes:</strong> <code>docs/*.md</code>, <code>docs/guides/</code>, <code>docs/reference/</code>, <code>docs/platforms/</code>, <code>docs/usage/</code>, <code>docs/domains/</code>, <code>docs/installation/</code>
+- <strong>Excludes:</strong> <code>docs/internal_documentation/</code>, <code>docs/domain_health/</code>
+</p>
+</div>
+
+
+<div class="section-header" id="getting-started">
+    <h1>Getting Started</h1>
+</div>
+
+
+<div class="doc-separator" id="getting-started-getting-started">
+    <div class="doc-source">Source: docs/getting-started.md</div>
+    <h1>Getting Started Guide</h1>
+<p>Complete guide to installing, configuring, and initializing pyWATS.</p>
+<p>> <strong>ℹ️ Beta Release Note</strong>: This is a beta release. Before getting started, please review the <a href="BETA_DISCLAIMER.md">Beta Disclaimer</a> to understand the current stability levels of the API, client, and GUI components.</p>
+<h2>Table of Contents</h2>
+<p>- <a href="#installation">Installation</a>
+- <a href="#api-initialization">API Initialization</a>
+- <a href="#async-usage">Async Usage</a>
+- <a href="#authentication">Authentication</a>
+- <a href="#logging-configuration">Logging Configuration</a>
+- <a href="#exception-handling">Exception Handling</a>
+- <a href="#performance-optimization">Performance Optimization</a>
+- <a href="#internal-api-usage">Internal API Usage</a>
+- <a href="#client-installation">Client Installation</a>
+- <a href="#parallel-operations--pagination">Batch Operations & Pagination</a></p>
+<p>---</p>
+<h2>Installation</h2>
+<h3>Library Only (API Access)</h3>
+<p>For Python scripts and applications using the WATS API:</p>
+<pre><code>pip install pywats-api
+</code></pre>
+<h3>With GUI Client</h3>
+<p>For desktop applications with Qt-based GUI (Windows, macOS, Linux):</p>
+<pre><code>pip install pywats-api[client]
+</code></pre>
+<h3>Headless Client</h3>
+<p>For servers, Raspberry Pi, and embedded systems (no Qt/GUI):</p>
+<pre><code>pip install pywats-api[client-headless]
+</code></pre>
+<h3>Native Installers</h3>
+<p>Pre-built installers are available for systems without Python:</p>
+<p>| Platform | Installer | Download |
+|----------|-----------|----------|
+| Windows | <code>.msi</code> | <a href="https://github.com/olreppe/pyWATS/releases">GitHub Releases</a> |
+| macOS | <code>.dmg</code> / <code>.pkg</code> | <a href="https://github.com/olreppe/pyWATS/releases">GitHub Releases</a> |
+| Linux | <code>.deb</code> / <code>.rpm</code> / AppImage | <a href="https://github.com/olreppe/pyWATS/releases">GitHub Releases</a> |</p>
+<p>See <a href="../deployment/README.md">deployment/README.md</a> for building installers from source.</p>
+<h3>Development Installation</h3>
+<p>From source for development:</p>
+<pre><code>git clone https://github.com/olreppe/pyWATS.git
+cd pyWATS
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
+pip install -e ".[dev]"
+</code></pre>
+<p>---</p>
+<h2>API Initialization</h2>
+<h3>Basic Initialization</h3>
+<pre><code>from pywats import pyWATS
+<h1>Initialize with credentials</h1>
+api = pyWATS(
+    base_url="https://your-wats-server.com",
+    token="your_base64_token"  # Base64 of "username:password"
+)
+<h1>Test connection</h1>
+if api.test_connection():
+    print(f"Connected! Server version: {api.get_version()}")
+</code></pre>
+<h3>Using Environment Variables</h3>
+<pre><code>import os
+from pywats import pyWATS
+<h1>Set environment variables</h1>
+os.environ['WATS_BASE_URL'] = 'https://your-wats-server.com'
+os.environ['WATS_AUTH_TOKEN'] = 'your_base64_token'
+<h1>Initialize from environment</h1>
+api = pyWATS()  # Automatically reads from environment
+</code></pre>
+<p>Or create a <code>.env</code> file:</p>
+<pre><code>WATS_BASE_URL=https://your-wats-server.com
+WATS_AUTH_TOKEN=your_base64_token
+</code></pre>
+<pre><code>from dotenv import load_dotenv
+from pywats import pyWATS
+<p>load_dotenv()  # Load from .env file
+api = pyWATS()
+</code></pre></p>
+<h3>Configuration Options</h3>
+<pre><code>from pywats import pyWATS, RetryConfig
+from pywats.core.exceptions import ErrorMode
+<p>api = pyWATS(
+    base_url="https://your-wats-server.com",
+    token="your_token",
+    
+    # Optional: Custom timeout (default: 30 seconds)
+    timeout=60,
+    
+    # Optional: Process cache refresh interval (default: 300 seconds)
+    process_refresh_interval=600,
+    
+    # Optional: Error handling mode (default: STRICT)
+    error_mode=ErrorMode.STRICT,  # or ErrorMode.LENIENT
+    
+    # Optional: Retry configuration (default: enabled with 3 attempts)
+    retry_enabled=True,  # Set to False to disable
+    # Or for advanced configuration:
+    # retry_config=RetryConfig(max_attempts=5, base_delay=2.0)
+)
+</code></pre></p>
+<h3>Automatic Retry</h3>
+<p>The library automatically retries requests that fail due to transient errors:</p>
+<p>- <strong>Connection errors</strong> - Network unavailable, DNS failures
+- <strong>Timeout errors</strong> - Server took too long to respond
+- <strong>HTTP 429</strong> - Too Many Requests (respects <code>Retry-After</code> header)
+- <strong>HTTP 500/502/503/504</strong> - Server errors, often transient during deployments</p>
+<p>Retry uses <strong>exponential backoff with jitter</strong> to avoid thundering herd:</p>
+<p>| Attempt | Delay (approx) |
+|---------|----------------|
+| 1 | 0-1 second |
+| 2 | 0-2 seconds |
+| 3 | 0-4 seconds |
+| (fail) | Exception raised |</p>
+<strong>Important:</strong> Only idempotent methods (GET, PUT, DELETE) are retried. POST is never retried automatically to prevent duplicate creates.
+<pre><code>from pywats import pyWATS, RetryConfig
+<h1>Disable retry entirely</h1>
+api = pyWATS(
+    base_url="https://...",
+    token="...",
+    retry_enabled=False
+)
+<h1>Custom retry configuration</h1>
+config = RetryConfig(
+    max_attempts=5,      # Try up to 5 times
+    base_delay=2.0,      # Start with 2 second delay
+    max_delay=60.0,      # Cap delay at 60 seconds
+    jitter=True,         # Add randomness to avoid thundering herd
+)
+api = pyWATS(
+    base_url="https://...",
+    token="...",
+    retry_config=config
+)
+<h1>Check retry statistics</h1>
+print(api.retry_config.stats)
+<h1>{'total_retries': 3, 'total_retry_time': 4.5}</h1>
+</code></pre>
+<h3>Error Handling Modes</h3>
+<p>The library supports two error handling modes that control how missing data and 404 responses are handled:</p>
+<h4>STRICT Mode (Default - Recommended for Production)</h4>
+<pre><code>from pywats import pyWATS
+from pywats.core.exceptions import ErrorMode
+<p>api = pyWATS(
+    base_url="https://your-wats-server.com",
+    token="your_token",
+    error_mode=ErrorMode.STRICT  # Default, can be omitted
+)
+</code></pre></p>
+<strong>Behavior:</strong>
+- <strong>404 errors</strong> → Raises <code>NotFoundError</code>
+- <strong>Empty responses</strong> (200 with no data) → Raises <code>EmptyResponseError</code>
+- <strong>All 4xx/5xx errors</strong> → Raises appropriate exception
+- <strong>If no exception</strong> → You have valid data (guaranteed)
+<strong>Use STRICT when:</strong>
+- Writing production code that needs certainty
+- Validating data existence
+- Critical operations where failures must be explicit
+- You want type safety (no None checks needed)
+<strong>Example:</strong>
+<pre><code>from pywats import NotFoundError
+<p>try:
+    product = api.product.get_product("WIDGET-001")
+    # If we reach here, product is DEFINITELY valid
+    print(f"Found: {product.part_number}")
+except NotFoundError:
+    print("Product doesn't exist - handle explicitly")
+</code></pre></p>
+<h4>LENIENT Mode (Recommended for Scripts/Exploration)</h4>
+<pre><code>from pywats import pyWATS
+from pywats.core.exceptions import ErrorMode
+<p>api = pyWATS(
+    base_url="https://your-wats-server.com",
+    token="your_token",
+    error_mode=ErrorMode.LENIENT
+)
+</code></pre></p>
+<strong>Behavior:</strong>
+- <strong>404 errors</strong> → Returns <code>None</code> (no exception)
+- <strong>Empty responses</strong> → Returns <code>None</code> (no exception)
+- <strong>Actual errors</strong> (5xx, 400, 401, 403, 409) → Still raises exceptions
+- <strong>Must check for None</strong> before using returned data
+<strong>Use LENIENT when:</strong>
+- Writing exploratory scripts
+- Querying optional data
+- Batch processing where some items may not exist
+- You want simpler code with less try/except boilerplate
+<strong>Example:</strong>
+<pre><code><h1>Simpler code - no try/except needed for missing data</h1>
+product = api.product.get_product("WIDGET-001")
+<p>if product is None:
+    print("Product doesn't exist")
+else:
+    print(f"Found: {product.part_number}")
+</code></pre></p>
+<h4>Mode Comparison</h4>
+<p>| Aspect | STRICT Mode | LENIENT Mode |
+|--------|-------------|--------------|
+| <strong>404 Response</strong> | Raises <code>NotFoundError</code> | Returns <code>None</code> |
+| <strong>Empty Response</strong> | Raises <code>EmptyResponseError</code> | Returns <code>None</code> |
+| <strong>Server Error (5xx)</strong> | Raises <code>ServerError</code> | Raises <code>ServerError</code> |
+| <strong>Validation Error (400)</strong> | Raises <code>ValidationError</code> | Raises <code>ValidationError</code> |
+| <strong>Auth Error (401)</strong> | Raises <code>AuthenticationError</code> | Raises <code>AuthenticationError</code> |
+| <strong>Permission Error (403)</strong> | Raises <code>AuthorizationError</code> | Raises <code>AuthorizationError</code> |
+| <strong>Conflict (409)</strong> | Raises <code>ConflictError</code> | Raises <code>ConflictError</code> |
+| <strong>Return Type</strong> | <code>Model</code> or raises | <code>Model \| None</code> |
+| <strong>None Checks</strong> | Not needed | Required |
+| <strong>Best For</strong> | Production code | Scripts/exploration |</p>
+<h4>Choosing the Right Mode</h4>
+<pre><code><h1>Production code - use STRICT for explicit error handling</h1>
+from pywats.core.exceptions import ErrorMode
+<p>api_prod = pyWATS(..., error_mode=ErrorMode.STRICT)</p>
+<p>try:
+    product = api_prod.product.get_product(part_number)
+    # Guaranteed to have valid product here
+    process_product(product)
+except NotFoundError as e:
+    log_error(f"Product not found: {e}")
+    send_alert(...)
+except ValidationError as e:
+    log_error(f"Invalid data: {e}")</p>
+<h1>Exploratory script - use LENIENT for simpler code</h1>
+api_explore = pyWATS(..., error_mode=ErrorMode.LENIENT)
+<p>for part_number in candidate_parts:
+    product = api_explore.product.get_product(part_number)
+    if product:  # Simple None check
+        print(f"Found: {product.part_number}")
+    # Missing products are silently skipped
+</code></pre></p>
+<h3>Station Configuration</h3>
+<p>Configure test station identity:</p>
+<pre><code>from pywats import pyWATS, Station, StationConfig, Purpose
+<h1>Configure station</h1>
+station = Station(
+    config=StationConfig(
+        station_name="ICT-01",
+        location="Production Line A"
+    )
+)
+<h1>Initialize with station</h1>
+api = pyWATS(
+    base_url="https://your-wats-server.com",
+    token="your_token",
+    station=station
+)
+<h1>Station is automatically used in reports</h1>
+from pywats.tools.test_uut import TestUUT
+<p>uut = TestUUT(
+    part_number="WIDGET-001",
+    serial_number="SN-12345",
+    revision="A",
+    operator="John Doe",
+    purpose=Purpose.TEST  # or 10
+)
+<h1>Station info automatically filled from api.station</h1>
+</code></pre></p>
+<p>---</p>
+<h2>Async Usage</h2>
+<p>pyWATS supports both synchronous and asynchronous usage patterns. The library is designed 
+with an <strong>async-first architecture</strong> where all business logic lives in async services, 
+and sync services are thin wrappers.</p>
+<h3>Synchronous Usage (Default)</h3>
+<p>The standard synchronous API is the easiest way to use pyWATS:</p>
+<pre><code>from pywats import pyWATS
+<p>api = pyWATS(base_url="https://...", token="...")</p>
+<h1>Synchronous calls - simple and blocking</h1>
+products = api.product.get_products()
+unit = api.production.get_unit("SN-12345", "WIDGET-001")
+</code></pre>
+<h3>Asynchronous Usage</h3>
+<p>For high-performance applications, use the async API directly:</p>
+<pre><code>import asyncio
+from pywats import AsyncWATS
+<p>async def main():
+    # Create async client
+    async with AsyncWATS(base_url="https://...", token="...") as api:
+        # Async calls - non-blocking
+        products = await api.product.get_products()
+        unit = await api.production.get_unit("SN-12345", "WIDGET-001")
+        
+        # Concurrent requests
+        product, unit, assets = await asyncio.gather(
+            api.product.get_product("WIDGET-001"),
+            api.production.get_unit("SN-12345", "WIDGET-001"),
+            api.asset.get_assets(top=10)
+        )</p>
+<p>asyncio.run(main())
+</code></pre></p>
+<h3>Using run_sync() for Mixed Code</h3>
+<p>When you have async code but need to call it from sync context:</p>
+<pre><code>from pywats.core.sync_runner import run_sync
+from pywats import AsyncWATS
+<p>async def fetch_data():
+    async with AsyncWATS(base_url="https://...", token="...") as api:
+        return await api.product.get_products()</p>
+<h1>Call async code from sync context</h1>
+products = run_sync(fetch_data())
+</code></pre>
+<h3>Service Architecture</h3>
+<p>pyWATS uses an async-first architecture with two main entry points:</p>
+<p>| Component | Description |
+|-----------|-------------|
+| <code>pyWATS</code> | Synchronous API entry point (auto-discovers credentials) |
+| <code>AsyncWATS</code> | Asynchronous API entry point (also supports auto-discovery) |
+| <code>AsyncXxxService</code> | All business logic lives here (async) |
+| <code>AsyncXxxRepository</code> | Async data access layer |</p>
+<pre><code><h1>Synchronous usage (most common)</h1>
+from pywats import pyWATS
+api = pyWATS()  # Auto-discovers credentials from pywats_client
+products = api.product.get_products()
+<h1>Asynchronous usage (high performance)</h1>
+from pywats import AsyncWATS
+async with AsyncWATS() as api:  # Also supports auto-discovery
+    products = await api.product.get_products()
+</code></pre>
+<p>---</p>
+<h2>Authentication</h2>
+<h3>Token Generation</h3>
+<p>pyWATS uses Base64-encoded credentials:</p>
+<pre><code>import base64
+<p>username = "your_username"
+password = "your_password"</p>
+<h1>Create token</h1>
+credentials = f"{username}:{password}"
+token = base64.b64encode(credentials.encode()).decode()
+<p>print(f"Token: {token}")
+</code></pre></p>
+<h3>Using in API</h3>
+<pre><code>from pywats import pyWATS
+<p>api = pyWATS(
+    base_url="https://your-wats-server.com",
+    token=token  # Use generated token
+)
+</code></pre></p>
+<h3>Token Security</h3>
+<strong>Best Practices:</strong>
+<p>1. <strong>Never hardcode credentials</strong> in source code
+2. <strong>Use environment variables</strong> for production
+3. <strong>Use .env files</strong> for development (add to .gitignore)
+4. <strong>Rotate tokens</strong> regularly
+5. <strong>Use separate tokens</strong> for different environments</p>
+<pre><code><h1>❌ DON'T DO THIS</h1>
+api = pyWATS(base_url="https://...", token="dXNlcjpwYXNz")
+<h1>✅ DO THIS</h1>
+import os
+api = pyWATS(
+    base_url=os.getenv('WATS_BASE_URL'),
+    token=os.getenv('WATS_AUTH_TOKEN')
+)
+</code></pre>
+<p>---</p>
+<h2>Logging Configuration</h2>
+<h3>Quick Debug Mode</h3>
+<p>Enable detailed logging for troubleshooting:</p>
+<pre><code>from pywats import pyWATS, enable_debug_logging
+<h1>Enable debug logging before creating API instance</h1>
+enable_debug_logging()
+<p>api = pyWATS(base_url="...", token="...")
+</code></pre></p>
+<p>This shows:
+- HTTP requests and responses
+- API calls to WATS server
+- Data serialization/deserialization
+- Repository and service operations</p>
+<h3>Custom Logging Configuration</h3>
+<pre><code>import logging
+from pywats import pyWATS
+<h1>Configure logging your way</h1>
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('pywats.log'),
+        logging.StreamHandler()
+    ]
+)
+<h1>Set pyWATS logger to DEBUG</h1>
+logging.getLogger('pywats').setLevel(logging.DEBUG)
+<h1>Or be more specific</h1>
+logging.getLogger('pywats.http_client').setLevel(logging.DEBUG)
+logging.getLogger('pywats.domains.product').setLevel(logging.INFO)
+<p>api = pyWATS(base_url="...", token="...")
+</code></pre></p>
+<h3>Log Levels</h3>
+<p>| Level | Use Case | Output |
+|-------|----------|--------|
+| DEBUG | Development, troubleshooting | All details including HTTP requests |
+| INFO | Normal operation | Important operations and status |
+| WARNING | Production monitoring | Warnings and potential issues |
+| ERROR | Minimal logging | Errors only |</p>
+<h3>Example Log Output</h3>
+<pre><code>2026-01-08 14:30:15 - pywats.http_client - INFO - GET https://wats.example.com/api/Product/1234
+2026-01-08 14:30:15 - pywats.http_client - DEBUG - Response: 200 OK (1234 bytes)
+2026-01-08 14:30:15 - pywats.domains.product - DEBUG - Retrieved product: WIDGET-001
+</code></pre>
+<h3>Disable Logging</h3>
+<pre><code>import logging
+<h1>Disable all pyWATS logging</h1>
+logging.getLogger('pywats').setLevel(logging.CRITICAL)
+</code></pre>
+<p>---</p>
+<h2>Exception Handling</h2>
+<h3>Exception Hierarchy</h3>
+<p>pyWATS provides a comprehensive exception hierarchy for precise error handling:</p>
+<pre><code>PyWATSError                      # Base exception for all pyWATS errors
+├── AuthenticationError          # Authentication failed (401)
+├── AuthorizationError           # Permission denied (403)
+├── NotFoundError                # Resource not found (404)
+├── ValidationError              # Invalid request data (400)
+├── ConflictError                # Resource conflict (409)
+├── EmptyResponseError           # Empty response in STRICT mode (200 with no data)
+├── ServerError                  # Server-side error (5xx)
+├── ConnectionError              # Network/connection failure
+└── TimeoutError                 # Request timeout
+</code></pre>
+<p>All exceptions include:
+- <strong>message</strong>: Human-readable error description
+- <strong>operation</strong>: Name of the operation that failed (e.g., "get_product")
+- <strong>details</strong>: Additional context without HTTP internals
+- <strong>cause</strong>: Original exception if wrapping another error</p>
+<h3>Basic Error Handling</h3>
+<pre><code>from pywats import pyWATS, PyWATSError, AuthenticationError
+<p>try:
+    api = pyWATS(base_url="https://...", token="...")
+    product = api.product.get_product("WIDGET-001")
+    
+except AuthenticationError:
+    print("Invalid credentials - check your token")
+    
+except PyWATSError as e:
+    print(f"WATS API error: {e}")
+    print(f"Operation: {e.operation}")
+    print(f"Details: {e.details}")
+    
+except Exception as e:
+    print(f"Unexpected error: {e}")
+</code></pre></p>
+<h3>Comprehensive Exception Handling</h3>
+<pre><code>from pywats import (
+    pyWATS, 
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+    EmptyResponseError,
+    ServerError,
+    ConnectionError,
+    TimeoutError,
+    PyWATSError
+)
+<p>try:
+    api = pyWATS(base_url="https://...", token="...")
+    product = api.product.get_product("WIDGET-001")
+    
+except AuthenticationError as e:
+    # 401 - Invalid credentials
+    print(f"Authentication failed: {e.message}")
+    # Action: Verify token, re-authenticate
+    
+except AuthorizationError as e:
+    # 403 - No permission
+    print(f"Permission denied: {e.message}")
+    # Action: Check user permissions, request access
+    
+except NotFoundError as e:
+    # 404 - Resource doesn't exist (STRICT mode only)
+    print(f"Not found: {e.resource_type} '{e.identifier}'")
+    # Action: Verify identifier, create resource
+    
+except ValidationError as e:
+    # 400 - Invalid request data
+    print(f"Validation error: {e.message}")
+    if e.field:
+        print(f"  Field: {e.field}")
+    if e.value:
+        print(f"  Value: {e.value}")
+    # Action: Fix input data, check API documentation
+    
+except ConflictError as e:
+    # 409 - Resource conflict
+    print(f"Conflict: {e.message}")
+    # Action: Resolve conflict, retry with updated data
+    
+except EmptyResponseError as e:
+    # 200 with empty body (STRICT mode only)
+    print(f"Empty response: {e.message}")
+    # Action: Verify query parameters, switch to LENIENT mode
+    
+except ServerError as e:
+    # 5xx - Server-side error
+    print(f"Server error: {e.message}")
+    if e.status_code:
+        print(f"  Status: {e.status_code}")
+    # Action: Retry, contact support if persistent
+    
+except ConnectionError as e:
+    # Network failure
+    print(f"Connection failed: {e.message}")
+    # Action: Check network, verify URL
+    
+except TimeoutError as e:
+    # Request timeout
+    print(f"Request timed out: {e.message}")
+    # Action: Increase timeout, check network
+    
+except PyWATSError as e:
+    # Catch-all for other errors
+    print(f"WATS error: {e.message}")
+    print(f"Operation: {e.operation}")
+    print(f"Details: {e.details}")
+</code></pre></p>
+<h3>Error Mode Impact on Exceptions</h3>
+<p>The <code>error_mode</code> parameter affects which exceptions are raised:</p>
+<pre><code>from pywats import pyWATS, NotFoundError, EmptyResponseError
+from pywats.core.exceptions import ErrorMode
+<h1>STRICT mode - raises exceptions for missing data</h1>
+api_strict = pyWATS(..., error_mode=ErrorMode.STRICT)
+<p>try:
+    product = api_strict.product.get_product("UNKNOWN")
+except NotFoundError:
+    # This WILL be raised in STRICT mode
+    print("Product not found")</p>
+<p>try:
+    product = api_strict.product.get_product("EMPTY-RESULT")
+except EmptyResponseError:
+    # This WILL be raised in STRICT mode
+    print("Query returned no data")</p>
+<h1>LENIENT mode - returns None for missing data</h1>
+api_lenient = pyWATS(..., error_mode=ErrorMode.LENIENT)
+<p>product = api_lenient.product.get_product("UNKNOWN")
+<h1>Returns None - no NotFoundError raised</h1></p>
+<p>if product is None:
+    print("Product not found or empty")
+</code></pre></p>
+<strong>Exception Matrix by Mode:</strong>
+<p>| Error Type | STRICT Mode | LENIENT Mode |
+|------------|-------------|--------------|
+| 404 Not Found | Raises <code>NotFoundError</code> | Returns <code>None</code> |
+| Empty Response | Raises <code>EmptyResponseError</code> | Returns <code>None</code> |
+| 400 Validation | Raises <code>ValidationError</code> | Raises <code>ValidationError</code> |
+| 401 Auth | Raises <code>AuthenticationError</code> | Raises <code>AuthenticationError</code> |
+| 403 Permission | Raises <code>AuthorizationError</code> | Raises <code>AuthorizationError</code> |
+| 409 Conflict | Raises <code>ConflictError</code> | Raises <code>ConflictError</code> |
+| 5xx Server Error | Raises <code>ServerError</code> | Raises <code>ServerError</code> |
+| Network Failure | Raises <code>ConnectionError</code> | Raises <code>ConnectionError</code> |
+| Timeout | Raises <code>TimeoutError</code> | Raises <code>TimeoutError</code> |</p>
+<pre><code>
+<h3>Retry Logic</h3>
+</code></pre>python
+import time
+from pywats import pyWATS, ConnectionError, ServerError
+<p>def get_product_with_retry(api, part_number, max_retries=3):
+    """Get product with automatic retry on network errors"""
+    
+    for attempt in range(max_retries):
+        try:
+            return api.product.get_product(part_number)
+            
+        except (ConnectionError, ServerError) as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 <strong> attempt  # Exponential backoff
+                print(f"Retry {attempt + 1}/{max_retries} after {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise  # Re-raise on final attempt
+    
+    return None</p>
+<h1>Use it</h1>
+try:
+    product = get_product_with_retry(api, "WIDGET-001")
+except PyWATSError as e:
+    print(f"Failed after retries: {e}")
+<pre><code>
+<h3>Validation Errors</h3>
+</code></pre>python
+from pywats import ValidationError
+from pywats.tools.test_uut import TestUUT
+<p>try:
+    # Invalid data
+    uut = TestUUT(
+        part_number="",  # Empty part number - will raise ValidationError
+        serial_number="SN-12345",
+        revision="A"
+    )
+    
+except ValidationError as e:
+    print(f"Validation failed: {e}")
+    # Handle gracefully - prompt user, use defaults, etc.
+<pre><code>
+---</p>
+<h2>Client Installation</h2>
+<h3>GUI Client (Desktop)</h3>
+<h4>Prerequisites</h4>
+<p>- Python 3.10 or later
+- Qt6 support (Windows, macOS, Linux with display)</p>
+<h4>Installation</h4>
+</code></pre>bash
+<h1>Install with client support</h1>
+pip install pywats-api[client]
+<h1>Launch GUI</h1>
+python -m pywats_client
+<pre><code>
+Or from command line:
+</code></pre>bash
+pywats-client
+<pre><code>
+<h4>First-Time Setup</h4>
+<p>1. Launch the client
+2. Go to </strong>Setup<strong> tab
+3. Configure:
+   - Server URL: <code>https://your-wats-server.com</code>
+   - API Token: Your Base64 token
+   - Station Name: <code>YOUR-STATION-01</code>
+4. Click </strong>Save<strong>
+5. Click </strong>Test Connection<strong></p>
+<p>See </strong><a href="../src/pywats_client/GUI_CONFIGURATION.md">GUI Configuration Guide</a><strong> for detailed setup.</p>
+<h4>Using the File Menu</h4>
+<p>The GUI includes helpful controls in the </strong>File<strong> menu:</p>
+</strong>Restart GUI<strong> (Ctrl+R)
+- Restarts only the GUI application
+- Service continues running in the background
+- Configuration is reloaded automatically
+- Useful after GUI code changes during development
+</strong>Stop Service<strong> (Ctrl+Shift+S)
+- Sends stop command to the service process
+- Stops all file watching and converter workers
+- GUI remains open but shows [Disconnected] status
+- Useful before making service code changes
+</strong>Exit<strong> (Alt+F4)
+- Closes the GUI application
+- Service continues running if started separately
+</strong>Window Title Status:<strong>
+- Shows <code>[Connected]</code> when service is running
+- Shows <code>[Disconnected]</code> when service is not reachable
+<p>---</p>
+<h3>Headless Client (No GUI)</h3>
+<p>For servers, Raspberry Pi, and embedded systems.</p>
+<h4>Installation</h4>
+</code></pre>bash
+<h1>Install headless client (no Qt)</h1>
+pip install pywats-api[client-headless]
+<pre><code>
+<h4>Initialize Configuration</h4>
+</code></pre>bash
+<h1>Interactive setup</h1>
+pywats-client config init
+<h1>Or non-interactive</h1>
+pywats-client config init \
+    --server-url https://wats.example.com \
+    --api-token YOUR_TOKEN \
+    --station-name RASPBERRY-PI-01 \
+    --non-interactive
+<pre><code>
+<h4>Test Connection</h4>
+</code></pre>bash
+pywats-client test-connection
+<pre><code>
+<h4>Start Service</h4>
+</code></pre>bash
+<h1>Foreground (for testing)</h1>
+pywats-client start
+<h1>With HTTP API for remote management</h1>
+pywats-client start --api --api-port 8765
+<h1>As daemon (Linux/Unix)</h1>
+pywats-client start --daemon
+<pre><code>
+<h4>Configuration File</h4>
+<p>Location:
+- </strong>Windows:<strong> <code>%APPDATA%\pyWATS_Client\config.json</code>
+- </strong>Linux/Mac:<strong> <code>~/.config/pywats_client/config.json</code></p>
+<p>Example:</p>
+</code></pre>json
+{
+  "service_address": "https://wats.example.com",
+  "api_token": "your_token",
+  "station_name": "RASPBERRY-PI-01",
+  "log_level": "INFO",
+  "max_queue_size": 10000,
+  "max_concurrent_uploads": 5
+}
+<pre><code>
+<h4>Queue Configuration</h4>
+<p>Control report queue behavior with these settings:</p>
+</code></pre>json
+{
+  "max_queue_size": 10000,           // Maximum queued reports (0 = unlimited)
+  "max_concurrent_uploads": 5,       // Number of concurrent uploads
+  "offline_queue_enabled": true,     // Enable local queuing when offline
+  "max_retry_attempts": 5,           // Retry failed uploads
+  "retry_interval_seconds": 60       // Wait between retries
+}
+<pre><code>
+</strong>Parameters:<strong>
+<p>- </strong>max_queue_size<strong> (0-∞): Prevents unbounded queue growth
+  - Default: 10,000 reports
+  - Set to 0 to disable limit (careful on limited storage!)
+  - Server will reject new reports when limit reached</p>
+<p>- </strong>max_concurrent_uploads<strong> (1-100): Balance speed vs. network load
+  - Default: 5 concurrent uploads
+  - Increase for fast networks, decrease for slow/unreliable connections
+  - Each upload thread consumes ~1-5MB memory</p>
+<p>- </strong>offline_queue_enabled<strong> (true/false): Queue reports when server unavailable
+  - Default: true (recommended)
+  - Reports automatically upload when connection restored</p>
+<p>- </strong>max_retry_attempts<strong> (1-20): How many times to retry failed uploads
+  - Default: 5 attempts
+  - Each attempt waits <code>retry_interval_seconds</code></p>
+<h4>CLI Commands</h4>
+</code></pre>bash
+<h1>Configuration</h1>
+pywats-client config show
+pywats-client config get max_queue_size
+pywats-client config set max_concurrent_uploads 10
+<h1>Queue status</h1>
+pywats-client queue status
+pywats-client queue list
+pywats-client queue clear     # Clear all pending reports (careful!)
+<h1>Service control</h1>
+pywats-client status
+pywats-client start
+pywats-client stop
+<h1>Converters</h1>
+pywats-client converters list
+pywats-client converters enable my_converter
+<pre><code>
+See </strong><a href="../src/pywats_client/control/HEADLESS_GUIDE.md">Headless Operation Guide</a><strong> for complete documentation.
+<p>---</p>
+<h2>Complete Example</h2>
+<p>Putting it all together:</p>
+</code></pre>python
+"""
+Complete example of pyWATS initialization with logging and error handling
+"""
+<p>import os
+import logging
+from dotenv import load_dotenv
+from pywats import (
+    pyWATS,
+    enable_debug_logging,
+    PyWATSError,
+    AuthenticationError,
+    Station,
+    StationConfig,
+    Purpose
+)</p>
+<p>def initialize_api():
+    """Initialize pyWATS API with proper configuration"""
+    
+    # Load environment variables
+    load_dotenv()
+    
+    # Enable debug logging if in debug mode
+    if os.getenv('DEBUG', 'false').lower() == 'true':
+        enable_debug_logging()
+    else:
+        # Configure INFO level logging
+        logging.basicConfig(level=logging.INFO)
+    
+    # Get credentials from environment
+    base_url = os.getenv('WATS_BASE_URL')
+    token = os.getenv('WATS_AUTH_TOKEN')
+    
+    if not base_url or not token:
+        raise ValueError("WATS_BASE_URL and WATS_AUTH_TOKEN must be set")
+    
+    # Configure station
+    station = Station(
+        config=StationConfig(
+            station_name=os.getenv('WATS_STATION_NAME', 'DEFAULT-STATION'),
+            location=os.getenv('WATS_LOCATION', 'Default Location')
+        )
+    )
+    
+    # Initialize API
+    try:
+        api = pyWATS(
+            base_url=base_url,
+            token=token,
+            station=station,
+            timeout=int(os.getenv('WATS_TIMEOUT', '30'))
+        )
+        
+        # Test connection
+        if api.test_connection():
+            version = api.get_version()
+            logging.info(f"Connected to WATS server version: {version}")
+            return api
+        else:
+            raise ConnectionError("Connection test failed")
+            
+    except AuthenticationError:
+        logging.error("Authentication failed - check credentials")
+        raise
+        
+    except PyWATSError as e:
+        logging.error(f"Failed to initialize WATS API: {e}")
+        raise</p>
+<h1>Use it</h1>
+if __name__ == "__main__":
+    try:
+        api = initialize_api()
+        
+        # Now use the API
+        products = api.product.get_products()
+        print(f"Found {len(products)} products")
+        
+    except Exception as e:
+        logging.exception("Application error")
+        exit(1)
+<pre><code>
+---
+<h2>Performance Optimization</h2>
+<p>pyWATS includes several performance optimizations to make your applications faster and more efficient:</p>
+<h3>Enhanced TTL Caching</h3>
+<p>Cache static data automatically with TTL (Time To Live) expiration:</p>
+</code></pre>python
+from pywats import AsyncWATS
+from pywats.core.cache import AsyncTTLCache
+<p>async def main():
+    async with AsyncWATS(base_url="https://...", token="...") as api:
+        # Process service has built-in caching
+        # First call - fetches from server
+        processes = await api.process.get_processes()
+        
+        # Second call - returns cached data (100x faster!)
+        processes = await api.process.get_processes()
+        
+        # Check cache statistics
+        stats = api.process.cache_stats
+        print(f"Cache hit rate: {stats['hit_rate']:.1%}")  # e.g., 95.0%
+        
+        # Clear cache when needed
+        await api.process.clear_cache()</p>
+<h1>Create your own caches for any data</h1>
+cache = AsyncTTLCache<a href="
+    max_size=1000,
+    default_ttl=300.0  # 5 minutes
+">str</a>
+<p>async with cache:
+    # Cache a value
+    await cache.set("key", "value", ttl=60.0)  # Custom TTL
+    
+    # Get a value
+    value = await cache.get("key")
+    
+    # Check statistics
+    print(f"Hit rate: {cache.stats.hit_rate:.1%}")
+    print(f"Hits: {cache.stats.hits}, Misses: {cache.stats.misses}")
+<pre><code>
+</strong>Performance Impact:<strong> 95% reduction in server calls for static data, 100x faster cache hits vs server calls.</p>
+<h3>Connection Pooling</h3>
+<p>HTTP/2 connection pooling is automatically enabled for all API calls:</p>
+</code></pre>python
+from pywats import AsyncWATS
+<p>async with AsyncWATS(base_url="https://...", token="...") as api:
+    # All requests automatically use connection pooling
+    # - Reuses connections (faster, less overhead)
+    # - HTTP/2 multiplexing (multiple requests on one connection)
+    # - Up to 100 max connections
+    # - 20 keepalive connections
+    
+    # Concurrent requests are much faster
+    import asyncio
+    products, assets, units = await asyncio.gather(
+        api.product.get_products(),
+        api.asset.get_assets(top=100),
+        api.production.get_units(top=100)
+    )
+<pre><code>
+</strong>Performance Impact:<strong> 3-5x faster for bulk operations, automatic connection reuse.</p>
+<h3>Request Coalescing</h3>
+<p>Process multiple items efficiently with built-in coalescing utilities:</p>
+</code></pre>python
+from pywats import AsyncWATS
+from pywats.core.coalesce import ChunkedProcessor, coalesce_map
+<p>async def main():
+    async with AsyncWATS(base_url="https://...", token="...") as api:
+        serial_numbers = [f"SN-{i:05d}" for i in range(1000)]
+        
+        # Method 1: ChunkedProcessor for size-based processing
+        async with ChunkedProcessor(
+            processor=lambda sns: api.production.get_units_batch(sns),
+            chunk_size=50,  # Process 50 at a time
+            max_concurrent=5  # Up to 5 concurrent batches
+        ) as batcher:
+            units = await batcher.process(serial_numbers)
+        
+        # Method 2: coalesce_map for simple concurrent mapping
+        async def fetch_unit(sn: str):
+            return await api.production.get_unit(sn, "WIDGET-001")
+        
+        units = await coalesce_map(
+            items=serial_numbers,
+            func=fetch_unit,
+            batch_size=50,
+            max_concurrent=10
+        )
+        
+        print(f"Fetched {len(units)} units")</p>
+<p>import asyncio
+asyncio.run(main())
+<pre><code>
+</strong>Performance Impact:<strong> 5-10x faster for bulk operations, automatic concurrency control.</p>
+<h3>MessagePack Serialization</h3>
+<p>Use MessagePack for faster, smaller payloads (optional):</p>
+</code></pre>python
+<h1>First, install MessagePack support</h1>
+<h1>pip install msgpack</h1>
+<p>from pywats.core.performance import Serializer</p>
+<h1>Create serializer with MessagePack</h1>
+serializer = Serializer(format='msgpack')
+<h1>Serialize data</h1>
+data = {"part_number": "WIDGET-001", "values": [1, 2, 3]}
+payload = serializer.serialize(data)
+<h1>Deserialize</h1>
+result = serializer.deserialize(payload)
+<h1>Compare formats</h1>
+json_serializer = Serializer(format='json')
+msgpack_serializer = Serializer(format='msgpack')
+<p>json_size = len(json_serializer.serialize(data))
+msgpack_size = len(msgpack_serializer.serialize(data))</p>
+<p>print(f"JSON: {json_size} bytes")
+print(f"MessagePack: {msgpack_size} bytes ({msgpack_size/json_size:.1%} size)")
+<h1>Output: MessagePack: 50% size of JSON</h1></p>
+<h1>Benchmark serialization speed</h1>
+from pywats.core.performance import benchmark_serialization
+<p>results = benchmark_serialization(data, iterations=10000)
+for fmt, metrics in results.items():
+    print(f"{fmt}: {metrics['ops_per_sec']:.0f} ops/sec")
+<h1>MessagePack is typically 3x faster than JSON</h1>
+<pre><code>
+</strong>Performance Impact:<strong> 50% smaller payloads, 3x faster serialization, graceful fallback to JSON if not installed.</p>
+<h3>Combined Performance Pattern</h3>
+<p>Use all optimizations together for maximum performance:</p>
+</code></pre>python
+from pywats import AsyncWATS
+from pywats.core.cache import AsyncTTLCache
+from pywats.core.coalesce import coalesce_map
+<p>async def process_production_data():
+    async with AsyncWATS(base_url="https://...", token="...") as api:
+        # 1. Use built-in caching for static data
+        processes = await api.process.get_processes()  # Cached automatically
+        
+        # 2. Create custom cache for frequently accessed data
+        product_cache = AsyncTTLCache<a href="max_size=1000, default_ttl=600.0">dict</a>
+        
+        async with product_cache:
+            # 3. Batch process units with connection pooling
+            serial_numbers = [f"SN-{i:05d}" for i in range(1000)]
+            
+            async def fetch_with_cache(sn: str):
+                # Check cache first
+                cached = await product_cache.get(sn)
+                if cached:
+                    return cached
+                
+                # Fetch from API (uses connection pooling automatically)
+                unit = await api.production.get_unit(sn, "WIDGET-001")
+                
+                # Cache result
+                await product_cache.set(sn, unit)
+                return unit
+            
+            # Process in batches with concurrency control
+            units = await coalesce_map(
+                items=serial_numbers,
+                func=fetch_with_cache,
+                batch_size=100,
+                max_concurrent=10
+            )
+            
+            print(f"Processed {len(units)} units")
+            print(f"Cache hit rate: {product_cache.stats.hit_rate:.1%}")
+            # Expect 95%+ hit rate on subsequent runs</p>
+<p>import asyncio
+asyncio.run(process_production_data())
+<pre><code>
+---</p>
+<h2>Internal API Usage</h2>
+<h3>Understanding Internal vs Public APIs</h3>
+<p>pyWATS provides access to both </strong>public<strong> and </strong>internal<strong> WATS API endpoints:</p>
+</strong>Public APIs<strong> (Stable):
+- Documented and stable endpoints (e.g., <code>/api/Product</code>, <code>/api/Report</code>)
+- Accessed through standard modules: <code>api.product</code>, <code>api.report</code>, <code>api.asset</code>, etc.
+- </strong>Guaranteed stability<strong> - Will not change without notice
+- </strong>Recommended<strong> for production code
+</strong>Internal APIs<strong> (Unstable):
+- Undocumented endpoints used by WATS frontend (e.g., <code>/api/internal/UnitFlow</code>)
+- Accessed through the same domain accessor: <code>api.product</code>, <code>api.analytics</code>, etc.
+- Methods are marked with <code>⚠️ INTERNAL API</code> in docstrings
+- </strong>⚠️ MAY CHANGE WITHOUT NOTICE<strong> - Subject to breaking changes
+- </strong>Use with caution<strong> - Only when public APIs don't provide needed functionality
+<h3>When to Use Internal APIs</h3>
+<p>Internal APIs fill gaps where public endpoints don't yet exist:</p>
+<p>| Feature | Method | Why Internal? |
+|---------|--------|---------------|
+| Unit Flow Analysis | <code>api.analytics.get_unit_flow()</code> | No public Unit Flow endpoints yet |
+| Box Build Templates | <code>api.product.get_box_build_template()</code> | No public box build management |
+| Asset File Operations | <code>api.asset.upload_blob()</code> | No public file upload/download |
+| Unit Phases (MES) | <code>api.production.get_all_unit_phases()</code> | MES integration not in public API |
+| Process Details | <code>api.process.get_all_processes()</code> | Full process info not in public API |</p>
+<h3>Using Internal APIs Safely</h3>
+</code></pre>python
+from pywats import pyWATS
+<p>api = pyWATS(base_url="...", token="...")</p>
+<h1>✅ Public API - Use this when available</h1>
+products = api.product.get_products()
+<h1>⚠️ Internal API - Use only when necessary</h1>
+<h1>This uses internal endpoints that may change (see docstring for warning)</h1>
+box_build = api.product.get_box_build_template("WIDGET-001", "A")
+<pre><code>
+</strong>Best Practices:<strong>
+<p>1. </strong>Prefer Public APIs<strong>: Always use public APIs when available
+2. </strong>Isolate Internal Calls<strong>: Wrap internal API calls in your own functions
+3. </strong>Add Error Handling<strong>: Internal APIs may fail differently than public ones
+4. </strong>Document Usage<strong>: Note which parts of your code use internal APIs
+5. </strong>Monitor for Changes<strong>: Subscribe to pyWATS updates for breaking changes</p>
+</strong>Example - Isolated Internal API Usage:<strong>
+</code></pre>python
+def get_unit_flow_safely(api, part_number, date_from, date_to):
+    """
+    Get unit flow data using internal API.
+    
+    ⚠️ INTERNAL API: This function uses internal WATS endpoints
+    that may change without notice.
+    """
+    try:
+        from pywats import UnitFlowFilter
+        
+        filter_data = UnitFlowFilter(
+            part_number=part_number,
+            date_from=date_from,
+            date_to=date_to
+        )
+        
+        # Internal API call - wrapped for safety
+        result = api.analytics.get_unit_flow(filter_data)
+        return result
+        
+    except AttributeError:
+        # API may have changed
+        raise RuntimeError(
+            "Unit Flow API has changed. "
+            "Please update pyWATS to the latest version."
+        )
+<h1>Use the wrapped function</h1>
+try:
+    flow = get_unit_flow_safely(api, "WIDGET-001", date_from, date_to)
+except RuntimeError as e:
+    # Handle API change gracefully
+    logging.error(f"Unit Flow not available: {e}")
+    # Fall back to alternative approach
+<pre><code>
+<h3>Deprecation Warnings</h3>
+<p>Some internal API methods will emit deprecation warnings:</p>
+</code></pre>python
+<h1>This method is deprecated and will show a warning</h1>
+bom_xml = api.product.repository.get_bom("WIDGET-001", "A")
+<h1>DeprecationWarning: ProductRepository.get_bom() uses an internal API endpoint...</h1>
+<h1>Use the unified API method instead</h1>
+bom_items = api.product.get_bom_items("WIDGET-001", "A")
+<pre><code>
+To suppress these warnings during testing (not recommended for production):
+</code></pre>python
+import warnings
+<p>with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    bom = api.product.repository.get_bom("WIDGET-001", "A")
+<pre><code>
+<h3>Future-Proofing Your Code</h3></p>
+<p>As public APIs become available, migrate away from internal APIs:</p>
+</code></pre>python
+<h1>Current unified API - Internal methods are marked in docstrings</h1>
+def get_box_build_template(api, part_number, revision):
+    # ⚠️ INTERNAL API (see docstring) - may change
+    return api.product.get_box_build_template(part_number, revision)
+<h1>When endpoint becomes public, docstring warning will be removed</h1>
+<h1>Your code continues to work with no changes required</h1>
+<pre><code>
+</strong>Migration Checklist:**
+<p>- ✅ Monitor pyWATS release notes for new public endpoints
+- ✅ Test your code with each new pyWATS version
+- ✅ Keep internal API usage isolated and documented
+- ✅ Have fallback strategies for critical workflows</p>
+<p>---</p>
+<h2>Parallel Operations & Pagination</h2>
+<h3>Parallel Operations</h3>
+<p>Execute multiple API calls concurrently for better performance:</p>
+</code></pre>python
+from pywats.core import parallel_execute, collect_successes, collect_failures
+<h1>Fetch multiple products in parallel</h1>
+part_numbers = ["PN-001", "PN-002", "PN-003", "PN-004", "PN-005"]
+<p>results = parallel_execute(
+    keys=part_numbers,
+    operation=lambda pn: api.product.get_product(pn),
+    max_workers=5  # Concurrent threads (default: 10)
+)</p>
+<h1>Extract successful results</h1>
+products = collect_successes(results)
+print(f"Fetched {len(products)} products successfully")
+<h1>Check for failures</h1>
+failures = collect_failures(results)
+for key, error in failures:
+    print(f"Failed to fetch {key}: {error}")
+<pre><code>
+Domain-specific batch methods are also available:
+</code></pre>python
+<h1>Product domain batch methods</h1>
+product_results = api.product.get_products_batch(["PN-001", "PN-002", "PN-003"])
+<h1>Fetch multiple revisions</h1>
+revision_pairs = [("PN-001", "A"), ("PN-001", "B"), ("PN-002", "A")]
+revision_results = api.product.get_revisions_batch(revision_pairs)
+<pre><code>
+<h3>Pagination</h3>
+<p>Iterate over large datasets efficiently without loading everything into memory:</p>
+</code></pre>python
+<h1>SCIM: Iterate over all users</h1>
+for user in api.scim.iter_users(page_size=100):
+    print(f"{user.user_name}: {user.display_name}")
+<h1>With a limit</h1>
+for user in api.scim.iter_users(page_size=50, max_users=200):
+    process_user(user)
+<h1>With progress tracking</h1>
+def on_page(page_num, items_so_far, total):
+    print(f"Page {page_num}: {items_so_far}/{total} users")
+<p>for user in api.scim.iter_users(on_page=on_page):
+    sync_to_external_system(user)
+<pre><code>
+For custom pagination needs, use the core utilities directly:</p>
+</code></pre>python
+from pywats.core import paginate, Paginator
+<h1>Custom pagination with any API</h1>
+def fetch_page(start_index, count):
+    return api.some_api.get_items(start=start_index, count=count)
+<p>for item in paginate(
+    fetch_page=fetch_page,
+    get_items=lambda r: r.items,
+    get_total=lambda r: r.total_count,
+    page_size=50
+):
+    process(item)
+```</p>
+<p>---</p>
+<h2>See Also</h2>
+<p>- <a href="INDEX.md">Domain Guides</a> - API documentation for each domain
+- <a href="../src/pywats_client/GUI_CONFIGURATION.md">GUI Configuration</a> - GUI client setup
+- <a href="../src/pywats_client/control/HEADLESS_GUIDE.md">Headless Operation</a> - Headless client setup
+- <a href="../examples/">Examples</a> - Working code examples
+</p>
+</div>
+
+
+<div class="doc-separator" id="getting-started-quick-reference">
+    <div class="doc-source">Source: docs/quick-reference.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\quick-reference.md</em>
+</div>
+
+
+<div class="section-header" id="installation">
+    <h1>Installation</h1>
+</div>
+
+
+<div class="doc-separator" id="installation-overview">
+    <div class="doc-source">Source: docs/installation/README.md</div>
+    <h1>Installation & Deployment Documentation</h1>
+<p>This directory contains guides for installing PyWATS components and deploying the client service.</p>
+<h2>🎯 What Do You Need?</h2>
+<p>Use this decision tree to find the right installation guide:</p>
+<pre><code>What are you building?
+│
+├─► Python scripts/automation → API Only
+│   └─ Install: pip install pywats-api
+│   └─ Guide: api.md
+│
+├─► Test station with queue/converters
+│   │
+│   ├─► With monitoring GUI → Client + GUI
+│   │   └─ Install: pip install pywats-api[client]
+│   │   └─ Guides: client.md + gui.md
+│   │
+│   └─► Headless/server → Client Service
+│       └─ Install: pip install pywats-api[client-headless]
+│       └─ Guide: client.md
+│
+└─► Production deployment → System Service
+    └─ Choose your platform:
+        ├─ Windows: windows-service.md
+        ├─ Linux: linux-service.md
+        ├─ macOS: macos-service.md
+        └─ Docker: docker.md
+</code></pre>
+<p>---</p>
+<h2>📦 Installation by Component</h2>
+<h3>API Library</h3>
+<strong><a href="api.md">API Installation</a></strong> - Python SDK for direct WATS integration
+- pip package only (~5 MB)
+- No background services
+- Use from scripts and applications
+<pre><code>pip install pywats-api
+</code></pre>
+<h3>Client Service</h3>
+<strong><a href="client.md">Client Service</a></strong> - Background service with queue and converters
+- Report queue with retry
+- File watching and converters
+- Offline support
+<pre><code><h1>With GUI</h1>
+pip install pywats-api[client]
+<h1>Headless (no GUI)</h1>
+pip install pywats-api[client-headless]
+</code></pre>
+<h3>GUI Application</h3>
+<strong><a href="gui.md">GUI Application</a></strong> - Desktop app for monitoring and configuration
+- Real-time queue monitoring
+- Configuration interface
+- Log viewer
+<pre><code>pip install pywats-api[client]
+</code></pre>
+<p>---</p>
+<h2>🖥️ Service Deployment</h2>
+<p>Install the client as a system service for automatic startup:</p>
+<p>| Platform | Guide | Method |
+|----------|-------|--------|
+| <strong>Windows</strong> | <a href="windows-service.md">windows-service.md</a> | Native Service / NSSM |
+| <strong>Linux</strong> | <a href="linux-service.md">linux-service.md</a> | systemd |
+| <strong>macOS</strong> | <a href="macos-service.md">macos-service.md</a> | launchd |
+| <strong>Docker</strong> | <a href="docker.md">docker.md</a> | Container |</p>
+<p>---</p>
+<h2>📦 Native Installers</h2>
+<p>Pre-built installers are available for systems without Python:</p>
+<p>| Platform | Format | Download |
+|----------|--------|----------|
+| <strong>Windows</strong> | <code>.msi</code> | <a href="https://github.com/olreppe/pyWATS/releases">GitHub Releases</a> |
+| <strong>macOS</strong> | <code>.dmg</code> / <code>.pkg</code> | <a href="https://github.com/olreppe/pyWATS/releases">GitHub Releases</a> |
+| <strong>Ubuntu/Debian</strong> | <code>.deb</code> | <a href="https://github.com/olreppe/pyWATS/releases">GitHub Releases</a> |
+| <strong>RHEL/Rocky/Alma</strong> | <code>.rpm</code> | <a href="https://github.com/olreppe/pyWATS/releases">GitHub Releases</a> |
+| <strong>Linux (any)</strong> | AppImage | <a href="https://github.com/olreppe/pyWATS/releases">GitHub Releases</a> |</p>
+<strong>Building from source:</strong> See <a href="../../deployment/README.md">deployment/README.md</a>
+<p>---</p>
+<h2>📊 Quick Comparison</h2>
+<p>| Feature | API Only | Client Headless | Client + GUI |
+|---------|----------|-----------------|--------------|
+| <strong>Size</strong> | ~5 MB | ~8 MB | ~150 MB |
+| <strong>Python SDK</strong> | ✓ | ✓ | ✓ |
+| <strong>Report Queue</strong> | - | ✓ | ✓ |
+| <strong>Converters</strong> | - | ✓ | ✓ |
+| <strong>File Watching</strong> | - | ✓ | ✓ |
+| <strong>GUI</strong> | - | - | ✓ |
+| <strong>Use Case</strong> | Scripts | Servers, Pi | Desktop |</p>
+<p>---</p>
+<h2>🚀 Quick Start</h2>
+<h3>Developers/Integrators</h3>
+<pre><code>pip install pywats-api
+</code></pre>
+<pre><code>from pywats import pyWATS
+api = pyWATS(base_url="...", token="...")
+</code></pre>
+<h3>Test Stations (Desktop)</h3>
+<pre><code>pip install pywats-api[client]
+python -m pywats_client service
+python -m pywats_client gui  # In another terminal
+</code></pre>
+<h3>Test Stations (Headless)</h3>
+<pre><code>pip install pywats-api[client-headless]
+pywats-client config init
+pywats-client start
+</code></pre>
+<p>---</p>
+<h2>See Also</h2>
+<p>- <strong><a href="../INDEX.md">../INDEX.md</a></strong> - Main documentation index
+- <strong><a href="../getting-started.md">../getting-started.md</a></strong> - Complete tutorial
+- <strong><a href="../client-architecture.md">../client-architecture.md</a></strong> - Client service internals
+- <strong><a href="../env-variables.md">../env-variables.md</a></strong> - Environment variable reference
+</p>
+</div>
+
+
+<div class="doc-separator" id="installation-api">
+    <div class="doc-source">Source: docs/installation/api.md</div>
+    <h1>PyWATS API Installation</h1>
+<p>Install the core PyWATS API library for direct integration with WATS from your Python applications.</p>
+<h2>Overview</h2>
+<p>The API package provides:
+- Python SDK for all WATS domains (Report, Product, Production, Asset, etc.)
+- Sync and async client support
+- Data validation with Pydantic 2.0+
+- No GUI dependencies</p>
+<strong>Best for:</strong> Scripts, automation, server-side integrations, custom applications.
+<p>---</p>
+<h2>Installation</h2>
+<pre><code>pip install pywats-api
+</code></pre>
+<strong>Requirements:</strong>
+- Python 3.10+
+- ~5 MB disk space
+<strong>Dependencies (automatically installed):</strong>
+- <code>httpx</code> - HTTP client
+- <code>pydantic</code> - Data validation
+- <code>python-dateutil</code> - Date utilities
+<p>---</p>
+<h2>Quick Start</h2>
+<h3>Basic Connection</h3>
+<pre><code>from pywats import pyWATS
+<h1>Initialize client</h1>
+api = pyWATS(
+    base_url="https://your-server.wats.com",
+    token="your_base64_encoded_token"
+)
+<h1>Test connection</h1>
+if api.test_connection():
+    print("Connected to WATS!")
+</code></pre>
+<h3>Using Environment Variables</h3>
+<p>Set credentials once, use everywhere:</p>
+<pre><code><h1>Windows</h1>
+set PYWATS_SERVER_URL=https://your-server.wats.com
+set PYWATS_API_TOKEN=your_base64_encoded_token
+<h1>Linux/macOS</h1>
+export PYWATS_SERVER_URL=https://your-server.wats.com
+export PYWATS_API_TOKEN=your_base64_encoded_token
+</code></pre>
+<p>Then in Python:</p>
+<pre><code>from pywats import pyWATS
+<h1>Reads from environment automatically</h1>
+api = pyWATS()
+</code></pre>
+<h3>Async Client</h3>
+<p>For high-performance applications:</p>
+<pre><code>import asyncio
+from pywats import pyWATS
+<p>async def main():
+    async with pyWATS(async_mode=True) as api:
+        products = await api.product.get_products()
+        print(f"Found {len(products)} products")</p>
+<p>asyncio.run(main())
+</code></pre></p>
+<p>---</p>
+<h2>API Domains</h2>
+<p>The API is organized into domain modules:</p>
+<p>| Domain | Import | Use Case |
+|--------|--------|----------|
+| <strong>Report</strong> | <code>api.report</code> | Create/query test reports (UUT/UUR) |
+| <strong>Product</strong> | <code>api.product</code> | Manage products, revisions, BOMs |
+| <strong>Production</strong> | <code>api.production</code> | Serial numbers, unit lifecycle |
+| <strong>Asset</strong> | <code>api.asset</code> | Equipment tracking, calibration |
+| <strong>Analytics</strong> | <code>api.analytics</code> | Yield analysis, statistics |
+| <strong>Software</strong> | <code>api.software</code> | Package distribution |
+| <strong>RootCause</strong> | <code>api.rootcause</code> | Issue tracking, defects |
+| <strong>Process</strong> | <code>api.process</code> | Operation types, processes |
+| <strong>SCIM</strong> | <code>api.scim</code> | User provisioning |</p>
+<h3>Example: Create a Test Report</h3>
+<pre><code>from pywats import pyWATS
+from pywats.report import UUTReport
+<p>api = pyWATS()</p>
+<h1>Create report</h1>
+report = UUTReport(
+    part_number="PCB-001",
+    serial_number="SN12345",
+    operation_code="ICT",
+    result="P"
+)
+<h1>Add a numeric measurement</h1>
+report.add_numeric_limit_step(
+    name="Voltage Check",
+    value=3.3,
+    low_limit=3.0,
+    high_limit=3.6,
+    unit="V"
+)
+<h1>Submit</h1>
+result = api.report.submit_uut_report(report)
+print(f"Report ID: {result.id}")
+</code></pre>
+<p>---</p>
+<h2>Authentication</h2>
+<h3>Token Generation</h3>
+<p>1. Log into WATS web interface
+2. Navigate to <strong>Settings → API Access</strong>
+3. Generate a new API token
+4. Copy the base64-encoded token</p>
+<h3>Token Format</h3>
+<p>The token is a base64-encoded string containing your credentials:</p>
+<pre><code>import base64
+<h1>Create token from username:password</h1>
+credentials = "username:password"
+token = base64.b64encode(credentials.encode()).decode()
+print(token)  # dXNlcm5hbWU6cGFzc3dvcmQ=
+</code></pre>
+<p>---</p>
+<h2>Configuration Options</h2>
+<h3>Client Initialization</h3>
+<pre><code>from pywats import pyWATS
+<p>api = pyWATS(
+    base_url="https://your-server.wats.com",  # WATS server URL
+    token="...",                               # Auth token
+    timeout=30,                                # Request timeout (seconds)
+    verify_ssl=True,                           # SSL certificate verification
+    async_mode=False,                          # Use async client
+)
+</code></pre></p>
+<h3>Environment Variables</h3>
+<p>| Variable | Description | Default |
+|----------|-------------|---------|
+| <code>PYWATS_SERVER_URL</code> | WATS server base URL | Required |
+| <code>PYWATS_API_TOKEN</code> | Base64-encoded auth token | Required |
+| <code>PYWATS_TIMEOUT</code> | Request timeout (seconds) | 30 |
+| <code>PYWATS_VERIFY_SSL</code> | Verify SSL certificates | true |
+| <code>PYWATS_LOG_LEVEL</code> | Logging level | INFO |</p>
+<p>---</p>
+<h2>Upgrading</h2>
+<pre><code>pip install --upgrade pywats-api
+</code></pre>
+<p>Check current version:</p>
+<pre><code>pip show pywats-api
+</code></pre>
+<p>Or in Python:</p>
+<pre><code>import pywats
+print(pywats.__version__)
+</code></pre>
+<p>---</p>
+<h2>Troubleshooting</h2>
+<h3>Import Errors</h3>
+<pre><code><h1>Verify installation</h1>
+pip show pywats-api
+<h1>Check Python version</h1>
+python --version  # Should be 3.10+
+<h1>Reinstall</h1>
+pip uninstall pywats-api
+pip install pywats-api
+</code></pre>
+<h3>Connection Issues</h3>
+<pre><code>from pywats import pyWATS
+<p>api = pyWATS(
+    base_url="https://your-server.wats.com",
+    token="your_token"
+)</p>
+<h1>Enable debug logging</h1>
+import logging
+logging.basicConfig(level=logging.DEBUG)
+<h1>Test connection</h1>
+try:
+    api.test_connection()
+except Exception as e:
+    print(f"Connection failed: {e}")
+</code></pre>
+<h3>SSL Certificate Errors</h3>
+<p>For development/testing only:</p>
+<pre><code>api = pyWATS(
+    base_url="https://...",
+    token="...",
+    verify_ssl=False  # ⚠️ Not for production!
+)
+</code></pre>
+<p>---</p>
+<h2>Next Steps</h2>
+<p>- <strong><a href="../getting-started.md">Getting Started Guide</a></strong> - Comprehensive tutorial
+- <strong><a href="../quick-reference.md">Quick Reference</a></strong> - Common patterns and snippets
+- <strong><a href="../domains/">Domain Documentation</a></strong> - Detailed API reference</p>
+<p>---</p>
+<h2>Need More?</h2>
+<p>| If you need... | Install... | Guide |
+|----------------|------------|-------|
+| Background service with queue | <code>pip install pywats-api[client-headless]</code> | <a href="client.md">Service Guide</a> |
+| Desktop GUI for monitoring | <code>pip install pywats-api[client]</code> | <a href="gui.md">GUI Guide</a> |
+| Development tools | <code>pip install pywats-api[dev]</code> | <a href="../getting-started.md">Getting Started</a> |</p>
+<p>---</p>
+<h2>See Also</h2>
+<p>- <strong><a href="../INDEX.md">../INDEX.md</a></strong> - Main documentation index
+- <strong><a href="../architecture.md">../architecture.md</a></strong> - System architecture overview
+- <strong><a href="../env-variables.md">../env-variables.md</a></strong> - Environment variable reference
+</p>
+</div>
+
+
+<div class="doc-separator" id="installation-client">
+    <div class="doc-source">Source: docs/installation/client.md</div>
+    <h1>PyWATS Client Service</h1>
+<p>The PyWATS Client Service is a background process that handles automated test report processing, queuing, and upload to WATS.</p>
+<h2>Overview</h2>
+<p>The client service provides:
+- <strong>Report Queue</strong> - Reliable queuing with retry on failure
+- <strong>Offline Support</strong> - Queue reports when disconnected, upload when online
+- <strong>Converters</strong> - Transform test equipment output to WATS format
+- <strong>File Watching</strong> - Auto-detect new reports in watch folders
+- <strong>Multi-Instance</strong> - Run separate instances for different stations</p>
+<strong>Best for:</strong> Test station automation, production environments, embedded systems.
+<p>---</p>
+<h2>Installation</h2>
+<h3>With GUI (Desktop Stations)</h3>
+<pre><code>pip install pywats-api[client]
+</code></pre>
+<p>Includes desktop GUI for configuration and monitoring. See <a href="gui.md">GUI Guide</a>.</p>
+<h3>Headless (Servers, Embedded)</h3>
+<pre><code>pip install pywats-api[client-headless]
+</code></pre>
+<p>No GUI dependencies - CLI and HTTP API only. Ideal for:
+- Linux servers
+- Raspberry Pi
+- Embedded systems
+- Docker containers</p>
+<strong>Requirements:</strong>
+- Python 3.10+
+- ~8 MB disk space (headless) / ~150 MB (with GUI)
+<p>---</p>
+<h2>Quick Start</h2>
+<h3>Start the Service</h3>
+<pre><code><h1>Default instance</h1>
+python -m pywats_client service
+<h1>Named instance</h1>
+python -m pywats_client service --instance-id station1
+</code></pre>
+<h3>First-Time Configuration</h3>
+<strong>Interactive setup:</strong>
+<pre><code>pywats-client config init
+</code></pre>
+<strong>Non-interactive:</strong>
+<pre><code>pywats-client config init \
+    --server-url https://wats.yourcompany.com \
+    --username your-username \
+    --password your-password \
+    --station-name ICT-STATION-01 \
+    --non-interactive
+</code></pre>
+<h3>Verify Connection</h3>
+<pre><code>pywats-client status
+</code></pre>
+<p>---</p>
+<h2>Architecture</h2>
+<h3>Async-First Design (v1.4+)</h3>
+<p>The client uses an <strong>async-first architecture</strong> with asyncio for efficient concurrent I/O:</p>
+<p>| Component | Purpose | Concurrency |
+|-----------|---------|-------------|
+| <strong>AsyncClientService</strong> | Main service controller | Single asyncio event loop |
+| <strong>AsyncPendingQueue</strong> | Report upload queue | 5 concurrent uploads |
+| <strong>AsyncConverterPool</strong> | File conversion | 10 concurrent conversions |
+| <strong>File Watcher</strong> | Detects new files in watch folders | Async events |
+| <strong>IPC Server</strong> | GUI communication | Qt LocalSocket |</p>
+<h3>Report Processing Flow</h3>
+<pre><code>Test Equipment → [File Created] → [File Watcher]
+                                       ↓
+                          [AsyncConverterPool]
+                           (10 concurrent)
+                                       ↓
+                          [AsyncPendingQueue]
+                           (5 concurrent)
+                                       ↓
+                           [WATS Server]
+</code></pre>
+<strong>Benefits of async architecture:</strong>
+- <strong>5x faster uploads</strong> - Concurrent report submission
+- <strong>Lower memory</strong> - Single thread vs multiple workers
+- <strong>Responsive GUI</strong> - Non-blocking API calls
+- <strong>Efficient I/O</strong> - asyncio multiplexing
+<p>---</p>
+<h2>File Organization</h2>
+<h3>Data Directories</h3>
+<strong>Windows (Production):</strong>
+<pre><code>C:\ProgramData\Virinco\pyWATS\
+├── config.json              # Configuration
+├── logs\                    # Service logs
+├── queue\                   # Report queue
+│   ├── pending\            # Waiting for upload
+│   ├── processing\         # Currently uploading
+│   ├── completed\          # Successfully uploaded
+│   └── failed\             # Failed uploads
+├── converters\              # Custom converters
+└── data\                    # Software packages
+</code></pre>
+<strong>Windows (User Development):</strong>
+<pre><code>%APPDATA%\pyWATS_Client\
+</code></pre>
+<strong>Linux/macOS:</strong>
+<pre><code>~/.config/pywats_client/     # User
+/var/lib/pywats/             # System service
+</code></pre>
+<h3>Queue Folder Contents</h3>
+<p>| Folder | Purpose | Auto-Cleanup |
+|--------|---------|--------------|
+| <code>pending/</code> | Reports waiting for upload | No |
+| <code>processing/</code> | Currently uploading | No |
+| <code>completed/</code> | Successfully uploaded | After 7 days |
+| <code>failed/</code> | Failed uploads | After 30 days |</p>
+<p>---</p>
+<h2>Configuration</h2>
+<h3>Configuration File</h3>
+<code>config.json</code>:
+<pre><code>{
+  "server_url": "https://wats.yourcompany.com",
+  "api_token": "...",
+  "station_name": "ICT-STATION-01",
+  "station_location": "Production Line A",
+  
+  "queue": {
+    "watch_folders": ["C:\\TestReports"],
+    "upload_interval": 10,
+    "retry_attempts": 3,
+    "retry_delay": 60
+  },
+  
+  "converters": {
+    "enabled": ["WATSStandardXMLConverter", "TeradyneICTConverter"],
+    "auto_detect": true
+  },
+  
+  "logging": {
+    "level": "INFO",
+    "max_size_mb": 10,
+    "backup_count": 5
+  }
+}
+</code></pre>
+<h3>CLI Configuration</h3>
+<pre><code><h1>View all settings</h1>
+pywats-client config show
+<h1>Get specific value</h1>
+pywats-client config get queue.upload_interval
+<h1>Set value</h1>
+pywats-client config set queue.upload_interval 30
+<h1>Add watch folder</h1>
+pywats-client config add-watch-folder "C:\TestReports\Station1"
+</code></pre>
+<h3>Environment Variables</h3>
+<p>Override config via environment:</p>
+<p>| Variable | Description |
+|----------|-------------|
+| <code>PYWATS_SERVER_URL</code> | WATS server URL |
+| <code>PYWATS_API_TOKEN</code> | Auth token |
+| <code>PYWATS_STATION_NAME</code> | Station identifier |
+| <code>PYWATS_LOG_LEVEL</code> | Logging level |
+| <code>PYWATS_WATCH_FOLDERS</code> | Colon-separated paths |</p>
+<p>---</p>
+<h2>Converters</h2>
+<p>Converters transform test equipment output into WATS format.</p>
+<h3>Built-in Converters</h3>
+<strong>WATS Standard Formats:</strong>
+<p>| Converter | Format | File Patterns |
+|-----------|--------|---------------|
+| <code>WATSStandardXMLConverter</code> | WSXF/WRML | <code><em>.xml</code> |
+| <code>WATSStandardJsonConverter</code> | WSJF | <code></em>.json</code> |
+| <code>WATSStandardTextConverter</code> | WSTF | <code><em>.txt</code> |</p>
+<strong>Industry Standards:</strong>
+<p>| Converter | Standard | File Patterns | Notes |
+|-----------|----------|---------------|-------|
+| <code>ATMLConverter</code> | IEEE ATML (1671/1636.1) | <code></em>.xml</code>, <code><em>.atml</code> | ATML 2.02, 5.00, 6.01 + TestStand AddOn |</p>
+<strong>Test Equipment:</strong>
+<p>| Converter | Equipment | File Patterns |
+|-----------|-----------|---------------|
+| <code>TeradyneICTConverter</code> | Teradyne i3070 | <code></em>.txt</code>, <code><em>.log</code> |
+| <code>TeradyneSpectrumICTConverter</code> | Teradyne Spectrum | <code></em>.txt</code>, <code><em>.log</code> |
+| <code>SeicaXMLConverter</code> | Seica Flying Probe | <code></em>.xml</code> |
+| <code>KlippelConverter</code> | Klippel Audio/Acoustic | <code><em>.txt</code> + data folder |
+| <code>SPEAConverter</code> | SPEA ATE | <code></em>.txt</code> |
+| <code>XJTAGConverter</code> | XJTAG Boundary Scan | <code><em>.zip</code> |</p>
+<strong>Special:</strong>
+<p>| Converter | Purpose |
+|-----------|---------|
+| <code>AIConverter</code> | Auto-detects file type and delegates to best matching converter |</p>
+<h3>Custom Converters</h3>
+<p>Place custom converters in the converters folder:</p>
+<pre><code><h1>converters/my_converter.py</h1>
+from pywats_client.converters import BaseConverter, ConverterInfo
+from pywats.report import UUTReport
+<p>class MyConverter(BaseConverter):
+    @classmethod
+    def get_info(cls) -> ConverterInfo:
+        return ConverterInfo(
+            name="MyConverter",
+            description="Converts my test equipment output",
+            file_patterns=["</em>.myext"],
+            version="1.0.0"
+        )
+    
+    def convert(self, file_path: str) -> UUTReport:
+        # Parse file and create report
+        report = UUTReport(
+            part_number="...",
+            serial_number="...",
+            operation_code="TEST",
+            result="P"
+        )
+        return report
+</code></pre></p>
+<p>See <a href="../llm-converter-guide.md">LLM Converter Guide</a> for detailed examples.</p>
+<p>---</p>
+<h2>Queue Management</h2>
+<h3>CLI Commands</h3>
+<pre><code><h1>View queue status</h1>
+pywats-client queue status
+<h1>List pending reports</h1>
+pywats-client queue list
+<h1>Retry failed reports</h1>
+pywats-client queue retry-failed
+<h1>Clear completed reports</h1>
+pywats-client queue clear-completed
+<h1>Manual upload</h1>
+pywats-client upload --file /path/to/report.xml
+</code></pre>
+<h3>Queue API</h3>
+<p>For programmatic access:</p>
+<pre><code>from pywats_client.core.queue import ReportQueue
+<p>queue = ReportQueue(config_path)</p>
+<h1>Add report</h1>
+queue.add("path/to/report.xml")
+<h1>Get status</h1>
+status = queue.get_status()
+print(f"Pending: {status.pending_count}")
+<h1>Process queue</h1>
+await queue.process_all()
+</code></pre>
+<p>---</p>
+<h2>Multi-Instance Support</h2>
+<p>Run separate instances for different stations:</p>
+<pre><code><h1>Instance 1</h1>
+pywats-client --instance station1 config init
+pywats-client --instance station1 service
+<h1>Instance 2</h1>
+pywats-client --instance station2 config init  
+pywats-client --instance station2 service
+</code></pre>
+<p>Each instance has separate:
+- Configuration file
+- Queue folder
+- Log file
+- Watch folders</p>
+<p>---</p>
+<h2>Headless Mode</h2>
+<h3>CLI Control</h3>
+<pre><code><h1>Start foreground</h1>
+pywats-client start
+<h1>Start as daemon (Linux/macOS)</h1>
+pywats-client start --daemon
+<h1>Check status</h1>
+pywats-client status
+<h1>Stop daemon</h1>
+pywats-client stop
+<h1>Restart</h1>
+pywats-client restart
+</code></pre>
+<h3>HTTP API Control</h3>
+<pre><code><h1>Start with HTTP API</h1>
+pywats-client start --api --api-port 8765
+</code></pre>
+<p>Available endpoints:</p>
+<p>| Endpoint | Method | Description |
+|----------|--------|-------------|
+| <code>/status</code> | GET | Service status |
+| <code>/queue</code> | GET | Queue status |
+| <code>/queue/pending</code> | GET | List pending reports |
+| <code>/restart</code> | POST | Restart service |
+| <code>/stop</code> | POST | Stop service |
+| <code>/config</code> | GET | View configuration |</p>
+<pre><code><h1>Examples</h1>
+curl http://localhost:8765/status
+curl http://localhost:8765/queue
+curl -X POST http://localhost:8765/restart
+</code></pre>
+<p>---</p>
+<h2>Running as System Service</h2>
+<p>For production deployments, run as a system service:</p>
+<p>- <strong><a href="windows-service.md">Windows Service</a></strong> - NSSM setup, auto-start
+- <strong><a href="linux-service.md">Linux Service</a></strong> - Systemd configuration
+- <strong><a href="macos-service.md">macOS Service</a></strong> - Launchd daemon
+- <strong><a href="docker.md">Docker</a></strong> - Container deployment</p>
+<p>---</p>
+<h2>Troubleshooting</h2>
+<h3>Service Won't Start</h3>
+<pre><code><h1>Check Python version</h1>
+python --version  # Should be 3.10+
+<h1>Check installation</h1>
+pip show pywats-api
+<h1>View logs</h1>
+cat ~/.config/pywats_client/pywats_client.log
+</code></pre>
+<h3>Reports Not Uploading</h3>
+<p>1. <strong>Check connection:</strong>
+   <pre><code>   pywats-client status
+   </code></pre></p>
+<p>2. <strong>Check queue:</strong>
+   <pre><code>   pywats-client queue status
+   </code></pre></p>
+<p>3. <strong>Enable debug logging:</strong>
+   <pre><code>   pywats-client config set logging.level DEBUG
+   pywats-client restart
+   </code></pre></p>
+<p>4. <strong>Manual upload test:</strong>
+   <pre><code>   pywats-client upload --file /path/to/report.xml --verbose
+   </code></pre></p>
+<h3>Converter Not Detecting Files</h3>
+<p>1. <strong>Check watch folders:</strong>
+   <pre><code>   pywats-client config get queue.watch_folders
+   </code></pre></p>
+<p>2. <strong>Check file patterns:</strong>
+   <pre><code>   pywats-client converters list
+   </code></pre></p>
+<p>3. <strong>Test converter manually:</strong>
+   <pre><code>   pywats-client convert --file /path/to/file.txt --converter MyConverter
+   </code></pre></p>
+<h3>Finding Configuration</h3>
+<pre><code><h1>Show config path</h1>
+pywats-client config show --format json | grep config_path
+<h1>Or check default locations:</h1>
+<h1>Windows: %APPDATA%\pyWATS_Client\config.json</h1>
+<h1>Linux/macOS: ~/.config/pywats_client/config.json</h1>
+</code></pre>
+<p>---</p>
+<h2>Security</h2>
+<h3>Credential Storage</h3>
+<p>- Passwords encrypted using platform-specific encryption
+- <strong>Windows</strong>: DPAPI (Data Protection API)
+- <strong>Linux/macOS</strong>: System keyring or file encryption</p>
+<h3>Network Security</h3>
+<p>- All WATS communication uses HTTPS
+- Credentials never logged
+- API tokens rotated on password change</p>
+<h3>File Permissions</h3>
+<pre><code><h1>Linux/macOS - restrict config access</h1>
+chmod 600 ~/.config/pywats_client/config.json
+</code></pre>
+<p>---</p>
+<h2>See Also</h2>
+<p>- <strong><a href="api.md">API Installation</a></strong> - SDK-only installation
+- <strong><a href="gui.md">GUI Guide</a></strong> - Desktop application
+- <strong><a href="../client-architecture.md">../client-architecture.md</a></strong> - Architecture details
+- <strong><a href="../llm-converter-guide.md">../llm-converter-guide.md</a></strong> - Writing converters
+- <strong><a href="../getting-started.md">../getting-started.md</a></strong> - Complete tutorial
+</p>
+</div>
+
+
+<div class="doc-separator" id="installation-gui">
+    <div class="doc-source">Source: docs/installation/gui.md</div>
+    <h1>PyWATS GUI Application</h1>
+<p>The PyWATS GUI provides a desktop application for monitoring and configuring your WATS client service.</p>
+<h2>Overview</h2>
+<p>The GUI application offers:
+- <strong>Real-time Monitoring</strong> - View queue status, upload progress, connection state
+- <strong>Configuration Interface</strong> - Configure server, converters, and settings
+- <strong>Log Viewer</strong> - Monitor application and service logs
+- <strong>Converter Management</strong> - Enable/disable and configure converters</p>
+<strong>Important:</strong> The GUI is a companion application for the <a href="client.md">client service</a>. The service handles the actual work (queue processing, uploads); the GUI provides visibility and configuration.
+<p>---</p>
+<h2>Installation</h2>
+<pre><code>pip install pywats-api[client]
+</code></pre>
+<strong>Requirements:</strong>
+- Python 3.10+
+- Display/monitor (X11/Wayland on Linux)
+- ~150 MB disk space
+<strong>Dependencies (automatically installed):</strong>
+- <code>PySide6</code> - Qt6 GUI framework
+- <code>watchdog</code> - File monitoring
+- <code>aiofiles</code> - Async file operations
+- Plus all API dependencies
+<p>---</p>
+<h2>Quick Start</h2>
+<h3>Starting the Service and GUI</h3>
+<p>The recommended workflow is to run the service first, then connect the GUI:</p>
+<strong>Step 1: Start the service</strong>
+<pre><code>python -m pywats_client service --instance-id default
+</code></pre>
+<strong>Step 2: Launch GUI</strong> (in another terminal)
+<pre><code>python -m pywats_client gui --instance-id default
+</code></pre>
+<p>The GUI will connect to the running service via IPC.</p>
+<h3>First-Time Setup</h3>
+<p>1. Launch the GUI
+2. Go to <strong>Setup</strong> tab
+3. Enter your WATS server details:
+   - <strong>Server URL</strong>: <code>https://your-server.wats.com</code>
+   - <strong>Username</strong>: Your WATS username
+   - <strong>Password</strong>: Your WATS password
+   - <strong>Station Name</strong>: Identifier for this test station
+4. Click <strong>Test Connection</strong>
+5. Click <strong>Save</strong></p>
+<p>---</p>
+<h2>GUI Tabs</h2>
+<h3>📊 Dashboard</h3>
+<p>Main overview showing:
+- Connection status (connected/disconnected)
+- Queue statistics (pending, processing, completed, failed)
+- Recent uploads with timestamps
+- Service health indicators</p>
+<h3>⚙️ Setup</h3>
+<p>Configure WATS server connection:
+- Server URL
+- Credentials
+- Station name and location
+- Connection test button</p>
+<h3>📁 Queue</h3>
+<p>View and manage the report queue:
+- Pending reports waiting for upload
+- Processing status
+- Failed reports with error details
+- Retry/delete options</p>
+<h3>🔄 Converters</h3>
+<p>Manage report converters:
+- View installed converters
+- Enable/disable converters
+- Configure converter settings
+- View converter status and errors</p>
+<h3>📋 Logs</h3>
+<p>Real-time log viewer:
+- Filter by log level (DEBUG, INFO, WARNING, ERROR)
+- Search functionality
+- Auto-scroll toggle
+- Export logs</p>
+<h3>📦 Software</h3>
+<p>Software distribution panel (if enabled):
+- Available packages
+- Download status
+- Version information</p>
+<p>---</p>
+<h2>Configuration</h2>
+<h3>GUI Settings</h3>
+<p>The GUI stores its own settings separately from the service:</p>
+<strong>Windows:</strong>
+<pre><code>%APPDATA%\pyWATS_Client\gui_settings.json
+</code></pre>
+<strong>Linux/macOS:</strong>
+<pre><code>~/.config/pywats_client/gui_settings.json
+</code></pre>
+<h3>Customizable Options</h3>
+<pre><code>{
+  "window_geometry": {
+    "width": 1200,
+    "height": 800,
+    "x": 100,
+    "y": 100
+  },
+  "theme": "system",
+  "log_viewer": {
+    "max_lines": 10000,
+    "auto_scroll": true,
+    "show_timestamps": true
+  },
+  "refresh_interval": 1000,
+  "notifications": {
+    "upload_complete": true,
+    "upload_failed": true,
+    "connection_lost": true
+  }
+}
+</code></pre>
+<h3>Themes</h3>
+<p>The GUI supports system theme detection:</p>
+<pre><code><h1>Force light theme</h1>
+python -m pywats_client gui --theme light
+<h1>Force dark theme  </h1>
+python -m pywats_client gui --theme dark
+<h1>Use system preference (default)</h1>
+python -m pywats_client gui --theme system
+</code></pre>
+<p>---</p>
+<h2>Command Line Options</h2>
+<pre><code>python -m pywats_client gui [OPTIONS]
+<p>Options:
+  --instance-id TEXT    Client instance to connect to (default: "default")
+  --config-path PATH    Path to config file
+  --theme TEXT          Theme: light, dark, system
+  --minimized           Start minimized to system tray
+  --help               Show help message
+</code></pre></p>
+<h3>Examples</h3>
+<pre><code><h1>Connect to default instance</h1>
+python -m pywats_client gui
+<h1>Connect to specific instance</h1>
+python -m pywats_client gui --instance-id station2
+<h1>Start minimized</h1>
+python -m pywats_client gui --minimized
+<h1>Custom config location</h1>
+python -m pywats_client gui --config-path /path/to/config.json
+</code></pre>
+<p>---</p>
+<h2>System Tray</h2>
+<p>The GUI can minimize to the system tray:</p>
+<p>- <strong>Double-click</strong> tray icon to restore window
+- <strong>Right-click</strong> for context menu:
+  - Show/Hide window
+  - View status
+  - Open logs folder
+  - Exit</p>
+<h3>Tray Notifications</h3>
+<p>When minimized, the GUI shows notifications for:
+- Upload completed
+- Upload failed
+- Connection lost/restored
+- Service stopped</p>
+<p>Notifications can be disabled in settings.</p>
+<p>---</p>
+<h2>Troubleshooting</h2>
+<h3>GUI Won't Start</h3>
+<strong>Check Qt installation:</strong>
+<pre><code>python -c "from PySide6 import QtWidgets; print('Qt OK')"
+</code></pre>
+<strong>If import fails:</strong>
+<pre><code>pip uninstall PySide6
+pip install PySide6
+</code></pre>
+<strong>Linux: Check display server:</strong>
+<pre><code>echo $DISPLAY  # Should show :0 or similar
+</code></pre>
+<h3>GUI Can't Connect to Service</h3>
+<p>1. <strong>Verify service is running:</strong>
+   <pre><code>   python -m pywats_client status --instance-id default
+   </code></pre></p>
+<p>2. <strong>Start service if needed:</strong>
+   <pre><code>   python -m pywats_client service --instance-id default
+   </code></pre></p>
+<p>3. <strong>Check instance ID matches:</strong>
+   <pre><code>   # Both must use same instance-id
+   python -m pywats_client service --instance-id mystation
+   python -m pywats_client gui --instance-id mystation
+   </code></pre></p>
+<h3>Blank or Frozen UI</h3>
+<p>1. Check log file for errors:
+   - Windows: <code>%APPDATA%\pyWATS_Client\pywats_client.log</code>
+   - Linux: <code>~/.config/pywats_client/pywats_client.log</code></p>
+<p>2. Try resetting GUI settings:
+   <pre><code>   # Remove GUI settings (will use defaults)
+   rm ~/.config/pywats_client/gui_settings.json
+   </code></pre></p>
+<h3>High DPI Display Issues</h3>
+<pre><code><h1>Force DPI scaling</h1>
+export QT_AUTO_SCREEN_SCALE_FACTOR=1
+python -m pywats_client gui
+<h1>Or set specific scale</h1>
+export QT_SCALE_FACTOR=1.5
+python -m pywats_client gui
+</code></pre>
+<p>---</p>
+<h2>Keyboard Shortcuts</h2>
+<p>| Shortcut | Action |
+|----------|--------|
+| <code>Ctrl+Q</code> | Quit application |
+| <code>Ctrl+L</code> | Focus log search |
+| <code>Ctrl+R</code> | Refresh all panels |
+| <code>Ctrl+,</code> | Open settings |
+| <code>F5</code> | Refresh queue |
+| <code>F11</code> | Toggle fullscreen |
+| <code>Ctrl+M</code> | Minimize to tray |</p>
+<p>---</p>
+<h2>Without GUI (Headless Alternative)</h2>
+<p>If you don't need a GUI, install the headless version instead:</p>
+<pre><code>pip install pywats-api[client-headless]
+</code></pre>
+<p>This provides all service functionality via CLI and HTTP API:</p>
+<pre><code><h1>Check status</h1>
+pywats-client status
+<h1>View queue</h1>
+pywats-client queue list
+<h1>Control via HTTP API</h1>
+curl http://localhost:8765/status
+</code></pre>
+<p>See <a href="client.md">Client Service Guide</a> for headless operation.</p>
+<p>---</p>
+<h2>See Also</h2>
+<p>- <strong><a href="client.md">Client Service Guide</a></strong> - Background service documentation
+- <strong><a href="windows-service.md">Windows Service</a></strong> - Auto-start on Windows
+- <strong><a href="linux-service.md">Linux Service</a></strong> - Systemd service setup
+- <strong><a href="../getting-started.md">../getting-started.md</a></strong> - Complete tutorial
+- <strong><a href="../client-architecture.md">../client-architecture.md</a></strong> - Architecture details
+</p>
+</div>
+
+
+<div class="doc-separator" id="installation-docker">
+    <div class="doc-source">Source: docs/installation/docker.md</div>
+    <h1>Docker Deployment Guide for pyWATS</h1>
+<p>This guide covers deploying pyWATS using Docker for various use cases.</p>
+<h2>Table of Contents</h2>
+<p>- <a href="#quick-start">Quick Start</a>
+- <a href="#available-images">Available Images</a>
+- <a href="#production-deployment">Production Deployment</a>
+- <a href="#development-setup">Development Setup</a>
+- <a href="#configuration">Configuration</a>
+- <a href="#monitoring--troubleshooting">Monitoring & Troubleshooting</a>
+- <a href="#advanced-usage">Advanced Usage</a></p>
+<p>---</p>
+<h2>Quick Start</h2>
+<h3>1. Prerequisites</h3>
+<p>- Docker 20.10+ and Docker Compose 2.0+
+- WATS server credentials</p>
+<h3>2. Initial Setup</h3>
+<pre><code><h1>Clone the repository</h1>
+git clone https://github.com/olreppe/pyWATS.git
+cd pyWATS
+<h1>Create environment file</h1>
+cp .env.example .env
+<h1>Edit .env and add your WATS credentials</h1>
+nano .env
+</code></pre>
+<h3>3. Create Required Directories</h3>
+<pre><code>mkdir -p watch output archive config
+</code></pre>
+<h3>4. Create Client Configuration</h3>
+<p>Create <code>config/client_config.json</code>:</p>
+<pre><code>{
+  "wats": {
+    "base_url": "https://wats.yourcompany.com",
+    "token": "your_base64_token"
+  },
+  "converters": {
+    "enabled": ["csv", "json", "xml"],
+    "watch_directory": "/app/watch",
+    "output_directory": "/app/output",
+    "archive_directory": "/app/archive"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "/app/logs/pywats_client.log"
+  }
+}
+</code></pre>
+<h3>5. Start the Client</h3>
+<pre><code><h1>Start headless client</h1>
+docker-compose up -d client
+<h1>View logs</h1>
+docker-compose logs -f client
+<h1>Check status</h1>
+docker-compose ps
+</code></pre>
+<p>---</p>
+<h2>Available Images</h2>
+<p>The Dockerfile provides multiple build targets:</p>
+<h3>1. API Only (<code>api</code>)</h3>
+<p>Minimal image with just the pyWATS API library.</p>
+<pre><code><h1>Build</h1>
+docker build --target api -t pywats-api .
+<h1>Run Python with pyWATS</h1>
+docker run -it pywats-api python
+</code></pre>
+<strong>Use Cases:</strong>
+- Python scripts that use pyWATS API
+- Custom applications
+- Lambda/serverless functions
+<h3>2. Headless Client (<code>client-headless</code>)</h3>
+<p>Client without GUI for servers and embedded systems.</p>
+<pre><code><h1>Build</h1>
+docker build --target client-headless -t pywats-client .
+<h1>Run with config</h1>
+docker run -d \
+  -v $(pwd)/config:/app/config:ro \
+  -v $(pwd)/watch:/app/watch \
+  -v $(pwd)/output:/app/output \
+  -e WATS_BASE_URL=https://wats.example.com \
+  -e WATS_TOKEN=your_token \
+  pywats-client
+</code></pre>
+<strong>Use Cases:</strong>
+- Production test data ingestion
+- Automated test report uploads
+- Headless test stations
+- Raspberry Pi deployments
+<h3>3. Development (<code>dev</code>)</h3>
+<p>Full development environment with all dependencies.</p>
+<pre><code><h1>Start dev container</h1>
+docker-compose --profile dev up -d dev
+<h1>Attach to container</h1>
+docker-compose exec dev bash
+<h1>Run tests</h1>
+docker-compose exec dev pytest
+<h1>Build docs</h1>
+docker-compose exec dev sphinx-build docs/api docs/_build/html
+</code></pre>
+<p>---</p>
+<h2>Production Deployment</h2>
+<h3>Docker Compose (Recommended)</h3>
+<pre><code><h1>1. Configure environment</h1>
+cp .env.example .env
+nano .env
+<h1>2. Create config</h1>
+mkdir -p config watch output archive
+nano config/client_config.json
+<h1>3. Start services</h1>
+docker-compose up -d client
+<h1>4. Verify</h1>
+docker-compose logs client
+docker-compose ps
+</code></pre>
+<h3>Kubernetes</h3>
+<p>Example deployment:</p>
+<pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pywats-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pywats-client
+  template:
+    metadata:
+      labels:
+        app: pywats-client
+    spec:
+      containers:
+      - name: client
+        image: pywats-client:latest
+        env:
+        - name: WATS_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: pywats-secrets
+              key: base-url
+        - name: WATS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: pywats-secrets
+              key: token
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: watch
+          mountPath: /app/watch
+        - name: output
+          mountPath: /app/output
+        - name: logs
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "2"
+      volumes:
+      - name: config
+        configMap:
+          name: pywats-config
+      - name: watch
+        persistentVolumeClaim:
+          claimName: pywats-watch
+      - name: output
+        persistentVolumeClaim:
+          claimName: pywats-output
+      - name: logs
+        persistentVolumeClaim:
+          claimName: pywats-logs
+</code></pre>
+<h3>Docker Swarm</h3>
+<pre><code><h1>Initialize swarm</h1>
+docker swarm init
+<h1>Deploy stack</h1>
+docker stack deploy -c docker-compose.yml pywats
+<h1>Scale service</h1>
+docker service scale pywats_client=3
+<h1>View logs</h1>
+docker service logs -f pywats_client
+</code></pre>
+<p>---</p>
+<h2>Configuration</h2>
+<h3>Environment Variables</h3>
+<h4>Required</h4>
+<p>- <code>WATS_BASE_URL</code> - WATS server URL
+- <code>WATS_TOKEN</code> - Base64-encoded credentials</p>
+<h4>Optional</h4>
+<p>- <code>PYWATS_LOG_LEVEL</code> - Logging level (DEBUG, INFO, WARNING, ERROR)
+- <code>PYWATS_HEADLESS</code> - Run in headless mode (default: 1 in Docker)
+- <code>PYWATS_CONFIG_DIR</code> - Configuration directory (default: /app/config)
+- <code>PYWATS_DATA_DIR</code> - Data directory (default: /app/data)
+- <code>PYWATS_LOG_DIR</code> - Log directory (default: /app/logs)</p>
+<h3>Volume Mounts</h3>
+<p>| Mount Point | Purpose | Recommended |
+|------------|---------|-------------|
+| <code>/app/config</code> | Configuration files | Read-only in production |
+| <code>/app/watch</code> | Incoming test data | Writable |
+| <code>/app/output</code> | Converted reports | Writable |
+| <code>/app/archive</code> | Processed files | Writable |
+| <code>/app/logs</code> | Application logs | Persistent volume |
+| <code>/app/data</code> | State/queue data | Persistent volume |</p>
+<h3>Health Checks</h3>
+<p>All images include health checks:</p>
+<pre><code><h1>Check container health</h1>
+docker inspect --format='{{.State.Health.Status}}' pywats-client
+<h1>View health check logs</h1>
+docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' pywats-client
+</code></pre>
+<p>---</p>
+<h2>Monitoring & Troubleshooting</h2>
+<h3>View Logs</h3>
+<pre><code><h1>Real-time logs</h1>
+docker-compose logs -f client
+<h1>Last 100 lines</h1>
+docker-compose logs --tail=100 client
+<h1>Specific time range</h1>
+docker-compose logs --since 2024-01-01T00:00:00 client
+</code></pre>
+<h3>Check Status</h3>
+<pre><code><h1>Container status</h1>
+docker-compose ps
+<h1>Resource usage</h1>
+docker stats pywats-client
+<h1>Health status</h1>
+docker inspect --format='{{.State.Health.Status}}' pywats-client
+</code></pre>
+<h3>Common Issues</h3>
+<h4>Container exits immediately</h4>
+<pre><code><h1>Check logs</h1>
+docker-compose logs client
+<h1>Common causes:</h1>
+<h1>1. Missing WATS_BASE_URL or WATS_TOKEN</h1>
+<h1>2. Invalid configuration in config/client_config.json</h1>
+<h1>3. Permission issues on mounted directories</h1>
+</code></pre>
+<h4>Cannot connect to WATS server</h4>
+<pre><code><h1>Test network connectivity</h1>
+docker-compose exec client ping wats.yourcompany.com
+<h1>Test WATS API</h1>
+docker-compose exec client python -c "
+from pywats import pyWATS
+api = pyWATS(base_url='https://wats.example.com', token='...')
+print(api.test_connection())
+"
+</code></pre>
+<h4>Permission denied errors</h4>
+<pre><code><h1>Fix directory permissions (host)</h1>
+chmod -R 777 watch output archive logs
+<h1>Or run with specific user ID</h1>
+docker-compose run --user $(id -u):$(id -g) client
+</code></pre>
+<h3>Debugging</h3>
+<pre><code><h1>Start interactive shell</h1>
+docker-compose exec client bash
+<h1>Or start new container with shell</h1>
+docker-compose run --rm client bash
+<h1>Run Python interactively</h1>
+docker-compose exec client python
+</code></pre>
+<p>---</p>
+<h2>Advanced Usage</h2>
+<h3>Multi-Stage Builds</h3>
+<p>Build only what you need:</p>
+<pre><code><h1>API only (smallest)</h1>
+docker build --target api -t pywats-api:latest .
+<h1>Headless client</h1>
+docker build --target client-headless -t pywats-client:latest .
+<h1>Development (largest)</h1>
+docker build --target dev -t pywats-dev:latest .
+</code></pre>
+<h3>Custom Configuration</h3>
+<p>Override defaults with <code>docker-compose.override.yml</code>:</p>
+<pre><code>version: '3.8'
+services:
+  client:
+    environment:
+      PYWATS_LOG_LEVEL: DEBUG
+    volumes:
+      - /custom/watch:/app/watch
+      - /custom/output:/app/output
+</code></pre>
+<h3>Resource Limits</h3>
+<p>Adjust in <code>docker-compose.yml</code>:</p>
+<pre><code>deploy:
+  resources:
+    limits:
+      cpus: '4'      # Max CPUs
+      memory: 2G     # Max memory
+    reservations:
+      cpus: '1'      # Min CPUs
+      memory: 512M   # Min memory
+</code></pre>
+<h3>Network Configuration</h3>
+<pre><code><h1>Create custom network</h1>
+docker network create --driver bridge pywats-net
+<h1>Run with custom network</h1>
+docker run -d --network pywats-net pywats-client
+</code></pre>
+<h3>CI/CD Integration</h3>
+<p>GitHub Actions example:</p>
+<pre><code>name: Build Docker Image
+<p>on:
+  push:
+    branches: [main]</p>
+<p>jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build image
+        run: docker build --target client-headless -t pywats-client:latest .
+      
+      - name: Test image
+        run: |
+          docker run --rm pywats-client python -c "import pywats; print('OK')"
+      
+      - name: Push to registry
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker push pywats-client:latest
+</code></pre></p>
+<p>---</p>
+<h2>Security Considerations</h2>
+<p>1. <strong>Never commit <code>.env</code> files</strong> - Use secrets management
+2. <strong>Use read-only config mounts</strong> - Prevent container from modifying config
+3. <strong>Run as non-root</strong> - All images use non-root user (uid 1000)
+4. <strong>Scan images</strong> - <code>docker scan pywats-client</code>
+5. <strong>Use HTTPS</strong> - Always use TLS for WATS connections
+6. <strong>Rotate credentials</strong> - Update <code>WATS_TOKEN</code> regularly
+7. <strong>Network isolation</strong> - Use Docker networks to restrict access</p>
+<p>---</p>
+<h2>Support</h2>
+<p>- <strong>Documentation:</strong> https://github.com/olreppe/pyWATS/tree/main/docs
+- <strong>Issues:</strong> https://github.com/olreppe/pyWATS/issues
+- <strong>Email:</strong> support@virinco.com</p>
+<p>---</p>
+<strong>Last Updated:</strong> January 23, 2026  
+<strong>Version:</strong> 0.1.0b34
+
+</div>
+
+
+<div class="doc-separator" id="installation-windows-service">
+    <div class="doc-source">Source: docs/installation/windows-service.md</div>
+    <h1>Windows Service Installation</h1>
+<p>This guide explains how to install pyWATS Client as a Windows Service that auto-starts on system boot.</p>
+<h2>Overview</h2>
+<p>The pyWATS Client can run as a Windows Service in the background, automatically starting when Windows boots. This is the recommended setup for production environments.</p>
+<strong>Folder Structure:</strong>
+- <strong>Installation</strong>: <code>C:\Program Files\Virinco\pyWATS\</code> (binaries)
+- <strong>Data/Config</strong>: <code>C:\ProgramData\Virinco\pyWATS\</code> (configuration, logs, queues)
+- <strong>Service Name</strong>: <code>pyWATS_Service</code> (appears in Task Manager/Services)
+<p>This matches the existing WATS Client installation pattern.</p>
+<h2>Prerequisites</h2>
+<h3>Required</h3>
+- Windows 10/11 or Windows Server 2016+
+- Python 3.10 or later
+- Administrator privileges
+<h3>Recommended: NSSM (Non-Sucking Service Manager)</h3>
+<p>NSSM provides the best Windows Service experience with:
+- Easy service installation/removal
+- Automatic log rotation
+- Crash recovery
+- Better process management</p>
+<strong>Download NSSM:</strong>
+1. Visit: https://nssm.cc/download
+2. Download the latest version (2.24+)
+3. Extract <code>nssm.exe</code> to <code>C:\Program Files\NSSM\</code> or any PATH location
+<strong>Alternative:</strong> The installer can use <code>sc.exe</code> (built into Windows), but this has limitations.
+<h2>Installation</h2>
+<h3>Option 1: Using NSSM (Recommended)</h3>
+<p>1. <strong>Install pyWATS Client</strong> (if not already installed):
+   <pre><code>   pip install pywats-api[client]
+   </code></pre></p>
+<p>2. <strong>Install the service</strong> (run as Administrator):
+   <pre><code>   python -m pywats_client install-service
+   </code></pre></p>
+<p>   This will:
+   - Create service <code>pyWATS_Service</code>
+   - Set auto-start on boot
+   - Configure logging to <code>C:\ProgramData\Virinco\pyWATS\logs\</code>
+   - Use default configuration</p>
+<p>3. <strong>Start the service</strong>:
+   <pre><code>   net start pyWATS_Service
+   </code></pre>
+   or
+   <pre><code>   nssm start pyWATS_Service
+   </code></pre></p>
+<h3>Option 2: Native Windows Service (Recommended for Enterprise)</h3>
+<p>The native Windows service uses pywin32 and provides:
+- <strong>Appears in Task Manager</strong> → Services tab
+- <strong>Automatic restart on failure</strong> (5s/5s/30s delays)
+- <strong>Delayed auto-start</strong> (waits for network services)
+- <strong>Windows Event Log integration</strong> (events in Event Viewer)</p>
+<pre><code><h1>Install native service (run as Administrator)</h1>
+python -m pywats_client install-service --native
+<h1>Start the service</h1>
+net start pyWATS_Service
+</code></pre>
+<strong>Features automatically configured:</strong>
+- Service recovery: restarts after 5s on first two failures, 30s thereafter
+- Delayed start: waits for network to be ready before starting
+- Event logging: service events written to Windows Event Log
+<h3>Option 3: Using sc.exe (Fallback)</h3>
+<p>If NSSM is not available:</p>
+<pre><code>python -m pywats_client install-service --use-sc
+net start pyWATS_Service
+</code></pre>
+<strong>Note:</strong> <code>sc.exe</code> has limitations (no automatic log rotation, limited crash recovery).
+<h2>Multi-Instance Installation</h2>
+<p>For multi-station setups where you need multiple services (one per test station):</p>
+<pre><code><h1>Install service for Station A</h1>
+python -m pywats_client install-service --instance-id station_a --config "C:\ProgramData\Virinco\pyWATS\config_station_a.json"
+<h1>Install service for Station B</h1>
+python -m pywats_client install-service --instance-id station_b --config "C:\ProgramData\Virinco\pyWATS\config_station_b.json"
+</code></pre>
+<p>Each instance will have:
+- Service name: <code>pyWATS_Service_station_a</code>, <code>pyWATS_Service_station_b</code>
+- Separate logs: <code>pyWATS_Service_station_a.log</code>, <code>pyWATS_Service_station_b.log</code>
+- Independent configuration files</p>
+<h2>Service Management</h2>
+<h3>Check Service Status</h3>
+<pre><code><h1>Using sc.exe</h1>
+sc query pyWATS_Service
+<h1>Using NSSM</h1>
+nssm status pyWATS_Service
+<h1>Using services.msc GUI</h1>
+services.msc
+</code></pre>
+<h3>Start/Stop/Restart</h3>
+<pre><code><h1>Start</h1>
+net start pyWATS_Service
+<h1>Stop</h1>
+net stop pyWATS_Service
+<h1>Restart</h1>
+net stop pyWATS_Service && net start pyWATS_Service
+<h1>Or with NSSM</h1>
+nssm restart pyWATS_Service
+</code></pre>
+<h3>View Logs</h3>
+<p>Logs are written to <code>C:\ProgramData\Virinco\pyWATS\logs\</code>:
+- <code>pyWATS_Service.log</code> - Standard output
+- <code>pyWATS_Service_error.log</code> - Error output</p>
+<pre><code><h1>View latest logs</h1>
+Get-Content "C:\ProgramData\Virinco\pyWATS\logs\pyWATS_Service.log" -Tail 50
+<h1>Monitor live</h1>
+Get-Content "C:\ProgramData\Virinco\pyWATS\logs\pyWATS_Service.log" -Wait
+</code></pre>
+<h3>Uninstall Service</h3>
+<pre><code><h1>Stop and remove</h1>
+python -m pywats_client uninstall-service
+<h1>For specific instance</h1>
+python -m pywats_client uninstall-service --instance-id station_a
+</code></pre>
+<h2>Configuration</h2>
+<h3>Default Configuration</h3>
+<p>The service uses configuration from:
+- Default: <code>C:\ProgramData\Virinco\pyWATS\config.json</code>
+- Custom: Specify with <code>--config</code> during installation</p>
+<h3>Changing Configuration</h3>
+<strong>Option 1: Using GUI</strong>
+1. Run the pyWATS Client GUI
+2. It will discover the running service
+3. Make configuration changes in the GUI
+4. Changes are sent via IPC to the service
+<strong>Option 2: Edit config.json</strong>
+1. Stop the service: <code>net stop pyWATS_Service</code>
+2. Edit: <code>C:\ProgramData\Virinco\pyWATS\config.json</code>
+3. Start the service: <code>net start pyWATS_Service</code>
+<strong>Option 3: Reinstall with new config</strong>
+<pre><code>python -m pywats_client uninstall-service
+python -m pywats_client install-service --config "C:\path\to\new\config.json"
+net start pyWATS_Service
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Service Won't Start</h3>
+<p>1. <strong>Check logs</strong>:
+   <pre><code>   Get-Content "C:\ProgramData\Virinco\pyWATS\logs\pyWATS_Service_error.log"
+   </code></pre></p>
+<p>2. <strong>Test service command manually</strong>:
+   <pre><code>   python -m pywats_client service --instance-id default
+   </code></pre>
+   
+   This runs the service in foreground mode for debugging.</p>
+<p>3. <strong>Verify Python path</strong>:
+   <pre><code>   where python
+   </code></pre>
+   
+   NSSM uses the Python executable from your PATH. Make sure it's correct.</p>
+<h3>Permission Errors</h3>
+<p>The service runs under the SYSTEM account by default. If you need access to network shares or user-specific resources:</p>
+<pre><code><h1>Change service account (NSSM)</h1>
+nssm set pyWATS_Service ObjectName "DOMAIN\Username" "Password"
+<h1>Or use sc.exe</h1>
+sc config pyWATS_Service obj= "DOMAIN\Username" password= "Password"
+</code></pre>
+<h3>Service Crashes</h3>
+<p>NSSM automatically restarts crashed services. Check logs for crash details:
+<pre><code>Get-Content "C:\ProgramData\Virinco\pyWATS\logs\pyWATS_Service_error.log" -Tail 100
+</code></pre></p>
+<p>To disable auto-restart (for debugging):
+<pre><code>nssm set pyWATS_Service AppExit Default Exit
+</code></pre></p>
+<h3>Multiple Instances Conflict</h3>
+<p>If you see errors about ports or IPC endpoints already in use:</p>
+<p>1. Each instance needs a unique <code>--instance-id</code>
+2. Check running services:
+   <pre><code>   sc query type= service state= all | findstr "pyWATS"
+   </code></pre></p>
+<p>3. Stop conflicting instances:
+   <pre><code>   net stop pyWATS_Service
+   net stop pyWATS_Service_station_a
+   </code></pre></p>
+<h2>Silent Installation (IT Deployment)</h2>
+<p>For scripted deployment via GPO, SCCM, or automation tools:</p>
+<h3>Basic Silent Install</h3>
+<pre><code><h1>Install silently with native service</h1>
+python -m pywats_client install-service --native --silent
+<h1>Check exit code</h1>
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Installation failed with exit code $LASTEXITCODE"
+    exit 1
+}
+</code></pre>
+<h3>Silent Install with Configuration</h3>
+<pre><code>python -m pywats_client install-service --native --silent <code>
+    --server-url "https://wats.company.com" </code>
+    --api-token "your-api-token" <code>
+    --watch-folder "C:\TestReports"
+</code></pre>
+<h3>Exit Codes</h3>
+<p>| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 2 | Missing requirements (Python version, pywin32) |
+| 10 | Service already installed |
+| 11 | Service not installed (uninstall) |
+| 14 | Permission denied (need Administrator) |
+| 41 | Server unreachable |</p>
+<h3>Example Deployment Script</h3>
+<pre><code><h1>deploy_pywats.ps1 - Silent deployment script</h1>
+<p>param(
+    [string]$ServerUrl = "https://wats.company.com",
+    [string]$ApiToken,
+    [string]$WatchFolder = "C:\TestReports"
+)</p>
+<h1>Ensure admin privileges</h1>
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Error "Administrator privileges required"
+    exit 14
+}
+<h1>Install Python package (if needed)</h1>
+pip install pywats-api[client] --quiet
+<h1>Install service</h1>
+python -m pywats_client install-service --native --silent </code>
+    --server-url $ServerUrl <code>
+    --api-token $ApiToken </code>
+    --watch-folder $WatchFolder
+<p>if ($LASTEXITCODE -ne 0) {
+    Write-Error "Service installation failed: exit code $LASTEXITCODE"
+    exit $LASTEXITCODE
+}</p>
+<h1>Start service</h1>
+net start pyWATS_Service
+Write-Host "pyWATS Service installed and started successfully"
+</code></pre>
+<h2>Event Log</h2>
+<p>When using <code>--native</code>, the service writes to Windows Event Log:</p>
+<pre><code><h1>View pyWATS events in Event Viewer</h1>
+Get-EventLog -LogName Application -Source "pyWATS" -Newest 20
+</code></pre>
+<p>Events include:
+- Service installation/uninstallation
+- Service start/stop
+- Errors and warnings</p>
+<h2>Advanced Configuration</h2>
+<h3>Custom Service Name</h3>
+<pre><code><h1>Edit WindowsServiceInstaller.SERVICE_NAME in:</h1>
+<h1>src/pywats_client/control/windows_service.py</h1>
+</code></pre>
+<h3>Environment Variables</h3>
+<pre><code><h1>Set environment variables for the service</h1>
+nssm set pyWATS_Service AppEnvironmentExtra PYTHONPATH=C:\custom\path
+</code></pre>
+<h3>Delayed Start</h3>
+<pre><code><h1>Start service 2 minutes after boot</h1>
+sc config pyWATS_Service start= delayed-auto
+</code></pre>
+<h2>GUI Discovery</h2>
+<p>When you open the pyWATS Client GUI:</p>
+<p>1. <strong>Discovery</strong>: GUI scans for running service instances
+2. <strong>Instance Selector</strong>: Shows all discovered services
+3. <strong>Connect</strong>: Select an instance to view/configure
+4. <strong>Status</strong>: Live status updates via IPC</p>
+<p>The GUI never auto-starts services - they must be started separately (manually or via Windows Service).</p>
+<h2>Comparison with Manual Start</h2>
+<p>| Method | Auto-Start | Survives Reboot | Crash Recovery | Service Management |
+|--------|------------|-----------------|----------------|-------------------|
+| <strong>Windows Service</strong> | ✓ | ✓ | ✓ (NSSM) | services.msc, sc.exe |
+| <strong>Manual (GUI)</strong> | ✗ | ✗ | ✗ | Task Manager |
+| <strong>Task Scheduler</strong> | ✓ | ✓ | ✗ | taskschd.msc |
+| <strong>Startup Folder</strong> | ✓ | ✓ | ✗ | Manual |</p>
+<strong>Recommendation:</strong> Use Windows Service for production environments.
+<h2>See Also</h2>
+<p>- <a href="../getting-started.md">Getting Started</a> - Basic client usage
+- <a href="client.md">Client Installation</a> - Installation guide
+- <a href="https://nssm.cc/usage">NSSM Documentation</a> - Full NSSM options
+</p>
+</div>
+
+
+<div class="doc-separator" id="installation-linux-service">
+    <div class="doc-source">Source: docs/installation/linux-service.md</div>
+    <h1>Linux systemd Service Installation</h1>
+<p>This guide explains how to install pyWATS Client as a Linux systemd service that auto-starts on system boot.</p>
+<h2>Overview</h2>
+<p>The pyWATS Client can run as a systemd service in the background, automatically starting when Linux boots. This is the recommended setup for production environments.</p>
+<strong>System Compatibility:</strong>
+- Ubuntu 16.04+ / Debian 8+
+- RHEL/CentOS 7+
+- Fedora 15+
+- Any systemd-based Linux distribution
+<strong>Folder Structure:</strong>
+- <strong>System-wide</strong>: <code>/var/lib/pywats/</code> (configuration, logs, queues)
+- <strong>User-specific</strong>: <code>~/.config/pywats_client/</code>
+- <strong>Service files</strong>: <code>/etc/systemd/system/</code>
+<h2>Prerequisites</h2>
+<h3>Required</h3>
+- Linux with systemd (check: <code>systemctl --version</code>)
+- Python 3.10 or later
+- Root privileges (for system-wide installation)
+<h3>Check systemd</h3>
+<pre><code><h1>Verify systemd is running</h1>
+systemctl --version
+<h1>Should show systemd version (e.g., systemd 245)</h1>
+</code></pre>
+<h2>Installation</h2>
+<h3>System-Wide Installation (Recommended)</h3>
+<p>Installs service that runs at boot, before user login.</p>
+<pre><code><h1>Install pyWATS Client</h1>
+pip install pywats-api[client]
+<h1>Install as systemd service (requires sudo)</h1>
+sudo python -m pywats_client install-service
+<h1>Start the service</h1>
+sudo systemctl start pywats-service
+<h1>Check status</h1>
+sudo systemctl status pywats-service
+</code></pre>
+<p>This creates:
+- Service: <code>pywats-service.service</code>
+- Auto-start: Enabled
+- Logs: <code>journalctl -u pywats-service</code>
+- Data directory: <code>/var/lib/pywats/</code></p>
+<h3>User-Level Installation</h3>
+<p>Installs service that runs when specific user logs in.</p>
+<pre><code><h1>Install pyWATS Client</h1>
+pip install pywats-api[client]
+<h1>Install as user service (specify your username)</h1>
+sudo python -m pywats_client install-service --user $USER
+<h1>Start the service</h1>
+sudo systemctl start pywats-service
+<h1>Check status</h1>
+systemctl status pywats-service
+</code></pre>
+<p>This creates:
+- Service runs as your user account
+- Data directory: <code>~/.config/pywats_client/</code>
+- User-specific permissions</p>
+<h2>Multi-Instance Installation</h2>
+<p>For multi-station setups where you need multiple services (one per test station):</p>
+<pre><code><h1>Create separate config files</h1>
+sudo mkdir -p /var/lib/pywats
+sudo cp config.json /var/lib/pywats/config_station_a.json
+sudo cp config.json /var/lib/pywats/config_station_b.json
+<h1>Install service for Station A</h1>
+sudo python -m pywats_client install-service \
+    --instance-id station_a \
+    --config /var/lib/pywats/config_station_a.json \
+    --user pywats
+<h1>Install service for Station B</h1>
+sudo python -m pywats_client install-service \
+    --instance-id station_b \
+    --config /var/lib/pywats/config_station_b.json \
+    --user pywats
+<h1>Start both services</h1>
+sudo systemctl start pywats-service@station_a
+sudo systemctl start pywats-service@station_b
+</code></pre>
+<p>Each instance will have:
+- Service name: <code>pywats-service@station_a.service</code>, <code>pywats-service@station_b.service</code>
+- Separate configurations
+- Independent logging</p>
+<h2>Service Management</h2>
+<h3>Check Service Status</h3>
+<pre><code><h1>Status</h1>
+sudo systemctl status pywats-service
+<h1>Check if enabled</h1>
+systemctl is-enabled pywats-service
+<h1>Check if running</h1>
+systemctl is-active pywats-service
+</code></pre>
+<h3>Start/Stop/Restart</h3>
+<pre><code><h1>Start</h1>
+sudo systemctl start pywats-service
+<h1>Stop</h1>
+sudo systemctl stop pywats-service
+<h1>Restart</h1>
+sudo systemctl restart pywats-service
+<h1>Reload configuration (without restart)</h1>
+sudo systemctl reload pywats-service
+</code></pre>
+<h3>Enable/Disable Auto-Start</h3>
+<pre><code><h1>Enable (auto-start on boot)</h1>
+sudo systemctl enable pywats-service
+<h1>Disable (don't auto-start)</h1>
+sudo systemctl disable pywats-service
+<h1>Check status</h1>
+systemctl is-enabled pywats-service
+</code></pre>
+<h3>View Logs</h3>
+<p>systemd logs all service output to the journal:</p>
+<pre><code><h1>View all logs</h1>
+sudo journalctl -u pywats-service
+<h1>Follow logs (live)</h1>
+sudo journalctl -u pywats-service -f
+<h1>Last 50 lines</h1>
+sudo journalctl -u pywats-service -n 50
+<h1>Since last boot</h1>
+sudo journalctl -u pywats-service -b
+<h1>Last hour</h1>
+sudo journalctl -u pywats-service --since "1 hour ago"
+<h1>With timestamps</h1>
+sudo journalctl -u pywats-service -o short-iso
+</code></pre>
+<h3>Uninstall Service</h3>
+<pre><code><h1>Stop and remove</h1>
+sudo python -m pywats_client uninstall-service
+<h1>For specific instance</h1>
+sudo python -m pywats_client uninstall-service --instance-id station_a
+<h1>Verify removal</h1>
+systemctl list-units | grep pywats
+</code></pre>
+<h2>Silent Installation (IT Deployment)</h2>
+<p>For automated deployment via Ansible, Puppet, Chef, or shell scripts, use silent mode with exit codes.</p>
+<h3>Silent Mode Parameters</h3>
+<p>| Parameter | Description |
+|-----------|-------------|
+| <code>--silent</code> | Suppress all output (exit codes only) |
+| <code>--server-url URL</code> | Pre-configure WATS server URL |
+| <code>--api-token TOKEN</code> | Pre-configure API token |
+| <code>--watch-folder PATH</code> | Pre-configure watch folder path |
+| <code>--skip-preflight</code> | Skip connectivity checks |
+| <code>--instance-id ID</code> | Create named instance |
+| <code>--user USERNAME</code> | Run service as specific user |</p>
+<h3>Exit Codes</h3>
+<p>| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 2 | Missing requirements (systemd not available) |
+| 10 | Service already installed |
+| 11 | Service not installed (uninstall) |
+| 14 | Permission denied (not running as root) |
+| 20-22 | Configuration errors |
+| 30 | Server unreachable |</p>
+<h3>Bash Deployment Script</h3>
+<pre><code>#!/bin/bash
+<h1>deploy_pywats.sh - Silent deployment for Ubuntu/Debian</h1>
+<p>set -e</p>
+<p>WATS_SERVER="https://your-wats-server.com"
+API_TOKEN="your-api-token"
+WATCH_FOLDER="/data/reports"
+SERVICE_USER="pywats"</p>
+<h1>Create service user if not exists</h1>
+if ! id "$SERVICE_USER" &>/dev/null; then
+    useradd -r -m -d /var/lib/pywats -s /bin/false "$SERVICE_USER"
+fi
+<h1>Create directories</h1>
+mkdir -p /var/lib/pywats /var/log/pywats "$WATCH_FOLDER"
+chown -R "$SERVICE_USER:$SERVICE_USER" /var/lib/pywats /var/log/pywats
+<h1>Install Python package</h1>
+pip3 install pywats-api[client] --quiet
+<h1>Install service silently</h1>
+python3 -m pywats_client install-service \
+    --silent \
+    --server-url "$WATS_SERVER" \
+    --api-token "$API_TOKEN" \
+    --watch-folder "$WATCH_FOLDER" \
+    --user "$SERVICE_USER"
+<p>EXIT_CODE=$?</p>
+<p>case $EXIT_CODE in
+    0)  echo "Installation successful"
+        systemctl start pywats-service
+        ;;
+    10) echo "Already installed, restarting..."
+        systemctl restart pywats-service
+        ;;
+    14) echo "ERROR: Must run as root"
+        exit 1
+        ;;
+    *)  echo "ERROR: Installation failed (code $EXIT_CODE)"
+        exit 1
+        ;;
+esac</p>
+<h1>Verify service is running</h1>
+systemctl is-active pywats-service
+</code></pre>
+<h3>Ansible Playbook</h3>
+<pre><code><h1>deploy_pywats.yml</h1>
+---
+- name: Deploy pyWATS Client
+  hosts: test_stations
+  become: yes
+  vars:
+    wats_server: "https://wats.example.com"
+    api_token: "{{ vault_api_token }}"
+    watch_folder: "/data/reports"
+    service_user: "pywats"
+<p>  tasks:
+    - name: Create service user
+      user:
+        name: "{{ service_user }}"
+        system: yes
+        home: /var/lib/pywats
+        shell: /bin/false
+        create_home: yes</p>
+<p>    - name: Create directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ service_user }}"
+        group: "{{ service_user }}"
+        mode: '0755'
+      loop:
+        - /var/lib/pywats
+        - /var/log/pywats
+        - "{{ watch_folder }}"</p>
+<p>    - name: Install pyWATS
+      pip:
+        name: pywats-api[client]
+        state: latest</p>
+<p>    - name: Install service
+      command: >
+        python3 -m pywats_client install-service
+        --silent
+        --server-url {{ wats_server }}
+        --api-token {{ api_token }}
+        --watch-folder {{ watch_folder }}
+        --user {{ service_user }}
+      register: install_result
+      changed_when: install_result.rc == 0
+      failed_when: install_result.rc not in [0, 10]</p>
+<p>    - name: Start service
+      systemd:
+        name: pywats-service
+        state: started
+        enabled: yes
+</code></pre></p>
+<h3>Query Installation Status</h3>
+<pre><code><h1>Check if service is installed</h1>
+python3 -m pywats_client status --instance-id default
+<h1>Returns exit code 0 if installed, 11 if not</h1>
+<h1>Get service status</h1>
+systemctl is-active pywats-service && echo "Running" || echo "Stopped"
+</code></pre>
+<h2>Configuration</h2>
+<h3>Default Configuration</h3>
+<p>The service uses configuration from:
+- System-wide: <code>/var/lib/pywats/config.json</code>
+- User-specific: <code>~/.config/pywats_client/config.json</code>
+- Custom: Specify with <code>--config</code> during installation</p>
+<h3>Changing Configuration</h3>
+<strong>Option 1: Using GUI</strong>
+1. Run the pyWATS Client GUI
+2. It will discover the running service
+3. Make configuration changes in the GUI
+4. Changes are sent via IPC to the service
+<strong>Option 2: Edit config.json</strong>
+<pre><code><h1>Stop the service</h1>
+sudo systemctl stop pywats-service
+<h1>Edit configuration</h1>
+sudo nano /var/lib/pywats/config.json
+<h1>Start the service</h1>
+sudo systemctl start pywats-service
+<h1>Verify</h1>
+sudo journalctl -u pywats-service -n 20
+</code></pre>
+<strong>Option 3: Reinstall with new config</strong>
+<pre><code>sudo python -m pywats_client uninstall-service
+sudo python -m pywats_client install-service --config /path/to/new/config.json
+sudo systemctl start pywats-service
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Service Won't Start</h3>
+<p>1. <strong>Check logs</strong>:
+   <pre><code>   sudo journalctl -u pywats-service -n 100 --no-pager
+   </code></pre></p>
+<p>2. <strong>Check service file</strong>:
+   <pre><code>   sudo systemctl cat pywats-service
+   </code></pre></p>
+<p>3. <strong>Test service command manually</strong>:
+   <pre><code>   # Run in foreground for debugging
+   python -m pywats_client service --instance-id default
+   </code></pre></p>
+<p>4. <strong>Verify Python path</strong>:
+   <pre><code>   which python
+   python --version
+   </code></pre></p>
+<p>5. <strong>Check permissions</strong>:
+   <pre><code>   ls -la /var/lib/pywats/
+   sudo chown -R pywats:pywats /var/lib/pywats/
+   </code></pre></p>
+<h3>Permission Errors</h3>
+<p>If the service can't access files:</p>
+<pre><code><h1>Create dedicated user</h1>
+sudo useradd -r -s /bin/false pywats
+<h1>Set ownership</h1>
+sudo chown -R pywats:pywats /var/lib/pywats/
+<h1>Reinstall with user</h1>
+sudo python -m pywats_client uninstall-service
+sudo python -m pywats_client install-service --user pywats
+</code></pre>
+<h3>Service Keeps Restarting</h3>
+<p>The service is configured to automatically restart on failure. Check why it's failing:</p>
+<pre><code><h1>View recent crashes</h1>
+sudo journalctl -u pywats-service --since "10 minutes ago"
+<h1>Disable auto-restart temporarily</h1>
+sudo systemctl edit pywats-service
+<h1>Add:</h1>
+<h1>[Service]</h1>
+<h1>Restart=no</h1>
+<p>sudo systemctl daemon-reload
+sudo systemctl restart pywats-service
+</code></pre></p>
+<h3>Port Already in Use</h3>
+<p>If you see "Address already in use" errors:</p>
+<pre><code><h1>Check what's using the port</h1>
+sudo netstat -tlnp | grep :8765
+<h1>Or with ss</h1>
+sudo ss -tlnp | grep :8765
+<h1>Kill the conflicting process or change port in config</h1>
+</code></pre>
+<h3>Multiple Instances Conflict</h3>
+<p>If you see errors about IPC endpoints already in use:</p>
+<pre><code><h1>List all pyWATS services</h1>
+systemctl list-units | grep pywats
+<h1>Check each one</h1>
+sudo systemctl status pywats-service
+sudo systemctl status pywats-service@station_a
+<h1>Ensure each has unique instance-id</h1>
+</code></pre>
+<h2>Advanced Configuration</h2>
+<h3>Custom User and Group</h3>
+<pre><code><h1>Create dedicated user</h1>
+sudo useradd -r -m -d /var/lib/pywats -s /bin/false pywats
+<h1>Install with custom user</h1>
+sudo python -m pywats_client install-service --user pywats
+</code></pre>
+<h3>Environment Variables</h3>
+<p>Edit the service file:</p>
+<pre><code>sudo systemctl edit pywats-service --full
+</code></pre>
+<p>Add environment variables:
+<pre><code>[Service]
+Environment="PYTHONPATH=/custom/path"
+Environment="PYWATS_LOG_LEVEL=DEBUG"
+</code></pre></p>
+<p>Then reload:
+<pre><code>sudo systemctl daemon-reload
+sudo systemctl restart pywats-service
+</code></pre></p>
+<h3>Resource Limits</h3>
+<p>The service unit file includes production-hardened defaults:</p>
+<pre><code>[Service]
+<h1>Memory and CPU limits</h1>
+MemoryMax=512M
+CPUQuota=80%
+LimitNOFILE=65535
+LimitNPROC=4096
+<h1>Watchdog (service health monitoring)</h1>
+Type=notify
+WatchdogSec=60s
+<h1>Security hardening</h1>
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+<h1>Capability restrictions</h1>
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+<h1>System call filtering</h1>
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+</code></pre>
+<p>To customize limits, override with:</p>
+<h3>Network Dependencies</h3>
+<p>If pyWATS needs specific network services:</p>
+<pre><code>sudo systemctl edit pywats-service --full
+</code></pre>
+<p>Add dependencies:
+<pre><code>[Unit]
+After=network-online.target postgresql.service
+Requires=network-online.target
+</code></pre></p>
+<h2>GUI Discovery</h2>
+<p>When you open the pyWATS Client GUI on Linux:</p>
+<p>1. <strong>Discovery</strong>: GUI scans for running service instances via IPC
+2. <strong>Instance Selector</strong>: Shows all discovered services
+3. <strong>Connect</strong>: Select an instance to view/configure
+4. <strong>Status</strong>: Live status updates via IPC</p>
+<p>The GUI never auto-starts services - they must be started separately via systemd.</p>
+<h2>Comparison with Other Methods</h2>
+<p>| Method | Auto-Start | Survives Reboot | Crash Recovery | Service Management |
+|--------|------------|-----------------|----------------|-------------------|
+| <strong>systemd</strong> | ✓ | ✓ | ✓ | systemctl, journalctl |
+| <strong>Manual (GUI)</strong> | ✗ | ✗ | ✗ | Terminal |
+| <strong>cron @reboot</strong> | ✓ | ✓ | ✗ | crontab |
+| <strong>init.d script</strong> | ✓ | ✓ | ✗ | service command |</p>
+<strong>Recommendation:</strong> Use systemd for production environments.
+<h2>Ubuntu Specific Notes</h2>
+<h3>Ubuntu 22.04 LTS (Jammy)</h3>
+<p>Fully supported. systemd 249.</p>
+<pre><code>sudo apt update
+sudo apt install python3 python3-pip
+pip3 install pywats-api[client]
+sudo python3 -m pywats_client install-service
+</code></pre>
+<h3>Ubuntu 20.04 LTS (Focal)</h3>
+<p>Fully supported. systemd 245.</p>
+<h3>Ubuntu 18.04 LTS (Bionic)</h3>
+<p>Supported. systemd 237.</p>
+<h2>See Also</h2>
+<p>- <a href="../getting-started.md">Getting Started</a> - Basic client usage
+- <a href="client.md">Client Installation</a> - Installation guide
+- <a href="https://www.freedesktop.org/software/systemd/man/systemd.service.html">systemd documentation</a>
+</p>
+</div>
+
+
+<div class="doc-separator" id="installation-macos-service">
+    <div class="doc-source">Source: docs/installation/macos-service.md</div>
+    <h1>macOS launchd Service Installation</h1>
+<p>This guide explains how to install pyWATS Client as a macOS launchd service that auto-starts on system boot.</p>
+<h2>Overview</h2>
+<p>The pyWATS Client can run as a launchd daemon/agent in the background, automatically starting when macOS boots or when you log in.</p>
+<strong>Service Types:</strong>
+- <strong>Launch Daemon</strong>: Starts at boot (system-wide, requires sudo)
+- <strong>Launch Agent</strong>: Starts at login (user-specific, no sudo required)
+<strong>Folder Structure:</strong>
+- <strong>Daemons</strong>: <code>/Library/LaunchDaemons/</code> (system-wide)
+- <strong>Agents</strong>: <code>/Library/LaunchAgents/</code> (user-level)
+- <strong>Data (Daemon)</strong>: <code>/var/lib/pywats/</code>
+- <strong>Data (Agent)</strong>: <code>~/.config/pywats_client/</code>
+- <strong>Logs (Daemon)</strong>: <code>/var/log/pywats/</code>
+- <strong>Logs (Agent)</strong>: <code>~/Library/Logs/pyWATS/</code>
+<h2>Prerequisites</h2>
+<h3>Required</h3>
+- macOS 10.10 (Yosemite) or later
+- Python 3.10 or later
+- Administrator privileges (for Launch Daemon)
+<h2>Installation</h2>
+<h3>Option 1: Launch Daemon (System-Wide, Recommended)</h3>
+<p>Runs at boot, before any user logs in. Best for production test stations.</p>
+<pre><code><h1>Install pyWATS Client</h1>
+pip3 install pywats-api[client]
+<h1>Install as Launch Daemon (requires sudo)</h1>
+sudo python3 -m pywats_client install-service
+<h1>Service starts automatically after installation</h1>
+<h1>Or start manually:</h1>
+sudo launchctl start com.wats.pywats.service
+</code></pre>
+<p>This creates:
+- Plist: <code>/Library/LaunchDaemons/com.wats.pywats.service.plist</code>
+- Auto-start: Enabled (runs at boot)
+- Logs: <code>/var/log/pywats/pywats-service.log</code>
+- Data: <code>/var/lib/pywats/</code></p>
+<h3>Option 2: Launch Agent (User-Level)</h3>
+<p>Runs when you log in. Good for development.</p>
+<pre><code><h1>Install pyWATS Client</h1>
+pip3 install pywats-api[client]
+<h1>Install as Launch Agent (no sudo needed)</h1>
+python3 -m pywats_client install-service --user-agent
+<h1>Service starts automatically at login</h1>
+<h1>Or start manually:</h1>
+launchctl start com.wats.pywats.service
+</code></pre>
+<p>This creates:
+- Plist: <code>/Library/LaunchAgents/com.wats.pywats.service.plist</code>
+- Auto-start: At login
+- Logs: <code>~/Library/Logs/pyWATS/pywats-service.log</code>
+- Data: <code>~/.config/pywats_client/</code></p>
+<h2>Multi-Instance Installation</h2>
+<p>For multi-station setups where you need multiple services (one per test station):</p>
+<pre><code><h1>Create config files</h1>
+sudo mkdir -p /var/lib/pywats
+sudo cp config.json /var/lib/pywats/config_station_a.json
+sudo cp config.json /var/lib/pywats/config_station_b.json
+<h1>Install service for Station A</h1>
+sudo python3 -m pywats_client install-service \
+    --instance-id station_a \
+    --config /var/lib/pywats/config_station_a.json
+<h1>Install service for Station B</h1>
+sudo python3 -m pywats_client install-service \
+    --instance-id station_b \
+    --config /var/lib/pywats/config_station_b.json
+</code></pre>
+<p>Each instance will have:
+- Plist: <code>com.wats.pywats.service.station_a.plist</code>, <code>com.wats.pywats.service.station_b.plist</code>
+- Separate configurations
+- Independent logging</p>
+<h2>Service Management</h2>
+<h3>Check Service Status</h3>
+<pre><code><h1>List all launchd services (system)</h1>
+sudo launchctl list | grep pywats
+<h1>List user services</h1>
+launchctl list | grep pywats
+<h1>Check specific service</h1>
+sudo launchctl list com.wats.pywats.service
+</code></pre>
+<h3>Start/Stop</h3>
+<strong>Launch Daemon (system-wide):</strong>
+<pre><code><h1>Start</h1>
+sudo launchctl start com.wats.pywats.service
+<h1>Stop</h1>
+sudo launchctl stop com.wats.pywats.service
+<h1>Note: Service will auto-restart if killed</h1>
+<h1>To prevent restart, unload the plist</h1>
+sudo launchctl unload /Library/LaunchDaemons/com.wats.pywats.service.plist
+</code></pre>
+<strong>Launch Agent (user-level):</strong>
+<pre><code><h1>Start</h1>
+launchctl start com.wats.pywats.service
+<h1>Stop</h1>
+launchctl stop com.wats.pywats.service
+<h1>Unload</h1>
+launchctl unload /Library/LaunchAgents/com.wats.pywats.service.plist
+</code></pre>
+<h3>View Logs</h3>
+<strong>Launch Daemon logs:</strong>
+<pre><code><h1>View logs</h1>
+sudo tail -f /var/log/pywats/pywats-service.log
+<h1>View errors</h1>
+sudo tail -f /var/log/pywats/pywats-service-error.log
+<h1>View with Console.app</h1>
+open -a Console /var/log/pywats/
+</code></pre>
+<strong>Launch Agent logs:</strong>
+<pre><code><h1>View logs</h1>
+tail -f ~/Library/Logs/pyWATS/pywats-service.log
+<h1>View errors</h1>
+tail -f ~/Library/Logs/pyWATS/pywats-service-error.log
+<h1>View with Console.app</h1>
+open -a Console ~/Library/Logs/pyWATS/
+</code></pre>
+<h3>Uninstall Service</h3>
+<strong>Launch Daemon:</strong>
+<pre><code><h1>Stop and remove</h1>
+sudo python3 -m pywats_client uninstall-service
+<h1>For specific instance</h1>
+sudo python3 -m pywats_client uninstall-service --instance-id station_a
+<h1>Verify removal</h1>
+sudo launchctl list | grep pywats
+</code></pre>
+<strong>Launch Agent:</strong>
+<pre><code><h1>Stop and remove</h1>
+python3 -m pywats_client uninstall-service --user-agent
+<h1>Verify removal</h1>
+launchctl list | grep pywats
+</code></pre>
+<h2>Configuration</h2>
+<h3>Default Configuration</h3>
+<p>The service uses configuration from:
+- Daemon: <code>/var/lib/pywats/config.json</code>
+- Agent: <code>~/.config/pywats_client/config.json</code>
+- Custom: Specify with <code>--config</code> during installation</p>
+<h3>Changing Configuration</h3>
+<strong>Option 1: Using GUI</strong>
+1. Run the pyWATS Client GUI
+2. It will discover the running service
+3. Make configuration changes in the GUI
+4. Changes are sent via IPC to the service
+<strong>Option 2: Edit config.json</strong>
+<pre><code><h1>Stop the service</h1>
+sudo launchctl stop com.wats.pywats.service
+<h1>Edit configuration (Daemon)</h1>
+sudo nano /var/lib/pywats/config.json
+<h1>Or for Agent</h1>
+nano ~/.config/pywats_client/config.json
+<h1>Restart the service</h1>
+sudo launchctl start com.wats.pywats.service
+</code></pre>
+<strong>Option 3: Reinstall with new config</strong>
+<pre><code>sudo python3 -m pywats_client uninstall-service
+sudo python3 -m pywats_client install-service --config /path/to/new/config.json
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Service Won't Start</h3>
+<p>1. <strong>Check if plist is loaded</strong>:
+   <pre><code>   sudo launchctl list | grep pywats
+   </code></pre></p>
+<p>2. <strong>Check logs</strong>:
+   <pre><code>   sudo tail -100 /var/log/pywats/pywats-service-error.log
+   </code></pre></p>
+<p>3. <strong>Test service command manually</strong>:
+   <pre><code>   # Run in foreground for debugging
+   python3 -m pywats_client service --instance-id default
+   </code></pre></p>
+<p>4. <strong>Verify Python path</strong>:
+   <pre><code>   which python3
+   python3 --version
+   </code></pre></p>
+<p>5. <strong>Check plist syntax</strong>:
+   <pre><code>   plutil /Library/LaunchDaemons/com.wats.pywats.service.plist
+   </code></pre></p>
+<h3>Permission Errors</h3>
+<p>If the service can't access files:</p>
+<pre><code><h1>Check ownership (Daemon)</h1>
+ls -la /var/lib/pywats/
+<h1>Fix permissions</h1>
+sudo chown -R root:wheel /var/lib/pywats/
+sudo chmod -R 755 /var/lib/pywats/
+<h1>For Agent</h1>
+ls -la ~/.config/pywats_client/
+</code></pre>
+<h3>Service Keeps Restarting</h3>
+<p>The service is configured to auto-restart on failure. Check why it's failing:</p>
+<pre><code><h1>View recent errors</h1>
+sudo tail -100 /var/log/pywats/pywats-service-error.log
+<h1>Check system logs</h1>
+log show --predicate 'subsystem == "com.apple.launchd"' --last 10m | grep pywats
+<h1>Disable auto-restart temporarily</h1>
+sudo launchctl unload /Library/LaunchDaemons/com.wats.pywats.service.plist
+</code></pre>
+<h3>Port Already in Use</h3>
+<p>If you see "Address already in use" errors:</p>
+<pre><code><h1>Check what's using the port</h1>
+sudo lsof -i :8765
+<h1>Kill the conflicting process or change port in config</h1>
+</code></pre>
+<h3>Service Doesn't Auto-Start at Boot</h3>
+<p>1. <strong>Verify plist location</strong>:
+   <pre><code>   ls -l /Library/LaunchDaemons/com.wats.pywats.service.plist
+   </code></pre></p>
+<p>2. <strong>Check RunAtLoad</strong>:
+   <pre><code>   plutil -p /Library/LaunchDaemons/com.wats.pywats.service.plist | grep RunAtLoad
+   # Should show: "RunAtLoad" => 1
+   </code></pre></p>
+<p>3. <strong>Reload plist</strong>:
+   <pre><code>   sudo launchctl unload /Library/LaunchDaemons/com.wats.pywats.service.plist
+   sudo launchctl load /Library/LaunchDaemons/com.wats.pywats.service.plist
+   </code></pre></p>
+<h2>Advanced Configuration</h2>
+<h3>Custom Environment Variables</h3>
+<p>Edit the plist file:</p>
+<pre><code>sudo nano /Library/LaunchDaemons/com.wats.pywats.service.plist
+</code></pre>
+<p>Add environment variables:
+<pre><code><key>EnvironmentVariables</key>
+<dict>
+    <key>PYTHONPATH</key>
+    <string>/custom/path</string>
+    <key>PYWATS_LOG_LEVEL</key>
+    <string>DEBUG</string>
+</dict>
+</code></pre></p>
+<p>Then reload:
+<pre><code>sudo launchctl unload /Library/LaunchDaemons/com.wats.pywats.service.plist
+sudo launchctl load /Library/LaunchDaemons/com.wats.pywats.service.plist
+</code></pre></p>
+<h3>Run on Schedule</h3>
+<p>Instead of continuous running, run periodically:</p>
+<pre><code><key>StartCalendarInterval</key>
+<dict>
+    <key>Hour</key>
+    <integer>8</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+</dict>
+</code></pre>
+<h3>Resource Limits</h3>
+<p>Add limits to prevent runaway processes:</p>
+<pre><code><key>SoftResourceLimits</key>
+<dict>
+    <key>NumberOfFiles</key>
+    <integer>1024</integer>
+</dict>
+<key>HardResourceLimits</key>
+<dict>
+    <key>NumberOfFiles</key>
+    <integer>2048</integer>
+</dict>
+</code></pre>
+<h3>Network Dependency</h3>
+<p>Ensure network is available before starting:</p>
+<p>The default plist already includes this via <code>StandardOutPath</code> and <code>StandardErrorPath</code>, which ensures the filesystem is ready.</p>
+<h2>GUI Discovery</h2>
+<p>When you open the pyWATS Client GUI on macOS:</p>
+<p>1. <strong>Discovery</strong>: GUI scans for running service instances via IPC
+2. <strong>Instance Selector</strong>: Shows all discovered services
+3. <strong>Connect</strong>: Select an instance to view/configure
+4. <strong>Status</strong>: Live status updates via IPC</p>
+<p>The GUI never auto-starts services - they must be started separately via launchd.</p>
+<h2>Comparison with Other Methods</h2>
+<p>| Method | Auto-Start | Survives Reboot | Crash Recovery | Service Management |
+|--------|------------|-----------------|----------------|-------------------|
+| <strong>launchd Daemon</strong> | ✓ (boot) | ✓ | ✓ | launchctl |
+| <strong>launchd Agent</strong> | ✓ (login) | ✓ | ✓ | launchctl |
+| <strong>Manual (GUI)</strong> | ✗ | ✗ | ✗ | Terminal |
+| <strong>Login Item</strong> | ✓ (login) | ✓ | ✗ | System Preferences |
+| <strong>cron @reboot</strong> | ✓ | ✓ | ✗ | crontab |</p>
+<strong>Recommendation:</strong> Use Launch Daemon for production test stations.
+<h2>macOS Version Notes</h2>
+<h3>macOS 13+ (Ventura)</h3>
+<p>Fully supported. May require additional privacy permissions.</p>
+<pre><code><h1>Grant Full Disk Access if needed</h1>
+System Settings → Privacy & Security → Full Disk Access
+</code></pre>
+<h3>macOS 12 (Monterey)</h3>
+<p>Fully supported.</p>
+<h3>macOS 11 (Big Sur)</h3>
+<p>Fully supported.</p>
+<h3>macOS 10.15 (Catalina)</h3>
+<p>Supported. May prompt for security approval on first run.</p>
+<h2>See Also</h2>
+<p>- <a href="../getting-started.md">Getting Started</a> - Basic client usage
+- <a href="client.md">Client Installation</a> - Installation guide
+- <a href="https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html">Apple launchd documentation</a>
+</p>
+</div>
+
+
+<div class="section-header" id="architecture">
+    <h1>Architecture</h1>
+</div>
+
+
+<div class="doc-separator" id="architecture-architecture">
+    <div class="doc-source">Source: docs/architecture.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\architecture.md</em>
+</div>
+
+
+<div class="doc-separator" id="architecture-client-architecture">
+    <div class="doc-source">Source: docs/client-architecture.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\client-architecture.md</em>
+</div>
+
+
+<div class="doc-separator" id="architecture-integration-patterns">
+    <div class="doc-source">Source: docs/integration-patterns.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\integration-patterns.md</em>
+</div>
+
+
+<div class="section-header" id="domain-modules">
+    <h1>Domain Modules</h1>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-overview">
+    <div class="doc-source">Source: docs/modules/README.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\README.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-report">
+    <div class="doc-source">Source: docs/modules/report.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\report.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-asset">
+    <div class="doc-source">Source: docs/modules/asset.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\asset.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-process">
+    <div class="doc-source">Source: docs/modules/process.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\process.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-product">
+    <div class="doc-source">Source: docs/modules/product.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\product.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-production">
+    <div class="doc-source">Source: docs/modules/production.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\production.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-analytics">
+    <div class="doc-source">Source: docs/modules/analytics.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\analytics.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-rootcause">
+    <div class="doc-source">Source: docs/modules/rootcause.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\rootcause.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-software">
+    <div class="doc-source">Source: docs/modules/software.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\software.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-scim">
+    <div class="doc-source">Source: docs/modules/scim.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\scim.md</em>
+</div>
+
+
+<div class="doc-separator" id="domain-modules-events">
+    <div class="doc-source">Source: docs/modules/EVENTS.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\modules\EVENTS.md</em>
+</div>
+
+
+<div class="section-header" id="usage-guides">
+    <h1>Usage Guides</h1>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-report-module">
+    <div class="doc-source">Source: docs/usage/report-module.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\usage\report-module.md</em>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-report-builder">
+    <div class="doc-source">Source: docs/usage/report-builder.md</div>
+    <h1>ReportBuilder - Simple Report Building for pyWATS</h1>
+<h2>Overview</h2>
+<p>The <strong>ReportBuilder</strong> is a forgiving, LLM-friendly tool for creating WATS test reports with minimal complexity. It's designed for:</p>
+<p>- <strong>Converter scripts</strong> that parse test data from various formats
+- <strong>LLM-generated code</strong> that needs to build reports without deep understanding
+- <strong>Quick prototyping</strong> where you don't want to think about report structure
+- <strong>Situations with messy data</strong> that needs graceful handling</p>
+<h2>Philosophy</h2>
+<p>- <strong>If it can be inferred, it will be</strong> - Step types, comparison operators, and statuses are automatically determined
+- <strong>If it's missing, use sensible defaults</strong> - You only specify what you have
+- <strong>Never fail on missing metadata</strong> - Do the best with what's provided
+- <strong>Support both flat and hierarchical structures</strong> - Automatically organize by groups</p>
+<h2>Quick Start</h2>
+<h3>Simple Example</h3>
+<pre><code>from pywats.tools import ReportBuilder
+<h1>Create builder</h1>
+builder = ReportBuilder(
+    part_number="MODULE-100",
+    serial_number="MOD-2025-001"
+)
+<h1>Add steps - it figures out the types</h1>
+builder.add_step("Voltage Test", 5.02, unit="V", low_limit=4.5, high_limit=5.5)
+builder.add_step("Power OK", True)
+builder.add_step("Serial Read", "ABC123")
+<h1>Build and submit</h1>
+report = builder.build()
+api.report.submit_report(report)
+</code></pre>
+<h3>One-Liner with quick_report()</h3>
+<pre><code>from pywats.tools import quick_report
+<p>steps = [
+    {"name": "Voltage", "value": 5.0, "unit": "V", "low_limit": 4.5, "high_limit": 5.5},
+    {"name": "Current", "value": 1.2, "unit": "A"},
+    {"name": "Status", "value": True}
+]</p>
+<p>report = quick_report("PN-001", "SN-001", steps)
+api.report.submit_report(report)
+</code></pre></p>
+<h2>Key Features</h2>
+<h3>1. Automatic Type Inference</h3>
+<p>The builder automatically determines the correct step type based on your data:</p>
+<pre><code>builder.add_step("Boolean Test", True)           # → Boolean step
+builder.add_step("Numeric Test", 5.0)           # → Numeric step
+builder.add_step("String Test", "ABC")          # → String step
+builder.add_step("Multi-Numeric", [1, 2, 3])    # → Multi-numeric step
+</code></pre>
+<h3>2. Smart Status Calculation</h3>
+<p>Status is automatically calculated from limits unless you override it:</p>
+<pre><code><h1>Auto-calculated as "P" (in range)</h1>
+builder.add_step("Test1", 5.0, low_limit=4.0, high_limit=6.0)
+<h1>Auto-calculated as "F" (out of range)</h1>
+builder.add_step("Test2", 10.0, low_limit=4.0, high_limit=6.0)
+<h1>Manual override</h1>
+builder.add_step("Test3", 5.0, status="F")  # Force fail
+</code></pre>
+<h3>3. Flexible Data Handling</h3>
+<p>Works with messy, real-world data:</p>
+<pre><code><h1>Limits as strings (auto-converted)</h1>
+builder.add_step("Test", "5.02", low_limit="4.5", high_limit="5.5")
+<h1>Various status formats</h1>
+builder.add_step("Test1", 5.0, status="PASS")
+builder.add_step("Test2", 5.0, status="P")
+builder.add_step("Test3", 5.0, status="Passed")
+builder.add_step("Test4", 5.0, status=True)
+<h1>Boolean from string</h1>
+builder.add_step("Test", "TRUE")  # Converts to boolean
+</code></pre>
+<h3>4. Automatic Grouping/Sequences</h3>
+<p>Create hierarchical reports by specifying groups:</p>
+<pre><code>builder = ReportBuilder("PN-001", "SN-001")
+<h1>Power tests group</h1>
+builder.add_step("VCC", 3.3, unit="V", group="Power Tests")
+builder.add_step("VDD", 1.8, unit="V", group="Power Tests")
+<h1>Communication tests group</h1>
+builder.add_step("UART", True, group="Communication")
+builder.add_step("I2C", True, group="Communication")
+<h1>Build creates sequences automatically</h1>
+report = builder.build()
+</code></pre>
+<p>Result:
+<pre><code>MainSequence
+├── Power Tests (sequence)
+│   ├── VCC
+│   └── VDD
+└── Communication (sequence)
+    ├── UART
+    └── I2C
+</code></pre></p>
+<h2>API Reference</h2>
+<h3>ReportBuilder</h3>
+<pre><code>class ReportBuilder:
+    def __init__(
+        self,
+        part_number: str,
+        serial_number: str,
+        revision: str = "A",
+        operator: Optional[str] = None,
+        station: Optional[str] = None,
+        location: Optional[str] = None,
+        process_code: int = 10,
+        result: Optional[str] = None,
+        start_time: Optional[datetime] = None,
+        purpose: Optional[str] = None
+    )
+</code></pre>
+<strong>Parameters:</strong>
+- <code>part_number</code> (required): Part number
+- <code>serial_number</code> (required): Serial number
+- <code>revision</code>: Revision (default: "A")
+- <code>operator</code>: Operator name (default: "Converter")
+- <code>station</code>: Station name
+- <code>location</code>: Location
+- <code>process_code</code>: Operation type code (default: 10 = SW Debug)
+- <code>result</code>: Overall result "P" or "F" (auto-calculated if None)
+- <code>start_time</code>: Start time (defaults to now)
+- <code>purpose</code>: Test purpose
+<h3>add_step()</h3>
+<pre><code>def add_step(
+    self,
+    name: str,
+    value: Any = None,
+    unit: Optional[str] = None,
+    low_limit: Optional[Union[float, str]] = None,
+    high_limit: Optional[Union[float, str]] = None,
+    status: Optional[str] = None,
+    group: Optional[str] = None,
+    comp_op: Optional[Union[CompOp, str]] = None,
+    <strong>kwargs
+) -> "ReportBuilder"
+</code></pre>
+</strong>Type Inference:<strong>
+- <code>bool</code> / <code>"TRUE"</code> / <code>"FALSE"</code> / <code>"PASS"</code> / <code>"FAIL"</code> → Boolean step
+- <code>float</code> / <code>int</code> with limits → Numeric limit test
+- <code>float</code> / <code>int</code> without limits → Numeric log
+- <code>str</code> → String step
+- <code>list[float]</code> / <code>list[int]</code> → Multi-numeric step
+- <code>list[bool]</code> → Multi-boolean step
+- <code>list[str]</code> → Multi-string step
+</strong>Parameters:<strong>
+- <code>name</code> (required): Step name
+- <code>value</code>: Measured value (can be anything)
+- <code>unit</code>: Unit of measurement (e.g., "V", "A", "°C")
+- <code>low_limit</code>: Lower limit (for numeric tests)
+- <code>high_limit</code>: Upper limit (for numeric tests)
+- <code>status</code>: Status override ("P", "F", "Passed", "Failed", etc.)
+- <code>group</code>: Group/sequence name (creates hierarchy)
+- <code>comp_op</code>: Comparison operator (auto-inferred if not specified)
+- <code></strong>kwargs</code>: Additional metadata stored for debugging
+<strong>Returns:</strong> Self (for method chaining)
+<h3>add_step_from_dict()</h3>
+<pre><code>def add_step_from_dict(
+    self,
+    data: Dict[str, Any],
+    name_key: str = "name",
+    value_key: str = "value",
+    unit_key: str = "unit",
+    low_limit_key: str = "low_limit",
+    high_limit_key: str = "high_limit",
+    status_key: str = "status",
+    group_key: str = "group"
+) -> "ReportBuilder"
+</code></pre>
+<p>Add a step from a dictionary with flexible key mapping. Automatically tries common variations:
+- name: <code>name</code>, <code>Name</code>, <code>TestName</code>, <code>test_name</code>, <code>Step</code>
+- value: <code>value</code>, <code>Value</code>, <code>MeasuredValue</code>, <code>Result</code>
+- unit: <code>unit</code>, <code>Unit</code>, <code>Units</code>, <code>UOM</code>
+- low_limit: <code>low_limit</code>, <code>LowLimit</code>, <code>Low</code>, <code>MinLimit</code>, <code>min</code>
+- high_limit: <code>high_limit</code>, <code>HighLimit</code>, <code>High</code>, <code>MaxLimit</code>, <code>max</code>
+- status: <code>status</code>, <code>Status</code>, <code>Result</code>, <code>Pass</code>
+- group: <code>group</code>, <code>Group</code>, <code>Sequence</code>, <code>TestGroup</code></p>
+<h3>add_misc_info()</h3>
+<pre><code>def add_misc_info(
+    self,
+    description: str,
+    text: str
+) -> "ReportBuilder"
+</code></pre>
+<p>Add searchable metadata to the report header.</p>
+<h3>add_sub_unit()</h3>
+<pre><code>def add_sub_unit(
+    self,
+    part_type: str,
+    part_number: Optional[str] = None,
+    serial_number: Optional[str] = None,
+    revision: Optional[str] = None
+) -> "ReportBuilder"
+</code></pre>
+<p>Add a sub-unit (component) to the report.</p>
+<h3>build()</h3>
+<pre><code>def build(self) -> UUTReport
+</code></pre>
+<p>Build the final UUTReport. This method:
+1. Creates UUTReport with header info
+2. Groups steps by sequence (if groups specified)
+3. Adds all steps in correct order
+4. Sets overall result based on step statuses
+5. Adds misc info and sub-units</p>
+<strong>Returns:</strong> UUTReport ready to submit
+<h3>quick_report()</h3>
+<pre><code>def quick_report(
+    part_number: str,
+    serial_number: str,
+    steps: List[Dict[str, Any]],
+    <strong>kwargs
+) -> UUTReport
+</code></pre>
+<p>Create a report from a list of step dictionaries in one call. Perfect for LLM-generated code.</p>
+<h2>Usage Examples</h2>
+<h3>Example 1: Simple Converter</h3>
+<pre><code>from pywats.tools import ReportBuilder
+<p>def convert_my_format(file_path):
+    # Parse your file format
+    data = parse_file(file_path)
+    
+    # Create builder
+    builder = ReportBuilder(
+        part_number=data["part_number"],
+        serial_number=data["serial_number"]
+    )
+    
+    # Add all tests
+    for test in data["tests"]:
+        builder.add_step(
+            name=test["name"],
+            value=test["value"],
+            unit=test.get("unit"),
+            low_limit=test.get("low_limit"),
+            high_limit=test.get("high_limit")
+        )
+    
+    # Done!
+    return builder.build()
+</code></pre></p>
+<h3>Example 2: From CSV Data</h3>
+<pre><code>import csv
+from pywats.tools import ReportBuilder
+<p>def convert_csv(csv_file):
+    with open(csv_file) as f:
+        reader = csv.DictReader(f)
+        
+        builder = ReportBuilder("PN-FROM-CSV", "SN-FROM-CSV")
+        
+        for row in reader:
+            builder.add_step_from_dict(
+                row,
+                name_key="TestName",
+                value_key="MeasuredValue",
+                unit_key="Unit",
+                low_limit_key="LowLimit",
+                high_limit_key="HighLimit"
+            )
+        
+        return builder.build()
+</code></pre></p>
+<h3>Example 3: With Metadata</h3>
+<pre><code>builder = ReportBuilder(
+    part_number="ASSEMBLY-500",
+    serial_number="ASM-2025-0123",
+    operator="Production Line 3",
+    station="Final Test"
+)
+<h1>Add tests</h1>
+builder.add_step("Visual Inspection", "PASS")
+builder.add_step("Voltage", 12.05, unit="V", low_limit=11.5, high_limit=12.5)
+<h1>Add metadata</h1>
+builder.add_misc_info("Batch Number", "BATCH-2025-Q1-042")
+builder.add_misc_info("Temperature", "22°C")
+<h1>Add components</h1>
+builder.add_sub_unit(
+    part_type="Power Supply",
+    part_number="PSU-24V-100W",
+    serial_number="PSU-001"
+)
+<p>report = builder.build()
+</code></pre></p>
+<h3>Example 4: ICT Converter</h3>
+<pre><code>def convert_ict_data(ict_file):
+    data = parse_ict_file(ict_file)
+    
+    builder = ReportBuilder(
+        part_number=data["pn"],
+        serial_number=data["sn"],
+        operator=data["operator"]
+    )
+    
+    # Group by test type
+    for resistance in data["resistances"]:
+        builder.add_step(
+            name=resistance["designator"],
+            value=resistance["measured"],
+            unit="Ω",
+            low_limit=resistance["min"],
+            high_limit=resistance["max"],
+            group="Resistance Tests"
+        )
+    
+    for capacitor in data["capacitors"]:
+        builder.add_step(
+            name=capacitor["designator"],
+            value=capacitor["measured"],
+            unit="µF",
+            low_limit=capacitor["min"],
+            high_limit=capacitor["max"],
+            group="Capacitance Tests"
+        )
+    
+    return builder.build()
+</code></pre>
+<h2>LLM Integration Guide</h2>
+<h3>For LLM Monitoring/Autocorrection</h3>
+<p>When monitoring converter code, check for these patterns:</p>
+<p>✅ </strong>Good Pattern:<strong>
+<pre><code>builder = ReportBuilder(pn, sn)
+builder.add_step("Test", value, unit="V", low_limit=4.5, high_limit=5.5)
+report = builder.build()
+</code></pre></p>
+<p>❌ </strong>Avoid Direct UUTReport Construction:<strong>
+<pre><code><h1>Too complex for LLMs to get right</h1>
+report = UUTReport(pn=pn, sn=sn, ...)
+root = report.get_root_sequence_call()
+root.add_numeric_step(...)  # Easy to mess up parameters
+</code></pre></p>
+<h3>For LLM Implementation of New Converters</h3>
+</strong>Template for LLMs:<strong>
+<pre><code>from pywats.tools import ReportBuilder
+<p>def convert_my_format(file_path):
+    # 1. Parse file (this is the only custom part)
+    data = parse_your_format(file_path)
+    
+    # 2. Create builder
+    builder = ReportBuilder(
+        part_number=data["part_number"],
+        serial_number=data["serial_number"]
+    )
+    
+    # 3. Add steps (one line per test)
+    for test in data["tests"]:
+        builder.add_step(
+            name=test["name"],
+            value=test["value"],
+            unit=test.get("unit"),
+            low_limit=test.get("low_limit"),
+            high_limit=test.get("high_limit"),
+            group=test.get("group")  # Optional
+        )
+    
+    # 4. Build and return
+    return builder.build()
+</code></pre></p>
+</strong>LLM should only customize:<strong> The <code>parse_your_format()</code> function to extract data from the specific file format.
+</strong>Everything else is standard.<strong>
+<h2>Advanced Features</h2>
+<h3>Multi-Value Steps</h3>
+<pre><code><h1>Multi-numeric (array of numbers)</h1>
+builder.add_step(
+    "Calibration Points",
+    [1.2, 1.3, 1.1, 1.25, 1.15],
+    unit="mV",
+    low_limit=1.0,
+    high_limit=1.5
+)
+<h1>Multi-boolean (array of pass/fail)</h1>
+builder.add_step("Pin Tests", [True, True, False, True])
+<h1>Multi-string (array of strings)</h1>
+builder.add_step("Serial Numbers", ["ABC", "DEF", "GHI"])
+</code></pre>
+<h3>Custom Comparison Operators</h3>
+<pre><code>from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+<p>builder.add_step(
+    "Exact Value",
+    5.0,
+    low_limit=5.0,
+    comp_op=CompOp.EQ  # Must equal exactly
+)</p>
+<p>builder.add_step(
+    "Greater Than",
+    10.0,
+    low_limit=5.0,
+    comp_op=CompOp.GT  # Must be > 5.0 (not >=)
+)
+</code></pre></p>
+<h3>Failed Reports</h3>
+<pre><code>builder = ReportBuilder("PN", "SN")
+<p>builder.add_step("Test1", 5.0, low_limit=4.0, high_limit=6.0)  # Pass
+builder.add_step("Test2", 10.0, low_limit=4.0, high_limit=6.0)  # FAIL</p>
+<p>report = builder.build()
+<h1>report.result will be "F" because Test2 failed</h1>
+</code></pre></p>
+<h2>Comparison with Direct API</h2>
+<h3>Before (Complex):</h3>
+<pre><code>from pywats.domains.report.report_models import UUTReport
+from pywats.domains.report.report_models.uut.steps.comp_operator import CompOp
+<p>report = UUTReport(
+    pn="PN-001",
+    sn="SN-001",
+    rev="A",
+    process_code=10,
+    station_name="Station1",
+    result="P",
+    start=datetime.now()
+)</p>
+<p>root = report.get_root_sequence_call()</p>
+<h1>Need to know exact parameters, types, and comparison operators</h1>
+root.add_numeric_step(
+    name="Voltage",
+    value=5.02,
+    unit="V",
+    comp_op=CompOp.GELE,
+    low_limit=4.5,
+    high_limit=5.5,
+    status="P"
+)
+</code></pre>
+<h3>After (Simple):</h3>
+<pre><code>from pywats.tools import ReportBuilder
+<p>builder = ReportBuilder("PN-001", "SN-001")</p>
+<h1>Just provide data - everything else is inferred</h1>
+builder.add_step("Voltage", 5.02, unit="V", low_limit=4.5, high_limit=5.5)
+<p>report = builder.build()
+</code></pre></p>
+<h2>Best Practices</h2>
+<p>1. </strong>Use ReportBuilder for converters<strong> - It handles edge cases better than manual construction
+2. </strong>Let it infer types<strong> - Don't overthink numeric vs string vs boolean
+3. </strong>Use groups for organization<strong> - Makes reports easier to read in WATS
+4. </strong>Add misc_info for metadata<strong> - Searchable in WATS
+5. </strong>Let status auto-calculate<strong> - Only override if you have explicit pass/fail from source</p>
+<h2>Troubleshooting</h2>
+<h3>Problem: Status always "P" even with failures</h3>
+</strong>Solution:<strong> Make sure limits are numeric (not strings), or provide explicit status:
+<pre><code><h1>Auto-fails if out of range</h1>
+builder.add_step("Test", 10.0, low_limit=4.0, high_limit=6.0)
+<h1>Or explicit</h1>
+builder.add_step("Test", 10.0, status="F")
+</code></pre>
+<h3>Problem: Wrong step type created</h3>
+</strong>Solution:<strong> Ensure value is correct Python type:
+<pre><code><h1>Boolean</h1>
+builder.add_step("Test", True)  # ✓
+builder.add_step("Test", "true")  # ✗ (becomes string step)
+<h1>Numeric</h1>
+builder.add_step("Test", 5.0)  # ✓
+builder.add_step("Test", "5.0")  # ? (auto-converted, but better to convert yourself)
+</code></pre>
+<h3>Problem: Can't find data in dictionary</h3>
+</strong>Solution:** Use <code>add_step_from_dict()</code> with explicit key names:
+<pre><code>builder.add_step_from_dict(
+    data,
+    name_key="TestName",  # Specify exact keys
+    value_key="MeasuredValue"
+)
+</code></pre>
+<h2>See Also</h2>
+<p>- <a href="../modules/report.md">Report Module Documentation</a>
+- <a href="../../converters/converter_template.py">Converter Template</a>
+- <a href="../../examples/report/report_builder_examples.py">Examples</a>
+</p>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-asset-module">
+    <div class="doc-source">Source: docs/usage/asset-module.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\usage\asset-module.md</em>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-process-module">
+    <div class="doc-source">Source: docs/usage/process-module.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\usage\process-module.md</em>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-product-module">
+    <div class="doc-source">Source: docs/usage/product-module.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\usage\product-module.md</em>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-production-module">
+    <div class="doc-source">Source: docs/usage/production-module.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\usage\production-module.md</em>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-rootcause-module">
+    <div class="doc-source">Source: docs/usage/rootcause-module.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\usage\rootcause-module.md</em>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-software-module">
+    <div class="doc-source">Source: docs/usage/software-module.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\usage\software-module.md</em>
+</div>
+
+
+<div class="doc-separator" id="usage-guides-box-build-guide">
+    <div class="doc-source">Source: docs/usage/box-build-guide.md</div>
+    <h1>Box Build Guide</h1>
+<h2>Overview</h2>
+<p>Box build functionality in pyWATS manages multi-level product assemblies where a parent product contains one or more child products (subunits). This guide explains how to:</p>
+<p>1. Define what subunits a product requires (Box Build Template)
+2. Actually build assemblies during production (Unit Assembly)</p>
+<h2>Key Concept: Templates vs. Units</h2>
+<p>Understanding the distinction between these two concepts is crucial:</p>
+<h3>Box Build Template (Product Domain)</h3>
+<strong>What it is:</strong> A DESIGN-TIME definition of what subunits are required to build a product.
+<strong>Where it lives:</strong> Product domain (<code>api.product</code>)
+<strong>Example use case:</strong> "A Controller Module (CTRL-100) requires 1x Power Supply and 2x Sensor Board"
+<pre><code><h1>This defines the REQUIREMENTS (what's needed)</h1>
+template = api.product.get_box_build_template("CTRL-100", "A")
+template.add_subunit("PSU-200", "A", quantity=1)
+template.add_subunit("SENSOR-300", "A", quantity=2)
+template.save()
+</code></pre>
+<h3>Unit Assembly (Production Domain)</h3>
+<strong>What it is:</strong> RUNTIME attachment of actual production units (with serial numbers) to a parent unit.
+<strong>Where it lives:</strong> Production domain (<code>api.production</code>)
+<strong>Example use case:</strong> "Unit CTRL-SN-001 now contains PSU-SN-456, SENSOR-SN-789, and SENSOR-SN-790"
+<pre><code><h1>This BUILDS the assembly (attaches actual units)</h1>
+api.production.add_child_to_assembly(
+    parent_serial="CTRL-SN-001", parent_part="CTRL-100",
+    child_serial="PSU-SN-456", child_part="PSU-200"
+)
+</code></pre>
+<h2>Complete Workflow</h2>
+<h3>Step 1: Create Products</h3>
+<p>First, create the parent and child products with revisions:</p>
+<pre><code>from pywats import pyWATS
+from pywats.domains.product.enums import ProductState
+<p>api = pyWATS(base_url="https://wats.example.com", token="your-token")</p>
+<h1>Create child product (Power Supply)</h1>
+api.product.create_product(
+    part_number="PSU-200",
+    name="Power Supply Unit",
+    description="24V DC Power Supply",
+    state=ProductState.ACTIVE
+)
+api.product.create_revision(
+    part_number="PSU-200",
+    revision="A",
+    state=ProductState.ACTIVE
+)
+<h1>Create parent product (Controller Module)</h1>
+api.product.create_product(
+    part_number="CTRL-100",
+    name="Controller Module",
+    description="Main Controller with Power Supply",
+    state=ProductState.ACTIVE
+)
+api.product.create_revision(
+    part_number="CTRL-100",
+    revision="A",
+    state=ProductState.ACTIVE
+)
+</code></pre>
+<h3>Step 2: Define Box Build Template</h3>
+<p>Define what subunits the parent product requires:</p>
+<pre><code><h1>Get or create box build template</h1>
+template = api.product.get_box_build_template("CTRL-100", "A")
+<h1>Add required subunits</h1>
+template.add_subunit(
+    part_number="PSU-200",
+    revision="A",
+    quantity=1
+)
+<h1>Save to server</h1>
+template.save()
+<h1>Or use context manager (auto-saves)</h1>
+with api.product.get_box_build_template("CTRL-100", "A") as bb:
+    bb.add_subunit("PSU-200", "A", quantity=1)
+    bb.add_subunit("SENSOR-300", "A", quantity=2)
+<h1>Automatically saved when exiting context</h1>
+</code></pre>
+<h3>Step 3: Create Production Units</h3>
+<p>Create actual units with serial numbers:</p>
+<pre><code>from pywats.domains.production import Unit
+<h1>Create parent unit</h1>
+parent_unit = Unit(
+    serial_number="CTRL-SN-001",
+    part_number="CTRL-100",
+    revision="A"
+)
+<h1>Create child unit</h1>
+child_unit = Unit(
+    serial_number="PSU-SN-456",
+    part_number="PSU-200",
+    revision="A"
+)
+<h1>Save to WATS</h1>
+api.production.create_units([parent_unit, child_unit])
+</code></pre>
+<h3>Step 4: Test and Finalize Child Units</h3>
+<strong>Important:</strong> Child units MUST be finalized before they can be added to an assembly.
+<pre><code><h1>Run tests on child unit (creates test reports)</h1>
+<h1>... your test code here ...</h1>
+<h1>Set child unit to "Finalized" phase</h1>
+api.production.set_unit_phase(
+    serial_number="PSU-SN-456",
+    part_number="PSU-200",
+    phase="Finalized"  # or phase=16 (the phase ID)
+)
+</code></pre>
+<h3>Step 5: Build the Assembly</h3>
+<p>Attach child units to the parent:</p>
+<pre><code><h1>Add child to parent assembly</h1>
+result = api.production.add_child_to_assembly(
+    parent_serial="CTRL-SN-001",
+    parent_part="CTRL-100",
+    child_serial="PSU-SN-456",
+    child_part="PSU-200"
+)
+<p>if result:
+    print("Child successfully added to assembly!")
+</code></pre></p>
+<h3>Step 6: Verify Assembly</h3>
+<p>Check if all required subunits are attached:</p>
+<pre><code><h1>Verify assembly matches box build template</h1>
+verification = api.production.verify_assembly(
+    serial_number="CTRL-SN-001",
+    part_number="CTRL-100",
+    revision="A"
+)
+<p>print(f"Verification result: {verification}")
+</code></pre></p>
+<h2>API Reference</h2>
+<h3>Product Domain (Templates)</h3>
+<h4><code>api.product.get_box_build_template(part_number, revision)</code></h4>
+<p>Get or create a box build template.</p>
+<pre><code>template = api.product.get_box_build_template("CTRL-100", "A")
+</code></pre>
+<h4><code>BoxBuildTemplate.add_subunit(part_number, revision, quantity=1)</code></h4>
+<p>Add a subunit requirement to the template.</p>
+<pre><code>template.add_subunit("PSU-200", "A", quantity=1)
+template.add_subunit("SENSOR-300", "A", quantity=2, revision_mask="A,B")
+</code></pre>
+<strong>Parameters:</strong>
+- <code>part_number</code>: Child product part number
+- <code>revision</code>: Default revision for the child
+- <code>quantity</code>: How many are required (default: 1)
+- <code>revision_mask</code>: Acceptable revisions pattern (optional)
+<h4><code>BoxBuildTemplate.remove_subunit(part_number, revision)</code></h4>
+<p>Remove a subunit from the template.</p>
+<pre><code>template.remove_subunit("OLD-PART", "A")
+</code></pre>
+<h4><code>BoxBuildTemplate.save()</code></h4>
+<p>Persist all changes to the server.</p>
+<pre><code>template.save()
+</code></pre>
+<h4><code>BoxBuildTemplate.subunits</code></h4>
+<p>Get current subunits (including pending changes).</p>
+<pre><code>for subunit in template.subunits:
+    print(f"{subunit.child_part_number} rev {subunit.child_revision}: qty {subunit.quantity}")
+</code></pre>
+<h3>Production Domain (Unit Assembly)</h3>
+<h4><code>api.production.add_child_to_assembly(parent_serial, parent_part, child_serial, child_part)</code></h4>
+<p>Attach a child unit to a parent assembly.</p>
+<strong>Requirements:</strong>
+- Parent's box build template must define this child product
+- Child unit must be in "Finalized" phase
+- Child must not already have a parent
+<pre><code>api.production.add_child_to_assembly(
+    parent_serial="CTRL-SN-001",
+    parent_part="CTRL-100",
+    child_serial="PSU-SN-456",
+    child_part="PSU-200"
+)
+</code></pre>
+<h4><code>api.production.remove_child_from_assembly(parent_serial, parent_part, child_serial, child_part)</code></h4>
+<p>Detach a child unit from a parent.</p>
+<pre><code>api.production.remove_child_from_assembly(
+    parent_serial="CTRL-SN-001",
+    parent_part="CTRL-100",
+    child_serial="PSU-SN-456",
+    child_part="PSU-200"
+)
+</code></pre>
+<h4><code>api.production.verify_assembly(serial_number, part_number, revision)</code></h4>
+<p>Check if assembly matches box build template.</p>
+<pre><code>result = api.production.verify_assembly("CTRL-SN-001", "CTRL-100", "A")
+</code></pre>
+<h4><code>api.production.set_unit_phase(serial_number, part_number, phase)</code></h4>
+<p>Set a unit's phase. Use "Finalized" (or phase ID 16) before adding to assembly.</p>
+<pre><code><h1>By name</h1>
+api.production.set_unit_phase("PSU-SN-456", "PSU-200", "Finalized")
+<h1>By ID</h1>
+api.production.set_unit_phase("PSU-SN-456", "PSU-200", 16)
+</code></pre>
+<h2>Revision Masks</h2>
+<p>Revision masks control which child revisions are acceptable in a box build:</p>
+<pre><code><h1>Accept only revision A</h1>
+template.add_subunit("PART", "A", revision_mask="A")
+<h1>Accept any revision starting with "1."</h1>
+template.add_subunit("PART", "1.0", revision_mask="1.%")
+<h1>Accept multiple specific revisions</h1>
+template.add_subunit("PART", "A", revision_mask="A,B,C")
+<h1>Accept revision range</h1>
+template.add_subunit("PART", "1.0", revision_mask="1.0,1.1,1.2")
+</code></pre>
+<h2>Error Handling</h2>
+<h3>Common Errors</h3>
+<strong>Child not finalized:</strong>
+<pre><code>Error: Child unit must be in phase Finalized
+Solution: Call api.production.set_unit_phase(child_sn, child_pn, "Finalized")
+</code></pre>
+<strong>Child not in template:</strong>
+<pre><code>Error: Parent's box build must define the child unit as valid
+Solution: Add the child product to the box build template first
+</code></pre>
+<strong>Child already has parent:</strong>
+<pre><code>Error: The child unit must not already have a parent
+Solution: Remove child from existing parent first
+</code></pre>
+<h2>BOM vs Box Build</h2>
+<strong>Bill of Materials (BOM):</strong> Lists electronic components (resistors, capacitors, ICs) - typically for PCB assembly. Uses WSBF XML format.
+<strong>Box Build Template:</strong> Lists subassemblies/subunits (PCBAs, power supplies, modules) - for mechanical/final assembly. Uses ProductRevisionRelation.
+<pre><code><h1>BOM: Electronic components for PCB</h1>
+bom_items = [
+    BomItem(component_ref="R1", part_number="RES-10K", quantity=1),
+    BomItem(component_ref="C1", part_number="CAP-100NF", quantity=1),
+]
+api.product.update_bom("PCBA-100", "A", bom_items)
+<h1>Box Build: Subassemblies for final product</h1>
+template = api.product.get_box_build_template("MODULE-100", "A")
+template.add_subunit("PCBA-100", "A", quantity=1)  # The assembled PCB
+template.add_subunit("PSU-200", "A", quantity=1)   # Power supply
+template.save()
+</code></pre>
+<h2>Best Practices</h2>
+<p>1. <strong>Define templates before production:</strong> Set up box build templates before creating production units.</p>
+<p>2. <strong>Finalize children first:</strong> Always finalize child units before adding to assembly.</p>
+<p>3. <strong>Use revision masks wisely:</strong> Allow flexibility where appropriate (e.g., <code>"1.%"</code> for minor revisions).</p>
+<p>4. <strong>Verify after assembly:</strong> Always call <code>verify_assembly()</code> to confirm completeness.</p>
+<p>5. <strong>Handle errors gracefully:</strong> Wrap assembly operations in try/except blocks.</p>
+<pre><code>try:
+    api.production.add_child_to_assembly(
+        parent_serial, parent_part, child_serial, child_part
+    )
+except Exception as e:
+    print(f"Assembly failed: {e}")
+    # Handle error (retry, log, alert, etc.)
+</code></pre>
+
+</div>
+
+
+<div class="section-header" id="reference">
+    <h1>Reference</h1>
+</div>
+
+
+<div class="doc-separator" id="reference-env-variables">
+    <div class="doc-source">Source: docs/env-variables.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\env-variables.md</em>
+</div>
+
+
+<div class="doc-separator" id="reference-error-catalog">
+    <div class="doc-source">Source: docs/error-catalog.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\error-catalog.md</em>
+</div>
+
+
+<div class="doc-separator" id="reference-wats-domain-knowledge">
+    <div class="doc-source">Source: docs/wats-domain-knowledge.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\wats-domain-knowledge.md</em>
+</div>
+
+
+<div class="doc-separator" id="reference-llm-converter-guide">
+    <div class="doc-source">Source: docs/llm-converter-guide.md</div>
+    <em>Document not found: C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\docs\llm-converter-guide.md</em>
+</div>
+
+    
+    <!-- Footer -->
+    <hr>
+    <p style="text-align: center; color: #999; font-size: 0.9em;">
+        pyWATS Documentation &copy; Virinco AS<br>
+        Generated on 2026-01-29
+    </p>
+</body>
+</html>
