@@ -36,7 +36,7 @@ Key Features:
 from typing import TypeVar, Callable, List, Optional, Any, Dict, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from pywats.shared.result import Success, Failure
+from pywats.shared.result import Success, Failure, Result
 import logging
 
 T = TypeVar("T")
