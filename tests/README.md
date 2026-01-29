@@ -1,5 +1,18 @@
 # pyWATS Test Suite
 
+> **⚠️ CRITICAL WARNING - DO NOT RUN ON PRODUCTION SERVERS**
+>
+> **This test suite creates extensive test data on the WATS server and should ONLY be run against dedicated sandbox/development environments.**
+>
+> - ❌ **NEVER** run these tests against production WATS servers
+> - ❌ **NEVER** use production credentials in test configuration
+> - ✅ **ALWAYS** use a dedicated sandbox server for testing
+> - ✅ **ALWAYS** verify you're connected to the correct environment before running tests
+>
+> **Test data created includes:** UUT reports, products, parts, serial numbers, stations, processes, and various domain-specific entities. Cleaning up this data from a production environment is extremely time-consuming and error-prone.
+>
+> **Designed by:** Ola Lund Reppe, Integration Architect, The WATS Company AS
+
 This directory contains the comprehensive test suite for pyWATS, organized by functional area for better discoverability and maintenance.
 
 ## Directory Structure

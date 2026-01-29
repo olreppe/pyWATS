@@ -205,7 +205,7 @@ xattr -cr "/Applications/pyWATS Client.app"
 launchctl list | grep pywats
 
 # Load manually
-launchctl load ~/Library/LaunchAgents/com.virinco.pywats-client.plist
+launchctl load ~/Library/LaunchAgents/com.wats.pywats-client.plist
 
 # Check for errors
 launchctl error <error_code>
@@ -432,4 +432,4 @@ cat config.json | python3 -m json.tool
 
 - **GitHub Issues:** https://github.com/olreppe/pyWATS/issues
 - **Documentation:** https://github.com/olreppe/pyWATS/docs
-- **Email:** support@virinco.com
+- **Email:** support@wats.com

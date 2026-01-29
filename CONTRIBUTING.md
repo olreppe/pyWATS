@@ -1,5 +1,7 @@
 # Contributing to PyWATS
 
+> **Project Attribution**: PyWATS was designed and implemented by **Ola Lund Reppe** (Integration Architect, The WATS Company AS) using AI-assisted development.
+
 ## Changelog Management
 
 PyWATS uses a **split changelog** structure to keep the main changelog readable:

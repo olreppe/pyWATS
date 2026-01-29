@@ -22,6 +22,11 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ### Added
 - Test coverage improvements for pywats_client: new tests for `io.py`, `config_manager.py`, `connection_config.py`, `exceptions.py`, `converters/models.py`, and `exit_codes.py` modules
 - Coverage configuration: excluded GUI code from coverage metrics (gui/, service_tray.py, windows_service.py, diagnostics.py) to focus on testable modules
+- **Documentation**: AI coding attribution and project credits (Integration Architect: Ola Lund Reppe)
+- **Documentation**: Critical test suite warning - tests must NEVER be run on production servers
+
+### Changed
+- **Company branding**: Updated from Virinco AS to The WATS Company AS across all documentation, deployment configs, and copyright notices
 
 ### Fixed
 - Python 3.11 typing compatibility: `Result[T]` type alias cannot be subscripted on Union types. Changed `parallel_execute` return type to use `Union[Success[T], Failure]` directly.

@@ -76,15 +76,58 @@ if ($confirm -ne 'y' -and $confirm -ne 'Y') {
 }
 
 Write-Host ""
+
+# Check if we should remove workflows from GHE
+$removeWorkflows = $true
+if (Test-Path ".ghe-exclude") {
+    $excludeContent = Get-Content ".ghe-exclude" -Raw
+    if ($excludeContent -match "\.github/workflows") {
+        Write-Host "Note: Workflows will be removed from GHE (review-only copy)" -ForegroundColor Yellow
+        Write-Host ""
+    }
+}
+
 Write-Host "Syncing to GitHub Enterprise..." -ForegroundColor Green
 
 try {
-    if ($All) {
-        Write-Host "  Pushing all branches..." -ForegroundColor Gray
-        git push $RemoteName --all
+    # First, remove workflows from GHE if needed
+    if ($removeWorkflows -and -not $All) {
+        Write-Host "  Removing workflows from GHE branch..." -ForegroundColor Gray
+        
+        # Create temporary branch with workflows removed
+        $tempBranch = "temp-ghe-sync-$((Get-Date).Ticks)"
+        git checkout -b $tempBranch 2>$null
+        
+        if (Test-Path ".github/workflows") {
+            git rm -r .github/workflows --quiet 2>$null
+            git rm .github/FUNDING.yml --quiet 2>$null
+            git rm .github/dependabot.yml --quiet 2>$null
+            
+            git commit -m "GHE sync: Remove workflows (review-only copy)" --quiet
+            
+            # Push the cleaned branch to GHE
+            git push $RemoteName "${tempBranch}:${Branch}" --force
+            
+            # Return to original branch and cleanup
+            git checkout $Branch --quiet
+            git branch -D $tempBranch --quiet
+            
+            Write-Host "  Workflows excluded from GHE" -ForegroundColor Green
+        } else {
+            # No workflows to remove, just push normally
+            git checkout $Branch --quiet
+            git branch -D $tempBranch --quiet
+            git push $RemoteName $Branch
+        }
     } else {
-        Write-Host "  Pushing branch $Branch..." -ForegroundColor Gray
-        git push $RemoteName $Branch
+        # Normal push (all branches or no workflow removal)
+        if ($All) {
+            Write-Host "  Pushing all branches..." -ForegroundColor Gray
+            git push $RemoteName --all
+        } else {
+            Write-Host "  Pushing branch $Branch..." -ForegroundColor Gray
+            git push $RemoteName $Branch
+        }
     }
     
     if ($PushTags) {

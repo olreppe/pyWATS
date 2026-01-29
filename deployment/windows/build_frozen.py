@@ -37,10 +37,10 @@ def get_version():
         return "0.0.0"
 
 VERSION = get_version()
-COMPANY_NAME = "Virinco AS"
+COMPANY_NAME = "The WATS Company AS"
 PRODUCT_NAME = "pyWATS Client"
 DESCRIPTION = "WATS Test Data Management Client"
-COPYRIGHT = "Copyright © 2024-2026 Virinco AS"
+COPYRIGHT = "Copyright © 2024-2026 The WATS Company AS"
 
 # =============================================================================
 # Build Options

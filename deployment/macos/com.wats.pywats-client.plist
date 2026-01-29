@@ -4,7 +4,7 @@
 <dict>
     <!-- Service identifier -->
     <key>Label</key>
-    <string>com.virinco.pywats-client</string>
+    <string>com.wats.pywats-client</string>
     
     <!-- Program to run -->
     <key>ProgramArguments</key>

@@ -46,7 +46,7 @@ For current changes, see [CHANGELOG.md](CHANGELOG.md).
 - Consolidated converter architecture
 - Cross-platform service installation (Windows/Linux/macOS)
 - Service/GUI separation architecture
-- Virinco folder structure
+- Standard folder structure
 
 ### Fixed
 - ReportBuilder multi-value step fixes

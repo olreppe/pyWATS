@@ -3,6 +3,9 @@
 [![PyPI version](https://badge.fury.io/py/pywats-api.svg)](https://badge.fury.io/py/pywats-api)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![AI Coded](https://img.shields.io/badge/AI-Coded-purple.svg)](https://github.com/features/copilot)
+
+> **🤖 AI-Powered Development**: This entire project was designed and implemented using AI-assisted coding by **Ola Lund Reppe, Integration Architect** at The WATS Company AS.
 
 A Python library for interacting with the [WATS](https://servername.wats.com) test data management platform API.
 

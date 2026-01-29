@@ -40,11 +40,11 @@ sudo python3 -m pywats_client install-service
 
 # Service starts automatically after installation
 # Or start manually:
-sudo launchctl start com.virinco.pywats.service
+sudo launchctl start com.wats.pywats.service
 ```
 
 This creates:
-- Plist: `/Library/LaunchDaemons/com.virinco.pywats.service.plist`
+- Plist: `/Library/LaunchDaemons/com.wats.pywats.service.plist`
 - Auto-start: Enabled (runs at boot)
 - Logs: `/var/log/pywats/pywats-service.log`
 - Data: `/var/lib/pywats/`
@@ -62,11 +62,11 @@ python3 -m pywats_client install-service --user-agent
 
 # Service starts automatically at login
 # Or start manually:
-launchctl start com.virinco.pywats.service
+launchctl start com.wats.pywats.service
 ```
 
 This creates:
-- Plist: `/Library/LaunchAgents/com.virinco.pywats.service.plist`
+- Plist: `/Library/LaunchAgents/com.wats.pywats.service.plist`
 - Auto-start: At login
 - Logs: `~/Library/Logs/pyWATS/pywats-service.log`
 - Data: `~/.config/pywats_client/`
@@ -93,7 +93,7 @@ sudo python3 -m pywats_client install-service \
 ```
 
 Each instance will have:
-- Plist: `com.virinco.pywats.service.station_a.plist`, `com.virinco.pywats.service.station_b.plist`
+- Plist: `com.wats.pywats.service.station_a.plist`, `com.wats.pywats.service.station_b.plist`
 - Separate configurations
 - Independent logging
 
@@ -109,7 +109,7 @@ sudo launchctl list | grep pywats
 launchctl list | grep pywats
 
 # Check specific service
-sudo launchctl list com.virinco.pywats.service
+sudo launchctl list com.wats.pywats.service
 ```
 
 ### Start/Stop
@@ -117,26 +117,26 @@ sudo launchctl list com.virinco.pywats.service
 **Launch Daemon (system-wide):**
 ```bash
 # Start
-sudo launchctl start com.virinco.pywats.service
+sudo launchctl start com.wats.pywats.service
 
 # Stop
-sudo launchctl stop com.virinco.pywats.service
+sudo launchctl stop com.wats.pywats.service
 
 # Note: Service will auto-restart if killed
 # To prevent restart, unload the plist
-sudo launchctl unload /Library/LaunchDaemons/com.virinco.pywats.service.plist
+sudo launchctl unload /Library/LaunchDaemons/com.wats.pywats.service.plist
 ```
 
 **Launch Agent (user-level):**
 ```bash
 # Start
-launchctl start com.virinco.pywats.service
+launchctl start com.wats.pywats.service
 
 # Stop
-launchctl stop com.virinco.pywats.service
+launchctl stop com.wats.pywats.service
 
 # Unload
-launchctl unload /Library/LaunchAgents/com.virinco.pywats.service.plist
+launchctl unload /Library/LaunchAgents/com.wats.pywats.service.plist
 ```
 
 ### View Logs
@@ -208,7 +208,7 @@ The service uses configuration from:
 **Option 2: Edit config.json**
 ```bash
 # Stop the service
-sudo launchctl stop com.virinco.pywats.service
+sudo launchctl stop com.wats.pywats.service
 
 # Edit configuration (Daemon)
 sudo nano /var/lib/pywats/config.json
@@ -217,7 +217,7 @@ sudo nano /var/lib/pywats/config.json
 nano ~/.config/pywats_client/config.json
 
 # Restart the service
-sudo launchctl start com.virinco.pywats.service
+sudo launchctl start com.wats.pywats.service
 ```
 
 **Option 3: Reinstall with new config**
@@ -254,7 +254,7 @@ sudo python3 -m pywats_client install-service --config /path/to/new/config.json
 
 5. **Check plist syntax**:
    ```bash
-   plutil /Library/LaunchDaemons/com.virinco.pywats.service.plist
+   plutil /Library/LaunchDaemons/com.wats.pywats.service.plist
    ```
 
 ### Permission Errors
@@ -285,7 +285,7 @@ sudo tail -100 /var/log/pywats/pywats-service-error.log
 log show --predicate 'subsystem == "com.apple.launchd"' --last 10m | grep pywats
 
 # Disable auto-restart temporarily
-sudo launchctl unload /Library/LaunchDaemons/com.virinco.pywats.service.plist
+sudo launchctl unload /Library/LaunchDaemons/com.wats.pywats.service.plist
 ```
 
 ### Port Already in Use
@@ -303,19 +303,19 @@ sudo lsof -i :8765
 
 1. **Verify plist location**:
    ```bash
-   ls -l /Library/LaunchDaemons/com.virinco.pywats.service.plist
+   ls -l /Library/LaunchDaemons/com.wats.pywats.service.plist
    ```
 
 2. **Check RunAtLoad**:
    ```bash
-   plutil -p /Library/LaunchDaemons/com.virinco.pywats.service.plist | grep RunAtLoad
+   plutil -p /Library/LaunchDaemons/com.wats.pywats.service.plist | grep RunAtLoad
    # Should show: "RunAtLoad" => 1
    ```
 
 3. **Reload plist**:
    ```bash
-   sudo launchctl unload /Library/LaunchDaemons/com.virinco.pywats.service.plist
-   sudo launchctl load /Library/LaunchDaemons/com.virinco.pywats.service.plist
+   sudo launchctl unload /Library/LaunchDaemons/com.wats.pywats.service.plist
+   sudo launchctl load /Library/LaunchDaemons/com.wats.pywats.service.plist
    ```
 
 ## Advanced Configuration
@@ -325,7 +325,7 @@ sudo lsof -i :8765
 Edit the plist file:
 
 ```bash
-sudo nano /Library/LaunchDaemons/com.virinco.pywats.service.plist
+sudo nano /Library/LaunchDaemons/com.wats.pywats.service.plist
 ```
 
 Add environment variables:
@@ -341,8 +341,8 @@ Add environment variables:
 
 Then reload:
 ```bash
-sudo launchctl unload /Library/LaunchDaemons/com.virinco.pywats.service.plist
-sudo launchctl load /Library/LaunchDaemons/com.virinco.pywats.service.plist
+sudo launchctl unload /Library/LaunchDaemons/com.wats.pywats.service.plist
+sudo launchctl load /Library/LaunchDaemons/com.wats.pywats.service.plist
 ```
 
 ### Run on Schedule

@@ -172,7 +172,7 @@ def generate_wix_source():
                       WorkingDirectory="INSTALLDIR"
                       Icon="ProductIcon" />
             <RemoveFolder Id="RemoveProgramMenuDir" On="uninstall" />
-            <RegistryValue Root="HKCU" Key="Software\\Virinco\\pyWATS" Name="MenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+            <RegistryValue Root="HKCU" Key="Software\\WATS\\pyWATS" Name="MenuShortcut" Type="integer" Value="1" KeyPath="yes" />
         </Component>
         
         <!-- Desktop Shortcut -->
@@ -182,7 +182,7 @@ def generate_wix_source():
                       Target="[INSTALLDIR]pywats-client-gui.exe"
                       WorkingDirectory="INSTALLDIR"
                       Icon="ProductIcon" />
-            <RegistryValue Root="HKCU" Key="Software\\Virinco\\pyWATS" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+            <RegistryValue Root="HKCU" Key="Software\\WATS\\pyWATS" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
         </Component>
         
         <!-- Windows Service -->

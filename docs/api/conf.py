@@ -11,8 +11,8 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 project = 'pyWATS'
-copyright = '2024-2026, Virinco AS'
-author = 'Virinco AS'
+copyright = '2024-2026, The WATS Company AS'
+author = 'The WATS Company AS | Design & Implementation: Ola Lund Reppe, Integration Architect'
 release = '0.2.0b2'
 version = '0.2.0'
 

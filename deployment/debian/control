@@ -1,12 +1,12 @@
 Source: pywats-client
 Section: python
 Priority: optional
-Maintainer: Virinco <support@virinco.com>
+Maintainer: The WATS Company AS <support@wats.com>
 Build-Depends: debhelper (>= 10), dh-python, python3-all (>= 3.10), python3-setuptools, python3-pip
 Standards-Version: 4.5.1
-Homepage: https://github.com/virinco/pyWATS
-Vcs-Browser: https://github.com/virinco/pyWATS
-Vcs-Git: https://github.com/virinco/pyWATS.git
+Homepage: https://github.com/olreppe/pyWATS
+Vcs-Browser: https://github.com/olreppe/pyWATS
+Vcs-Git: https://github.com/olreppe/pyWATS.git
 
 Package: pywats-client
 Architecture: all

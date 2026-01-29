@@ -565,3 +565,22 @@ src/pywats_client/converters/example_files_to_be_converted/
 # C# reference code (internal only, not for distribution)
 referenced_code/
 referenced_code_net_core/
+
+# Git credentials and authentication (NEVER commit these!)
+.git-credentials
+.netrc
+*_credentials.txt
+*_token.txt
+gh_token
+ghe_token
+.github_token
+*.pat
+
+# GitHub Enterprise sync (internal only - not for public repository)
+.ghe-exclude
+scripts/migrate_to_ghe.ps1
+scripts/setup_ghe_sync.ps1
+scripts/sync_to_ghe.ps1
+scripts/remove_ghe_workflows.ps1
+scripts/GHE_SYNC_README.md
+scripts/GHE_CREDENTIALS_SECURITY.md

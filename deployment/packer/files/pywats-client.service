@@ -1,6 +1,6 @@
 [Unit]
 Description=pyWATS Client Service
-Documentation=https://github.com/virinco/pyWATS
+Documentation=https://github.com/olreppe/pyWATS
 After=network-online.target
 Wants=network-online.target
 

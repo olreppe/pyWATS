@@ -75,7 +75,7 @@ pyinstaller --name pywats-client \
 ```bash
 pyinstaller --name "pyWATS Client" \
     --windowed \
-    --osx-bundle-identifier com.virinco.pywats-client \
+    --osx-bundle-identifier com.wats.pywats-client \
     --icon deployment/standalone/pywats.icns \
     --add-data "src/pywats_client/gui/resources:resources" \
     --hidden-import pywats \

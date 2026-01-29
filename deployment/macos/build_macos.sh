@@ -161,7 +161,7 @@ build_pkg() {
     # Build component package
     pkgbuild --root "$APP_BUNDLE" \
         --install-location "/Applications/$APP_NAME.app" \
-        --identifier "com.virinco.pywats-client" \
+        --identifier "com.wats.pywats-client" \
         --version "$VERSION" \
         ${DEVELOPER_ID_INST:+--sign "$DEVELOPER_ID_INST"} \
         "$COMPONENT_PKG"

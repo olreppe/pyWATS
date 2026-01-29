@@ -68,6 +68,6 @@ autoinstall:
        
        First-time setup: sudo first-boot-setup.sh
        
-       Documentation: https://github.com/virinco/pyWATS
+       Documentation: https://github.com/olreppe/pyWATS
       ===============================================
       EOF

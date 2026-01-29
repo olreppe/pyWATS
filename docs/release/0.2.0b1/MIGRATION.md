@@ -47,7 +47,7 @@ This release introduces **security hardening** (Stage 1), **versioning** (Stage 
    # Linux/macOS
    systemctl restart pywats-client
    # or
-   launchctl restart com.virinco.pywats-client
+   launchctl restart com.wats.pywats-client
    
    # Windows
    net stop pywats-client

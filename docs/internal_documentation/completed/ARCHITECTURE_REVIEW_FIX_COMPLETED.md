@@ -198,6 +198,7 @@ Test Breakdown:
 **Improvement:** +3 points
 
 ### Grade Breakdown
+
 | Category | Before | After | Change |
 |----------|--------|-------|--------|
 | Security | C (73) | A (95) | +22 |
