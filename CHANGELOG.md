@@ -17,6 +17,20 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ---
 
+## [0.2.0b3] - 2026-01-29
+
+### Added
+- **Documentation**: Comprehensive architecture review documents for code quality and maintenance
+  - API Architecture Review (650+ lines) - 9.5/10 rating
+  - Client Architecture Review (850+ lines) - 9.0/10 rating
+  - Cross-Platform Support Review (1000+ lines) - 9.0/10 rating
+  - GUI Architecture Review (600+ lines) - 8.0/10 rating
+
+### Removed
+- Obsolete internal documentation (NAMING_CONSISTENCY_REPORT.md)
+
+---
+
 ## [0.2.0b2] - 2026-01-29
 
 ### Added
