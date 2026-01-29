@@ -127,7 +127,7 @@ class AsyncProcessService:
             >>> stats = service.cache_stats
             >>> print(f"Hit rate: {stats.hit_rate:.1f}%")
         """
-        internal_stats = self._cache.stats
+        internal_stats = self._cache._stats
         return CacheStats(
             hits=internal_stats.hits,
             misses=internal_stats.misses,

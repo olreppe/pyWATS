@@ -357,7 +357,7 @@ class SequenceCall(Step):
             step_parent_name = getattr(step.parent, "name", "None")  # Get parent name for each step
             
             if isinstance(step, SequenceCall):  # If step is another SequenceCall, recurse
-                self.print_hierarchy(step, indent + 1)
+                step.print_hierarchy(indent + 1)
             else:
                 # Print the step with its class name
                 print(f"{prefix}    - {step.__class__.__name__}: {getattr(step, 'name', 'Unnamed')} (Parent: {step_parent_name}, Class: {step.step_type})")

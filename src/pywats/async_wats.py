@@ -401,8 +401,9 @@ class AsyncWATS:
         """
         if self._software is None:
             repo = AsyncSoftwareRepository(
-                self._http_client, 
-                self._error_handler
+                self._http_client,
+                base_url=self._base_url,
+                error_handler=self._error_handler
             )
             self._software = AsyncSoftwareService(repo)
         return self._software

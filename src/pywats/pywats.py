@@ -386,7 +386,7 @@ class pyWATS:
             )
             async_service = AsyncProductService(repo, self._base_url)
             self._product = SyncProductServiceWrapper(async_service)
-        return self._product
+        return self._product  # type: ignore[return-value]
     
     @property
     def asset(self) -> SyncServiceWrapper:

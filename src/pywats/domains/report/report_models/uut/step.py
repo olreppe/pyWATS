@@ -123,7 +123,7 @@ class Step(WATSBase, ABC):
     # return the steps path
     def get_step_path(self) -> str:
         path = []
-        current_step = self
+        current_step: Step | None = self
         while current_step is not None:
             path.append(current_step.name)
             current_step = current_step.parent
