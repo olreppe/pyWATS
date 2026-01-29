@@ -405,7 +405,7 @@ class Routes:
         PARETO = f"{BASE}/Pareto"
         
         @staticmethod
-        def test_statistics(part_number: str = None) -> str:
+        def test_statistics(part_number: str | None = None) -> str:
             """GET /api/Analytics/TestStatistics[/{partNumber}]"""
             if part_number:
                 return f"{Routes.Analytics.BASE}/TestStatistics/{part_number}"

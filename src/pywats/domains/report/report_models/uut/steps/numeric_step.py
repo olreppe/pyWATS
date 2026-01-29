@@ -142,7 +142,7 @@ class MultiNumericStep(Step):
                 return False
         return True
 
-    def add_measurement(self,*, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float=None, low_limit:float=None):
+    def add_measurement(self,*, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float | None = None, low_limit:float | None = None):
         name = self.check_for_duplicates(name) 
         nm = MultiNumericMeasurement(name=name, value=value, unit=unit, status=status, comp_op=comp_op, high_limit=high_limit, low_limit=low_limit, parent_step=self)
         self.measurements.append(nm)

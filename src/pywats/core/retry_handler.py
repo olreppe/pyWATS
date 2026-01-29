@@ -205,7 +205,8 @@ class RetryHandler:
             except httpx.ConnectError as e:
                 last_exception = ConnectionError(
                     f"Failed to connect: {e}",
-                    url=endpoint
+                    operation=f"{method} {endpoint}",
+                    details={"url": endpoint}
                 )
                 
                 if should_retry_flag:
@@ -229,7 +230,8 @@ class RetryHandler:
             except httpx.TimeoutException as e:
                 last_exception = TimeoutError(
                     f"Request timed out: {e}",
-                    endpoint=endpoint
+                    operation=f"{method} {endpoint}",
+                    details={"endpoint": endpoint}
                 )
                 
                 if should_retry_flag:
@@ -251,7 +253,7 @@ class RetryHandler:
                 raise last_exception
                 
             except Exception as e:
-                raise PyWATSError(f"HTTP request failed: {e}", show_hints=False)
+                raise PyWATSError(f"HTTP request failed: {e}")
         
         # All retries exhausted
         if last_exception:
@@ -259,7 +261,7 @@ class RetryHandler:
         if last_response:
             return last_response
         
-        raise PyWATSError("Unexpected state: no response or exception after retries", show_hints=False)
+        raise PyWATSError("Unexpected state: no response or exception after retries")
     
     async def execute_async(
         self,
@@ -325,7 +327,8 @@ class RetryHandler:
             except httpx.ConnectError as e:
                 last_exception = ConnectionError(
                     f"Failed to connect: {e}",
-                    url=endpoint
+                    operation=f"{method} {endpoint}",
+                    details={"url": endpoint}
                 )
                 
                 if should_retry_flag:
@@ -349,7 +352,8 @@ class RetryHandler:
             except httpx.TimeoutException as e:
                 last_exception = TimeoutError(
                     f"Request timed out: {e}",
-                    endpoint=endpoint
+                    operation=f"{method} {endpoint}",
+                    details={"endpoint": endpoint}
                 )
                 
                 if should_retry_flag:
@@ -371,7 +375,7 @@ class RetryHandler:
                 raise last_exception
                 
             except Exception as e:
-                raise PyWATSError(f"HTTP request failed: {e}", show_hints=False)
+                raise PyWATSError(f"HTTP request failed: {e}")
         
         # All retries exhausted
         if last_exception:
@@ -379,4 +383,4 @@ class RetryHandler:
         if last_response:
             return last_response
         
-        raise PyWATSError("Unexpected state: no response or exception after retries", show_hints=False)
+        raise PyWATSError("Unexpected state: no response or exception after retries")

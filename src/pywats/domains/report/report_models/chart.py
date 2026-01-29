@@ -85,7 +85,7 @@ class Chart(WATSBase):
     """
 
         
-    def AddSeries(self, name: str, y_label:str, y_values: List[float], x_label: str, x_values: List[float] = None) -> ChartSeries:        
+    def AddSeries(self, name: str, y_label:str, y_values: List[float], x_label: str, x_values: List[float] | None = None) -> ChartSeries:        
         y_data = ";".join(map(str,y_values))
         x_data = None
         if(x_values is not None):

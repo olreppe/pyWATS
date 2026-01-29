@@ -312,7 +312,8 @@ class AsyncHttpClient:
             except httpx.ConnectError as e:
                 last_exception = ConnectionError(
                     f"Failed to connect to {self.base_url}: {e}",
-                    url=self.base_url
+                    operation=f"{method} {endpoint}",
+                    details={"url": self.base_url}
                 )
                 
                 if retry_enabled:
@@ -333,9 +334,9 @@ class AsyncHttpClient:
                 
             except httpx.TimeoutException as e:
                 last_exception = TimeoutError(
-                    f"Request timed out after {self._timeout}s: {e}",
-                    timeout=self._timeout,
-                    endpoint=endpoint
+                    f"Request timed out after {self.timeout}s: {e}",
+                    operation=f"{method} {endpoint}",
+                    details={"timeout": self.timeout, "endpoint": endpoint}
                 )
                 
                 if retry_enabled:
@@ -355,7 +356,7 @@ class AsyncHttpClient:
                 raise last_exception
                 
             except Exception as e:
-                raise PyWATSError(f"HTTP request failed: {e}", show_hints=False)
+                raise PyWATSError(f"HTTP request failed: {e}")
         
         if last_exception:
             raise last_exception

@@ -26,19 +26,21 @@ $script:FailureCount = 0
 
 function Write-Step {
     param([string]$Message)
-    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
     Write-Host " $Message" -ForegroundColor Cyan
-    Write-Host "========================================`n" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
 }
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "[OK] $Message" -ForegroundColor Green
 }
 
 function Write-Failure {
     param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
+    Write-Host "[FAIL] $Message" -ForegroundColor Red
     $script:FailureCount++
 }
 
@@ -127,15 +129,19 @@ if ($LASTEXITCODE -eq 0) {
 # =============================================================================
 # SUMMARY
 # =============================================================================
-Write-Host "`n========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Cyan
 if ($script:FailureCount -eq 0) {
-    Write-Host " ✓ ALL CHECKS PASSED" -ForegroundColor Green
-    Write-Host "========================================`n" -ForegroundColor Cyan
+    Write-Host " ALL CHECKS PASSED" -ForegroundColor Green
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
     Write-Host "Safe to push to GitHub!" -ForegroundColor Green
     exit 0
-} else {
-    Write-Host " ✗ $($script:FailureCount) CHECK(S) FAILED" -ForegroundColor Red
-    Write-Host "========================================`n" -ForegroundColor Cyan
+}
+else {
+    Write-Host " $($script:FailureCount) CHECK(S) FAILED" -ForegroundColor Red
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
     Write-Host "Fix issues before pushing!" -ForegroundColor Red
     exit 1
 }
