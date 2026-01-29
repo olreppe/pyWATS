@@ -1,7 +1,9 @@
 # Deployment Infrastructure
 
-This folder contains platform-specific deployment configurations and packaging files.
+This folder contains platform-specific deployment configurations and packaging files for pyWATS 0.2.0b1.
 
+**Version**: 0.2.0b1 (Beta)  
+**Last Updated**: January 29, 2026  
 **⚠️ NOT Published** - These files are excluded from the PyPI package and are for development/deployment use only.
 
 ## Folder Structure

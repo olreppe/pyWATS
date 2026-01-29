@@ -1,7 +1,7 @@
 # Platform Compatibility Guide
 
-> **Last Updated**: January 2026  
-> **pyWATS Version**: 0.9.x (Beta)
+> **Last Updated**: January 29, 2026  
+> **pyWATS Version**: 0.2.0b1 (Beta)
 
 This document describes the supported platforms, deployment modes, and compatibility considerations for pyWATS.
 
