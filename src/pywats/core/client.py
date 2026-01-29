@@ -59,31 +59,31 @@ class Response(BaseModel):
     headers: Dict[str, str] = Field(default_factory=dict, description="Response headers")
     raw: bytes = Field(default=b"", description="Raw response bytes")
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_success(self) -> bool:
         """True if status code is 2xx."""
         return 200 <= self.status_code < 300
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_error(self) -> bool:
         """True if status code is 4xx or 5xx."""
         return self.status_code >= 400
     
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_not_found(self) -> bool:
         """True if status code is 404."""
         return self.status_code == 404
     
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_server_error(self) -> bool:
         """True if status code is 5xx."""
         return 500 <= self.status_code < 600
     
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_client_error(self) -> bool:
         """True if status code is 4xx."""

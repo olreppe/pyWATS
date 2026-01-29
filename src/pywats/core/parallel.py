@@ -208,7 +208,7 @@ def parallel_execute(
     # Fill any remaining None slots (from cancelled futures) with failures
     for i, result in enumerate(results):
         if result is None:
-            results[i] = Failure(
+            results[i] = Failure(  # type: ignore[assignment]
                 error_code="OPERATION_FAILED",
                 message="Operation was cancelled (fail_fast triggered)",
                 details={"key": str(keys[i]), "index": i}
