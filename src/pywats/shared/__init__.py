@@ -29,6 +29,7 @@ from .result import Result, Success, Failure, ErrorCode, failure_from_exception
 from .enums import StatusFilter, RunFilter, StepType, CompOp, SortDirection, QueueItemStatus
 from .paths import StepPath, MeasurementPath, normalize_path, display_path, normalize_paths
 from .stats import QueueProcessingResult, QueueStats, CacheStats, BatchResult
+from .odata import escape_string, escape_guid, format_value, build_filter, ODataFilterBuilder
 from . import discovery as discover
 
 __all__ = [
@@ -61,6 +62,12 @@ __all__ = [
     "QueueStats",
     "CacheStats",
     "BatchResult",
+    # OData query helpers
+    "escape_string",
+    "escape_guid", 
+    "format_value",
+    "build_filter",
+    "ODataFilterBuilder",
     # Discovery module for API exploration
     "discover",
 ]
