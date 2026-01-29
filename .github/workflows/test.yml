@@ -36,16 +36,31 @@ jobs:
         # Exit-zero treats all errors as warnings
         flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Run unit tests (no server required)
+    - name: Run unit tests with coverage
       run: |
         pytest tests/ -v \
           --tb=short \
           -x \
-          -m "not server"
+          -m "not server" \
+          --cov=src \
+          --cov-report=term-missing \
+          --cov-report=html \
+          --cov-report=xml \
+          --cov-fail-under=60
       env:
         # Provide dummy values so tests don't fail on missing env vars
         WATS_BASE_URL: "https://demo.wats.com"
         WATS_AUTH_TOKEN: "dGVzdDp0ZXN0"
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: matrix.python-version == '3.11'
+      with:
+        name: coverage-report
+        path: |
+          htmlcov/
+          coverage.xml
+        retention-days: 30
 
   type-check:
     name: Type checking
