@@ -62,17 +62,20 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: rockylinux:9
+      options: --user root
     
     steps:
       - name: Install Git
-        run: dnf install -y git
+        run: |
+          dnf install -y git
+          git config --global --add safe.directory /__w/pyWATS/pyWATS
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install Python and dependencies
         run: |
-          dnf install -y python3.11 python3.11-pip python3.11-devel
+          dnf install -y python3.11 python3.11-pip python3.11-devel gcc
           python3.11 -m pip install --upgrade pip
 
       - name: Install pyWATS
@@ -123,12 +126,11 @@ jobs:
 
       - name: Validate DEB control files
         run: |
-          # Check for required fields
+          # Check for required fields (note: Version is added at build time)
           grep -q "^Package:" deployment/debian/control
-          grep -q "^Version:" deployment/debian/control
           grep -q "^Architecture:" deployment/debian/control
           grep -q "^Depends:" deployment/debian/control
-          echo "DEB control file valid"
+          echo "DEB control file structure valid"
 
       - name: Validate RPM spec file (syntax only)
         run: |
@@ -164,7 +166,8 @@ jobs:
 
       - name: Build Docker image (native arch only)
         run: |
-          docker build -t pywats-test -f deployment/docker/Dockerfile .
+          cd deployment/docker
+          docker build -t pywats-test -f Dockerfile ../..
 
       - name: Test Docker image
         run: |
@@ -199,7 +202,8 @@ jobs:
 
       - name: Build ARM64 image
         run: |
-          docker buildx build --platform linux/arm64 -t pywats-arm64 -f deployment/docker/Dockerfile --load .
+          cd deployment/docker
+          docker buildx build --platform linux/arm64 -t pywats-arm64 -f Dockerfile --load ../..
 
       - name: Test ARM64 image
         run: |
@@ -225,7 +229,14 @@ jobs:
       - name: Prepare source for packaging
         run: |
           # Create source tarball structure
-          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          VERSION=$(python3 -c "
+          try:
+              import tomllib
+          except ImportError:
+              import tomli as tomllib
+          with open('pyproject.toml', 'rb') as f:
+              print(tomllib.load(f)['project']['version'])
+          ")
           echo "Building version: $VERSION"
           
           # Update debian changelog with version
@@ -271,11 +282,13 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     container:
       image: rockylinux:9
+      options: --user root
     
     steps:
       - name: Install Git and build tools
         run: |
-          dnf install -y git rpm-build python3-devel python3-setuptools python3-pip rpmdevtools
+          dnf install -y git rpm-build python3-devel python3-setuptools python3-pip rpmdevtools gcc
+          git config --global --add safe.directory /__w/pyWATS/pyWATS
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -284,8 +297,13 @@ jobs:
         run: |
           rpmdev-setuptree
           
-          # Get version from pyproject.toml
-          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          # Get version from pyproject.toml (Rocky 9 has Python 3.9, no tomllib)
+          python3 -m pip install tomli
+          VERSION=$(python3 -c "
+          import tomli
+          with open('pyproject.toml', 'rb') as f:
+              print(tomli.load(f)['project']['version'])
+          ")
           echo "Building version: $VERSION"
           
           # Update spec file version
@@ -293,7 +311,12 @@ jobs:
 
       - name: Create source tarball
         run: |
-          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          python3 -m pip install tomli
+          VERSION=$(python3 -c "
+          import tomli
+          with open('pyproject.toml', 'rb') as f:
+              print(tomli.load(f)['project']['version'])
+          ")
           mkdir -p ~/rpmbuild/SOURCES
           tar czf ~/rpmbuild/SOURCES/pywats-client-$VERSION.tar.gz \
             --transform "s,^,pywats-client-$VERSION/," \
