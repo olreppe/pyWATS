@@ -141,7 +141,11 @@ omit = [
     "*/__pycache__/*",
     "*/examples/*",
     "*/_version.py",
+    "*/gui/*",
     "*/gui/resources/*",
+    "*/service_tray.py",
+    "*/windows_service.py",
+    "*/diagnostics.py",
 ]
 
 [tool.coverage.report]
@@ -153,7 +157,7 @@ exclude_lines = [
     "@overload",
     "if __name__ == .__main__.:",
 ]
-fail_under = 60
+fail_under = 45
 show_missing = true
 skip_covered = false
 

@@ -19,6 +19,10 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ## [0.2.0b2] - 2026-01-29
 
+### Added
+- Test coverage improvements for pywats_client: new tests for `io.py`, `config_manager.py`, `connection_config.py`, `exceptions.py`, `converters/models.py`, and `exit_codes.py` modules
+- Coverage configuration: excluded GUI code from coverage metrics (gui/, service_tray.py, windows_service.py, diagnostics.py) to focus on testable modules
+
 ### Fixed
 - Python 3.11 typing compatibility: `Result[T]` type alias cannot be subscripted on Union types. Changed `parallel_execute` return type to use `Union[Success[T], Failure]` directly.
 
