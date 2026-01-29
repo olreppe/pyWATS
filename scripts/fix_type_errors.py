@@ -5,6 +5,7 @@ Run this before committing code to fix common type issues.
 """
 import re
 from pathlib import Path
+from typing import cast
 
 ROOT = Path(__file__).parent.parent / "src"
 
@@ -40,16 +41,23 @@ def fix_retry_handler_exceptions():
     file.write_text(content, encoding="utf-8")
     print(f"[OK] Fixed {file}")
 
-def fix_exceptions_type_error():
-    """Fix str assigned to float in exceptions.py"""
-    file = ROOT / "pywats" / "exceptions.py"
+def add_type_ignores_for_pydantic():
+    """Add type: ignore comments for Pydantic auto-conversion"""
+    file = ROOT / "pywats" / "domains" / "report" / "report_models" / "uut" / "steps" / "sequence_call.py"
     content = file.read_text(encoding="utf-8")
     
-    # Find line 263 area - likely a type annotation issue
-    # This will need manual inspection
-    print(f"[SKIP] {file} - needs manual inspection at line 263")
+    # Add type: ignore for status parameter in step constructors (Pydantic handles str->enum)
+    lines = content.split('\n')
+    for i, line in enumerate(lines):
+        if 'Step(name=name' in line and 'status=' in line and '# type: ignore' not in line:
+            lines[i] = line.rstrip() + '  # type: ignore[arg-type]'
+    
+    content = '\n'.join(lines)
+    file.write_text(content, encoding="utf-8")
+    print(f"[OK] Added type ignores to {file}")
 
 if __name__ == "__main__":
     print("Fixing type errors...")
     fix_retry_handler_exceptions()
+    add_type_ignores_for_pydantic()
     print("\n[DONE] Run mypy again to verify fixes")

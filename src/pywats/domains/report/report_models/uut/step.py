@@ -137,7 +137,7 @@ class Step(WATSBase, ABC):
 
     # Add chart to any step
     def add_chart(self, chart_type:ChartType, chart_label: str, x_label:str, x_unit:str, y_label: str, y_unit: str) -> Chart:
-        self.chart = Chart(chart_type=chart_type, label=chart_label, xLabel=x_label, yLabel=y_label, xUnit=x_unit, yUnit=y_unit)
+        self.chart = Chart(chart_type=chart_type, label=chart_label, x_label=x_label, y_label=y_label, x_unit=x_unit, y_unit=y_unit)
         return self.chart
     
     def add_attachment(self, attachment: Attachment) -> None:

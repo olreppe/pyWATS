@@ -8,7 +8,7 @@ from pydantic_core import core_schema
 
 from ...chart import Chart, ChartSeries, ChartType
 
-from ..step import Step, StepType
+from ..step import Step, StepType, StepStatus
 from ..steps import *
 from .numeric_step import NumericStep, MultiNumericStep, NumericMeasurement
 from .string_step import StringStep, MultiStringStep
@@ -194,7 +194,7 @@ class SequenceCall(Step):
             # Import mode: default to Passed
             final_status = "P"
         
-        ns = NumericStep(name=name, value=value, unit=unit, status=final_status, id=id, group=group, errorCode=error_code, error_message=error_message, reportText=reportText, start=start, totTime=tot_time, parent=self)
+        ns = NumericStep(name=name, value=value, unit=unit, status=final_status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=reportText, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
         nm = NumericMeasurement(value=value, unit=unit, status=final_status, comp_op=comp_op, low_limit=low_limit, high_limit=high_limit)
         ns.measurement = nm
         ns.fail_parent_on_failure = fail_parent_on_failure
@@ -218,7 +218,7 @@ class SequenceCall(Step):
                          reportText: Optional[str] = None, 
                          start: Optional[str] = None, 
                          tot_time: Optional[Union[float, str]] = None):
-        ns = MultiNumericStep(name=name, status=status, id=id, group=group, errorCode=error_code, error_message=error_message, reportText=reportText, start=start, totTime=tot_time, parent=self)
+        ns = MultiNumericStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=reportText, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
         self.steps.append(ns)
         return ns   
     # --------------------------------------------
@@ -243,7 +243,7 @@ class SequenceCall(Step):
             value = "Null"
             comp_op = CompOp.LOG
                
-        ss = StringStep(name=name, value=value, unit=unit, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)
+        ss = StringStep(name=name, value=value, unit=unit, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
         ss.measurement= StringMeasurement(value=value, unit=unit, status=status, comp_op=comp_op, limit=limit)
         self.steps.append(ss)
         return ss
@@ -261,7 +261,7 @@ class SequenceCall(Step):
                             tot_time: Optional[Union[float, str]] = None) -> MultiStringStep:
         """
         """
-        ss = MultiStringStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)
+        ss = MultiStringStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
         self.steps.append(ss)
         return ss
     # --------------------------------------------
@@ -278,7 +278,7 @@ class SequenceCall(Step):
                          tot_time: Optional[Union[float, str]] = None) -> BooleanStep:
         """
         """
-        bs = BooleanStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
+        bs = BooleanStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
         bs.measurement = BooleanMeasurement(status=status)        
         self.steps.append(bs)
         return bs
@@ -296,7 +296,7 @@ class SequenceCall(Step):
                          tot_time: Optional[Union[float, str]] = None) -> MultiBooleanStep:
         """
         """
-        bs = MultiBooleanStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)        
+        bs = MultiBooleanStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
         self.steps.append(bs)
         return bs
     # --------------------------------------------
@@ -318,8 +318,8 @@ class SequenceCall(Step):
                       report_text: Optional[str] = None, 
                       start: Optional[str] = None, 
                       tot_time: Optional[Union[float, str]] = None) -> ChartStep:
-        cs = ChartStep(name=name, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
-        cs.chart = Chart(chart_type=chart_type, label=label, x_label=x_label, y_label=y_label, x_unit=x_unit,y_unit=y_unit, series=series)
+        cs = ChartStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
+        cs.chart = Chart(chart_type=chart_type, label=label, x_label=x_label, y_label=y_label, x_unit=x_unit,y_unit=y_unit, series=series or [])
         self.steps.append(cs)
         return cs
     # --------------------------------------------
@@ -337,7 +337,7 @@ class SequenceCall(Step):
                       tot_time: Optional[Union[float, str]] = None) -> GenericStep:
         # Convert FlowType enum to string value for Pydantic validation
         step_type_str = step_type.value if isinstance(step_type, FlowType) else step_type
-        fs = GenericStep(name=name, step_type=step_type_str, status=status, id=id, group=group, errorCode=error_code, errorMessage=error_message, reportText=report_text, start=start, totTime=tot_time, parent=self)
+        fs = GenericStep(name=name, step_type=step_type_str, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
         self.steps.append(fs)
         return fs
 

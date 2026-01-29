@@ -443,7 +443,7 @@ class HttpClient:
             except httpx.ConnectError as e:
                 last_exception = ConnectionError(
                     f"Failed to connect to {self.base_url}: {e}",
-                    operation=f"{method} {url}",
+                    operation=f"{method} {endpoint}",
                     details={"url": self.base_url}
                 )
                 
