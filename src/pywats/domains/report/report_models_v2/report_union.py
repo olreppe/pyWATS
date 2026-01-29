@@ -8,7 +8,7 @@ Provides type-safe report parsing based on the 'type' field:
 This enables polymorphic report handling with full type safety.
 """
 
-from typing import Annotated, Union
+from typing import Annotated, Any, Union
 from pydantic import Field, TypeAdapter
 
 from .uut_report import UUTReport
@@ -54,7 +54,7 @@ Polymorphic handling:
 
 
 # Type adapter for parsing
-_report_adapter = TypeAdapter(Report)
+_report_adapter: TypeAdapter[Report] = TypeAdapter(Report)
 
 
 def parse_report(data: dict | str | bytes) -> Report:
@@ -94,7 +94,7 @@ def parse_report(data: dict | str | bytes) -> Report:
         raise ValueError(f"Unknown report type: {report_type}. Expected 'T' or 'R'.")
 
 
-def parse_reports(data: list[dict] | str | bytes) -> list[Report]:
+def parse_reports(data: list[dict[str, Any]] | str | bytes) -> list[Report]:
     """
     Parse a list of reports from JSON.
     
@@ -113,11 +113,14 @@ def parse_reports(data: list[dict] | str | bytes) -> list[Report]:
         assert isinstance(reports[0], UUTReport)
         assert isinstance(reports[1], UURReport)
     """
+    parsed_data: list[dict[str, Any]]
     if isinstance(data, (str, bytes)):
         import json
-        data = json.loads(data)
+        parsed_data = json.loads(data)
+    else:
+        parsed_data = data
     
-    return [parse_report(item) for item in data]
+    return [parse_report(item) for item in parsed_data]
 
 
 def serialize_report(report: Report) -> str:

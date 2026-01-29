@@ -90,7 +90,7 @@ class UURReport(WATSBase):
     # =========================================================================
     
     common: ReportCommon = Field(
-        default_factory=ReportCommon,
+        default_factory=ReportCommon,  # type: ignore[arg-type]
         description="Shared fields for all report types (composition pattern)"
     )
     
@@ -326,10 +326,10 @@ class UURReport(WATSBase):
     def model_dump_json(self, **kwargs):
         """Override JSON serialization to flatten common fields."""
         import json
-        from pydantic.json import pydantic_encoder
+        from pydantic_core import to_jsonable_python
         
         data = self.model_dump(**kwargs)
-        return json.dumps(data, default=pydantic_encoder)
+        return json.dumps(data, default=to_jsonable_python)
     
     @classmethod
     def model_validate(cls, obj, **kwargs):
