@@ -150,22 +150,49 @@ class TestInstanceManager:
         """
         Load or create test instance configuration.
 
-        Checks for existing config file, otherwise creates from defaults.
+        Checks for existing config file, otherwise prompts user to create from template.
         """
         config_path = self.get_instance_config_path(instance_id)
+        template_path = INSTANCES_DIR / f"client_{instance_id.lower()}_config.template.json"
 
         if config_path.exists():
             with open(config_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            return TestInstanceConfig.from_dict(data)
+            config = TestInstanceConfig.from_dict(data)
+            
+            # Check if using placeholder token
+            if not config.token or config.token == "YOUR_BASE64_ENCODED_TOKEN_HERE":
+                raise ValueError(
+                    f"Test instance {instance_id} config has no valid API token.\n"
+                    f"Please edit: {config_path}\n"
+                    f"And replace the token placeholder with a real Base64-encoded API token.\n"
+                    f"You can generate tokens at: https://your-wats-server/api/token"
+                )
+            return config
 
-        # Create from defaults
+        # Config doesn't exist - check for template
+        if template_path.exists():
+            raise FileNotFoundError(
+                f"Test instance config not found: {config_path}\n\n"
+                f"To set up test instances:\n"
+                f"1. Copy the template: {template_path}\n"
+                f"   To: {config_path}\n"
+                f"2. Edit the config and add your real WATS server URL and API token\n"
+                f"3. Re-run the tests\n\n"
+                f"Note: Config files with real tokens are gitignored for security."
+            )
+
+        # No config or template - use defaults (creates config without valid token)
         config = DEFAULT_INSTANCES.get(instance_id)
         if config is None:
             raise ValueError(f"Unknown instance ID: {instance_id}")
 
         # Save for persistence
         self.save_test_instance_config(config)
+        logger.warning(
+            f"Created default config for instance {instance_id} at {config_path}. "
+            f"Please edit and add valid credentials before running server tests."
+        )
         return config
 
     def save_test_instance_config(self, config: TestInstanceConfig) -> None:

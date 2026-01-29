@@ -551,8 +551,8 @@ wats_tdm_data/
 # Use *.template.json files as reference
 tests/instances/client_a_config.json
 tests/instances/client_b_config.json
-tests/fixtures/client_a_config.json
-tests/fixtures/client_b_config.json
+tests/fixtures/instances/client_a_config.json
+tests/fixtures/instances/client_b_config.json
 
 # Release preparation docs (internal only)
 RELEASE_PREPARATION.md
