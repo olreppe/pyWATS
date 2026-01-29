@@ -362,7 +362,7 @@ class AsyncProductionService:
         """
         result = await self._repository.save_batch(batch)
         if result:
-            logger.info(f"BATCH_CREATED: {result.id}")
+            logger.info(f"BATCH_CREATED: {result.batch_number}")
         return result
 
     async def update_batch(
@@ -379,7 +379,7 @@ class AsyncProductionService:
         """
         result = await self._repository.save_batch(batch)
         if result:
-            logger.info(f"BATCH_UPDATED: {result.id}")
+            logger.info(f"BATCH_UPDATED: {result.batch_number}")
         return result
 
     async def save_batches(

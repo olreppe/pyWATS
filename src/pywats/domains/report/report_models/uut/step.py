@@ -3,13 +3,7 @@ from abc import ABC
 import base64
 from enum import Enum
 from typing import Any, ClassVar, Optional, Union, Literal, Annotated
-
-try:
-    # Python 3.11+
-    from typing import Self
-except ImportError:  # pragma: no cover
-    # Python 3.10
-    from typing_extensions import Self
+from typing_extensions import Self
 from pydantic import Field, ModelWrapValidatorHandler, model_validator, Discriminator, Tag
 from abc import ABC, abstractmethod
 

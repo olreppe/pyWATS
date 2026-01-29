@@ -141,7 +141,7 @@ def parallel_execute(
     workers = effective_config.max_workers
     
     # Pre-allocate results list to maintain order
-    results: List[Optional[Result[T]]] = [None] * len(keys)
+    results: List[Result[T] | None] = [None] * len(keys)
     completed_count = 0
     first_error: Optional[Exception] = None
     
@@ -215,10 +215,11 @@ def parallel_execute(
             )
     
     logger.debug(
-        f"Parallel execution completed: {sum(1 for r in results if r.is_success)}/{len(keys)} succeeded"
+        f"Parallel execution completed: {sum(1 for r in results if r and r.is_success)}/{len(keys)} succeeded"
     )
     
-    return results
+    # Cast since we've filled all None slots with Failures
+    return results  # type: ignore[return-value]
 
 
 def parallel_execute_with_retry(
@@ -258,7 +259,7 @@ def parallel_execute_with_retry(
         # Find failed indices
         failed_indices = [
             i for i, r in enumerate(results) 
-            if r.is_failure and _is_retryable(r)
+            if r.is_failure and _is_retryable(r)  # type: ignore[arg-type]
         ]
         
         if not failed_indices:
@@ -297,7 +298,7 @@ def collect_successes(results: List[Result[T]]) -> List[T]:
         >>> products = collect_successes(results)
         >>> print(f"Got {len(products)} products")
     """
-    return [r.value for r in results if r.is_success]
+    return [r.value for r in results if r.is_success]  # type: ignore[misc]
 
 
 def collect_failures(results: List[Result[T]]) -> List[Failure]:
@@ -315,7 +316,7 @@ def collect_failures(results: List[Result[T]]) -> List[Failure]:
         >>> for f in failures:
         ...     print(f"Error: {f.error_code} - {f.message}")
     """
-    return [r for r in results if r.is_failure]
+    return [r for r in results if r.is_failure]  # type: ignore[misc, return-value]
 
 
 def partition_results(

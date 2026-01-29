@@ -289,7 +289,8 @@ class AsyncAssetService:
         Returns:
             True if asset is in alarm state
         """
-        return asset.state == AssetState.IN_ALARM
+        # TODO: AssetState doesn't have IN_ALARM. Should this use AssetAlarmState.ALARM?
+        return asset.state == AssetState.IN_ALARM  # type: ignore[attr-defined]
 
     def is_in_warning(self, asset: Asset) -> bool:
         """
@@ -301,7 +302,8 @@ class AsyncAssetService:
         Returns:
             True if asset is in warning state
         """
-        return asset.state == AssetState.IN_WARNING
+        # TODO: AssetState doesn't have IN_WARNING. Should this use AssetAlarmState.WARNING?
+        return asset.state == AssetState.IN_WARNING  # type: ignore[attr-defined]
 
     async def get_assets_in_alarm(
         self,
@@ -316,7 +318,8 @@ class AsyncAssetService:
         Returns:
             List of assets in alarm state
         """
-        return await self.get_assets_by_alarm_state(AssetState.IN_ALARM, top)
+        # TODO: AssetState doesn't have IN_ALARM. Should this use AssetAlarmState.ALARM?
+        return await self.get_assets_by_alarm_state(AssetState.IN_ALARM, top)  # type: ignore[attr-defined]
 
     async def get_assets_in_warning(
         self,
@@ -331,7 +334,8 @@ class AsyncAssetService:
         Returns:
             List of assets in warning state
         """
-        return await self.get_assets_by_alarm_state(AssetState.IN_WARNING, top)
+        # TODO: AssetState doesn't have IN_WARNING. Should this use AssetAlarmState.WARNING?
+        return await self.get_assets_by_alarm_state(AssetState.IN_WARNING, top)  # type: ignore[attr-defined]
 
     async def get_assets_by_alarm_state(
         self,

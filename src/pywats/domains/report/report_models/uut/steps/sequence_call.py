@@ -101,7 +101,7 @@ class SequenceCall(Step):
     # NOTE: Discriminator is NOT used because Pydantic's discriminated union has issues
     # with complex inheritance and field structures. Instead, we rely on union type resolution
     # which tries each type in order. GenericStep is last in the Union to act as fallback.
-    steps: Optional[StepList[StepType]] = Field(default_factory=StepList)
+    steps: StepList = Field(default_factory=StepList)  # type: ignore[type-arg]
     
     # Model validator (after) - Converts list to StepList and sets parent references
     @model_validator(mode="after")
@@ -194,7 +194,7 @@ class SequenceCall(Step):
             # Import mode: default to Passed
             final_status = "P"
         
-        ns = NumericStep(name=name, value=value, unit=unit, status=final_status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=reportText, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
+        ns = NumericStep(name=name, status=final_status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=reportText, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
         nm = NumericMeasurement(value=value, unit=unit, status=final_status, comp_op=comp_op, low_limit=low_limit, high_limit=high_limit)
         ns.measurement = nm
         ns.fail_parent_on_failure = fail_parent_on_failure
@@ -243,8 +243,8 @@ class SequenceCall(Step):
             value = "Null"
             comp_op = CompOp.LOG
                
-        ss = StringStep(name=name, value=value, unit=unit, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        ss.measurement= StringMeasurement(value=value, unit=unit, status=status, comp_op=comp_op, limit=limit)
+        ss = StringStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
+        ss.measurement= StringMeasurement(value=value, status=status, comp_op=comp_op, limit=limit)
         self.steps.append(ss)
         return ss
         # --------------------------------------------

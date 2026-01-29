@@ -572,6 +572,24 @@ class AsyncProductRepository:
             operation="delete_revision_relation"
         )
 
+    async def get_groups_for_product(
+        self,
+        part_number: str
+    ) -> List[ProductGroup]:
+        """
+        ⚠️ INTERNAL: Get groups that contain a specific product.
+        
+        GET /api/internal/Product/GetGroupsForProduct
+        """
+        data = await self._internal_get(
+            Routes.Product.Internal.GET_GROUPS_FOR_PRODUCT,
+            params={"partNumber": part_number},
+            operation="get_groups_for_product"
+        )
+        if data and isinstance(data, list):
+            return [ProductGroup.model_validate(item) for item in data]
+        return []
+
     # =========================================================================
     # ⚠️ INTERNAL API - Product Categories
     # =========================================================================

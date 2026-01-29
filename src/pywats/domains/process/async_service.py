@@ -588,7 +588,7 @@ class AsyncProcessService:
         configs = await self.get_repair_operation_configs()
         
         if code in configs:
-            return configs[code].repair_categories
+            return configs[code].categories
         return []
 
     async def get_repair_codes(
@@ -612,6 +612,7 @@ class AsyncProcessService:
         
         codes = []
         for cat in categories:
-            if category is None or cat.name == category:
-                codes.extend(cat.repair_codes)
+            if category is None or cat.description == category:
+                # fail_codes is List[RepairCategory], extract descriptions
+                codes.extend([fc.description for fc in cat.fail_codes])
         return codes
