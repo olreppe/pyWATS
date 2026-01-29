@@ -61,7 +61,9 @@ class UURReport(Report):
     )
     
     # Sub-units with failures (idx=0 is main unit)
-    sub_units: List[UURSubUnit] = Field(
+    # TODO: Refactor Report base class to use Generic[T] with TypeVar bound to SubUnitBase
+    # This would allow proper typing: Report[UURSubUnit] instead of type:ignore
+    sub_units: List[UURSubUnit] = Field(  # type: ignore[assignment]
         default_factory=list, 
         validation_alias="subUnits", 
         serialization_alias="subUnits"
@@ -118,7 +120,8 @@ class UURReport(Report):
                 return su
         return None
     
-    def add_sub_unit(
+    # TODO: Refactor to match base class signature or use @overload for type safety
+    def add_sub_unit(  # type: ignore[override]
         self,
         pn: str,
         sn: str,

@@ -585,7 +585,7 @@ def cached_function(
             cache.set(cache_key, result, ttl=ttl)
             return result
         
-        wrapper.__wrapped__ = func
+        wrapper.__wrapped__ = func  # type: ignore[attr-defined]
         return wrapper
     return decorator
 
@@ -625,10 +625,10 @@ def cached_async_function(
                 return result
             
             # Call function and cache result
-            result = await func(*args, **kwargs)
+            result = await func(*args, **kwargs)  # type: ignore[misc]
             await cache.set_async(cache_key, result, ttl=ttl)
             return result
         
-        wrapper.__wrapped__ = func
-        return wrapper
+        wrapper.__wrapped__ = func  # type: ignore[attr-defined]
+        return wrapper  # type: ignore[return-value]
     return decorator

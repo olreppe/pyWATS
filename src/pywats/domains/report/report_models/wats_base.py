@@ -15,15 +15,15 @@ class WATSBase(BaseModel):
     @model_validator(mode="before")
     def inject_defaults(cls, data: Any, info: Optional[ValidationInfo]) -> Any:
         # Check if context is provided
-        if info.context is not None and hasattr(info.context, 'defaults'):
-            defaults = info.context.defaults
+        if info.context is not None and hasattr(info.context, 'defaults'):  # type: ignore[union-attr]
+            defaults = info.context.defaults  # type: ignore[union-attr]
             for key, value in defaults.items():
                 # Split type & prop
                 if key.find(".") > 0:
                     type_name, prop_name = key.split(".")
 
                     # Skip if the type doesn't match
-                    if type_name != cls.__qualname__:
+                    if type_name != cls.__qualname__:  # type: ignore[attr-defined]
                         continue
                     
                     # Get the alias for the field (if it exists)
