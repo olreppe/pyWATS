@@ -179,7 +179,9 @@ class Success(BaseModel, Generic[T]):
         return f"Success: {type(self.value).__name__}"
 
 
-# Type alias for Result - either Success or Failure
+# Generic Result type - can be used as Result[T] in type hints
+# Note: Due to Python typing limitations, use Union[Success[T], Failure] directly
+# in function signatures when you need a subscripted Result type.
 Result = Union[Success[T], Failure]
 
 

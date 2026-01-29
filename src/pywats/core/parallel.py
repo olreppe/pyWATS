@@ -33,10 +33,10 @@ Key Features:
 - Progress callback support
 - Type-safe Result[T] return type
 """
-from typing import TypeVar, Callable, List, Optional, Any, Dict
+from typing import TypeVar, Callable, List, Optional, Any, Dict, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from pywats.shared.result import Success, Failure, Result
+from pywats.shared.result import Success, Failure
 import logging
 
 T = TypeVar("T")
@@ -78,7 +78,7 @@ def parallel_execute(
     max_workers: int = 10,
     on_progress: Optional[Callable[[int, int], None]] = None,
     config: Optional["ParallelConfig"] = None,
-) -> List[Result[T]]:
+) -> List[Union[Success[T], Failure]]:
     """Execute operations concurrently with error handling.
     
     Executes the given operation for each key concurrently using a thread pool.
