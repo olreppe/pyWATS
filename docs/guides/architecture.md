@@ -925,6 +925,7 @@ api.report.submit_report(...)
 - **[Getting Started Guide](getting-started.md)** - Installation and basic usage
 - **[Client Architecture](client-architecture.md)** - Detailed client design
 - **[Integration Patterns](integration-patterns.md)** - Common scenarios and workflows
+- **[Thread Safety Guide](thread-safety.md)** - Threading and concurrency patterns
 - **[Error Catalog](error-catalog.md)** - Error codes and remediation
 - **[Docker Deployment](installation/docker.md)** - Container deployment guide
 - **Domain Guides:** [Report](../domains/report.md), [Product](../domains/product.md), [Asset](../domains/asset.md), etc.

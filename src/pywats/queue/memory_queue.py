@@ -244,7 +244,33 @@ class MemoryQueue(BaseQueue):
         ...     queue.update(item)
     
     Thread Safety:
-        All operations are protected by a lock and are thread-safe.
+        All public methods are thread-safe and can be called from multiple
+        threads concurrently. Internal state is protected by a reentrant
+        lock (RLock).
+        
+        Safe Operations:
+            - add(), get_next(), update(), remove() - fully thread-safe
+            - Iteration via __iter__ - returns snapshot (thread-safe)
+            - All query methods (size, count_by_status, etc.) - atomic reads
+            
+        Important:
+            Individual QueueItem objects are NOT thread-safe once retrieved.
+            Once you get an item from the queue, protect mutations with
+            queue.update() calls to safely persist changes back to the queue.
+            
+            Example - CORRECT:
+                item = queue.get_next()
+                item.mark_processing()  # Safe mutation
+                queue.update(item)       # Thread-safe update
+            
+            Example - INCORRECT:
+                item = queue.get_next()
+                item.status = QueueItemStatus.COMPLETED  # ❌ Not thread-safe
+                # Missing queue.update(item)
+    
+    Cross-Platform Compatibility:
+        Uses threading.RLock which is fully supported on all platforms:
+        Windows, Linux, macOS, BSD, and other POSIX systems.
     """
     
     def __init__(
@@ -521,11 +547,25 @@ class MemoryQueue(BaseQueue):
         return self.size
     
     def __iter__(self) -> Iterator[QueueItem]:
-        """Iterate over all items in order."""
+        """Iterate over all items in order.
+        
+        Returns an iterator over a snapshot of current items to avoid
+        holding the lock during iteration. This makes it safe to iterate
+        over the queue while other threads are modifying it.
+        
+        Example:
+            >>> for item in queue:
+            ...     print(item.id, item.status)
+        
+        Thread Safety:
+            This method returns a snapshot, so iteration is thread-safe
+            and won't block other operations. The snapshot is taken at
+            the moment this method is called.
+        """
         with self._lock:
-            for item_id in self._order:
-                if item := self._items.get(item_id):
-                    yield item
+            # Create snapshot to avoid holding lock during iteration
+            items = [self._items[item_id] for item_id in self._order if item_id in self._items]
+        return iter(items)
     
     def get_stats(self) -> QueueStats:
         """

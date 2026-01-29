@@ -24,9 +24,16 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 - Coverage configuration: excluded GUI code from coverage metrics (gui/, service_tray.py, windows_service.py, diagnostics.py) to focus on testable modules
 - **Documentation**: AI coding attribution and project credits (Integration Architect: Ola Lund Reppe)
 - **Documentation**: Critical test suite warning - tests must NEVER be run on production servers
+- **Threading**: Comprehensive thread safety documentation (`docs/guides/thread-safety.md`)
+- **Threading**: Thread safety tests for TTLCache (`tests/cross_cutting/test_cache_threading.py` - 8 tests)
+- **Threading**: Parallel execution stress tests (`tests/integration/test_parallel_stress.py` - 16 tests)
+- **Threading**: Enhanced docstrings with thread safety guarantees for `MemoryQueue`, `TTLCache`, `parallel_execute`
 
 ### Changed
 - **Company branding**: Updated from Virinco AS to The WATS Company AS across all documentation, deployment configs, and copyright notices
+- **Performance**: `run_sync()` now uses pooled ThreadPoolExecutor (4 workers) instead of creating new executor per call
+- **Performance**: `MemoryQueue.__iter__()` returns snapshot to avoid holding lock during iteration
+- **Threading**: `AsyncTTLCache` refactored to remove inheritance and dual locking (asyncio.Lock only, no threading.RLock)
 
 ### Fixed
 - Python 3.11 typing compatibility: `Result[T]` type alias cannot be subscripted on Union types. Changed `parallel_execute` return type to use `Union[Success[T], Failure]` directly.

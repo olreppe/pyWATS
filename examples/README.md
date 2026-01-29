@@ -48,6 +48,9 @@ examples/
 │   └── 04_async_usage.py     # Async patterns and run_sync()
 │
 ├── async_client_example.py   # Async client service examples (NEW)
+├── performance_optimization.py  # Caching, pooling, coalescing
+├── attachment_io_example.py  # File attachment operations
+├── logging_demo.py           # Logging configuration
 │
 ├── product/                  # Product management
 │   ├── basic_operations.py   # CRUD operations
@@ -144,3 +147,25 @@ from examples.product.basic_operations import demo_product_crud
 ## Note
 
 These examples use placeholder URLs and tokens. Replace with your actual WATS server configuration.
+
+## Thread Safety
+
+pyWATS components are designed for safe concurrent use:
+
+- **Thread-Safe**: `MemoryQueue`, `TTLCache`, `parallel_execute()` - safe for concurrent access from multiple threads
+- **Async-Safe**: `AsyncTTLCache`, `AsyncEventBus` - use with `async`/`await` only
+- **Cross-Platform**: All threading uses Python standard library (Windows, Linux, macOS compatible)
+
+For detailed threading information, see `docs/guides/thread-safety.md`.
+
+Example of thread-safe parallel execution:
+```python
+from pywats.core.parallel import parallel_execute
+
+# Thread-safe concurrent API calls
+results = parallel_execute(
+    keys=["PN-001", "PN-002", "PN-003"],
+    operation=lambda pn: api.product.get_product(pn),
+    max_workers=10
+)
+```

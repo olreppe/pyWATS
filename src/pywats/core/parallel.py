@@ -110,6 +110,23 @@ def parallel_execute(
         ...         print(f"{pn}: {result.value.description}")
         ...     else:
         ...         print(f"{pn}: Error - {result.message}")
+    
+    Thread Safety Requirements:
+        The `operation` callable MUST be thread-safe. It will be called
+        concurrently from multiple threads in the thread pool.
+        
+        - If operation accesses shared mutable state, use proper locks
+        - If operation uses a client/session, ensure it's thread-safe
+        - Operations on different keys are naturally isolated
+        
+        Safe example:
+            # Each call gets different key, no shared state
+            operation = lambda pn: api.product.get_product(pn)
+        
+        Unsafe example (needs locking):
+            results_dict = {}  # Shared mutable state
+            def operation(key):
+                results_dict[key] = process(key)  # ❌ Race condition!
         
     Note:
         - Results preserve input order

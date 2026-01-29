@@ -16,9 +16,23 @@ Usage:
 """
 import asyncio
 from typing import TypeVar, Coroutine, Any
-from functools import wraps
+from functools import wraps, lru_cache
+import concurrent.futures
 
 T = TypeVar('T')
+
+
+@lru_cache(maxsize=1)
+def _get_sync_runner_pool() -> concurrent.futures.ThreadPoolExecutor:
+    """Get or create a singleton thread pool for sync runners.
+    
+    This pool is reused across all run_sync() calls to avoid the overhead
+    of creating and destroying ThreadPoolExecutor instances.
+    """
+    return concurrent.futures.ThreadPoolExecutor(
+        max_workers=4,
+        thread_name_prefix="sync_runner_"
+    )
 
 
 def run_sync(coro: Coroutine[Any, Any, T]) -> T:
@@ -41,6 +55,11 @@ def run_sync(coro: Coroutine[Any, Any, T]) -> T:
         
         # Can be called from sync code:
         data = run_sync(fetch_data())
+    
+    Thread Safety:
+        Uses a pooled ThreadPoolExecutor to avoid creating new threads
+        on every call. The pool is shared across all run_sync() invocations
+        for better performance.
     """
     try:
         loop = asyncio.get_running_loop()
@@ -48,12 +67,10 @@ def run_sync(coro: Coroutine[Any, Any, T]) -> T:
         # No running loop - use asyncio.run()
         return asyncio.run(coro)
     else:
-        # Already in async context - run in thread pool
-        # This avoids blocking the event loop
-        import concurrent.futures
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(asyncio.run, coro)
-            return future.result()
+        # Already in async context - run in pooled thread to avoid blocking
+        pool = _get_sync_runner_pool()
+        future = pool.submit(asyncio.run, coro)
+        return future.result()
 
 
 def sync_wrapper(async_method):

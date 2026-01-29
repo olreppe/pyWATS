@@ -78,6 +78,30 @@ class TTLCache(Generic[T]):
     - Cache statistics tracking
     - Thread-safe operations
     
+    Thread Safety:
+        All operations are thread-safe and can be called concurrently from
+        multiple threads. Multiple threads can safely read from and write to
+        the cache simultaneously.
+        
+        The cache uses a reentrant lock (RLock) which allows the same thread
+        to acquire the lock multiple times without deadlocking. This is
+        important for internal methods that call other locked methods.
+        
+    Performance:
+        Lock contention is minimized by keeping lock-held operations as
+        short as possible. For very high-concurrency scenarios (>100 req/s),
+        consider using multiple cache instances (sharding) to reduce
+        contention.
+        
+        Example of sharding:
+            caches = [TTLCache() for _ in range(16)]
+            shard_id = hash(key) % 16
+            value = caches[shard_id].get(key)
+    
+    Cross-Platform Compatibility:
+        Uses threading.RLock which works identically on Windows, Linux,
+        macOS, and all other POSIX systems
+    
     Example:
         >>> cache = TTLCache[Product](default_ttl=3600, max_size=1000)
         >>> cache.set("PART-001", product, ttl=7200)
@@ -272,18 +296,32 @@ class TTLCache(Generic[T]):
         )
 
 
-class AsyncTTLCache(TTLCache[T]):
+class AsyncTTLCache(Generic[T]):
     """
     Async-safe TTL cache with async cleanup task.
     
-    Extends TTLCache with async locking and automatic background cleanup.
+    This is an independent async implementation (does NOT inherit from TTLCache)
+    to avoid dual locking overhead. Uses only asyncio.Lock for async safety.
+    
+    Features:
+    - Configurable TTL per entry
+    - Automatic expiration cleanup
+    - LRU eviction when max size reached
+    - Cache statistics tracking
+    - Async-safe operations with asyncio.Lock
+    - Background cleanup task
+    
+    Thread Safety:
+        This cache is ASYNC-SAFE, not thread-safe. Do not call methods from
+        multiple threads concurrently. Use TTLCache for sync/threaded contexts.
+        
+        All methods should be called with 'await' from async code only.
     
     Example:
         >>> cache = AsyncTTLCache[Product](default_ttl=3600)
-        >>> await cache.start_cleanup()  # Start background cleanup
-        >>> await cache.set_async("KEY", value)
-        >>> value = await cache.get_async("KEY")
-        >>> await cache.stop_cleanup()  # Stop background cleanup
+        >>> async with cache:  # Starts/stops cleanup task
+        ...     await cache.set_async("KEY", value)
+        ...     value = await cache.get_async("KEY")
     """
     
     def __init__(
@@ -293,14 +331,55 @@ class AsyncTTLCache(TTLCache[T]):
         auto_cleanup: bool = True,
         cleanup_interval: float = 300.0
     ):
-        super().__init__(default_ttl, max_size, auto_cleanup, cleanup_interval)
-        self._async_lock = asyncio.Lock()
+        """
+        Initialize async TTL cache.
+        
+        Args:
+            default_ttl: Default time-to-live in seconds (default: 1 hour)
+            max_size: Maximum cache size (0 = unlimited)
+            auto_cleanup: Automatically clean expired entries (default: True)
+            cleanup_interval: Cleanup check interval in seconds (default: 5 min)
+        """
+        self._default_ttl = default_ttl
+        self._max_size = max_size
+        self._auto_cleanup = auto_cleanup
+        self._cleanup_interval = cleanup_interval
+        
+        self._cache: Dict[str, CacheEntry[T]] = {}
+        self._lock = asyncio.Lock()  # Only async lock
+        self._stats = CacheStats()
         self._cleanup_task: Optional[asyncio.Task] = None
+        self._last_cleanup = datetime.now()
     
     async def get_async(self, key: str, default: Optional[T] = None) -> Optional[T]:
-        """Async version of get()."""
-        async with self._async_lock:
-            return self.get(key, default)
+        """
+        Get value from cache asynchronously.
+        
+        Args:
+            key: Cache key
+            default: Default value if not found or expired
+            
+        Returns:
+            Cached value or default
+        """
+        async with self._lock:
+            entry = self._cache.get(key)
+            
+            if entry is None:
+                self._stats.misses += 1
+                return default
+            
+            if entry.is_expired:
+                # Expired - remove and return default
+                del self._cache[key]
+                self._stats.misses += 1
+                self._stats.evictions += 1
+                return default
+            
+            # Cache hit
+            entry.hits += 1
+            self._stats.hits += 1
+            return entry.value
     
     async def set_async(
         self,
@@ -308,24 +387,109 @@ class AsyncTTLCache(TTLCache[T]):
         value: T,
         ttl: Optional[float] = None
     ) -> None:
-        """Async version of set()."""
-        async with self._async_lock:
-            self.set(key, value, ttl)
+        """
+        Set value in cache asynchronously.
+        
+        Args:
+            key: Cache key
+            value: Value to cache
+            ttl: Time-to-live in seconds (None = use default)
+        """
+        async with self._lock:
+            # Check size limit
+            if self._max_size > 0 and key not in self._cache:
+                if len(self._cache) >= self._max_size:
+                    # Evict least recently used (oldest)
+                    await self._evict_lru()
+            
+            effective_ttl = ttl if ttl is not None else self._default_ttl
+            
+            self._cache[key] = CacheEntry(
+                value=value,
+                cached_at=datetime.now(),
+                ttl_seconds=effective_ttl
+            )
     
     async def delete_async(self, key: str) -> bool:
-        """Async version of delete()."""
-        async with self._async_lock:
-            return self.delete(key)
+        """
+        Delete entry from cache asynchronously.
+        
+        Args:
+            key: Cache key
+            
+        Returns:
+            True if entry was deleted, False if not found
+        """
+        async with self._lock:
+            if key in self._cache:
+                del self._cache[key]
+                return True
+            return False
     
     async def clear_async(self) -> None:
-        """Async version of clear()."""
-        async with self._async_lock:
-            self.clear()
+        """Clear entire cache asynchronously."""
+        async with self._lock:
+            self._cache.clear()
+            self._stats = CacheStats()
     
     async def cleanup_expired_async(self) -> int:
-        """Async version of cleanup_expired()."""
-        async with self._async_lock:
-            return self.cleanup_expired()
+        """
+        Remove all expired entries asynchronously.
+        
+        Returns:
+            Number of entries removed
+        """
+        async with self._lock:
+            expired_keys = [
+                key for key, entry in self._cache.items()
+                if entry.is_expired
+            ]
+            
+            for key in expired_keys:
+                del self._cache[key]
+                self._stats.evictions += 1
+            
+            self._last_cleanup = datetime.now()
+            return len(expired_keys)
+    
+    async def _evict_lru(self) -> None:
+        """Evict least recently used (oldest) entry."""
+        if not self._cache:
+            return
+        
+        # Find oldest entry
+        oldest_key = min(
+            self._cache.keys(),
+            key=lambda k: self._cache[k].cached_at
+        )
+        
+        del self._cache[oldest_key]
+        self._stats.evictions += 1
+    
+    @property
+    def size(self) -> int:
+        """Get current cache size (not async-safe for direct access)."""
+        return len(self._cache)
+    
+    async def size_async(self) -> int:
+        """Get current cache size asynchronously."""
+        async with self._lock:
+            return len(self._cache)
+    
+    async def stats_async(self) -> CacheStats:
+        """Get cache statistics asynchronously."""
+        async with self._lock:
+            return CacheStats(
+                hits=self._stats.hits,
+                misses=self._stats.misses,
+                evictions=self._stats.evictions,
+                refreshes=self._stats.refreshes
+            )
+    
+    async def keys_async(self) -> list[str]:
+        """Get all cache keys asynchronously."""
+        async with self._lock:
+            return list(self._cache.keys())
     
     async def start_cleanup(self) -> None:
         """Start background cleanup task."""

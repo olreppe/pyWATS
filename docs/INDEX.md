@@ -25,10 +25,12 @@ Official documentation for pyWATS - Python API library for WATS.
 - **[Architecture Overview](guides/architecture.md)** - Complete system design: API, Client, GUI layers; async/sync patterns; deployment modes
 - **[Client Architecture](guides/client-architecture.md)** - Client service internals: IPC, queue system, converters, multi-instance
 - **[Integration Patterns](guides/integration-patterns.md)** - Practical workflows: station setup, multi-process testing, error recovery, performance optimization
+- **[Thread Safety Guide](guides/thread-safety.md)** - Threading and concurrency patterns: thread-safe components, best practices, cross-platform compatibility
 
 **See these guides to understand:**
 - How the three layers (API, Client, GUI) work together
 - When to use async vs sync API
+- Thread safety guarantees and concurrent usage patterns
 - How to extend with custom converters or domains
 - Common integration scenarios and best practices
 
