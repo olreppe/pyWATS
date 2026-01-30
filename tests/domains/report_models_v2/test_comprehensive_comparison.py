@@ -126,8 +126,8 @@ class TestAPISurfaceComparison:
         assert main is not None
         assert main.idx == 0
         
-        # add_sub_unit exists
-        sub = v2.add_sub_unit("SUB-PN", "SUB-SN", "1.0")
+        # add_uur_sub_unit exists (UUR-specific sub-unit method)
+        sub = v2.add_uur_sub_unit("SUB-PN", "SUB-SN", "1.0")
         assert sub.pn == "SUB-PN"
         assert sub.idx > 0
 

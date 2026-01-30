@@ -215,7 +215,7 @@ class TestUURFromUUT:
 class TestSubUnitManagement:
     """Test sub-unit creation and management."""
     
-    def test_add_sub_unit(self):
+    def test_add_uur_sub_unit(self):
         """Test adding sub-units to UUR."""
         uur = UURReport.create(
             pn="MAIN-BOARD",
@@ -229,12 +229,12 @@ class TestSubUnitManagement:
         )
         
         # Add a sub-unit
-        sub1 = uur.add_sub_unit(pn="PCB-123", sn="PCB-001", rev="A")
+        sub1 = uur.add_uur_sub_unit(pn="PCB-123", sn="PCB-001", rev="A")
         assert sub1.idx == 1  # First sub-unit after main (idx=0)
         assert sub1.pn == "PCB-123"
         
         # Add another
-        sub2 = uur.add_sub_unit(pn="PCB-456", sn="PCB-002", rev="B")
+        sub2 = uur.add_uur_sub_unit(pn="PCB-456", sn="PCB-002", rev="B")
         assert sub2.idx == 2
         
         # Should have 3 total (main + 2 sub-units)

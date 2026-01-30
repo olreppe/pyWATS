@@ -6,20 +6,25 @@ Key differences from v1:
 - Imports Step hierarchy from v1 (already perfect with discriminated union!)
 - Clean type signature (no field overrides)
 - 100% JSON compatible with v1
+- **Flat API access via ReportProxyMixin** (report.pn works, not just report.common.pn)
 
 Design notes:
 - Parent injection handled by StepList (from v1) - unchanged
 - Step hierarchy imported from v1 - DO NOT COPY!
 - Supports both constructor and factory patterns
+- ReportProxyMixin provides property proxies for all ReportCommon fields
 """
 
 from __future__ import annotations
 
-from typing import Literal
-from pydantic import BaseModel, Field
+from typing import Any, Literal
+from pydantic import BaseModel, Field, model_validator
 
 # Import ReportCommon (composition)
 from .report_common import ReportCommon
+
+# Import proxy mixin for flat API access
+from .report_proxy_mixin import ReportProxyMixin
 
 # Import from v1 (stable models - relative imports)
 from ..report_models.uut.uut_info import UUTInfo
@@ -29,14 +34,33 @@ from ..report_models.uut.steps.sequence_call import SequenceCall
 from ..report_models.wats_base import WATSBase
 
 
-class UUTReport(WATSBase):
+# Field names that belong to ReportCommon (for constructor mapping)
+_COMMON_FIELD_NAMES = {
+    'id', 'pn', 'sn', 'rev', 'process_code', 'processCode',
+    'result', 'station_name', 'machineName', 'location', 'purpose',
+    'start', 'start_utc', 'startUTC',
+    'misc_infos', 'miscInfos', 'sub_units', 'subUnits',
+    'assets', 'asset_stats', 'assetStats',
+    'binary_data', 'binaryData', 'additional_data', 'additionalData',
+    'origin', 'product_name', 'productName', 'process_name', 'processName',
+    # Aliases for v1 compatibility
+    'misc_info_list', 'asset_list',
+}
+
+
+class UUTReport(ReportProxyMixin, WATSBase):
     """
     UUT (Unit Under Test) Report - Composition-based v2
     
     This replaces the inheritance-based v1 UUTReport with a composition pattern.
     
+    **API Access:**
+    Both access patterns work (flat API via ReportProxyMixin):
+        report.pn           # Flat (v1 compatible) ✓
+        report.common.pn    # Explicit composition ✓
+    
     Key fields:
-    - common: ReportCommon (all shared fields)
+    - common: ReportCommon (all shared fields, also accessible via properties)
     - type: Literal["T"] (UUT type identifier)
     - root: SequenceCall (test steps hierarchy)
     - info: UUTInfo (UUT-specific metadata)
@@ -47,20 +71,18 @@ class UUTReport(WATSBase):
     
     Example usage:
     
-    Constructor pattern:
+    Direct constructor (v1 compatible):
         report = UUTReport(
-            common=ReportCommon(
-                pn="ABC123",
-                sn="SN-001",
-                rev="A",
-                process_code=100,
-                station_name="Station1",
-                location="TestLab",
-                purpose="Development"
-            )
+            pn="ABC123",
+            sn="SN-001",
+            rev="A",
+            process_code=100,
+            station_name="Station1",
+            location="TestLab",
+            purpose="Development"
         )
         
-    Or with unpacked fields (delegated to common):
+    Factory method:
         report = UUTReport.create(
             pn="ABC123",
             sn="SN-001",
@@ -101,6 +123,53 @@ class UUTReport(WATSBase):
         serialization_alias="uut",
         description="UUT-specific metadata (serializes as 'uut' in JSON)"
     )
+    
+    # =========================================================================
+    # Constructor: Support flat field construction (v1 compatible)
+    # =========================================================================
+    
+    @model_validator(mode='before')
+    @classmethod
+    def _wrap_flat_fields_in_common(cls, data: Any) -> Any:
+        """
+        Allow flat field construction like v1.
+        
+        This validator intercepts constructor calls and wraps flat fields
+        into a ReportCommon object if 'common' is not provided.
+        
+        Enables both patterns:
+            UUTReport(pn="...", sn="...")           # Flat (v1 compatible)
+            UUTReport(common=ReportCommon(...))    # Explicit composition
+        """
+        if not isinstance(data, dict):
+            return data
+        
+        # If 'common' is already provided, use as-is
+        if 'common' in data:
+            return data
+        
+        # Check if any flat common fields are provided
+        common_fields = {k: v for k, v in data.items() if k in _COMMON_FIELD_NAMES}
+        if not common_fields:
+            return data
+        
+        # Map v1 aliases to v2 field names
+        alias_map = {
+            'misc_info_list': 'misc_infos',
+            'asset_list': 'assets',
+        }
+        for old_key, new_key in alias_map.items():
+            if old_key in common_fields:
+                common_fields[new_key] = common_fields.pop(old_key)
+        
+        # Extract UUT-specific fields
+        uut_fields = {k: v for k, v in data.items() if k not in _COMMON_FIELD_NAMES}
+        
+        # Create nested structure with common wrapper
+        return {
+            'common': common_fields,
+            **uut_fields
+        }
     
     # =========================================================================
     # Methods

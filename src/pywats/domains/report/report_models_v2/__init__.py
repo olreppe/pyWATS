@@ -77,12 +77,18 @@ from .report_union import (
     is_uur_report,
 )
 
+# Optional: Export the mixin for advanced use cases
+from .report_proxy_mixin import ReportProxyMixin
+
 __all__ = [
     # Core models
     'ReportCommon',
     'UUTReport',
     'UURReport',
     'Report',
+    
+    # Mixin (for custom report types)
+    'ReportProxyMixin',
     
     # Parsing utilities
     'parse_report',

@@ -6,21 +6,26 @@ Key differences from v1:
 - Clean type signature (no field overrides)
 - Dual process code architecture preserved
 - 100% JSON compatible with v1
+- **Flat API access via ReportProxyMixin** (report.pn works, not just report.common.pn)
 
 Design notes:
 - UUR has dual process codes: repair_process_code + test_operation_code
 - Failures stored on sub_units (idx=0 is main unit)
 - Imports UURInfo and UURSubUnit from v1
+- ReportProxyMixin provides property proxies for all ReportCommon fields
 """
 
 from __future__ import annotations
 
-from typing import Literal, TYPE_CHECKING
+from typing import Any, Literal, TYPE_CHECKING
 from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 # Import ReportCommon (composition)
 from .report_common import ReportCommon
+
+# Import proxy mixin for flat API access
+from .report_proxy_mixin import ReportProxyMixin
 
 # Import from v1 (stable models)
 from ..report_models.uur.uur_info import UURInfo
@@ -34,11 +39,30 @@ if TYPE_CHECKING:
     from .uut_report import UUTReport
 
 
-class UURReport(WATSBase):
+# Field names that belong to ReportCommon (for constructor mapping)
+_COMMON_FIELD_NAMES = {
+    'id', 'pn', 'sn', 'rev', 'process_code', 'processCode',
+    'result', 'station_name', 'machineName', 'location', 'purpose',
+    'start', 'start_utc', 'startUTC',
+    'misc_infos', 'miscInfos',
+    'assets', 'asset_stats', 'assetStats',
+    'binary_data', 'binaryData', 'additional_data', 'additionalData',
+    'origin', 'product_name', 'productName', 'process_name', 'processName',
+    # Aliases for v1 compatibility
+    'misc_info_list', 'asset_list',
+}
+
+
+class UURReport(ReportProxyMixin, WATSBase):
     """
     UUR (Unit Under Repair) Report - Composition-based v2
     
     UUR reports document repair/rework activities on units that have failed testing.
+    
+    **API Access:**
+    Both access patterns work (flat API via ReportProxyMixin):
+        report.pn           # Flat (v1 compatible) ✓
+        report.common.pn    # Explicit composition ✓
     
     Key features:
     - Links to original UUT report via `uur_info.ref_uut`
@@ -49,35 +73,33 @@ class UURReport(WATSBase):
     - Supports sub-unit replacement tracking
     
     Architecture:
-    - common: ReportCommon (all shared fields via composition)
+    - common: ReportCommon (all shared fields, also accessible via properties)
     - type: Literal["R"] (UUR type identifier)
     - uur_info: UURInfo (UUR-specific metadata, dual process codes)
     - sub_units: list[UURSubUnit] (units being repaired, idx=0 is main)
     
     Example usage:
     
+    Direct constructor (v1 compatible):
+        uur = UURReport(
+            pn="ABC123",
+            sn="SN-001",
+            rev="A",
+            process_code=500,
+            station_name="RepairStation",
+            location="RepairLab",
+            purpose="Repair",
+            uur_info=UURInfo(
+                test_operation_code=100,
+                operator="John Doe"
+            )
+        )
+        
     Factory pattern (recommended):
         uur = UURReport.create_from_uut(
             uut_report,
             repair_process_code=500,
             operator="John Doe"
-        )
-        
-    Constructor pattern:
-        uur = UURReport(
-            common=ReportCommon(
-                pn="ABC123",
-                sn="SN-001",
-                rev="A",
-                process_code=500,  # Repair process code
-                station_name="RepairStation",
-                location="RepairLab",
-                purpose="Repair"
-            ),
-            uur_info=UURInfo(
-                test_operation_code=100,  # Original test that failed
-                operator="John Doe"
-            )
         )
     
     Adding failures:
@@ -122,6 +144,53 @@ class UURReport(WATSBase):
         description="Report-level attachments (photos, documents, etc.)"
     )
     
+    # =========================================================================
+    # Constructor: Support flat field construction (v1 compatible)
+    # =========================================================================
+    
+    @model_validator(mode='before')
+    @classmethod
+    def _wrap_flat_fields_in_common(cls, data: Any) -> Any:
+        """
+        Allow flat field construction like v1.
+        
+        This validator intercepts constructor calls and wraps flat fields
+        into a ReportCommon object if 'common' is not provided.
+        
+        Enables both patterns:
+            UURReport(pn="...", sn="...")           # Flat (v1 compatible)
+            UURReport(common=ReportCommon(...))    # Explicit composition
+        """
+        if not isinstance(data, dict):
+            return data
+        
+        # If 'common' is already provided, use as-is
+        if 'common' in data:
+            return data
+        
+        # Check if any flat common fields are provided
+        common_fields = {k: v for k, v in data.items() if k in _COMMON_FIELD_NAMES}
+        if not common_fields:
+            return data
+        
+        # Map v1 aliases to v2 field names
+        alias_map = {
+            'misc_info_list': 'misc_infos',
+            'asset_list': 'assets',
+        }
+        for old_key, new_key in alias_map.items():
+            if old_key in common_fields:
+                common_fields[new_key] = common_fields.pop(old_key)
+        
+        # Extract UUR-specific fields (not in common)
+        uur_fields = {k: v for k, v in data.items() if k not in _COMMON_FIELD_NAMES}
+        
+        # Create nested structure with common wrapper
+        return {
+            'common': common_fields,
+            **uur_fields
+        }
+    
     @model_validator(mode='after')
     def ensure_main_unit(self) -> 'UURReport':
         """
@@ -156,12 +225,16 @@ class UURReport(WATSBase):
         # Shouldn't happen due to ensure_main_unit validator
         raise ValueError("Main unit (idx=0) not found")
     
-    def add_sub_unit(self, pn: str, sn: str, rev: str = "A") -> UURSubUnit:
+    def add_uur_sub_unit(self, pn: str, sn: str, rev: str = "A") -> UURSubUnit:
         """
-        Add a sub-unit to the repair report.
+        Add a UUR sub-unit to the repair report.
         
         Sub-units are assigned sequential indices starting from 1
         (idx=0 is reserved for the main unit).
+        
+        Note: This is different from ReportCommon.add_sub_unit() which adds
+        generic SubUnit objects. Use this for repair-specific sub-units
+        that can have failures attached.
         
         Args:
             pn: Part number of the sub-unit
@@ -172,7 +245,7 @@ class UURReport(WATSBase):
             UURSubUnit: The created sub-unit
             
         Example:
-            sub = uur.add_sub_unit("PCB-123", "PCB-SN-001", "1.0")
+            sub = uur.add_uur_sub_unit("PCB-123", "PCB-SN-001", "1.0")
             sub.add_failure(category="Solder", code="COLD_JOINT")
         """
         # Find next available index
