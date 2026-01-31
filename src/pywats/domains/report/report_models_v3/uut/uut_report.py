@@ -88,6 +88,15 @@ class UUTReport(Report[UUTSubUnit]):
     # Factory Methods
     # ========================================================================
     
+    @property
+    def test_operation_code(self) -> int:
+        """Alias for process_code (test operation code)."""
+        return self.process_code
+    
+    @test_operation_code.setter
+    def test_operation_code(self, value: int) -> None:
+        self.process_code = value
+    
     def get_root_sequence_call(self) -> SequenceCall:
         """
         Get or create the root sequence call.

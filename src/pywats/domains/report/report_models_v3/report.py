@@ -244,6 +244,13 @@ class Report(WATSBase, Generic[SubUnitT]):
         description="Test equipment/assets used."
     )
     
+    asset_stats: Optional[List] = Field(
+        default=None,
+        validation_alias="assetStats",
+        serialization_alias="assetStats",
+        description="Asset statistics."
+    )
+    
     # Binary data attachments
     binary_data: Optional[List[BinaryData]] = Field(
         default=None,

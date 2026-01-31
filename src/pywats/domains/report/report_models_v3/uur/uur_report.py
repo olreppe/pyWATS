@@ -84,6 +84,17 @@ class UURReport(Report[UURSubUnit]):
     )
     
     # ========================================================================
+    # Assets
+    # ========================================================================
+    
+    asset_stats: Optional[List] = Field(
+        default_factory=list,
+        validation_alias="assetStats",
+        serialization_alias="assetStats",
+        description="Asset statistics."
+    )
+    
+    # ========================================================================
     # Attachments
     # ========================================================================
     
@@ -109,6 +120,160 @@ class UURReport(Report[UURSubUnit]):
             )
             self.sub_units.insert(0, main)
         return self
+    
+    # ========================================================================
+    # Convenience Properties (delegate to uur_info)
+    # ========================================================================
+    
+    @property
+    def uut_guid(self) -> Optional[UUID]:
+        """GUID of the referenced UUT report."""
+        return self.uur_info.ref_uut if self.uur_info else None
+    
+    @uut_guid.setter
+    def uut_guid(self, value: UUID) -> None:
+        if self.uur_info:
+            self.uur_info.ref_uut = value
+    
+    @property
+    def operator(self) -> Optional[str]:
+        """Operator who performed the repair."""
+        return self.uur_info.operator if self.uur_info else None
+    
+    @operator.setter
+    def operator(self, value: str) -> None:
+        if self.uur_info:
+            self.uur_info.operator = value
+    
+    @property
+    def comment(self) -> Optional[str]:
+        """Repair comment."""
+        return self.uur_info.comment if self.uur_info else None
+    
+    @comment.setter
+    def comment(self, value: str) -> None:
+        if self.uur_info:
+            self.uur_info.comment = value
+    
+    @property
+    def execution_time(self) -> float:
+        """Time spent on repair (seconds)."""
+        return self.uur_info.exec_time if self.uur_info and self.uur_info.exec_time else 0.0
+    
+    @execution_time.setter
+    def execution_time(self, value: float) -> None:
+        if self.uur_info:
+            self.uur_info.exec_time = value
+    
+    @property
+    def repair_process_code(self) -> int:
+        """Alias for process_code (repair operation code)."""
+        return self.process_code
+    
+    @property
+    def repair_operation_code(self) -> int:
+        """Alias for process_code (repair operation code)."""
+        return self.process_code
+    
+    @property
+    def test_operation_code(self) -> Optional[int]:
+        """Test operation code from uur_info."""
+        return self.uur_info.test_operation_code if self.uur_info else None
+    
+    @property
+    def all_failures(self) -> List[UURFailure]:
+        """Get all failures from all sub-units."""
+        result = []
+        for su in self.sub_units:
+            if su.failures:
+                result.extend(su.failures)
+        return result
+    
+    @property
+    def failures(self) -> List[UURFailure]:
+        """Alias for all_failures."""
+        return self.all_failures
+    
+    def get_sub_unit(self, idx: int) -> Optional[UURSubUnit]:
+        """Get sub-unit by index."""
+        for su in self.sub_units:
+            if su.idx == idx:
+                return su
+        return None
+    
+    def add_failure(
+        self,
+        category: str,
+        code: str,
+        comment: Optional[str] = None,
+        component_ref: Optional[str] = None,
+        ref_step_id: Optional[int] = None
+    ) -> UURFailure:
+        """Add failure to main unit."""
+        main = self.get_main_unit()
+        return main.add_failure(category, code, comment, component_ref, ref_step_id)
+    
+    def add_failure_to_main_unit(
+        self,
+        category: str,
+        code: str,
+        comment: Optional[str] = None,
+        component_ref: Optional[str] = None
+    ) -> UURFailure:
+        """Add failure to main unit (alias for add_failure)."""
+        return self.add_failure(category, code, comment, component_ref)
+    
+    def attach_bytes(
+        self,
+        name: str,
+        content: bytes,
+        mime_type: str = "application/octet-stream"
+    ) -> Attachment:
+        """Attach binary data to report."""
+        attachment = Attachment(
+            name=name,
+            mime_type=mime_type,
+            data=content
+        )
+        self.attachments.append(attachment)
+        return attachment
+    
+    def get_summary(self) -> dict:
+        """Get report summary."""
+        return {
+            'pn': self.pn,
+            'sn': self.sn,
+            'result': self.result,
+            'repair_process_code': self.process_code,
+            'test_operation_code': self.test_operation_code,
+            'total_failures': len(self.all_failures),
+            'sub_units': len(self.sub_units)
+        }
+    
+    def validate_report(self) -> tuple[bool, str]:
+        """Validate report structure and content."""
+        errors = []
+        
+        # Check main unit exists
+        try:
+            _ = self.get_main_unit()
+        except ValueError as e:
+            errors.append(str(e))
+            return False, "; ".join(errors)
+        
+        # Validate dual process codes
+        if self.uur_info and self.process_code and self.uur_info.test_operation_code:
+            if self.process_code == self.uur_info.test_operation_code:
+                errors.append("repair process_code and test_operation_code should differ")
+        
+        if errors:
+            return False, "; ".join(errors)
+        return True, "OK"
+    
+    def copy_misc_from_uut(self, uut_report: Any) -> None:
+        """Copy misc_infos from UUT report."""
+        if hasattr(uut_report, 'misc_infos') and uut_report.misc_infos:
+            self.misc_infos = list(uut_report.misc_infos)
     
     # ========================================================================
     # UUT Linking

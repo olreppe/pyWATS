@@ -1,0 +1,2187 @@
+[
+  {
+    "class": "ABC",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": []
+  },
+  {
+    "class": "ActionStep",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "AdditionalData",
+    "in_v1": true,
+    "in_v3": false,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V3"
+    ]
+  },
+  {
+    "class": "Asset",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "asset_type": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": "assetType"
+      },
+      "calibration_date": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": "calibrationDate"
+      },
+      "calibration_due": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": "calibrationDue"
+      },
+      "pn": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": "partNumber"
+      },
+      "sn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "assetSN",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "",
+        "alias_mismatch": true,
+        "type_mismatch": true
+      },
+      "usage_count": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "usageCount",
+        "v3_type": "int | None",
+        "v3_alias": "usageCount"
+      },
+      "usage_count_format": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "str | None",
+        "v1_alias": "usageCountFormat"
+      }
+    },
+    "methods": {},
+    "issues": []
+  },
+  {
+    "class": "AssetStats",
+    "in_v1": true,
+    "in_v3": false,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V3"
+    ]
+  },
+  {
+    "class": "Attachment",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "binary_data_guid": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "uuid.UUID | None",
+        "v1_alias": ""
+      },
+      "content_type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "contentType",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "contentType",
+        "type_mismatch": true
+      },
+      "data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "description": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "failure_idx": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "int | None",
+        "v1_alias": "failIdx"
+      },
+      "name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      }
+    },
+    "methods": {
+      "missing_in_v1": [
+        "from_file"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "BaseMeasurement",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "BinaryData",
+    "in_v1": true,
+    "in_v3": false,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V3"
+    ]
+  },
+  {
+    "class": "BooleanMeasurement",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "Chart",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "chart_type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<enum 'ChartType'>",
+        "v1_alias": "chartType",
+        "v3_type": "<enum 'ChartType'>",
+        "v3_alias": "chartType"
+      },
+      "label": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "series": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.chart.ChartSeries]",
+        "v1_alias": "",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.chart.ChartSeries]",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "x_label": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "xLabel",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "xLabel"
+      },
+      "x_unit": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "xUnit",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "xUnit",
+        "type_mismatch": true
+      },
+      "y_label": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "yLabel",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "yLabel"
+      },
+      "y_unit": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "yUnit",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "yUnit",
+        "type_mismatch": true
+      }
+    },
+    "methods": {
+      "missing_in_v3": [
+        "AddSeries"
+      ],
+      "missing_in_v1": [
+        "add_series"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "ChartSeries",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "data_type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "dataType",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "dataType"
+      },
+      "name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "x_data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "xdata",
+        "v3_type": "typing.List[float]",
+        "v3_alias": "xData",
+        "alias_mismatch": true,
+        "type_mismatch": true
+      },
+      "y_data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "ydata",
+        "v3_type": "typing.List[float]",
+        "v3_alias": "yData",
+        "alias_mismatch": true,
+        "type_mismatch": true
+      }
+    },
+    "methods": {},
+    "issues": []
+  },
+  {
+    "class": "CompOp",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "Enum",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "Generic",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "LoopInfo",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "count": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "int | None",
+        "v3_alias": "n"
+      },
+      "ending_index": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "int | None",
+        "v1_alias": "endingIndex"
+      },
+      "failed": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "int | None",
+        "v1_alias": ""
+      },
+      "idx": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "int | None",
+        "v1_alias": ""
+      },
+      "index": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "<class 'int'>",
+        "v3_alias": "i"
+      },
+      "num": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "int | None",
+        "v1_alias": ""
+      },
+      "parent": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "pywats.domains.report.report_models_v3.binary_data.LoopInfo | None",
+        "v3_alias": ""
+      },
+      "passed": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "int | None",
+        "v1_alias": ""
+      }
+    },
+    "methods": {},
+    "issues": []
+  },
+  {
+    "class": "MiscInfo",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "description": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "id": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "numeric_normat": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "str | None",
+        "v1_alias": "numericFormat"
+      },
+      "numeric_value": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "numeric",
+        "v3_type": "float | None",
+        "v3_alias": "numeric",
+        "type_mismatch": true
+      },
+      "string_value": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "text",
+        "v3_type": "str | None",
+        "v3_alias": "text"
+      },
+      "type_def": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "str | None",
+        "v1_alias": "typedef"
+      }
+    },
+    "methods": {
+      "missing_in_v1": [
+        "convert_numeric_to_string"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "NumericMeasurement",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "NumericStep",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "PassFailStep",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "Report",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "additional_data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.additional_data.AdditionalData | None] | None",
+        "v1_alias": "additionalData",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.AdditionalData] | None",
+        "v3_alias": "additionalData",
+        "type_mismatch": true
+      },
+      "asset_stats": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "list[pywats.domains.report.report_models.asset.AssetStats] | None",
+        "v1_alias": "assetStats"
+      },
+      "assets": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.asset.Asset] | None",
+        "v1_alias": "",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.asset.Asset] | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "binary_data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.binary_data.BinaryData] | None",
+        "v1_alias": "binaryData",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.BinaryData] | None",
+        "v3_alias": "binaryData",
+        "type_mismatch": true
+      },
+      "id": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'uuid.UUID'>",
+        "v1_alias": "",
+        "v3_type": "<class 'uuid.UUID'>",
+        "v3_alias": ""
+      },
+      "info": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.report_info.ReportInfo | None",
+        "v1_alias": "",
+        "v3_type": "pywats.domains.report.report_models_v3.report_info.ReportInfo | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "location": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "misc_infos": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.misc_info.MiscInfo] | None",
+        "v1_alias": "miscInfos",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.misc_info.MiscInfo] | None",
+        "v3_alias": "miscInfos",
+        "type_mismatch": true
+      },
+      "origin": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "pn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "process_code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'int'>",
+        "v1_alias": "processCode",
+        "v3_type": "<class 'int'>",
+        "v3_alias": "processCode"
+      },
+      "process_code_format": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": "processCodeFormat"
+      },
+      "process_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "processName",
+        "v3_type": "str | None",
+        "v3_alias": "processName"
+      },
+      "product_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "productName",
+        "v3_type": "str | None",
+        "v3_alias": "productName"
+      },
+      "purpose": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "result": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<enum 'ReportResult'>",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "rev": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "sn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "start": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "datetime.datetime | None",
+        "v1_alias": "",
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": ""
+      },
+      "start_utc": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "datetime.datetime | None",
+        "v1_alias": "startUTC",
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": "startUTC"
+      },
+      "station_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "machineName",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "machineName"
+      },
+      "sub_units": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.sub_unit.SubUnit] | None",
+        "v1_alias": "subUnits",
+        "v3_type": "typing.List[~SubUnitT] | None",
+        "v3_alias": "subUnits",
+        "type_mismatch": true
+      },
+      "type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      }
+    },
+    "methods": {
+      "missing_in_v3": [
+        "add_sub_unit"
+      ],
+      "missing_in_v1": [
+        "add_binary_data"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "ReportInfo",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "comment": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "exec_time": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "float | None",
+        "v1_alias": "execTime",
+        "v3_type": "float | None",
+        "v3_alias": "execTime"
+      },
+      "exec_time_format": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "str | None",
+        "v1_alias": "execTimeFormat"
+      },
+      "operator": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "user",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "user"
+      }
+    },
+    "methods": {
+      "missing_in_v1": [
+        "serialize_exec_time"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "Report[UURSubUnit]",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "Report[UUTSubUnit]",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "SequenceCall",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "additional_results": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.additional_data.AdditionalData] | None",
+        "v1_alias": "additionalResults",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.AdditionalData] | None",
+        "v3_alias": "additionalResults",
+        "type_mismatch": true
+      },
+      "attachment": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.attachment.Attachment | None",
+        "v1_alias": "",
+        "v3_type": "pywats.domains.report.report_models_v3.binary_data.Attachment | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "caller": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "caused_seq_failure": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "bool | None",
+        "v1_alias": "causedSeqFailure",
+        "v3_type": "bool | None",
+        "v3_alias": "causedSeqFailure"
+      },
+      "caused_uut_failure": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "bool | None",
+        "v1_alias": "causedUUTFailure",
+        "v3_type": "bool | None",
+        "v3_alias": "causedUUTFailure"
+      },
+      "chart": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.chart.Chart | None",
+        "v1_alias": "",
+        "v3_type": "pywats.domains.report.report_models_v3.chart.Chart | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "error_code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | int | None",
+        "v1_alias": "errorCode",
+        "v3_type": "str | int | None",
+        "v3_alias": "errorCode"
+      },
+      "error_code_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "errorCodeFormat",
+        "v3_type": "str | None",
+        "v3_alias": "errorCodeFormat"
+      },
+      "error_message": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "errorMessage",
+        "v3_type": "str | None",
+        "v3_alias": "errorMessage"
+      },
+      "fail_parent_on_failure": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'bool'>",
+        "v1_alias": "",
+        "v3_type": "<class 'bool'>",
+        "v3_alias": ""
+      },
+      "group": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "id": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | int | None",
+        "v1_alias": "",
+        "v3_type": "str | int | None",
+        "v3_alias": ""
+      },
+      "loop": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.uut.step.LoopInfo | None",
+        "v1_alias": "",
+        "v3_type": "pywats.domains.report.report_models_v3.binary_data.LoopInfo | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "module": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "parent": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.uut.step.Step | None",
+        "v1_alias": "",
+        "v3_type": "typing.Any | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "report_text": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "reportText",
+        "v3_type": "str | None",
+        "v3_alias": "reportText"
+      },
+      "sequence": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'pywats.domains.report.report_models.uut.steps.sequence_call.SequenceCallInfo'>",
+        "v1_alias": "seqCall",
+        "v3_type": "<class 'pywats.domains.report.report_models_v3.common_types.SequenceCallInfo'>",
+        "v3_alias": "seqCall",
+        "type_mismatch": true
+      },
+      "start": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "start",
+        "v3_type": "str | None",
+        "v3_alias": "",
+        "alias_mismatch": true
+      },
+      "status": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<enum 'StepStatus'>",
+        "v1_alias": "",
+        "v3_type": "<enum 'StepStatus'>",
+        "v3_alias": ""
+      },
+      "step_type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "typing.Literal['SequenceCall', 'WATS_SeqCall']",
+        "v1_alias": "stepType",
+        "v3_type": "typing.Literal['SequenceCall', 'WATS_SeqCall']",
+        "v3_alias": "stepType"
+      },
+      "steps": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'pywats.domains.report.report_models.uut.steps.sequence_call.StepList'>",
+        "v1_alias": "",
+        "v3_type": "pywats.domains.report.report_models_v3.uut.steps.step_list.StepList[pywats.domains.report.report_models_v3.uut.steps.sequence_call.SequenceCall | pywats.domains.report.report_models_v3.uut.steps.numeric_step.NumericStep | pywats.domains.report.report_models_v3.uut.steps.numeric_step.MultiNumericStep | pywats.domains.report.report_models_v3.uut.steps.boolean_step.PassFailStep | pywats.domains.report.report_models_v3.uut.steps.boolean_step.MultiBooleanStep | pywats.domains.report.report_models_v3.uut.steps.string_step.StringValueStep | pywats.domains.report.report_models_v3.uut.steps.string_step.MultiStringStep | pywats.domains.report.report_models_v3.uut.steps.generic_step.GenericStep | pywats.domains.report.report_models_v3.uut.steps.action_step.ActionStep | pywats.domains.report.report_models_v3.uut.steps.chart_step.ChartStep]",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "tot_time": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "float | str | None",
+        "v1_alias": "totTime",
+        "v3_type": "float | str | None",
+        "v3_alias": "totTime"
+      },
+      "tot_time_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "totTimeFormat",
+        "v3_type": "str | None",
+        "v3_alias": "totTimeFormat"
+      },
+      "ts_guid": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "tsGuid",
+        "v3_type": "str | None",
+        "v3_alias": "tsGuid"
+      }
+    },
+    "methods": {
+      "missing_in_v3": [
+        "assign_parent",
+        "print_hierarchy"
+      ],
+      "missing_in_v1": [
+        "add_action_step",
+        "add_attachment_from_file",
+        "add_pass_fail_step",
+        "add_step",
+        "count_steps",
+        "find_all_steps",
+        "find_step",
+        "get_failed_steps"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "Step",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "additional_results": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.additional_data.AdditionalData] | None",
+        "v1_alias": "additionalResults",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.AdditionalData] | None",
+        "v3_alias": "additionalResults",
+        "type_mismatch": true
+      },
+      "attachment": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.attachment.Attachment | None",
+        "v1_alias": "",
+        "v3_type": "pywats.domains.report.report_models_v3.binary_data.Attachment | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "caused_seq_failure": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "bool | None",
+        "v1_alias": "causedSeqFailure",
+        "v3_type": "bool | None",
+        "v3_alias": "causedSeqFailure"
+      },
+      "caused_uut_failure": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "bool | None",
+        "v1_alias": "causedUUTFailure",
+        "v3_type": "bool | None",
+        "v3_alias": "causedUUTFailure"
+      },
+      "chart": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.chart.Chart | None",
+        "v1_alias": "",
+        "v3_type": "pywats.domains.report.report_models_v3.chart.Chart | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "error_code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | int | None",
+        "v1_alias": "errorCode",
+        "v3_type": "str | int | None",
+        "v3_alias": "errorCode"
+      },
+      "error_code_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "errorCodeFormat",
+        "v3_type": "str | None",
+        "v3_alias": "errorCodeFormat"
+      },
+      "error_message": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "errorMessage",
+        "v3_type": "str | None",
+        "v3_alias": "errorMessage"
+      },
+      "fail_parent_on_failure": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'bool'>",
+        "v1_alias": "",
+        "v3_type": "<class 'bool'>",
+        "v3_alias": ""
+      },
+      "group": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "id": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | int | None",
+        "v1_alias": "",
+        "v3_type": "str | int | None",
+        "v3_alias": ""
+      },
+      "loop": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.uut.step.LoopInfo | None",
+        "v1_alias": "",
+        "v3_type": "pywats.domains.report.report_models_v3.binary_data.LoopInfo | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "parent": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.uut.step.Step | None",
+        "v1_alias": "",
+        "v3_type": "typing.Any | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "report_text": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "reportText",
+        "v3_type": "str | None",
+        "v3_alias": "reportText"
+      },
+      "start": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "start",
+        "v3_type": "str | None",
+        "v3_alias": "",
+        "alias_mismatch": true
+      },
+      "status": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<enum 'StepStatus'>",
+        "v1_alias": "",
+        "v3_type": "<enum 'StepStatus'>",
+        "v3_alias": ""
+      },
+      "step_type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "stepType",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "stepType"
+      },
+      "tot_time": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "float | str | None",
+        "v1_alias": "totTime",
+        "v3_type": "float | str | None",
+        "v3_alias": "totTime"
+      },
+      "tot_time_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "totTimeFormat",
+        "v3_type": "str | None",
+        "v3_alias": "totTimeFormat"
+      },
+      "ts_guid": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "tsGuid",
+        "v3_type": "str | None",
+        "v3_alias": "tsGuid"
+      }
+    },
+    "methods": {
+      "missing_in_v1": [
+        "add_attachment_from_file"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "StringMeasurement",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "StringValueStep",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  },
+  {
+    "class": "SubUnit",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "part_type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "partType",
+        "v3_type": "str | None",
+        "v3_alias": "partType"
+      },
+      "pn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "rev": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "sn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      }
+    },
+    "methods": {},
+    "issues": []
+  },
+  {
+    "class": "UURFailure",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "art_description": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "artDescription",
+        "v3_type": "str | None",
+        "v3_alias": "artDescription"
+      },
+      "art_number": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "artNumber",
+        "v3_type": "str | None",
+        "v3_alias": "artNumber"
+      },
+      "art_rev": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "artRev",
+        "v3_type": "str | None",
+        "v3_alias": "artRev"
+      },
+      "art_vendor": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "artVendor",
+        "v3_type": "str | None",
+        "v3_alias": "artVendor"
+      },
+      "category": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "com_ref": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "comRef",
+        "v3_type": "str | None",
+        "v3_alias": "comRef"
+      },
+      "comment": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "func_block": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "funcBlock",
+        "v3_type": "str | None",
+        "v3_alias": "funcBlock"
+      },
+      "ref_step_id": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "refStepId",
+        "v3_type": "int | None",
+        "v3_alias": "refStepId"
+      },
+      "ref_step_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "refStepName",
+        "v3_type": "str | None",
+        "v3_alias": "refStepName"
+      }
+    },
+    "methods": {},
+    "issues": []
+  },
+  {
+    "class": "UURInfo",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "active": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'bool'>",
+        "v1_alias": "",
+        "v3_type": "<class 'bool'>",
+        "v3_alias": ""
+      },
+      "children": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "list[uuid.UUID] | None",
+        "v1_alias": ""
+      },
+      "comment": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "confirm_date": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "datetime.datetime | None",
+        "v1_alias": "confirmDate",
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": "confirmDate"
+      },
+      "exec_time": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "float | None",
+        "v1_alias": "execTime",
+        "v3_type": "float | None",
+        "v3_alias": "execTime"
+      },
+      "exec_time_format": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "str | None",
+        "v1_alias": "execTimeFormat"
+      },
+      "finalize_date": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "datetime.datetime | None",
+        "v1_alias": "finalizeDate",
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": "finalizeDate"
+      },
+      "operator": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "user",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "user"
+      },
+      "parent": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "uuid.UUID | None",
+        "v1_alias": "",
+        "v3_type": "uuid.UUID | None",
+        "v3_alias": ""
+      },
+      "process_code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "processCode",
+        "v3_type": "int | None",
+        "v3_alias": "processCode"
+      },
+      "process_code_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "processCodeFormat",
+        "v3_type": "str | None",
+        "v3_alias": "processCodeFormat"
+      },
+      "process_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "processName",
+        "v3_type": "str | None",
+        "v3_alias": "processName"
+      },
+      "ref_uut": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "uuid.UUID | None",
+        "v1_alias": "refUUT",
+        "v3_type": "uuid.UUID | None",
+        "v3_alias": "refUUT"
+      },
+      "repair_process_code": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "int | None",
+        "v3_alias": "repairProcessCode"
+      },
+      "repair_process_name": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": "repairProcessName"
+      },
+      "test_operation_code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "testOperationCode",
+        "v3_type": "int | None",
+        "v3_alias": "testOperationCode"
+      },
+      "test_operation_guid": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "uuid.UUID | None",
+        "v1_alias": "testOperationGuid",
+        "v3_type": "uuid.UUID | None",
+        "v3_alias": "testOperationGuid"
+      },
+      "test_operation_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "testOperationName",
+        "v3_type": "str | None",
+        "v3_alias": "testOperationName"
+      },
+      "uur_operator": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "str | None",
+        "v1_alias": "userLoginName"
+      }
+    },
+    "methods": {
+      "missing_in_v3": [
+        "get_repair_process_info",
+        "get_test_operation_info",
+        "set_dual_process_codes",
+        "sync_process_codes",
+        "to_dict",
+        "to_uur_type_dict",
+        "validate_dual_process_codes"
+      ],
+      "missing_in_v1": [
+        "serialize_exec_time"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "UURReport",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "additional_data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.additional_data.AdditionalData | None] | None",
+        "v1_alias": "additionalData",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.AdditionalData] | None",
+        "v3_alias": "additionalData",
+        "type_mismatch": true
+      },
+      "asset_stats": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "list[pywats.domains.report.report_models.asset.AssetStats] | None",
+        "v1_alias": "assetStats"
+      },
+      "assets": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.asset.Asset] | None",
+        "v1_alias": "",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.asset.Asset] | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "attachments": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "typing.List[pywats.domains.report.report_models.attachment.Attachment]",
+        "v1_alias": "binaryData",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.Attachment]",
+        "v3_alias": "binaryData",
+        "type_mismatch": true
+      },
+      "binary_data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.binary_data.BinaryData] | None",
+        "v1_alias": "binaryData",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.BinaryData] | None",
+        "v3_alias": "binaryData",
+        "type_mismatch": true
+      },
+      "id": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'uuid.UUID'>",
+        "v1_alias": "",
+        "v3_type": "<class 'uuid.UUID'>",
+        "v3_alias": ""
+      },
+      "info": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.uur.uur_info.UURInfo | None",
+        "v1_alias": "uur",
+        "v3_type": "pywats.domains.report.report_models_v3.report_info.ReportInfo | None",
+        "v3_alias": "",
+        "alias_mismatch": true,
+        "type_mismatch": true
+      },
+      "location": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "misc_infos": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.misc_info.MiscInfo] | None",
+        "v1_alias": "miscInfos",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.misc_info.MiscInfo] | None",
+        "v3_alias": "miscInfos",
+        "type_mismatch": true
+      },
+      "origin": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "pn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "process_code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'int'>",
+        "v1_alias": "processCode",
+        "v3_type": "<class 'int'>",
+        "v3_alias": "processCode"
+      },
+      "process_code_format": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": "processCodeFormat"
+      },
+      "process_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "processName",
+        "v3_type": "str | None",
+        "v3_alias": "processName"
+      },
+      "product_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "productName",
+        "v3_type": "str | None",
+        "v3_alias": "productName"
+      },
+      "purpose": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "result": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<enum 'ReportResult'>",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "rev": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "sn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "start": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "datetime.datetime | None",
+        "v1_alias": "",
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": ""
+      },
+      "start_utc": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "datetime.datetime | None",
+        "v1_alias": "startUTC",
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": "startUTC"
+      },
+      "station_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "machineName",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "machineName"
+      },
+      "sub_units": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "typing.List[pywats.domains.report.report_models.uur.uur_sub_unit.UURSubUnit]",
+        "v1_alias": "subUnits",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.uur.uur_sub_unit.UURSubUnit]",
+        "v3_alias": "subUnits",
+        "type_mismatch": true
+      },
+      "type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "typing.Literal['R']",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "uur_info": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "<class 'pywats.domains.report.report_models_v3.uur.uur_info.UURInfo'>",
+        "v3_alias": "uur"
+      }
+    },
+    "methods": {
+      "missing_in_v3": [
+        "add_failure",
+        "add_failure_to_main_unit",
+        "attach_bytes",
+        "copy_misc_from_uut",
+        "get_sub_unit",
+        "get_summary",
+        "validate_report"
+      ],
+      "missing_in_v1": [
+        "add_attachment",
+        "add_attachment_from_file",
+        "add_binary_data",
+        "add_main_failure",
+        "count_failures",
+        "get_all_failures",
+        "get_sub_unit_by_idx",
+        "link_to_uut",
+        "set_repair_process",
+        "set_test_operation"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "UURSubUnit",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "failures": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "typing.List[pywats.domains.report.report_models.uur.uur_sub_unit.UURFailure] | None",
+        "v1_alias": "",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.uur.uur_failure.UURFailure] | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "idx": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'int'>",
+        "v1_alias": "",
+        "v3_type": "<class 'int'>",
+        "v3_alias": ""
+      },
+      "parent_idx": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "parentIdx",
+        "v3_type": "int | None",
+        "v3_alias": "parentIdx"
+      },
+      "part_type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "partType",
+        "v3_type": "str | None",
+        "v3_alias": "partType"
+      },
+      "pn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "position": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "",
+        "v3_type": "int | None",
+        "v3_alias": ""
+      },
+      "replaced_idx": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "replacedIdx",
+        "v3_type": "int | None",
+        "v3_alias": "replacedIdx"
+      },
+      "rev": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "sn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "",
+        "type_mismatch": true
+      }
+    },
+    "methods": {
+      "missing_in_v3": [
+        "from_sub_unit"
+      ],
+      "missing_in_v1": [
+        "get_failures",
+        "has_failures",
+        "validate_pn",
+        "validate_sn"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "UUTInfo",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "batch_fail_count": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "batchFailCount",
+        "v3_type": "int | None",
+        "v3_alias": "batchFailCount"
+      },
+      "batch_fail_count_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "batchFailCountFormat",
+        "v3_type": "str | None",
+        "v3_alias": "batchFailCountFormat"
+      },
+      "batch_loop_index": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "batchLoopIndex",
+        "v3_type": "int | None",
+        "v3_alias": "batchLoopIndex"
+      },
+      "batch_loop_index_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "batchLoopIndexFormat",
+        "v3_type": "str | None",
+        "v3_alias": "batchLoopIndexFormat"
+      },
+      "batch_number": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "batchSN",
+        "v3_type": "str | None",
+        "v3_alias": "batchSN"
+      },
+      "comment": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "error_code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | str | None",
+        "v1_alias": "errorCode",
+        "v3_type": "int | None",
+        "v3_alias": "errorCode",
+        "type_mismatch": true
+      },
+      "error_code_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "errorCodeFormat",
+        "v3_type": "str | None",
+        "v3_alias": "errorCodeFormat"
+      },
+      "error_message": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "errorMessage",
+        "v3_type": "str | None",
+        "v3_alias": "errorMessage"
+      },
+      "exec_time": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "float | None",
+        "v1_alias": "execTime",
+        "v3_type": "float | None",
+        "v3_alias": "execTime"
+      },
+      "exec_time_format": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "str | None",
+        "v1_alias": "execTimeFormat"
+      },
+      "fixture_id": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "fixtureId",
+        "v3_type": "str | None",
+        "v3_alias": "fixtureId"
+      },
+      "operator": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "user",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "user"
+      },
+      "referenced_by_uurs": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.uut.uut_info.RefUURs] | None",
+        "v1_alias": "referencedByUURs",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.uut.uut_info.RefUURs] | None",
+        "v3_alias": "referencedByUURs",
+        "type_mismatch": true
+      },
+      "socket_index": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "testSocketIndex",
+        "v3_type": "int | None",
+        "v3_alias": "testSocketIndex"
+      },
+      "socket_index_format": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "testSocketIndexFormat",
+        "v3_type": "str | None",
+        "v3_alias": "testSocketIndexFormat"
+      },
+      "step_id_caused_uut_failure": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "int | None",
+        "v1_alias": "stepIdCausedUUTFailure",
+        "v3_type": "int | None",
+        "v3_alias": "stepIdCausedUUTFailure"
+      }
+    },
+    "methods": {
+      "missing_in_v1": [
+        "serialize_exec_time"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "UUTReport",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {
+      "additional_data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.additional_data.AdditionalData | None] | None",
+        "v1_alias": "additionalData",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.AdditionalData] | None",
+        "v3_alias": "additionalData",
+        "type_mismatch": true
+      },
+      "asset_stats": {
+        "in_v1": true,
+        "in_v3": false,
+        "v1_type": "list[pywats.domains.report.report_models.asset.AssetStats] | None",
+        "v1_alias": "assetStats"
+      },
+      "assets": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.asset.Asset] | None",
+        "v1_alias": "",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.asset.Asset] | None",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "binary_data": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.binary_data.BinaryData] | None",
+        "v1_alias": "binaryData",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.binary_data.BinaryData] | None",
+        "v3_alias": "binaryData",
+        "type_mismatch": true
+      },
+      "id": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'uuid.UUID'>",
+        "v1_alias": "",
+        "v3_type": "<class 'uuid.UUID'>",
+        "v3_alias": ""
+      },
+      "info": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "pywats.domains.report.report_models.uut.uut_info.UUTInfo | None",
+        "v1_alias": "uut",
+        "v3_type": "pywats.domains.report.report_models_v3.uut.uut_info.UUTInfo | None",
+        "v3_alias": "uut",
+        "type_mismatch": true
+      },
+      "location": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "misc_infos": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.misc_info.MiscInfo] | None",
+        "v1_alias": "miscInfos",
+        "v3_type": "typing.List[pywats.domains.report.report_models_v3.misc_info.MiscInfo] | None",
+        "v3_alias": "miscInfos",
+        "type_mismatch": true
+      },
+      "origin": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "",
+        "v3_type": "str | None",
+        "v3_alias": ""
+      },
+      "pn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "process_code": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'int'>",
+        "v1_alias": "processCode",
+        "v3_type": "<class 'int'>",
+        "v3_alias": "processCode"
+      },
+      "process_code_format": {
+        "in_v1": false,
+        "in_v3": true,
+        "v3_type": "str | None",
+        "v3_alias": "processCodeFormat"
+      },
+      "process_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "processName",
+        "v3_type": "str | None",
+        "v3_alias": "processName"
+      },
+      "product_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "str | None",
+        "v1_alias": "productName",
+        "v3_type": "str | None",
+        "v3_alias": "productName"
+      },
+      "purpose": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "result": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<enum 'ReportResult'>",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "rev": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "root": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'pywats.domains.report.report_models.uut.steps.sequence_call.SequenceCall'>",
+        "v1_alias": "",
+        "v3_type": "<class 'pywats.domains.report.report_models_v3.uut.steps.sequence_call.SequenceCall'>",
+        "v3_alias": "",
+        "type_mismatch": true
+      },
+      "sn": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": ""
+      },
+      "start": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "datetime.datetime | None",
+        "v1_alias": "",
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": ""
+      },
+      "start_utc": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "datetime.datetime | None",
+        "v1_alias": "startUTC",
+        "v3_type": "datetime.datetime | None",
+        "v3_alias": "startUTC"
+      },
+      "station_name": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "<class 'str'>",
+        "v1_alias": "machineName",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "machineName"
+      },
+      "sub_units": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "list[pywats.domains.report.report_models.sub_unit.SubUnit] | None",
+        "v1_alias": "subUnits",
+        "v3_type": "typing.List[~SubUnitT] | None",
+        "v3_alias": "subUnits",
+        "type_mismatch": true
+      },
+      "type": {
+        "in_v1": true,
+        "in_v3": true,
+        "v1_type": "typing.Literal['T']",
+        "v1_alias": "",
+        "v3_type": "<class 'str'>",
+        "v3_alias": "",
+        "type_mismatch": true
+      }
+    },
+    "methods": {
+      "missing_in_v1": [
+        "add_binary_data"
+      ]
+    },
+    "issues": []
+  },
+  {
+    "class": "WATSBase",
+    "in_v1": true,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": []
+  },
+  {
+    "class": "str",
+    "in_v1": false,
+    "in_v3": true,
+    "fields": {},
+    "methods": {},
+    "issues": [
+      "Missing in V1"
+    ]
+  }
+]
