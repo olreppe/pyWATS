@@ -1,29 +1,51 @@
-# MessagePopUp
-# messagePopup: Optional[MessagePopup] = None
+"""
+ActionStep - v3 Implementation
 
-# Type/lib
-from typing import Literal, Optional
-from pydantic import Field
+Action step (no measurement, just execution).
+"""
+from __future__ import annotations
 
-# Imports
+from typing import (
+    Optional,
+    List,
+    Literal,
+)
+
 from ..step import Step
+from ...common_types import (
+    Field,
+    StepStatus,
+)
 
 
-# Example json object and schema:
-
-
-# Class: MessagePopUpStep
-# A step type that displays a popup message.
 class ActionStep(Step):
-    # Temporarily allow any step_type to use this as fallback
-    #step_type: str = Field(default="Action", alias="stepType")
-
-    #This is the correct implementation
-    step_type: Literal["Action"] = Field(default="Action", validation_alias="stepType", serialization_alias="stepType")
-
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
-        if not super().validate_step(trigger_children=trigger_children, errors=errors):
-            return False
-        return True
-
-
+    """
+    Action step with no measurement.
+    
+    Represents an action that was executed but has no measurement data.
+    Typically used for setup/cleanup actions or logging.
+    
+    C# Name: ActionStep
+    
+    Example:
+        step = ActionStep(name="Initialize Equipment")
+    """
+    
+    # Step type discriminator
+    step_type: Literal["Action"] = Field(
+        default="Action",
+        validation_alias="stepType",
+        serialization_alias="stepType",
+    )
+    
+    # ========================================================================
+    # Validation
+    # ========================================================================
+    
+    def validate_step(
+        self,
+        trigger_children: bool = False,
+        errors: Optional[List[str]] = None
+    ) -> bool:
+        """Validate the action step (passes unless explicitly failed)."""
+        return self.status != StepStatus.Failed

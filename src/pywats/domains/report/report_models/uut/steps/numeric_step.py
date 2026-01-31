@@ -1,170 +1,279 @@
-import json
-from typing import Annotated
+"""
+NumericStep and MultiNumericStep - v3 Implementation
 
-from pydantic import AllowInfNan
-from ...common_types import Field, model_validator, field_serializer, Optional, Literal
+Numeric limit test steps with proper Optional typing and mixin usage.
 
-from ..step import Step, StepStatus
-from .measurement import LimitMeasurement
-from pywats.shared.enums import CompOp
+Fixes:
+- measurement field properly typed as Optional[NumericMeasurement]
+- Uses SingleMeasurementMixin to avoid code duplication
+- Active mode validation integrated
+"""
+from __future__ import annotations
 
-class NumericMeasurement(LimitMeasurement):
-    value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)
-    unit: str = Field(default="NOT SET", description="The units of the measurement.")
-    
-    @model_validator(mode='before')
-    @classmethod
-    def set_default_unit(cls, data):
-        """If unit is None or missing, default to 'NOT SET'."""
-        if isinstance(data, dict):
-            if data.get('unit') is None:
-                data['unit'] = 'NOT SET'
-        return data
- 
-    model_config = {
-        "populate_by_name": True,          # Use alias for serializatio / deserialization
-        "arbitrary_types_allowed": True,    # Fixes StepList issue
-        "use_enum_values": True,
-        "json_encoders": {CompOp: lambda c: c.name},  # Serialize enums as their names
-        "allow_inf_nan": True,
-        "ser_json_inf_nan": 'strings'
-    }
+from typing import (
+    TYPE_CHECKING,
+    Optional,
+    List,
+    Literal,
+    ClassVar,
+    Any,
+    Type,
+)
 
-class MultiNumericMeasurement(LimitMeasurement):
-    name: str = Field(..., description="The name of the measurement - required for MultiStepTypes")
-    value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)
-    unit: str = Field(default="NOT SET", description="The units of the measurement.")
-    
-    @model_validator(mode='before')
-    @classmethod
-    def set_default_unit(cls, data):
-        """If unit is None or missing, default to 'NOT SET'."""
-        if isinstance(data, dict):
-            if data.get('unit') is None:
-                data['unit'] = 'NOT SET'
-        return data
-    
-    model_config = {
-        "populate_by_name": True,          # Use alias for serializatio / deserialization
-        "arbitrary_types_allowed": True,    # Fixes StepList issue
-        "use_enum_values": True,
-        "json_encoders": {CompOp: lambda c: c.name},  # Serialize enums as their names
-        "allow_inf_nan": True,
-        "ser_json_inf_nan": 'strings'
-    }
+from pydantic import field_serializer, model_validator
 
-# -------------------------------------------------------
-# Numeric Step
+from ..step import Step
+from .measurement import (
+    NumericMeasurement,
+    MultiNumericMeasurement,
+)
+from ...common_types import (
+    Field,
+    StepStatus,
+    CompOp,
+)
+
+
 class NumericStep(Step):
-    step_type: Literal["ET_NLT", "NumericLimitStep"] = Field(default="ET_NLT", validation_alias="stepType",  serialization_alias="stepType")  # noqa: F821
-    measurement: NumericMeasurement = Field(default=None, validation_alias="numericMeas", serialization_alias="numericMeas")
-
-    #Critical fix: Pre-process raw JSON data
-    @model_validator(mode='before')
-    def unpack_measurement(cls, data: dict) -> dict:
-        if 'numericMeas' in data:
-            meas_data = data['numericMeas']
-            
-            # Convert list to single item
-            if isinstance(meas_data, list):
-                data['numericMeas'] = meas_data[0] if meas_data else None
-            
-            # Ensure dicts get converted to models
-            if isinstance(data['numericMeas'], dict):
-                data['numericMeas'] = NumericMeasurement(**data['numericMeas'])
+    """
+    Numeric limit test step.
     
+    Tests a numeric value against configurable limits.
+    
+    C# Name: NumericLimitStep (alias: ET_NLT in TestStand)
+    
+    Example:
+        step = NumericStep(
+            name="Voltage Test",
+            value=5.0,
+            comp=CompOp.GELE,
+            limit_l=4.5,
+            limit_h=5.5,
+            unit="V"
+        )
+    """
+    
+    # Step type discriminator
+    step_type: Literal["NumericLimitTest", "ET_NLT"] = Field(
+        default="NumericLimitTest",
+        validation_alias="stepType",
+        serialization_alias="stepType",
+    )
+    
+    # Single measurement (unwrap from array, wrap to array on serialize)
+    measurement: Optional[NumericMeasurement] = Field(
+        default=None,
+        validation_alias="numericMeas",
+        serialization_alias="numericMeas",
+        description="Numeric measurement with limits."
+    )
+    
+    @model_validator(mode='before')
+    @classmethod
+    def unwrap_measurement(cls, data: Any) -> Any:
+        """Unwrap measurement from list (API returns single-item array)."""
+        if isinstance(data, dict) and 'numericMeas' in data:
+            meas = data['numericMeas']
+            if isinstance(meas, list) and len(meas) > 0:
+                data = dict(data)
+                data['numericMeas'] = meas[0]
         return data
     
-    # Custom serializer for the measurement field
-    @field_serializer('measurement', when_used='json')
-    def serialize_measurement(self, measurement: Optional[NumericMeasurement]) -> list:
-        if measurement is None:
-            return []
-        return [measurement.model_dump(by_alias=True, exclude_none=True)]  # Use aliases during serialization
-
-    # validate_step:
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
-        if errors is None:
-            errors = []
-        if not super().validate_step(trigger_children=trigger_children, errors=errors):
-            return False
-        # Numeric Step Validation:
-        # Handle case where comp_op might be a string (due to use_enum_values config)
-        comp_op = self.measurement.comp_op
-        if isinstance(comp_op, str):
-            try:
-                comp_op = CompOp[comp_op]
-            except (KeyError, ValueError):
-                comp_op = CompOp.LOG  # Default fallback
-        
-        if not comp_op.validate_limits(low_limit=self.measurement.low_limit, high_limit=self.measurement.high_limit):
-            errors.append(f"{self.get_step_path()} Invalig limits / comp_op.")
-            return False
-        return True
+    @field_serializer('measurement', when_used='always')
+    @classmethod
+    def wrap_measurement(cls, value: Optional[NumericMeasurement]) -> Optional[List[Any]]:
+        """Wrap measurement to list format for serialization."""
+        if value is None:
+            return None
+        return [value.model_dump(by_alias=True, exclude_none=True)]
     
-    model_config = {
-        "populate_by_name": True,          # Use alias for serializatio / deserialization
-        "arbitrary_types_allowed": True,    # Fixes StepList issue
-        "use_enum_values": True,
-        "json_encoders": {CompOp: lambda c: c.name},  # Serialize enums as their names
-        "allow_inf_nan": True,
-        "ser_json_inf_nan": 'strings'
-    }
-
-
-# -------------------------------------------------------
-# Numeric Step
-class MultiNumericStep(Step):
-    step_type: Literal["ET_MNLT"] = Field(default="ET_MNLT", validation_alias="stepType", serialization_alias="stepType")  # noqa: F821
-    measurements: list[MultiNumericMeasurement] = Field(default_factory=list, validation_alias="numericMeas", serialization_alias="numericMeas")
-
-    # validate_step:
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
+    # ========================================================================
+    # Convenience Properties (delegate to measurement)
+    # ========================================================================
+    
+    @property
+    def value(self) -> Optional[float | str]:
+        """Get the measured value."""
+        return self.measurement.value if self.measurement else None
+    
+    @value.setter
+    def value(self, val: float | str | None) -> None:
+        """Set the measured value."""
+        if self.measurement is None:
+            self.measurement = NumericMeasurement()
+        self.measurement.value = val
+    
+    @property
+    def unit(self) -> Optional[str]:
+        """Get the unit."""
+        return self.measurement.unit if self.measurement else None
+    
+    @unit.setter
+    def unit(self, val: str | None) -> None:
+        """Set the unit."""
+        if self.measurement is None:
+            self.measurement = NumericMeasurement()
+        self.measurement.unit = val
+    
+    @property
+    def comp_op(self) -> Optional[CompOp]:
+        """Get the comparison operator."""
+        return self.measurement.comp_op if self.measurement else None
+    
+    @comp_op.setter
+    def comp_op(self, val: CompOp | None) -> None:
+        """Set the comparison operator."""
+        if self.measurement is None:
+            self.measurement = NumericMeasurement()
+        self.measurement.comp_op = val
+    
+    @property
+    def low_limit(self) -> Optional[float | str]:
+        """Get the low limit."""
+        return self.measurement.low_limit if self.measurement else None
+    
+    @low_limit.setter
+    def low_limit(self, val: float | str | None) -> None:
+        """Set the low limit."""
+        if self.measurement is None:
+            self.measurement = NumericMeasurement()
+        self.measurement.low_limit = val
+    
+    @property
+    def high_limit(self) -> Optional[float | str]:
+        """Get the high limit."""
+        return self.measurement.high_limit if self.measurement else None
+    
+    @high_limit.setter
+    def high_limit(self, val: float | str | None) -> None:
+        """Set the high limit."""
+        if self.measurement is None:
+            self.measurement = NumericMeasurement()
+        self.measurement.high_limit = val
+    
+    # ========================================================================
+    # Factory Method
+    # ========================================================================
+    
+    @classmethod
+    def create(
+        cls,
+        name: str,
+        value: float | str,
+        *,
+        unit: str = "NA",
+        comp_op: CompOp = CompOp.LOG,
+        low_limit: float | str | None = None,
+        high_limit: float | str | None = None,
+        status: StepStatus | str = StepStatus.Passed,
+    ) -> "NumericStep":
+        """
+        Factory method to create a NumericStep with measurement.
+        
+        Args:
+            name: Step name
+            value: Measured value
+            unit: Unit of measurement (default "NA")
+            comp_op: Comparison operator (default LOG = log only)
+            low_limit: Low limit value
+            high_limit: High limit value
+            status: Step status
+            
+        Returns:
+            Configured NumericStep instance.
+        """
+        # Convert string status to enum if needed
+        if isinstance(status, str):
+            status = StepStatus(status)
+            
+        measurement = NumericMeasurement(
+            value=value,
+            comp_op=comp_op,
+            low_limit=low_limit,
+            high_limit=high_limit,
+            unit=unit,
+            status=status,
+        )
+        
+        return cls(
+            name=name,
+            measurement=measurement,
+            status=status,
+        )
+    
+    # ========================================================================
+    # Validation
+    # ========================================================================
+    
+    def validate_step(
+        self,
+        trigger_children: bool = False,
+        errors: Optional[List[str]] = None
+    ) -> bool:
+        """Validate the numeric step."""
         if errors is None:
             errors = []
-        if not super().validate_step(trigger_children=trigger_children, errors=errors):
-            return False
-        # Numeric Step Validation:
-        valid_limits = True
-        for index, m in enumerate(self.measurements):
-            # Handle case where comp_op might be a string (due to use_enum_values config)
-            comp_op = m.comp_op
-            if isinstance(comp_op, str):
-                try:
-                    comp_op = CompOp[comp_op]
-                except (KeyError, ValueError):
-                    comp_op = CompOp.LOG  # Default fallback
             
-            if not comp_op.validate_limits(low_limit=m.low_limit, high_limit=m.high_limit):
-                errors.append(f"{self.get_step_path()} Measurement index: {index} - Invalid limits / comp_op.")
-                valid_limits = False
-        if not valid_limits:
-            return False
-        
-        # Validate measurement count
-        if len(self.measurements) < 2:
-            errors.append(f"{self.get_step_path()} MultiNumericStep requires more than one measurement.")
-            return False
-        
-        # Validate that step status corresponds with measurement statuses. 
-        statuslist = [m.status for m in self.measurements]
-        if self.status == StepStatus.Passed:
-            # Step is "P", all measurements must be "P"
-            if not all(status == "P" for status in statuslist):
-                errors.append(f"{self.get_step_path()} Step is passed, but one or more measurements are not.")
-                return False
-        elif self.status == "F":
-            # Step is "F", at least one measurement must be "F"
-            if "F" not in statuslist:
-                errors.append(f"{self.get_step_path()} Step is failed, but all measurements are passed.")
-                return False
-        return True
+        if self.measurement:
+            status, passed = self.measurement.validate_against_limits()
+            self.measurement.status = status
+            
+            if not passed:
+                self.status = status
+                if self.fail_parent_on_failure:
+                    self.propagate_failure()
+                    
+        return self.status != StepStatus.Failed
 
-    def add_measurement(self,*, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float | None = None, low_limit:float | None = None):
+
+class MultiNumericStep(Step):
+    """
+    Multi-numeric limit test step.
+    
+    Tests multiple numeric values in a single step.
+    
+    C# Name: MultiNumericLimitStep (alias: ET_MNLT in TestStand)
+    """
+    
+    # Step type discriminator
+    step_type: Literal["MultiNumericLimitTest", "ET_MNLT"] = Field(
+        default="MultiNumericLimitTest",
+        validation_alias="stepType",
+        serialization_alias="stepType",
+    )
+    
+    # Multiple measurements
+    measurements: List[MultiNumericMeasurement] = Field(
+        default_factory=list,
+        validation_alias="numericMeas",
+        serialization_alias="numericMeas",
+        description="List of numeric measurements."
+    )
+    
+    # ========================================================================
+    # Helpers
+    # ========================================================================
+    
+    def add_measurement(self, *, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float | None = None, low_limit:float | None = None):
+        """
+        Add a measurement to this step.
+        
+        Args:
+            name: Measurement name (required, keyword-only)
+            value: Measured value
+            unit: Unit of measurement
+            status: Measurement status ("P" or "F")
+            comp_op: Comparison operator
+            high_limit: High limit value
+            low_limit: Low limit value
+            
+        Returns:
+            The created MultiNumericMeasurement.
+        """
         name = self.check_for_duplicates(name) 
         nm = MultiNumericMeasurement(name=name, value=value, unit=unit, status=status, comp_op=comp_op, high_limit=high_limit, low_limit=low_limit, parent_step=self)
         self.measurements.append(nm)
-
+    
     def check_for_duplicates(self, name):
         """
         Check for duplicate measurement names and truncate if needed.
@@ -186,12 +295,32 @@ class MultiNumericStep(Step):
             # Update the measurement's name
             name = new_name
         return name
-
-    model_config = {
-        "populate_by_name": True,          # Use alias for serializatio / deserialization
-        "arbitrary_types_allowed": True,    # Fixes StepList issue
-        "use_enum_values": True,
-        "json_encoders": {CompOp: lambda c: c.name},  # Serialize enums as their names
-        "allow_inf_nan": True,
-        "ser_json_inf_nan": 'strings'
-    }
+    
+    # ========================================================================
+    # Validation
+    # ========================================================================
+    
+    def validate_step(
+        self,
+        trigger_children: bool = False,
+        errors: Optional[List[str]] = None
+    ) -> bool:
+        """Validate all measurements in the step."""
+        if errors is None:
+            errors = []
+            
+        all_passed = True
+        
+        for meas in self.measurements:
+            status, passed = meas.validate_against_limits()
+            meas.status = status
+            
+            if not passed:
+                all_passed = False
+                
+        if not all_passed:
+            self.status = StepStatus.Failed
+            if self.fail_parent_on_failure:
+                self.propagate_failure()
+                
+        return all_passed

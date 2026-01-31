@@ -1,174 +1,182 @@
 """
-UURSubUnit model for UUR reports.
+UURSubUnit - v3 Implementation
 
-Extended SubUnit with repair-specific fields: idx, parentIdx, failures.
-Based on WSJF SubUnit schema for repairs.
+Extended sub-unit for UUR reports with repair-specific fields.
+Inherits from SubUnit base class for proper type compatibility.
 """
+from __future__ import annotations
 
-from typing import List, Optional
-from pydantic import Field, ConfigDict
+from typing import Optional, List
 
-from ..wats_base import WATSBase
+from ..common_types import Field
+from ..sub_unit import SubUnit
+from .uur_failure import UURFailure
 
 
-class UURFailure(WATSBase):
+class UURSubUnit(SubUnit):
     """
-    Serializable failure for UUR subUnits.
+    Extended sub-unit for UUR (repair) reports.
     
-    Based on WSJF Failure schema - simpler than the full Failure class
-    for serialization purposes.
+    Extends SubUnit with repair-specific fields:
+    - idx: Unit index (0 = main unit)
+    - parent_idx: Parent unit index for hierarchy
+    - failures: List of failures found on this unit
+    - replaced_idx: Index of unit this replaced
+    
+    C# Name: SubUnit (in UUR context)
     """
-    category: str = Field(default="Unknown")
-    """Failure category."""
     
-    code: str = Field(default="Unknown")
-    """Failure code."""
-    
-    comment: Optional[str] = Field(default=None)
-    """Failure comment."""
-    
-    com_ref: Optional[str] = Field(default=None, validation_alias="comRef", serialization_alias="comRef")
-    """Component reference."""
-    
-    func_block: Optional[str] = Field(default=None, validation_alias="funcBlock", serialization_alias="funcBlock")
-    """Function block reference."""
-    
-    ref_step_id: Optional[int] = Field(default=None, validation_alias="refStepId", serialization_alias="refStepId")
-    """Id of step from referenced UUT that uncovered failure."""
-    
-    ref_step_name: Optional[str] = Field(
-        default=None, 
-        validation_alias="refStepName", 
-        serialization_alias="refStepName",
-        exclude=True  # Server doesn't accept this field
+    # Note: pn, sn, rev inherited from SubUnit
+    # Override sn to make it optional for main unit
+    sn: str = Field(  # type: ignore[assignment]
+        default="",
+        max_length=100,
+        description="Serial number (can be empty for main unit)."
     )
-    """Name of step from referenced UUT that uncovered failure (client-side only, not sent to server)."""
     
-    art_number: Optional[str] = Field(default=None, validation_alias="artNumber", serialization_alias="artNumber")
-    """Article number of failed component."""
+    part_type: Optional[str] = Field(
+        default="Unknown",
+        max_length=50,
+        validation_alias="partType",
+        serialization_alias="partType",
+        description="Type of unit."
+    )
     
-    art_rev: Optional[str] = Field(default=None, validation_alias="artRev", serialization_alias="artRev")
-    """Failed component revision."""
+    # ========================================================================
+    # Repair-Specific Fields
+    # ========================================================================
     
-    art_vendor: Optional[str] = Field(default=None, validation_alias="artVendor", serialization_alias="artVendor")
-    """Vendor of failed component."""
+    idx: int = Field(
+        default=0,
+        description="Unit index. Index 0 is the main unit being repaired."
+    )
     
-    art_description: Optional[str] = Field(default=None, validation_alias="artDescription", serialization_alias="artDescription")
-    """Description of failed component."""
+    parent_idx: Optional[int] = Field(
+        default=None,
+        validation_alias="parentIdx",
+        serialization_alias="parentIdx",
+        description="Index of parent unit (for sub-assembly hierarchy)."
+    )
     
-    model_config = ConfigDict(populate_by_name=True)
-
-
-class UURSubUnit(WATSBase):
-    """
-    Extended SubUnit for UUR reports with repair-specific fields.
+    position: Optional[int] = Field(
+        default=None,
+        description="Position of unit within parent."
+    )
     
-    Based on WSJF SubUnit schema - includes idx, parentIdx, failures
-    which are only used in repairs.
-    """
-    pn: str = Field(default="", max_length=100)
-    """Unit part number."""
+    replaced_idx: Optional[int] = Field(
+        default=None,
+        validation_alias="replacedIdx",
+        serialization_alias="replacedIdx",
+        description="Index of unit this unit replaced (for component swaps)."
+    )
     
-    rev: Optional[str] = Field(default=None, max_length=100)
-    """Unit revision number."""
+    # ========================================================================
+    # Failures
+    # ========================================================================
     
-    sn: Optional[str] = Field(default=None, max_length=100)
-    """Unit serial number. Can be None/null for main unit failures."""
+    failures: Optional[List[UURFailure]] = Field(
+        default=None,
+        description="List of failures found on this unit."
+    )
     
-    part_type: Optional[str] = Field(default="Unknown", max_length=50, validation_alias="partType", serialization_alias="partType")
-    """Type of unit."""
-    
-    idx: int = Field(default=0)
-    """Unit index (only used in repair). Index 0 is the main unit."""
-    
-    parent_idx: Optional[int] = Field(default=None, validation_alias="parentIdx", serialization_alias="parentIdx")
-    """Index of parent unit (only used in repair)."""
-    
-    position: Optional[int] = Field(default=None)
-    """Position of unit."""
-    
-    replaced_idx: Optional[int] = Field(default=None, validation_alias="replacedIdx", serialization_alias="replacedIdx")
-    """Index of unit this unit was replaced by (only valid for repair)."""
-    
-    failures: Optional[List[UURFailure]] = Field(default=None)
-    """Failures in this unit."""
-    
-    model_config = ConfigDict(populate_by_name=True)
-    
-    def add_failure(
-        self,
-        category: str,
-        code: str,
-        comment: Optional[str] = None,
-        component_ref: Optional[str] = None,
-        ref_step_id: Optional[int] = None
-    ) -> UURFailure:
-        """
-        Add a failure to this subunit.
-        
-        Args:
-            category: Failure category (e.g., "Component Failure")
-            code: Failure code
-            comment: Optional comment about the failure
-            component_ref: Component reference (e.g., "C12")
-            ref_step_id: Optional step ID from UUT that revealed failure
-            
-        Returns:
-            The created UURFailure
-        """
-        if self.failures is None:
-            self.failures = []
-            
-        failure = UURFailure(
-            category=category,
-            code=code,
-            comment=comment,
-            com_ref=component_ref,
-            ref_step_id=ref_step_id
-        )
-        self.failures.append(failure)
-        return failure
+    # ========================================================================
+    # Factory Methods
+    # ========================================================================
     
     @classmethod
-    def from_sub_unit(cls, sub_unit, idx: int = 0, parent_idx: Optional[int] = None) -> "UURSubUnit":
-        """
-        Create UURSubUnit from a basic SubUnit.
-        
-        Args:
-            sub_unit: SubUnit from UUT report
-            idx: Index to assign (0 for main unit)
-            parent_idx: Parent index
-            
-        Returns:
-            UURSubUnit with copied data and repair fields
-        """
-        return cls(
-            pn=sub_unit.pn,
-            rev=sub_unit.rev,
-            sn=sub_unit.sn,
-            part_type=getattr(sub_unit, 'part_type', 'Unknown'),
-            idx=idx,
-            parent_idx=parent_idx
-        )
-    
-    @classmethod
-    def create_main_unit(cls, pn: str, sn: str, rev: str = "") -> "UURSubUnit":
+    def create_main_unit(
+        cls,
+        pn: str,
+        sn: str,
+        rev: str = ""
+    ) -> "UURSubUnit":
         """
         Create the main unit (idx=0) for a UUR report.
         
         Args:
             pn: Part number
-            sn: Serial number  
+            sn: Serial number
             rev: Revision
             
         Returns:
-            UURSubUnit configured as main unit (no parentIdx for main unit)
+            UURSubUnit configured as main unit.
         """
         return cls(
             pn=pn,
             sn=sn,
             rev=rev,
             idx=0,
-            parent_idx=None,  # Main unit has no parent
             part_type="Main"
         )
+    
+    # ========================================================================
+    # Failure Management
+    # ========================================================================
+    
+    def add_failure(
+        self,
+        category: str,
+        code: str,
+        *,
+        comment: Optional[str] = None,
+        com_ref: Optional[str] = None,
+        component_ref: Optional[str] = None,  # V1 compatibility alias
+        func_block: Optional[str] = None,
+        ref_step_id: Optional[int] = None,
+        ref_step_name: Optional[str] = None,
+        art_number: Optional[str] = None,
+        art_rev: Optional[str] = None,
+        art_vendor: Optional[str] = None,
+        art_description: Optional[str] = None,
+    ) -> UURFailure:
+        """
+        Add a failure to this sub-unit.
+        
+        Args:
+            category: Failure category
+            code: Failure code
+            comment: Optional comment
+            com_ref: Component reference (e.g., 'C12')
+            component_ref: Alias for com_ref (V1 compatibility)
+            func_block: Functional block
+            ref_step_id: ID of UUT step that found this
+            ref_step_name: Name of UUT step that found this
+            art_number: Article/part number of failed component
+            art_rev: Component revision
+            art_vendor: Component vendor
+            art_description: Component description
+            
+        Returns:
+            The created UURFailure.
+        """
+        # V1 compatibility: component_ref is an alias for com_ref
+        if component_ref is not None and com_ref is None:
+            com_ref = component_ref
+        
+        failure = UURFailure(
+            category=category,
+            code=code,
+            comment=comment,
+            com_ref=com_ref,
+            func_block=func_block,
+            ref_step_id=ref_step_id,
+            ref_step_name=ref_step_name,
+            art_number=art_number,
+            art_rev=art_rev,
+            art_vendor=art_vendor,
+            art_description=art_description,
+        )
+        
+        if self.failures is None:
+            self.failures = []
+        self.failures.append(failure)
+        
+        return failure
+    
+    def get_failures(self) -> List[UURFailure]:
+        """Get all failures (empty list if none)."""
+        return self.failures or []
+    
+    def has_failures(self) -> bool:
+        """Check if this unit has any failures."""
+        return bool(self.failures)

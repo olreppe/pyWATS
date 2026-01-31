@@ -1,31 +1,43 @@
-# CallExeStep
+"""
+CallExecutable Step - v3 Implementation
 
-# Type/lib
-from typing import Literal, Optional
-from pydantic import Field
+Represents a step that calls an external executable.
+"""
+from __future__ import annotations
 
-from ...wats_base import WATSBase
+from typing import Optional
 
-# Imports
 from ..step import Step
+from ...common_types import WATSBase, Field
 
 
-# Example json object and schema:
 class CallExeStepInfo(WATSBase):
-    exit_code: Optional[int] = Field(default=None, description="The exit code of the executable.", validation_alias="exitCode", serialization_alias="exitCode")
+    """Information about a CallExecutable step."""
+    
+    exit_code: Optional[int] = Field(
+        default=None,
+        validation_alias="exitCode",
+        serialization_alias="exitCode",
+        description="Exit code from the executable."
+    )
 
 
-# Class: MessagePopUpStep
-# A step type that displays a popup message.
 class CallExeStep(Step):
-    step_type: Literal["CallExecutable"] = Field(default="CallExecutable", validation_alias="stepType", serialization_alias="stepType")
-    callExe: Optional[CallExeStepInfo] = Field(default=None, validation_alias="callExe", serialization_alias="callExe")
-
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
-        if not super().validate_step(trigger_children=trigger_children, errors=errors):
-            return False
-        return True
-
-
-
-
+    """
+    Represents a step that calls an external executable.
+    
+    This step type executes an external program and captures its exit code.
+    """
+    
+    step_type: str = Field(
+        default="CallExecutable",
+        frozen=True,
+        validation_alias="stepType",
+        serialization_alias="stepType",
+        description="Step type identifier."
+    )
+    
+    info: Optional[CallExeStepInfo] = Field(
+        default=None,
+        description="CallExecutable-specific information."
+    )

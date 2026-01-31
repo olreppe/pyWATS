@@ -1,15 +1,26 @@
-# NI_Step
+"""
+GenericStep - v3 Implementation
 
-# Type/lib
-from typing import Literal, Optional
-from pydantic import Field
+Generic/custom step for arbitrary data.
+"""
+from __future__ import annotations
+
+from typing import (
+    Optional,
+    List,
+    Literal,
+)
 from enum import Enum
 
-# Imports
 from ..step import Step
-# Example json object and schema:
+from ...common_types import (
+    Field,
+    StepStatus,
+)
+
 
 class FlowType(Enum):
+    """Flow control step types from TestStand."""
     FTPFiles = "NI_FTPFiles"
     If = "NI_Flow_If"
     ElseIf = "NI_Flow_ElseIf"
@@ -61,12 +72,10 @@ class FlowType(Enum):
     Action = "Action"
     Statement = "Statement"
     Label = "Label"
+    GenericTest = "GT"
+
 
 # Define all possible GenericStep step_type values as a Literal
-# This is required for Pydantic's discriminated union to work correctly
-# NOTE: "Action" is included because it's just a GenericStep with a specific literal value
-# used to select the correct icon. Only specialized steps like NumericStep, StringStep,
-# BooleanStep, SequenceCall, and ChartStep have their own dedicated classes.
 GenericStepLiteral = Literal[
     "NI_FTPFiles", "NI_Flow_If", "NI_Flow_ElseIf", "NI_Flow_Else", "NI_Flow_End",
     "NI_Flow_For", "NI_Flow_ForEach", "NI_Flow_Break", "NI_Flow_Continue",
@@ -80,18 +89,41 @@ GenericStepLiteral = Literal[
     "NI_IviSwitch", "NI_IviTools", "NI_LV_DeployLibrary", "NI_LV_CheckSystemStatus",
     "NI_LV_RunVIAsynchronously", "NI_PropertyLoader", "NI_VariableAndPropertyLoader",
     "NI_NewCsvFileInputRecordStream", "NI_NewCsvFileOutputRecordStream",
-    "NI_WriteRecord", "Goto", "Action", "Statement", "Label"
+    "NI_WriteRecord", "Goto", "Action", "Statement", "Label", "GT", "GenericTest", "NONE"
 ]
 
-# Class: GenericStep
-# A step type that displays flow icon and handles all flow control step types
-# Uses explicit Literal to work with Pydantic's discriminated union
-class GenericStep(Step):
-    # Use Literal with all FlowType values for proper discriminator support
-    # This ensures Pydantic can correctly discriminate GenericStep from other types
-    step_type: GenericStepLiteral = Field(..., validation_alias="stepType", serialization_alias="stepType")
 
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
-        if not super().validate_step(trigger_children=trigger_children, errors=errors):
-            return False
+class GenericStep(Step):
+    """
+    Generic test step for custom/arbitrary data.
+    
+    Use when none of the specific step types fit your needs.
+    Can contain any combination of report_text and additional_results.
+    
+    C# Name: GenericStep
+    
+    Example:
+        step = GenericStep(
+            name="Custom Data",
+            report_text="Test completed with custom results"
+        )
+    """
+    
+    # Step type discriminator - accepts string to support all flow types
+    step_type: str = Field(
+        default="GT",
+        validation_alias="stepType",
+        serialization_alias="stepType",
+    )
+    
+    # ========================================================================
+    # Validation
+    # ========================================================================
+    
+    def validate_step(
+        self,
+        trigger_children: bool = False,
+        errors: Optional[List[str]] = None
+    ) -> bool:
+        """Validate the generic step (always passes)."""
         return True

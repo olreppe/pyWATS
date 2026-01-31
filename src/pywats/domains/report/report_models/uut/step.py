@@ -1,86 +1,235 @@
-from __future__ import annotations  # Enable forward references
-from abc import ABC
-import base64
-from enum import Enum
-from typing import Any, ClassVar, Optional, Union, Literal, Annotated
-from typing_extensions import Self
-from pydantic import Field, ModelWrapValidatorHandler, model_validator, Discriminator, Tag
+"""
+Step Base Class - v3 Implementation
+
+Abstract base class for all test steps with proper type annotations.
+Fixes:
+- Parent type properly annotated for forward reference
+- Failure propagation with type safety
+- Step path traversal
+"""
+from __future__ import annotations
+
+from typing import (
+    TYPE_CHECKING,
+    Optional,
+    Union,
+    List,
+    ClassVar,
+    Any,
+    Annotated,
+)
 from abc import ABC, abstractmethod
 
-from ..wats_base import WATSBase
-
+from ..common_types import (
+    WATSBase,
+    Field,
+    StepStatus,
+    StepGroup,
+)
 from ..chart import Chart, ChartType
-from ..additional_data import AdditionalData
-from ..attachment import Attachment
-# -----------------------------------------------------------------------
-# LoopInfo for looping steps
-class LoopInfo(WATSBase):
-    idx: Optional[int] = Field(default=None)
-    num: Optional[int] = Field(default=None)
-    ending_index: Optional[int] = Field(default=None, validation_alias="endingIndex",serialization_alias="endingIndex")
-    passed: Optional[int] = Field(default=None)
-    failed: Optional[int] = Field(default=None)
+from ..binary_data import Attachment, AdditionalData, LoopInfo
 
-class StepStatus(Enum):
-    Passed = 'P'
-    Failed = 'F'
-    Skipped = 'S'
-    Terminated = 'T'
-    Done = 'D'
+# Forward reference for parent - avoids circular import
+if TYPE_CHECKING:
+    from .steps.sequence_call import SequenceCall
 
-# -----------------------------------------------------------------------
-# Step: Abstract base step for all steps
+
 class Step(WATSBase, ABC):
-    """Abstract base class for all WATS test steps."""
+    """
+    Abstract base class for all WATS test steps.
     
-    # WATS API limits for step names
+    Provides common fields and functionality for all step types:
+    - Step identification (name, type, status)
+    - Parent/child relationship management
+    - Failure propagation through hierarchy
+    - Attachments and additional data
+    
+    Subclasses must implement:
+    - validate_step(): Step-specific validation logic
+    """
+    
+    # ========================================================================
+    # Class Variables
+    # ========================================================================
+    
     MAX_NAME_LENGTH: ClassVar[int] = 100
     
-    # Parent Step - For internal use only - does not seriallize
-    parent: Optional['Step'] = Field(default=None, exclude=True)
+    # ========================================================================
+    # Parent Reference (Internal Use Only)
+    # ========================================================================
     
-    # ImportMode propagation control - does not serialize
-    # When True and status is Failed in Active mode, failure propagates to parent
-    fail_parent_on_failure: bool = Field(default=True, exclude=True)
-
-    # Required - Base step_type is str to allow subclasses to override with specific Literals
-    # This enables Pydantic's discriminated union to work properly
-    step_type: str = Field(default="NONE", validation_alias="stepType", serialization_alias="stepType")
+    # Parent step - excluded from serialization
+    # Using Any type to avoid forward reference issues with SequenceCall
+    # At runtime, this will be a SequenceCall instance
+    parent: Optional[Any] = Field(
+        default=None, 
+        exclude=True,
+        description="Parent SequenceCall (internal use, not serialized)."
+    )
     
-    name: str = Field(default="StepName", max_length=100, min_length=1)
-    group: str = Field(default="M", max_length=1, min_length=1, pattern='^[SMC]$')
-    #status: str = Field(default="P", max_length=1, min_length=1, pattern='^[PFSDET]$')
-    status: StepStatus = Field(default=StepStatus.Passed)
-
-    id: Optional[Union[int, str]] = Field(default=None)
-
-    # Error code and report text
-    error_code: Optional[Union[int, str]] = Field(default=None, validation_alias="errorCode",serialization_alias="errorCode")
-    error_code_format: Optional[str] = Field(default=None, validation_alias="errorCodeFormat", serialization_alias="errorCodeFormat")
-    error_message: Optional[str] = Field(default=None, validation_alias="errorMessage",serialization_alias="errorMessage")
-    report_text: Optional[str] = Field(default=None, validation_alias="reportText",serialization_alias="reportText")
+    # Control whether failures propagate to parent
+    fail_parent_on_failure: bool = Field(
+        default=True,
+        exclude=True,
+        description="If True, failure status propagates to parent in Active mode."
+    )
     
-    start: Optional[str] = Field(default=None, validation_alias="start",serialization_alias="start")
-    tot_time: Optional[Union[float, str]] = Field(default=None, validation_alias="totTime",serialization_alias="totTime")
-    tot_time_format: Optional[str] = Field(default=None, validation_alias="totTimeFormat",serialization_alias="totTimeFormat")
-    ts_guid: Optional[str] = Field(default=None, validation_alias="tsGuid",serialization_alias="tsGuid")
+    # ========================================================================
+    # Core Step Fields
+    # ========================================================================
     
-    # Step Caused Failure (ReadOnly)
-    caused_seq_failure: Optional[bool] = Field(default=None, validation_alias="causedSeqFailure", serialization_alias="causedSeqFailure")
-    caused_uut_failure: Optional[bool] = Field(default=None, validation_alias="causedUUTFailure", serialization_alias="causedUUTFailure")
+    # Step type discriminator - overridden by subclasses with specific Literal
+    step_type: str = Field(
+        default="NONE",
+        validation_alias="stepType",
+        serialization_alias="stepType",
+        description="Step type identifier for polymorphic deserialization."
+    )
     
-    # LoopInfo
-    loop: Optional[LoopInfo] = Field(default=None)
-   
-    # Additional Results, Charts and Attachments
-    additional_results: Optional[list[AdditionalData]] = Field(default=None, validation_alias="additionalResults", serialization_alias="additionalResults")
+    # Step name
+    name: str = Field(
+        default="StepName",
+        max_length=100,
+        min_length=1,
+        description="Step name/title."
+    )
     
-    chart: Optional[Chart] = Field(default=None)
-    attachment: Optional[Attachment] = Field(default=None)  
-
-    # -----------------------------------------------------------------------
-    # Failure propagation for ImportMode.Active
-    # -----------------------------------------------------------------------
+    # Step group: Setup, Main, or Cleanup
+    group: str = Field(
+        default="M",
+        max_length=1,
+        min_length=1,
+        pattern='^[SMC]$',
+        description="Step group: S=Setup, M=Main, C=Cleanup."
+    )
+    
+    # Step status
+    status: StepStatus = Field(
+        default=StepStatus.Passed,
+        description="Step execution status."
+    )
+    
+    # Optional step ID
+    id: Optional[Union[int, str]] = Field(
+        default=None,
+        description="Optional step identifier."
+    )
+    
+    # ========================================================================
+    # Error Information
+    # ========================================================================
+    
+    error_code: Optional[Union[int, str]] = Field(
+        default=None,
+        validation_alias="errorCode",
+        serialization_alias="errorCode",
+        description="Error code if step failed."
+    )
+    
+    error_code_format: Optional[str] = Field(
+        default=None,
+        validation_alias="errorCodeFormat",
+        serialization_alias="errorCodeFormat",
+        description="Format string for error code display."
+    )
+    
+    error_message: Optional[str] = Field(
+        default=None,
+        validation_alias="errorMessage",
+        serialization_alias="errorMessage",
+        description="Error message if step failed."
+    )
+    
+    report_text: Optional[str] = Field(
+        default=None,
+        validation_alias="reportText",
+        serialization_alias="reportText",
+        description="Additional report text."
+    )
+    
+    # ========================================================================
+    # Timing Fields
+    # ========================================================================
+    
+    start: Optional[str] = Field(
+        default=None,
+        description="Step start time."
+    )
+    
+    tot_time: Optional[Union[float, str]] = Field(
+        default=None,
+        validation_alias="totTime",
+        serialization_alias="totTime",
+        description="Total execution time in seconds."
+    )
+    
+    tot_time_format: Optional[str] = Field(
+        default=None,
+        validation_alias="totTimeFormat",
+        serialization_alias="totTimeFormat",
+        description="Format string for time display."
+    )
+    
+    # TestStand GUID
+    ts_guid: Optional[str] = Field(
+        default=None,
+        validation_alias="tsGuid",
+        serialization_alias="tsGuid",
+        description="TestStand step GUID."
+    )
+    
+    # ========================================================================
+    # Failure Flags (Read-Only from Server)
+    # ========================================================================
+    
+    caused_seq_failure: Optional[bool] = Field(
+        default=None,
+        validation_alias="causedSeqFailure",
+        serialization_alias="causedSeqFailure",
+        description="Whether this step caused the sequence to fail."
+    )
+    
+    caused_uut_failure: Optional[bool] = Field(
+        default=None,
+        validation_alias="causedUUTFailure",
+        serialization_alias="causedUUTFailure",
+        description="Whether this step caused the UUT to fail."
+    )
+    
+    # ========================================================================
+    # Additional Data
+    # ========================================================================
+    
+    # Loop information for steps in loops
+    loop: Optional[LoopInfo] = Field(
+        default=None,
+        description="Loop iteration information."
+    )
+    
+    # Additional structured results
+    additional_results: Optional[List[AdditionalData]] = Field(
+        default=None,
+        validation_alias="additionalResults",
+        serialization_alias="additionalResults",
+        description="Additional result data."
+    )
+    
+    # Chart attached to step
+    chart: Optional[Chart] = Field(
+        default=None,
+        description="Chart visualization data."
+    )
+    
+    # File attachment
+    attachment: Optional[Attachment] = Field(
+        default=None,
+        description="File attachment."
+    )
+    
+    # ========================================================================
+    # Failure Propagation (Active Mode)
+    # ========================================================================
+    
     def propagate_failure(self) -> None:
         """
         Propagate failure status up the step hierarchy.
@@ -88,153 +237,103 @@ class Step(WATSBase, ABC):
         When called, sets this step's status to Failed and recursively
         propagates to parent steps if fail_parent_on_failure is True.
         
-        This method is called automatically in Active mode when a step
+        This is called automatically in Active mode when a measurement
         fails and fail_parent_on_failure=True.
         """
         self.status = StepStatus.Failed
         
         if self.fail_parent_on_failure and self.parent is not None:
             self.parent.propagate_failure()
-
-    # validate - all step types
-    @abstractmethod
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
-        # Implement generic step validation here
-
-        # Validate Step
-            # Validate LoopInfo
-            # Validate Additional Results
-            # Validate Chart
-            # Validate Attachment
-
-        return True
-        # validate_step template:
-        # @abstractmethod
-        # def validate_step(self, trigger_children=False, errors=None) -> bool:
-        #     if errors is None:
-        #         errors = []
-        #     if not super().validate_step(trigger_children=trigger_children, errors=errors):
-        #         return False
-        #     # Current Class Validation:
-        #       # For every validation failure        
-        #           errors.append(f"{self.get_step_path()} ErrorMessage.")
-        #     return True
-
-    # return the steps path
+    
+    # ========================================================================
+    # Path Navigation
+    # ========================================================================
+    
     def get_step_path(self) -> str:
-        path = []
-        current_step: Step | None = self
+        """
+        Get the full path to this step in the hierarchy.
+        
+        Returns a '/'-separated path like:
+            "MainSequence Callback/SubSequence/TestStep"
+        
+        Returns:
+            The full path from root to this step.
+        """
+        path: List[str] = []
+        current_step: Optional[Step] = self
+        
         while current_step is not None:
             path.append(current_step.name)
             current_step = current_step.parent
+            
         return '/'.join(reversed(path))
-
-    # Add chart to any step
-    def add_chart(self, chart_type:ChartType, chart_label: str, x_label:str, x_unit:str, y_label: str, y_unit: str) -> Chart:
-        self.chart = Chart(chart_type=chart_type, label=chart_label, x_label=x_label, y_label=y_label, x_unit=x_unit, y_unit=y_unit)
+    
+    # ========================================================================
+    # Chart and Attachment Helpers
+    # ========================================================================
+    
+    def add_chart(
+        self,
+        chart_type: ChartType,
+        chart_label: str,
+        x_label: str,
+        x_unit: str,
+        y_label: str,
+        y_unit: str
+    ) -> Chart:
+        """
+        Add a chart to this step.
+        
+        Args:
+            chart_type: Type of chart (LineChart, XYGraph, etc.)
+            chart_label: Chart title
+            x_label: X-axis label
+            x_unit: X-axis unit
+            y_label: Y-axis label
+            y_unit: Y-axis unit
+            
+        Returns:
+            The created Chart object for adding series data.
+        """
+        self.chart = Chart(
+            chart_type=chart_type,
+            label=chart_label,
+            x_label=x_label,
+            y_label=y_label,
+            x_unit=x_unit,
+            y_unit=y_unit
+        )
         return self.chart
     
     def add_attachment(self, attachment: Attachment) -> None:
         """
         Add an attachment to this step.
         
-        The pywats API is memory-only. To load attachments from files,
-        use pywats_client.io.AttachmentIO:
-        
-            from pywats_client.io import AttachmentIO
-            attachment = AttachmentIO.from_file("screenshot.png")
-            step.add_attachment(attachment)
-        
         Args:
-            attachment: An Attachment object created via Attachment.from_bytes()
-                       or AttachmentIO.from_file()
+            attachment: The Attachment object to add.
         """
         self.attachment = attachment
-
-
-        
-
-# Discriminator function for StepType Union
-# Maps stepType values to the appropriate Step class tag
-def _discriminate_step_type(v: Any) -> str:
-    """
-    Discriminator function for step types.
-    Returns a tag identifying which Step class should handle this data.
-    Falls back to 'unknown' for unrecognized step types.
-    """
-    if isinstance(v, dict):
-        step_type = v.get('stepType', v.get('step_type', ''))
-    else:
-        step_type = getattr(v, 'step_type', getattr(v, 'stepType', ''))
     
-    # Map stepType values to class tags
-    # Order matters: Check more specific types first
-    if step_type in ['SequenceCall', 'WATS_SeqCall']:
-        return 'SequenceCall'
-    elif step_type in ['ET_CHAR']:
-        return 'ChartStep'
-    elif step_type in ['ET_MNLT']:
-        return 'MultiNumericStep'
-    elif step_type in ['ET_NLT', 'NumericLimitStep']:
-        return 'NumericStep'
-    elif step_type in ['ET_MPFT']:
-        return 'MultiBooleanStep'
-    elif step_type in ['ET_PFT', 'PassFailStep']:
-        return 'BooleanStep'
-    elif step_type in ['ET_MSVT']:
-        return 'MultiStringStep'
-    elif step_type in ['ET_SVT', 'StringValueStep']:
-        return 'StringStep'
-    elif step_type in ['CallExe']:
-        return 'CallExeStep'
-    elif step_type in ['MessagePopup']:
-        return 'MessagePopUpStep'
-    elif step_type in ['Action']:
-        return 'ActionStep'
-    # GenericStep types (flow control, etc.)
-    elif step_type in [
-        "NI_FTPFiles", "NI_Flow_If", "NI_Flow_ElseIf", "NI_Flow_Else", "NI_Flow_End",
-        "NI_Flow_For", "NI_Flow_ForEach", "NI_Flow_Break", "NI_Flow_Continue",
-        "NI_Flow_DoWhile", "NI_Flow_While", "NI_Flow_Select", "NI_Flow_Case",
-        "NI_Flow_StreamLoop", "NI_Flow_SweepLoop", "NI_Lock", "NI_Rendezvous",
-        "NI_Queue", "NI_Notification", "NI_Wait", "NI_Batch_Sync", "NI_AutoSchedule",
-        "NI_UseResource", "NI_ThreadPriority", "NI_Semaphore", "NI_BatchSpec",
-        "NI_BatchSync", "NI_OpenDatabase", "NI_OpenSQLStatement",
-        "NI_CloseSQLStatement", "NI_CloseDatabase", "NI_DataOperation",
-        "NI_CPUAffinity", "NI_IviDmm", "NI_IviScope", "NI_IviFgen", "NI_IviDCPower",
-        "NI_IviSwitch", "NI_IviTools", "NI_LV_DeployLibrary", "NI_LV_CheckSystemStatus",
-        "NI_LV_RunVIAsynchronously", "NI_PropertyLoader", "NI_VariableAndPropertyLoader",
-        "NI_NewCsvFileInputRecordStream", "NI_NewCsvFileOutputRecordStream",
-        "NI_WriteRecord", "Goto", "Statement", "Label"
-    ]:
-        return 'GenericStep'
-    else:
-        # Unknown/unsupported step type - fallback to UnknownStep
-        return 'unknown'
-
-# Union of all Step types with discriminated union for robust parsing
-# The discriminator function maps stepType values to the appropriate class,
-# with UnknownStep as the ultimate fallback for unrecognized types.
-StepType = Annotated[
-    Union[
-        Annotated['SequenceCall', Tag('SequenceCall')],
-        Annotated['ChartStep', Tag('ChartStep')],
-        Annotated['MultiNumericStep', Tag('MultiNumericStep')],
-        Annotated['NumericStep', Tag('NumericStep')],
-        Annotated['MultiBooleanStep', Tag('MultiBooleanStep')],
-        Annotated['BooleanStep', Tag('BooleanStep')],
-        Annotated['MultiStringStep', Tag('MultiStringStep')],
-        Annotated['StringStep', Tag('StringStep')],
-        Annotated['CallExeStep', Tag('CallExeStep')],
-        Annotated['MessagePopUpStep', Tag('MessagePopUpStep')],
-        Annotated['ActionStep', Tag('ActionStep')],
-        Annotated['GenericStep', Tag('GenericStep')],
-        Annotated['UnknownStep', Tag('unknown')]
-    ],
-    Discriminator(_discriminate_step_type)
-]
-
-# Import step classes after StepType definition to avoid circular imports
-from .steps import NumericStep,MultiNumericStep,SequenceCall,BooleanStep,MultiBooleanStep,MultiStringStep,StringStep,ChartStep,CallExeStep,MessagePopUpStep,GenericStep,ActionStep,UnknownStep  # noqa: E402
-
-Step.model_rebuild()
+    # ========================================================================
+    # Validation (Abstract)
+    # ========================================================================
+    
+    @abstractmethod
+    def validate_step(
+        self, 
+        trigger_children: bool = False, 
+        errors: Optional[List[str]] = None
+    ) -> bool:
+        """
+        Validate this step.
+        
+        Subclasses must implement step-specific validation logic.
+        
+        Args:
+            trigger_children: If True, also validate child steps (for SequenceCall)
+            errors: List to append error messages to
+            
+        Returns:
+            True if validation passes, False otherwise.
+        """
+        return True

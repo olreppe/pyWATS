@@ -24,7 +24,6 @@ from .report_models import (
     ChartType,
     SubUnit,
     Attachment,  # Primary Attachment class for creating report content
-    DeserializationContext,
 )
 from .report_models.uut.steps.sequence_call import SequenceCall, StepList
 
@@ -81,7 +80,6 @@ __all__ = [
     "ChartType",
     "SubUnit",
     "ReportAttachment",
-    "DeserializationContext",
     # Enums
     "DateGrouping",
     "ImportMode",

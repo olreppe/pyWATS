@@ -586,7 +586,6 @@ from .report_models import (
     ChartType,
     SubUnit,
     Attachment as ReportAttachment,
-    DeserializationContext,
     UUTReport,
     UURReport,
 )

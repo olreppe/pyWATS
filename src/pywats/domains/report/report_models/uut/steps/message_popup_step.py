@@ -1,40 +1,55 @@
-# MessagePopUp
-# messagePopup: Optional[MessagePopup] = None
+"""
+MessagePopup Step - v3 Implementation
 
-# Type/lib
-from typing import Literal, Optional
-from pydantic import BaseModel, Field, model_validator
+Represents a step that displays a message popup to the user.
+"""
+from __future__ import annotations
 
-from ...wats_base import WATSBase
+from typing import Optional
 
-# Imports
 from ..step import Step
+from ...common_types import WATSBase, Field, model_validator
+
 
 class MessagePopupInfo(WATSBase):
-    response: str = Field(default="NOT SET", max_length=100, description="The popup message.")
-    button: Optional[int] = Field(default=None, description="The code of the button that was pressed.")
+    """Information about a MessagePopup step."""
     
-    @model_validator(mode='before')
-    @classmethod
-    def set_default_response(cls, data):
-        """If response is None or missing, default to 'NOT SET'."""
-        if isinstance(data, dict):
-            if data.get('response') is None:
-                data['response'] = 'NOT SET'
-        return data
+    response: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description="User's response to the popup."
+    )
+    
+    button: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description="Button that was clicked."
+    )
+    
+    @model_validator(mode='after')
+    def set_default_response(self) -> "MessagePopupInfo":
+        """Set default response if not provided."""
+        if self.response is None:
+            self.response = "NOT SET"
+        return self
 
-# Example
 
-# Class: MessagePopUpStep
-# A step type that displays a popup message.
 class MessagePopUpStep(Step):
-    step_type: Literal["MessagePopup"] = Field(default="MessagePopup", validation_alias="stepType", serialization_alias="stepType")
-    button_format: Optional[str] = Field(default=None, description="", validation_alias="buttonFormat", serialization_alias="buttonFormat")
-    messagePopup: Optional[MessagePopupInfo] = Field(default=None, description="The popup data")
-
-
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
-        """ No validation required """
-        return True
-
-
+    """
+    Represents a step that displays a message popup to the user.
+    
+    This step type shows a message dialog and captures the user's response.
+    """
+    
+    step_type: str = Field(
+        default="MessagePopup",
+        frozen=True,
+        validation_alias="stepType",
+        serialization_alias="stepType",
+        description="Step type identifier."
+    )
+    
+    info: Optional[MessagePopupInfo] = Field(
+        default=None,
+        description="MessagePopup-specific information."
+    )

@@ -1,382 +1,888 @@
+"""
+SequenceCall - v3 Implementation
+
+Container step that holds child steps. Core of the test hierarchy.
+
+Fixes:
+- Factory methods with proper parent=self typing
+- StepList with proper Generic parameter
+- Caller field typed correctly
+- Uses sequence object (serializes to seqCall) like V1 for WATS API compatibility
+"""
 from __future__ import annotations
-from abc import abstractmethod
 
-from pydantic import model_validator
+from typing import (
+    TYPE_CHECKING,
+    Optional,
+    List,
+    Literal,
+    Union,
+    overload,
+)
 
-from .measurement import BooleanMeasurement
-from .string_step import StringMeasurement
-from ...common_types import *
-from pydantic_core import core_schema
-
-from ...chart import Chart, ChartSeries, ChartType
-
-from ..step import Step, StepType, StepStatus
-from ..steps import *
+from ..step import Step
+from .step_list import StepList
 from .numeric_step import NumericStep, MultiNumericStep, NumericMeasurement
-from .string_step import StringStep, MultiStringStep
-from .boolean_step import BooleanStep, MultiBooleanStep
+from .boolean_step import PassFailStep, MultiBooleanStep
+from .string_step import StringValueStep, MultiStringStep
 from .generic_step import GenericStep, FlowType
-from .chart_step import ChartStep
 from .action_step import ActionStep
-from pywats.shared.enums import CompOp
+from .chart_step import ChartStep
+from ...common_types import (
+    Field,
+    StepStatus,
+    StepGroup,
+    CompOp,
+    SequenceCallInfo,
+)
 
-# ------------------------------------------------------------------------
-# Custom list class with parent reference
-class StepList(List[StepType]):
-    """Custom list that behaves like a list but has a parent reference."""
 
-    def __init__(self, items=None, parent: Optional["SequenceCall"] = None) -> None:  # Use string reference
-        super().__init__(items or [])
-        self.parent = parent
+# Type alias for all step types
+StepType = Union[
+    "SequenceCall",
+    NumericStep,
+    MultiNumericStep,
+    PassFailStep,
+    MultiBooleanStep,
+    StringValueStep,
+    MultiStringStep,
+    GenericStep,
+    ActionStep,
+    ChartStep,
+]
 
-    def set_parent(self, parent: "SequenceCall"):  # Use string reference to avoid NameError
-        """
-        Set the correct parent reference for all elements.
-        #If an item is a SequenceCall, propagate the hierarchy recursively.
-        """
-        self.parent = parent
-        for item in self:
-            if hasattr(item, "parent"):
-                item.parent = parent  # Assign direct parent
 
-            #If an item is a SequenceCall, propagate the hierarchy recursively.
-            #if isinstance(item, SequenceCall):  # Ensure the parent is set recursively
-            #    item.steps.set_parent(item)  # Child SequenceCall gets its own steps as children
-
-    def append(self, item):
-        """Ensure parent is set when appending."""
-        if hasattr(item, "parent"):
-            item.parent = self.parent
-        super().append(item)
-
-    def extend(self, iterable):
-        """Ensure parent is set when extending."""
-        for item in iterable:
-            if hasattr(item, "parent"):
-                item.parent = self.parent
-        super().extend(iterable)
-
-    def insert(self, index, item):
-        """Ensure parent is set when inserting."""
-        if hasattr(item, "parent"):
-            item.parent = self.parent
-        super().insert(index, item)
-
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source_type, handler):
-        """Correctly handle serialization and validation for Pydantic with StepType (Union)."""
-        return core_schema.list_schema(
-            items_schema=handler.generate_schema(StepType),  # Handle Union[Step, NumericStep, ...]
-            serialization=core_schema.plain_serializer_function_ser_schema(list),
-        )
-
-    @classmethod
-    def _validate_list(cls, value):
-        """Ensure the list is properly validated and converted."""
-        if not isinstance(value, list):
-            raise ValueError("Expected a list")
-        return StepList(value)  # Convert normal lists to StepList
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Additional info in sequence call steps
-class SequenceCallInfo(WATSBase):
-    # Fields - path, name, and version are required by the server
-    path: str = Field(default="C:/SequenceCall.seq", max_length=500)
-    file_name: str = Field(default="TestSequence.seq", max_length=200, validation_alias="name", serialization_alias="name")
-    version: str = Field(default="1.0.0", max_length=30)
-    
-    @model_validator(mode='before')
-    @classmethod
-    def set_defaults(cls, data):
-        """If required fields are None or missing, use sensible defaults."""
-        if isinstance(data, dict):
-            if data.get('version') is None:
-                data['version'] = '1.0.0'
-            if data.get('path') is None:
-                data['path'] = 'C:/SequenceCall.seq'
-            if data.get('name') is None:
-                data['name'] = 'TestSequence.seq'
-        return data
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Sequence call class
 class SequenceCall(Step):
     """
-    Class: SequenceCall
+    Sequence call step - container for child steps.
     
-    sequence(uut):  UUTInfo
-    steps:          StepList[StepType]
+    SequenceCall represents a call to a subsequence and contains the
+    steps executed within that subsequence. This is the primary container
+    for building test hierarchies.
+    
+    C# Name: SequenceCall
+    
+    Factory Methods:
+        - add_numeric_step(): Add a NumericStep
+        - add_boolean_step(): Add a PassFailStep
+        - add_string_step(): Add a StringValueStep
+        - add_sequence_call(): Add a nested SequenceCall
+        - add_action_step(): Add an ActionStep
+        - add_generic_step(): Add a GenericStep
+        - add_chart_step(): Add a ChartStep
+    
+    Example:
+        root = SequenceCall(name="MainSequence")
+        root.add_numeric_step(name="Voltage", value=5.0, comp_op=CompOp.GELE, low_limit=4.5, high_limit=5.5)
+        sub = root.add_sequence_call("SubTests")
+        sub.add_boolean_step(name="LED Check", value=True)
     """
-    step_type: Literal["SequenceCall","WATS_SeqCall"] = Field(default="SequenceCall",validation_alias="stepType", serialization_alias="stepType")
-    sequence: SequenceCallInfo = Field(default_factory=SequenceCallInfo, validation_alias="seqCall", serialization_alias="seqCall")
-
-    # Child steps - Only applies to SequenceCall
-    # NOTE: Discriminator is NOT used because Pydantic's discriminated union has issues
-    # with complex inheritance and field structures. Instead, we rely on union type resolution
-    # which tries each type in order. GenericStep is last in the Union to act as fallback.
-    steps: StepList = Field(default_factory=StepList)  # type: ignore[type-arg]
     
-    # Model validator (after) - Converts list to StepList and sets parent references
-    @model_validator(mode="after")
-    def assign_parent(self):
-        """
-        Ensure all steps have the correct parent after model creation.
-        Converts regular list to StepList if needed and establishes parent references.
-        """
-        if not isinstance(self.steps, StepList):  # Convert list to StepList if needed
-            self.steps = StepList(self.steps)
-        # Set parent reference for all child steps
-        self.steps.set_parent(self)
-        return self  
+    # Step type discriminator - accepts both "SequenceCall" and "WATS_SeqCall" for compatibility
+    step_type: Literal["SequenceCall", "WATS_SeqCall"] = Field(
+        default="SequenceCall",
+        validation_alias="stepType",
+        serialization_alias="stepType",
+    )
+    
+    # ========================================================================
+    # Sequence-Specific Fields
+    # ========================================================================
+    
+    # Sequence call info - contains path, name, version (serializes to seqCall)
+    sequence: SequenceCallInfo = Field(
+        default_factory=SequenceCallInfo,
+        validation_alias="seqCall",
+        serialization_alias="seqCall",
+        description="Sequence file information."
+    )
+    
+    # Caller sequence name (TestStand)
+    caller: Optional[str] = Field(
+        default=None,
+        description="Name of the calling sequence."
+    )
+    
+    # Module name
+    module: Optional[str] = Field(
+        default=None,
+        description="Module or library name."
+    )
+    
+    # ========================================================================
+    # Child Steps
+    # ========================================================================
+    
+    # List of child steps - this is the key container
+    steps: StepList[StepType] = Field(
+        default_factory=StepList,
+        description="Child steps within this sequence."
+    )
+    
+    def __init__(self, **data) -> None:
+        """Initialize SequenceCall and set parent on StepList."""
+        super().__init__(**data)
+        # Ensure StepList has this as parent
+        if isinstance(self.steps, StepList):
+            self.steps.parent = self
 
-    # validate_step - all step types
-    def validate_step(self, trigger_children=False, errors=None) -> bool:
+    # ========================================================================
+    # Factory Methods - Create and Add Steps
+    # ========================================================================
+    
+    def add_step(self, step: StepType) -> StepType:
+        """
+        Add an existing step to this sequence.
+        
+        Args:
+            step: The step to add
+            
+        Returns:
+            The added step (same instance, with parent set)
+        """
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_numeric_step(
+        self,
+        *,
+        name: str,
+        value: float | str,
+        unit: str = "NA",
+        comp_op: CompOp = CompOp.LOG,
+        low_limit: float | str | None = None,
+        high_limit: float | str | None = None,
+        status: StepStatus | str | None = None,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+        fail_parent_on_failure: bool = True,
+    ) -> NumericStep:
+        """
+        Add a numeric limit test step.
+        
+        Args:
+            name: Step name
+            value: Measured value
+            unit: Unit of measurement (default "NA")
+            comp_op: Comparison operator (default LOG = log only)
+            low_limit: Low limit value
+            high_limit: High limit value
+            status: Step status (None = auto-calculate in Active mode)
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            fail_parent_on_failure: Propagate failure to parent
+            
+        Returns:
+            The created NumericStep.
+        """
+        # Convert status if needed
+        if status is None:
+            final_status = StepStatus.Passed
+        elif isinstance(status, str):
+            final_status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+        else:
+            final_status = status
+        
+        step = NumericStep.create(
+            name=name,
+            value=value,
+            unit=unit,
+            comp_op=comp_op,
+            low_limit=low_limit,
+            high_limit=high_limit,
+            status=final_status,
+        )
+        step.id = id
+        step.group = group
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.fail_parent_on_failure = fail_parent_on_failure
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_multi_numeric_step(
+        self,
+        *,
+        name: str,
+        status: StepStatus | str = StepStatus.Passed,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+    ) -> MultiNumericStep:
+        """
+        Add a multi-numeric limit test step.
+        
+        Args:
+            name: Step name
+            status: Step status
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            
+        Returns:
+            The created MultiNumericStep (add measurements via add_measurement).
+        """
+        if isinstance(status, str):
+            status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+            
+        step = MultiNumericStep(
+            name=name,
+            status=status,
+            group=group,
+        )
+        step.id = id
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_boolean_step(
+        self,
+        *,
+        name: str,
+        status: StepStatus | str = StepStatus.Passed,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+    ) -> PassFailStep:
+        """
+        Add a boolean/pass-fail test step.
+        
+        Args:
+            name: Step name
+            status: Step status ("P", "F", or StepStatus)
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            
+        Returns:
+            The created PassFailStep.
+        """
+        # Convert string status to bool value
+        if isinstance(status, str):
+            value = status == "P"
+            status_enum = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+        else:
+            value = status == StepStatus.Passed
+            status_enum = status
+        
+        step = PassFailStep.create(
+            name=name,
+            value=value,
+            status=status_enum,
+        )
+        step.id = id
+        step.group = group
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    # Alias for clarity
+    add_pass_fail_step = add_boolean_step
+    
+    def add_string_step(
+        self,
+        *,
+        name: str,
+        value: str,
+        unit: str = "NA",
+        comp_op: CompOp = CompOp.LOG,
+        limit: str | None = None,
+        status: StepStatus | str = StepStatus.Passed,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+    ) -> StringValueStep:
+        """
+        Add a string value test step.
+        
+        Args:
+            name: Step name
+            value: Measured string
+            unit: Unit (default "NA")
+            comp_op: Comparison operator
+            limit: Expected string
+            status: Step status
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            
+        Returns:
+            The created StringValueStep.
+        """
+        if isinstance(status, str):
+            status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+            
+        step = StringValueStep.create(
+            name=name,
+            value=value,
+            comp_op=comp_op,
+            limit=limit,
+            status=status,
+        )
+        step.id = id
+        step.group = group
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_multi_string_step(
+        self,
+        *,
+        name: str,
+        status: StepStatus | str = StepStatus.Passed,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+    ) -> MultiStringStep:
+        """
+        Add a multi-string test step.
+        
+        Args:
+            name: Step name
+            status: Step status
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            
+        Returns:
+            The created MultiStringStep.
+        """
+        if isinstance(status, str):
+            status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+            
+        step = MultiStringStep(
+            name=name,
+            status=status,
+            group=group,
+        )
+        step.id = id
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_multi_boolean_step(
+        self,
+        *,
+        name: str,
+        status: StepStatus | str = StepStatus.Passed,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+    ) -> MultiBooleanStep:
+        """
+        Add a multi-boolean test step.
+        
+        Args:
+            name: Step name
+            status: Step status
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            
+        Returns:
+            The created MultiBooleanStep.
+        """
+        if isinstance(status, str):
+            status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+            
+        step = MultiBooleanStep(
+            name=name,
+            status=status,
+            group=group,
+        )
+        step.id = id
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_sequence_call(
+        self,
+        name: str,
+        *,
+        caller: str | None = None,
+        status: StepStatus | str = StepStatus.Passed,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+        file_name: str = "TestSequence.seq",
+        path: str = "C:/SequenceCall.seq",
+        version: str = "1.0.0",
+    ) -> "SequenceCall":
+        """
+        Add a nested sequence call.
+        
+        Args:
+            name: Sequence name
+            caller: Caller sequence name
+            status: Step status
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            file_name: Sequence file name
+            path: Sequence file path
+            version: Sequence version
+            
+        Returns:
+            The created SequenceCall (add child steps via its factory methods).
+        """
+        if isinstance(status, str):
+            status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+            
+        step = SequenceCall(
+            name=name,
+            caller=caller,
+            status=status,
+            group=group,
+            sequence=SequenceCallInfo(
+                file_name=file_name,
+                path=path,
+                version=version,
+            ),
+        )
+        step.id = id
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_action_step(
+        self,
+        name: str,
+        *,
+        status: StepStatus | str = StepStatus.Passed,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+    ) -> ActionStep:
+        """
+        Add an action step.
+        
+        Args:
+            name: Step name
+            status: Step status
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            
+        Returns:
+            The created ActionStep.
+        """
+        if isinstance(status, str):
+            status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+            
+        step = ActionStep(
+            name=name,
+            status=status,
+            group=group,
+        )
+        step.id = id
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_generic_step(
+        self,
+        *,
+        step_type: FlowType | str,
+        name: str,
+        status: StepStatus | str = StepStatus.Passed,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+    ) -> GenericStep:
+        """
+        Add a generic step.
+        
+        Args:
+            step_type: Type of generic step (FlowType enum or string)
+            name: Step name
+            status: Step status
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            
+        Returns:
+            The created GenericStep.
+        """
+        if isinstance(status, str):
+            status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+        
+        # Convert FlowType enum to string
+        step_type_str = step_type.value if isinstance(step_type, FlowType) else step_type
+            
+        step = GenericStep(
+            name=name,
+            step_type=step_type_str,
+            report_text=report_text,
+            status=status,
+            group=group,
+        )
+        step.id = id
+        step.error_code = error_code
+        step.error_message = error_message
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    def add_chart_step(
+        self,
+        name: str,
+        *,
+        chart_type: str = "LineChart",
+        status: StepStatus | str = StepStatus.Passed,
+        label: str = "Chart",
+        x_label: str = "X",
+        x_unit: str | None = None,
+        y_label: str = "Y",
+        y_unit: str | None = None,
+        series: list | None = None,
+        id: int | str | None = None,
+        group: str = "M",
+        error_code: int | str | None = None,
+        error_message: str | None = None,
+        report_text: str | None = None,
+        start: str | None = None,
+        tot_time: float | str | None = None,
+    ) -> ChartStep:
+        """
+        Add a chart step.
+        
+        Args:
+            name: Step name
+            chart_type: Type of chart (LineChart, Histogram, etc.)
+            status: Step status
+            label: Chart title/label
+            x_label: X-axis label
+            x_unit: X-axis unit
+            y_label: Y-axis label
+            y_unit: Y-axis unit
+            series: List of chart series
+            id: Step ID
+            group: Step group (S/M/C)
+            error_code: Error code on failure
+            error_message: Error message on failure
+            report_text: Report text
+            start: Start time
+            tot_time: Total execution time
+            
+        Returns:
+            The created ChartStep.
+        """
+        from ...chart import Chart
+        
+        if isinstance(status, str):
+            status = StepStatus(status) if status in ("P", "F", "D", "E", "T", "S") else StepStatus.Passed
+            
+        step = ChartStep(
+            name=name,
+            status=status,
+            group=group,
+        )
+        step.chart = Chart(
+            chart_type=chart_type,  # type: ignore[arg-type]
+            label=label,
+            x_label=x_label,
+            x_unit=x_unit or "",
+            y_label=y_label,
+            y_unit=y_unit or "",
+            series=series or [],
+        )
+        step.id = id
+        step.error_code = error_code
+        step.error_message = error_message
+        step.report_text = report_text
+        step.start = start
+        step.tot_time = tot_time
+        step.parent = self
+        self.steps.append(step)
+        return step
+    
+    # ========================================================================
+    # Validation
+    # ========================================================================
+    
+    def validate_step(
+        self,
+        trigger_children: bool = False,
+        errors: Optional[List[str]] = None
+    ) -> bool:
+        """
+        Validate this sequence and optionally all child steps.
+        
+        Args:
+            trigger_children: If True, recursively validate child steps
+            errors: List to append error messages to
+            
+        Returns:
+            True if all validations pass.
+        """
         if errors is None:
             errors = []
+            
+        all_passed = True
         
-        if not super().validate_step(trigger_children=trigger_children, errors=errors):
-            return False
-        
-        # Sequence Call Validation:
-        
-        # Validate child steps
         if trigger_children:
             for step in self.steps:
-                if not step.validate_step(trigger_children=trigger_children, errors=errors):
-                    return False            
-        
-        return True
- 
-    # --------------------------------------------
-    # AddSequenceCall() - Create a new sub-sequence below the current sequence call object 
-    def add_sequence_call(self, name: str, file_name: str = "SequenceFilename.seq", version: str = "1.0.0.0", path: str = "NaN") -> 'SequenceCall':
-        new_seq = SequenceCall()
-        new_seq.name = name
-        new_seq.sequence.file_name = file_name
-        new_seq.sequence.path = path
-        new_seq.sequence.version = version
-        new_seq.parent = self
-        self.steps.append(new_seq)
-        return new_seq
-    # --------------------------------------------
-    # AddNumericLimitStep()
-    def add_numeric_step(self, *,
-                         name: str,
-                         value: float,
-                         unit: str = "NA",
-                         comp_op: CompOp = CompOp.LOG,
-                         low_limit: float | None = None,
-                         high_limit: float | None = None,
-                         status: str | None = None,  # None = auto-calculate in Active mode
-                         id: Optional[Union[int, str]] = None, 
-                         group: str = "M", 
-                         error_code: Optional[Union[int, str]] = None, 
-                         error_message: Optional[str] = None, 
-                         reportText: Optional[str] = None, 
-                         start: Optional[str] = None, 
-                         tot_time: Optional[Union[float, str]] = None,
-                         fail_parent_on_failure: bool = True):
-        """
-        Add a numeric measurement step.
-        
-        In ImportMode.Active:
-        - If status is None, it will be auto-calculated from comp_op and limits
-        - If the calculated/set status is Failed and fail_parent_on_failure=True,
-          failure will propagate up the hierarchy
-          
-        In ImportMode.Import:
-        - Status defaults to "P" if not provided
-        - No auto-calculation or propagation occurs
-        """
-        from ....import_mode import is_active_mode, apply_failure_propagation
-        
-        # Handle skipped status
-        if status == "S":
-            value = "NaN"
-            comp_op = CompOp.LOG
-            unit = ""
-            final_status = "S"
-        elif status is not None:
-            # Explicit status provided
-            final_status = status
-        elif is_active_mode():
-            # Active mode: auto-calculate status
-            nm_temp = NumericMeasurement(value=value, unit=unit, status="P", comp_op=comp_op, low_limit=low_limit, high_limit=high_limit)
-            final_status = nm_temp.calculate_status()
-        else:
-            # Import mode: default to Passed
-            final_status = "P"
-        
-        ns = NumericStep(name=name, status=final_status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=reportText, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        nm = NumericMeasurement(value=value, unit=unit, status=final_status, comp_op=comp_op, low_limit=low_limit, high_limit=high_limit)
-        ns.measurement = nm
-        ns.fail_parent_on_failure = fail_parent_on_failure
-        self.steps.append(ns)
-        
-        # Apply failure propagation in Active mode
-        if is_active_mode() and final_status == "F":
-            apply_failure_propagation(ns)
-        
-        return ns
-    
-        # --------------------------------------------
-    # AddNumericLimitStep()
-    def add_multi_numeric_step(self, *,
-                         name: str,
-                         status: str = "P", 
-                         id: Optional[Union[int, str]] = None, 
-                         group: str = "M", 
-                         error_code: Optional[Union[int, str]] = None, 
-                         error_message: Optional[str] = None, 
-                         reportText: Optional[str] = None, 
-                         start: Optional[str] = None, 
-                         tot_time: Optional[Union[float, str]] = None):
-        ns = MultiNumericStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=reportText, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        self.steps.append(ns)
-        return ns   
-    # --------------------------------------------
-    # Add a single string step
-    def add_string_step(self, *,
-                        name: str,
-                        value: str,
-                        unit: str = "Na",
-                        comp_op: CompOp = CompOp.LOG,
-                        limit: str | None = None,
-                        status: str = "P", 
-                        id: Optional[Union[int, str]] = None, 
-                        group: str = "M", 
-                        error_code: Optional[Union[int, str]] = None, 
-                        error_message: Optional[str] = None, 
-                        report_text: Optional[str] = None, 
-                        start: Optional[str] = None, 
-                        tot_time: Optional[Union[float, str]] = None) -> StringStep:
-        """
-        """
-        if status == "S":
-            value = "Null"
-            comp_op = CompOp.LOG
-               
-        ss = StringStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        ss.measurement= StringMeasurement(value=value, status=status, comp_op=comp_op, limit=limit)
-        self.steps.append(ss)
-        return ss
-        # --------------------------------------------
-        # Add a single string step
-    def add_multi_string_step(self, *,
-                            name: str,
-                            status: str = "P", 
-                            id: Optional[Union[int, str]] = None, 
-                            group: str = "M", 
-                            error_code: Optional[Union[int, str]] = None, 
-                            error_message: Optional[str] = None, 
-                            report_text: Optional[str] = None, 
-                            start: Optional[str] = None, 
-                            tot_time: Optional[Union[float, str]] = None) -> MultiStringStep:
-        """
-        """
-        ss = MultiStringStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        self.steps.append(ss)
-        return ss
-    # --------------------------------------------
-    # Add a single boolean step    
-    def add_boolean_step(self, *,
-                         name: str,
-                         status: str = "P",
-                         id: Optional[Union[int, str]] = None, 
-                         group: str = "M", 
-                         error_code: Optional[Union[int, str]] = None, 
-                         error_message: Optional[str] = None, 
-                         report_text: Optional[str] = None, 
-                         start: Optional[str] = None, 
-                         tot_time: Optional[Union[float, str]] = None) -> BooleanStep:
-        """
-        """
-        bs = BooleanStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        bs.measurement = BooleanMeasurement(status=status)        
-        self.steps.append(bs)
-        return bs
-        # --------------------------------------------
-    # Add a single boolean step    
-    def add_multi_boolean_step(self, *,
-                         name: str,
-                         status: str = "P",
-                         id: Optional[Union[int, str]] = None, 
-                         group: str = "M", 
-                         error_code: Optional[Union[int, str]] = None, 
-                         error_message: Optional[str] = None, 
-                         report_text: Optional[str] = None, 
-                         start: Optional[str] = None, 
-                         tot_time: Optional[Union[float, str]] = None) -> MultiBooleanStep:
-        """
-        """
-        bs = MultiBooleanStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        self.steps.append(bs)
-        return bs
-    # --------------------------------------------
-    # Add a chart step
-    def add_chart_step(self, *,
-                      name: str,
-                      chart_type: ChartType,
-                      status: str = "P",
-                      label: str,
-                      x_label: str,
-                      x_unit: Optional[str],
-                      y_label: str,
-                      y_unit: Optional[str],
-                      series: List[ChartSeries] | None = None,
-                      id: Optional[Union[int, str]] = None, 
-                      group: str = "M", 
-                      error_code: Optional[Union[int, str]] = None, 
-                      error_message: Optional[str] = None, 
-                      report_text: Optional[str] = None, 
-                      start: Optional[str] = None, 
-                      tot_time: Optional[Union[float, str]] = None) -> ChartStep:
-        cs = ChartStep(name=name, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        cs.chart = Chart(chart_type=chart_type, label=label, x_label=x_label, y_label=y_label, x_unit=x_unit,y_unit=y_unit, series=series or [])
-        self.steps.append(cs)
-        return cs
-    # --------------------------------------------
-    # Add a generic step
-    def add_generic_step(self, *,
-                      step_type: FlowType,
-                      name: str,
-                      status: str = "P",
-                      id: Optional[Union[int, str]] = None, 
-                      group: str = "M", 
-                      error_code: Optional[Union[int, str]] = None, 
-                      error_message: Optional[str] = None, 
-                      report_text: Optional[str] = None, 
-                      start: Optional[str] = None, 
-                      tot_time: Optional[Union[float, str]] = None) -> GenericStep:
-        # Convert FlowType enum to string value for Pydantic validation
-        step_type_str = step_type.value if isinstance(step_type, FlowType) else step_type
-        fs = GenericStep(name=name, step_type=step_type_str, status=status, id=id, group=group, error_code=error_code, error_message=error_message, report_text=report_text, start=start, tot_time=tot_time, parent=self)  # type: ignore[arg-type]
-        self.steps.append(fs)
-        return fs
-
-        
-        
-
-
-    # PRINT CHILD STEP HIERARCHY - For debugging
-    def print_hierarchy(self, indent: int = 0):
-        """Recursively print the hierarchy of SequenceCall and its steps with indentation, including parent names and class names."""
-        prefix = " " * (indent * 4)  # Create indentation (4 spaces per level)
-        parent_name = getattr(self.parent, "name", "None")  # Get parent name or "None"
-        # Print the current SequenceCall with its class name
-        print(f"{prefix}- {self.__class__.__name__}: {getattr(self, 'name', 'Unnamed')} (Parent: {parent_name}, Class: {self.__class__.__name__})")
-
-        for step in self.steps:
-            step_parent_name = getattr(step.parent, "name", "None")  # Get parent name for each step
+                if not step.validate_step(trigger_children=True, errors=errors):
+                    all_passed = False
+                    
+        if not all_passed:
+            self.status = StepStatus.Failed
             
-            if isinstance(step, SequenceCall):  # If step is another SequenceCall, recurse
+        return all_passed
+    
+    # ========================================================================
+    # Traversal and Search
+    # ========================================================================
+    
+    def find_step(self, name: str, recursive: bool = True) -> Optional[Step]:
+        """
+        Find a step by name.
+        
+        Args:
+            name: Step name to find
+            recursive: If True, search child sequences too
+            
+        Returns:
+            The first matching step, or None.
+        """
+        for step in self.steps:
+            if step.name == name:
+                return step
+            if recursive and isinstance(step, SequenceCall):
+                found = step.find_step(name, recursive=True)
+                if found:
+                    return found
+        return None
+    
+    def find_all_steps(
+        self, 
+        name: str | None = None,
+        step_type: type | None = None,
+        recursive: bool = True
+    ) -> List[Step]:
+        """
+        Find all steps matching criteria.
+        
+        Args:
+            name: Step name to match (optional)
+            step_type: Step type to match (optional)
+            recursive: If True, search child sequences too
+            
+        Returns:
+            List of matching steps.
+        """
+        results: List[Step] = []
+        
+        for step in self.steps:
+            matches = True
+            
+            if name is not None and step.name != name:
+                matches = False
+            if step_type is not None and not isinstance(step, step_type):
+                matches = False
+                
+            if matches:
+                results.append(step)
+                
+            if recursive and isinstance(step, SequenceCall):
+                results.extend(step.find_all_steps(name, step_type, recursive=True))
+                
+        return results
+    
+    def get_failed_steps(self, recursive: bool = True) -> List[Step]:
+        """
+        Get all failed steps.
+        
+        Args:
+            recursive: If True, include failed steps from child sequences
+            
+        Returns:
+            List of failed steps.
+        """
+        results: List[Step] = []
+        
+        for step in self.steps:
+            if step.status == StepStatus.Failed:
+                results.append(step)
+                
+            if recursive and isinstance(step, SequenceCall):
+                results.extend(step.get_failed_steps(recursive=True))
+                
+        return results
+    
+    def count_steps(self, recursive: bool = True) -> int:
+        """
+        Count steps in this sequence.
+        
+        Args:
+            recursive: If True, count steps in child sequences too
+            
+        Returns:
+            Total step count.
+        """
+        count = len(self.steps)
+        
+        if recursive:
+            for step in self.steps:
+                if isinstance(step, SequenceCall):
+                    count += step.count_steps(recursive=True)
+                    
+        return count
+    
+    def assign_parent(self) -> "SequenceCall":
+        """
+        Ensure all steps have the correct parent after model creation.
+        
+        This is typically called automatically during model validation,
+        but can be called manually if needed.
+        
+        Returns:
+            Self (for method chaining)
+        """
+        # Set parent reference for all child steps
+        for step in self.steps:
+            if hasattr(step, "parent"):
+                step.parent = self
+                # If step is a SequenceCall, recursively assign its children
+                if isinstance(step, SequenceCall):
+                    step.assign_parent()
+        return self
+    
+    def print_hierarchy(self, indent: int = 0) -> None:
+        """
+        Recursively print the hierarchy of SequenceCall and its steps.
+        
+        Useful for debugging test structure.
+        
+        Args:
+            indent: Current indentation level (internal use)
+        """
+        prefix = " " * (indent * 4)
+        parent_name = getattr(self.parent, "name", "None") if hasattr(self, "parent") else "None"
+        
+        print(f"{prefix}- {self.__class__.__name__}: {self.name} (Parent: {parent_name}, Type: {self.step_type})")
+        
+        for step in self.steps:
+            step_parent_name = getattr(step.parent, "name", "None") if hasattr(step, "parent") else "None"
+            
+            if isinstance(step, SequenceCall):
                 step.print_hierarchy(indent + 1)
             else:
-                # Print the step with its class name
-                print(f"{prefix}    - {step.__class__.__name__}: {getattr(step, 'name', 'Unnamed')} (Parent: {step_parent_name}, Class: {step.step_type})")
-    
-
-
-
+                step_type = getattr(step, "step_type", step.__class__.__name__)
+                print(f"{prefix}    - {step.__class__.__name__}: {step.name} (Parent: {step_parent_name}, Type: {step_type})")

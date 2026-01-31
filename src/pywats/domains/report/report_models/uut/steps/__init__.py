@@ -1,31 +1,52 @@
-# Import the step classes from their respective files
-from .sequence_call import SequenceCall
-from .numeric_step import NumericStep, MultiNumericStep
-from .boolean_step import BooleanStep, MultiBooleanStep
-from .string_step import StringStep, MultiStringStep
-from .action_step import ActionStep
-from .callexe_step import CallExeStep
-from .generic_step import GenericStep, FlowType
-from .chart_step import ChartStep
-from .message_popup_step import MessagePopUpStep
-from .unknown_step import UnknownStep
-from pywats.shared.enums import CompOp
+"""
+Steps Package - v3 Implementation
 
-# Re-export the step classes for easier access
+Contains all step types and the StepList container.
+"""
+from __future__ import annotations
+
+from .step_list import StepList
+from .step_discriminator import discriminate_step_type, get_step_class
+from .measurement import (
+    BaseMeasurement,
+    NumericMeasurement,
+    BooleanMeasurement,
+    StringMeasurement,
+    SingleMeasurementMixin,
+)
+from .sequence_call import SequenceCall, StepType
+from .numeric_step import NumericStep, MultiNumericStep
+from .boolean_step import PassFailStep, BooleanStep
+from .string_step import StringValueStep, StringStep
+from .generic_step import GenericStep
+from .action_step import ActionStep
+from .chart_step import ChartStep
+
 __all__ = [
+    # Container
+    "StepList",
+    "StepType",
+    
+    # Discriminator
+    "discriminate_step_type",
+    "get_step_class",
+    
+    # Measurements
+    "BaseMeasurement",
+    "NumericMeasurement",
+    "BooleanMeasurement",
+    "StringMeasurement",
+    "SingleMeasurementMixin",
+    
+    # Step Classes
     "SequenceCall",
     "NumericStep",
     "MultiNumericStep",
-    "BooleanStep",
-    "MultiBooleanStep",
-    "StringStep",
-    "MultiStringStep",
-    "ActionStep",
-    "CallExeStep",
+    "PassFailStep",
+    "BooleanStep",  # Alias
+    "StringValueStep",
+    "StringStep",  # Alias
     "GenericStep",
-    "FlowType",
+    "ActionStep",
     "ChartStep",
-    "MessagePopUpStep",
-    "UnknownStep",
-    "CompOp",
 ]
