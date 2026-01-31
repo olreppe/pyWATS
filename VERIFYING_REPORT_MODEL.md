@@ -160,10 +160,10 @@ misc_infos: List[MiscInfo] = Field(
 ### 13. ✅ Fix test_models_v3.py Import
 **Problem:** Test imported from non-existent `report_models_v3` module.
 
-**Solution:** Changed import to use `report_models`.
+**Solution:** Changed import to use `report_models`. File later renamed to `test_comprehensive_model.py`.
 
 **Files Modified:**
-- `tests/domains/report/test_models_v3.py`
+- `tests/domains/report/test_comprehensive_model.py` (renamed from test_models_v3.py)
 
 ### 14. ✅ Fix MultiStringStep add_measurement Field Name
 **Problem:** `add_measurement()` passed `comp=comp_op` but field name is `comp_op`.
