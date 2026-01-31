@@ -48,7 +48,7 @@ class StringValueStep(Step):
     
     # Step type discriminator
     step_type: Literal["StringValueTest", "ET_SVT"] = Field(
-        default="StringValueTest",
+        default="ET_SVT",
         validation_alias="stepType",
         serialization_alias="stepType",
     )
@@ -255,7 +255,7 @@ class MultiStringStep(Step):
             name=name,
             value=str(value),
             status=step_status,
-            comp=comp_op,
+            comp_op=comp_op,
             limit=limit,
         )
         self.measurements.append(measurement)

@@ -261,7 +261,13 @@ class UURReport(Report[UURSubUnit]):
     ) -> UURFailure:
         """Add failure to main unit."""
         main = self.get_main_unit()
-        return main.add_failure(category, code, comment, component_ref, ref_step_id)
+        return main.add_failure(
+            category, 
+            code, 
+            comment=comment, 
+            component_ref=component_ref, 
+            ref_step_id=ref_step_id
+        )
     
     def add_failure_to_main_unit(
         self,

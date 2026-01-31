@@ -5,6 +5,8 @@ Fallback step type for forward compatibility.
 """
 from __future__ import annotations
 
+from typing import Optional, List
+
 from ..step import Step
 from ...common_types import Field, ConfigDict
 
@@ -28,3 +30,23 @@ class UnknownStep(Step):
         serialization_alias="stepType",
         description="Step type identifier (can be any value)."
     )
+    
+    def validate_step(
+        self,
+        trigger_children: bool = False,
+        errors: Optional[List[str]] = None
+    ) -> bool:
+        """
+        Validate the unknown step.
+        
+        Unknown steps always pass validation since we don't know
+        their expected structure.
+        
+        Args:
+            trigger_children: Ignored for unknown steps
+            errors: List to append error messages to
+            
+        Returns:
+            Always True (unknown steps pass validation).
+        """
+        return True

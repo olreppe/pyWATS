@@ -72,7 +72,7 @@ def get_step_class(step_type: str) -> Any:
         step_type: The stepType discriminator value
         
     Returns:
-        The step class for the given type, or GenericStep if unknown.
+        The step class for the given type, or UnknownStep if unknown.
     """
     from .sequence_call import SequenceCall
     from .numeric_step import NumericStep, MultiNumericStep
@@ -81,6 +81,7 @@ def get_step_class(step_type: str) -> Any:
     from .generic_step import GenericStep
     from .action_step import ActionStep
     from .chart_step import ChartStep
+    from .unknown_step import UnknownStep
     
     mapping = {
         'SequenceCall': SequenceCall,
@@ -98,4 +99,4 @@ def get_step_class(step_type: str) -> Any:
         'NONE': GenericStep,
     }
     
-    return mapping.get(step_type, GenericStep)
+    return mapping.get(step_type, UnknownStep)

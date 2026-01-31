@@ -55,7 +55,7 @@ class NumericStep(Step):
     
     # Step type discriminator
     step_type: Literal["NumericLimitTest", "ET_NLT"] = Field(
-        default="NumericLimitTest",
+        default="ET_NLT",
         validation_alias="stepType",
         serialization_alias="stepType",
     )
@@ -237,7 +237,7 @@ class MultiNumericStep(Step):
     
     # Step type discriminator
     step_type: Literal["MultiNumericLimitTest", "ET_MNLT"] = Field(
-        default="MultiNumericLimitTest",
+        default="ET_MNLT",
         validation_alias="stepType",
         serialization_alias="stepType",
     )
@@ -305,13 +305,37 @@ class MultiNumericStep(Step):
         trigger_children: bool = False,
         errors: Optional[List[str]] = None
     ) -> bool:
-        """Validate all measurements in the step."""
+        """Validate all measurements in the step.
+        
+        Checks:
+        1. Limit validity (low_limit <= high_limit for range comparisons)
+        2. Value against limits (passes/fails)
+        
+        Args:
+            trigger_children: Not used for multi-step (no children)
+            errors: List to append error messages to
+            
+        Returns:
+            True if all measurements pass validation
+        """
         if errors is None:
             errors = []
             
         all_passed = True
         
         for meas in self.measurements:
+            # Check for invalid limit configuration (low > high)
+            if (meas.low_limit is not None and 
+                meas.high_limit is not None and 
+                meas.low_limit > meas.high_limit):
+                errors.append(
+                    f"Measurement '{meas.name}' has invalid limits: "
+                    f"low_limit ({meas.low_limit}) > high_limit ({meas.high_limit})"
+                )
+                all_passed = False
+                continue
+            
+            # Validate value against limits
             status, passed = meas.validate_against_limits()
             meas.status = status
             

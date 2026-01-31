@@ -412,7 +412,7 @@ class AsyncReportService:
             location=resolved_location,
             purpose=resolved_purpose,
             start=datetime.now().astimezone(),
-            uur_info=uur_info
+            info=uur_info  # Field name is 'info', not 'uur_info'
         )
 
         # Copy sub_units from UUT if creating from UUTReport

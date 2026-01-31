@@ -248,7 +248,7 @@ class TestUUTModelComprehensive:
         chart_seq = root.add_sequence_call(name="ChartTests", file_name="chart.seq")
         
         # Create chart steps with different chart types
-        from pywats.domains.report.report_models_v3.chart import ChartSeries
+        from pywats.domains.report.report_models.chart import ChartSeries
         
         for i, chart_type in enumerate([ChartType.LINE, ChartType.LINE_LOG_X]):
             # Create series data (x_data and y_data are semicolon-separated strings)

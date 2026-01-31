@@ -109,8 +109,9 @@ class GenericStep(Step):
         )
     """
     
-    # Step type discriminator - accepts string to support all flow types
-    step_type: str = Field(
+    # Step type discriminator - uses Literal to limit to known flow types
+    # Unknown types will fall through to UnknownStep
+    step_type: GenericStepLiteral = Field(
         default="GT",
         validation_alias="stepType",
         serialization_alias="stepType",

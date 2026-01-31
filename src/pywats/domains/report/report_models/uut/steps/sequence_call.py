@@ -28,6 +28,7 @@ from .string_step import StringValueStep, MultiStringStep
 from .generic_step import GenericStep, FlowType
 from .action_step import ActionStep
 from .chart_step import ChartStep
+from .unknown_step import UnknownStep
 from ...common_types import (
     Field,
     StepStatus,
@@ -38,6 +39,8 @@ from ...common_types import (
 
 
 # Type alias for all step types
+# NOTE: UnknownStep MUST be last - Pydantic tries unions in order,
+# and UnknownStep can match any step_type string value
 StepType = Union[
     "SequenceCall",
     NumericStep,
@@ -49,6 +52,7 @@ StepType = Union[
     GenericStep,
     ActionStep,
     ChartStep,
+    UnknownStep,  # Fallback for unrecognized step types
 ]
 
 
@@ -122,9 +126,13 @@ class SequenceCall(Step):
     def __init__(self, **data) -> None:
         """Initialize SequenceCall and set parent on StepList."""
         super().__init__(**data)
-        # Ensure StepList has this as parent
+        # Ensure StepList has this as parent and inject parent into all child steps
         if isinstance(self.steps, StepList):
             self.steps.parent = self
+        # Also set parent on each individual step (for cases where StepList.parent wasn't 
+        # set during deserialization)
+        for step in self.steps:
+            step.parent = self
 
     # ========================================================================
     # Factory Methods - Create and Add Steps
@@ -186,7 +194,11 @@ class SequenceCall(Step):
         Returns:
             The created NumericStep.
         """
-        # Convert status if needed
+        from pywats.domains.report.import_mode import is_active_mode
+        
+        # Determine status
+        explicit_status_provided = status is not None
+        
         if status is None:
             final_status = StepStatus.Passed
         elif isinstance(status, str):
@@ -213,6 +225,19 @@ class SequenceCall(Step):
         step.fail_parent_on_failure = fail_parent_on_failure
         step.parent = self
         self.steps.append(step)
+        
+        # In Active mode, auto-calculate status if not explicitly provided
+        if is_active_mode() and not explicit_status_provided:
+            if step.measurement is not None:
+                calculated_status = step.measurement.calculate_status()
+                if calculated_status == "F":
+                    step.status = StepStatus.Failed
+                    if step.measurement:
+                        step.measurement.status = StepStatus.Failed
+                    # Propagate failure to parent
+                    if fail_parent_on_failure:
+                        self.propagate_failure()
+        
         return step
     
     def add_multi_numeric_step(

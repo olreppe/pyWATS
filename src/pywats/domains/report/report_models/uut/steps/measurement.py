@@ -141,8 +141,16 @@ class NumericMeasurement(BaseMeasurement):
         except (ValueError, TypeError):
             return (StepStatus.Error, False)
         
+        # Get comp_op - may be enum or string due to use_enum_values=True
+        comp_op = self.comp_op
+        if isinstance(comp_op, str):
+            try:
+                comp_op = CompOp(comp_op)
+            except (ValueError, KeyError):
+                return (StepStatus.Passed, True)  # Unknown comp_op - pass
+        
         # If no comp_op or it's LOG (no validation), pass
-        if self.comp_op is None or self.comp_op == CompOp.LOG:
+        if comp_op is None or comp_op == CompOp.LOG:
             return (StepStatus.Passed, True)
         
         # Validate using comp_op
@@ -161,11 +169,33 @@ class NumericMeasurement(BaseMeasurement):
             except (ValueError, TypeError):
                 return (StepStatus.Error, False)
         
-        # Use comp_op validate method
-        if self.comp_op.validate(value, low, high):  # type: ignore[union-attr]
+        # Use comp_op evaluate method
+        if comp_op.evaluate(value, low, high):
             return (StepStatus.Passed, True)
         else:
             return (StepStatus.Failed, False)
+    
+    def calculate_status(self) -> str:
+        """
+        Calculate status based on comparison operator and limits.
+        
+        Used by ImportMode.Active for automatic status determination.
+        
+        Returns:
+            "P" if measurement passes, "F" if it fails
+            
+        Note:
+            - Returns "P" for LOG (no comparison)
+            - Returns "P" if value is not numeric
+            - Returns "P" if required limits are missing
+        """
+        status, _ = self.validate_against_limits()
+        if status == StepStatus.Passed:
+            return "P"
+        elif status == StepStatus.Failed:
+            return "F"
+        else:
+            return "P"  # Error or other -> default to pass
 
 
 class BooleanMeasurement(BaseMeasurement):

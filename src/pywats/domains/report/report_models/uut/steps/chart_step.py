@@ -2,14 +2,13 @@
 ChartStep - v3 Implementation
 
 Chart step for displaying charts as standalone test steps.
-
-Fix: Uses string stepType instead of Literal to avoid type override conflict.
 """
 from __future__ import annotations
 
 from typing import (
     Optional,
     List,
+    Literal,
 )
 
 from ..step import Step
@@ -29,9 +28,6 @@ class ChartStep(Step):
     
     C# Name: ChartStep
     
-    Note: stepType is a string field (not Literal) to avoid mypy conflicts
-    with base class override rules. Default is "Chart".
-    
     Example:
         step = ChartStep(name="Waveform Display")
         step.add_chart(
@@ -44,8 +40,8 @@ class ChartStep(Step):
         )
     """
     
-    # Step type discriminator - uses string to avoid Literal override conflict
-    step_type: str = Field(
+    # Step type discriminator - uses Literal to only match Chart type
+    step_type: Literal["Chart"] = Field(
         default="Chart",
         validation_alias="stepType",
         serialization_alias="stepType",

@@ -231,8 +231,8 @@ class Report(WATSBase, Generic[SubUnitT]):
     )
     
     # Miscellaneous information
-    misc_infos: Optional[List[MiscInfo]] = Field(
-        default=None,
+    misc_infos: List[MiscInfo] = Field(
+        default_factory=list,
         validation_alias="miscInfos",
         serialization_alias="miscInfos",
         description="Additional key-value information."
@@ -322,8 +322,6 @@ class Report(WATSBase, Generic[SubUnitT]):
         """
         str_val = str(value)
         mi = MiscInfo(description=description, string_value=str_val)
-        if self.misc_infos is None:
-            self.misc_infos = []
         self.misc_infos.append(mi)
         return mi
     

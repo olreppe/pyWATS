@@ -41,7 +41,7 @@ class PassFailStep(Step):
     
     # Step type discriminator
     step_type: Literal["PassFailTest", "ET_PFT"] = Field(
-        default="PassFailTest",
+        default="ET_PFT",
         validation_alias="stepType",
         serialization_alias="stepType",
     )
