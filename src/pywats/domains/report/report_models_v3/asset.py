@@ -87,3 +87,92 @@ class Asset(WATSBase):
     def validate_sn(cls, v: str) -> str:
         """Validate serial number for problematic characters."""
         return validate_serial_number(v)
+
+
+class AssetStats(WATSBase):
+    """
+    Statistics about an asset.
+    Read-only from server.
+    """
+    
+    sn: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description="Asset serial number."
+    )
+    
+    running_count: Optional[int] = Field(
+        default=None,
+        validation_alias="runningCount",
+        serialization_alias="runningCount",
+        description="Number of executions."
+    )
+    
+    running_count_exceeded: Optional[bool] = Field(
+        default=None,
+        validation_alias="runningCountExceeded",
+        serialization_alias="runningCountExceeded",
+        description="Running count limit exceeded."
+    )
+    
+    total_count: Optional[int] = Field(
+        default=None,
+        validation_alias="totalCount",
+        serialization_alias="totalCount",
+        description="Total count."
+    )
+    
+    total_count_exceeded: Optional[bool] = Field(
+        default=None,
+        validation_alias="totalCountExceeded",
+        serialization_alias="totalCountExceeded",
+        description="Total count limit exceeded."
+    )
+    
+    days_since_calibration: Optional[int] = Field(
+        default=None,
+        validation_alias="daysSinceCalibration",
+        serialization_alias="daysSinceCalibration",
+        description="Days since last calibration."
+    )
+    
+    is_days_since_calibration_unknown: Optional[bool] = Field(
+        default=None,
+        validation_alias="isDaysSinceCalibrationUnknown",
+        serialization_alias="isDaysSinceCalibrationUnknown",
+        description="Whether days since calibration is unknown."
+    )
+    
+    calibration_days_overdue: Optional[int] = Field(
+        default=None,
+        validation_alias="calibrationDaysOverdue",
+        serialization_alias="calibrationDaysOverdue",
+        description="Days overdue for calibration."
+    )
+    
+    days_since_maintenance: Optional[int] = Field(
+        default=None,
+        validation_alias="daysSinceMaintenance",
+        serialization_alias="daysSinceMaintenance",
+        description="Days since last maintenance."
+    )
+    
+    is_days_since_maintenance_unknown: Optional[bool] = Field(
+        default=None,
+        validation_alias="isDaysMaintenanceUnknown",
+        serialization_alias="isDaysMaintenanceUnknown",
+        description="Whether days since maintenance is unknown."
+    )
+    
+    maintenance_days_overdue: Optional[int] = Field(
+        default=None,
+        validation_alias="maintenanceDaysOverdue",
+        serialization_alias="maintenanceDaysOverdue",
+        description="Days overdue for maintenance."
+    )
+    
+    message: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Asset message."
+    )

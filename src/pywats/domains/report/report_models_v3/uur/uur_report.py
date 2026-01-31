@@ -438,24 +438,3 @@ class UURReport(Report[UURSubUnit]):
     def add_attachment(self, attachment: Attachment) -> None:
         """Add an attachment to the report."""
         self.attachments.append(attachment)
-    
-    def add_attachment_from_file(
-        self,
-        file_path: str,
-        content_type: Optional[str] = None,
-        description: Optional[str] = None
-    ) -> Attachment:
-        """
-        Add an attachment from a file.
-        
-        Args:
-            file_path: Path to the file
-            content_type: MIME type (auto-detected if not provided)
-            description: Optional description
-            
-        Returns:
-            The created Attachment.
-        """
-        attachment = Attachment.from_file(file_path, content_type, description)
-        self.attachments.append(attachment)
-        return attachment

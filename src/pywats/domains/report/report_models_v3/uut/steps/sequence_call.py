@@ -844,3 +844,45 @@ class SequenceCall(Step):
                     count += step.count_steps(recursive=True)
                     
         return count
+    
+    def assign_parent(self) -> "SequenceCall":
+        """
+        Ensure all steps have the correct parent after model creation.
+        
+        This is typically called automatically during model validation,
+        but can be called manually if needed.
+        
+        Returns:
+            Self (for method chaining)
+        """
+        # Set parent reference for all child steps
+        for step in self.steps:
+            if hasattr(step, "parent"):
+                step.parent = self
+                # If step is a SequenceCall, recursively assign its children
+                if isinstance(step, SequenceCall):
+                    step.assign_parent()
+        return self
+    
+    def print_hierarchy(self, indent: int = 0) -> None:
+        """
+        Recursively print the hierarchy of SequenceCall and its steps.
+        
+        Useful for debugging test structure.
+        
+        Args:
+            indent: Current indentation level (internal use)
+        """
+        prefix = " " * (indent * 4)
+        parent_name = getattr(self.parent, "name", "None") if hasattr(self, "parent") else "None"
+        
+        print(f"{prefix}- {self.__class__.__name__}: {self.name} (Parent: {parent_name}, Type: {self.step_type})")
+        
+        for step in self.steps:
+            step_parent_name = getattr(step.parent, "name", "None") if hasattr(step, "parent") else "None"
+            
+            if isinstance(step, SequenceCall):
+                step.print_hierarchy(indent + 1)
+            else:
+                step_type = getattr(step, "step_type", step.__class__.__name__)
+                print(f"{prefix}    - {step.__class__.__name__}: {step.name} (Parent: {step_parent_name}, Type: {step_type})")

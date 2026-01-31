@@ -243,8 +243,10 @@ class MultiNumericStep(Step):
     )
     
     # Multiple measurements
-    measurement: List[NumericMeasurement] = Field(
+    measurements: List[MultiNumericMeasurement] = Field(
         default_factory=list,
+        validation_alias="numericMeas",
+        serialization_alias="numericMeas",
         description="List of numeric measurements."
     )
     
@@ -252,46 +254,47 @@ class MultiNumericStep(Step):
     # Helpers
     # ========================================================================
     
-    def add_measurement(
-        self,
-        name: str,
-        value: float | str | None = None,
-        *,
-        comp: CompOp | None = None,
-        limit: float | str | None = None,
-        comp_l: CompOp | None = None,
-        limit_l: float | str | None = None,
-        comp_h: CompOp | None = None,
-        limit_h: float | str | None = None,
-        unit: str | None = None,
-    ) -> NumericMeasurement:
+    def add_measurement(self, *, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float | None = None, low_limit:float | None = None):
         """
         Add a measurement to this step.
         
         Args:
-            name: Measurement name
+            name: Measurement name (required, keyword-only)
             value: Measured value
-            comp: Single-limit comparison operator
-            limit: Single limit value
-            comp_l: Low limit comparison operator
-            limit_l: Low limit value
-            comp_h: High limit comparison operator
-            limit_h: High limit value
             unit: Unit of measurement
+            status: Measurement status ("P" or "F")
+            comp_op: Comparison operator
+            high_limit: High limit value
+            low_limit: Low limit value
             
         Returns:
-            The created NumericMeasurement.
+            The created MultiNumericMeasurement.
         """
-        measurement = NumericMeasurement(
-            name=name,
-            value=value,
-            comp_op=comp,
-            low_limit=limit_l,
-            high_limit=limit_h,
-            unit=unit,
-        )
-        self.measurement.append(measurement)
-        return measurement
+        name = self.check_for_duplicates(name) 
+        nm = MultiNumericMeasurement(name=name, value=value, unit=unit, status=status, comp_op=comp_op, high_limit=high_limit, low_limit=low_limit, parent_step=self)
+        self.measurements.append(nm)
+    
+    def check_for_duplicates(self, name):
+        """
+        Check for duplicate measurement names and truncate if needed.
+        """
+        # Validate if a measurement with the same name already exists
+        if any(measurement.name == name for measurement in self.measurements):
+            base_name = name
+            # Leave room for suffix like " #99" (max 4 chars)
+            if len(name) >= Step.MAX_NAME_LENGTH:
+                base_name = name[:Step.MAX_NAME_LENGTH - 3]
+            suffix = 2
+            new_name = f"{base_name} #{suffix}"
+
+            # Keep generating a new name until it's unique
+            while new_name in self.measurements:
+                suffix += 1
+                new_name = f"{base_name} #{suffix}"
+
+            # Update the measurement's name
+            name = new_name
+        return name
     
     # ========================================================================
     # Validation
@@ -308,7 +311,7 @@ class MultiNumericStep(Step):
             
         all_passed = True
         
-        for meas in self.measurement:
+        for meas in self.measurements:
             status, passed = meas.validate_against_limits()
             meas.status = status
             

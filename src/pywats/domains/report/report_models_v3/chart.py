@@ -19,12 +19,13 @@ class ChartSeries(WATSBase):
     A single data series in a chart.
     
     Contains the X and Y data points plus metadata about the series.
+    Internally stores as semicolon-separated strings like V1.
     """
     
     # Data type identifier
     data_type: str = Field(
-        ...,
-        max_length=50,
+        default="XYG",
+        min_length=1,
         validation_alias="dataType",
         serialization_alias="dataType",
         description="Type of data in this series."
@@ -38,20 +39,22 @@ class ChartSeries(WATSBase):
         description="Name of the data series."
     )
     
-    # X-axis data points
-    x_data: List[float] = Field(
-        ...,
-        validation_alias="xData",
-        serialization_alias="xData",
-        description="X-axis values."
+    # X-axis data points (semicolon-separated string)
+    x_data: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        validation_alias="xdata",
+        serialization_alias="xdata",
+        description="Semicolon-separated X-axis values."
     )
     
-    # Y-axis data points
-    y_data: List[float] = Field(
-        ...,
-        validation_alias="yData",
-        serialization_alias="yData",
-        description="Y-axis values."
+    # Y-axis data points (semicolon-separated string)
+    y_data: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        validation_alias="ydata",
+        serialization_alias="ydata",
+        description="Semicolon-separated Y-axis values."
     )
 
 
@@ -65,7 +68,7 @@ class Chart(WATSBase):
     
     # Chart type
     chart_type: ChartType = Field(
-        default=ChartType.LineChart,
+        default=ChartType.LINE,
         validation_alias="chartType",
         serialization_alias="chartType",
         description="Type of chart visualization."
@@ -123,7 +126,7 @@ class Chart(WATSBase):
         name: str,
         x_data: List[float],
         y_data: List[float],
-        data_type: str = "float"
+        data_type: str = "XYG"
     ) -> ChartSeries:
         """
         Add a data series to the chart.
@@ -137,11 +140,42 @@ class Chart(WATSBase):
         Returns:
             The created ChartSeries object
         """
+        # Convert lists to semicolon-separated strings
+        x_data_str = ";".join(map(str, x_data)) if x_data else None
+        y_data_str = ";".join(map(str, y_data))
+        
         series = ChartSeries(
             data_type=data_type,
             name=name,
-            x_data=x_data,
-            y_data=y_data
+            x_data=x_data_str,
+            y_data=y_data_str
         )
         self.series.append(series)
         return series
+    
+    def AddSeries(self, name: str, y_label: str, y_values: List[float], x_label: str, x_values: List[float] | None = None) -> ChartSeries:
+        """
+        DEPRECATED: Use add_series() instead. Kept for backward compatibility.
+        
+        Add a data series to the chart (legacy PascalCase method).
+        
+        Args:
+            name: Name of the series
+            y_label: Y-axis label (ignored, chart already has y_label)
+            y_values: Y-axis values
+            x_label: X-axis label (ignored, chart already has x_label)
+            x_values: X-axis values (optional)
+            
+        Returns:
+            The created ChartSeries object
+        """
+        # Convert lists to semicolon-separated strings
+        y_data = ";".join(map(str, y_values))
+        x_data = None
+        if x_values is not None:
+            x_data = ";".join(map(str, x_values))
+        
+        series = ChartSeries(name=name, x_data=x_data, y_data=y_data)
+        self.series.append(series)
+        return series
+

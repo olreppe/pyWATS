@@ -5,7 +5,7 @@ Support for file attachments and binary data in reports and steps.
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List
 import base64
 
 from .common_types import (
@@ -65,27 +65,6 @@ class BinaryData(WATSBase):
             data=base64.b64encode(data).decode('ascii'),
             name=name
         )
-    
-    @classmethod
-    def from_file(
-        cls,
-        file_path: str,
-        content_type: Optional[str] = None
-    ) -> "BinaryData":
-        """Create BinaryData from a file."""
-        import os
-        import mimetypes
-        
-        name = os.path.basename(file_path)
-        
-        if content_type is None:
-            content_type, _ = mimetypes.guess_type(file_path)
-            content_type = content_type or "application/octet-stream"
-        
-        with open(file_path, 'rb') as f:
-            data = f.read()
-        
-        return cls.from_bytes(data, name, content_type)
 
 
 class Attachment(WATSBase):
@@ -149,58 +128,120 @@ class Attachment(WATSBase):
             name=name,
             description=description
         )
-    
-    @classmethod
-    def from_file(
-        cls,
-        file_path: str,
-        content_type: Optional[str] = None,
-        description: Optional[str] = None
-    ) -> "Attachment":
-        """Create Attachment from a file."""
-        import os
-        import mimetypes
-        
-        name = os.path.basename(file_path)
-        
-        if content_type is None:
-            content_type, _ = mimetypes.guess_type(file_path)
-            content_type = content_type or "application/octet-stream"
-        
-        with open(file_path, 'rb') as f:
-            data = f.read()
-        
-        return cls.from_bytes(data, name, content_type, description)
 
 
 class AdditionalData(WATSBase):
     """
-    Additional data attached to a step.
+    A collection of additional step, header, or station data.
     
-    Used for storing extra information that doesn't fit
-    into the standard step fields.
+    Container for structured additional properties that can include
+    nested objects and arrays.
     """
     
-    # Data type identifier
-    data_type: str = Field(
+    name: str = Field(
         ...,
-        max_length=100,
-        validation_alias="dataType",
-        serialization_alias="dataType",
-        description="Type identifier for the additional data."
+        max_length=200,
+        min_length=1,
+        description="The name of the additional data."
     )
     
-    # The data content (can be various formats)
-    data: Optional[str] = Field(
-        default=None,
-        description="The additional data content."
+    props: List["AdditionalDataProperty"] = Field(
+        default_factory=list,
+        description="List of properties in the additional data."
+    )
+
+
+class AdditionalDataProperty(WATSBase):
+    """
+    An additional data property.
+    
+    Can represent simple values, nested objects, or arrays.
+    """
+    
+    name: str = Field(
+        ...,
+        min_length=1,
+        description="Name of property."
     )
     
-    # Optional name/label
-    name: Optional[str] = Field(
+    type: str = Field(
+        ...,
+        min_length=1,
+        description="Value type of property."
+    )
+    
+    flags: Optional[int] = Field(
         default=None,
-        max_length=100,
-        description="Optional name for the additional data."
+        description="Bit flags of property."
+    )
+    
+    value: Optional[str] = Field(
+        default=None,
+        description="Value string of property."
+    )
+    
+    comment: Optional[str] = Field(
+        default=None,
+        description="Comment of property."
+    )
+    
+    num_format: Optional[str] = Field(
+        default=None,
+        validation_alias="numFormat",
+        serialization_alias="numFormat",
+        description="Number format for value with type Number."
+    )
+    
+    props: Optional[List[Optional["AdditionalDataProperty"]]] = Field(
+        default=None,
+        description="Array of sub-properties. Used for type Obj."
+    )
+    
+    array: Optional["AdditionalDataArray"] = Field(
+        default=None,
+        description="Array information. Used for type Array."
+    )
+
+
+class AdditionalDataArray(WATSBase):
+    """
+    Information about array in additional data.
+    """
+    
+    dimension: int = Field(
+        ...,
+        description="Dimension of array."
+    )
+    
+    type: str = Field(
+        ...,
+        description="Type of the values in the array."
+    )
+    
+    indexes: List[Optional["AdditionalDataArrayIndex"]] = Field(
+        ...,
+        description="List of indexes in the array."
+    )
+
+
+class AdditionalDataArrayIndex(WATSBase):
+    """
+    Information about an index in an array.
+    """
+    
+    text: str = Field(
+        ...,
+        description="The index as text."
+    )
+    
+    indexes: List[int] = Field(
+        ...,
+        description="List of indexes ordered by dimension."
+    )
+    
+    value: Optional[AdditionalDataProperty] = Field(
+        default=None,
+        description="The value at this index."
     )
 
 

@@ -344,6 +344,25 @@ class Report(WATSBase, Generic[SubUnitT]):
         self.assets.append(asset)
         return asset
     
+    def add_sub_unit(self, part_type: str, sn: str, pn: str, rev: str) -> SubUnitT:
+        """
+        Add a sub-unit to the report.
+        
+        Args:
+            part_type: Type of the sub-unit
+            sn: Serial number
+            pn: Part number
+            rev: Revision
+            
+        Returns:
+            The created SubUnit object
+        """
+        su = SubUnit(part_type=part_type, sn=sn, pn=pn, rev=rev)  # type: ignore
+        if self.sub_units is None:
+            self.sub_units = []
+        self.sub_units.append(su)  # type: ignore
+        return su  # type: ignore
+    
     def add_binary_data(
         self,
         data: bytes,

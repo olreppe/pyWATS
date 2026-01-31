@@ -66,13 +66,17 @@ class StepStatus(str, Enum):
     Terminated = "T"
 
 
-class ReportResult(str, Enum):
-    """Overall report result."""
+class ReportStatus(str, Enum):
+    """Overall report status."""
     Passed = "P"
     Failed = "F"
     Done = "D"
     Error = "E"
     Terminated = "T"
+
+
+# Alias for backwards compatibility (if needed)
+ReportResult = ReportStatus
 
 
 class StepGroup(str, Enum):
@@ -90,11 +94,10 @@ class ReportType(str, Enum):
 
 class ChartType(str, Enum):
     """Chart visualization types."""
-    LineChart = "LineChart"
-    XYGraph = "XYGraph"
-    BarChart = "BarChart"
-    Histogram = "Histogram"
-    ScatterPlot = "ScatterPlot"
+    LINE = "Line"
+    LINE_LOG_XY = "LineLogXY"
+    LINE_LOG_X = "LineLogX"
+    LINE_LOG_Y = "LineLogY"
 
 
 class CompOp(str, Enum):

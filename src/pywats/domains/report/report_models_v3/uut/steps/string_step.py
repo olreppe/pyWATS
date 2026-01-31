@@ -261,6 +261,18 @@ class MultiStringStep(Step):
         self.measurements.append(measurement)
         return measurement
     
+    def check_for_duplicates(self, name: str) -> str:
+        """
+        Public method for checking duplicate measurement names (V1 compatibility).
+        
+        Args:
+            name: Measurement name to check
+            
+        Returns:
+            Unique name (original or modified with suffix)
+        """
+        return self._check_for_duplicates(name)
+    
     def _check_for_duplicates(self, name: str) -> str:
         """
         Check for duplicate measurement names and generate unique name if needed.

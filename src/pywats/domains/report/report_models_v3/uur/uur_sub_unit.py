@@ -120,6 +120,7 @@ class UURSubUnit(SubUnit):
         *,
         comment: Optional[str] = None,
         com_ref: Optional[str] = None,
+        component_ref: Optional[str] = None,  # V1 compatibility alias
         func_block: Optional[str] = None,
         ref_step_id: Optional[int] = None,
         ref_step_name: Optional[str] = None,
@@ -136,6 +137,7 @@ class UURSubUnit(SubUnit):
             code: Failure code
             comment: Optional comment
             com_ref: Component reference (e.g., 'C12')
+            component_ref: Alias for com_ref (V1 compatibility)
             func_block: Functional block
             ref_step_id: ID of UUT step that found this
             ref_step_name: Name of UUT step that found this
@@ -147,6 +149,10 @@ class UURSubUnit(SubUnit):
         Returns:
             The created UURFailure.
         """
+        # V1 compatibility: component_ref is an alias for com_ref
+        if component_ref is not None and com_ref is None:
+            com_ref = component_ref
+        
         failure = UURFailure(
             category=category,
             code=code,

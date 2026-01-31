@@ -86,6 +86,21 @@ class StepList(List[StepT]):
             if isinstance(item, Step):
                 item.parent = value
     
+    def set_parent(self, parent: "SequenceCall") -> None:
+        """
+        Set the parent for this list and all items in it (V1 compatibility).
+        
+        This method explicitly sets the parent reference for the list itself
+        and injects it into all child steps.
+        
+        Args:
+            parent: The parent SequenceCall to assign
+        """
+        self._parent = parent
+        for item in self:
+            if hasattr(item, "parent"):
+                item.parent = parent
+    
     def _inject_parent(self, item: StepT) -> StepT:
         """Inject parent reference into a step if parent is set."""
         if self._parent is not None and isinstance(item, Step):
