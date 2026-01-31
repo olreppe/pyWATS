@@ -10,7 +10,16 @@ from pywats.shared.enums import CompOp
 
 class NumericMeasurement(LimitMeasurement):
     value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)
-    unit: Optional[str] = Field(None, description="The units of the measurement.")
+    unit: str = Field(default="NOT SET", description="The units of the measurement.")
+    
+    @model_validator(mode='before')
+    @classmethod
+    def set_default_unit(cls, data):
+        """If unit is None or missing, default to 'NOT SET'."""
+        if isinstance(data, dict):
+            if data.get('unit') is None:
+                data['unit'] = 'NOT SET'
+        return data
  
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization
@@ -24,7 +33,16 @@ class NumericMeasurement(LimitMeasurement):
 class MultiNumericMeasurement(LimitMeasurement):
     name: str = Field(..., description="The name of the measurement - required for MultiStepTypes")
     value: float = Field(..., description="The measured value as float.", allow_inf_nan=True)
-    unit: Optional[str] = Field(None, description="The units of the measurement.")
+    unit: str = Field(default="NOT SET", description="The units of the measurement.")
+    
+    @model_validator(mode='before')
+    @classmethod
+    def set_default_unit(cls, data):
+        """If unit is None or missing, default to 'NOT SET'."""
+        if isinstance(data, dict):
+            if data.get('unit') is None:
+                data['unit'] = 'NOT SET'
+        return data
     
     model_config = {
         "populate_by_name": True,          # Use alias for serializatio / deserialization

@@ -8,7 +8,7 @@ Based on C# UURReport specification - handles dual process code architecture
 from typing import Optional, Any
 from datetime import datetime
 from uuid import UUID
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from ..report_info import ReportInfo
 
@@ -21,36 +21,52 @@ class UURInfo(ReportInfo):
     """
     
     # Dual process codes (key architectural feature)
-    repair_process_code: Optional[int] = Field(default=None, validation_alias="repairProcessCode", serialization_alias="repairProcessCode")
-    """The repair process code (top-level WATSReport.Process) - what kind of repair operation this is"""
+    # Note: The fields in the UUR object represent the TEST OPERATION that was running
+    # when the failure occurred. The REPAIR operation code is at the report top level.
+    test_operation_code: Optional[int] = Field(
+        default=None, 
+        validation_alias="testOperationCode",
+        serialization_alias="testOperationCode",
+        description="Test operation code that was running when failure occurred"
+    )
     
-    repair_process_name: Optional[str] = Field(default=None, validation_alias="repairProcessName", serialization_alias="repairProcessName")
-    """The repair process name"""
+    test_operation_name: Optional[str] = Field(
+        default=None,
+        validation_alias="testOperationName",
+        serialization_alias="testOperationName",
+        description="Test operation name that was running when failure occurred"
+    )
     
-    test_operation_code: Optional[int] = Field(default=None, validation_alias="testOperationCode", serialization_alias="testOperationCode")
-    """The test operation code (UUR_type.Process) - original test operation that was being performed"""
-    
-    test_operation_name: Optional[str] = Field(default=None, validation_alias="testOperationName", serialization_alias="testOperationName")
-    """The test operation name"""
-    
-    test_operation_guid: Optional[UUID] = Field(default=None, validation_alias="testOperationGuid", serialization_alias="testOperationGuid")
-    """The test operation GUID"""
+    test_operation_guid: Optional[UUID] = Field(
+        default=None,
+        validation_alias="testOperationGuid",
+        serialization_alias="testOperationGuid",
+        description="Test operation GUID"
+    )
     
     # API-required fields (server requires processCode in uur object)
-    # Note: exclude=False ensures these fields are ALWAYS serialized (even if None)
+    # These are ALIASES to test_operation_code/name for backward compatibility
     process_code: Optional[int] = Field(
         default=None, 
         validation_alias="processCode", 
         serialization_alias="processCode",
-        exclude=False  # Always include in serialization
+        exclude=False,  # Always include in serialization
+        description="Alias for test_operation_code (required by API in uur object)"
     )
-    """Process code - required by API in uur object"""
     
-    process_code_format: Optional[str] = Field(default=None, validation_alias="processCodeFormat", serialization_alias="processCodeFormat")
-    """Process code format"""
+    process_code_format: Optional[str] = Field(
+        default=None,
+        validation_alias="processCodeFormat",
+        serialization_alias="processCodeFormat",
+        description="Process code format"
+    )
     
-    process_name: Optional[str] = Field(default=None, validation_alias="processName", serialization_alias="processName")
-    """Process name"""
+    process_name: Optional[str] = Field(
+        default=None,
+        validation_alias="processName",
+        serialization_alias="processName",
+        description="Alias for test_operation_name (required by API in uur object)"
+    )
     
     # UUR-specific properties
     ref_uut: Optional[UUID] = Field(
@@ -102,6 +118,30 @@ class UURInfo(ReportInfo):
     
     children: Optional[list[UUID]] = Field(default=None)
     """Child UUR GUIDs (for hierarchical repairs)"""
+    
+    @model_validator(mode='after')
+    def sync_process_codes(self) -> 'UURInfo':
+        """
+        Sync test_operation_code/name with process_code/name.
+        
+        The API expects processCode/processName in the uur object to contain
+        the test operation that was running. We store this as test_operation_*
+        but serialize as process*.
+        """
+        # If test_operation_code is set but process_code isn't, copy it
+        if self.test_operation_code is not None and self.process_code is None:
+            self.process_code = self.test_operation_code
+        # If process_code is set but test_operation_code isn't, copy it
+        elif self.process_code is not None and self.test_operation_code is None:
+            self.test_operation_code = self.process_code
+        
+        # Same for names
+        if self.test_operation_name is not None and self.process_name is None:
+            self.process_name = self.test_operation_name
+        elif self.process_name is not None and self.test_operation_name is None:
+            self.test_operation_name = self.process_name
+        
+        return self
     
     def __init__(self, **data) -> None:
         """Initialize UURInfo with dual process code mapping"""

@@ -3,7 +3,7 @@
 
 # Type/lib
 from typing import Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from ...wats_base import WATSBase
 
@@ -11,8 +11,17 @@ from ...wats_base import WATSBase
 from ..step import Step
 
 class MessagePopupInfo(WATSBase):
-    response: Optional[str] = Field(default=" ", max_length=100, min_length=1, description="The popup message.")
+    response: str = Field(default="NOT SET", max_length=100, description="The popup message.")
     button: Optional[int] = Field(default=None, description="The code of the button that was pressed.")
+    
+    @model_validator(mode='before')
+    @classmethod
+    def set_default_response(cls, data):
+        """If response is None or missing, default to 'NOT SET'."""
+        if isinstance(data, dict):
+            if data.get('response') is None:
+                data['response'] = 'NOT SET'
+        return data
 
 # Example
 

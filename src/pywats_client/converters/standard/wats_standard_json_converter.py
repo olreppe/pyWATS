@@ -19,12 +19,16 @@ Step types:
 - ET_PFT: Pass/Fail Test
 - ET_SVT: String Value Test
 - ET_A: Action Step
+
+Returns:
+    UUTReport or UURReport models - NOT dicts. These are proper Pydantic models
+    that can be submitted directly to the WATS API.
 """
 
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pywats_client.converters.file_converter import FileConverter
 from pywats_client.converters.context import ConverterContext
@@ -36,6 +40,9 @@ from pywats_client.converters.models import (
     ArgumentDefinition,
     ArgumentType,
 )
+
+# Import report models for proper typed returns
+from pywats.domains.report.report_models import UUTReport, UURReport
 
 
 # Step type mapping from WSJF to WATS internal format
@@ -261,8 +268,23 @@ class WATSStandardJsonConverter(FileConverter):
                 "stepResults": []
             }
         
+        # Parse dict into proper report model
+        # Check if this is a UUR (repair) report or UUT (test) report
+        report_type = wsjf_data.get('type', 'T')
+        is_uur = report_type in ('U', 'UUR', 'R', 'Repair')
+        
+        try:
+            if is_uur:
+                validated_report: Union[UUTReport, UURReport] = UURReport.model_validate(report)
+            else:
+                validated_report = UUTReport.model_validate(report)
+        except Exception as e:
+            return ConverterResult.failed_result(
+                error=f"Failed to validate report model: {e}"
+            )
+        
         return ConverterResult.success_result(
-            report=report,
+            report=validated_report,
             post_action=PostProcessAction.MOVE,
         )
     

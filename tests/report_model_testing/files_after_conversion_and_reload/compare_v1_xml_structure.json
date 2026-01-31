@@ -1,0 +1,1950 @@
+{
+  "type": "Test",
+  "serialNumber": "FATTest-325_v1_xml_compare",
+  "partNumber": "FATPartNo",
+  "partRevision": "Rev1",
+  "machineName": "OLALAPTOP",
+  "location": "Drammen, Norway",
+  "purpose": "Testing",
+  "result": "F",
+  "start": "2026-01-30T21:47:58.437709+00:00",
+  "operator": "FATOperator",
+  "batchSerialNumber": "BatchSN",
+  "execTime": 123.67,
+  "fixtureId": "FAT FixtureId",
+  "errorCode": 999,
+  "errorMessage": "Error code 999",
+  "comment": "FAT Comment - can be 500 long",
+  "processCode": "10",
+  "processName": "SW Debug",
+  "miscInfos": [
+    {
+      "name": "MiscInfoNumeric",
+      "value": "100"
+    },
+    {
+      "name": "MiscInfoString",
+      "value": "Hello"
+    },
+    {
+      "name": "InvalidXML",
+      "value": "This is a test with < and >"
+    }
+  ],
+  "uutParts": [
+    {
+      "partType": "PCBA",
+      "partNumber": "SubPartNo1",
+      "serialNumber": "SubPartSN1",
+      "revision": "Rev2"
+    },
+    {
+      "partType": "MODULE",
+      "partNumber": "SubPartNo2",
+      "serialNumber": "SubPartSN2",
+      "revision": "Rev3"
+    }
+  ],
+  "root": {
+    "type": "SEQ",
+    "name": "Root",
+    "status": "Failed",
+    "stepResults": [
+      {
+        "name": "MainSequence Callback",
+        "status": "Failed",
+        "totTime": 0.0,
+        "type": "SEQ",
+        "stepResults": [
+          {
+            "name": "Numeric tests",
+            "status": "Failed",
+            "totTime": 0.0,
+            "type": "SEQ",
+            "stepResults": [
+              {
+                "name": "SingleLog",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 10.0,
+                "compOp": "LOG",
+                "unit": "A"
+              },
+              {
+                "name": "SingleEQPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "EQ",
+                "lowLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleEQFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "EQ",
+                "lowLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGEPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GE",
+                "lowLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGEFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GE",
+                "lowLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGELEPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GELE",
+                "lowLimit": 500.0,
+                "highLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGELEFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GELE",
+                "lowLimit": 501.0,
+                "highLimit": 502.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGELTPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GELT",
+                "lowLimit": 500.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGELTFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GELT",
+                "lowLimit": 499.0,
+                "highLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGTPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GT",
+                "lowLimit": 499.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGTFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GT",
+                "lowLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGTLEPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GTLE",
+                "lowLimit": 499.0,
+                "highLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGTLEFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GTLE",
+                "lowLimit": 500.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGTLTPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GTLT",
+                "lowLimit": 499.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleGTLTFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "GTLT",
+                "lowLimit": 499.0,
+                "highLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLEPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LE",
+                "lowLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLEFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LE",
+                "lowLimit": 499.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLEGEPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LEGE",
+                "lowLimit": 500.0,
+                "highLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLEGEFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LEGE",
+                "lowLimit": 499.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLEGTPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LEGT",
+                "lowLimit": 500.0,
+                "highLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLEGTFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LEGT",
+                "lowLimit": 499.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLTPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LT",
+                "lowLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLTFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LT",
+                "lowLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLTGEPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 498.0,
+                "compOp": "LTGE",
+                "lowLimit": 499.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLTGEFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LTGE",
+                "lowLimit": 500.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLTGTPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 502.0,
+                "compOp": "LTGT",
+                "lowLimit": 499.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleLTGTFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "LTGT",
+                "lowLimit": 500.0,
+                "highLimit": 501.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleNEPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "NE",
+                "lowLimit": 499.0,
+                "unit": "V"
+              },
+              {
+                "name": "SingleNEFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "numericValue": 500.0,
+                "compOp": "NE",
+                "lowLimit": 500.0,
+                "unit": "V"
+              },
+              {
+                "name": "Multiple Numeric Step",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "NT",
+                "measurements": [
+                  {
+                    "status": "Passed",
+                    "numericValue": 10.0,
+                    "index": "MultiLog",
+                    "compOp": "LOG",
+                    "unit": "A"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiEQPass",
+                    "compOp": "EQ",
+                    "lowLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiEQFail",
+                    "compOp": "EQ",
+                    "lowLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiGEPass",
+                    "compOp": "GE",
+                    "lowLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiGEFail",
+                    "compOp": "GE",
+                    "lowLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiGELEPass",
+                    "compOp": "GELE",
+                    "lowLimit": 500.0,
+                    "highLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiGELEFail",
+                    "compOp": "GELE",
+                    "lowLimit": 501.0,
+                    "highLimit": 502.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiGELTPass",
+                    "compOp": "GELT",
+                    "lowLimit": 500.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiGELTFail",
+                    "compOp": "GELT",
+                    "lowLimit": 499.0,
+                    "highLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiGTPass",
+                    "compOp": "GT",
+                    "lowLimit": 499.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiGTFail",
+                    "compOp": "GT",
+                    "lowLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiGTLEPass",
+                    "compOp": "GTLE",
+                    "lowLimit": 499.0,
+                    "highLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiGTLEFail",
+                    "compOp": "GTLE",
+                    "lowLimit": 500.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiGTLTPass",
+                    "compOp": "GTLT",
+                    "lowLimit": 499.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiGTLTFail",
+                    "compOp": "GTLT",
+                    "lowLimit": 499.0,
+                    "highLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiLEPass",
+                    "compOp": "LE",
+                    "lowLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiLEFail",
+                    "compOp": "LE",
+                    "lowLimit": 499.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiLEGEPass",
+                    "compOp": "LEGE",
+                    "lowLimit": 500.0,
+                    "highLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiLEGEFail",
+                    "compOp": "LEGE",
+                    "lowLimit": 499.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiLEGTPass",
+                    "compOp": "LEGT",
+                    "lowLimit": 500.0,
+                    "highLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiLEGTFail",
+                    "compOp": "LEGT",
+                    "lowLimit": 499.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiLTPass",
+                    "compOp": "LT",
+                    "lowLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiLTFail",
+                    "compOp": "LT",
+                    "lowLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 498.0,
+                    "index": "MultiLTGEPass",
+                    "compOp": "LTGE",
+                    "lowLimit": 499.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiLTGEFail",
+                    "compOp": "LTGE",
+                    "lowLimit": 500.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 502.0,
+                    "index": "MultiLTGTPass",
+                    "compOp": "LTGT",
+                    "lowLimit": 499.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiLTGTFail",
+                    "compOp": "LTGT",
+                    "lowLimit": 500.0,
+                    "highLimit": 501.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiNEPass",
+                    "compOp": "NE",
+                    "lowLimit": 499.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Failed",
+                    "numericValue": 500.0,
+                    "index": "MultiNEFail",
+                    "compOp": "NE",
+                    "lowLimit": 500.0,
+                    "unit": "V"
+                  },
+                  {
+                    "status": "Passed",
+                    "numericValue": 500.0,
+                    "index": "MultiLOGPass",
+                    "compOp": "LOG",
+                    "unit": "V"
+                  }
+                ],
+                "numericValue": 10.0,
+                "compOp": "LOG",
+                "unit": "A"
+              }
+            ]
+          },
+          {
+            "name": "Pass/Fail tests",
+            "status": "Failed",
+            "totTime": 0.0,
+            "type": "SEQ",
+            "stepResults": [
+              {
+                "name": "SinglePass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "PF",
+                "passFailStatus": true
+              },
+              {
+                "name": "SingleFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "PF",
+                "passFailStatus": false
+              },
+              {
+                "name": "SinglePassDone",
+                "status": "Done",
+                "totTime": 0.0,
+                "type": "PF",
+                "passFailStatus": true
+              },
+              {
+                "name": "Multiple tests",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "GEN",
+                "stepType": "Action"
+              }
+            ]
+          },
+          {
+            "name": "StringValue tests",
+            "status": "Failed",
+            "totTime": 0.0,
+            "type": "SEQ",
+            "stepResults": [
+              {
+                "name": "Single",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "ST",
+                "stringValue": "",
+                "compOp": "LOG"
+              },
+              {
+                "name": "SingleCasePass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "ST",
+                "stringValue": "",
+                "stringLimit": "CaseSensitive",
+                "compOp": "CASESENSIT"
+              },
+              {
+                "name": "SingleCaseFail",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "ST",
+                "stringValue": "",
+                "stringLimit": "CaseSensitive",
+                "compOp": "CASESENSIT"
+              },
+              {
+                "name": "SingleInsiensPass",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "ST",
+                "stringValue": "",
+                "stringLimit": "CaseSensitive",
+                "compOp": "IGNORECASE"
+              },
+              {
+                "name": "Multiple tests",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "GEN",
+                "stepType": "Action"
+              }
+            ]
+          },
+          {
+            "name": "Step with ReportText/ErrorText",
+            "status": "Passed",
+            "totTime": 0.0,
+            "reportText": "The quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog",
+            "type": "ST",
+            "stringValue": "",
+            "compOp": "LOG"
+          },
+          {
+            "name": "Graphs",
+            "status": "Failed",
+            "totTime": 0.0,
+            "type": "SEQ",
+            "stepResults": [
+              {
+                "name": "Fibionacci",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "GEN",
+                "stepType": "Action"
+              },
+              {
+                "name": "Current from burn-in test",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "GEN",
+                "stepType": "Action"
+              }
+            ]
+          },
+          {
+            "name": "Loops",
+            "status": "Failed",
+            "totTime": 0.0,
+            "type": "SEQ",
+            "stepResults": [
+              {
+                "name": "SequenceCallLoopSequence",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "SequenceCallLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "SEQ",
+                    "stepResults": [
+                      {
+                        "name": "NumericStep1",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 301.0,
+                        "compOp": "GE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep2",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 301.0,
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep3",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 300.0,
+                        "compOp": "EQ",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "StringStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "ST",
+                        "stringValue": "",
+                        "stringLimit": "testvalue",
+                        "compOp": "IGNORECASE"
+                      },
+                      {
+                        "name": "PassFailStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "PF",
+                        "passFailStatus": true
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SequenceCallLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "SEQ",
+                    "stepResults": [
+                      {
+                        "name": "NumericStep1",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 301.0,
+                        "compOp": "GE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep2",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 301.0,
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep3",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 300.0,
+                        "compOp": "EQ",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "StringStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "ST",
+                        "stringValue": "",
+                        "stringLimit": "testvalue",
+                        "compOp": "IGNORECASE"
+                      },
+                      {
+                        "name": "PassFailStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "PF",
+                        "passFailStatus": true
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SequenceCallLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "SEQ",
+                    "stepResults": [
+                      {
+                        "name": "NumericStep1",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 301.0,
+                        "compOp": "GE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "StringStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "ST",
+                        "stringValue": "",
+                        "stringLimit": "testvalue",
+                        "compOp": "IGNORECASE"
+                      },
+                      {
+                        "name": "PassFailStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "PF",
+                        "passFailStatus": true
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SequenceCallLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "SEQ",
+                    "stepResults": [
+                      {
+                        "name": "NumericStep2",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 301.0,
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep3",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 300.0,
+                        "compOp": "EQ",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "StringStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "ST",
+                        "stringValue": "",
+                        "stringLimit": "testvalue",
+                        "compOp": "IGNORECASE"
+                      },
+                      {
+                        "name": "PassFailStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "PF",
+                        "passFailStatus": true
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SequenceCallLoop2",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "SEQ",
+                    "stepResults": [
+                      {
+                        "name": "NumericStep1",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 301.0,
+                        "compOp": "GE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep2",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 301.0,
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep3",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 300.0,
+                        "compOp": "EQ",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "StringStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "ST",
+                        "stringValue": "",
+                        "stringLimit": "testvalue1",
+                        "compOp": "IGNORECASE"
+                      },
+                      {
+                        "name": "PassFailStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "PF",
+                        "passFailStatus": true
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SequenceCallLoop2",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "SEQ",
+                    "stepResults": [
+                      {
+                        "name": "NumericStep1",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 401.0,
+                        "compOp": "GE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep2",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 401.0,
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep3",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 400.0,
+                        "compOp": "EQ",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "StringStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "ST",
+                        "stringValue": "",
+                        "stringLimit": "testvalue2",
+                        "compOp": "IGNORECASE"
+                      },
+                      {
+                        "name": "PassFailStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "PF",
+                        "passFailStatus": true
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SequenceCallLoop2",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "SEQ",
+                    "stepResults": [
+                      {
+                        "name": "NumericStep1",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 501.0,
+                        "compOp": "GE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep2",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 501.0,
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep3",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 500.0,
+                        "compOp": "EQ",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "StringStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "ST",
+                        "stringValue": "",
+                        "stringLimit": "testvalue3",
+                        "compOp": "IGNORECASE"
+                      },
+                      {
+                        "name": "PassFailStep",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "PF",
+                        "passFailStatus": true
+                      }
+                    ]
+                  },
+                  {
+                    "name": "SequenceCallLoop2",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "SEQ",
+                    "stepResults": [
+                      {
+                        "name": "NumericStep1",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 601.0,
+                        "compOp": "GE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep2",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 601.0,
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "NumericStep3",
+                        "status": "Failed",
+                        "totTime": 0.0,
+                        "type": "NT",
+                        "numericValue": 600.0,
+                        "compOp": "EQ",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "name": "StringStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "ST",
+                        "stringValue": "",
+                        "stringLimit": "testvalue4",
+                        "compOp": "IGNORECASE"
+                      },
+                      {
+                        "name": "PassFailStep",
+                        "status": "Passed",
+                        "totTime": 0.0,
+                        "type": "PF",
+                        "passFailStatus": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "NumericLimitLoopSequence",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "NumericLimitStepLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 301.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 298.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitStepLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 301.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "name": "MultiNumericLimitLoopSequence",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "NumericLimitMultiStepLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "measurements": [
+                      {
+                        "status": "Failed",
+                        "numericValue": 301.0,
+                        "index": "NumTest1",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "status": "Passed",
+                        "numericValue": 298.0,
+                        "index": "NumTest2",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      }
+                    ],
+                    "numericValue": 301.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultiStepLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "measurements": [
+                      {
+                        "status": "Failed",
+                        "numericValue": 301.0,
+                        "index": "NumTest1",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "status": "Passed",
+                        "numericValue": 298.0,
+                        "index": "NumTest2",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      }
+                    ],
+                    "numericValue": 301.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultiStepLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "measurements": [
+                      {
+                        "status": "Failed",
+                        "numericValue": 302.0,
+                        "index": "NumTest1",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "status": "Passed",
+                        "numericValue": 297.0,
+                        "index": "NumTest2",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      }
+                    ],
+                    "numericValue": 302.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "name": "MultiAndSingleNumericLimitLoopSequence",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "NumericLimitMultiAndSingleStepLoop1",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "NT"
+                  },
+                  {
+                    "name": "NumericLimitMultiAndSingleStepLoop1",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 302.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultiAndSingleStepLoop1",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "measurements": [
+                      {
+                        "status": "Failed",
+                        "numericValue": 301.0,
+                        "index": "NumTest",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "status": "Passed",
+                        "numericValue": 298.0,
+                        "index": "NumTest1",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      }
+                    ],
+                    "numericValue": 301.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultiAndSingleStepLoop1",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 299.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultiAndSingleStepLoop2",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "NT"
+                  },
+                  {
+                    "name": "NumericLimitMultiAndSingleStepLoop2",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "measurements": [
+                      {
+                        "status": "Failed",
+                        "numericValue": 301.0,
+                        "index": "NumTest",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "status": "Passed",
+                        "numericValue": 298.0,
+                        "index": "NumTest1",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      }
+                    ],
+                    "numericValue": 301.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultiAndSingleStepLoop2",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 302.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultiAndSingleStepLoop2",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "measurements": [
+                      {
+                        "status": "Failed",
+                        "numericValue": 303.0,
+                        "index": "NumTest",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      },
+                      {
+                        "status": "Passed",
+                        "numericValue": 297.0,
+                        "index": "NumTest1",
+                        "compOp": "LE",
+                        "lowLimit": 300.0
+                      }
+                    ],
+                    "numericValue": 303.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "name": "StringValueStepLoopSequence",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "StringValueStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "ST",
+                    "stringValue": "",
+                    "stringLimit": "testvalue1",
+                    "compOp": "IGNORECASE"
+                  },
+                  {
+                    "name": "StringValueStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "ST",
+                    "stringValue": "",
+                    "stringLimit": "testvalue2",
+                    "compOp": "IGNORECASE"
+                  },
+                  {
+                    "name": "StringValueStepLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "ST",
+                    "stringValue": "",
+                    "stringLimit": "testvalue3",
+                    "compOp": "CASESENSIT"
+                  }
+                ]
+              },
+              {
+                "name": "PassFailStepLoopSequence",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "PassFailLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "PF",
+                    "passFailStatus": false
+                  },
+                  {
+                    "name": "PassFailLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "PF",
+                    "passFailStatus": true
+                  },
+                  {
+                    "name": "PassFailLoop",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "PF",
+                    "passFailStatus": false
+                  }
+                ]
+              },
+              {
+                "name": "GenericStepLoopSequence",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "GenericStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "GenericStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "GenericStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "GenericStepLoop2",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "GenericStepLoop2",
+                    "status": "Passed",
+                    "totTime": 1.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "GenericStepLoop2",
+                    "status": "Passed",
+                    "totTime": 2.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  }
+                ]
+              },
+              {
+                "name": "MessagePopupStepLoopSequence",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "MessagePopupStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "MessagePopupStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "MessagePopupStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  }
+                ]
+              },
+              {
+                "name": "CallExeStepLoopSequence",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "CallExeStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "CallExeStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "CallExeStepLoop",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  }
+                ]
+              },
+              {
+                "name": "NumericLimitMultipleLoopsSequence",
+                "status": "Failed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "NumericLimitMultipleLoops1",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 302.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultipleLoops1",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 301.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultipleLoops1",
+                    "status": "Failed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 302.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultipleLoops2",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 299.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultipleLoops2",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 298.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "name": "NumericLimitMultipleLoops2",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "NT",
+                    "numericValue": 299.0,
+                    "compOp": "LE",
+                    "lowLimit": 300.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Misc Features",
+            "status": "Passed",
+            "totTime": 0.0,
+            "type": "SEQ",
+            "stepResults": [
+              {
+                "name": "Generic Steps",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "Label Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Action Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Goto Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "FTPFiles Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "If Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "ElseIf Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Else Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "End Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "For Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "ForEach Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Break Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Continue Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "DoWhile Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "While Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Select Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Case Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Lock Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Rendezvous Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Queue Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Notification Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Wait Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "BatchSyncronization Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "AutoSchedule Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "UseAutoScheduledResource Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "ThreadPriority Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Semaphore Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "BatchSpecification Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "OpenDatabase Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "OpenSQLStatement Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "CloseSQLStatement Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "CloseDatabase Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "DataOperation Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "IVIDmm Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "IVIScope Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "IVIFgen Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "IVIPowerSupply Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "Switch Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "IVITools Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "CheckRemoteSystemStatus Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "RunVIAsynchronously Step",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  }
+                ]
+              },
+              {
+                "name": "Misc",
+                "status": "Passed",
+                "totTime": 0.0,
+                "type": "SEQ",
+                "stepResults": [
+                  {
+                    "name": "MessagePopup",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  },
+                  {
+                    "name": "CallExe",
+                    "status": "Passed",
+                    "totTime": 0.0,
+                    "type": "GEN",
+                    "stepType": "Action"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "id": "9b94e079-5bbc-4d2c-a96a-6a0cbd0d5790",
+  "sn": "FATTest-325_v1_xml_compare",
+  "startUTC": "2026-01-30T21:47:58.437709+00:00"
+}

@@ -1,6 +1,8 @@
 from __future__ import annotations
 from abc import abstractmethod
 
+from pydantic import model_validator
+
 from .measurement import BooleanMeasurement
 from .string_step import StringMeasurement
 from ...common_types import *
@@ -79,10 +81,23 @@ class StepList(List[StepType]):
 # ------------------------------------------------------------------------
 # Additional info in sequence call steps
 class SequenceCallInfo(WATSBase):
-    # Fields
-    path: str = Field(default="SW FilePath",max_length=500, min_length=1)
-    file_name: str = Field(default="SW FileName", max_length=200, min_length=1, validation_alias="name", serialization_alias="name")
-    version: str = Field(default="SW Version", max_length=30, min_length=1)
+    # Fields - path, name, and version are required by the server
+    path: str = Field(default="C:/SequenceCall.seq", max_length=500)
+    file_name: str = Field(default="TestSequence.seq", max_length=200, validation_alias="name", serialization_alias="name")
+    version: str = Field(default="1.0.0", max_length=30)
+    
+    @model_validator(mode='before')
+    @classmethod
+    def set_defaults(cls, data):
+        """If required fields are None or missing, use sensible defaults."""
+        if isinstance(data, dict):
+            if data.get('version') is None:
+                data['version'] = '1.0.0'
+            if data.get('path') is None:
+                data['path'] = 'C:/SequenceCall.seq'
+            if data.get('name') is None:
+                data['name'] = 'TestSequence.seq'
+        return data
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------

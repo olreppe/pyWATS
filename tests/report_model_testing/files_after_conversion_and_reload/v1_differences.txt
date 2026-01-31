@@ -1,0 +1,9 @@
+V1 Roundtrip Differences
+========================
+
+Report ID: dc466ce7-0558-45e9-888f-fe10a56e4873
+Total differences: 3
+
+VALUE: subUnits[0].rev: '01     ' vs '01'
+VALUE: subUnits[1].partType: 'VirincoPWR SEC BD FP S 1800/  ' vs 'VirincoPWR SEC BD FP S 1800/'
+VALUE: subUnits[1].rev: '03  ' vs '03'

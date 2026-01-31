@@ -1,0 +1,1350 @@
+{
+  "id": "dc466ce7-0558-45e9-888f-fe10a56e4873",
+  "type": "T",
+  "pn": "4494394418",
+  "sn": "244750022142_v1_roundtrip",
+  "rev": "03",
+  "processCode": 50,
+  "uut": {
+    "user": "te85",
+    "execTime": 148.9191064,
+    "fixtureId": "290473  #84",
+    "testSocketIndex": -1,
+    "errorCode": 0,
+    "batchSN": "19524558858"
+  },
+  "result": "P",
+  "machineName": "WVXM-NGH-Z-998",
+  "location": "Wisconsin, USA",
+  "purpose": "Demo",
+  "start": "2026-01-31T00:55:09.254820Z",
+  "miscInfos": [
+    {
+      "description": "UUT Description",
+      "text": "VirincoPWR MAIN BD FP S 48/1800 HE",
+      "numeric": 0
+    }
+  ],
+  "subUnits": [
+    {
+      "pn": "4494394453",
+      "rev": "01     ",
+      "sn": "241350013440",
+      "partType": "VirincoPWR PRIMARY BD FP S 1.8K ARM"
+    },
+    {
+      "pn": "4494394417",
+      "rev": "03  ",
+      "sn": "241350018912",
+      "partType": "VirincoPWR SEC BD FP S 1800/  "
+    }
+  ],
+  "assets": [],
+  "binaryData": [],
+  "additionalData": [],
+  "root": {
+    "stepType": "WATS_SeqCall",
+    "name": "MainSequence Callback",
+    "group": "M",
+    "status": "P",
+    "id": 1,
+    "errorCode": 0,
+    "start": "2024-04-15T02:49:36.93+00:00",
+    "totTime": 148.9191064,
+    "tsGuid": "ID#:AZur12wMdkuCxIdLZoEPbA",
+    "causedUUTFailure": false,
+    "seqCall": {
+      "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+      "name": "MainSequence Callback",
+      "version": "1.6.0.0"
+    },
+    "steps": [
+      {
+        "stepType": "ET_NLT",
+        "name": "Measure fixture temp",
+        "group": "S",
+        "status": "P",
+        "id": 2,
+        "errorCode": 0,
+        "start": "2024-04-15T02:49:40.082+00:00",
+        "totTime": 0.1135342,
+        "tsGuid": "ID#:fRufchyzcU+j+7AgkcRYnD",
+        "causedUUTFailure": false,
+        "numericMeas": [
+          {
+            "status": "P",
+            "value": 30.1822794904241,
+            "compOp": "GELE",
+            "highLimit": 45.0,
+            "lowLimit": 10.0,
+            "unit": "degC"
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "Slow startup",
+        "group": "M",
+        "status": "P",
+        "id": 3,
+        "errorCode": 0,
+        "start": "2024-04-15T02:49:41.347+00:00",
+        "totTime": 22.289174,
+        "tsGuid": "ID#:g6dPGNJ15UOL1izcKUVyiC",
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+          "name": "Slow startup",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure Boost Voltage",
+            "group": "S",
+            "status": "P",
+            "id": 4,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:41.38+00:00",
+            "totTime": 0.2132184,
+            "tsGuid": "ID#:Ogudd5mn0k6O7APi0duoiD",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 0.162670934501666,
+                "compOp": "LT",
+                "lowLimit": 5.0,
+                "unit": "Vdc"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_A",
+            "name": "Turn Discharge relay ON",
+            "group": "S",
+            "status": "D",
+            "id": 5,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:41.595+00:00",
+            "totTime": 0.0057969,
+            "tsGuid": "ID#:N5bgTcYG70+OIEowJDui0B",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "ET_A",
+            "name": "Switch DC MultiPower #1/2 to T101",
+            "group": "S",
+            "status": "D",
+            "id": 6,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:41.602+00:00",
+            "totTime": 0.0069307,
+            "tsGuid": "ID#:wBDSrfj6dUyO+V1ZGW1+3B",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "NI_Wait",
+            "name": "Wait 1 sec",
+            "group": "S",
+            "status": "D",
+            "id": 7,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:41.61+00:00",
+            "totTime": 1.0004579,
+            "tsGuid": "ID#:4zRUxR3UfE+WNyLPQ0tstB",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Apply 60V on boost",
+            "group": "M",
+            "status": "P",
+            "id": 8,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:42.622+00:00",
+            "totTime": 0.233359,
+            "tsGuid": "ID#:+T0dNBn23EqnYlQrgpsFAA",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 59.92329,
+                "compOp": "LOG",
+                "unit": "V"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Apply 120V on boost",
+            "group": "M",
+            "status": "P",
+            "id": 9,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:42.857+00:00",
+            "totTime": 0.2322246,
+            "tsGuid": "ID#:+034JJ9kC0+BzYM3wUAbYB",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 59.93712,
+                "compOp": "LOG",
+                "unit": "V"
+              }
+            ]
+          },
+          {
+            "stepType": "NI_Wait",
+            "name": "Wait 4 sec",
+            "group": "M",
+            "status": "D",
+            "id": 10,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:43.096+00:00",
+            "totTime": 4.0004403,
+            "tsGuid": "ID#:e0eOeXGN40u0xFMOdyKozB",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure T101 voltage",
+            "group": "M",
+            "status": "P",
+            "id": 11,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:47.1+00:00",
+            "totTime": 0.2131143,
+            "tsGuid": "ID#:ST++D07H+k+YK/0vjFfssA",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 124.832855740455,
+                "compOp": "GELE",
+                "highLimit": 135.0,
+                "lowLimit": 117.0,
+                "unit": "V"
+              }
+            ]
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "AUX Voltages",
+            "group": "M",
+            "status": "P",
+            "id": 12,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:47.316+00:00",
+            "totTime": 1.1364464,
+            "tsGuid": "ID#:sf71uhbPQ0OyYVqevuRZUB",
+            "causedUUTFailure": false,
+            "seqCall": {
+              "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+              "name": "AUX Voltages",
+              "version": "1.0.0"
+            },
+            "steps": [
+              {
+                "stepType": "ET_NLT",
+                "name": "Measure Boost current",
+                "group": "M",
+                "status": "P",
+                "id": 13,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:47.335+00:00",
+                "totTime": 0.0268739,
+                "tsGuid": "ID#:GwmivBnpo0imuy0prKU0iD",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 22.96172,
+                    "compOp": "GELE",
+                    "highLimit": 30.0,
+                    "lowLimit": 15.0,
+                    "unit": "mA"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Measure +12VSfeed",
+                "group": "M",
+                "status": "P",
+                "id": 14,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:47.367+00:00",
+                "totTime": 0.2137787,
+                "tsGuid": "ID#:dW4ae3PkQkySP+ddN1z/aD",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 11.8581755762613,
+                    "compOp": "GELE",
+                    "highLimit": 12.4,
+                    "lowLimit": 11.0,
+                    "unit": "Vdc"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Measure +5VSfeed",
+                "group": "M",
+                "status": "P",
+                "id": 15,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:47.583+00:00",
+                "totTime": 0.2151355,
+                "tsGuid": "ID#:deBfDf2zp0SA7uJJbDm/gA",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 5.86601142822866,
+                    "compOp": "GELE",
+                    "highLimit": 6.3,
+                    "lowLimit": 5.5,
+                    "unit": "Vdc"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Measure +12VP",
+                "group": "M",
+                "status": "P",
+                "id": 16,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:47.804+00:00",
+                "totTime": 0.2120704,
+                "tsGuid": "ID#:vlqJxGaFeUGnk3m/CLSGLB",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 11.7320258907707,
+                    "compOp": "GELE",
+                    "highLimit": 12.0,
+                    "lowLimit": 11.25,
+                    "unit": "Vdc"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Measure +7.5VP",
+                "group": "M",
+                "status": "P",
+                "id": 17,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:48.018+00:00",
+                "totTime": 0.2140933,
+                "tsGuid": "ID#:QD4YrFIxO0elvPmP9ccwvA",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 3.94351650327852,
+                    "compOp": "GELE",
+                    "highLimit": 5.3,
+                    "lowLimit": 3.8,
+                    "unit": "Vdc"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Measure +3.3VP",
+                "group": "M",
+                "status": "P",
+                "id": 18,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:48.235+00:00",
+                "totTime": 0.2134931,
+                "tsGuid": "ID#:BFi63HoCBEKR9mOSnwyVLA",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 3.29481697438044,
+                    "compOp": "GELE",
+                    "highLimit": 3.4,
+                    "lowLimit": 3.2,
+                    "unit": "Vdc"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "Check communication",
+            "group": "M",
+            "status": "P",
+            "id": 19,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:48.469+00:00",
+            "totTime": 1.9592341,
+            "tsGuid": "ID#:wBy3YEEYbUq44UYGTJ7UMA",
+            "causedUUTFailure": false,
+            "seqCall": {
+              "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+              "name": "Check communication & Internal voltages",
+              "version": "1.0.0"
+            },
+            "steps": [
+              {
+                "stepType": "Label",
+                "name": "Get Child serial number from MES",
+                "group": "S",
+                "status": "D",
+                "id": 20,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:48.514+00:00",
+                "totTime": 0.0001855,
+                "tsGuid": "ID#:KU7h71dDqEKfEg7DoNFyoB",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "PassFailTest",
+                "name": "Get subpart Part Number",
+                "group": "S",
+                "status": "P",
+                "id": 21,
+                "errorCode": 0,
+                "reportText": "5505605582",
+                "start": "2024-04-15T02:49:48.668+00:00",
+                "totTime": 0.0003811,
+                "tsGuid": "ID#:M4JC254yr0uv3bvOveXrKD",
+                "causedUUTFailure": false,
+                "booleanMeas": [
+                  {
+                    "name": null,
+                    "status": "P"
+                  }
+                ]
+              },
+              {
+                "stepType": "PassFailTest",
+                "name": "Get UUT subpart Serial Number (Sec)",
+                "group": "S",
+                "status": "P",
+                "id": 22,
+                "errorCode": 0,
+                "reportText": "241350018912",
+                "start": "2024-04-15T02:49:48.69+00:00",
+                "totTime": 0.0003419,
+                "tsGuid": "ID#:p3MC5aa340GDhnyB1ObcwB",
+                "causedUUTFailure": false,
+                "booleanMeas": [
+                  {
+                    "name": null,
+                    "status": "P"
+                  }
+                ]
+              },
+              {
+                "stepType": "PassFailTest",
+                "name": "Get subpart Part Number",
+                "group": "S",
+                "status": "P",
+                "id": 23,
+                "errorCode": 0,
+                "reportText": "5505605546",
+                "start": "2024-04-15T02:49:48.727+00:00",
+                "totTime": 0.0003271,
+                "tsGuid": "ID#:M4JC254yr0uv3bvOveXrKD",
+                "causedUUTFailure": false,
+                "booleanMeas": [
+                  {
+                    "name": null,
+                    "status": "P"
+                  }
+                ]
+              },
+              {
+                "stepType": "PassFailTest",
+                "name": "Get UUT subpart Serial Number (Prim)",
+                "group": "S",
+                "status": "P",
+                "id": 24,
+                "errorCode": 0,
+                "reportText": "241350013440",
+                "start": "2024-04-15T02:49:48.735+00:00",
+                "totTime": 0.0003459,
+                "tsGuid": "ID#:2IlVSp3BZUmNcsFBqeSV2D",
+                "causedUUTFailure": false,
+                "booleanMeas": [
+                  {
+                    "name": null,
+                    "status": "P"
+                  }
+                ]
+              },
+              {
+                "stepType": "PassFailTest",
+                "name": "Error on MES steps",
+                "group": "S",
+                "status": "S",
+                "id": 25,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:48.782+00:00",
+                "totTime": 0.0002748,
+                "tsGuid": "ID#:OQVGxH2LoEqnenFd26b71D",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Get Tempback from UUT",
+                "group": "M",
+                "status": "P",
+                "id": 34,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:50.16+00:00",
+                "totTime": 0.0615886,
+                "tsGuid": "ID#:zzSFGucCb0K5ExujCxeQRC",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 29.0,
+                    "compOp": "GELE",
+                    "highLimit": 50.0,
+                    "lowLimit": 15.0,
+                    "unit": "degC"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Get Temptrafo from UUT",
+                "group": "M",
+                "status": "P",
+                "id": 35,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:50.224+00:00",
+                "totTime": 0.0596647,
+                "tsGuid": "ID#:Vfn2peCbP0+jihBig9GuaA",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 28.0,
+                    "compOp": "GELE",
+                    "highLimit": 55.0,
+                    "lowLimit": 15.0,
+                    "unit": "degC"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Get Tempfront from UUT",
+                "group": "M",
+                "status": "P",
+                "id": 36,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:50.287+00:00",
+                "totTime": 0.0617098,
+                "tsGuid": "ID#:0riQzm5sMEOwDVY01fXZIC",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 23.0,
+                    "compOp": "GELE",
+                    "highLimit": 50.0,
+                    "lowLimit": 15.0,
+                    "unit": "degC"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Calc Tempfront deviation",
+                "group": "M",
+                "status": "P",
+                "id": 37,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:50.352+00:00",
+                "totTime": 0.0001934,
+                "tsGuid": "ID#:cVHdcldGXEStGikhKx3hxC",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": -7.18227949042409,
+                    "compOp": "GELE",
+                    "highLimit": 15.0,
+                    "lowLimit": -15.0,
+                    "unit": "degC"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "Calibrate Boost Lo",
+            "group": "M",
+            "status": "P",
+            "id": 38,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:50.444+00:00",
+            "totTime": 1.4609985,
+            "tsGuid": "ID#:AvVDQGVaZ0y/3W9nMJ6m5A",
+            "causedUUTFailure": false,
+            "seqCall": {
+              "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+              "name": "Boost Meas lo",
+              "version": "1.0.0"
+            },
+            "steps": [
+              {
+                "stepType": "Statement",
+                "name": "Reset BoostMeasurements",
+                "group": "S",
+                "status": "D",
+                "id": 39,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:50.47+00:00",
+                "totTime": 0.0002258,
+                "tsGuid": "ID#:s5mkG7MwEE2Puaa0U/uNnB",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Calc avg Boost Low bf Calib",
+                "group": "M",
+                "status": "P",
+                "id": 41,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:51.328+00:00",
+                "totTime": 0.0014791,
+                "tsGuid": "ID#:PFbW3aJ+5UmwzwzvyRkYNC",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 0.085707875,
+                    "compOp": "GELE",
+                    "highLimit": 4.0,
+                    "lowLimit": -2.0,
+                    "unit": "Vdc"
+                  }
+                ]
+              },
+              {
+                "stepType": "Statement",
+                "name": "If Boost cal is negative",
+                "group": "M",
+                "status": "S",
+                "id": 42,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:51.333+00:00",
+                "totTime": 4.55e-05,
+                "tsGuid": "ID#:M2OPzLe5aEa6JXew7M0O0B",
+                "causedUUTFailure": false
+              }
+            ]
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "DCDC stage switching pulses",
+            "group": "M",
+            "status": "P",
+            "id": 44,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:51.924+00:00",
+            "totTime": 1.1917756,
+            "tsGuid": "ID#:aRHePI9RUk2TlaIvrAiKeB",
+            "causedUUTFailure": false,
+            "seqCall": {
+              "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+              "name": "DCDC stage switching pulses",
+              "version": "1.0.0"
+            },
+            "steps": [
+              {
+                "stepType": "ET_A",
+                "name": "Switch Gate A / Gate B to scope",
+                "group": "M",
+                "status": "D",
+                "id": 45,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:51.96+00:00",
+                "totTime": 0.0044697,
+                "tsGuid": "ID#:cp0bLOtN6kqFKbNO2CieDD",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Wait",
+                "name": "Wait 0.2 sec",
+                "group": "M",
+                "status": "D",
+                "id": 46,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:51.966+00:00",
+                "totTime": 0.2005813,
+                "tsGuid": "ID#:lqdzFLMQk0myWvD43y3qVB",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Release Gate A / Gate B from scope",
+                "group": "M",
+                "status": "D",
+                "id": 48,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:52.478+00:00",
+                "totTime": 0.0044265,
+                "tsGuid": "ID#:05W1uCfw306c/aOV0Gke1C",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Wait",
+                "name": "Wait 0.2 sec",
+                "group": "M",
+                "status": "D",
+                "id": 49,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:52.483+00:00",
+                "totTime": 0.20041,
+                "tsGuid": "ID#:LlaWPqMLJkWIuKMLS3VNQD",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Switch GateHighSide and GateLowSide to scope",
+                "group": "M",
+                "status": "D",
+                "id": 50,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:52.689+00:00",
+                "totTime": 0.0043616,
+                "tsGuid": "ID#:wE5rhAMYakGIJmhhDjrSXA",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Wait",
+                "name": "Wait 0.2 sec",
+                "group": "M",
+                "status": "D",
+                "id": 51,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:52.696+00:00",
+                "totTime": 0.200393,
+                "tsGuid": "ID#:4Zx6O4wMyEGGkspi3oCX0D",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Deselect ALL",
+                "group": "C",
+                "status": "D",
+                "id": 53,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:53.106+00:00",
+                "totTime": 0.0058862,
+                "tsGuid": "ID#:rblJCWu4AEWpBh6SR0ATxB",
+                "causedUUTFailure": false
+              }
+            ]
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "Boost stage switching pulses",
+            "group": "M",
+            "status": "P",
+            "id": 54,
+            "errorCode": 0,
+            "start": "2024-04-15T02:49:53.133+00:00",
+            "totTime": 9.9724241,
+            "tsGuid": "ID#:7BAbrZPNH0WstmMAMDxosD",
+            "causedUUTFailure": false,
+            "seqCall": {
+              "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+              "name": "Boost stage switching pulses",
+              "version": "1.0.0"
+            },
+            "steps": [
+              {
+                "stepType": "ET_A",
+                "name": "Init Driver AC PowerSupply #1",
+                "group": "S",
+                "status": "D",
+                "id": 55,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:53.162+00:00",
+                "totTime": 0.0049248,
+                "tsGuid": "ID#:Gig0VydHl0+K+xolp4bT7B",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Init Instrument AC PowerSupply #1",
+                "group": "S",
+                "status": "D",
+                "id": 56,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:53.173+00:00",
+                "totTime": 0.3183337,
+                "tsGuid": "ID#:IArcjsnftUekDLWOt7XubC",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Set AC PowerSupply #1 voltage range to LOW",
+                "group": "S",
+                "status": "D",
+                "id": 57,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:53.492+00:00",
+                "totTime": 0.5076631,
+                "tsGuid": "ID#:0OEjKPuthEK0DafpuUvcbB",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Switch Q100 to Scope CH1",
+                "group": "S",
+                "status": "D",
+                "id": 58,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:54.001+00:00",
+                "totTime": 0.0045357,
+                "tsGuid": "ID#:ITs5+rfwoEKe9GLDHWKWyB",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Start switching pulses",
+                "group": "M",
+                "status": "D",
+                "id": 59,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:54.019+00:00",
+                "totTime": 0.0023301,
+                "tsGuid": "ID#:sBKfLKEl9UudYmMoAIXPMC",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Wait",
+                "name": "Wait 2 sec",
+                "group": "M",
+                "status": "D",
+                "id": 61,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:56.856+00:00",
+                "totTime": 2.0004432,
+                "tsGuid": "ID#:HAObe1JXaUea21eWEZGzjB",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Measure AC PowerSupply #1 current",
+                "group": "M",
+                "status": "P",
+                "id": 62,
+                "errorCode": 0,
+                "start": "2024-04-15T02:49:58.859+00:00",
+                "totTime": 0.7876082,
+                "tsGuid": "ID#:4PsvSpaNk0e/FfxnLz1e+A",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 0.0,
+                    "compOp": "LT",
+                    "lowLimit": 450.0,
+                    "unit": "mA"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Release Q100 from Scope CH1",
+                "group": "C",
+                "status": "D",
+                "id": 67,
+                "errorCode": 0,
+                "start": "2024-04-15T02:50:01.715+00:00",
+                "totTime": 0.0044168,
+                "tsGuid": "ID#:yC4YGBLKG02OssKXXiYF1D",
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "ET_NLT",
+                "name": "Turn OFF AC power source",
+                "group": "C",
+                "status": "P",
+                "id": 68,
+                "errorCode": 0,
+                "start": "2024-04-15T02:50:01.727+00:00",
+                "totTime": 0.8650913,
+                "tsGuid": "ID#:1Zf656dt9UqJiM6ecYm7DD",
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "status": "P",
+                    "value": 0.0,
+                    "compOp": "GELE",
+                    "highLimit": 1.0,
+                    "lowLimit": -1.0,
+                    "unit": "Vac"
+                  }
+                ]
+              },
+              {
+                "stepType": "ET_A",
+                "name": "Set AC PowerSupply #1 voltage range to HIGH",
+                "group": "C",
+                "status": "D",
+                "id": 69,
+                "errorCode": 0,
+                "start": "2024-04-15T02:50:02.596+00:00",
+                "totTime": 0.5068126,
+                "tsGuid": "ID#:r9r7ZRpeF0Wik0/9TuHqVC",
+                "causedUUTFailure": false
+              }
+            ]
+          },
+          {
+            "stepType": "ET_A",
+            "name": "Turn Discharge relay OFF",
+            "group": "C",
+            "status": "D",
+            "id": 70,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:03.14+00:00",
+            "totTime": 0.0046603,
+            "tsGuid": "ID#:sU04/yRbekGd3ntRMexpcA",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "ET_A",
+            "name": "Deselect ALL",
+            "group": "C",
+            "status": "D",
+            "id": 71,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:03.152+00:00",
+            "totTime": 0.0057212,
+            "tsGuid": "ID#:wZI/6SaCpkiv4ioKI0h3wC",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Apply 60V on boost",
+            "group": "C",
+            "status": "P",
+            "id": 72,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:03.16+00:00",
+            "totTime": 0.2305436,
+            "tsGuid": "ID#:9L0xoqFATUqxtnOxwraWcA",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": -0.04628786,
+                "compOp": "LOG",
+                "unit": "V"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Apply 0V on boost",
+            "group": "C",
+            "status": "P",
+            "id": 73,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:03.394+00:00",
+            "totTime": 0.2307677,
+            "tsGuid": "ID#:WmTAYkplLk26CeoqEzhkTC",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 0.2712611,
+                "compOp": "LOG",
+                "unit": "V"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_A",
+            "name": "Disconnect DC MultiPower #1/2 from T101",
+            "group": "C",
+            "status": "D",
+            "id": 74,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:03.629+00:00",
+            "totTime": 0.0044703,
+            "tsGuid": "ID#:q5j0FWsSEEeigZN0jobvUA",
+            "causedUUTFailure": false
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "Mains start voltage",
+        "group": "M",
+        "status": "P",
+        "id": 95,
+        "errorCode": 0,
+        "start": "2024-04-15T02:50:14.613+00:00",
+        "totTime": 10.9319654,
+        "tsGuid": "ID#:ZlL/eQrZQkWJOIEEC3ZmGA",
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+          "name": "Mains start voltage",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "SequenceCall",
+            "name": "Production Data",
+            "group": "M",
+            "status": "D",
+            "id": 96,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:14.641+00:00",
+            "totTime": 0.0010297,
+            "tsGuid": "ID#:lTqk0tZyFEabJW5wiqFa0C",
+            "causedUUTFailure": false,
+            "seqCall": {
+              "path": "C:/SequenceCall.seq",
+              "name": "TestSequence.seq",
+              "version": "1.0.0"
+            },
+            "steps": []
+          },
+          {
+            "stepType": "NI_Wait",
+            "name": "Wait 4 sec",
+            "group": "M",
+            "status": "D",
+            "id": 98,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:15.568+00:00",
+            "totTime": 4.0004261,
+            "tsGuid": "ID#:RfCr7U4h2kq9e1EiOr5MWB",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "NI_Wait",
+            "name": "Wait 1.5 sec",
+            "group": "M",
+            "status": "D",
+            "id": 100,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:20.557+00:00",
+            "totTime": 1.5004315,
+            "tsGuid": "ID#:0Fsr9UEIJ0K9pJevFQH1SC",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure Boost voltage @ 95Vac with DMM",
+            "group": "M",
+            "status": "P",
+            "id": 102,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:22.063+00:00",
+            "totTime": 0.9837653,
+            "tsGuid": "ID#:DJiVdiNifUyGtx7QmG7rMC",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 405.39081,
+                "compOp": "GELE",
+                "highLimit": 428.0,
+                "lowLimit": 280.0,
+                "unit": "Vdc"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure Vout @ 95Vac",
+            "group": "M",
+            "status": "P",
+            "id": 103,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:23.049+00:00",
+            "totTime": 0.0037284,
+            "tsGuid": "ID#:ylcNtTaqqk+MRyvzA7kg7C",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 53.902,
+                "compOp": "GELE",
+                "highLimit": 57.0,
+                "lowLimit": 45.0,
+                "unit": "Vdc"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure +12VSfeed",
+            "group": "M",
+            "status": "P",
+            "id": 104,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:23.054+00:00",
+            "totTime": 0.5129377,
+            "tsGuid": "ID#:JH+tRU040kupaujrbEsNGA",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 12.0021526592886,
+                "compOp": "GELE",
+                "highLimit": 12.8,
+                "lowLimit": 11.5,
+                "unit": "Vdc"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure +5VSfeed",
+            "group": "M",
+            "status": "P",
+            "id": 105,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:23.57+00:00",
+            "totTime": 0.5145647,
+            "tsGuid": "ID#:1oviOWw4R0KonyBgh5ipnA",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 5.92251775058422,
+                "compOp": "GELE",
+                "highLimit": 6.3,
+                "lowLimit": 5.5,
+                "unit": "Vdc"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure +12VP",
+            "group": "M",
+            "status": "P",
+            "id": 106,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:24.088+00:00",
+            "totTime": 0.5135248,
+            "tsGuid": "ID#:N/z3725L0EmQ3i/VQU6afB",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 11.7187035642743,
+                "compOp": "GELE",
+                "highLimit": 12.0,
+                "lowLimit": 11.25,
+                "unit": "Vdc"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure +7.5VP",
+            "group": "M",
+            "status": "P",
+            "id": 107,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:24.605+00:00",
+            "totTime": 0.5124991,
+            "tsGuid": "ID#:CjtD9O7luUWHb0LvYd5KNA",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 3.9547321443536,
+                "compOp": "GELE",
+                "highLimit": 5.5,
+                "lowLimit": 3.6,
+                "unit": "Vdc"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure +3.3VP",
+            "group": "M",
+            "status": "P",
+            "id": 108,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:25.122+00:00",
+            "totTime": 0.4142798,
+            "tsGuid": "ID#:jzlny5veHUa7azbEeNPXgB",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 3.29564588979754,
+                "compOp": "GELE",
+                "highLimit": 3.45,
+                "lowLimit": 3.15,
+                "unit": "Vdc"
+              }
+            ]
+          },
+          {
+            "stepType": "NI_Wait",
+            "name": "Wait for Production Data",
+            "group": "M",
+            "status": "P",
+            "id": 109,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:25.54+00:00",
+            "totTime": 0.0004784,
+            "tsGuid": "ID#:on1dTi0pCk67Hth7zoMTcC",
+            "causedUUTFailure": false
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "Mains 230Vac",
+        "group": "M",
+        "status": "P",
+        "id": 117,
+        "errorCode": 0,
+        "start": "2024-04-15T02:50:25.559+00:00",
+        "totTime": 1.4882944,
+        "tsGuid": "ID#:63rOiAVOmkOdDjM+jdyXqC",
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+          "name": "Mains 230Vac",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "NI_Wait",
+            "name": "Wait 0.5 sec",
+            "group": "M",
+            "status": "D",
+            "id": 119,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:26.539+00:00",
+            "totTime": 0.5004082,
+            "tsGuid": "ID#:GEebVtmYm0290JYeK0qx9D",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "Measure Vout @ 230Vac",
+            "group": "M",
+            "status": "P",
+            "id": 120,
+            "errorCode": 0,
+            "start": "2024-04-15T02:50:27.041+00:00",
+            "totTime": 0.0038041,
+            "tsGuid": "ID#:IbHVNqORqkaZr3glYNuYVD",
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 53.908,
+                "compOp": "GELE",
+                "highLimit": 57.0,
+                "lowLimit": 45.0,
+                "unit": "Vdc"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "Calibration",
+        "group": "M",
+        "status": "P",
+        "id": 136,
+        "errorCode": 0,
+        "start": "2024-04-15T02:50:34.725+00:00",
+        "totTime": 73.2098205,
+        "tsGuid": "ID#:9EUSxQWuTE+CmRQ5uKWfnB",
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+          "name": "Calibration",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "ET_A",
+            "name": "Remove load",
+            "group": "C",
+            "status": "D",
+            "id": 254,
+            "errorCode": 0,
+            "start": "2024-04-15T02:51:47.522+00:00",
+            "totTime": 0.4101588,
+            "tsGuid": "ID#:7oq0IYJkVEyQzG9AgHVi1D",
+            "causedUUTFailure": false
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "UI Char / Efficiency",
+        "group": "M",
+        "status": "P",
+        "id": 255,
+        "errorCode": 0,
+        "start": "2024-04-15T02:51:47.954+00:00",
+        "totTime": 6.9546921,
+        "tsGuid": "ID#:B0A0k/XnekSueFkKK+60cC",
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "C:\\EGTS\\Teststand\\5505605581\\SeqFiles\\5505605581 rev03 709526.2 WW-MTS-A v1.6.0.seq",
+          "name": "UI Char / Efficiency",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "ET_A",
+            "name": "Remove load",
+            "group": "C",
+            "status": "D",
+            "id": 271,
+            "errorCode": 0,
+            "start": "2024-04-15T02:51:54.392+00:00",
+            "totTime": 0.0100595,
+            "tsGuid": "ID#:oBZ/+EuWIEqjbugk3XH6JA",
+            "causedUUTFailure": false
+          },
+          {
+            "stepType": "NI_Wait",
+            "name": "Wait 0.5 sec",
+            "group": "C",
+            "status": "D",
+            "id": 272,
+            "errorCode": 0,
+            "start": "2024-04-15T02:51:54.405+00:00",
+            "totTime": 0.5004013,
+            "tsGuid": "ID#:0FUR0nS6cUK0cfgfL0b31D",
+            "causedUUTFailure": false
+          }
+        ]
+      }
+    ]
+  }
+}

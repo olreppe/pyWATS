@@ -212,6 +212,16 @@ class CompOp(str, Enum):
     LEGE = "LEGE"
     """Outside or equal (<= low OR >= high)."""
 
+    @classmethod
+    def _missing_(cls, value: object) -> "CompOp | None":
+        """Handle case-insensitive enum lookup."""
+        if isinstance(value, str):
+            upper_value = value.upper()
+            for member in cls:
+                if member.value == upper_value:
+                    return member
+        return None
+
     def __str__(self) -> str:
         """Return the value for serialization."""
         return self.value

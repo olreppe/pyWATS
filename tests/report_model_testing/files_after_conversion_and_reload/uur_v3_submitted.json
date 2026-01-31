@@ -1,0 +1,46 @@
+{
+  "id": "9c793ac9-dd11-4ea9-882c-e4c145a46d56",
+  "type": "R",
+  "pn": "PRODUCTION-TEST-MODULE",
+  "sn": "MODULE-20251221230142-5519_v3",
+  "rev": "A",
+  "processCode": 500,
+  "result": "P",
+  "machineName": "RepairStation",
+  "location": "TestLab",
+  "purpose": "Repair",
+  "start": "2026-01-31T01:28:04.339094Z",
+  "subUnits": [
+    {
+      "pn": "PRODUCTION-TEST-MODULE",
+      "rev": "A",
+      "sn": "MODULE-20251221230142-5519_v3",
+      "partType": "Main",
+      "idx": 0,
+      "failures": [
+        {
+          "category": "Component",
+          "code": "Burned Component",
+          "comment": "Thermal failure during burn-in - Reworked thermal interface",
+          "comRef": "U1",
+          "refStepId": 0
+        }
+      ]
+    }
+  ],
+  "miscInfos": [],
+  "assets": [],
+  "additionalData": [],
+  "uur": {
+    "user": "RepairOperator",
+    "comment": "Thermal failure repaired",
+    "execTime": 0.0,
+    "processCode": 90,
+    "processName": "Burn In test",
+    "refUUT": "873d67f8-7669-4f4b-a627-e598e444d323",
+    "confirmDate": "2025-12-21T22:01:45.472138Z",
+    "finalizeDate": "2025-12-21T22:01:45.472138Z",
+    "active": true
+  },
+  "binaryData": []
+}

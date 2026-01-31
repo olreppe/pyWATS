@@ -27,7 +27,7 @@ class UURReport(Report):
     UUR reports document repair/rework activities on units that have failed
     testing. Key features:
     
-    - Links to original UUT report via `uur_info.ref_uut`
+    - Links to original UUT report via `info.ref_uut`
     - Dual process codes: repair_process_code (what repair type) and 
       test_operation_code (original test that failed)
     - Failures are stored on sub_units (idx=0 is main unit)
@@ -54,7 +54,8 @@ class UURReport(Report):
     type: str = Field(default="R", pattern='^[R]$')
     
     # UUR-specific info (dual process codes, operator, comment, etc.)
-    uur_info: UURInfo = Field(
+    # Override base class info field to be UURInfo with "uur" serialization
+    info: Optional[UURInfo] = Field(  # type: ignore[assignment]
         default_factory=UURInfo, 
         validation_alias="uur", 
         serialization_alias="uur"
@@ -75,7 +76,17 @@ class UURReport(Report):
         validation_alias="binaryData",
         serialization_alias="binaryData"
     )
+
+    # Aliases for process_code/process_name to be called repair_operation_*
+    @property
+    def repair_operation_code(self) -> int:
+        """Alias for process_code (repair operation code)."""
+        return self.process_code
     
+    @repair_operation_code.setter
+    def repair_operation_code(self, value: int) -> None:
+        self.process_code = value
+
     @model_validator(mode='after')
     def ensure_main_unit(self) -> 'UURReport':
         """Ensure main unit (idx=0) exists."""
@@ -250,54 +261,58 @@ class UURReport(Report):
         return result
     
     # =========================================================================
-    # UUR Properties (delegated to uur_info)
+    # UUR Properties (delegated to info)
     # =========================================================================
     
     @property
     def uut_guid(self) -> Optional[UUID]:
         """GUID of the referenced UUT report."""
-        return self.uur_info.ref_uut
+        return self.info.ref_uut if self.info else None
     
     @uut_guid.setter
     def uut_guid(self, value: UUID) -> None:
-        self.uur_info.ref_uut = value
+        if self.info:
+            self.info.ref_uut = value
     
     @property
     def operator(self) -> Optional[str]:
         """Operator who performed the repair."""
-        return self.uur_info.uur_operator
+        return self.info.uur_operator if self.info else None
     
     @operator.setter
     def operator(self, value: str) -> None:
-        self.uur_info.uur_operator = value
+        if self.info:
+            self.info.uur_operator = value
     
     @property
     def comment(self) -> Optional[str]:
         """Repair comment."""
-        return self.uur_info.comment
+        return self.info.comment if self.info else None
     
     @comment.setter
     def comment(self, value: str) -> None:
-        self.uur_info.comment = value
+        if self.info:
+            self.info.comment = value
     
     @property
     def execution_time(self) -> float:
         """Time spent on repair (seconds)."""
-        return self.uur_info.exec_time or 0.0
+        return self.info.exec_time if self.info and self.info.exec_time else 0.0
     
     @execution_time.setter
     def execution_time(self, value: float) -> None:
-        self.uur_info.exec_time = value
+        if self.info:
+            self.info.exec_time = value
     
     @property
-    def repair_process_code(self) -> Optional[int]:
-        """The repair process code (type of repair operation)."""
-        return self.uur_info.repair_process_code
+    def repair_process_code(self) -> int:
+        """The repair process code (type of repair operation). Alias for top-level process_code."""
+        return self.process_code
     
     @property
     def test_operation_code(self) -> Optional[int]:
         """The original test operation code."""
-        return self.uur_info.test_operation_code
+        return self.info.test_operation_code if self.info else None
     
     # =========================================================================
     # Attachment Methods
@@ -374,9 +389,11 @@ class UURReport(Report):
             return False, "; ".join(errors)
         
         # Validate dual process codes
-        if self.uur_info.repair_process_code and self.uur_info.test_operation_code:
-            if self.uur_info.repair_process_code == self.uur_info.test_operation_code:
-                errors.append("repair_process_code and test_operation_code should differ")
+        # Top-level process_code is the repair operation
+        # info.test_operation_code is the original test that was running
+        if self.info and self.process_code and self.info.test_operation_code:
+            if self.process_code == self.info.test_operation_code:
+                errors.append("repair process_code and test_operation_code should differ")
         
         # Check for failures (UUR should typically have at least one)
         if not self.all_failures:

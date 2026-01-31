@@ -36,8 +36,13 @@ class UURFailure(WATSBase):
     ref_step_id: Optional[int] = Field(default=None, validation_alias="refStepId", serialization_alias="refStepId")
     """Id of step from referenced UUT that uncovered failure."""
     
-    ref_step_name: Optional[str] = Field(default=None, validation_alias="refStepName", serialization_alias="refStepName")
-    """Name of step from referenced UUT that uncovered failure."""
+    ref_step_name: Optional[str] = Field(
+        default=None, 
+        validation_alias="refStepName", 
+        serialization_alias="refStepName",
+        exclude=True  # Server doesn't accept this field
+    )
+    """Name of step from referenced UUT that uncovered failure (client-side only, not sent to server)."""
     
     art_number: Optional[str] = Field(default=None, validation_alias="artNumber", serialization_alias="artNumber")
     """Article number of failed component."""

@@ -152,11 +152,13 @@ class AsyncReportRepository:
 
         POST /api/Report/WSJF
         """
-        if isinstance(report, (UUTReport, UURReport)):
+        # Check if it's a Pydantic model (V1 or V3) by checking for model_dump
+        if hasattr(report, 'model_dump'):
             data = report.model_dump(
                 mode="json", by_alias=True, exclude_none=True
             )
             
+            # Handle UURReport special fields
             if isinstance(report, UURReport) and 'uurInfo' in data:
                 uur_info = data['uurInfo']
                 if 'processCode' not in uur_info:
