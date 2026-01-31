@@ -1,9 +1,16 @@
 V1 Roundtrip Differences
 ========================
 
-Report ID: deafa680-5a0b-4340-b8fb-14522f82672e
-Total differences: 3
+Report ID: 1aed8c6d-a40e-4eef-ac03-e2b3482cacf5
+Total differences: 10
 
+MISSING: binaryData
+MISSING: root.steps[1].steps[9].steps[1].booleanMeas[0].name
+MISSING: root.steps[1].steps[9].steps[2].booleanMeas[0].name
+MISSING: root.steps[1].steps[9].steps[3].booleanMeas[0].name
+MISSING: root.steps[1].steps[9].steps[4].booleanMeas[0].name
+ADDED: assetStats
 VALUE: subUnits[0].rev: '01     ' vs '01'
 VALUE: subUnits[1].rev: '03  ' vs '03'
 VALUE: subUnits[1].partType: 'VirincoPWR SEC BD FP S 1800/  ' vs 'VirincoPWR SEC BD FP S 1800/'
+MISSING: miscInfos[0].numeric

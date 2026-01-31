@@ -26,7 +26,7 @@ class UURReport(Report[UURSubUnit]):
     Documents repair/rework activities on units that have failed testing.
     
     Key Features:
-    - Links to original UUT report via uur_info.ref_uut
+    - Links to original UUT report via info.ref_uut
     - Dual process codes: repair (what repair type) and test (original test)
     - Failures stored on sub_units (idx=0 is main unit)
     - No test steps/sequences (unlike UUTReport)
@@ -38,12 +38,15 @@ class UURReport(Report[UURSubUnit]):
         uur = UURReport(
             pn="WIDGET-001",
             sn="SN123456",
-            operation="Repair"
+            rev="A",
+            process_code=500,
+            station_name="RepairStation",
+            location="Lab1",
+            purpose="Repair"
         )
         
         # Link to failed UUT
-        uur.uur_info.ref_uut = uut_report.id
-        uur.uur_info.repair_process_code = 500
+        uur.info.ref_uut = uut_report.id
         
         # Add failure to main unit
         main = uur.get_main_unit()
@@ -61,10 +64,11 @@ class UURReport(Report[UURSubUnit]):
     )
     
     # ========================================================================
-    # UUR-Specific Info
+    # UUR-Specific Info (overrides base info field)
     # ========================================================================
     
-    uur_info: UURInfo = Field(
+    # Override info from Report base - UURReport uses UURInfo, serialized as "uur"
+    info: Optional[UURInfo] = Field(
         default_factory=UURInfo,
         validation_alias="uur",
         serialization_alias="uur",
@@ -122,48 +126,48 @@ class UURReport(Report[UURSubUnit]):
         return self
     
     # ========================================================================
-    # Convenience Properties (delegate to uur_info)
+    # Convenience Properties (delegate to info)
     # ========================================================================
     
     @property
     def uut_guid(self) -> Optional[UUID]:
         """GUID of the referenced UUT report."""
-        return self.uur_info.ref_uut if self.uur_info else None
+        return self.info.ref_uut if self.info else None
     
     @uut_guid.setter
     def uut_guid(self, value: UUID) -> None:
-        if self.uur_info:
-            self.uur_info.ref_uut = value
+        if self.info:
+            self.info.ref_uut = value
     
     @property
     def operator(self) -> Optional[str]:
         """Operator who performed the repair."""
-        return self.uur_info.operator if self.uur_info else None
+        return self.info.operator if self.info else None
     
     @operator.setter
     def operator(self, value: str) -> None:
-        if self.uur_info:
-            self.uur_info.operator = value
+        if self.info:
+            self.info.operator = value
     
     @property
     def comment(self) -> Optional[str]:
         """Repair comment."""
-        return self.uur_info.comment if self.uur_info else None
+        return self.info.comment if self.info else None
     
     @comment.setter
     def comment(self, value: str) -> None:
-        if self.uur_info:
-            self.uur_info.comment = value
+        if self.info:
+            self.info.comment = value
     
     @property
     def execution_time(self) -> float:
         """Time spent on repair (seconds)."""
-        return self.uur_info.exec_time if self.uur_info and self.uur_info.exec_time else 0.0
+        return self.info.exec_time if self.info and self.info.exec_time else 0.0
     
     @execution_time.setter
     def execution_time(self, value: float) -> None:
-        if self.uur_info:
-            self.uur_info.exec_time = value
+        if self.info:
+            self.info.exec_time = value
     
     @property
     def repair_process_code(self) -> int:
@@ -177,8 +181,8 @@ class UURReport(Report[UURSubUnit]):
     
     @property
     def test_operation_code(self) -> Optional[int]:
-        """Test operation code from uur_info."""
-        return self.uur_info.test_operation_code if self.uur_info else None
+        """Test operation code from info."""
+        return self.info.test_operation_code if self.info else None
     
     @property
     def all_failures(self) -> List[UURFailure]:
@@ -194,12 +198,58 @@ class UURReport(Report[UURSubUnit]):
         """Alias for all_failures."""
         return self.all_failures
     
+    # ========================================================================
+    # Backward compatibility property (uur_info -> info)
+    # ========================================================================
+    
+    @property
+    def uur_info(self) -> Optional[UURInfo]:
+        """Backward compatibility: uur_info is now just info."""
+        return self.info
+    
+    @uur_info.setter
+    def uur_info(self, value: UURInfo) -> None:
+        """Backward compatibility: uur_info is now just info."""
+        self.info = value
+    
+    # ========================================================================
+    # Sub-Unit Access
+    # ========================================================================
+    
     def get_sub_unit(self, idx: int) -> Optional[UURSubUnit]:
         """Get sub-unit by index."""
         for su in self.sub_units:
             if su.idx == idx:
                 return su
         return None
+    
+    def get_sub_unit_by_idx(self, idx: int) -> Optional[UURSubUnit]:
+        """Get a sub-unit by its index."""
+        return self.get_sub_unit(idx)
+    
+    def get_main_unit(self) -> UURSubUnit:
+        """
+        Get the main unit (idx=0).
+        
+        Returns:
+            UURSubUnit representing the main unit being repaired.
+        """
+        for su in self.sub_units:
+            if su.idx == 0:
+                return su
+        
+        # Should not happen due to validator, but create if missing
+        main = UURSubUnit.create_main_unit(
+            pn=self.pn,
+            sn=self.sn,
+            rev=self.rev or ""
+        )
+        self.sub_units.insert(0, main)
+        return main
+    
+    # ========================================================================
+    # Failure Methods
+    # ========================================================================
     
     def add_failure(
         self,
@@ -223,132 +273,36 @@ class UURReport(Report[UURSubUnit]):
         """Add failure to main unit (alias for add_failure)."""
         return self.add_failure(category, code, comment, component_ref)
     
-    def attach_bytes(
+    def add_main_failure(
         self,
-        name: str,
-        content: bytes,
-        mime_type: str = "application/octet-stream"
-    ) -> Attachment:
-        """Attach binary data to report."""
-        attachment = Attachment(
-            name=name,
-            mime_type=mime_type,
-            data=content
-        )
-        self.attachments.append(attachment)
-        return attachment
-    
-    def get_summary(self) -> dict:
-        """Get report summary."""
-        return {
-            'pn': self.pn,
-            'sn': self.sn,
-            'result': self.result,
-            'repair_process_code': self.process_code,
-            'test_operation_code': self.test_operation_code,
-            'total_failures': len(self.all_failures),
-            'sub_units': len(self.sub_units)
-        }
-    
-    def validate_report(self) -> tuple[bool, str]:
-        """Validate report structure and content."""
-        errors = []
-        
-        # Check main unit exists
-        try:
-            _ = self.get_main_unit()
-        except ValueError as e:
-            errors.append(str(e))
-            return False, "; ".join(errors)
-        
-        # Validate dual process codes
-        if self.uur_info and self.process_code and self.uur_info.test_operation_code:
-            if self.process_code == self.uur_info.test_operation_code:
-                errors.append("repair process_code and test_operation_code should differ")
-        
-        if errors:
-            return False, "; ".join(errors)
-        return True, "OK"
-    
-    def copy_misc_from_uut(self, uut_report: Any) -> None:
-        """Copy misc_infos from UUT report."""
-        if hasattr(uut_report, 'misc_infos') and uut_report.misc_infos:
-            self.misc_infos = list(uut_report.misc_infos)
-    
-    # ========================================================================
-    # UUT Linking
-    # ========================================================================
-    
-    def link_to_uut(self, uut_id: UUID) -> None:
+        category: str,
+        code: str,
+        **kwargs: Any
+    ) -> UURFailure:
         """
-        Link this repair report to a failed UUT report.
+        Add a failure to the main unit.
         
         Args:
-            uut_id: UUID of the failed UUT report.
-        """
-        self.uur_info.ref_uut = uut_id
-    
-    def set_repair_process(
-        self,
-        code: int,
-        name: Optional[str] = None
-    ) -> None:
-        """
-        Set the repair process code.
-        
-        Args:
-            code: Repair process code
-            name: Optional process name
-        """
-        self.uur_info.repair_process_code = code
-        self.uur_info.process_code = code
-        if name:
-            self.uur_info.repair_process_name = name
-            self.uur_info.process_name = name
-    
-    def set_test_operation(
-        self,
-        code: int,
-        name: Optional[str] = None,
-        guid: Optional[UUID] = None
-    ) -> None:
-        """
-        Set the original test operation that failed.
-        
-        Args:
-            code: Test operation code
-            name: Optional operation name
-            guid: Optional operation GUID
-        """
-        self.uur_info.test_operation_code = code
-        if name:
-            self.uur_info.test_operation_name = name
-        if guid:
-            self.uur_info.test_operation_guid = guid
-    
-    # ========================================================================
-    # Main Unit Access
-    # ========================================================================
-    
-    def get_main_unit(self) -> UURSubUnit:
-        """
-        Get the main unit (idx=0).
-        
+            category: Failure category
+            code: Failure code
+            **kwargs: Additional failure fields
+            
         Returns:
-            UURSubUnit representing the main unit being repaired.
+            The created UURFailure.
         """
+        main = self.get_main_unit()
+        return main.add_failure(category, code, **kwargs)
+    
+    def get_all_failures(self) -> List[UURFailure]:
+        """Get all failures across all sub-units."""
+        failures: List[UURFailure] = []
         for su in self.sub_units:
-            if su.idx == 0:
-                return su
-        
-        # Should not happen due to validator, but create if missing
-        main = UURSubUnit.create_main_unit(
-            pn=self.pn,
-            sn=self.sn,
-            rev=self.rev or ""
-        )
-        self.sub_units.insert(0, main)
-        return main
+            failures.extend(su.get_failures())
+        return failures
+    
+    def count_failures(self) -> int:
+        """Count total failures across all sub-units."""
+        return sum(len(su.get_failures()) for su in self.sub_units)
     
     # ========================================================================
     # Sub-Unit Management
@@ -389,52 +343,120 @@ class UURReport(Report[UURSubUnit]):
         self.sub_units.append(sub_unit)
         return sub_unit
     
-    def get_sub_unit_by_idx(self, idx: int) -> Optional[UURSubUnit]:
-        """Get a sub-unit by its index."""
-        for su in self.sub_units:
-            if su.idx == idx:
-                return su
-        return None
-    
     # ========================================================================
-    # Failure Helpers
+    # Attachment Methods
     # ========================================================================
     
-    def add_main_failure(
+    def attach_bytes(
         self,
-        category: str,
-        code: str,
-        **kwargs: Any
-    ) -> UURFailure:
-        """
-        Add a failure to the main unit.
-        
-        Args:
-            category: Failure category
-            code: Failure code
-            **kwargs: Additional failure fields
-            
-        Returns:
-            The created UURFailure.
-        """
-        main = self.get_main_unit()
-        return main.add_failure(category, code, **kwargs)
-    
-    def get_all_failures(self) -> List[UURFailure]:
-        """Get all failures across all sub-units."""
-        failures: List[UURFailure] = []
-        for su in self.sub_units:
-            failures.extend(su.get_failures())
-        return failures
-    
-    def count_failures(self) -> int:
-        """Count total failures across all sub-units."""
-        return sum(len(su.get_failures()) for su in self.sub_units)
-    
-    # ========================================================================
-    # Attachment Helpers
-    # ========================================================================
+        name: str,
+        content: bytes,
+        mime_type: str = "application/octet-stream"
+    ) -> Attachment:
+        """Attach binary data to report."""
+        attachment = Attachment(
+            name=name,
+            mime_type=mime_type,
+            data=content
+        )
+        self.attachments.append(attachment)
+        return attachment
     
     def add_attachment(self, attachment: Attachment) -> None:
         """Add an attachment to the report."""
         self.attachments.append(attachment)
+    
+    # ========================================================================
+    # UUT Linking
+    # ========================================================================
+    
+    def link_to_uut(self, uut_id: UUID) -> None:
+        """
+        Link this repair report to a failed UUT report.
+        
+        Args:
+            uut_id: UUID of the failed UUT report.
+        """
+        if self.info:
+            self.info.ref_uut = uut_id
+    
+    def set_repair_process(
+        self,
+        code: int,
+        name: Optional[str] = None
+    ) -> None:
+        """
+        Set the repair process code.
+        
+        Args:
+            code: Repair process code
+            name: Optional process name
+        """
+        if self.info:
+            self.info.repair_process_code = code
+            self.info.process_code = code
+            if name:
+                self.info.repair_process_name = name
+                self.info.process_name = name
+    
+    def set_test_operation(
+        self,
+        code: int,
+        name: Optional[str] = None,
+        guid: Optional[UUID] = None
+    ) -> None:
+        """
+        Set the original test operation that failed.
+        
+        Args:
+            code: Test operation code
+            name: Optional operation name
+            guid: Optional operation GUID
+        """
+        if self.info:
+            self.info.test_operation_code = code
+            if name:
+                self.info.test_operation_name = name
+            if guid:
+                self.info.test_operation_guid = guid
+    
+    # ========================================================================
+    # Utility Methods
+    # ========================================================================
+    
+    def get_summary(self) -> dict:
+        """Get report summary."""
+        return {
+            'pn': self.pn,
+            'sn': self.sn,
+            'result': self.result,
+            'repair_process_code': self.process_code,
+            'test_operation_code': self.test_operation_code,
+            'total_failures': len(self.all_failures),
+            'sub_units': len(self.sub_units)
+        }
+    
+    def validate_report(self) -> tuple[bool, str]:
+        """Validate report structure and content."""
+        errors = []
+        
+        # Check main unit exists
+        try:
+            _ = self.get_main_unit()
+        except ValueError as e:
+            errors.append(str(e))
+            return False, "; ".join(errors)
+        
+        # Validate dual process codes
+        if self.info and self.process_code and self.info.test_operation_code:
+            if self.process_code == self.info.test_operation_code:
+                errors.append("repair process_code and test_operation_code should differ")
+        
+        if errors:
+            return False, "; ".join(errors)
+        return True, "OK"
+    
+    def copy_misc_from_uut(self, uut_report: Any) -> None:
+        """Copy misc_infos from UUT report."""
+        if hasattr(uut_report, 'misc_infos') and uut_report.misc_infos:
+            self.misc_infos = list(uut_report.misc_infos)

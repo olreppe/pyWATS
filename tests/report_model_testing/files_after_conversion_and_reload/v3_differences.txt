@@ -1,12 +1,6 @@
 V3 Roundtrip Differences
 ========================
 
-Report ID: e5d73c60-e7a6-4603-9a6e-60849b27acfe
-Total differences: 6
+Report ID: 813f04b8-d569-41ec-b34f-909a80d6fe0c
+Total differences: 0
 
-ADDED: root.steps[1].steps[9].steps[1].booleanMeas[0].name
-ADDED: root.steps[1].steps[9].steps[2].booleanMeas[0].name
-ADDED: root.steps[1].steps[9].steps[3].booleanMeas[0].name
-ADDED: root.steps[1].steps[9].steps[4].booleanMeas[0].name
-ADDED: binaryData
-MISSING: assetStats

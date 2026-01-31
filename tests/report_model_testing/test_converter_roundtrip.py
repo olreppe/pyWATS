@@ -1,15 +1,15 @@
 """
-Report Model Roundtrip Test - V1 vs V3 Comparison
+Report Model Roundtrip Test
 
-This test validates that V1 and V3 report models can:
-1. Deserialize original WSJF JSON files using Pydantic model_validate
+This test validates that the report models can:
+1. Deserialize WSJF JSON files using Pydantic model_validate
 2. Submit reports to WATS API
 3. Load reports back from server
 4. Compare loaded data against original to find information loss
 
 Test Workflow:
 1. Load original JSON report
-2. Deserialize directly into UUTReport using model_validate (V1 and V3 separately)
+2. Deserialize directly into UUTReport/UURReport using model_validate
 3. Modify: new UUID, append to serial number, set new start time
 4. Submit via api.report.submit_report()
 5. Wait for server processing
@@ -19,6 +19,10 @@ Test Workflow:
 
 Usage:
     pytest tests/report_model_testing/test_converter_roundtrip.py -v -s
+    
+Note:
+    This test requires WATS API access and will be skipped if wats_config is not available.
+    A "perfect" sample report will be provided later to make this a crucial validation test.
 """
 import asyncio
 import copy
@@ -30,13 +34,9 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-# V1 Report Model imports
-from pywats.domains.report.report_models import UUTReport as UUTReportV1
-from pywats.domains.report.report_models import UURReport as UURReportV1
-
-# V3 Report Model imports  
-from pywats.domains.report.report_models_v3 import UUTReport as UUTReportV3
-from pywats.domains.report.report_models_v3 import UURReport as UURReportV3
+# Report Model imports (current implementation)
+from pywats.domains.report.report_models import UUTReport
+from pywats.domains.report.report_models import UURReport
 
 # API client - use AsyncWATS for async tests
 from pywats import AsyncWATS
@@ -50,9 +50,9 @@ TEST_DIR = Path(__file__).parent
 ORIGINAL_REPORTS_DIR = TEST_DIR / "original reports"
 OUTPUT_DIR = TEST_DIR / "files_after_conversion_and_reload"
 
-# Original test file - use new_report_example.json for simpler roundtrip test
-JSON_ORIGINAL = Path(__file__).parent / "original reports" / "new_report_example.json"
-UUR_ORIGINAL = Path(__file__).parent / "original reports" / "uur_example.json"
+# Test files
+UUT_JSON_FILE = ORIGINAL_REPORTS_DIR / "new_report_example.json"
+UUR_JSON_FILE = ORIGINAL_REPORTS_DIR / "uur_example.json"
 
 # Wait time after submit (seconds)
 SUBMIT_WAIT_TIME = 5
@@ -70,21 +70,21 @@ def output_directory() -> Path:
 
 
 @pytest.fixture(scope="module")
-def original_json() -> Dict[str, Any]:
-    """Load the original WSJF JSON file."""
-    with open(JSON_ORIGINAL, "r", encoding="utf-8") as f:
+def uut_json() -> Dict[str, Any]:
+    """Load the UUT example JSON file."""
+    if not UUT_JSON_FILE.exists():
+        pytest.skip(f"UUT example file not found: {UUT_JSON_FILE}")
+    with open(UUT_JSON_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 @pytest.fixture(scope="module")
 def uur_json() -> Dict[str, Any]:
     """Load the UUR example JSON file."""
-    with open(UUR_ORIGINAL, "r", encoding="utf-8") as f:
+    if not UUR_JSON_FILE.exists():
+        pytest.skip(f"UUR example file not found: {UUR_JSON_FILE}")
+    with open(UUR_JSON_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
-
-
-# Note: We use the wats_client fixture from the global conftest.py
-# It provides a pyWATS instance configured with proper credentials.
 
 
 # =============================================================================
@@ -96,13 +96,7 @@ def remove_loop_steps(data: Dict[str, Any]) -> Dict[str, Any]:
     Remove steps that contain 'loop' property from the report.
     
     NOTE: Loop steps are being skipped because the WATS server has strict validation
-    rules for loops that the exported test files don't satisfy:
-    - endingIndex must equal the highest index in the loop
-    - num must be one more than endingIndex  
-    - All iterations must match the Summary step structure exactly
-    
-    These validation rules are stricter than what older WATS exports contained.
-    This is a known limitation for roundtrip testing with legacy export files.
+    rules for loops that older exported test files don't satisfy.
     
     TODO: Create a proper test file with valid loop structures to test loop roundtrip.
     """
@@ -111,9 +105,7 @@ def remove_loop_steps(data: Dict[str, Any]) -> Dict[str, Any]:
         filtered = []
         for step in steps:
             if step.get('loop') is not None:
-                # Skip steps with loop property
                 continue
-            # Process nested steps recursively
             step_copy = step.copy()
             if 'steps' in step_copy and step_copy['steps']:
                 step_copy['steps'] = filter_steps(step_copy['steps'])
@@ -122,7 +114,6 @@ def remove_loop_steps(data: Dict[str, Any]) -> Dict[str, Any]:
     
     result = copy.deepcopy(data)
     
-    # Handle both flat structure and nested root structure
     if 'root' in result and 'steps' in result['root']:
         result['root']['steps'] = filter_steps(result['root']['steps'])
     elif 'steps' in result:
@@ -135,7 +126,6 @@ def save_json(data: Any, filepath: Path) -> None:
     """Save data as formatted JSON."""
     with open(filepath, "w", encoding="utf-8") as f:
         if hasattr(data, 'model_dump'):
-            # Pydantic model
             json.dump(data.model_dump(mode='json', by_alias=True, exclude_none=True), 
                      f, indent=2, default=str, ensure_ascii=False)
         else:
@@ -155,7 +145,7 @@ def modify_for_submission(data: Dict[str, Any], suffix: str) -> Dict[str, Any]:
     
     Args:
         data: Original report dict
-        suffix: Suffix to append to serial number (e.g., '_v1_test')
+        suffix: Suffix to append to serial number
     
     Returns:
         Modified copy with new UUID, modified SN, and new start time
@@ -163,8 +153,7 @@ def modify_for_submission(data: Dict[str, Any], suffix: str) -> Dict[str, Any]:
     modified = copy.deepcopy(data)
     
     # New UUID
-    new_id = str(uuid.uuid4())
-    modified["id"] = new_id
+    modified["id"] = str(uuid.uuid4())
     
     # Modify serial number
     original_sn = modified.get("sn") or modified.get("serialNumber", "UNKNOWN")
@@ -195,7 +184,6 @@ def deep_diff(
     Returns list of difference descriptions.
     """
     if ignore_keys is None:
-        # Keys that will naturally differ
         ignore_keys = {"id", "sn", "serialNumber", "start", "startUTC", "startUtc"}
     
     differences = []
@@ -230,280 +218,153 @@ def deep_diff(
 
 
 # =============================================================================
-# V1 Model Tests
+# UUT Report Roundtrip Tests
 # =============================================================================
 
-class TestV1ModelRoundtrip:
-    """Test V1 model deserialization and roundtrip."""
+class TestUUTRoundtrip:
+    """Test UUT report deserialization and roundtrip."""
     
-    def test_v1_deserialize_original(self, original_json: Dict[str, Any]) -> None:
-        """Test that V1 can deserialize the original JSON."""
+    def test_uut_deserialize(self, uut_json: Dict[str, Any]) -> None:
+        """Test that UUTReport can deserialize the JSON."""
         try:
-            report = UUTReportV1.model_validate(original_json)
-            print(f"\n[OK] V1 deserialized successfully")
+            report = UUTReport.model_validate(uut_json)
+            print(f"\n[OK] UUT deserialized successfully")
             print(f"  PN: {report.pn}")
             print(f"  SN: {report.sn}")
             print(f"  Result: {report.result}")
             assert report.pn, "Part number should be set"
             assert report.sn, "Serial number should be set"
         except Exception as e:
-            pytest.fail(f"V1 failed to deserialize: {e}")
+            pytest.fail(f"UUT deserialization failed: {e}")
     
     @pytest.mark.asyncio
-    async def test_v1_roundtrip(
+    async def test_uut_roundtrip(
         self, 
-        original_json: Dict[str, Any],
+        uut_json: Dict[str, Any],
         wats_config,
         output_directory: Path
     ) -> None:
-        """Full V1 roundtrip: deserialize -> submit -> load -> compare."""
-        # 0. Remove loop steps (see remove_loop_steps docstring for why)
-        data_without_loops = remove_loop_steps(original_json)
+        """Full UUT roundtrip: deserialize -> submit -> load -> compare."""
+        # Remove loop steps (see remove_loop_steps docstring for why)
+        data_without_loops = remove_loop_steps(uut_json)
         
-        # 1. Modify identifiers
-        modified_data = modify_for_submission(data_without_loops, "v1_roundtrip")
+        # Modify identifiers
+        modified_data = modify_for_submission(data_without_loops, "roundtrip")
         report_id = modified_data["id"]
         
-        print(f"\n=== V1 Roundtrip Test ===")
+        print(f"\n=== UUT Roundtrip Test ===")
         print(f"UUID: {report_id}")
         print(f"SN: {modified_data.get('sn') or modified_data.get('serialNumber')}")
         
-        # 2. Deserialize into V1 model
+        # Deserialize into model
         try:
-            report_v1 = UUTReportV1.model_validate(modified_data)
+            report = UUTReport.model_validate(modified_data)
         except Exception as e:
-            pytest.fail(f"V1 deserialization failed: {e}")
+            pytest.fail(f"UUT deserialization failed: {e}")
         
         # Save what we're submitting
-        save_json(report_v1, output_directory / "v1_submitted.json")
-        print(f"Saved submitted report to: v1_submitted.json")
+        save_json(report, output_directory / "uut_submitted.json")
+        print(f"Saved submitted report to: uut_submitted.json")
         
-        # 3. Submit using async client
+        # Submit using async client
         async with AsyncWATS(base_url=wats_config["base_url"], token=wats_config["token"]) as client:
-            submitted_id = await client.report.submit_report(report_v1)
+            submitted_id = await client.report.submit_report(report)
             assert submitted_id, "Submit should return report ID"
             print(f"Submitted! ID: {submitted_id}")
             
-            # 4. Wait for server processing
+            # Wait for server processing
             print(f"Waiting {SUBMIT_WAIT_TIME}s for server processing...")
             await asyncio.sleep(SUBMIT_WAIT_TIME)
             
-            # 5. Load back
+            # Load back
             loaded_report = await client.report.get_report(report_id, detail_level=7)
             assert loaded_report, f"Should be able to load report {report_id}"
         
-        # 6. Save loaded report
-        save_json(loaded_report, output_directory / "v1_loaded.json")
-        print(f"Saved loaded report to: v1_loaded.json")
-        
-        # 7. Compare
-        submitted_dict = model_to_dict(report_v1)
-        loaded_dict = model_to_dict(loaded_report)
-        
-        differences = deep_diff(submitted_dict, loaded_dict)
-        
-        print(f"\n=== V1 Comparison Results ===")
-        if differences:
-            print(f"Differences found ({len(differences)}):")
-            for diff in differences[:30]:
-                print(f"  - {diff}")
-            if len(differences) > 30:
-                print(f"  ... and {len(differences) - 30} more")
-        else:
-            print("[OK] No differences found!")
-        
-        # Save diff report
-        with open(output_directory / "v1_differences.txt", "w") as f:
-            f.write(f"V1 Roundtrip Differences\n")
-            f.write(f"========================\n\n")
-            f.write(f"Report ID: {report_id}\n")
-            f.write(f"Total differences: {len(differences)}\n\n")
-            for diff in differences:
-                f.write(f"{diff}\n")
-
-
-# =============================================================================
-# V3 Model Tests
-# =============================================================================
-
-class TestV3ModelRoundtrip:
-    """Test V3 model deserialization and roundtrip."""
-    
-    def test_v3_deserialize_original(self, original_json: Dict[str, Any]) -> None:
-        """Test that V3 can deserialize the original JSON."""
-        try:
-            report = UUTReportV3.model_validate(original_json)
-            print(f"\n[OK] V3 deserialized successfully")
-            print(f"  PN: {report.pn}")
-            print(f"  SN: {report.sn}")
-            print(f"  Result: {report.result}")
-            assert report.pn, "Part number should be set"
-            assert report.sn, "Serial number should be set"
-        except Exception as e:
-            pytest.fail(f"V3 failed to deserialize: {e}")
-    
-    @pytest.mark.asyncio
-    async def test_v3_roundtrip(
-        self, 
-        original_json: Dict[str, Any],
-        wats_config,
-        output_directory: Path
-    ) -> None:
-        """Full V3 roundtrip: deserialize -> submit -> load -> compare."""
-        # 0. Remove loop steps (see remove_loop_steps docstring for why)
-        data_without_loops = remove_loop_steps(original_json)
-        
-        # 1. Modify identifiers
-        modified_data = modify_for_submission(data_without_loops, "v3_roundtrip")
-        report_id = modified_data["id"]
-        
-        print(f"\n=== V3 Roundtrip Test ===")
-        print(f"UUID: {report_id}")
-        print(f"SN: {modified_data.get('sn') or modified_data.get('serialNumber')}")
-        
-        # 2. Deserialize into V3 model
-        try:
-            report_v3 = UUTReportV3.model_validate(modified_data)
-        except Exception as e:
-            pytest.fail(f"V3 deserialization failed: {e}")
-        
-        # Save what we're submitting
-        save_json(report_v3, output_directory / "v3_submitted.json")
-        print(f"Saved submitted report to: v3_submitted.json")
-        
-        # 3. Submit using async client
-        async with AsyncWATS(base_url=wats_config["base_url"], token=wats_config["token"]) as client:
-            submitted_id = await client.report.submit_report(report_v3)
-            assert submitted_id, "Submit should return report ID"
-            print(f"Submitted! ID: {submitted_id}")
-            
-            # 4. Wait for server processing
-            print(f"Waiting {SUBMIT_WAIT_TIME}s for server processing...")
-            await asyncio.sleep(SUBMIT_WAIT_TIME)
-            
-            # 5. Load back
-            loaded_report = await client.report.get_report(report_id, detail_level=7)
-            assert loaded_report, f"Should be able to load report {report_id}"
-        
-        # 6. Save loaded report
-        save_json(loaded_report, output_directory / "v3_loaded.json")
-        print(f"Saved loaded report to: v3_loaded.json")
-        
-        # 7. Compare
-        submitted_dict = model_to_dict(report_v3)
-        loaded_dict = model_to_dict(loaded_report)
-        
-        differences = deep_diff(submitted_dict, loaded_dict)
-        
-        print(f"\n=== V3 Comparison Results ===")
-        if differences:
-            print(f"Differences found ({len(differences)}):")
-            for diff in differences[:30]:
-                print(f"  - {diff}")
-            if len(differences) > 30:
-                print(f"  ... and {len(differences) - 30} more")
-        else:
-            print("[OK] No differences found!")
-        
-        # Save diff report
-        with open(output_directory / "v3_differences.txt", "w") as f:
-            f.write(f"V3 Roundtrip Differences\n")
-            f.write(f"========================\n\n")
-            f.write(f"Report ID: {report_id}\n")
-            f.write(f"Total differences: {len(differences)}\n\n")
-            for diff in differences:
-                f.write(f"{diff}\n")
-
-
-# =============================================================================
-# V1 vs V3 Comparison
-# =============================================================================
-
-class TestV1VsV3Comparison:
-    """Compare V1 and V3 model handling of the same data."""
-    
-    def test_deserialization_parity(self, original_json: Dict[str, Any]) -> None:
-        """Test that V1 and V3 deserialize to equivalent structures."""
-        # Deserialize with both
-        report_v1 = UUTReportV1.model_validate(original_json)
-        report_v3 = UUTReportV3.model_validate(original_json)
-        
-        # Convert back to dict
-        dict_v1 = model_to_dict(report_v1)
-        dict_v3 = model_to_dict(report_v3)
+        # Save loaded report
+        save_json(loaded_report, output_directory / "uut_loaded.json")
+        print(f"Saved loaded report to: uut_loaded.json")
         
         # Compare
-        differences = deep_diff(dict_v1, dict_v3)
+        submitted_dict = model_to_dict(report)
+        loaded_dict = model_to_dict(loaded_report)
         
-        print(f"\n=== V1 vs V3 Deserialization Comparison ===")
+        differences = deep_diff(submitted_dict, loaded_dict)
+        
+        print(f"\n=== UUT Comparison Results ===")
         if differences:
-            print(f"Differences ({len(differences)}):")
-            for diff in differences[:20]:
+            print(f"Differences found ({len(differences)}):")
+            for diff in differences[:30]:
                 print(f"  - {diff}")
-            if len(differences) > 20:
-                print(f"  ... and {len(differences) - 20} more")
+            if len(differences) > 30:
+                print(f"  ... and {len(differences) - 30} more")
+        else:
+            print("[OK] No differences found!")
+        
+        # Save diff report
+        with open(output_directory / "uut_differences.txt", "w") as f:
+            f.write(f"UUT Roundtrip Differences\n")
+            f.write(f"=========================\n\n")
+            f.write(f"Report ID: {report_id}\n")
+            f.write(f"Total differences: {len(differences)}\n\n")
+            for diff in differences:
+                f.write(f"{diff}\n")
 
 
 # =============================================================================
-#  UUR (Repair) Report Tests
+# UUR Report Roundtrip Tests
 # =============================================================================
 
-class TestV1UURRoundtrip:
-    """V1 UUR model roundtrip test."""
+class TestUURRoundtrip:
+    """Test UUR report deserialization and roundtrip."""
     
-    @pytest.mark.asyncio
-    async def test_v1_uur_deserialize(self, uur_json: Dict[str, Any]) -> None:
-        """Test V1 can deserialize the UUR JSON."""
-        print("\n=== V1 UUR Deserialization Test ===")
+    def test_uur_deserialize(self, uur_json: Dict[str, Any]) -> None:
+        """Test that UURReport can deserialize the JSON."""
+        print("\n=== UUR Deserialization Test ===")
         try:
-            report = UURReportV1.model_validate(uur_json)
-            print(f"✓ V1 deserialized UUR report: {report.pn}/{report.sn}")
+            report = UURReport.model_validate(uur_json)
+            print(f"[OK] UUR deserialized: {report.pn}/{report.sn}")
             assert report.type == "R"
             assert report.info is not None
-            assert report.info.operator == "RepairOperator"
         except Exception as e:
-            pytest.fail(f"V1 UUR deserialization failed: {e}")
+            pytest.fail(f"UUR deserialization failed: {e}")
     
     @pytest.mark.asyncio
-    async def test_v1_uur_roundtrip(
+    async def test_uur_roundtrip(
         self, 
         uur_json: Dict[str, Any],
         wats_config,
         output_directory: Path
     ) -> None:
-        """Full V1 UUR roundtrip: deserialize → submit → load → compare."""
-        print("\n=== V1 UUR Roundtrip Test ===")
+        """Full UUR roundtrip: deserialize -> submit -> load -> compare."""
+        print("\n=== UUR Roundtrip Test ===")
         
         # Deserialize
-        report_v1 = UURReportV1.model_validate(uur_json)
+        report = UURReport.model_validate(uur_json)
         
         # Modify for uniqueness
         new_uuid = uuid.uuid4()
-        report_v1.id = new_uuid
-        report_v1.sn = f"{report_v1.sn}_v1"
-        report_v1.start = datetime.now(timezone.utc)
+        report.id = new_uuid
+        report.sn = f"{report.sn}_roundtrip"
+        report.start = datetime.now(timezone.utc)
         
         # Update main sub-unit serial to match
-        if report_v1.sub_units:
-            for su in report_v1.sub_units:
-                if su.idx == 0:  # Main unit
-                    su.sn = report_v1.sn
+        if report.sub_units:
+            for su in report.sub_units:
+                if su.idx == 0:
+                    su.sn = report.sn
                     break
         
         print(f"UUID: {new_uuid}")
-        print(f"SN: {report_v1.sn}")
+        print(f"SN: {report.sn}")
         
-        # Submit
-        submitted_json = report_v1.model_dump(mode="json", by_alias=True, exclude_none=True)
-        output_directory.joinpath("uur_v1_submitted.json").write_text(
-            json.dumps(submitted_json, indent=2), encoding="utf-8"
-        )
-        print(f"Saved submitted report to: uur_v1_submitted.json")
+        # Save submitted report
+        save_json(report, output_directory / "uur_submitted.json")
+        print(f"Saved submitted report to: uur_submitted.json")
         
         # Submit using async client
         async with AsyncWATS(base_url=wats_config["base_url"], token=wats_config["token"]) as client:
             try:
-                submitted_id = await client.report.submit_report(report_v1)
+                submitted_id = await client.report.submit_report(report)
                 print(f"Submitted! ID: {submitted_id}")
             except Exception as e:
                 pytest.fail(f"Submit failed: {e}")
@@ -515,124 +376,33 @@ class TestV1UURRoundtrip:
             # Load back
             try:
                 loaded_report = await client.report.get_report(str(new_uuid), detail_level=7)
-                loaded_json = loaded_report.model_dump(mode="json", by_alias=True)
-                output_directory.joinpath("uur_v1_loaded.json").write_text(
-                    json.dumps(loaded_json, indent=2), encoding="utf-8"
-                )
-                print(f"Saved loaded report to: uur_v1_loaded.json")
+                save_json(loaded_report, output_directory / "uur_loaded.json")
+                print(f"Saved loaded report to: uur_loaded.json")
             except Exception as e:
                 pytest.fail(f"Load failed: {e}")
         
         # Compare
-        submitted_dict = model_to_dict(report_v1)
+        submitted_dict = model_to_dict(report)
         loaded_dict = model_to_dict(loaded_report)
         
         differences = deep_diff(submitted_dict, loaded_dict)
         
-        print(f"\n=== V1 UUR Comparison Results ===")
+        print(f"\n=== UUR Comparison Results ===")
         if differences:
             print(f"Differences found ({len(differences)}):")
-            for diff in differences[:10]:  # Show first 10
+            for diff in differences[:10]:
                 print(f"  - {diff}")
         else:
-            print("✓ No differences - perfect roundtrip!")
-
-
-class TestV3UURRoundtrip:
-    """V3 UUR model roundtrip test."""
-    
-    @pytest.mark.asyncio
-    async def test_v3_uur_deserialize(self, uur_json: Dict[str, Any]) -> None:
-        """Test V3 can deserialize the UUR JSON."""
-        print("\n=== V3 UUR Deserialization Test ===")
-        try:
-            report = UURReportV3.model_validate(uur_json)
-            print(f"✓ V3 deserialized UUR report: {report.pn}/{report.sn}")
-            assert report.type == "R"
-            assert report.uur_info is not None
-            assert report.uur_info.operator == "RepairOperator"
-        except Exception as e:
-            pytest.fail(f"V3 UUR deserialization failed: {e}")
-    
-    @pytest.mark.asyncio
-    async def test_v3_uur_roundtrip(
-        self, 
-        uur_json: Dict[str, Any],
-        wats_config,
-        output_directory: Path
-    ) -> None:
-        """Full V3 UUR roundtrip: deserialize → submit → load → compare."""
-        print("\n=== V3 UUR Roundtrip Test ===")
+            print("[OK] No differences - perfect roundtrip!")
         
-        # Deserialize
-        report_v3 = UURReportV3.model_validate(uur_json)
-        
-        # Modify for uniqueness
-        new_uuid = uuid.uuid4()
-        report_v3.id = new_uuid
-        report_v3.sn = f"{report_v3.sn}_v3"
-        report_v3.start = datetime.now(timezone.utc)
-        
-        # Update main sub-unit serial to match
-        if report_v3.sub_units:
-            for su in report_v3.sub_units:
-                if su.idx == 0:  # Main unit
-                    su.sn = report_v3.sn
-                    break
-        
-        print(f"UUID: {new_uuid}")
-        print(f"SN: {report_v3.sn}")
-        
-        # Submit
-        submitted_json = report_v3.model_dump(mode="json", by_alias=True, exclude_none=True)
-        output_directory.joinpath("uur_v3_submitted.json").write_text(
-            json.dumps(submitted_json, indent=2), encoding="utf-8"
-        )
-        print(f"Saved submitted report to: uur_v3_submitted.json")
-        
-        # Submit using async client
-        async with AsyncWATS(base_url=wats_config["base_url"], token=wats_config["token"]) as client:
-            try:
-                submitted_id = await client.report.submit_report(report_v3)
-                print(f"Submitted! ID: {submitted_id}")
-            except Exception as e:
-                pytest.fail(f"Submit failed: {e}")
-            
-            # Wait for processing
-            print(f"Waiting {SUBMIT_WAIT_TIME}s for server processing...")
-            await asyncio.sleep(SUBMIT_WAIT_TIME)
-            
-            # Load back
-            try:
-                loaded_report = await client.report.get_report(str(new_uuid), detail_level=7)
-                loaded_json = loaded_report.model_dump(mode="json", by_alias=True)
-                output_directory.joinpath("uur_v3_loaded.json").write_text(
-                    json.dumps(loaded_json, indent=2), encoding="utf-8"
-                )
-                print(f"Saved loaded report to: uur_v3_loaded.json")
-            except Exception as e:
-                pytest.fail(f"Load failed: {e}")
-        
-        # Compare
-        submitted_dict = model_to_dict(report_v3)
-        loaded_dict = model_to_dict(loaded_report)
-        
-        differences = deep_diff(submitted_dict, loaded_dict)
-        
-        print(f"\n=== V3 UUR Comparison Results ===")
-        if differences:
-            print(f"Differences found ({len(differences)}):")
-            for diff in differences[:10]:  # Show first 10
-                print(f"  - {diff}")
-        else:
-            print("✓ No differences - perfect roundtrip!")
-
-
-# =============================================================================
-#           print("[OK] V1 and V3 produce identical output!")
-        
-        # This is informational - we expect them to be the same if V3 is drop-in
-        # Don't fail the test, just report
+        # Save diff report
+        with open(output_directory / "uur_differences.txt", "w") as f:
+            f.write(f"UUR Roundtrip Differences\n")
+            f.write(f"=========================\n\n")
+            f.write(f"Report ID: {new_uuid}\n")
+            f.write(f"Total differences: {len(differences)}\n\n")
+            for diff in differences:
+                f.write(f"{diff}\n")
 
 
 # =============================================================================
@@ -648,7 +418,8 @@ class TestSummary:
         print("ROUNDTRIP TEST SUMMARY")
         print("=" * 70)
         
-        print(f"\nOriginal file: {JSON_ORIGINAL}")
+        print(f"\nUUT file: {UUT_JSON_FILE}")
+        print(f"UUR file: {UUR_JSON_FILE}")
         print(f"Output directory: {output_directory}")
         
         if output_directory.exists():

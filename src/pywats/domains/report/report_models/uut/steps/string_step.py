@@ -153,7 +153,7 @@ class StringValueStep(Step):
             
         measurement = StringMeasurement(
             value=value,
-            comp=comp_op,
+            comp_op=comp_op,
             limit=limit,
             status=status,
         )

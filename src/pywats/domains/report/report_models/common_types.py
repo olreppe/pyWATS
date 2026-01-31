@@ -42,6 +42,10 @@ from pydantic import (
     computed_field,
     PrivateAttr,
 )
+
+# Import CompOp from shared enums (single source of truth)
+from pywats.shared.enums import CompOp
+
 from pydantic_core import core_schema
 
 # Type variable for generic Step parent
@@ -100,127 +104,8 @@ class ChartType(str, Enum):
     LINE_LOG_Y = "LineLogY"
 
 
-class CompOp(str, Enum):
-    """
-    Comparison operators for measurements.
-    
-    Defines how measured values are compared against limits.
-    """
-    LOG = "LOG"      # No comparison, just log
-    EQ = "EQ"        # Equal
-    NE = "NE"        # Not Equal
-    LT = "LT"        # Less Than
-    LE = "LE"        # Less Than or Equal
-    GT = "GT"        # Greater Than
-    GE = "GE"        # Greater Than or Equal
-    GELE = "GELE"    # Between (inclusive): low <= value <= high
-    GTLT = "GTLT"    # Between (exclusive): low < value < high
-    GELT = "GELT"    # low <= value < high
-    GTLE = "GTLE"    # low < value <= high
-    LTGT = "LTGT"    # Outside (exclusive): value < low OR value > high
-    LEGE = "LEGE"    # Outside (inclusive): value <= low OR value >= high
-    CASESENSITIVESTRINGCOMPARE = "CASESENSITIVESTRINGCOMPARE"
-    CASEINSENSITIVESTRINGCOMPARE = "CASEINSENSITIVESTRINGCOMPARE"
-    CASELESSEQ = "CASELESSEQ"    # Case-insensitive equal
-    CASELESSNE = "CASELESSNE"    # Case-insensitive not equal
 
-    def validate_limits(
-        self, 
-        low_limit: Optional[float] = None, 
-        high_limit: Optional[float] = None
-    ) -> bool:
-        """
-        Validate that the required limits are provided for this comparison operator.
-        
-        Returns True if limits are valid for the operator, False otherwise.
-        """
-        # Operators requiring no limits
-        if self in (CompOp.LOG,):
-            return True
-            
-        # Operators requiring only low limit
-        if self in (CompOp.GE, CompOp.GT):
-            return low_limit is not None
-            
-        # Operators requiring only high limit  
-        if self in (CompOp.LE, CompOp.LT):
-            return high_limit is not None
-            
-        # Operators requiring both limits
-        if self in (CompOp.GELE, CompOp.GTLT, CompOp.GELT, CompOp.GTLE, 
-                    CompOp.LTGT, CompOp.LEGE):
-            return low_limit is not None and high_limit is not None
-            
-        # String comparison and EQ/NE - no numeric limits needed
-        if self in (CompOp.EQ, CompOp.NE, 
-                    CompOp.CASESENSITIVESTRINGCOMPARE, 
-                    CompOp.CASEINSENSITIVESTRINGCOMPARE):
-            return True
-            
-        return True
-    
-    def evaluate(
-        self,
-        value: float,
-        low_limit: Optional[float] = None,
-        high_limit: Optional[float] = None,
-        string_value: Optional[str] = None,
-        string_limit: Optional[str] = None,
-    ) -> bool:
-        """
-        Evaluate if a value passes this comparison.
-        
-        Returns True if value passes, False if it fails.
-        """
-        # Handle special float values
-        if value != value:  # NaN check
-            return False
-            
-        if self == CompOp.LOG:
-            return True
-        elif self == CompOp.EQ:
-            if low_limit is not None:
-                return value == low_limit
-            return True
-        elif self == CompOp.NE:
-            if low_limit is not None:
-                return value != low_limit
-            return True
-        elif self == CompOp.LT:
-            return high_limit is not None and value < high_limit
-        elif self == CompOp.LE:
-            return high_limit is not None and value <= high_limit
-        elif self == CompOp.GT:
-            return low_limit is not None and value > low_limit
-        elif self == CompOp.GE:
-            return low_limit is not None and value >= low_limit
-        elif self == CompOp.GELE:
-            return (low_limit is not None and high_limit is not None and 
-                    low_limit <= value <= high_limit)
-        elif self == CompOp.GTLT:
-            return (low_limit is not None and high_limit is not None and 
-                    low_limit < value < high_limit)
-        elif self == CompOp.GELT:
-            return (low_limit is not None and high_limit is not None and 
-                    low_limit <= value < high_limit)
-        elif self == CompOp.GTLE:
-            return (low_limit is not None and high_limit is not None and 
-                    low_limit < value <= high_limit)
-        elif self == CompOp.LTGT:
-            return (low_limit is not None and high_limit is not None and 
-                    (value < low_limit or value > high_limit))
-        elif self == CompOp.LEGE:
-            return (low_limit is not None and high_limit is not None and 
-                    (value <= low_limit or value >= high_limit))
-        elif self == CompOp.CASESENSITIVESTRINGCOMPARE:
-            return string_value == string_limit if string_limit else True
-        elif self == CompOp.CASEINSENSITIVESTRINGCOMPARE:
-            if string_value and string_limit:
-                return string_value.lower() == string_limit.lower()
-            return True
-            
-        return True
-
+# CompOp imported from shared enums (see below)
 
 class FlowType(str, Enum):
     """Flow control step types for GenericStep."""
@@ -250,35 +135,12 @@ class FlowType(str, Enum):
 # Validation Utilities
 # ============================================================================
 
-# Characters that cause issues in WATS API
-PROBLEMATIC_CHARS = ['/', '\\', '<', '>', ':', '"', '|', '?', '*']
-
-
-def validate_serial_number(sn: str) -> str:
-    """
-    Validate and clean serial number.
-    
-    Warns if problematic characters are found but allows them through
-    since the WATS API may handle them.
-    """
-    for char in PROBLEMATIC_CHARS:
-        if char in sn:
-            # Could log warning here
-            pass
-    return sn
-
-
-def validate_part_number(pn: str) -> str:
-    """
-    Validate and clean part number.
-    
-    Warns if problematic characters are found but allows them through.
-    """
-    for char in PROBLEMATIC_CHARS:
-        if char in pn:
-            # Could log warning here
-            pass
-    return pn
+# Import actual validation functions from core module
+from pywats.core.validation import (
+    validate_serial_number,
+    validate_part_number,
+    PROBLEMATIC_CHARS,
+)
 
 
 # ============================================================================

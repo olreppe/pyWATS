@@ -1,15 +1,15 @@
 {
-  "id": "c724cf98-dff0-4e5b-a767-79df85a74639",
+  "id": "b66c43fb-66f8-4552-bf9a-45919e7e9de1",
   "type": "R",
   "pn": "PRODUCTION-TEST-MODULE",
-  "sn": "MODULE-20251221230142-5519_v3",
+  "sn": "MODULE-20251221230142-5519_roundtrip",
   "rev": "A",
   "processCode": 500,
   "result": "P",
   "machineName": "RepairStation",
   "location": "TestLab",
   "purpose": "Repair",
-  "start": "2026-01-31T11:09:36.986268Z",
+  "start": "2026-01-31T21:08:41.871911Z",
   "uur": {
     "user": "RepairOperator",
     "comment": "Thermal failure repaired",
@@ -25,7 +25,7 @@
     {
       "pn": "PRODUCTION-TEST-MODULE",
       "rev": "A",
-      "sn": "MODULE-20251221230142-5519_v3",
+      "sn": "MODULE-20251221230142-5519_roundtrip",
       "partType": "Main",
       "idx": 0,
       "failures": [

@@ -21,6 +21,10 @@ from .string_step import StringValueStep, StringStep
 from .generic_step import GenericStep
 from .action_step import ActionStep
 from .chart_step import ChartStep
+from .limit_measurement import LimitMeasurement
+
+# Import CompOp from shared enums for convenience
+from pywats.shared.enums import CompOp
 
 __all__ = [
     # Container
@@ -37,6 +41,7 @@ __all__ = [
     "BooleanMeasurement",
     "StringMeasurement",
     "SingleMeasurementMixin",
+    "LimitMeasurement",
     
     # Step Classes
     "SequenceCall",
@@ -49,4 +54,7 @@ __all__ = [
     "GenericStep",
     "ActionStep",
     "ChartStep",
+    
+    # Enums
+    "CompOp",
 ]

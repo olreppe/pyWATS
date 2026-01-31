@@ -8,11 +8,11 @@ Tests all variants of all step types with extensive examples using V3 models
 """
 from datetime import datetime
 
-from pywats.domains.report.report_models_v3.chart import ChartType
+from pywats.domains.report.report_models.chart import ChartType
 from pywats.shared.enums import CompOp
-from pywats.domains.report.report_models_v3.uut.steps.generic_step import FlowType
-from pywats.domains.report.report_models_v3.uut.steps.sequence_call import SequenceCall
-from pywats.domains.report.report_models_v3.uut.uut_report import UUTReport
+from pywats.domains.report.report_models.uut.steps.generic_step import FlowType
+from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+from pywats.domains.report.report_models.uut.uut_report import UUTReport
 
 # Rebuild models to resolve forward references
 UUTReport.model_rebuild()

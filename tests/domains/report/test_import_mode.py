@@ -14,8 +14,7 @@ from pywats.domains.report.import_mode import (
 )
 from pywats.domains.report.report_models.uut.step import Step, StepStatus
 from pywats.shared.enums import CompOp
-from pywats.domains.report.report_models.uut.steps.measurement import LimitMeasurement
-from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
+from pywats.domains.report.report_models.uut.steps import LimitMeasurement, SequenceCall
 from pywats.domains.report.report_models.uut.uut_report import UUTReport
 
 

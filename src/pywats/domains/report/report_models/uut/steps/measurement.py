@@ -213,9 +213,11 @@ class StringMeasurement(BaseMeasurement):
         description="Measured string value."
     )
     
-    # Comparison operator (EQ, NE, CASELESSEQ, CASELESSNE)
-    comp: Optional[CompOp] = Field(
-        default=None,
+    # Comparison operator (EQ, NE, CASESENSIT, IGNORECASE)
+    comp_op: Optional[CompOp] = Field(
+        default=CompOp.LOG,
+        validation_alias="compOp",
+        serialization_alias="compOp",
         description="String comparison operator."
     )
     
@@ -232,11 +234,11 @@ class StringMeasurement(BaseMeasurement):
         Returns:
             Tuple of (status, passed).
         """
-        if self.value is None or self.comp is None or self.limit is None:
+        if self.value is None or self.comp_op is None or self.limit is None:
             return (StepStatus.Passed, True)
             
         # String comparisons
-        match self.comp:
+        match self.comp_op:
             case CompOp.EQ:
                 passed = self.value == self.limit
             case CompOp.NE:

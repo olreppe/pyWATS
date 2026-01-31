@@ -1,35 +1,33 @@
 {
-  "id": "6c2e8837-1310-4224-907f-a31e66b82fd5",
+  "id": "c724cf98-dff0-4e5b-a767-79df85a74639",
   "type": "R",
   "pn": "PRODUCTION-TEST-MODULE",
   "sn": "MODULE-20251221230142-5519_v3",
   "rev": "A",
   "processCode": 500,
+  "result": "P",
+  "machineName": "RepairStation",
+  "location": "TestLab",
+  "purpose": "Repair",
+  "start": "2026-01-31T11:09:36.986268Z",
   "uur": {
     "user": "RepairOperator",
     "comment": "Thermal failure repaired",
     "execTime": 0.0,
-    "execTimeFormat": null,
-    "testOperationCode": 90,
-    "testOperationName": "Burn In test",
+    "repairProcessCode": null,
+    "repairProcessName": null,
+    "testOperationCode": null,
+    "testOperationName": null,
     "testOperationGuid": null,
     "processCode": 90,
     "processCodeFormat": null,
     "processName": "Burn In test",
     "refUUT": "873d67f8-7669-4f4b-a627-e598e444d323",
-    "userLoginName": null,
     "confirmDate": "2025-12-21T22:01:45.472138Z",
     "finalizeDate": "2025-12-21T22:01:45.472138Z",
     "active": true,
-    "parent": null,
-    "children": null
+    "parent": null
   },
-  "result": "P",
-  "machineName": "RepairStation",
-  "location": "TestLab",
-  "purpose": "Repair",
-  "start": "2026-01-31T04:20:12.494596Z",
-  "miscInfos": [],
   "subUnits": [
     {
       "pn": "PRODUCTION-TEST-MODULE",
@@ -56,7 +54,9 @@
       ]
     }
   ],
+  "miscInfos": [],
   "assets": [],
+  "assetStats": [],
   "binaryData": [],
   "additionalData": []
 }

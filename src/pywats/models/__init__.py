@@ -12,11 +12,11 @@ from ..domains.report.report_models import (
     WATSBase, Report, ReportStatus,
     ReportInfo, MiscInfo, AdditionalData, BinaryData,
     Asset as ReportAsset, AssetStats, Chart, ChartSeries, ChartType,
-    SubUnit, Attachment as ReportAttachment, DeserializationContext,
+    SubUnit, Attachment as ReportAttachment,
     # UUT Report
     UUTReport, UUTInfo, Step, StepStatus,
     # UUR Report
-    UURReport, UURInfo, SubRepair
+    UURReport, UURInfo, UURSubUnit, UURFailure
 )
 
 # Comparison operator (convenient import without deep path)
@@ -38,14 +38,14 @@ __all__ = [
     "ChartType",
     "SubUnit",
     "ReportAttachment",
-    "DeserializationContext",
     "UUTReport",
     "UUTInfo",
     "Step",
     "StepStatus",
     "UURReport",
     "UURInfo",
-    "SubRepair",
+    "UURSubUnit",
+    "UURFailure",
     # Comparison operator
     "CompOp",
 ]
