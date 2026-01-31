@@ -1,10 +1,7 @@
 """
-Comprehensive UUT Model Test - V3
-Tests all variants of all step types with extensive examples using V3 models
-"""
-"""
-Comprehensive UUT Model Test - V3
-Tests all variants of all step types with extensive examples using V3 models
+Comprehensive UUT Model Test
+
+Tests all variants of all step types with extensive examples.
 """
 from datetime import datetime
 

@@ -1,0 +1,18 @@
+# pyWATS Git Attributes
+# ======================
+
+# Mark archived/reference code as non-code for linguist statistics
+# These are kept for reference but should not be modified or used
+
+# Archived report model implementations (V1, V2, old)
+src/pywats/domains/report/report_models_old/** linguist-vendored
+src/pywats/domains/report/report_models_v1/** linguist-vendored
+src/pywats/domains/report/report_models_v2/** linguist-vendored
+
+# C# reference code (not part of pyWATS, just for reference)
+referenced_code/** linguist-vendored
+referenced_code/**/*.cs linguist-vendored
+
+# Documentation
+*.md linguist-documentation
+docs/** linguist-documentation
