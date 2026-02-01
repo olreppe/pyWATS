@@ -369,10 +369,11 @@ class TestPyWATSRetryIntegration:
     """Tests for retry integration with pyWATS class."""
     
     def test_default_retry_config(self):
-        """pyWATS should have retry enabled by default."""
+        """pyWATS should have retry disabled by default (for HTTP client)."""
         api = pyWATS(base_url="https://test.example.com", token="dGVzdDp0ZXN0")
         
-        assert api.retry_config.enabled is True
+        # HTTP retry is disabled by default
+        assert api.retry_config.enabled is False
         assert api.retry_config.max_attempts == 3
     
     def test_custom_retry_config(self):

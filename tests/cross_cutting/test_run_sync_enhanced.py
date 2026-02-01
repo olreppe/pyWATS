@@ -110,9 +110,9 @@ def test_correlation_id_in_logs(caplog):
     
     caplog.set_level(logging.INFO)
     
-    # Add correlation filter to capture correlation IDs
-    for handler in caplog.handler.handlers:
-        handler.addFilter(CorrelationFilter())
+    # Add correlation filter to the caplog handler
+    correlation_filter = CorrelationFilter()
+    caplog.handler.addFilter(correlation_filter)
     
     async def logged_operation():
         logger = logging.getLogger("pywats.test")

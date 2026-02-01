@@ -1,5 +1,5 @@
 {
-  "id": "a38448dc-a5bb-4ecf-87ae-dd4a1a9055bb",
+  "id": "5abc8828-4f51-4605-878d-2e6c62cae642",
   "type": "R",
   "pn": "PRODUCTION-TEST-MODULE",
   "sn": "MODULE-20251221230142-5519_roundtrip",
@@ -9,7 +9,7 @@
   "machineName": "RepairStation",
   "location": "TestLab",
   "purpose": "Repair",
-  "start": "2026-02-01T21:55:14.541733Z",
+  "start": "2026-02-01T23:05:59.118231Z",
   "uur": {
     "user": "RepairOperator",
     "comment": "Thermal failure repaired",
