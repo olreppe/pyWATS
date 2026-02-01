@@ -1,12 +1,17 @@
 # Type Stub Generation for pyWATS
 
+**Audience:** Developers and Contributors  
+**User Documentation:** See [docs/reference/type-hints.md](../reference/type-hints.md) for user-facing troubleshooting
+
+---
+
 ## Overview
 
 The pyWATS library provides both asynchronous (`AsyncWATS`) and synchronous (`pyWATS`) APIs. The synchronous API uses a dynamic wrapper (`SyncServiceWrapper`) which prevents type checkers from inferring proper return types.
 
 To solve this, we auto-generate **type stub files** (`.pyi`) that provide full type information for IDE autocomplete and type checking.
 
-## What This Provides
+## Developer Benefits
 
 ✅ **Full autocomplete** in VS Code/PyCharm  
 ✅ **Type checking** with mypy/Pylance  

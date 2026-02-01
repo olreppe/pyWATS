@@ -4,6 +4,40 @@ This guide covers common installation and configuration issues across all suppor
 
 ---
 
+## Quick Links
+
+- [IDE & Type Hints Issues](#ide--type-hints-issues) - Autocomplete not working in VS Code/PyCharm
+- [Installation Issues](#installation-issues) - Platform-specific installation problems
+- [Service Issues](#service-issues) - Client service won't start or crashes
+- [Connection Issues](#connection-issues) - Can't connect to WATS server
+- [Performance Issues](#performance-issues) - Slow uploads or high memory usage
+
+---
+
+## IDE & Type Hints Issues
+
+### VS Code autocomplete not working
+
+**Symptom:** Typing `api.report.` doesn't show available methods
+
+**Quick fix:**
+1. Press `Ctrl+Shift+P` → "Developer: Reload Window"
+2. Verify Pylance extension is installed and enabled
+3. Check Python interpreter points to your virtual environment
+
+**Detailed troubleshooting:** See [Type Hints & IDE Support](reference/type-hints.md)
+
+### PyCharm not showing type hints
+
+**Solution:**
+1. File → Invalidate Caches → "Invalidate and Restart"
+2. Check interpreter: File → Settings → Project → Python Interpreter
+3. Verify pyWATS is listed in packages
+
+**More details:** [Type Hints Reference](reference/type-hints.md#pycharm)
+
+---
+
 ## Quick Diagnostics
 
 ### Run the Diagnostic Tool
@@ -41,9 +75,11 @@ cat /var/log/pywats/stdout.log
 
 ---
 
-## Windows Issues
+## Installation Issues
 
-### Installation Fails
+### Windows Issues
+
+#### Installation Fails
 
 #### "Windows protected your PC" (SmartScreen)
 **Cause:** Unsigned installer  
@@ -57,7 +93,11 @@ cat /var/log/pywats/stdout.log
 **Error:** `VCRUNTIME140.dll not found`  
 **Solution:** Install [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe)
 
-### Service Issues
+---
+
+## Service Issues
+
+### Windows Service Issues
 
 #### Service won't start
 1. Check Event Viewer: `eventvwr.msc` → Windows Logs → Application
