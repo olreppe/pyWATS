@@ -136,6 +136,7 @@ class PersistentQueue(MemoryQueue):
         self,
         data: Any,
         item_id: Optional[str] = None,
+        priority: int = 5,
         max_attempts: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> QueueItem:
@@ -145,6 +146,7 @@ class PersistentQueue(MemoryQueue):
         Args:
             data: The payload data (report dict, pydantic model, etc.)
             item_id: Optional custom ID
+            priority: Queue priority (1=highest, 10=lowest, default=5)
             max_attempts: Override default max attempts
             metadata: Optional metadata
             
@@ -165,7 +167,7 @@ class PersistentQueue(MemoryQueue):
         
         # Add to memory queue
         try:
-            item = super().add(data, item_id, max_attempts, metadata)
+            item = super().add(data, item_id, priority, max_attempts, metadata)
         except ValueError as e:
             # Convert parent's ValueError to our QueueFullError
             if "full" in str(e).lower():
@@ -257,6 +259,7 @@ class PersistentQueue(MemoryQueue):
     
     def _load_from_disk(self) -> None:
         """Load existing items from disk on startup."""
+        import heapq
         loaded = 0
         recovered = 0
         
@@ -274,7 +277,11 @@ class PersistentQueue(MemoryQueue):
                             recovered += 1
                         
                         self._items[item.id] = item
-                        self._order.append(item.id)
+                        
+                        # Add to heap if pending (for priority-based processing)
+                        if item.status == QueueItemStatus.PENDING:
+                            heapq.heappush(self._heap, item)
+                        
                         loaded += 1
                         
                 except Exception as ex:
@@ -309,6 +316,7 @@ class PersistentQueue(MemoryQueue):
         item = QueueItem(
             id=item_id,
             data=report_data,
+            priority=metadata.get('priority', 5),  # Load priority with default
             status=status,
             created_at=datetime.fromtimestamp(data_path.stat().st_ctime),
             updated_at=datetime.fromtimestamp(data_path.stat().st_mtime),
@@ -338,6 +346,7 @@ class PersistentQueue(MemoryQueue):
         # Write metadata file
         meta = {
             'id': item.id,
+            'priority': item.priority,
             'status': item.status.value,
             'created_at': item.created_at.isoformat(),
             'updated_at': item.updated_at.isoformat(),
@@ -375,6 +384,7 @@ class PersistentQueue(MemoryQueue):
             # Update metadata content
             meta = {
                 'id': item.id,
+                'priority': item.priority,
                 'status': item.status.value,
                 'created_at': item.created_at.isoformat(),
                 'updated_at': item.updated_at.isoformat(),
@@ -395,6 +405,7 @@ class PersistentQueue(MemoryQueue):
             meta_path = self._get_meta_path(item)
             meta = {
                 'id': item.id,
+                'priority': item.priority,
                 'status': item.status.value,
                 'created_at': item.created_at.isoformat(),
                 'updated_at': item.updated_at.isoformat(),
