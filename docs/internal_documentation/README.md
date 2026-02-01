@@ -2,6 +2,8 @@
 
 **Purpose**: This folder contains all working documents, implementation plans, analysis reports, and agent-generated documentation. This README defines the workflow for organizing and managing internal documentation.
 
+**Last Reorganized:** February 1, 2026
+
 ---
 
 ## 📁 Folder Structure
@@ -9,19 +11,80 @@
 ```
 docs/internal_documentation/
 ├── README.md                    # This file - workflow guide
-├── TYPE_SAFETY_AUDIT.md         # Active reference documents
-├── WIP/                         # Work In Progress tracking
-│   ├── completed/              # ✅ Finished work
-│   ├── to_do/                  # 🚧 Active/planned work
-│   └── ideas/                  # 💡 Future ideas & proposals
+├── TYPE_STUBS.md               # Active reference documents
+├── BETA_TESTING_PROGRAM.md     # Active programs
+├── .agent_instructions.md      # Agent context
+│
+├── 📋 active/                  # Current work (1-5 items max)
+├── 📅 planned/                 # Next 1-3 months (10-20 items)
+├── ✅ completed/               # Historical record (organized by quarter)
+│   └── 2026-q1/               # Jan-Mar 2026
+│       ├── jan_architecture_review/
+│       ├── jan_report_system/
+│       └── feb_developer_experience/
+├── 💡 ideas/                   # Future exploration (unlimited)
+├── 📚 reference/               # Code samples, specs, analysis
+│   └── csharp_code/           # C# reference implementations
+├── 🛠️ scripts/                 # Utility scripts
+└── 🗄️ archive_old/            # Pre-2026 historical docs
 ```
 
 ---
 
-## 📋 Document Categories
+## 🎯 Simple 3-State Workflow
 
-### ✅ **Completed** (`WIP/completed/`)
-Implementation plans, analysis reports, and summaries that have been **fully executed** and are kept for historical reference.
+### 📋 **Active** (`active/`)
+**What you're working on RIGHT NOW**
+
+**Rule:** Maximum 5 items. If you can't finish it this week, move to planned.
+
+**Criteria**:
+- Actively editing TODAY
+- Implementation in progress RIGHT NOW  
+- Clear deliverable within 1 week
+- Has your full attention
+
+**When to add**: When you start working on it  
+**When to remove**: 
+- Completed → Move to `completed/YYYY-qN/theme/`
+- Not working on it → Back to `planned/`
+- Blocked → Move to `planned/` with blocker noted
+
+---
+
+### 📅 **Planned** (`planned/`)
+**What's coming up in the NEXT 1-3 months**
+
+**Rule:** Concrete enough to estimate, prioritized by value.
+
+**Criteria**:
+- Clear scope and acceptance criteria
+- Estimated effort known
+- Prioritized but not yet started
+- Waiting for capacity or dependencies
+
+**When to add**: When idea becomes concrete plan  
+**When to remove**:
+- Ready to start → Promote to `active/`
+- Deprioritized → Downgrade to `ideas/`
+- Dependencies unclear → Back to `ideas/` for research
+
+---
+
+### ✅ **Completed** (`completed/YYYY-qN/`)
+**Historical record of finished work**
+
+**Rule:** Organize by quarter and theme for easy reference.
+
+**Structure**:
+```
+completed/
+└── 2026-q1/
+    ├── README.md  (summary of Q1 achievements)
+    ├── jan_architecture_review/
+    ├── jan_report_system/
+    └── feb_developer_experience/
+```
 
 **Criteria**:
 - Status markers: ✅ IMPLEMENTED, ✅ COMPLETED, ✅ DONE
@@ -29,98 +92,164 @@ Implementation plans, analysis reports, and summaries that have been **fully exe
 - No outstanding action items
 - Valuable for understanding past decisions
 
-**Examples**:
-- `TYPE_SAFETY_IMPLEMENTATION_PLAN.md` - Fully implemented type safety improvements
-- `BATCH_IMPLEMENTATION_PLAN.md` - Batch operations now in core
-- `PERFORMANCE_OPTIMIZATIONS.md` - Completed optimization work
-
-**When to move here**: Immediately after completing all work items in a plan
+**When to add**: Immediately when work is finished  
+**When to archive**: Annually - very old quarters to `archive_old/`
 
 ---
 
-### 🚧 **To Do** (`WIP/to_do/`)
-Active work in progress or planned implementations that are **ready to execute** or **currently being worked on**.
+### 💡 **Ideas** (`ideas/`)
+**Future exploration - not yet scheduled**
 
-**Criteria**:
-- Status markers: 📋 PLANNED, 🚧 IN PROGRESS, TODO
-- Has clear action items or implementation steps
-- Intended to be worked on in near future (next 1-3 months)
-- Blocking or high-priority work
+**Rule:** Any idea worth remembering. Review monthly to promote or archive.
 
-**Examples**:
-- `ASYNC_IMPLEMENTATION_PLAN.md` - Planned async API support
-- `EXCEPTION_HANDLING_PLAN.md` - ErrorHandler standardization work
-- `RETRY_IMPLEMENTATION_PLAN.md` - Retry logic implementation
-
-**When to move here**: When creating new implementation plans or starting analysis for upcoming work
-
----
-
-### 💡 **Ideas** (`WIP/ideas/`)
-Proposals, explorations, and recommendations that are **good ideas** but **not yet scheduled** for implementation.
+**Structure**:
+```
+ideas/
+├── README.md  (index with priority ratings)
+├── integrations/  (CFX, MQTT, electronics test)
+├── analytics/     (SPC, AI-assisted, caching)
+├── deployment/    (packaging, easy install)
+└── architecture/  (MCP, performance, models)
+```
 
 **Criteria**:
 - Interesting concepts worth preserving
-- Requires further validation or prioritization
-- May depend on other work being completed first
-- Long-term improvements (3+ months out)
-- "Nice to have" vs "must have"
+- Not concrete enough to estimate yet
+- Requires research or validation
+- Long-term improvements (3+ months)
 
-**Examples**:
-- `TARGET_PLATFORM_IMPLEMENTATION_PLAN.md` - Future deployment improvements
-- `MCP_RECOMMENDATIONS.md` - Model Context Protocol integration ideas
-- `MCP_ANALYSIS.md` - Analysis of MCP capabilities
-
-**When to move here**: When documenting explorations, brainstorming, or future roadmap items
+**When to add**: Anytime you have an idea  
+**When to remove**: Promote to `planned/` OR archive if obsolete
 
 ---
 
-### 📚 **Reference** (Root level)
-Architecture documentation, domain knowledge, and reference materials that don't have a clear "completion" state. These are **living documents** that get updated over time.
+### 📚 **Reference** (`reference/`)
+**Permanent knowledge base - code samples, specs, analysis**
 
-**Criteria**:
-- Architecture diagrams and specifications
-- Domain knowledge and terminology guides
-- API design conventions and standards
-- Release procedures and checklists
+**Rule:** Never delete - this is your institutional knowledge.
 
-**Examples**:
-- `TYPE_SAFETY_AUDIT.md` - Comprehensive codebase audit reference
+**Structure**:
+```
+reference/
+├── csharp_code/      # C# implementations for comparison
+├── api_specs/        # API specifications
+├── example_reports/  # Sample report files
+└── domain_analysis/  # Domain health assessments
+```
 
-**Location**: Keep at root of `internal_documentation/` for easy access
+**Contains**:
+- Code samples for comparison (C# vs Python)
+- API specifications and contracts
+- Domain health assessments
+- Architecture diagrams
+
+**When to add**: Any reference material that helps understand the system
 
 ---
 
-## 🤖 Agent Workflow
+## 🔄 Workflow Examples
 
 ### Starting New Work
+1. Have idea → Add to `ideas/category/IDEA_NAME.md`
+2. Idea becomes concrete → Move to `planned/`
+3. Ready to start → Move to `active/` (max 5!)
+4. Work complete → Move to `completed/YYYY-qN/theme/`
 
-**When a user requests new development work:**
+### Weekly Review
+1. Look at `active/` - Still working on these? If not, back to `planned/`
+2. Look at `planned/` - Ready to promote to `active/`?
+3. Check `ideas/` - Any new priorities for `planned/`?
 
-1. **Check existing docs first**:
-   ```
-   - Search WIP/to_do/ for related plans
-   - Search WIP/completed/ for prior art
-   - Search WIP/ideas/ for relevant proposals
-   ```
+### Quarterly Cleanup
+1. Create new `completed/YYYY-qN/` folder with theme subfolders
+2. Group this quarter's work by theme
+3. Update `completed/YYYY-qN/README.md` with summary
+4. Review `ideas/` - Archive obsolete items
 
-2. **Create planning document**:
-   - Place in `WIP/to_do/`
-   - Use clear naming: `{TOPIC}_IMPLEMENTATION_PLAN.md`
-   - Include status header: `**Status**: 🚧 IN PROGRESS`
-   - Add date and objective
+---
 
-3. **Structure the plan**:
-   ```markdown
-   # {Feature} Implementation Plan
-   
-   **Status**: 🚧 IN PROGRESS
-   **Priority**: HIGH/MEDIUM/LOW
-   **Estimated Effort**: X hours/days
-   **Target Version**: X.Y.Z
-   
-   ## Overview
-   Brief description of what and why
+## 🤖 Agent Instructions
+
+### Creating New Plans
+
+**Place new implementation plans in** `active/` **when actively working on them.**
+
+**Structure:**
+```markdown
+# {Feature} Implementation Plan
+
+**Status**: 🚧 IN PROGRESS
+**Started**: YYYY-MM-DD
+**Priority**: HIGH/MEDIUM/LOW
+**Estimated Effort**: X hours/days
+
+## Overview
+What and why
+
+## Implementation Steps
+1. Step one
+2. Step two
+
+## Acceptance Criteria
+- [ ] Criteria one
+- [ ] Criteria two
+
+## Progress
+- [x] Completed step
+- [ ] Next step
+```
+
+### Completing Work
+
+**When work is finished:**
+1. Update status to ✅ COMPLETED
+2. Add completion date
+3. Move to `completed/YYYY-qN/appropriate_theme/`
+4. Update quarterly README
+
+### Moving Between States
+
+**Promote idea → planned:**
+- Add concrete scope, acceptance criteria, effort estimate
+- Move from `ideas/category/` to `planned/`
+
+**Promote planned → active:**
+- Ready to start work THIS WEEK
+- Move from `planned/` to `active/`
+- Ensure active has < 5 items
+
+**Downgrade active → planned:**
+- Not working on it anymore
+- Blocked or waiting
+- Move back to `planned/` with notes
+
+---
+
+## 📊 Current Status (February 1, 2026)
+
+**Active:** 1 item (Sphinx Documentation)  
+**Planned:** 4 items (Architecture debt, type safety analysis, Stage 4 improvements)  
+**Ideas:** 15 items (CFX, MQTT, AI/SPC, MCP, etc.)  
+**Completed Q1 2026:** ~67 documents across 3 major themes  
+**Reference:** C# code samples, API specs  
+**Archive:** Pre-2026 historical documentation (88 files)
+
+---
+
+## 🎯 Keep It Simple
+
+**Golden Rules:**
+1. **Active** = What I'm doing THIS WEEK (max 5)
+2. **Planned** = What's NEXT (1-3 months)
+3. **Completed** = What's DONE (organized by quarter + theme)
+4. **Ideas** = What's SOMEDAY (review monthly)
+5. **Reference** = What HELPS ME (never delete)
+
+**Don't overthink it!** The system works when you use it naturally, not when it's too complicated to maintain.
+
+---
+
+Last Updated: February 1, 2026
    
    ## Current State
    What exists today
