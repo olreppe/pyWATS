@@ -7,6 +7,8 @@ import asyncio
 import logging
 import inspect
 import threading
+import contextvars
+import uuid
 from typing import Optional, Any, TypeVar, Coroutine, TYPE_CHECKING
 from functools import wraps
 
@@ -16,11 +18,22 @@ from .core.retry import RetryConfig
 from .core.exceptions import ErrorMode, ErrorHandler
 
 if TYPE_CHECKING:
-    from .core.config import APISettings
+    from .core.config import APISettings, SyncConfig
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
+
+# Thread-local storage for persistent event loops
+_thread_local = threading.local()
+
+# Context variable for correlation IDs
+correlation_id_var = contextvars.ContextVar('correlation_id', default=None)
+
+
+def generate_correlation_id() -> str:
+    """Generate a unique correlation ID for request tracking."""
+    return str(uuid.uuid4())[:8]  # Short UUID for readability
 
 # Thread-local storage for persistent event loops
 _thread_local = threading.local()
@@ -35,8 +48,26 @@ def _get_or_create_event_loop() -> asyncio.AbstractEventLoop:
     return loop
 
 
-def _run_sync(coro: Coroutine[Any, Any, T]) -> T:
-    """Run a coroutine synchronously using a persistent event loop."""
+def _run_sync(
+    coro: Coroutine[Any, Any, T],
+    timeout: Optional[float] = None,
+    correlation_id: Optional[str] = None
+) -> T:
+    """
+    Run a coroutine synchronously with optional timeout and correlation tracking.
+    
+    Args:
+        coro: The coroutine to execute
+        timeout: Optional timeout in seconds
+        correlation_id: Optional correlation ID for request tracking
+        
+    Returns:
+        The result of the coroutine
+        
+    Raises:
+        TimeoutError: If operation exceeds timeout
+        RuntimeError: If called from within an async context
+    """
     try:
         asyncio.get_running_loop()
         # If there's already a running loop, we can't use run_until_complete
@@ -44,13 +75,29 @@ def _run_sync(coro: Coroutine[Any, Any, T]) -> T:
             "Cannot use pyWATS from within an async context. "
             "Use AsyncWATS instead."
         )
-    except RuntimeError:
+    except RuntimeError as e:
         # No running loop - this is the normal case for sync usage
-        pass
+        if "no running event loop" not in str(e).lower():
+            raise
     
-    # Use a persistent event loop for this thread
-    loop = _get_or_create_event_loop()
-    return loop.run_until_complete(coro)
+    # Apply timeout if specified
+    if timeout is not None:
+        coro = asyncio.wait_for(coro, timeout=timeout)
+    
+    # Set correlation ID in context if provided
+    token = None
+    if correlation_id:
+        token = correlation_id_var.set(correlation_id)
+    
+    try:
+        # Use a persistent event loop for this thread
+        loop = _get_or_create_event_loop()
+        return loop.run_until_complete(coro)
+    except asyncio.TimeoutError as e:
+        raise TimeoutError(f"Operation timed out after {timeout}s") from e
+    finally:
+        if token:
+            correlation_id_var.reset(token)
 
 
 class SyncServiceWrapper:

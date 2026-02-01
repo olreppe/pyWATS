@@ -262,3 +262,46 @@ def get_default_settings() -> APISettings:
     if _default_settings is None:
         _default_settings = APISettings()
     return _default_settings
+
+
+# ============================================================================
+# Sync Wrapper Configuration
+# ============================================================================
+
+class RetryConfig(BaseModel):
+    """
+    Configuration for retry logic in synchronous wrapper.
+    
+    Attributes:
+        max_retries: Maximum number of retry attempts
+        backoff: Exponential backoff multiplier (e.g., 2.0 means 2s, 4s, 8s)
+        retry_on_errors: Tuple of exception types to retry on
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    max_retries: int = Field(default=3, description="Maximum retry attempts")
+    backoff: float = Field(default=2.0, description="Exponential backoff multiplier")
+    retry_on_errors: tuple = Field(
+        default=(ConnectionError, TimeoutError),
+        description="Exception types to retry on"
+    )
+
+
+class SyncConfig(BaseModel):
+    """
+    Configuration for synchronous API wrapper.
+    
+    Controls timeout, retry, and correlation behavior for sync operations.
+    
+    Attributes:
+        timeout: Operation timeout in seconds (None = no timeout)
+        retry_enabled: Whether to enable automatic retry on transient failures
+        retry: Retry configuration
+        correlation_id_enabled: Whether to generate correlation IDs for request tracking
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    timeout: Optional[float] = Field(default=30.0, description="Timeout in seconds (None = no timeout)")
+    retry_enabled: bool = Field(default=False, description="Enable automatic retry")
+    retry: RetryConfig = Field(default_factory=RetryConfig, description="Retry configuration")
+    correlation_id_enabled: bool = Field(default=True, description="Enable correlation ID generation")
