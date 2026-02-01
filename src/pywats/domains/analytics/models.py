@@ -2531,6 +2531,8 @@ class AlarmLog(PyWATSModel):
             4: "Measurement",
             5: "Asset"
         }
+        if self.type is None:
+            return "Unknown (None)"
         return type_names.get(self.type, f"Unknown ({self.type})")
     
     @property  

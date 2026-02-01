@@ -99,14 +99,14 @@ class StringValueStep(Step):
     @property
     def comp(self) -> Optional[CompOp]:
         """Get the comparison operator."""
-        return self.measurement.comp if self.measurement else None
+        return self.measurement.comp_op if self.measurement else None
     
     @comp.setter
     def comp(self, val: CompOp | None) -> None:
         """Set the comparison operator."""
         if self.measurement is None:
             self.measurement = StringMeasurement()
-        self.measurement.comp = val
+        self.measurement.comp_op = val
     
     @property
     def limit(self) -> Optional[str]:

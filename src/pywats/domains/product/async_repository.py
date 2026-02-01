@@ -509,6 +509,7 @@ class AsyncProductRepository:
         parent_revision_id: UUID,
         child_revision_id: UUID,
         quantity: int = 1,
+        item_number: Optional[str] = None,
         revision_mask: Optional[str] = None
     ) -> Optional[ProductRevisionRelation]:
         """
@@ -521,6 +522,8 @@ class AsyncProductRepository:
             "ProductRevisionId": str(child_revision_id),
             "Quantity": quantity,
         }
+        if item_number:
+            data["ItemNumber"] = item_number
         if revision_mask:
             data["RevisionMask"] = revision_mask
             

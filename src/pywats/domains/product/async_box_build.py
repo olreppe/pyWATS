@@ -290,10 +290,8 @@ class AsyncBoxBuildTemplate:
         
         # Process updates
         for relation in self._to_update:
-            payload = relation.model_dump(by_alias=True, exclude_none=True, mode='json')
-            updated_data = await self._service._repository.update_revision_relation(payload)
-            if updated_data:
-                updated = ProductRevisionRelation.model_validate(updated_data)
+            updated = await self._service._repository.update_revision_relation(relation)
+            if updated:
                 idx = next((i for i, r in enumerate(self._relations) if r.relation_id == updated.relation_id), None)
                 if idx is not None:
                     self._relations[idx] = updated

@@ -256,7 +256,7 @@ class TimeoutError(PyWATSError):
         timeout: Optional[float] = None,
         endpoint: Optional[str] = None
     ) -> None:
-        details = {}
+        details: Dict[str, Any] = {}
         if timeout:
             details["timeout_seconds"] = timeout
         if endpoint:

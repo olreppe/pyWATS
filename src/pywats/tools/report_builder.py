@@ -38,6 +38,7 @@ from dataclasses import dataclass, field
 from ..domains.report.report_models.uut.uut_report import UUTReport
 from ..domains.report.report_models.uut.uut_info import UUTInfo
 from ..domains.report.report_models.uut.steps.sequence_call import SequenceCall
+from ..domains.report.report_models.common_types import ReportStatus
 from pywats.shared.enums import CompOp
 
 
@@ -354,12 +355,14 @@ class ReportBuilder:
         Returns:
             Self for method chaining
         """
-        self._sub_units.append({
-            "part_type": part_type,
-            "pn": part_number,
-            "sn": serial_number,
-            "rev": revision
-        })
+        sub_unit_data: Dict[str, str] = {"part_type": part_type}
+        if part_number is not None:
+            sub_unit_data["pn"] = part_number
+        if serial_number is not None:
+            sub_unit_data["sn"] = serial_number
+        if revision is not None:
+            sub_unit_data["rev"] = revision
+        self._sub_units.append(sub_unit_data)
         return self
     
     def build(self) -> UUTReport:
@@ -409,13 +412,15 @@ class ReportBuilder:
         
         # Add misc info
         from ..domains.report.report_models.misc_info import MiscInfo
-        for desc, text in self._misc_info.items():
-            report.misc_infos.append(MiscInfo(description=desc, text=text))
+        for desc, text_val in self._misc_info.items():
+            report.misc_infos.append(MiscInfo(description=desc, string_value=text_val))
         
         # Add sub-units
         from ..domains.report.report_models.sub_unit import SubUnit
+        if report.sub_units is None:
+            report.sub_units = []
         for sub in self._sub_units:
-            report.sub_units.append(SubUnit(**{k: v for k, v in sub.items() if v is not None}))
+            report.sub_units.append(SubUnit(**{k: v for k, v in sub.items() if v is not None}))  # type: ignore[arg-type]
         
         # Get root sequence
         root = report.get_root_sequence_call()
@@ -517,23 +522,23 @@ class ReportBuilder:
         # Default: assume pass if no limits
         return "P"
     
-    def _normalize_status(self, status: Any) -> str:
-        """Normalize various status representations to 'P' or 'F'"""
+    def _normalize_status(self, status: Any) -> ReportStatus:
+        """Normalize various status representations to ReportStatus"""
         if status is None:
-            return "P"
+            return ReportStatus.Passed
         
         status_str = str(status).upper().strip()
         
         # Pass variations
         if status_str in ["P", "PASS", "PASSED", "TRUE", "1", "SUCCESS", "OK"]:
-            return "P"
+            return ReportStatus.Passed
         
         # Fail variations
         if status_str in ["F", "FAIL", "FAILED", "FALSE", "0", "ERROR", "ERR"]:
-            return "F"
+            return ReportStatus.Failed
         
         # Default
-        return "P"
+        return ReportStatus.Passed
     
     def _parse_comp_op(self, comp_op_str: str) -> CompOp:
         """Parse comparison operator string to CompOp enum"""
@@ -567,17 +572,17 @@ class ReportBuilder:
         
         return None
     
-    def _calculate_overall_result(self) -> str:
+    def _calculate_overall_result(self) -> ReportStatus:
         """Calculate overall result from step statuses"""
         if not self._steps:
-            return "P"
+            return ReportStatus.Passed
         
         # If any step failed, overall is fail
         for step in self._steps:
             if step.status == "F":
-                return "F"
+                return ReportStatus.Failed
         
-        return "P"
+        return ReportStatus.Passed
     
     def _calculate_sequence_result(self, steps: List[StepData]) -> str:
         """Calculate sequence result from its steps"""
@@ -620,11 +625,11 @@ class ReportBuilder:
             sequence.add_numeric_step(
                 name=step_data.name,
                 value=float(value),
-                unit=step_data.unit,
+                unit=step_data.unit or "NA",
                 comp_op=step_data.comp_op or CompOp.LOG,
                 low_limit=step_data.low_limit,
                 high_limit=step_data.high_limit,
-                status=step_data.status
+                status=step_data.status or "P"
             )
         
         elif isinstance(value, str):
@@ -633,7 +638,7 @@ class ReportBuilder:
                 name=step_data.name,
                 value=value,
                 comp_op=step_data.comp_op or CompOp.LOG,
-                status=step_data.status
+                status=step_data.status or "P"
             )
         
         elif isinstance(value, list) and value:
@@ -643,23 +648,23 @@ class ReportBuilder:
             if isinstance(first_elem, bool):
                 # Multi-boolean - convert to status
                 multi_bool_status = "P" if all(value) else "F"
-                step = sequence.add_multi_boolean_step(
+                bool_step = sequence.add_multi_boolean_step(
                     name=step_data.name,
                     status=step_data.status or multi_bool_status
                 )
                 # Add individual boolean measurements
                 for i, v in enumerate(value):
-                    step.add_measurement(name=f"Value {i+1}", status="P" if v else "F")
+                    bool_step.add_measurement(name=f"Value {i+1}", status="P" if v else "F")
             
             elif isinstance(first_elem, (int, float)):
                 # Multi-numeric - create step and add measurements
-                step = sequence.add_multi_numeric_step(
+                numeric_step = sequence.add_multi_numeric_step(
                     name=step_data.name,
                     status=step_data.status or "P"
                 )
                 # Add individual numeric measurements
                 for i, v in enumerate(value):
-                    step.add_measurement(
+                    numeric_step.add_measurement(
                         name=f"Value {i+1}",
                         value=float(v),
                         unit=step_data.unit or "NA",
@@ -670,13 +675,13 @@ class ReportBuilder:
             
             elif isinstance(first_elem, str):
                 # Multi-string - create step and add measurements
-                step = sequence.add_multi_string_step(
+                string_step = sequence.add_multi_string_step(
                     name=step_data.name,
                     status=step_data.status or "P"
                 )
                 # Add individual string measurements
                 for i, v in enumerate(value):
-                    step.add_measurement(
+                    string_step.add_measurement(
                         name=f"Value {i+1}",
                         value=v,
                         status=step_data.status or "P",
@@ -689,7 +694,7 @@ class ReportBuilder:
                 name=step_data.name,
                 value=str(value) if value is not None else "N/A",
                 comp_op=CompOp.LOG,
-                status=step_data.status
+                status=step_data.status or "P"
             )
 
 

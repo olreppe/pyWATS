@@ -161,16 +161,17 @@ class AsyncReportRepository:
             # Handle UURReport special fields
             if isinstance(report, UURReport) and 'uurInfo' in data:
                 uur_info = data['uurInfo']
-                if 'processCode' not in uur_info:
-                    uur_info['processCode'] = report.uur_info.process_code
-                if 'refUUT' not in uur_info:
-                    uur_info['refUUT'] = report.uur_info.ref_uut
-                if 'confirmDate' not in uur_info:
-                    uur_info['confirmDate'] = report.uur_info.confirm_date
-                if 'finalizeDate' not in uur_info:
-                    uur_info['finalizeDate'] = report.uur_info.finalize_date
-                if 'execTime' not in uur_info:
-                    uur_info['execTime'] = report.uur_info.exec_time
+                if report.info is not None:  # Type guard for UURInfo access
+                    if 'processCode' not in uur_info:
+                        uur_info['processCode'] = report.info.process_code
+                    if 'refUUT' not in uur_info:
+                        uur_info['refUUT'] = report.info.ref_uut
+                    if 'confirmDate' not in uur_info:
+                        uur_info['confirmDate'] = report.info.confirm_date
+                    if 'finalizeDate' not in uur_info:
+                        uur_info['finalizeDate'] = report.info.finalize_date
+                    if 'execTime' not in uur_info:
+                        uur_info['execTime'] = report.info.exec_time
         else:
             data = report
             

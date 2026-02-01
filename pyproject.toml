@@ -122,6 +122,12 @@ warn_unused_configs = false
 disallow_untyped_defs = false
 ignore_missing_imports = true
 check_untyped_defs = false
+exclude = [
+    "report_models_old",
+    "report_models_v1", 
+    "report_models_v2",
+    "referenced_code",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

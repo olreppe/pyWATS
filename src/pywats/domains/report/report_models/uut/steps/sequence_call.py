@@ -650,7 +650,7 @@ class SequenceCall(Step):
             
         step = GenericStep(
             name=name,
-            step_type=step_type_str,
+            step_type=step_type_str,  # type: ignore[arg-type]  # FlowType values are valid GenericStep types
             report_text=report_text,
             status=status,
             group=group,

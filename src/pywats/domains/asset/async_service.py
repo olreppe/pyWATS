@@ -85,6 +85,7 @@ class AsyncAssetService:
         
         if asset_id:
             return await self._repository.get_by_id(asset_id)
+        assert serial_number is not None  # Validated above
         return await self._repository.get_by_serial_number(serial_number)
 
     async def get_asset_by_serial(self, serial_number: str) -> Optional[Asset]:
@@ -215,7 +216,11 @@ class AsyncAssetService:
         if not asset_id and not serial_number:
             raise ValueError("Either asset_id or serial_number is required")
         
-        result = await self._repository.delete(asset_id, serial_number)
+        # At least one is guaranteed non-None after validation
+        result = await self._repository.delete(
+            asset_id if asset_id else "",
+            serial_number if serial_number else ""
+        )
         if result:
             logger.info(f"ASSET_DELETED: {asset_id or serial_number}")
         return result

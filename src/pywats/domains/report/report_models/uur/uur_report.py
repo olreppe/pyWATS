@@ -360,10 +360,10 @@ class UURReport(Report[UURSubUnit]):
         mime_type: str = "application/octet-stream"
     ) -> Attachment:
         """Attach binary data to report."""
-        attachment = Attachment(
+        attachment = Attachment.from_bytes(
             name=name,
-            mime_type=mime_type,
-            data=content
+            content=content,
+            content_type=mime_type
         )
         self.attachments.append(attachment)
         return attachment

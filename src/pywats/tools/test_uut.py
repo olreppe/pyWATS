@@ -17,6 +17,7 @@ import math
 from ..domains.report.report_models.uut.uut_report import UUTReport
 from ..domains.report.report_models.uut.uut_info import UUTInfo
 from ..domains.report.report_models.uut.steps.sequence_call import SequenceCall, SequenceCallInfo
+from ..domains.report.report_models.common_types import ReportStatus
 from pywats.shared.enums import CompOp
 from ..domains.report.report_models.uut.steps.generic_step import FlowType
 from ..domains.report.report_models.chart import Chart, ChartSeries, ChartType
@@ -73,7 +74,7 @@ def create_test_uut_report(
         station_name=station_name,
         location=location,
         purpose="Debug",
-        result="P",  # Will be set based on test results
+        result=ReportStatus.Passed,  # Will be set based on test results
         start=datetime.now().astimezone(),
     )
     
@@ -456,7 +457,7 @@ def create_test_uut_report(
     )
     
     # Set overall result to Passed
-    report.result = "P"
+    report.result = ReportStatus.Passed
     
     return report
 
@@ -493,7 +494,7 @@ def create_minimal_test_report(
         station_name=station_name,
         location=location,
         purpose="Debug",
-        result="P",
+        result=ReportStatus.Passed,
         start=datetime.now().astimezone(),
     )
     

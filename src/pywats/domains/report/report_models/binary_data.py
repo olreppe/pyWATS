@@ -5,7 +5,7 @@ Support for file attachments and binary data in reports and steps.
 """
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional, List, ClassVar
 import base64
 
 from .common_types import (
@@ -78,21 +78,8 @@ class Attachment(WATSBase):
     - Any other supporting documentation
     """
     
-    # Content type (MIME type)
-    content_type: str = Field(
-        ...,
-        max_length=100,
-        min_length=1,
-        validation_alias="contentType",
-        serialization_alias="contentType",
-        description="MIME type of the attachment."
-    )
-    
-    # The actual data (base64 encoded in JSON)
-    data: str = Field(
-        ...,
-        description="Base64 encoded attachment data."
-    )
+    # Default max size (10 MB)
+    DEFAULT_MAX_SIZE: ClassVar[int] = 10 * 1024 * 1024
     
     # File name
     name: str = Field(
@@ -102,6 +89,23 @@ class Attachment(WATSBase):
         description="Filename of the attachment."
     )
     
+    # Content type (MIME type)
+    content_type: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        min_length=1,
+        validation_alias="contentType",
+        serialization_alias="contentType",
+        description="MIME type of the attachment."
+    )
+    
+    # The actual data (base64 encoded in JSON)
+    data: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        description="Base64 encoded attachment data."
+    )
+    
     # Optional description
     description: Optional[str] = Field(
         default=None,
@@ -109,24 +113,57 @@ class Attachment(WATSBase):
         description="Description of the attachment."
     )
     
+    # Optional: failure index for UUR attachments (None = report level)
+    failure_idx: Optional[int] = Field(
+        default=None,
+        validation_alias="failIdx",
+        serialization_alias="failIdx",
+        exclude=True,  # Excluded from default serialization, added separately for UUR
+        description="Index of failure this attachment belongs to (None for report-level, UUR only)."
+    )
+    
     def get_bytes(self) -> bytes:
         """Decode the base64 data to bytes."""
+        if self.data is None:
+            return b""
         return base64.b64decode(self.data)
     
     @classmethod
     def from_bytes(
         cls,
-        data: bytes,
         name: str,
+        content: bytes,
         content_type: str = "application/octet-stream",
-        description: Optional[str] = None
+        failure_idx: Optional[int] = None,
+        max_size: Optional[int] = None
     ) -> "Attachment":
-        """Create Attachment from raw bytes."""
+        """
+        Create an attachment from bytes.
+        
+        Args:
+            name: Display name for the attachment
+            content: Binary content
+            content_type: MIME type
+            failure_idx: Failure index (UUR only)
+            max_size: Maximum size in bytes (default: 10 MB)
+            
+        Returns:
+            Attachment instance
+            
+        Raises:
+            ValueError: If content exceeds max size
+        """
+        max_allowed = max_size or cls.DEFAULT_MAX_SIZE
+        if len(content) > max_allowed:
+            raise ValueError(
+                f"Content size ({len(content)} bytes) exceeds maximum ({max_allowed} bytes)"
+            )
+        
         return cls(
-            content_type=content_type,
-            data=base64.b64encode(data).decode('ascii'),
             name=name,
-            description=description
+            data=base64.b64encode(content).decode('ascii'),
+            content_type=content_type,
+            failure_idx=failure_idx
         )
 
 

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Optional
 from contextvars import ContextVar
 
 from .enums import ImportMode
+from .report_models.common_types import ReportStatus
 
 if TYPE_CHECKING:
     from .report_models.uut.step import Step
@@ -136,4 +137,4 @@ def propagate_failure_to_report(step: "Step", report: "UUTReport") -> None:
     if not is_active_mode():
         return
     
-    report.result = "F"
+    report.result = ReportStatus.Failed

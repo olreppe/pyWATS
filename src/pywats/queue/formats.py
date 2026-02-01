@@ -121,7 +121,7 @@ def convert_from_wstf(wstf_data: str) -> Dict[str, Any]:
     root = ET.fromstring(wstf_data)
     
     # Basic structure extraction
-    report = {}
+    report: Dict[str, Any] = {}
     
     # Extract TestStand-specific fields
     # This is simplified - actual implementation would need

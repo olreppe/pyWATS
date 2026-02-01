@@ -9,6 +9,7 @@ import logging
 
 from .models import WATSFilter, ReportHeader
 from .report_models import UUTReport, UURReport
+from .report_models.common_types import ReportStatus
 from .report_models.uut.uut_info import UUTInfo
 from .report_models.uur.uur_info import UURInfo
 from .report_models.uur.uur_sub_unit import UURSubUnit
@@ -127,7 +128,7 @@ class AsyncReportService:
             station_name=effective_station_name or "Unknown",
             location=effective_location or "Unknown",
             purpose=effective_purpose or "Unknown",
-            result="P",  # Default to pass, will be updated
+            result=ReportStatus.Passed,  # Default to pass, will be updated
             start=start_time or datetime.now().astimezone(),
         )
 

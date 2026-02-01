@@ -116,7 +116,7 @@ class AsyncProductService:
             non_serial=non_serial,
             state=state,
             xml_data=xml_data,
-            product_category_id=product_category_id,
+            product_category_id=UUID(product_category_id) if product_category_id else None,
         )
         result = await self._repository.save(product)
         if result:
@@ -155,12 +155,12 @@ class AsyncProductService:
             logger.info(f"PRODUCTS_BULK_SAVED: count={len(results)}")
         return results
 
-    async def get_active_products(self) -> List[ProductView]:
+    async def get_active_products(self) -> List[Product]:
         """
         Get all active products.
 
         Returns:
-            List of active ProductView objects
+            List of active Product objects
         """
         products = await self.get_products()
         return [p for p in products if p.state == ProductState.ACTIVE]
@@ -332,7 +332,7 @@ class AsyncProductService:
         Returns:
             Created ProductGroup object
         """
-        group = ProductGroup(name=name, description=description)
+        group = ProductGroup(product_group_name=name)
         result = await self._repository.save_group(group)
         if result:
             logger.info(f"GROUP_CREATED: {name}")

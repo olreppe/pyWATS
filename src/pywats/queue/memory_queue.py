@@ -296,7 +296,7 @@ class MemoryQueue(BaseQueue):
         
         logger.debug(f"Initialized MemoryQueue (max_size={max_size})")
     
-    def add(
+    def add(  # type: ignore[override]
         self,
         data: Any,
         item_id: Optional[str] = None,

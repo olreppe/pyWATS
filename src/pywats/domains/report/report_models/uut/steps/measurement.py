@@ -273,10 +273,10 @@ class StringMeasurement(BaseMeasurement):
                 passed = self.value == self.limit
             case CompOp.NE:
                 passed = self.value != self.limit
-            case CompOp.CASELESSEQ:
+            case CompOp.IGNORECASE:
                 passed = self.value.lower() == self.limit.lower()
-            case CompOp.CASELESSNE:
-                passed = self.value.lower() != self.limit.lower()
+            case CompOp.CASESENSIT:
+                passed = self.value == self.limit
             case _:
                 # Other operators don't make sense for strings
                 return (StepStatus.Error, False)

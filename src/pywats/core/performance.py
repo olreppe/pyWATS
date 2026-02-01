@@ -184,7 +184,7 @@ class Serializer:
             results['msgpack'] = {
                 'size': msgpack_size,
                 'ratio': msgpack_size / json_size,
-                'savings': f"{(1 - msgpack_size/json_size) * 100:.1f}%"
+                'savings': float((1 - msgpack_size/json_size) * 100)
             }
         
         # Compressed JSON
@@ -194,7 +194,7 @@ class Serializer:
             results['json-gzip'] = {
                 'size': compressed_size,
                 'ratio': compressed_size / json_size,
-                'savings': f"{(1 - compressed_size/json_size) * 100:.1f}%"
+                'savings': float((1 - compressed_size/json_size) * 100)
             }
         
         return results
@@ -210,11 +210,12 @@ def format_bytes(size_bytes: int) -> str:
     Returns:
         Formatted string (e.g., "1.5 MB")
     """
+    size: float = float(size_bytes)
     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if size_bytes < 1024.0:
-            return f"{size_bytes:.1f} {unit}"
-        size_bytes /= 1024.0
-    return f"{size_bytes:.1f} PB"
+        if size < 1024.0:
+            return f"{size:.1f} {unit}"
+        size /= 1024.0
+    return f"{size:.1f} PB"
 
 
 def benchmark_serialization(data: Any) -> None:

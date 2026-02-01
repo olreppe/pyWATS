@@ -8,14 +8,14 @@ from __future__ import annotations
 from typing import Optional, Union
 from pywats.shared.enums import CompOp
 from ...common_types import Field
-from .measurement import BooleanMeasurement
+from .measurement import BaseMeasurement
 
 
-class LimitMeasurement(BooleanMeasurement):
+class LimitMeasurement(BaseMeasurement):
     """
     A measurement with limit checking.
     
-    Extends BooleanMeasurement with:
+    Extends BaseMeasurement with:
     - Numeric value
     - High/low limits
     - Comparison operator

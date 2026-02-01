@@ -33,7 +33,7 @@ Key Features:
 - Progress callback support
 - Type-safe Result[T] return type
 """
-from typing import TypeVar, Callable, List, Optional, Any, Dict, Union
+from typing import TypeVar, Callable, List, Optional, Any, Dict, Union, cast
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pywats.shared.result import Success, Failure, Result
@@ -206,12 +206,12 @@ def parallel_execute(
                     on_progress(completed_count, len(keys))
     
     # Fill any remaining None slots (from cancelled futures) with failures
-    for i, result in enumerate(results):
-        if result is None:
-            results[i] = Failure(  # type: ignore[assignment]
+    for idx, res in enumerate(results):
+        if res is None:
+            results[idx] = Failure(  # type: ignore[misc]
                 error_code="OPERATION_FAILED",
                 message="Operation was cancelled (fail_fast triggered)",
-                details={"key": str(keys[i]), "index": i}
+                details={"key": str(keys[idx]), "index": idx}
             )
     
     logger.debug(

@@ -271,7 +271,15 @@ class MultiNumericStep(Step):
             The created MultiNumericMeasurement.
         """
         name = self.check_for_duplicates(name) 
-        nm = MultiNumericMeasurement(name=name, value=value, unit=unit, status=status, comp_op=comp_op, high_limit=high_limit, low_limit=low_limit, parent_step=self)
+        nm = MultiNumericMeasurement(
+            name=name, 
+            value=value, 
+            unit=unit, 
+            status=StepStatus(status) if isinstance(status, str) else status, 
+            comp_op=comp_op, 
+            high_limit=high_limit, 
+            low_limit=low_limit
+        )
         self.measurements.append(nm)
     
     def check_for_duplicates(self, name):
@@ -326,7 +334,9 @@ class MultiNumericStep(Step):
         for meas in self.measurements:
             # Check for invalid limit configuration (low > high)
             if (meas.low_limit is not None and 
-                meas.high_limit is not None and 
+                meas.high_limit is not None and
+                isinstance(meas.low_limit, (int, float)) and
+                isinstance(meas.high_limit, (int, float)) and
                 meas.low_limit > meas.high_limit):
                 errors.append(
                     f"Measurement '{meas.name}' has invalid limits: "

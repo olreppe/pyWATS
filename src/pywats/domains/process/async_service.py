@@ -388,7 +388,7 @@ class AsyncProcessService:
         
         # Fallback to first available test operation
         test_ops = await self.get_test_operations()
-        if test_ops:
+        if test_ops and test_ops[0].code is not None:
             return test_ops[0].code
         
         return self.DEFAULT_TEST_PROCESS_CODE  # Return default even if not found
@@ -409,7 +409,7 @@ class AsyncProcessService:
         
         # Fallback to first available repair operation
         repair_ops = await self.get_repair_operations()
-        if repair_ops:
+        if repair_ops and repair_ops[0].code is not None:
             return repair_ops[0].code
         
         return self.DEFAULT_REPAIR_PROCESS_CODE  # Return default even if not found

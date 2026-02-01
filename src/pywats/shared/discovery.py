@@ -404,23 +404,23 @@ def _format_type(type_hint) -> str:
     origin = getattr(type_hint, '__origin__', None)
     
     if origin is Union:
-        args = getattr(type_hint, '__args__', ())
+        union_args = getattr(type_hint, '__args__', ())
         # Check if it's Optional (Union with None)
-        if len(args) == 2 and type(None) in args:
-            other = [a for a in args if a is not type(None)][0]
+        if len(union_args) == 2 and type(None) in union_args:
+            other = [a for a in union_args if a is not type(None)][0]
             return f"Optional[{_format_type(other)}]"
-        return f"Union[{', '.join(_format_type(a) for a in args)}]"
+        return f"Union[{', '.join(_format_type(a) for a in union_args)}]"
     
     if origin is list:
-        args = getattr(type_hint, '__args__', ())
-        if args:
-            return f"List[{_format_type(args[0])}]"
+        list_args: tuple[Any, ...] = getattr(type_hint, '__args__', ())
+        if list_args and len(list_args) > 0:
+            return f"List[{_format_type(list_args[0])}]"
         return "List"
     
     if origin is dict:
-        args = getattr(type_hint, '__args__', ())
-        if len(args) == 2:
-            return f"Dict[{_format_type(args[0])}, {_format_type(args[1])}]"
+        dict_args: tuple[Any, ...] = getattr(type_hint, '__args__', ())
+        if len(dict_args) == 2:
+            return f"Dict[{_format_type(dict_args[0])}, {_format_type(dict_args[1])}]"
         return "Dict"
     
     # Simple types
@@ -430,5 +430,4 @@ def _format_type(type_hint) -> str:
     return str(type_hint)
 
 
-# Convenience alias
-Any = object  # Placeholder for typing.Any in format function
+# Note: typing.Any is imported above and used throughout this module
