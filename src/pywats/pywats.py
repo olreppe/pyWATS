@@ -9,20 +9,22 @@ import inspect
 import threading
 import contextvars
 import uuid
-from typing import Optional, Any, TypeVar, Coroutine, TYPE_CHECKING
+import time
+from typing import Optional, Any, TypeVar, Coroutine, TYPE_CHECKING, Callable
 from functools import wraps
 
 from .core.async_client import AsyncHttpClient
 from .core.station import Station, StationRegistry
-from .core.retry import RetryConfig
+from .core.retry import RetryConfig as CoreRetryConfig
 from .core.exceptions import ErrorMode, ErrorHandler
 
 if TYPE_CHECKING:
-    from .core.config import APISettings, SyncConfig
+    from .core.config import APISettings, SyncConfig, RetryConfig
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
+R = TypeVar('R')
 
 # Thread-local storage for persistent event loops
 _thread_local = threading.local()
@@ -100,22 +102,77 @@ def _run_sync(
             correlation_id_var.reset(token)
 
 
+def _with_retry(
+    func: Callable[..., R],
+    config: 'RetryConfig',
+    correlation_id: str
+) -> Callable[..., R]:
+    """
+    Wrap a function with retry logic for transient failures.
+    
+    Args:
+        func: Function to wrap with retry
+        config: RetryConfig with max_retries, backoff, and retry_on_errors
+        correlation_id: Correlation ID for logging
+        
+    Returns:
+        Wrapped function that retries on specified errors
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> R:
+        last_error = None
+        
+        for attempt in range(config.max_retries + 1):
+            try:
+                return func(*args, **kwargs)
+            except config.retry_on_errors as e:
+                last_error = e
+                
+                if attempt < config.max_retries:
+                    # Exponential backoff: backoff^(attempt+1)
+                    # For attempt 0 (first retry): backoff^1 = backoff
+                    # For attempt 1 (second retry): backoff^2
+                    # For attempt 2 (third retry): backoff^3
+                    wait_time = config.backoff ** (attempt + 1)
+                    logger.warning(
+                        f"[{correlation_id}] Attempt {attempt + 1}/{config.max_retries + 1} "
+                        f"failed: {e}. Retrying in {wait_time}s..."
+                    )
+                    time.sleep(wait_time)
+                else:
+                    logger.error(
+                        f"[{correlation_id}] All {config.max_retries + 1} attempts failed"
+                    )
+        
+        raise last_error
+    
+    return wrapper
+
+
 class SyncServiceWrapper:
     """
     Generic synchronous wrapper for async services.
     
     Automatically wraps all async methods of the underlying service
-    to run synchronously.
+    to run synchronously with optional timeout, retry, and correlation tracking.
     """
     
-    def __init__(self, async_service: Any) -> None:
+    def __init__(
+        self,
+        async_service: Any,
+        config: Optional['SyncConfig'] = None
+    ) -> None:
         """
         Initialize with an async service instance.
         
         Args:
             async_service: Any async service with async methods
+            config: Optional SyncConfig for timeout, retry, and correlation
         """
         self._async = async_service
+        # Import here to avoid circular dependency
+        from .core.config import SyncConfig
+        self._config = config if config is not None else SyncConfig()
     
     def __getattr__(self, name: str) -> Any:
         """
@@ -133,7 +190,24 @@ class SyncServiceWrapper:
         if inspect.iscoroutinefunction(attr):
             @wraps(attr)
             def sync_wrapper(*args, **kwargs):
-                return _run_sync(attr(*args, **kwargs))
+                # Generate correlation ID if enabled
+                corr_id = None
+                if self._config.correlation_id_enabled:
+                    corr_id = generate_correlation_id()
+                
+                # Run async method with timeout and correlation
+                result = _run_sync(
+                    attr(*args, **kwargs),
+                    timeout=self._config.timeout,
+                    correlation_id=corr_id
+                )
+                return result
+            
+            # Apply retry if enabled
+            if self._config.retry_enabled:
+                corr_id = generate_correlation_id() if self._config.correlation_id_enabled else "no-corr-id"
+                sync_wrapper = _with_retry(sync_wrapper, self._config.retry, corr_id)
+            
             return sync_wrapper
         
         # Otherwise return as-is (properties, regular methods, etc.)
@@ -155,21 +229,30 @@ class SyncProductServiceWrapper(SyncServiceWrapper):
         if name in ('get_box_build_template', 'get_box_build'):
             @wraps(attr)
             def box_build_wrapper(*args, **kwargs):
-                # Run async method
-                async_template = _run_sync(attr(*args, **kwargs))
+                # Generate correlation ID if enabled
+                corr_id = None
+                if self._config.correlation_id_enabled:
+                    corr_id = generate_correlation_id()
+                
+                # Run async method with timeout and correlation
+                async_template = _run_sync(
+                    attr(*args, **kwargs),
+                    timeout=self._config.timeout,
+                    correlation_id=corr_id
+                )
                 # Wrap result in sync wrapper
                 from .domains.product.sync_box_build import SyncBoxBuildTemplate
                 return SyncBoxBuildTemplate(async_template)
+            
+            # Apply retry if enabled
+            if self._config.retry_enabled:
+                corr_id = generate_correlation_id() if self._config.correlation_id_enabled else "no-corr-id"
+                box_build_wrapper = _with_retry(box_build_wrapper, self._config.retry, corr_id)
+            
             return box_build_wrapper
         
-        # Default handling
-        if inspect.iscoroutinefunction(attr):
-            @wraps(attr)
-            def sync_wrapper(*args, **kwargs):
-                return _run_sync(attr(*args, **kwargs))
-            return sync_wrapper
-        
-        return attr
+        # Default handling via parent class
+        return super().__getattr__(name)
 
 
 class pyWATS:
