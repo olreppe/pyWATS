@@ -16,6 +16,8 @@ from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 
+from pywats_client.core.constants import FolderName
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QFileDialog, QMessageBox, QTableWidget,
@@ -145,9 +147,9 @@ def create_default_converter_configs(data_path: Path) -> List[ConverterConfig]:
     
     for name, module_path, folder_name, patterns, description in converters_data:
         watch_folder = data_path / folder_name
-        done_folder = watch_folder / "Done"
-        error_folder = watch_folder / "Error"
-        pending_folder = watch_folder / "Pending"
+        done_folder = watch_folder / FolderName.DONE
+        error_folder = watch_folder / FolderName.ERROR
+        pending_folder = watch_folder / FolderName.PENDING
         
         # Create folders
         watch_folder.mkdir(parents=True, exist_ok=True)
