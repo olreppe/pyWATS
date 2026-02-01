@@ -394,6 +394,10 @@ class WATSFilter(PyWATSModel):
 class ReportHeader(PyWATSModel):
     """
     Represents a report header (summary info).
+    
+    This model provides lightweight metadata for querying reports without
+    fetching the full report content. It includes fields from both UUT and
+    UUR reports, with special dual-process support for UUR repairs.
 
     Attributes:
         uuid: Report unique identifier
@@ -402,12 +406,49 @@ class ReportHeader(PyWATSModel):
         revision: Product revision
         batch_number: Batch number
         station_name: Test station name
-        test_operation: Test operation name
-        status: Report status
-        start_utc: Test start time
-        root_node_type: Root node type
+        location: Test station location
+        purpose: Test station purpose
+        result: Report result (Passed, Failed, Error, Terminated)
+        start_utc: Test start time (UTC)
         operator: Operator name
+        comment: Report comment
+        
+        # Report Type Discriminator
+        report_type: 'T' (UUT/test) or 'R' (UUR/repair)
+        
+        # Process Code (Primary - matches C# API)
+        process_code: Process code (test_operation for UUT, repair_operation for UUR)
+        process_name: Process name (test_operation for UUT, repair_operation for UUR)
+        
+        # Failure Analysis (C# 2022.2+)
+        caused_uut_failure: Step name that caused failure
+        caused_uut_failure_path: Step path that caused failure
+        error_code: Error code
+        error_message: Error message
+        
+        # Extended Metadata (C# 2022.2+)
+        execution_time: Test duration in seconds
+        sw_filename: Test software filename
+        sw_version: Test software version
+        test_socket_index: Socket/site number
+        fixture_id: Fixture identifier
+        run: Run number
+        passed_in_run: Which run passed
+        receive_count: Submission count
+        report_size: Report size in KB
+        
+        # UUR Reference
+        referenced_uut: (UUR only) GUID of UUT report being repaired
+        
+        # Legacy/Compatibility
+        test_operation: DEPRECATED - Use process_name instead
+        root_node_type: Root node type
     """
+    
+    # ========================================================================
+    # Core Identity Fields
+    # ========================================================================
+    
     uuid: Optional[UUID] = Field(default=None)
     serial_number: Optional[str] = Field(
         default=None,
@@ -425,28 +466,195 @@ class ReportHeader(PyWATSModel):
         validation_alias=AliasChoices("batchNumber", "batch_number"),
         serialization_alias="batchNumber"
     )
+    
+    # ========================================================================
+    # Report Type Discriminator (PRIORITY 1 - CRITICAL)
+    # ========================================================================
+    
+    report_type: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("reportType", "report_type"),
+        serialization_alias="reportType",
+        pattern=r'^[TR]$',
+        description="Report type: 'T'=UUT (test), 'R'=UUR (repair)"
+    )
+    
+    # ========================================================================
+    # Station Fields
+    # ========================================================================
+    
     station_name: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("stationName", "station_name"),
         serialization_alias="stationName"
     )
-    test_operation: Optional[str] = Field(
+    location: Optional[str] = Field(default=None)
+    purpose: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("testOperation", "test_operation"),
-        serialization_alias="testOperation"
+        description="Test station purpose (e.g., 'Production', 'Engineering')"
     )
-    status: Optional[str] = Field(default=None)
+    
+    # ========================================================================
+    # Process Code Fields (Matches C# API - PRIORITY 2)
+    # ========================================================================
+    
+    process_code: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("processCode", "process_code"),
+        serialization_alias="processCode",
+        description="Process code: test_operation code (UUT) or repair_operation code (UUR). Check report_type to interpret."
+    )
+    
+    process_name: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("processName", "process_name"),
+        serialization_alias="processName",
+        description="Process name: test_operation name (UUT) or repair_operation name (UUR)"
+    )
+    
+    # ========================================================================
+    # Result and Timing
+    # ========================================================================
+    
+    result: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("result"),
+        serialization_alias="result",
+        description="Report result: Passed, Failed, Error, Terminated (matches C# API)"
+    )
     start_utc: Optional[datetime] = Field(
         default=None,
         validation_alias=AliasChoices("startUtc", "start_utc"),
         serialization_alias="startUtc"
     )
+    operator: Optional[str] = Field(default=None)
+    comment: Optional[str] = Field(default=None)
+    
+    # ========================================================================
+    # Extended Metadata (C# 2022.2+)
+    # ========================================================================
+    
+    execution_time: Optional[float] = Field(
+        default=None,
+        validation_alias=AliasChoices("executionTime", "execution_time"),
+        serialization_alias="executionTime",
+        description="Test duration in seconds (available from WATS 2022.2)"
+    )
+    
+    sw_filename: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("swFilename", "sw_filename"),
+        serialization_alias="swFilename",
+        description="Test software filename (available from WATS 2022.2)"
+    )
+    
+    sw_version: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("swVersion", "sw_version"),
+        serialization_alias="swVersion",
+        description="Test software version (available from WATS 2022.2)"
+    )
+    
+    test_socket_index: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("testSocketIndex", "test_socket_index"),
+        serialization_alias="testSocketIndex",
+        description="Socket/site number (available from WATS 2022.2)"
+    )
+    
+    fixture_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("fixtureId", "fixture_id"),
+        serialization_alias="fixtureId",
+        description="Fixture identifier (available from WATS 2022.2)"
+    )
+    
+    run: Optional[int] = Field(
+        default=None,
+        description="Run number (available from WATS 2022.2)"
+    )
+    
+    passed_in_run: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("passedInRun", "passed_in_run"),
+        serialization_alias="passedInRun",
+        description="Which run the report first passed in (available from WATS 2022.2)"
+    )
+    
+    receive_count: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("receiveCount", "receive_count"),
+        serialization_alias="receiveCount",
+        description="Number of times report was submitted (available from WATS 2022.2)"
+    )
+    
+    report_size: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("reportSize", "report_size"),
+        serialization_alias="reportSize",
+        description="Report size in KB (available from WATS 2022.2)"
+    )
+    
+    # ========================================================================
+    # Failure Analysis (C# 2022.2+)
+    # ========================================================================
+    
+    caused_uut_failure: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("causedUutFailure", "caused_uut_failure"),
+        serialization_alias="causedUutFailure",
+        description="Step name that caused the report to fail (available from WATS 2022.2)"
+    )
+    
+    caused_uut_failure_path: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("causedUutFailurePath", "caused_uut_failure_path"),
+        serialization_alias="causedUutFailurePath",
+        description="Step path that caused the report to fail (available from WATS 2022.2)"
+    )
+    
+    error_code: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("errorCode", "error_code"),
+        serialization_alias="errorCode",
+        description="Report error code (available from WATS 2022.2)"
+    )
+    
+    error_message: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("errorMessage", "error_message"),
+        serialization_alias="errorMessage",
+        description="Report error message (available from WATS 2022.2)"
+    )
+    
+    # ========================================================================
+    # UUR Reference
+    # ========================================================================
+    
+    referenced_uut: Optional[UUID] = Field(
+        default=None,
+        validation_alias=AliasChoices("referencedUut", "referenced_uut"),
+        serialization_alias="referencedUut",
+        description="(UUR only) GUID of the UUT report being repaired (available from WATS 2022.2)"
+    )
+    
+    # ========================================================================
+    # Legacy/Compatibility Fields
+    # ========================================================================
+    
+    test_operation: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("testOperation", "test_operation"),
+        serialization_alias="testOperation",
+        deprecated=True,
+        description="DEPRECATED: Use process_name instead. This field name is ambiguous for UUR reports."
+    )
+    
     root_node_type: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("rootNodeType", "root_node_type"),
         serialization_alias="rootNodeType"
     )
-    operator: Optional[str] = Field(default=None)
     
     # Expanded fields (available when using $expand in OData query)
     sub_units: Optional[List["HeaderSubUnit"]] = Field(

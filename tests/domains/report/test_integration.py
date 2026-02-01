@@ -701,7 +701,7 @@ class TestReportQuery:
         
         print(f"Found {len(headers)} UUT report headers")
         for h in headers[:3]:
-            print(f"  - {h.serial_number}: {h.status}")
+            print(f"  - {h.serial_number}: {h.result}")
         print("=========================\n")
         
         assert isinstance(headers, list)
