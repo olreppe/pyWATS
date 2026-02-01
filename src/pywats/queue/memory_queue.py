@@ -40,9 +40,14 @@ class QueueItem:
     
     This is a pure data class with no file operations.
     The 'data' field holds the actual payload (report dict, pydantic model, etc.)
+    
+    Priority:
+        Integer priority value (1=highest, 10=lowest, default=5).
+        Items are processed in priority order, with FIFO within same priority.
     """
     id: str
     data: Any  # The actual payload (report data)
+    priority: int = 5  # Priority for queue ordering (1=highest, 10=lowest)
     status: QueueItemStatus = QueueItemStatus.PENDING
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
@@ -51,11 +56,27 @@ class QueueItem:
     last_error: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     
+    def __lt__(self, other: "QueueItem") -> bool:
+        """
+        Compare queue items for heap ordering.
+        
+        Orders by priority first (lower number = higher priority),
+        then by creation time (FIFO within same priority).
+        
+        Args:
+            other: Another QueueItem to compare against
+            
+        Returns:
+            True if self should be processed before other
+        """
+        return (self.priority, self.created_at) < (other.priority, other.created_at)
+    
     @classmethod
     def create(
         cls,
         data: Any,
         item_id: Optional[str] = None,
+        priority: int = 5,
         max_attempts: int = 3,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> "QueueItem":
@@ -65,6 +86,7 @@ class QueueItem:
         Args:
             data: The payload data (report, dict, etc.)
             item_id: Optional custom ID (auto-generated if not provided)
+            priority: Queue priority (1=highest, 10=lowest, default=5)
             max_attempts: Maximum retry attempts
             metadata: Optional metadata dictionary
             
@@ -74,6 +96,7 @@ class QueueItem:
         return cls(
             id=item_id or str(uuid.uuid4()),
             data=data,
+            priority=priority,
             max_attempts=max_attempts,
             metadata=metadata or {},
         )
@@ -133,6 +156,7 @@ class QueueItem:
         """Serialize to dictionary."""
         return {
             "id": self.id,
+            "priority": self.priority,
             "status": self.status.value,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
@@ -149,6 +173,7 @@ class QueueItem:
         return cls(
             id=d["id"],
             data=data,
+            priority=d.get("priority", 5),  # Default for backward compatibility
             status=QueueItemStatus(d["status"]),
             created_at=datetime.fromisoformat(d["created_at"]),
             updated_at=datetime.fromisoformat(d["updated_at"]),
