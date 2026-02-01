@@ -318,13 +318,14 @@ class pyWATS:
         base_url: Optional[str] = None,
         token: Optional[str] = None,
         station: Optional[Station] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         verify_ssl: Optional[bool] = None,
         error_mode: Optional[ErrorMode] = None,
-        retry_config: Optional[RetryConfig] = None,
-        retry_enabled: bool = True,
+        retry_config: Optional['RetryConfig'] = None,
+        retry_enabled: bool = False,
         instance_id: str = "default",
         settings: Optional['APISettings'] = None,
+        sync_config: Optional['SyncConfig'] = None,
     ) -> None:
         """
         Initialize the pyWATS API.
@@ -346,17 +347,22 @@ class pyWATS:
             station: Default station configuration for reports. If provided,
                      this station's name, location, and purpose will be used
                      when creating reports (unless overridden).
-            timeout: Request timeout in seconds. If None, uses settings or default (30).
+            timeout: Request timeout in seconds (for HTTP requests).
+                     Also used as default for sync wrapper timeout if sync_config not provided.
+                     If None, uses settings or default (30).
             verify_ssl: Whether to verify SSL certificates. If None, uses settings or default (True).
             error_mode: Error handling mode (STRICT or LENIENT). If None, uses settings or default (STRICT).
                 - STRICT: Raises exceptions for 404/empty responses
                 - LENIENT: Returns None for 404/empty responses
-            retry_config: Custom retry configuration. If None, uses defaults.
-            retry_enabled: Enable/disable retry (default: True). 
+            retry_config: Custom retry configuration (for HTTP client).
+                     Separate from sync wrapper retry.
+            retry_enabled: Enable/disable HTTP retry (default: False). 
                 Shorthand for RetryConfig(enabled=False).
             instance_id: pyWATS Client instance ID for auto-discovery (default: "default")
             settings: APISettings object for injected configuration. Settings from this
                      object are used as defaults, but can be overridden by explicit parameters.
+            sync_config: SyncConfig for sync wrapper behavior (timeout, retry, correlation).
+                     If None, builds config from timeout/retry_config parameters.
         
         Raises:
             ValueError: If credentials not provided and service discovery fails
@@ -364,6 +370,18 @@ class pyWATS:
         Examples:
             # Explicit credentials
             api = pyWATS(base_url="https://wats.com", token="abc123")
+            
+            # With custom timeout (applies to both HTTP and sync wrapper)
+            api = pyWATS(base_url="...", token="...", timeout=60.0)
+            
+            # With retry enabled for sync wrapper
+            from pywats.core.config import SyncConfig, RetryConfig
+            config = SyncConfig(
+                timeout=45.0,
+                retry_enabled=True,
+                retry=RetryConfig(max_retries=3, backoff=2.0)
+            )
+            api = pyWATS(base_url="...", token="...", sync_config=config)
             
             # Auto-discover from running service
             api = pyWATS()  # Uses default instance
@@ -379,8 +397,8 @@ class pyWATS:
             settings = ConfigManager().load()
             api = pyWATS(base_url="...", token="...", settings=settings)
         """
-        # Import APISettings for type checking and defaults
-        from .core.config import APISettings, get_default_settings
+        # Import for type checking and defaults
+        from .core.config import APISettings, get_default_settings, SyncConfig, RetryConfig as SyncRetryConfig
         
         # Use injected settings or get defaults (no file I/O)
         if settings is None:
@@ -417,13 +435,25 @@ class pyWATS:
         # Store settings for domain-specific config access
         self._settings = settings
         
-        # Retry configuration
+        # HTTP Retry configuration (for HTTP client)
         if retry_config is not None:
             self._retry_config = retry_config
         elif not retry_enabled:
-            self._retry_config = RetryConfig(enabled=False)
+            self._retry_config = CoreRetryConfig(enabled=False)
         else:
-            self._retry_config = RetryConfig()
+            self._retry_config = CoreRetryConfig()
+        
+        # Sync wrapper configuration
+        if sync_config is None:
+            # Build SyncConfig from timeout and retry_config if provided
+            sync_retry_cfg = SyncRetryConfig() if retry_config else SyncRetryConfig()
+            sync_config = SyncConfig(
+                timeout=self._timeout if timeout is not None else 30.0,
+                retry_enabled=False,  # Disabled by default
+                retry=sync_retry_cfg,
+                correlation_id_enabled=True
+            )
+        self._sync_config = sync_config
         
         # Station configuration
         self._station: Optional[Station] = station
@@ -515,7 +545,7 @@ class pyWATS:
                 error_handler=self._error_handler
             )
             async_service = AsyncProductService(repo, self._base_url)
-            self._product = SyncProductServiceWrapper(async_service)
+            self._product = SyncProductServiceWrapper(async_service, config=self._sync_config)
         return self._product  # type: ignore[return-value]
     
     @property
@@ -534,7 +564,7 @@ class pyWATS:
                 error_handler=self._error_handler
             )
             async_service = AsyncAssetService(repo, self._base_url)
-            self._asset = SyncServiceWrapper(async_service)
+            self._asset = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._asset
     
     @property
@@ -559,7 +589,7 @@ class pyWATS:
                 error_handler=self._error_handler
             )
             async_service = AsyncProductionService(repo, self._base_url)
-            self._production = SyncServiceWrapper(async_service)
+            self._production = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._production
     
     @property
@@ -574,7 +604,7 @@ class pyWATS:
             from .domains.report import AsyncReportRepository, AsyncReportService
             repo = AsyncReportRepository(self._http_client, self._error_handler)
             async_service = AsyncReportService(repo)
-            self._report = SyncServiceWrapper(async_service)
+            self._report = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._report
     
     @property
@@ -593,7 +623,7 @@ class pyWATS:
                 error_handler=self._error_handler
             )
             async_service = AsyncSoftwareService(repo)
-            self._software = SyncServiceWrapper(async_service)
+            self._software = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._software
     
     @property
@@ -628,7 +658,7 @@ class pyWATS:
                 base_url=self._base_url
             )
             async_service = AsyncAnalyticsService(repo)
-            self._analytics = SyncServiceWrapper(async_service)
+            self._analytics = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._analytics
     
     @property
@@ -646,7 +676,7 @@ class pyWATS:
             from .domains.rootcause import AsyncRootCauseRepository, AsyncRootCauseService
             repo = AsyncRootCauseRepository(self._http_client, self._error_handler)
             async_service = AsyncRootCauseService(repo)
-            self._rootcause = SyncServiceWrapper(async_service)
+            self._rootcause = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._rootcause
     
     @property
@@ -669,7 +699,7 @@ class pyWATS:
             from .domains.scim import AsyncScimRepository, AsyncScimService
             repo = AsyncScimRepository(self._http_client, self._error_handler)
             async_service = AsyncScimService(repo)
-            self._scim = SyncServiceWrapper(async_service)
+            self._scim = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._scim
     
     @property
@@ -700,7 +730,7 @@ class pyWATS:
                 base_url=self._base_url
             )
             async_service = AsyncProcessService(repo)
-            self._process = SyncServiceWrapper(async_service)
+            self._process = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._process
     
     # -------------------------------------------------------------------------
