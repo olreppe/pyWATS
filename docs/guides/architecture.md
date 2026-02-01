@@ -1,14 +1,29 @@
-# pyWATS System Architecture
+# pyWATS System Architecture - Comprehensive Guide
 
-**Version:** 1.3.0  
-**Last Updated:** January 2026  
-**Audience:** Developers, integrators, contributors
+**Version:** 1.4.0  
+**Last Updated:** February 2026  
+**Audience:** Developers, integrators, contributors, architects
 
 ---
 
-## Overview
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Three-Layer Design](#2-three-layer-design)
+3. [API Layer Architecture](#3-api-layer-architecture)
+4. [Client Layer Architecture](#4-client-layer-architecture)
+5. [Component Details](#5-component-details)
+6. [Integration Patterns](#6-integration-patterns)
+7. [Deployment Architectures](#7-deployment-architectures)
+8. [Architecture Diagrams](#8-architecture-diagrams)
+
+---
+
+## 1. Overview
 
 pyWATS is a **three-layer Python system** for connecting manufacturing test stations to WATS (Web-based Automatic Test System) servers. It provides both a programmatic API for test automation and a client application for test station deployment.
+
+### 1.1 System Architecture
 
 ```mermaid
 flowchart TB
@@ -40,32 +55,37 @@ flowchart TB
     API -->|HTTPS/REST| WATS
 ```
 
-**Key Features:**
+### 1.2 Key Features
+
 - **Dual API modes:** Async (`AsyncWATS`) for high-performance concurrent operations, Sync (`pyWATS`) for simple scripting
 - **Headless operation:** Client runs without GUI on servers, Raspberry Pi, embedded systems
 - **Offline resilience:** Queue and retry reports when network is unavailable
 - **Multi-instance:** Run multiple clients on same machine with separate configurations
 - **Extensible:** Custom converters, custom domains, plugin architecture
+- **Async-first:** Non-blocking I/O with asyncio, concurrent uploads/conversions (v1.4+)
+
+### 1.3 Current Package Structure
+
+```
+pywats-api (single package)
+├── pywats/              # Core API library (sync + async)
+├── pywats_client/       # Client application
+│   ├── core/            # Configuration, auth
+│   ├── service/         # Background service (headless-capable)
+│   ├── gui/             # Qt GUI (requires PySide6)
+│   ├── converters/      # File converters
+│   ├── queue/           # Persistent queue
+│   ├── control/         # CLI interface
+│   └── io.py            # File I/O utilities
+├── pywats_cfx/          # CFX integration (optional)
+└── pywats_events/       # Event system (optional)
+```
 
 ---
 
-## Table of Contents
+## 2. Three-Layer Design
 
-1. [System Layers](#system-layers)
-2. [pyWATS API Layer](#pywats-api-layer)
-3. [pyWATS Client Layer](#pywats-client-layer)
-4. [pyWATS GUI Layer](#pywats-gui-layer)
-5. [Configuration Management](#configuration-management)
-6. [Async vs Sync Usage](#async-vs-sync-usage)
-7. [Extension Points](#extension-points)
-8. [Deployment Modes](#deployment-modes)
-9. [Dependencies](#dependencies)
-
----
-
-## System Layers
-
-### Layer 1: pyWATS API (`src/pywats/`)
+### 2.1 Layer 1: pyWATS API (`src/pywats/`)
 
 **Purpose:** Foundation library for REST API communication with WATS servers
 
@@ -80,7 +100,10 @@ flowchart TB
 
 **Entry point:** `pyWATS` (sync) or `AsyncWATS` (async)
 
-### Layer 2: pyWATS Client Service (`src/pywats_client/`)
+**Dependencies:** httpx, pydantic, python-dateutil, attrs  
+**Coupling:** LOW - Pure API library, no dependencies on other internal packages
+
+### 2.2 Layer 2: pyWATS Client Service (`src/pywats_client/`)
 
 **Purpose:** Background service for test station automation
 
@@ -96,7 +119,11 @@ flowchart TB
 
 **Entry point:** `python -m pywats_client service`
 
-### Layer 3: pyWATS GUI (`src/pywats_client/gui/`)
+**Dependencies:** pywats (AsyncWATS), watchdog, aiofiles  
+**Qt Dependencies:** NONE (after IPC refactoring)  
+**Coupling:** MEDIUM - Depends on pywats, but no GUI coupling
+
+### 2.3 Layer 3: pyWATS GUI (`src/pywats_client/gui/`)
 
 **Purpose:** Optional desktop application for client configuration
 
@@ -110,11 +137,14 @@ flowchart TB
 
 **Entry point:** `python -m pywats_client gui`
 
+**Dependencies:** PySide6, qasync, pywats_client.service  
+**Coupling:** HIGH - Tightly coupled to service layer
+
 ---
 
-## pyWATS API Layer
+## 3. API Layer Architecture
 
-### Architecture Pattern
+### 3.1 Architecture Pattern
 
 Each domain follows a **three-layer pattern**:
 
@@ -135,9 +165,9 @@ flowchart TB
     Repository --> HttpClient
 ```
 
-### Core Components
+### 3.2 Core Components
 
-#### HttpClient (`core/client.py`)
+#### 3.2.1 HttpClient (`core/client.py`)
 
 **Both sync and async implementations:**
 - `HttpClient` - Synchronous (uses `requests`)
@@ -167,7 +197,7 @@ class Response:
     error_message: Optional[str]
 ```
 
-#### Rate Limiting (`core/throttle.py`)
+#### 3.2.2 Rate Limiting (`core/throttle.py`)
 
 **Thread-safe sliding window rate limiter:**
 - Default: 500 requests per 60 seconds
@@ -186,7 +216,7 @@ configure_throttling(
 )
 ```
 
-#### Retry Logic (`core/retry.py`)
+#### 3.2.3 Retry Logic (`core/retry.py`)
 
 **Automatic retry with exponential backoff:**
 - Default: 3 attempts, 1s base delay, 30s max delay
@@ -208,7 +238,7 @@ config = RetryConfig(
 api = pyWATS(..., retry_config=config)
 ```
 
-#### Error Handling (`core/exceptions.py`, `shared/result.py`)
+#### 3.2.4 Error Handling (`core/exceptions.py`, `shared/result.py`)
 
 **Two error handling modes:**
 
@@ -235,7 +265,7 @@ else:
     print(result.error)  # ErrorCode.NOT_FOUND
 ```
 
-### Domain Services
+### 3.3 Domain Services
 
 **8 domains available:**
 
@@ -265,7 +295,7 @@ api.product.get_product("PRODUCT-123")
 api.production.allocate_serial_numbers(...)
 ```
 
-### Station Identity (`core/station.py`)
+### 3.4 Station Identity (`core/station.py`)
 
 **Station concept for report attribution:**
 ```python
@@ -292,13 +322,79 @@ registry.set_active("ict")
 current = registry.get_active()  # Station("ICT-01", ...)
 ```
 
+### 3.5 Async vs Sync Usage
+
+#### Sync API (`pyWATS`)
+
+**Best for:**
+- Simple scripts
+- Sequential operations
+- Learning/prototyping
+- Single-threaded applications
+
+**Example:**
+```python
+from pywats import pyWATS
+
+api = pyWATS(
+    base_url="https://company.wats.com",
+    token="your-token"
+)
+
+# Blocking calls
+product = api.product.get_product("PRODUCT-123")
+reports = api.report.get_reports(limit=10)
+```
+
+#### Async API (`AsyncWATS`)
+
+**Best for:**
+- High-performance applications
+- Concurrent operations
+- Batch processing
+- Server applications
+
+**Example:**
+```python
+import asyncio
+from pywats import AsyncWATS
+
+async def main():
+    api = AsyncWATS(
+        base_url="https://company.wats.com",
+        token="your-token"
+    )
+    
+    # Concurrent requests
+    products = await asyncio.gather(
+        api.product.get_product_async("PROD-1"),
+        api.product.get_product_async("PROD-2"),
+        api.product.get_product_async("PROD-3")
+    )
+
+asyncio.run(main())
+```
+
+**Performance benefit:** 5-100x speedup for batch operations
+
+#### When to Use Each
+
+| Scenario | Recommendation |
+|----------|----------------|
+| CLI tool | Sync (`pyWATS`) |
+| Test automation script | Sync (`pyWATS`) |
+| Web server integration | Async (`AsyncWATS`) |
+| Batch data migration | Async (`AsyncWATS`) |
+| Processing 1000s of reports | Async (`AsyncWATS`) |
+| Simple report submission | Sync (`pyWATS`) |
+
 ---
 
-## pyWATS Client Layer
+## 4. Client Layer Architecture
 
-### Service Architecture (New in v1.4 - Async-First)
+### 4.1 Async-First Architecture (v1.4+)
 
-The client uses an **async-first architecture** with asyncio for efficient concurrent I/O:
+Starting with v1.4.0, the client uses an **async-first architecture** with asyncio for efficient concurrent I/O:
 
 ```mermaid
 flowchart TB
@@ -358,237 +454,482 @@ flowchart TB
     ServiceProcess <-->|IPC| GUIProcess
 ```
 
-**Key components:**
+#### Benefits of Async Architecture
 
-1. **AsyncClientService** - Main async service controller
-   - AsyncServiceStatus states: STOPPED, START_PENDING, RUNNING, STOP_PENDING, PAUSED, ERROR
-   - Uses AsyncWATS for non-blocking API calls
-   - Manages lifecycle with asyncio tasks
+| Aspect | Threading (Traditional) | Asyncio (New) |
+|--------|------------------------|---------------|
+| Concurrency | Thread pool (1-50 workers) | Single thread, async tasks |
+| API Calls | Blocking, one per thread | Non-blocking, multiplexed |
+| Resource Usage | Higher (thread overhead) | Lower (coroutines are lightweight) |
+| Complexity | Race conditions, locks | Event loop, no locks |
+| GUI Integration | QThread signals | qasync event loop |
 
-2. **AsyncPendingQueue** - Concurrent report uploads
-   - 5 concurrent uploads (configurable via semaphore)
-   - Async file watching for new reports
-   - Automatic retry with exponential backoff
-   - Graceful shutdown (completes in-flight uploads)
+### 4.2 Core Service Components
 
-3. **AsyncConverterPool** - Concurrent file conversion
-   - 10 concurrent conversions (configurable via semaphore)
-   - Uses asyncio.to_thread() for CPU-bound converter code
-   - Async file I/O for efficiency
+#### 4.2.1 AsyncClientService
 
-4. **PersistentQueue** - SQLite-backed queue
-   - States: pending, processing, completed, failed
-   - Automatic crash recovery (processing → pending on restart)
-   - Retry logic with configurable attempts
+**Purpose:** Main async service controller and lifecycle manager
 
-5. **AsyncIPCServer** - Inter-process communication
-   - Pure asyncio (TCP on Windows, Unix sockets on Linux/macOS)
-   - Socket name: `pyWATS_Service_{instance_id}`
-   - JSON protocol for commands and responses
-   - No Qt dependency - enables true headless mode
+**Location:** `src/pywats_client/service/async_client_service.py`
 
-6. **AsyncAPIRunner** - GUI async helper (composition)
-   - Non-blocking API calls via `run_api_call()`
-   - Auto-detects sync/async API client
-   - Callback-based result handling
+**ServiceStatus States:**
+- `STOPPED` - Not running
+- `START_PENDING` - Initializing
+- `RUNNING` - Active and operational
+- `STOP_PENDING` - Shutting down
+- `PAUSED` - Temporarily paused (reserved for future use)
+- `ERROR` - Error state
 
-### Core Services
+**Key Responsibilities:**
+1. Initialize and coordinate all components using asyncio
+2. Manage service lifecycle with async context managers
+3. Provide AsyncWATS API client access (non-blocking)
+4. Track connection status
+5. Handle start/stop/pause commands
 
-#### File Monitor (`service/file_monitor.py`)
-
-**File system watching using Watchdog:**
-- Monitors configured watch folders
-- Pattern matching (`*.csv`, `*.xml`, etc.)
-- Debouncing (waits for file write completion)
-- Async event processing
-- Callbacks for file events
-
-**Monitor rules:**
+**Code Structure:**
 ```python
-class MonitorRule:
-    path: str                    # Folder to watch
-    converter_type: str          # Which converter to use
-    recursive: bool              # Watch subdirectories
-    file_pattern: str            # Glob pattern
-    delete_after_convert: bool   # Auto-cleanup
-```
-
-#### Converter System (`converters/`)
-
-**Three converter types:**
-
-1. **FileConverter** - One file → one report
-2. **FolderConverter** - Entire folder → one report (batch processing)
-3. **ScheduledConverter** - Timer-based execution
-
-**Base classes:**
-```python
-from pywats_client.converters import FileConverter, ConverterSource
-
-class MyConverter(FileConverter):
-    @property
-    def name(self) -> str:
-        return "My Test Converter"
+class AsyncClientService:
+    def __init__(self, config: ClientConfig):
+        self.config = config
+        self.status = ServiceStatus.STOPPED
+        self._api: Optional[AsyncWATS] = None
+        self._pending_queue: Optional[AsyncPendingQueue] = None
+        self._converter_pool: Optional[AsyncConverterPool] = None
+        self._tasks: List[asyncio.Task] = []
     
-    @property
-    def file_patterns(self) -> List[str]:
-        return ["*.csv", "*.txt"]
-    
-    def convert(self, source: ConverterSource, context) -> ConverterResult:
-        # Parse file
-        data = self._parse_file(source.read_text())
+    async def run(self):
+        """Run the service (blocks until shutdown)"""
+        self.status = ServiceStatus.START_PENDING
         
-        # Build report using ReportBuilder
-        builder = ReportBuilder(
-            part_number=data["part_number"],
-            serial_number=data["serial_number"]
+        # Initialize async API client
+        self._api = AsyncWATS(
+            url=self.config.wats_url,
+            token=self.config.token
         )
         
-        for test in data["tests"]:
-            builder.add_step(
-                name=test["name"],
-                value=test["value"],
-                limits=(test["low"], test["high"])
-            )
+        # Start concurrent components
+        self._pending_queue = AsyncPendingQueue(api=self._api, ...)
+        self._converter_pool = AsyncConverterPool(api=self._api, ...)
         
-        return ConverterResult.success(builder.to_dict())
+        self._tasks = [
+            asyncio.create_task(self._pending_queue.run()),
+            asyncio.create_task(self._converter_pool.run()),
+            asyncio.create_task(self._api_status_loop()),
+        ]
+        
+        self.status = ServiceStatus.RUNNING
+        
+        # Wait until stopped
+        await asyncio.gather(*self._tasks, return_exceptions=True)
+    
+    async def stop(self):
+        """Stop the service gracefully"""
+        self.status = ServiceStatus.STOP_PENDING
+        
+        # Cancel all tasks
+        for task in self._tasks:
+            task.cancel()
+        
+        self.status = ServiceStatus.STOPPED
 ```
 
-**Converter lifecycle:**
-1. File created/modified event detected
-2. Debounce wait (ensure write complete)
-3. Pattern match check
-4. Load converter module dynamically
-5. Call `convert(source, context)`
-6. Submit result to queue or upload directly
-7. Post-processing (move/delete/archive based on config)
-
-#### Configuration (`config.py`)
-
-**ClientConfig structure:**
-- Instance identity (ID, name)
-- Server connection (URL, token, username)
-- Station identification
-- Serial number handler settings
-- Proxy configuration
-- Sync settings (interval, enabled)
-- Offline queue settings
-- Converter configurations
-- GUI tab visibility
-- Logging configuration
-
-**Encryption:**
-- API tokens encrypted with machine-specific key
-- Uses `cryptography.fernet` (symmetric encryption)
-- Machine ID from system (Windows Registry, `/etc/machine-id`, IOPlatformUUID)
-- Tokens cannot be moved between machines
-
-**Configuration locations:**
-```
-Windows: %APPDATA%\pyWATS_Client\
-Linux:   ~/.config/pywats_client/
-macOS:   ~/Library/Application Support/pywats_client/
-
-Structure:
-  config.json                 # Default instance
-  config_{instance_id}.json   # Named instances
-  client.log                  # Application log
-  cache/
-    processes_cache.json      # Synced reference data
-  reports/
-    pending/                  # Queued for upload
-    processing/               # Currently uploading
-    completed/                # Successfully uploaded
-    failed/                   # Max retries exceeded
-```
-
-#### Instance Management (`service/instance_manager.py`)
-
-**Multi-instance support:**
-- File-based locking (`.lock` files in temp directory)
-- Lock contains: instance_id, name, PID, started timestamp
-- Stale lock detection (checks if PID still running)
-- Each instance has separate:
-  - Configuration file
-  - Queue directory
-  - Log file
-  - IPC socket name
-
-**Use case:** Multiple test processes on same machine (e.g., ICT + FCT + EOL on one PC)
-
----
-
-## pyWATS GUI Layer
-
-### Application Structure
-
-```
-src/pywats_client/gui/
-├── app.py                 # Main entry point, QApplication setup
-├── login_window.py        # Pre-authentication dialog
-├── main_window.py         # Main application window
-├── settings_dialog.py     # Settings configuration
-├── styles.py              # Dark theme stylesheet
-├── pages/                 # Stacked widget pages
-│   ├── base.py           # BasePage abstract class
-│   ├── setup.py          # Initial configuration
-│   ├── connection.py     # Server connection status
-│   ├── converters.py     # Converter management
-│   ├── sn_handler.py     # Serial number handling
-│   ├── software.py       # Software distribution
-│   ├── about.py          # Version info
-│   └── log.py            # Application logs
-└── widgets/              # Reusable UI components
-```
-
-### Communication with Service
-
-**IPC Protocol (Pure asyncio TCP/Unix sockets):**
+**API Status Tracking:**
 ```python
-# GUI → Service (Commands)
-{
-    "command": "get_status" | "get_config" | "start" | "stop" | "ping",
-    "request_id": "uuid",
-    "args": {...}
-}
+async def _api_status_loop(self):
+    """Periodically check API connection"""
+    while True:
+        try:
+            version = await self._api.app.get_version()
+            self._api_status = "Online"
+        except Exception:
+            self._api_status = "Offline"
+        await asyncio.sleep(60)
+```
 
-# Service → GUI (Responses)
+#### 4.2.2 AsyncPendingQueue
+
+**Purpose:** Monitor and submit queued reports with concurrent uploads
+
+**Location:** `src/pywats_client/service/async_pending_queue.py`
+
+**Key Features:**
+1. **File system monitoring:** Watches pending reports directory
+2. **Concurrent uploads:** Up to 5 simultaneous uploads via semaphore
+3. **Periodic checking:** Timer-based check every 60 seconds
+4. **Non-blocking:** All I/O operations are async
+
+**Workflow:**
+```mermaid
+flowchart TD
+    PendingDir["Pending Directory
+    - report1.json
+    - report2.json
+    - report3.json
+    - ..."]
+    
+    Semaphore["Semaphore 5
+    Bounded concurrency"]
+    
+    PendingDir --> Semaphore
+    
+    Semaphore --> Task1[Task1]
+    Semaphore --> Task2[Task2]
+    Semaphore --> Task3[Task3]
+    
+    Task1 -->|concurrent| WATS[WATS API]
+    Task2 -->|concurrent| WATS
+    Task3 -->|concurrent| WATS
+    
+    WATS --> MoveComplete["Move to Complete
+    or Retry on failure"]
+```
+
+**Code Structure:**
+```python
+class AsyncPendingQueue:
+    def __init__(self, api: AsyncWATS, reports_dir: Path, max_concurrent: int = 5):
+        self._api = api
+        self._reports_dir = reports_dir
+        self._semaphore = asyncio.Semaphore(max_concurrent)
+        self._stopped = False
+    
+    async def run(self):
+        """Main run loop"""
+        tasks = [
+            asyncio.create_task(self._watch_directory()),
+            asyncio.create_task(self._periodic_scan()),
+        ]
+        await asyncio.gather(*tasks)
+    
+    async def _submit_report(self, report_path: Path):
+        """Submit a single report (respects semaphore)"""
+        async with self._semaphore:  # Limits to max_concurrent
+            async with aiofiles.open(report_path) as f:
+                data = json.loads(await f.read())
+            
+            await self._api.report.create_report(data)
+            
+            # Move to completed
+            report_path.rename(self._reports_dir / "completed" / report_path.name)
+    
+    async def stop(self):
+        """Signal shutdown"""
+        self._stopped = True
+```
+
+#### 4.2.3 AsyncConverterPool
+
+**Purpose:** Manage concurrent file conversions with bounded parallelism
+
+**Location:** `src/pywats_client/service/async_converter_pool.py`
+
+**Configuration:**
+- `max_concurrent`: 1-50 (default: 10)
+- Concurrency bounded via `asyncio.Semaphore` to prevent resource exhaustion
+
+**Responsibilities:**
+1. Watch input directories for new files
+2. Execute converters concurrently (up to max_concurrent)
+3. Move converted files to pending queue
+4. Handle converter errors and retries
+
+**Code Structure:**
+```python
+class AsyncConverterPool:
+    def __init__(self, config: ClientConfig, api: AsyncWATS, max_concurrent: int = 10):
+        self._config = config
+        self._api = api
+        self._semaphore = asyncio.Semaphore(max_concurrent)
+        self._converters: List[Converter] = []
+        self._stopped = False
+    
+    def add_converter(self, converter: Converter):
+        """Register a converter"""
+        self._converters.append(converter)
+    
+    async def run(self):
+        """Main run loop - watch and convert files"""
+        tasks = [
+            asyncio.create_task(self._watch_input()),
+            asyncio.create_task(self._periodic_scan()),
+        ]
+        await asyncio.gather(*tasks)
+    
+    async def _convert_file(self, file_path: Path, converter: Converter):
+        """Execute conversion (respects semaphore)"""
+        async with self._semaphore:  # Limits concurrent conversions
+            try:
+                # Run converter (may be sync, use run_in_executor)
+                loop = asyncio.get_event_loop()
+                result = await loop.run_in_executor(
+                    None,
+                    lambda: converter.convert(ConverterSource(file_path), {})
+                )
+                
+                if result.success:
+                    # Move to pending queue
+                    await self._move_to_pending(result.report)
+                return result
+            except Exception as e:
+                return ConverterResult.failure(str(e))
+    
+    async def stop(self):
+        """Signal shutdown"""
+        self._stopped = True
+```
+
+**Concurrency Model:**
+```mermaid
+flowchart TB
+    subgraph AsyncConverterPool["AsyncConverterPool"]
+        direction TB
+        
+        subgraph InputFiles["Input Files"]
+            file1[file1]
+            file2[file2]
+            file3[file3]
+            files[...]
+            file20[file20]
+        end
+        
+        Semaphore["Semaphore 10"]
+        
+        subgraph Workers["Workers"]
+            direction TB
+            Task1["Task1: converter.convert"]
+            Task2["Task2: converter.convert"]
+            Task3["Task3: converter.convert"]
+            TaskMore[...]
+            Task10["Task10: converter.convert"]
+        end
+        
+        Output["Pending Queue output"]
+        Waiting["waiting: file11-file20"]
+        
+        InputFiles --> Semaphore
+        Semaphore --> Workers
+        Workers --> Output
+    end
+```
+
+#### 4.2.4 PersistentQueue
+
+**Purpose:** SQLite-backed report queue with crash recovery
+
+**Location:** `src/pywats_client/queue/persistent_queue.py`
+
+**Database Schema:**
+```sql
+CREATE TABLE reports (
+    id TEXT PRIMARY KEY,
+    report_data TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    attempts INTEGER DEFAULT 0,
+    error TEXT,
+    CHECK(status IN ('pending', 'processing', 'completed', 'failed'))
+);
+
+CREATE INDEX idx_status ON reports(status);
+CREATE INDEX idx_created_at ON reports(created_at);
+```
+
+**Queue States:**
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Initial state
+    pending --> processing: Upload starts
+    processing --> completed: Success
+    processing --> pending: Failure (retry if attempts < max)
+    pending --> failed: Max retries exceeded
+    completed --> [*]
+    failed --> [*]
+    
+    note right of pending
+        Awaiting upload
+    end note
+    
+    note right of processing
+        Currently being uploaded
+    end note
+    
+    note right of completed
+        Successfully uploaded
+    end note
+    
+    note right of failed
+        Permanent failure
+    end note
+```
+
+**Crash Recovery Implementation:**
+```python
+class PersistentQueue:
+    def __init__(self, queue_dir: Path):
+        self.queue_dir = queue_dir
+        self.db_path = queue_dir / "queue.db"
+        self._init_database()
+        self._recover_crashed_reports()
+    
+    def _recover_crashed_reports(self):
+        """Reset processing reports to pending on startup"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE reports 
+            SET status = 'pending',
+                attempts = attempts + 1,
+                updated_at = ?
+            WHERE status = 'processing'
+        """, (datetime.now(),))
+        
+        recovered = cursor.rowcount
+        conn.commit()
+        conn.close()
+        
+        if recovered > 0:
+            logger.info(f"Recovered {recovered} crashed reports")
+```
+
+#### 4.2.5 AsyncIPCServer
+
+**Purpose:** Inter-process communication for GUI-service interaction
+
+**Location:** `src/pywats_client/service/async_ipc_server.py`
+
+**Features:**
+- Pure asyncio (TCP on Windows, Unix sockets on Linux/macOS)
+- Socket name: `pyWATS_Service_{instance_id}`
+- JSON protocol for commands and responses
+- No Qt dependency - enables true headless mode
+
+**Protocol Overview:**
+
+**Transport:** TCP on Windows (localhost deterministic port), Unix socket on Linux/Mac
+
+**Socket Name:** `pyWATS_Service_{instance_id}`
+- Example: `pyWATS_Service_default`
+- Example: `pyWATS_Service_production`
+
+**Message Format:** JSON
+
+**Request (GUI → Service):**
+```json
 {
-    "success": true,
-    "data": {...},
-    "error": null,
-    "request_id": "uuid"
+  "command": "get_status",
+  "request_id": "uuid-here",
+  "args": {
+    "param1": "value1"
+  }
 }
 ```
 
-**AsyncIPCClient** in GUI connects to **AsyncIPCServer** in service.
-- Windows: TCP localhost on deterministic port (derived from instance_id hash)
-- Linux/macOS: Unix domain sockets at `/tmp/pywats_service_{instance_id}.sock`
+**Response (Service → GUI):**
+```json
+{
+  "success": true,
+  "data": {
+    "status": "RUNNING",
+    "api_status": "Online",
+    "pending_count": 5
+  },
+  "error": null,
+  "request_id": "uuid-here"
+}
+```
 
-### User Workflow
+**Supported Commands:**
 
-1. **First launch:**
-   - LoginWindow shown (no stored credentials)
-   - Enter server URL + password/token
-   - Authenticate → token encrypted and saved
-   - MainWindow opens
+| Command | Args | Response | Purpose |
+|---------|------|----------|---------|
+| `get_status` | None | ServiceStatus, API status | Check service state |
+| `get_config` | None | ClientConfig | Get current configuration |
+| `start` | None | Success/error | Start service |
+| `stop` | None | Success/error | Stop service gracefully |
+| `restart` | None | Success/error | Restart service |
+| `ping` | None | "pong" | Health check |
+| `get_queue_stats` | None | Pending/failed counts | Queue status |
 
-2. **Subsequent launches:**
-   - Auto-connect using stored encrypted token
-   - MainWindow opens directly if valid
-   - LoginWindow only if authentication fails
+### 4.3 GUI Integration
 
-3. **Main window:**
-   - Sidebar navigation (Dashboard, General, Connection, API Settings, Log, Converters, SN Handler, Software)
-   - Page content area (QStackedWidget)
-   - Status bar (connection status, instance info)
-   - System tray icon (minimize to tray option)
+#### 4.3.1 qasync Event Loop
 
----
+The GUI uses `qasync` to integrate Python's asyncio event loop with Qt's event loop,
+enabling non-blocking async operations directly in the GUI without freezing the UI.
 
-## Configuration Management
+**Application Startup (`gui/app.py`):**
 
-### Configuration Hierarchy
+```python
+import qasync
+from PySide6.QtWidgets import QApplication
+
+def run_gui(config):
+    qt_app = QApplication(sys.argv)
+    
+    # Setup window, config, etc.
+    window = MainWindow(config)
+    window.show()
+    
+    # Use qasync for asyncio integration
+    loop = qasync.QEventLoop(qt_app)
+    asyncio.set_event_loop(loop)
+    
+    with loop:
+        return loop.run_forever()
+```
+
+**GUI Pages with Async Operations:**
+
+GUI pages can use `asyncio.create_task()` directly for non-blocking operations:
+
+```python
+class ConnectionPage(BasePage):
+    def _on_test_connection(self) -> None:
+        """Handle test button click"""
+        self._test_btn.setEnabled(False)
+        self._test_btn.setText("Testing...")
+        
+        # Run async test - doesn't block UI
+        asyncio.create_task(self._run_connection_test())
+    
+    async def _run_connection_test(self) -> None:
+        """Test connection asynchronously"""
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(f"{url}/api/Report/wats/info")
+            # Update UI based on response
+            self._show_test_result(response.status_code == 200)
+```
+
+#### 4.3.2 AsyncAPIRunner
+
+**Purpose:** Helper class for GUI pages to make async API calls without blocking the UI (composition pattern)
+
+**Location:** `src/pywats_client/gui/async_api_mixin.py`
+
+**Usage:**
+```python
+# Example: a page using async API calls
+class MyDomainPage(BasePage):
+    def __init__(self, config, main_window=None, parent=None):
+        super().__init__(config, parent, async_api_runner=getattr(main_window, 'async_api_runner', None))
+    
+    def _fetch_data(self, query: str):
+        # Automatically handles async/sync detection
+        if self.async_api:
+            self.async_api.run(
+                self,
+                api_call=lambda api: api.some_domain.query(query),
+                on_success=self._on_fetch_success,
+                on_error=self._on_fetch_error
+            )
+```
+
+### 4.4 Configuration System
+
+#### 4.4.1 Configuration Hierarchy
 
 ```
 1. Environment Variables (highest priority)
@@ -607,7 +948,34 @@ src/pywats_client/gui/
 4. Defaults (hardcoded in dataclasses)
 ```
 
-### Dynamic Configuration
+#### 4.4.2 Configuration Locations
+
+```
+Windows: %APPDATA%\pyWATS_Client\
+Linux:   ~/.config/pywats_client/
+macOS:   ~/Library/Application Support/pywats_client/
+
+Structure:
+  config.json                 # Default instance
+  config_{instance_id}.json   # Named instances
+  client.log                  # Application log
+  cache/
+    processes_cache.json      # Synced reference data
+  reports/
+    pending/                  # Queued for upload
+    processing/               # Currently uploading
+    completed/                # Successfully uploaded
+    failed/                   # Max retries exceeded
+```
+
+#### 4.4.3 Encryption
+
+**API tokens encrypted with machine-specific key**
+- Uses `cryptography.fernet` (symmetric encryption)
+- Machine ID from system (Windows Registry, `/etc/machine-id`, IOPlatformUUID)
+- Tokens cannot be moved between machines
+
+#### 4.4.4 Dynamic Configuration
 
 **Runtime credential override:**
 ```python
@@ -621,79 +989,296 @@ def get_runtime_credentials(self):
 
 **Use case:** Development/testing without modifying config files
 
----
+### 4.5 Instance Management
 
-## Async vs Sync Usage
+#### 4.5.1 Multi-Instance Support
 
-### Sync API (`pyWATS`)
-
-**Best for:**
-- Simple scripts
-- Sequential operations
-- Learning/prototyping
-- Single-threaded applications
+**Use Case:** Multiple test processes on same machine
 
 **Example:**
-```python
-from pywats import pyWATS
+- Instance "ict" - ICT testing
+- Instance "fct" - Functional testing
+- Instance "eol" - End-of-line testing
 
-api = pyWATS(
-    base_url="https://company.wats.com",
-    token="your-token"
-)
+#### 4.5.2 Instance Isolation
 
-# Blocking calls
-product = api.product.get_product("PRODUCT-123")
-reports = api.report.get_reports(limit=10)
+**Separate per instance:**
+- Configuration file: `config_{instance_id}.json`
+- Queue directory: `reports_{instance_id}/`
+- Log file: `client_{instance_id}.log`
+- IPC socket: `pyWATS_Service_{instance_id}`
+- Lock file: `instance_{instance_id}.lock`
+
+#### 4.5.3 Lock File Mechanism
+
+**Location:** `%TEMP%\pyWATS_Client\instance_{id}.lock`
+
+**Content:**
+```json
+{
+  "instance_id": "production",
+  "instance_name": "Production Station",
+  "pid": 12345,
+  "started": "2026-01-26T10:30:00Z"
+}
 ```
 
-### Async API (`AsyncWATS`)
-
-**Best for:**
-- High-performance applications
-- Concurrent operations
-- Batch processing
-- Server applications
-
-**Example:**
+**Stale Lock Detection:**
 ```python
-import asyncio
-from pywats import AsyncWATS
+def _is_process_running(pid: int) -> bool:
+    """Check if PID is still alive"""
+    try:
+        if sys.platform == "win32":
+            # Windows: Check with tasklist
+            output = subprocess.check_output(
+                ["tasklist", "/FI", f"PID eq {pid}"],
+                text=True
+            )
+            return str(pid) in output
+        else:
+            # Unix: Send signal 0
+            os.kill(pid, 0)
+            return True
+    except (subprocess.CalledProcessError, OSError):
+        return False
+```
 
-async def main():
-    api = AsyncWATS(
-        base_url="https://company.wats.com",
-        token="your-token"
-    )
+---
+
+## 5. Component Details
+
+### 5.1 Thread Models & Concurrency
+
+#### 5.1.1 Async Architecture Concurrency Limits
+
+| Component | Limit | Purpose |
+|-----------|-------|---------|
+| **PendingQueue** | 5-10 concurrent | Max simultaneous API submissions |
+| **ConverterPool** | 10 concurrent | Max simultaneous file conversions |
+| **IPC Clients** | Unlimited | No limit on GUI connections |
+| **Watchdog Threads** | 1 per converter | File system monitoring |
+
+#### 5.1.2 Timers & Background Tasks
+
+| Component | Interval | Purpose | Location |
+|-----------|----------|---------|----------|
+| **Watchdog** | 60s | Health checks, stuck file detection | `AsyncClientService._watchdog_loop()` |
+| **Ping** | 5min | Verify WATS connectivity | `AsyncClientService._ping_loop()` |
+| **Registration** | 1hr | Update client status on server | `AsyncClientService._registration_loop()` |
+| **Config Watch** | 5s | Hot-reload configuration | `AsyncClientService._config_watch_loop()` |
+| **Queue Check** | 60s | Process pending/error files | `AsyncPendingQueue._run_loop()` |
+| **Error Retry** | 5min × 2^(n-1) | Exponential backoff for failed reports | `AsyncPendingQueue._process_error_files()` |
+| **GUI Status** | 5s | Update service status display | `MainWindow._status_timer` |
+| **Service Discovery** | 5s | Find running service instances | `ServiceDiscoveryAsync` |
+
+### 5.2 Queue Processing Details
+
+#### 5.2.1 File State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> queued: File created
+    queued --> processing: Submit started
+    processing --> completed: API success
+    processing --> error: API failure
+    error --> queued: Retry (backoff elapsed)
+    error --> exhausted: Max retries (5)
+    completed --> [*]: Cleanup
+    exhausted --> [*]: Move to failed folder
     
-    # Concurrent requests
-    products = await asyncio.gather(
-        api.product.get_product_async("PROD-1"),
-        api.product.get_product_async("PROD-2"),
-        api.product.get_product_async("PROD-3")
-    )
-
-asyncio.run(main())
+    note right of processing
+        Stuck detection: >30min
+        Auto-reset to queued
+    end note
 ```
 
-**Performance benefit:** 5-100x speedup for batch operations
+#### 5.2.2 Retry Logic Implementation
 
-### When to Use Each
+**Configuration:**
+- `max_retry_attempts`: Default 3
+- `retry_interval_seconds`: Default 60
 
-| Scenario | Recommendation |
-|----------|----------------|
-| CLI tool | Sync (`pyWATS`) |
-| Test automation script | Sync (`pyWATS`) |
-| Web server integration | Async (`AsyncWATS`) |
-| Batch data migration | Async (`AsyncWATS`) |
-| Processing 1000s of reports | Async (`AsyncWATS`) |
-| Simple report submission | Sync (`pyWATS`) |
+**Exponential Backoff:**
+```python
+def calculate_retry_delay(attempt: int) -> int:
+    """Calculate delay with exponential backoff"""
+    base_delay = 60  # 1 minute
+    max_delay = 3600  # 1 hour
+    
+    delay = min(base_delay * (2 ** attempt), max_delay)
+    return delay
+```
 
----
+**Retry Sequence:**
+```mermaid
+sequenceDiagram
+    participant Queue as PendingQueue
+    participant API as WATS API
+    participant FS as File System
+    
+    Note over Queue: Attempt 1
+    Queue->>API: Submit report
+    API-->>Queue: Error 503 (Service Unavailable)
+    Queue->>FS: report.queued → report.error
+    Queue->>FS: Write report.error.info (attempt=1)
+    
+    Note over Queue: Wait 5 minutes...
+    
+    Note over Queue: Attempt 2 (Periodic check)
+    Queue->>FS: Check .error files
+    Queue->>FS: Read report.error.info
+    Queue->>Queue: backoff_elapsed? (5min passed)
+    Queue->>FS: report.error → report.queued
+    Queue->>API: Submit report
+    API-->>Queue: Error 503
+    Queue->>FS: report.queued → report.error
+    Queue->>FS: Update report.error.info (attempt=2)
+    
+    Note over Queue: Wait 10 minutes...
+    
+    Note over Queue: After 5 failed attempts
+    Queue->>FS: Move to /failed folder
+    Queue->>Queue: Log exhausted error
+```
 
-## Extension Points
+### 5.3 File Monitoring Details
 
-### 1. Custom Converters
+#### 5.3.1 Watchdog Integration
+
+**Library:** `watchdog` (cross-platform file system events)
+
+**Event Types:**
+- `FileCreatedEvent` - New file appears
+- `FileModifiedEvent` - File content changed
+- `FileDeletedEvent` - File removed
+- `FileMovedEvent` - File renamed/moved
+
+#### 5.3.2 Debouncing
+
+**Problem:** File system events fire multiple times during file write
+
+**Solution:** Wait for write completion before processing
+
+```python
+class DebouncingEventHandler(FileSystemEventHandler):
+    def __init__(self, callback, delay=0.5):
+        self.callback = callback
+        self.delay = delay  # 500ms
+        self._timers = {}
+    
+    def on_created(self, event):
+        if event.is_directory:
+            return
+        
+        # Cancel previous timer
+        if event.src_path in self._timers:
+            self._timers[event.src_path].cancel()
+        
+        # Start new timer
+        timer = Timer(self.delay, self._process_file, [event.src_path])
+        self._timers[event.src_path] = timer
+        timer.start()
+    
+    def _process_file(self, file_path):
+        """Called after debounce delay"""
+        self.callback(file_path)
+        if file_path in self._timers:
+            del self._timers[file_path]
+```
+
+### 5.4 Converter System Details
+
+#### 5.4.1 Converter Lifecycle
+
+```mermaid
+flowchart TD
+    A[1. Configuration Load] --> B[2. Module Import - dynamic]
+    B --> C[3. Class Instantiation]
+    C --> D[4. File Pattern Registration]
+    D --> E[5. Watch Folder Setup]
+    E --> F{File appears in watch folder}
+    F --> G[6. Event Triggered]
+    G --> H[7. Debounce Wait - 500ms]
+    H --> I[8. Pattern Match Check]
+    I --> J[9. Converter.convert Call]
+    J --> K[10. Result Validation]
+    K --> L[11. Queue Submission or Direct Upload]
+    L --> M[12. Post-Processing - move/delete/archive]
+```
+
+#### 5.4.2 FileConverter Base Class
+
+**Location:** `src/pywats_client/converters/file_converter.py`
+
+**Abstract Methods:**
+```python
+class FileConverter(ABC):
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Converter display name"""
+        pass
+    
+    @property
+    @abstractmethod
+    def version(self) -> str:
+        """Converter version"""
+        return "1.0.0"
+    
+    @property
+    @abstractmethod
+    def file_patterns(self) -> List[str]:
+        """File patterns to match (glob)"""
+        pass
+    
+    @abstractmethod
+    def convert(self, source: ConverterSource, context: dict) -> ConverterResult:
+        """Convert file to report"""
+        pass
+```
+
+#### 5.4.3 Converter Configuration
+
+```json
+{
+  "converters": [{
+    "name": "CSV Converter",
+    "module_path": "converters.csv_converter.CSVConverter",
+    "watch_folder": "C:\\TestData\\Incoming",
+    "done_folder": "C:\\TestData\\Done",
+    "error_folder": "C:\\TestData\\Error",
+    "file_patterns": ["*.csv"],
+    "post_action": "move",
+    "enabled": true,
+    "arguments": {
+      "delimiter": ",",
+      "encoding": "utf-8"
+    }
+  }]
+}
+```
+
+#### 5.4.4 Dynamic Loading
+
+```python
+def load_converter(module_path: str, arguments: dict) -> Converter:
+    """Dynamically load converter class"""
+    # Parse module path
+    module_name, class_name = module_path.rsplit('.', 1)
+    
+    # Import module
+    module = importlib.import_module(module_name)
+    
+    # Get class
+    converter_class = getattr(module, class_name)
+    
+    # Instantiate with arguments
+    converter = converter_class(**arguments)
+    
+    return converter
+```
+
+#### 5.4.5 Custom Converter Example
 
 **Create custom file format converter:**
 ```python
@@ -731,7 +1316,233 @@ class MyCustomConverter(FileConverter):
 }
 ```
 
-### 2. Custom Domains
+---
+
+## 6. Integration Patterns
+
+### 6.1 How the Layers Work Together
+
+#### 6.1.1 Complete Data Flow
+
+```mermaid
+flowchart TB
+    subgraph External["🌍 External"]
+        WATS["WATS Server"]
+        TE["Test Equipment<br/>(creates files)"]
+    end
+    
+    subgraph FileSystem["📁 File System"]
+        WATCH["Watch Folders<br/>/results/*.csv"]
+        QUEUE["Queue Folder<br/>/queue/*.queued"]
+        CONFIG["Config<br/>/config/config.json"]
+    end
+    
+    subgraph Service["🖥️ Service Process"]
+        direction TB
+        
+        SVC["AsyncClientService"]
+        
+        subgraph Processing["Processing Pipeline"]
+            CP["ConverterPool"]
+            PQ["PendingQueue"]
+        end
+        
+        subgraph Timers["Background Tasks"]
+            T1["⏱️ Watchdog 60s"]
+            T2["⏱️ Ping 5min"]
+            T3["⏱️ Config 5s"]
+        end
+        
+        API["AsyncWATS"]
+        IPC["IPC Server"]
+    end
+    
+    subgraph GUI["🖼️ GUI Process"]
+        direction TB
+        MW["MainWindow"]
+        
+        subgraph Pages["Pages"]
+            DASH["Dashboard"]
+            SETUP["Setup"]
+            LOG["Log"]
+            CONV_PAGE["Converters"]
+        end
+        
+        CLIENT["IPC Client"]
+        RUNNER["TaskRunner"]
+    end
+    
+    %% File creation flow
+    TE -->|"1. Create test file"| WATCH
+    
+    %% Converter flow
+    WATCH -->|"2. Watchdog event"| CP
+    CP -->|"3. Convert to JSON"| PQ
+    
+    %% Queue flow
+    PQ -->|"4. Write .queued"| QUEUE
+    QUEUE -->|"5. File event"| PQ
+    PQ -->|"6. Submit"| API
+    API -->|"7. HTTP POST"| WATS
+    
+    %% Config flow
+    CONFIG -->|"Watch changes"| SVC
+    SVC -->|"Hot reload"| Processing
+    
+    %% GUI flow
+    MW --> CLIENT
+    CLIENT <-->|"IPC"| IPC
+    IPC --> SVC
+    
+    %% Timer flows
+    T1 -->|"Health check"| API
+    T2 -->|"Ping"| API
+    T3 -->|"Reload"| CONFIG
+    
+    %% GUI page updates
+    RUNNER --> Pages
+    
+    style External fill:#0f3460,stroke:#e94560,color:#fff
+    style Service fill:#1a1a2e,stroke:#16213e,color:#fff
+    style GUI fill:#16213e,stroke:#0f3460,color:#fff
+    style FileSystem fill:#2d2d2d,stroke:#3c3c3c,color:#fff
+```
+
+#### 6.1.2 Service-GUI Interaction
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Service as AsyncClientService
+    participant API as AsyncWATS
+    participant Queue as AsyncPendingQueue
+    participant Conv as AsyncConverterPool
+    participant IPC as IPCServer
+    
+    User->>Service: start()
+    activate Service
+    
+    Note over Service: State: START_PENDING
+    
+    Service->>API: Initialize connection
+    API-->>Service: Connected
+    
+    Service->>Service: Start Watchdog Timer (60s)
+    Service->>Service: Start Ping Timer (5min)
+    Service->>Service: Start Registration Timer (1hr)
+    
+    Service->>Queue: start()
+    Queue-->>Service: Started
+    
+    Service->>Conv: start()
+    Conv-->>Service: Started (file watchers active)
+    
+    Service->>Service: Start Config Watcher (5s)
+    
+    Service->>IPC: start()
+    IPC-->>Service: Listening
+    
+    Note over Service: State: RUNNING
+    
+    loop Every 60 seconds
+        Service->>API: Health check
+        Service->>Queue: Check stuck files
+        Service->>Conv: Check converter health
+    end
+    
+    loop Every 5 minutes
+        Service->>API: Ping
+    end
+    
+    loop Every 1 hour
+        Service->>API: Update registration
+    end
+    
+    User->>Service: stop()
+    Note over Service: State: STOP_PENDING
+    
+    Service->>Conv: stop()
+    Service->>Queue: stop() [wait for in-flight]
+    Service->>IPC: stop()
+    Service->>API: Close connections
+    
+    Note over Service: State: STOPPED
+    deactivate Service
+```
+
+#### 6.1.3 Converter Pipeline Flow
+
+```mermaid
+flowchart TB
+    subgraph WatchFolders["📁 Watch Folders"]
+        F1["C:/TestResults/Station1"]
+        F2["C:/TestResults/Station2"]
+        F3["C:/Archive/*.csv"]
+    end
+    
+    subgraph Converters["🔧 Converter Pool"]
+        direction TB
+        
+        subgraph Registration["Converter Registry"]
+            CSV["CSV Converter<br/>patterns: *.csv"]
+            XML["XML Converter<br/>patterns: *.xml, *.uut"]
+            CUSTOM["Custom Converter<br/>patterns: *.dat"]
+        end
+        
+        subgraph Watchers["File Watchers (watchdog)"]
+            W1["Watcher 1"]
+            W2["Watcher 2"]
+            W3["Watcher 3"]
+        end
+        
+        subgraph Processing["Processing Pipeline"]
+            TQUEUE["Thread-safe Queue<br/>(janus)"]
+            SEM["Semaphore<br/>(max 10)"]
+            PROC["_process_item()"]
+        end
+    end
+    
+    subgraph Conversion["📄 Conversion Steps"]
+        READ["Read File<br/>(aiofiles)"]
+        CONVERT["converter.convert()<br/>(thread pool)"]
+        VALIDATE["Validate Report"]
+    end
+    
+    subgraph Output["📤 Output"]
+        SUBMIT["api.report.submit()"]
+        POST["Post-Process"]
+    end
+    
+    subgraph PostActions["Post-Process Actions"]
+        DELETE["DELETE: Remove source"]
+        MOVE["MOVE: Archive folder"]
+        ZIP["ZIP: Compress"]
+        KEEP["KEEP: Leave in place"]
+    end
+    
+    %% Connections
+    F1 --> W1
+    F2 --> W2
+    F3 --> W3
+    
+    W1 & W2 & W3 -->|"File event"| TQUEUE
+    TQUEUE --> SEM
+    SEM --> PROC
+    PROC --> READ
+    READ --> CONVERT
+    CONVERT --> VALIDATE
+    VALIDATE --> SUBMIT
+    SUBMIT -->|"Success"| POST
+    
+    POST --> DELETE & MOVE & ZIP & KEEP
+    
+    style Converters fill:#1a1a2e,stroke:#16213e,color:#fff
+    style Conversion fill:#0f3460,stroke:#e94560,color:#fff
+```
+
+### 6.2 Extension Points
+
+#### 6.2.1 Custom Domains
 
 **Extend pyWATS API with custom domain:**
 ```python
@@ -755,7 +1566,7 @@ class CustomService:
 api.custom = CustomService(CustomRepository(...))
 ```
 
-### 3. Custom Report Steps
+#### 6.2.2 Custom Report Steps
 
 **Create domain-specific step types:**
 ```python
@@ -773,7 +1584,7 @@ builder.add_custom_step(
 )
 ```
 
-### 4. Scheduled Tasks
+#### 6.2.3 Scheduled Tasks
 
 **Implement periodic data sync:**
 ```python
@@ -791,9 +1602,11 @@ class DataSyncConverter(ScheduledConverter):
 
 ---
 
-## Deployment Modes
+## 7. Deployment Architectures
 
-### 1. **GUI Mode** (Desktop)
+### 7.1 Deployment Modes
+
+#### 7.1.1 GUI Mode (Desktop)
 ```bash
 python -m pywats_client gui
 # or
@@ -801,13 +1614,25 @@ pywats-client
 ```
 **Use case:** Lab stations, operator-facing stations
 
-### 2. **Headless Service Mode**
+#### 7.1.2 Headless Service Mode
 ```bash
 python -m pywats_client service --daemon
 ```
 **Use case:** Production servers, headless test stations
 
-### 3. **Docker Container**
+#### 7.1.3 Separate Service + GUI
+```bash
+# Terminal 1: Start service
+python -m pywats_client service
+
+# Terminal 2: Start GUI (connects to service)
+python -m pywats_client gui --connect
+```
+- Service and GUI in separate processes
+- GUI can crash without affecting service
+- Best for: Reliability, debugging
+
+#### 7.1.4 Docker Container
 ```bash
 docker run -d \
   -v /path/to/config:/app/config \
@@ -816,26 +1641,27 @@ docker run -d \
 ```
 **Use case:** Cloud deployments, Kubernetes, server racks
 
-### 4. **Windows Service**
+#### 7.1.5 Windows Service
 ```powershell
 pywats-client install-service --instance-id production
+Start-Service pyWATS-Client-production
 ```
 **Use case:** Auto-start on boot, production environments
 
-### 5. **Linux systemd**
+#### 7.1.6 Linux systemd
 ```bash
-sudo systemctl enable pywats-client@default
-sudo systemctl start pywats-client@default
+sudo systemctl enable pywats-client@production
+sudo systemctl start pywats-client@production
 ```
 **Use case:** Server deployments, Raspberry Pi, embedded Linux
 
-### 6. **macOS launchd**
+#### 7.1.7 macOS launchd
 ```bash
 launchctl load ~/Library/LaunchAgents/com.pywats.client.plist
 ```
 **Use case:** Mac-based test stations
 
-### 7. **Programmatic API**
+#### 7.1.8 Programmatic API
 ```python
 from pywats import pyWATS
 
@@ -844,11 +1670,21 @@ api.report.submit_report(...)
 ```
 **Use case:** Test automation scripts, custom applications
 
----
+### 7.2 Deployment Trade-offs
 
-## Dependencies
+| Mode | Reliability | Resource Usage | GUI Available | Auto-Start | Platform |
+|------|-------------|----------------|---------------|------------|----------|
+| GUI Mode | Low | High | ✅ | ❌ | Desktop |
+| Headless Service | High | Low | ❌ | ❌ | All |
+| Separate Processes | Highest | Medium | ✅ | ❌ | All |
+| Windows Service | High | Low | ❌ | ✅ | Windows |
+| systemd | High | Low | ❌ | ✅ | Linux |
+| Docker | High | Low | ❌ | ✅ | All |
+| Programmatic | N/A | Minimal | ❌ | N/A | All |
 
-### Core Dependencies
+### 7.3 Dependency Management
+
+#### Core Dependencies
 
 **pyWATS API:**
 - `httpx` (async HTTP client)
@@ -866,7 +1702,7 @@ api.report.submit_report(...)
 - All client dependencies
 - `PySide6` (Qt6 for Python)
 
-### Optional Dependencies
+#### Optional Dependencies
 
 **Performance:**
 - `orjson` or `msgpack` (faster serialization)
@@ -880,6 +1716,322 @@ api.report.submit_report(...)
 - `pytest` (testing)
 - `pytest-asyncio` (async test support)
 - `pytest-cov` (coverage reporting)
+
+#### Installation Options
+
+**Full GUI client:**
+```bash
+pip install pywats-api[client]
+```
+
+**Headless client only:**
+```bash
+pip install pywats-api[client-headless]
+```
+
+**API only:**
+```bash
+pip install pywats-api
+```
+
+---
+
+## 8. Architecture Diagrams
+
+### 8.1 High-Level Architecture
+
+```mermaid
+flowchart TB
+    subgraph WATS["☁️ WATS Server"]
+        API["REST API<br/>(HTTPS)"]
+    end
+    
+    subgraph SERVICE["🖥️ Service Process<br/>(python -m pywats_client service)"]
+        direction TB
+        ACS["AsyncClientService<br/>(Main Controller)"]
+        AW["AsyncWATS<br/>(API Client)"]
+        APQ["AsyncPendingQueue<br/>(Report Queue)"]
+        ACP["AsyncConverterPool<br/>(File Processing)"]
+        IPC_S["IPC Server<br/>(Unix/TCP)"]
+        HS["Health Server<br/>(HTTP :8080)"]
+        
+        ACS --> AW
+        ACS --> APQ
+        ACS --> ACP
+        ACS --> IPC_S
+        ACS --> HS
+    end
+    
+    subgraph GUI["🖼️ GUI Process (Optional)<br/>(python -m pywats_client)"]
+        direction TB
+        MW["MainWindow<br/>(PySide6/Qt)"]
+        IPC_C["AsyncIPCClient"]
+        ATR["AsyncTaskRunner"]
+        EB["EventBus"]
+        
+        MW --> ATR
+        MW --> EB
+        MW --> IPC_C
+    end
+    
+    subgraph FILES["📁 File System"]
+        WF["Watch Folders<br/>(test results)"]
+        PQ["Pending Queue<br/>(/queue/*.queued)"]
+        CF["Config Files<br/>(config.json)"]
+    end
+    
+    %% Connections
+    AW <--"HTTP"--> API
+    APQ <--"Files"--> PQ
+    ACP <--"Watchdog"--> WF
+    ACS <--"Watch"--> CF
+    IPC_C <--"IPC Protocol"--> IPC_S
+    HS --"Health Check"--> API
+    
+    style SERVICE fill:#1a1a2e,stroke:#16213e,color:#fff
+    style GUI fill:#16213e,stroke:#0f3460,color:#fff
+    style WATS fill:#0f3460,stroke:#e94560,color:#fff
+    style FILES fill:#2d2d2d,stroke:#3c3c3c,color:#fff
+```
+
+### 8.2 Service Process Components
+
+```mermaid
+flowchart TB
+    subgraph AsyncClientService["AsyncClientService (Main Controller)"]
+        direction TB
+        
+        subgraph State["Service State Machine"]
+            STOPPED["STOPPED"]
+            START_PENDING["START_PENDING"]
+            RUNNING["RUNNING"]
+            STOP_PENDING["STOP_PENDING"]
+            
+            STOPPED -->|"start()"| START_PENDING
+            START_PENDING -->|"init complete"| RUNNING
+            RUNNING -->|"stop()"| STOP_PENDING
+            STOP_PENDING -->|"cleanup done"| STOPPED
+        end
+        
+        subgraph Timers["Background Timers (asyncio Tasks)"]
+            WD["🔄 Watchdog<br/>60s interval"]
+            PING["📡 Ping<br/>5min interval"]
+            REG["📋 Registration<br/>1hr interval"]
+            CFW["📝 Config Watch<br/>5s interval"]
+        end
+        
+        subgraph Components["Owned Components"]
+            API["AsyncWATS API Client"]
+            QUEUE["AsyncPendingQueue"]
+            CONV["AsyncConverterPool"]
+            IPC["AsyncIPCServer"]
+            HEALTH["HealthServer :8080"]
+        end
+    end
+    
+    WD -->|"check health"| API
+    WD -->|"check stuck files"| QUEUE
+    PING -->|"verify connectivity"| API
+    REG -->|"update status"| API
+    CFW -->|"hot reload"| Components
+    
+    style AsyncClientService fill:#1a1a2e,stroke:#16213e,color:#fff
+    style State fill:#16213e,stroke:#0f3460,color:#fff
+    style Timers fill:#0f3460,stroke:#e94560,color:#fff
+    style Components fill:#2d2d2d,stroke:#3c3c3c,color:#fff
+```
+
+### 8.3 Report Submission Flow
+
+```mermaid
+flowchart TB
+    subgraph Input["📥 Report Sources"]
+        CONV["Converter Output"]
+        DIRECT["Direct API Call"]
+        IMPORT["Manual Import"]
+    end
+    
+    subgraph Queue["📂 Pending Queue"]
+        direction TB
+        
+        subgraph Files["Queue Files"]
+            QUEUED["*.queued<br/>(waiting)"]
+            PROC["*.processing<br/>(in flight)"]
+            COMP["*.completed<br/>(success)"]
+            ERR["*.error<br/>(failed)"]
+        end
+        
+        subgraph Watcher["File Watcher (watchdog)"]
+            FW["Monitor queue folder"]
+        end
+        
+        subgraph Processor["Submit Processor"]
+            SEM["Semaphore<br/>(max 10 concurrent)"]
+            SUBMIT["_submit_report()"]
+        end
+    end
+    
+    subgraph API["🌐 WATS API"]
+        RS["report.submit_raw()"]
+    end
+    
+    %% Flow
+    Input -->|"Write JSON"| QUEUED
+    FW -->|"Detect new file"| SEM
+    SEM -->|"Acquire slot"| SUBMIT
+    SUBMIT -->|"Rename"| PROC
+    PROC -->|"Read + Submit"| RS
+    RS -->|"Success"| COMP
+    RS -->|"Failure"| ERR
+    
+    subgraph Retry["🔄 Retry Logic"]
+        PERIODIC["Periodic Check<br/>(60s)"]
+        BACKOFF["Exponential Backoff<br/>5min × 2^(n-1)"]
+    end
+    
+    PERIODIC -->|"Find .error files"| BACKOFF
+    BACKOFF -->|"Retry if eligible"| QUEUED
+    
+    style Queue fill:#1a1a2e,stroke:#16213e,color:#fff
+    style Input fill:#0f3460,stroke:#e94560,color:#fff
+    style API fill:#16213e,stroke:#0f3460,color:#fff
+```
+
+### 8.4 GUI-Service Communication (IPC)
+
+```mermaid
+flowchart LR
+    subgraph GUI["🖼️ GUI Process"]
+        direction TB
+        PAGE["GUI Page<br/>(e.g., Dashboard)"]
+        MIXIN["AsyncAPIMixin"]
+        CLIENT["AsyncIPCClient"]
+    end
+    
+    subgraph Protocol["📡 IPC Protocol"]
+        direction TB
+        
+        subgraph Windows["Windows"]
+            TCP["TCP localhost<br/>Port: 50000 + hash"]
+        end
+        
+        subgraph Unix["Linux/macOS"]
+            SOCK["/tmp/pyWATS_Service_X.sock"]
+        end
+        
+        MSG["Length-prefixed JSON<br/>[4 bytes len][JSON payload]"]
+    end
+    
+    subgraph Service["🖥️ Service Process"]
+        direction TB
+        SERVER["AsyncIPCServer"]
+        SVC["AsyncClientService"]
+    end
+    
+    PAGE -->|"run_api_call()"| MIXIN
+    MIXIN -->|"get_status()"| CLIENT
+    CLIENT <-->|"Request/Response"| TCP & SOCK
+    TCP & SOCK <--> SERVER
+    SERVER -->|"Process command"| SVC
+    SVC -->|"Response data"| SERVER
+    
+    style GUI fill:#16213e,stroke:#0f3460,color:#fff
+    style Protocol fill:#0f3460,stroke:#e94560,color:#fff
+    style Service fill:#1a1a2e,stroke:#16213e,color:#fff
+```
+
+### 8.5 Error Recovery & Retry Logic
+
+```mermaid
+flowchart TB
+    subgraph Detection["🔍 Error Detection"]
+        API_ERR["API Error<br/>(HTTP 4xx/5xx)"]
+        TIMEOUT["Timeout<br/>(no response)"]
+        NET_ERR["Network Error<br/>(connection lost)"]
+    end
+    
+    subgraph Queue["📂 Queue Error Handling"]
+        direction TB
+        
+        ERR_FILE["Create .error file"]
+        ERR_INFO["Write .error.info<br/>(error details, attempts)"]
+        
+        subgraph Backoff["Exponential Backoff"]
+            B1["Attempt 1: 5 min wait"]
+            B2["Attempt 2: 10 min wait"]
+            B3["Attempt 3: 20 min wait"]
+            B4["Attempt 4: 40 min wait"]
+            B5["Attempt 5: 80 min wait"]
+            B6["Exhausted: Move to /failed"]
+        end
+    end
+    
+    subgraph Recovery["🔄 Recovery Mechanisms"]
+        STUCK["Stuck File Detection<br/>(>30min in .processing)"]
+        PERIODIC["Periodic Check<br/>(every 60s)"]
+        RESTART["Service Restart<br/>(crash recovery)"]
+    end
+    
+    Detection --> ERR_FILE
+    ERR_FILE --> ERR_INFO
+    ERR_INFO --> Backoff
+    
+    B1 --> B2 --> B3 --> B4 --> B5 --> B6
+    
+    PERIODIC -->|"Check .error files"| Backoff
+    STUCK -->|"Reset to .queued"| Queue
+    RESTART -->|"Scan queue folder"| Queue
+    
+    style Detection fill:#e94560,stroke:#0f3460,color:#fff
+    style Queue fill:#1a1a2e,stroke:#16213e,color:#fff
+    style Recovery fill:#16213e,stroke:#0f3460,color:#fff
+```
+
+### 8.6 Async Task System
+
+```mermaid
+flowchart TB
+    subgraph GUI["🖼️ Qt Main Thread"]
+        PAGE["Page Component"]
+        MIXIN["AsyncAPIMixin"]
+    end
+    
+    subgraph Runner["🔄 AsyncTaskRunner"]
+        direction TB
+        
+        subgraph BG["Background Thread"]
+            LOOP["asyncio Event Loop"]
+            TASKS["Task Registry"]
+        end
+        
+        subgraph Signals["Qt Signals (Thread-safe)"]
+            S1["task_started(id, name)"]
+            S2["task_completed(TaskResult)"]
+            S3["task_failed(TaskResult)"]
+            S4["task_progress(id, %, msg)"]
+            S5["task_cancelled(id)"]
+        end
+    end
+    
+    subgraph Result["📊 TaskResult"]
+        R1["task_id: str"]
+        R2["is_success: bool"]
+        R3["result: Any"]
+        R4["error: Exception"]
+        R5["elapsed: float"]
+    end
+    
+    PAGE -->|"1. User action"| MIXIN
+    MIXIN -->|"2. run_async(coro)"| LOOP
+    LOOP -->|"3. Execute coroutine"| TASKS
+    TASKS -->|"4. Emit signal"| Signals
+    Signals -->|"5. Qt event loop"| PAGE
+    
+    S2 & S3 --> Result
+    
+    style GUI fill:#16213e,stroke:#0f3460,color:#fff
+    style Runner fill:#1a1a2e,stroke:#16213e,color:#fff
+```
 
 ---
 
@@ -920,17 +2072,17 @@ api.report.submit_report(...)
 
 ---
 
-## Further Reading
+## See Also
 
 - **[Getting Started Guide](getting-started.md)** - Installation and basic usage
-- **[Client Architecture](client-architecture.md)** - Detailed client design
 - **[Integration Patterns](integration-patterns.md)** - Common scenarios and workflows
 - **[Thread Safety Guide](thread-safety.md)** - Threading and concurrency patterns
 - **[Error Catalog](error-catalog.md)** - Error codes and remediation
 - **[Docker Deployment](installation/docker.md)** - Container deployment guide
+- **[Troubleshooting Guide](../TROUBLESHOOTING.md)** - Common issues and solutions
 - **Domain Guides:** [Report](../domains/report.md), [Product](../domains/product.md), [Asset](../domains/asset.md), etc.
 
 ---
 
-**Last Updated:** January 26, 2026  
-**Version:** 1.3.0 (separate service/GUI architecture)
+**Last Updated:** February 1, 2026  
+**Version:** 1.4.0 (Async-First Architecture)
