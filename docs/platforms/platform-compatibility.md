@@ -1,6 +1,6 @@
 # Platform Compatibility Guide
 
-> **Last Updated**: January 29, 2026  
+> **Last Updated**: February 1, 2026  
 > **pyWATS Version**: 0.2.0b1 (Beta)
 
 This document describes the supported platforms, deployment modes, and compatibility considerations for pyWATS.
@@ -322,6 +322,225 @@ export NO_PROXY=localhost,127.0.0.1,.internal.domain
 
 ---
 
+## Platform-Specific Implementation Details (v0.2.0+)
+
+This section documents platform-specific behaviors for new components introduced in v0.2.0.
+
+### Converter Sandboxing
+
+**Feature**: Process isolation for converter execution with resource limits.
+
+| Platform | Support | Resource Limits | Notes |
+|----------|---------|-----------------|-------|
+| Linux | ✅ Full | CPU, Memory, File Descriptors, Processes | Uses `resource.setrlimit()` for all limits |
+| macOS | ✅ Full | CPU, Memory, File Descriptors, Processes | Uses `resource.setrlimit()` for all limits |
+| Windows | ⚠️ Partial | Timeout only | No native `resource` module - only timeout enforced |
+
+**Linux/macOS Details:**
+- **CPU Limit**: Uses `RLIMIT_CPU` (hard CPU time limit)
+- **Memory Limit**: Uses `RLIMIT_AS` (address space limit)
+- **File Descriptors**: Uses `RLIMIT_NOFILE` (max open files)
+- **Process Limit**: Uses `RLIMIT_NPROC` (prevents fork bombs)
+- **Session Isolation**: `os.setsid()` creates new session
+
+**Windows Details:**
+- Resource limits (`setrlimit`) not available on Windows
+- Sandbox still provides:
+  - ✅ Process isolation (separate subprocess)
+  - ✅ Timeout enforcement (kills process after timeout)
+  - ✅ Environment variable restrictions
+  - ✅ Static code analysis (AST validation)
+  - ❌ Memory limits (not enforced)
+  - ❌ CPU limits (not enforced)
+  - ❌ File descriptor limits (not enforced)
+
+**Fallback Behavior:**
+- If `setrlimit()` fails (e.g., permission denied), sandbox logs warning but continues
+- Sandboxing is enabled by default on all platforms
+- To disable sandboxing for trusted converters: `trusted_mode=True`
+
+**Configuration:**
+```python
+from pywats_client.converters.sandbox import ResourceLimits, SandboxConfig
+
+# Default limits (work on all platforms)
+config = SandboxConfig(
+    resource_limits=ResourceLimits(
+        timeout_seconds=300,        # ✅ All platforms
+        cpu_time_seconds=120,       # ✅ Linux/macOS only
+        memory_mb=512,              # ✅ Linux/macOS only
+        max_open_files=50,          # ✅ Linux/macOS only
+        max_processes=1             # ✅ Linux/macOS only
+    )
+)
+```
+
+**Related Files:**
+- [src/pywats_client/converters/sandbox.py](../src/pywats_client/converters/sandbox.py)
+- [docs/guides/converter-security.md](../guides/converter-security.md)
+- [tests/client/test_sandbox.py](../tests/client/test_sandbox.py)
+
+---
+
+### IPC Communication (Service ↔ GUI)
+
+**Feature**: Inter-process communication for service control.
+
+| Platform | Transport | Address |
+|----------|-----------|---------|
+| Windows | TCP | `127.0.0.1:<port>` (port derived from instance ID) |
+| Linux | Unix Socket | `/tmp/pywats_service_<instance_id>.sock` |
+| macOS | Unix Socket | `/tmp/pywats_service_<instance_id>.sock` |
+
+**Transport Selection Logic:**
+```python
+if sys.platform == "win32":
+    # Windows: Use TCP localhost with deterministic port
+    port = hash(instance_id) % 50000 + 10000
+    await asyncio.start_server(handler, "127.0.0.1", port)
+else:
+    # Linux/macOS: Use Unix domain socket
+    socket_path = f"/tmp/pywats_service_{instance_id}.sock"
+    await asyncio.start_unix_server(handler, socket_path)
+```
+
+**Why Different Transports?**
+- **Unix Sockets** (Linux/macOS):
+  - ✅ Faster than TCP (no network stack)
+  - ✅ File system permissions for security
+  - ✅ Automatic cleanup on process exit
+  - ❌ Not available on Windows
+
+- **TCP Localhost** (Windows):
+  - ✅ Cross-platform support
+  - ✅ Works on all Windows versions
+  - ⚠️ Requires firewall rules (localhost-only)
+  - ⚠️ Port conflicts possible (mitigated by hash)
+
+**Security:**
+- All platforms use shared secret authentication (256-bit tokens)
+- Rate limiting: 100 requests/minute per client (configurable)
+- Windows: Firewall automatically allows localhost
+- Linux/macOS: Socket file has 0600 permissions
+
+**Related Files:**
+- [src/pywats_client/service/async_ipc_server.py](../src/pywats_client/service/async_ipc_server.py)
+- [src/pywats_client/service/async_ipc_client.py](../src/pywats_client/service/async_ipc_client.py)
+- [docs/guides/ipc-security.md](../guides/ipc-security.md)
+
+---
+
+### Instance Management
+
+**Feature**: Multi-instance lock files and PID tracking.
+
+| Platform | Lock File Location | PID File Location |
+|----------|-------------------|-------------------|
+| Windows | `%TEMP%\pyWATS_Client\instance_<id>.lock` | Same |
+| Linux | `/tmp/pywats_client/instance_<id>.lock` | `/var/run/pywats/instance_<id>.pid` (service) |
+| macOS | `/tmp/pywats_client/instance_<id>.lock` | `~/Library/Application Support/pyWATS/instance_<id>.pid` |
+
+**Platform-Specific Paths:**
+```python
+if os.name == 'nt':
+    # Windows
+    lock_base = Path(os.environ.get('TEMP', '')) / 'pyWATS_Client'
+else:
+    # Linux/macOS
+    lock_base = Path('/tmp') / 'pywats_client'
+
+lock_file = lock_base / f"instance_{instance_id}.lock"
+```
+
+**Stale Lock Detection:**
+- All platforms: Check if PID in lock file is still running
+- Windows: `psutil.pid_exists()` or Windows API
+- Linux/macOS: `os.kill(pid, 0)` signal check
+- Stale locks are automatically removed on acquisition
+
+**Multi-Instance Support:**
+- Each instance identified by unique ID (e.g., "production", "test")
+- Lock files prevent duplicate instances
+- GUI can discover all running instances
+
+**Related Files:**
+- [src/pywats_client/core/instance_manager.py](../src/pywats_client/core/instance_manager.py)
+
+---
+
+### Health Server (Docker/Kubernetes)
+
+**Feature**: HTTP health check endpoint for monitoring.
+
+| Platform | Default Port | Bind Address | Protocol |
+|----------|-------------|--------------|----------|
+| All | 8080 | 0.0.0.0 | HTTP/1.1 |
+
+**Endpoints:**
+- `GET /health` - Basic health (200 OK / 503 Unavailable)
+- `GET /health/live` - Liveness probe (process alive?)
+- `GET /health/ready` - Readiness probe (accepting work?)
+- `GET /health/details` - JSON status details
+
+**Platform Compatibility:**
+- ✅ Windows: Works (bind to 0.0.0.0)
+- ✅ Linux: Works (bind to 0.0.0.0)
+- ✅ macOS: Works (bind to 0.0.0.0)
+- ✅ Docker: Full support (HEALTHCHECK)
+- ✅ Kubernetes: Full support (livenessProbe/readinessProbe)
+
+**Docker Example:**
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
+  CMD curl -f http://localhost:8080/health || exit 1
+```
+
+**Kubernetes Example:**
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 30
+```
+
+**Related Files:**
+- [src/pywats_client/service/health_server.py](../src/pywats_client/service/health_server.py)
+
+---
+
+### Security & Encryption
+
+**Feature**: Secret storage and file encryption.
+
+| Component | Windows | Linux | macOS |
+|-----------|---------|-------|-------|
+| Secret Storage | Windows Credential Manager (DPAPI) | `~/.config/pywats/secrets/` (0600) | Keychain or file |
+| IPC Auth Secret | `%LOCALAPPDATA%\pyWATS\secrets\` | `~/.config/pywats/secrets/` | `~/Library/Application Support/pyWATS/secrets/` |
+| File Locking | Windows file handles | `fcntl.flock()` | `fcntl.flock()` |
+
+**Windows Specifics:**
+- Uses Data Protection API (DPAPI) when available
+- Falls back to file-based storage with ACLs
+- Credential Manager integration for tokens
+
+**Linux Specifics:**
+- File-based secrets with 0600 permissions
+- Optional: Integration with system keyring (gnome-keyring, kwallet)
+- SELinux context: `pywats_secrets_t`
+
+**macOS Specifics:**
+- Prefers macOS Keychain
+- Falls back to file-based storage
+
+**Related Files:**
+- [src/pywats_client/core/security.py](../src/pywats_client/core/security.py)
+- [src/pywats_client/core/encryption.py](../src/pywats_client/core/encryption.py)
+- [src/pywats_client/core/file_utils.py](../src/pywats_client/core/file_utils.py)
+
+---
+
 ## WATS Server Compatibility
 
 | WATS Server Version | pyWATS Support |
@@ -341,3 +560,6 @@ export NO_PROXY=localhost,127.0.0.1,.internal.domain
 - [Linux Service](LINUX_SERVICE.md) - systemd configuration
 - [macOS Service](MACOS_SERVICE.md) - launchd configuration
 - [Headless Guide](src/pywats_client/control/HEADLESS_GUIDE.md) - Embedded/server deployment
+- [IPC Security Guide](../guides/ipc-security.md) - IPC authentication and rate limiting
+- [Converter Security Guide](../guides/converter-security.md) - Sandboxing explained
+- [Safe File Handling Guide](../guides/safe-file-handling.md) - Atomic file operations

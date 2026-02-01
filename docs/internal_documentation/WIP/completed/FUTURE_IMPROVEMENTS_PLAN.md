@@ -1,20 +1,23 @@
 # Future Improvements Implementation Plan
 
 **Created:** 2026-01-29  
-**Status:** Planning / Review  
+**Updated:** 2026-02-01  
+**Status:** Active - Coverage reporting ready to implement  
 **Target Release:** 0.3.0 or later
 
 ---
 
 ## Overview
 
-This document outlines implementation plans for three long-term improvements identified during the code review:
+This document outlines implementation plans for future improvements:
 
-| # | Improvement | Complexity | Effort | Priority |
-|---|-------------|------------|--------|----------|
-| 1 | ~~Integrate pywats_events with core~~ | ~~High~~ | ~~2-3 days~~ | ❌ Not Recommended |
-| 2 | Add coverage reporting to CI | Low | 2-4 hours | High |
-| 3 | Create quick reference cheat sheet | Low | 1-2 hours | Medium |
+| # | Improvement | Complexity | Effort | Priority | Status |
+|---|-------------|------------|--------|----------|--------|
+| 1 | ~~Integrate pywats_events with core~~ | ~~High~~ | ~~2-3 days~~ | ❌ Not Recommended | Deferred |
+| 2 | Add coverage reporting to CI | Low | 2-4 hours | High | 📋 Ready to implement |
+| 3 | Create quick reference cheat sheet | Low | 1-2 hours | Medium | 📋 Ready to implement |
+
+**Update 2026-02-01:** Focus on items #2 and #3 for 0.3.0 release.
 
 ---
 
