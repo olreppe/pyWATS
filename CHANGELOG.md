@@ -19,6 +19,17 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ## [Unreleased]
 
+### Added
+- **Sync Wrapper Enhancements**: Comprehensive reliability features for synchronous API usage
+  - **Timeout Control**: Configurable timeout for all sync operations (default 30s, customizable per-client or disabled via `timeout=None`)
+  - **Retry Logic**: Exponential backoff retry with configurable max retries, backoff factor, and error types (disabled by default for safety)
+  - **Correlation IDs**: Automatic 8-char UUID correlation IDs for request tracking across logs (enabled by default, can disable)
+  - **Configuration**: New `SyncConfig` and `RetryConfig` dataclasses in `pywats.core.config` for centralized control
+  - **Logging Integration**: `CorrelationFilter` adds correlation IDs to all log records for distributed tracing
+  - **Documentation**: New guide at `docs/guides/sync-vs-async.md` with examples, troubleshooting, best practices
+  - **Examples**: Comprehensive examples in `examples/sync_with_config.py` demonstrating all configuration patterns
+  - **Tests**: 51 new tests covering timeout, retry, correlation, and configuration integration (all passing)
+
 ### Improved
 - **Status Enums**: Enhanced `StepStatus`, `ReportStatus`, and `StatusFilter` with flexible string conversion and best practice enforcement
   - **Flexible Conversion**: Accepts multiple input formats via `_missing_` hook - exact values ("P", "F"), full names ("Passed", "Failed"), case-insensitive variants ("PASSED", "passed"), and 30+ common aliases ("OK", "pass", "fail", "NG", "success")
@@ -28,8 +39,11 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Backward Compatible**: String inputs still work via flexible conversion - zero breaking changes
   - **Serialization**: Format unchanged - StepStatus/ReportStatus use single letters ("P", "F"), StatusFilter uses full words
   - **Refactored**: 13 example files, 4 internal tools, 3 test files (150+ string-to-enum replacements)
+  - **Test Coverage**: 29 comprehensive enum conversion tests added to active test suite
 
 - **Configuration**: LogLevel enum properly used in GUI settings dialog and config validation (replaced hardcoded string lists)
+
+- **Test Suite**: Total test count increased to 1570 tests (80 new tests from recent projects)
 
 ---
 
