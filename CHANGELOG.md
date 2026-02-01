@@ -20,6 +20,15 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Priority Queue System**: Universal priority-based processing for all queue implementations
+  - **Priority Field**: Integer 1-10 (1=highest priority, 10=lowest, default=5) added to `QueueItem` base class
+  - **Heap-Based Ordering**: MemoryQueue uses min-heap for priority-first, then FIFO processing (replaces deque)
+  - **Lazy Cleanup**: Efficient heap management - invalid items discarded during retrieval rather than maintaining separate heaps
+  - **File Persistence**: PersistentQueue stores priority in `.meta.json` files and rebuilds heap on reload
+  - **Retry Support**: Failed items re-added to heap with original or updated priority
+  - **Backward Compatible**: Default priority=5, `from_dict()` handles missing priority field, all existing tests pass
+  - **Test Coverage**: 29 comprehensive tests (10 QueueItem + 17 MemoryQueue + 12 PersistentQueue) - all passing
+
 - **Sync Wrapper Enhancements**: Comprehensive reliability features for synchronous API usage
   - **Timeout Control**: Configurable timeout for all sync operations (default 30s, customizable per-client or disabled via `timeout=None`)
   - **Retry Logic**: Exponential backoff retry with configurable max retries, backoff factor, and error types (disabled by default for safety)
@@ -43,7 +52,7 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 - **Configuration**: LogLevel enum properly used in GUI settings dialog and config validation (replaced hardcoded string lists)
 
-- **Test Suite**: Total test count increased to 1570 tests (80 new tests from recent projects)
+- **Test Suite**: Total test count increased to 1597 tests (109 new tests from recent projects)
 
 ---
 
