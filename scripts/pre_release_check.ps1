@@ -84,6 +84,25 @@ if ($LASTEXITCODE -ne 0) {
 Write-Success "No critical linting errors"
 
 # ============================================================================
+# Type Stubs - Verify they're up-to-date
+# ============================================================================
+
+Write-Step "Checking type stub files (.pyi)"
+Write-Host "  Verifying stubs are up-to-date with async services" -ForegroundColor Gray
+
+& $VenvPython scripts/generate_type_stubs.py --check
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error-Custom "Type stubs are outdated"
+    Write-Host ""
+    Write-Host "  Run: python scripts/generate_type_stubs.py" -ForegroundColor Yellow
+    Write-Host "  Then commit the updated .pyi files" -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Success "Type stubs are up-to-date"
+
+# ============================================================================
 # Tests (optional)
 # ============================================================================
 

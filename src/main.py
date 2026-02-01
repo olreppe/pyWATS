@@ -45,7 +45,7 @@ def main():
             print(f"  Part Number: {header.part_number}")
             print(f"  Serial Number: {header.serial_number}")
             print(f"  Revision: {header.revision}")
-            print(f"  Status: {header.status}")
+            print(f"  Result: {header.result}")
             print(f"  Start (UTC): {header.start_utc}")
             print(f"  Station: {header.station_name}")
             print(f"  Test Operation: {header.test_operation}")
