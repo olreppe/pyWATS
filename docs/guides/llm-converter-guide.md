@@ -1,4 +1,7 @@
-# LLM Quick Reference - ReportBuilder for pyWATS
+# LLM Quick Reference - Creating Test Reports in pyWATS
+
+⚠️ **NOTE**: This guide mentions `ReportBuilder` which is EXPERIMENTAL and not fully tested.  
+**For production code**, use [`api.report.create_uut_report()`](../old/usage/report-domain.md ) or `UUTReport()` constructor with factory methods (see examples below).
 
 ## For LLMs Implementing Converters
 

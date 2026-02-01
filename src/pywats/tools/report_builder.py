@@ -1,32 +1,64 @@
 """
-Simple Report Builder for pyWATS
+Simple Report Builder for pyWATS - EXPERIMENTAL
 
+⚠️ WARNING: EXPERIMENTAL - NOT FULLY TESTED
+============================================
+This tool is experimental and incomplete. It is NOT recommended for production use.
+
+For production code, use the RECOMMENDED approach:
+    >>> # RECOMMENDED: Use api.report.create_uut_report() factory method
+    >>> report = api.report.create_uut_report(
+    ...     operator="John",
+    ...     part_number="MODULE-001",
+    ...     revision="A",
+    ...     serial_number="SN12345",
+    ...     operation_type=100  # Process code
+    ... )
+    >>> root = report.get_root_sequence_call()
+    >>> root.add_numeric_step("Voltage", value=5.02, unit="V", comp_op=CompOp.GELE, 
+    ...                       low_limit=4.5, high_limit=5.5, status="P")
+    >>> root.add_boolean_step("Power OK", value=True, status="P")
+    >>> api.report.submit_report(report)
+
+Alternative: Direct constructor
+    >>> from pywats.domains.report import UUTReport
+    >>> report = UUTReport(pn="MODULE-001", sn="SN12345", rev="A", 
+    ...                     process_code=100, station_name="Station1",
+    ...                     location="Lab", purpose="Testing")
+    >>> root = report.get_root_sequence_call()
+    >>> root.add_numeric_step(...)
+
+About ReportBuilder (EXPERIMENTAL)
+===================================
 A forgiving, LLM-friendly tool for building WATS reports with minimal complexity.
-Perfect for converters and AI-generated code that just wants to add steps without
-worrying about nested sequences, step types, or comparison operators.
+Useful for quick prototyping and LLM-generated code, but NOT fully tested.
 
-Key Features:
+Use Cases:
+- Quick prototyping and experimentation
+- LLM-generated converter code (with supervision)
+- Simple test scenarios where full control is not needed
+
+NOT Recommended For:
+- Production converters
+- Mission-critical test systems
+- Complex test hierarchies
+- Systems requiring full control over report structure
+
+Key Features (when it works):
 - Smart add_step() that infers step type from data
-- Automatic sequence management (flat or hierarchical)
-- Flexible data handling (handles strings, dicts, objects)
-- Sensible defaults for everything
-- Built-in type inference and validation
+- Automatic sequence management
+- Flexible data handling
+- Sensible defaults
 
-Example:
-    >>> from pywats.tools.report_builder import ReportBuilder
+Example (EXPERIMENTAL):
+    >>> from pywats.tools.report_builder import ReportBuilder  # ⚠️ EXPERIMENTAL
     >>> 
     >>> builder = ReportBuilder(
     ...     part_number="MODULE-001",
     ...     serial_number="SN12345"
     ... )
-    >>> 
-    >>> # Add whatever data you have - it figures it out
     >>> builder.add_step("Voltage Test", 5.02, unit="V", low_limit=4.5, high_limit=5.5)
     >>> builder.add_step("Power OK", True)
-    >>> builder.add_step("Serial Read", "ABC123")
-    >>> builder.add_step("Multi-point", [1.2, 1.3, 1.1], unit="mV")
-    >>> 
-    >>> # Build and submit
     >>> report = builder.build()
     >>> api.report.submit_report(report)
 """
@@ -59,13 +91,31 @@ class StepData:
 
 class ReportBuilder:
     """
-    Simple, forgiving report builder that intelligently handles messy data.
+    Simple, forgiving report builder - EXPERIMENTAL/INCOMPLETE
     
-    This builder is designed for:
-    - Converter scripts that parse test data
-    - LLM-generated code
-    - Quick prototyping
-    - Situations where you don't want to think about report structure
+    ⚠️ WARNING: This tool is experimental and not fully tested.
+    
+    RECOMMENDED APPROACH (Production Code):
+    ---------------------------------------
+    Use api.report.create_uut_report() instead:
+    
+        report = api.report.create_uut_report(
+            operator="John",
+            part_number="PCBA-001",
+            revision="A",
+            serial_number="SN-12345",
+            operation_type=100
+        )
+        root = report.get_root_sequence_call()
+        root.add_numeric_step("Voltage", value=5.0, unit="V", comp_op=CompOp.GELE,
+                             low_limit=4.5, high_limit=5.5, status="P")
+        root.add_boolean_step("Power OK", value=True, status="P")
+        api.report.submit_report(report)
+    
+    This ReportBuilder is designed for:
+    - Quick prototyping (not production)
+    - LLM-generated code (with supervision)
+    - Simple test scenarios
     
     Philosophy:
     - If it can be inferred, it will be
