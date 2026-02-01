@@ -8,6 +8,7 @@ from datetime import datetime
 from pywats import pyWATS
 from pywats.core import Station
 from pywats.models import UUTReport
+from pywats.domains.report.report_models.common_types import StepStatus
 
 # =============================================================================
 # Setup
@@ -55,7 +56,7 @@ report = UUTReport(
 # Add a numeric limit test
 report.add_numeric_limit_step(
     name="Voltage Check",
-    status="Passed",
+    status=StepStatus.Passed,
     value=5.02,
     units="V",
     low_limit=4.8,
@@ -66,7 +67,7 @@ report.add_numeric_limit_step(
 # Add another measurement
 report.add_numeric_limit_step(
     name="Current Draw",
-    status="Passed",
+    status=StepStatus.Passed,
     value=0.150,
     units="A",
     low_limit=0.100,
@@ -76,13 +77,13 @@ report.add_numeric_limit_step(
 # Add a pass/fail step
 report.add_pass_fail_step(
     name="Visual Inspection",
-    status="Passed"
+    status=StepStatus.Passed
 )
 
 # Add a string value step
 report.add_string_value_step(
     name="Firmware Version",
-    status="Passed",
+    status=StepStatus.Passed,
     value="v2.1.3"
 )
 
@@ -105,13 +106,13 @@ report = UUTReport(
 # Create a sequence (group of steps)
 sequence = report.add_sequence_call(
     name="Power Supply Tests",
-    status="Passed"
+    status=StepStatus.Passed
 )
 
 # Add steps to the sequence
 sequence.add_numeric_limit_step(
     name="3.3V Rail",
-    status="Passed",
+    status=StepStatus.Passed,
     value=3.31,
     units="V",
     low_limit=3.2,
@@ -120,7 +121,7 @@ sequence.add_numeric_limit_step(
 
 sequence.add_numeric_limit_step(
     name="5V Rail",
-    status="Passed",
+    status=StepStatus.Passed,
     value=5.01,
     units="V",
     low_limit=4.9,
@@ -130,11 +131,11 @@ sequence.add_numeric_limit_step(
 # Add another sequence
 sequence2 = report.add_sequence_call(
     name="Communication Tests",
-    status="Passed"
+    status=StepStatus.Passed
 )
 
-sequence2.add_pass_fail_step(name="UART Test", status="Passed")
-sequence2.add_pass_fail_step(name="I2C Test", status="Passed")
+sequence2.add_pass_fail_step(name="UART Test", status=StepStatus.Passed)
+sequence2.add_pass_fail_step(name="I2C Test", status=StepStatus.Passed)
 
 response = api.report.submit_report(report)
 print(f"Report with sequences submitted: {response.id}")
@@ -177,7 +178,7 @@ report = UUTReport(
 # Add passing step
 report.add_numeric_limit_step(
     name="Voltage Check",
-    status="Passed",
+    status=StepStatus.Passed,
     value=5.01,
     units="V",
     low_limit=4.8,
@@ -187,7 +188,7 @@ report.add_numeric_limit_step(
 # Add failing step
 report.add_numeric_limit_step(
     name="Current Draw",
-    status="Failed",
+    status=StepStatus.Failed,
     value=0.350,  # Out of spec!
     units="A",
     low_limit=0.100,
@@ -224,7 +225,7 @@ def run_test_and_report(serial_number: str):
     
     for name, value, low, high, units in tests:
         passed = low <= value <= high
-        status = "Passed" if passed else "Failed"
+        status=StepStatus.Passed if passed else StepStatus.Failed
         
         if not passed:
             all_passed = False
@@ -239,7 +240,7 @@ def run_test_and_report(serial_number: str):
         )
     
     # Set overall result
-    report.result = "Passed" if all_passed else "Failed"
+    report.result = StepStatus.Passed if all_passed else StepStatus.Failed
     
     # Submit
     response = api.report.submit_report(report)

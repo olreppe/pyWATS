@@ -37,6 +37,7 @@ from pywats.domains.rootcause import (
     TicketView,
     TicketUpdateType,
 )
+from pywats.domains.report.report_models.common_types import StepStatus
 from pywats.shared.enums import CompOp
 from pywats.shared.common_types import Setting
 
@@ -172,7 +173,7 @@ def failing_report(wats_client: Any) -> Dict[str, Any]:
         name="Input_Voltage_Check",
         value=12.05,
         unit="V",
-        status="P",
+        status=StepStatus.Passed,
         comp_op=CompOp.GELE,
         low_limit=11.5,
         high_limit=12.5
@@ -183,7 +184,7 @@ def failing_report(wats_client: Any) -> Dict[str, Any]:
         name="VReg_Output_3V3",
         value=2.87,  # Below 3.0V minimum
         unit="V",
-        status="F",
+        status=StepStatus.Failed,
         comp_op=CompOp.GELE,
         low_limit=3.0,
         high_limit=3.6
@@ -194,7 +195,7 @@ def failing_report(wats_client: Any) -> Dict[str, Any]:
         name="VReg_Ripple",
         value=0.15,
         unit="V",
-        status="P",
+        status=StepStatus.Passed,
         comp_op=CompOp.GELE,
         low_limit=0.0,
         high_limit=0.2
@@ -204,7 +205,7 @@ def failing_report(wats_client: Any) -> Dict[str, Any]:
         name="Current_Draw",
         value=0.85,
         unit="A",
-        status="P",
+        status=StepStatus.Passed,
         comp_op=CompOp.GELE,
         low_limit=0.0,
         high_limit=1.0

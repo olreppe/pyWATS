@@ -189,14 +189,14 @@ class MultiBooleanStep(Step):
         self,
         *,
         name: str,
-        status: str = "P",
+        status: StepStatus | str = "P",
     ) -> MultiBooleanMeasurement:
         """
         Add a boolean measurement to this step.
         
         Args:
             name: Measurement name
-            status: Status ("P", "F", etc.)
+            status: Status (StepStatus enum or "P"/"F")
             
         Returns:
             The created MultiBooleanMeasurement.

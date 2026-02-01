@@ -198,7 +198,7 @@ class KlippelConverter(FileConverter):
             # Determine overall result
             overall_verdict = header_data.get("Ctrl_OverallVerdict", "0")
             # Code: -1=Void, 0=Fail, 1=Pass, 2=Warning, 3=Noise, 4=Invalid
-            result = "P" if overall_verdict == "1" else "F"
+            result = StepStatus.Passed if overall_verdict == "1" else StepStatus.Failed
             
             # ========================================
             # BUILD REPORT USING UUTReport MODEL
@@ -386,10 +386,10 @@ class KlippelConverter(FileConverter):
         
         y_name = headers[1] if len(headers) > 1 else "Y"
         
-        # Create multi-numeric step with statistics (using "P" for passed, "F" for failed)
+        # Create multi-numeric step with statistics
         multi_step = sequence.add_multi_numeric_step(
             name=y_name,
-            status="P",
+            status=StepStatus.Passed,
         )
         
         # Add measurements: avg, min, max
@@ -399,7 +399,7 @@ class KlippelConverter(FileConverter):
             value=avg_value,
             unit="Hz",
             comp_op=CompOp.LOG,
-            status="P",
+            status=StepStatus.Passed,
         )
         
         if min_values:
@@ -408,7 +408,7 @@ class KlippelConverter(FileConverter):
                 value=min(y_values),
                 unit="Hz",
                 comp_op=CompOp.LOG,
-                status="P",
+                status=StepStatus.Passed,
             )
         
         if max_values:
@@ -417,7 +417,7 @@ class KlippelConverter(FileConverter):
                 value=max(y_values),
                 unit="Hz",
                 comp_op=CompOp.LOG,
-                status="P",
+                status=StepStatus.Passed,
             )
         
         # Check for out-of-bounds
@@ -429,7 +429,7 @@ class KlippelConverter(FileConverter):
                 error_count += 1
         
         # Add out-of-bounds check step
-        oob_status = "P" if error_count == 0 else "F"
+        oob_status = StepStatus.Passed if error_count == 0 else StepStatus.Failed
         sequence.add_numeric_step(
             name="OutOfBounds",
             value=float(error_count),

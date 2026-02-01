@@ -300,7 +300,7 @@ class ConverterTemplate(FileConverter):
                 message=f"Valid STF file with {sum([has_serial, has_part, has_result, has_tests])}/4 expected sections",
                 detected_serial_number=serial_number,
                 detected_part_number=part_number,
-                detected_result="Passed" if result_str == "PASS" else "Failed" if result_str == "FAIL" else result_str,
+                detected_result=StepStatus.Passed if result_str == "PASS" else StepStatus.Failed if result_str == "FAIL" else result_str,
             )
             
         except Exception as e:
@@ -387,7 +387,7 @@ class ConverterTemplate(FileConverter):
                 station_name=station_name,
                 location=location,
                 purpose=purpose,
-                result="P" if result_str == "PASS" else "F",
+                result=StepStatus.Passed.value if result_str == "PASS" else StepStatus.Failed.value,
                 start=start_time,
             )
             
@@ -519,7 +519,7 @@ class ConverterTemplate(FileConverter):
         │ ACTION         - Generic action step (no measurement)                   │
         └─────────────────────────────────────────────────────────────────────────┘
         """
-        step_status = "P" if status == "PASS" else "F"
+        step_status = StepStatus.Passed.value if status == "PASS" else StepStatus.Failed.value
         
         # ═══════════════════════════════════════════════════════════════════════
         # NUMERIC STEP - Single measurement with limits
@@ -573,7 +573,7 @@ class ConverterTemplate(FileConverter):
             
             # Add individual measurements
             for i, val in enumerate(values):
-                meas_status = "P" if (low is None or val >= low) and (high is None or val <= high) else "F"
+                meas_status = StepStatus.Passed.value if (low is None or val >= low) and (high is None or val <= high) else StepStatus.Failed.value
                 multi_step.add_measurement(
                     name=f"Reading {i+1}",
                     value=val,

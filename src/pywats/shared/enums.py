@@ -6,26 +6,35 @@ eliminating magic strings and enabling IDE autocomplete.
 Usage:
     from pywats import StatusFilter, RunFilter, StepType
     
-    filter = WATSFilter(status=StatusFilter.FAILED, run=RunFilter.FIRST)
+    filter = WATSFilter(status=StatusFilter.PASSED, run=RunFilter.FIRST)
 """
 from enum import Enum, IntEnum
+from typing import Any
 
 
 class StatusFilter(str, Enum):
     """
-    Status filter values for querying reports.
+    Status filter values for querying reports with flexible string conversion.
     
     Used for filtering reports by test outcome in WATSFilter and analytics queries.
-    Inherits from str so it serializes correctly to the API.
     
-    Note: This is different from ReportStatus which uses single-letter codes
-    for WSJF format. StatusFilter uses the full string values expected by 
-    query endpoints.
+    Accepts multiple input formats:
+    - Member names: StatusFilter.PASSED (UPPERCASE recommended)
+    - Full words: "Passed", "PASSED", "passed" (case-insensitive)
+    - Short forms: "Pass", "Fail", etc.
+    - Common aliases: "OK", "success", etc.
     
-    Example:
-        >>> filter = WATSFilter(status=StatusFilter.PASSED)
-        >>> # Or with string
-        >>> filter = WATSFilter(status="Passed")
+    Always serializes to WATS query format ("Passed", "Failed", etc.).
+    
+    Note: This is different from StepStatus/ReportStatus which use single-letter 
+    codes ("P", "F") for WSJF submission. StatusFilter uses full words for queries.
+    
+    Examples:
+        >>> StatusFilter("Passed")       # Full word
+        >>> StatusFilter("PASSED")       # Case-insensitive
+        >>> StatusFilter("pass")         # Short form
+        >>> StatusFilter("OK")           # Alias
+        >>> StatusFilter.PASSED.value    # Returns "Passed"
     """
     PASSED = "Passed"
     """Test passed successfully."""
@@ -44,6 +53,100 @@ class StatusFilter(str, Enum):
     
     SKIPPED = "Skipped"
     """Test was skipped."""
+    
+    @classmethod
+    def _missing_(cls, value: Any) -> "StatusFilter":
+        """
+        Handle flexible string conversion.
+        
+        Tries:
+        1. Case-insensitive match against enum values ("Passed", "Failed", etc.)
+        2. Case-insensitive match against member names ("PASSED", "FAILED", etc.)
+        3. Alias lookup ("OK" → "Passed", "fail" → "Failed", etc.)
+        
+        Raises:
+            ValueError: If value cannot be converted to valid status filter
+        """
+        if not isinstance(value, str):
+            raise ValueError(
+                f"StatusFilter value must be string, got {type(value).__name__}"
+            )
+        
+        # Try case-insensitive match against enum values
+        for member in cls:
+            if member.value.lower() == value.lower():
+                return member
+        
+        # Try case-insensitive match against member names (PASSED, FAILED, etc.)
+        value_upper = value.upper()
+        for member in cls:
+            if member.name == value_upper:
+                return member
+        
+        # Try alias lookup (case-insensitive)
+        canonical = StatusFilter._STATUS_ALIASES.get(value.lower())
+        if canonical:
+            for member in cls:
+                if member.value == canonical:
+                    return member
+        
+        # No match found
+        valid_options = ", ".join(m.name for m in cls)
+        raise ValueError(
+            f"Invalid status filter: '{value}'. "
+            f"Valid options: {valid_options} "
+            "(case-insensitive, also accepts single letters and aliases like 'OK')"
+        )
+    
+    @property
+    def full_name(self) -> str:
+        """Get full word representation (same as value)."""
+        return self.value
+    
+    @property
+    def is_passing(self) -> bool:
+        """True if status indicates a passing result."""
+        return self in (StatusFilter.PASSED, StatusFilter.DONE)
+    
+    @property
+    def is_failure(self) -> bool:
+        """True if status indicates a failure."""
+        return self in (StatusFilter.FAILED, StatusFilter.ERROR, StatusFilter.TERMINATED)
+
+# Alias mappings for StatusFilter
+StatusFilter._STATUS_ALIASES = {
+    # Passed variations
+    "pass": "Passed",
+    "ok": "Passed",
+    "success": "Passed",
+    "successful": "Passed",
+    "p": "Passed",
+    
+    # Failed variations
+    "fail": "Failed",
+    "failure": "Failed",
+    "ng": "Failed",
+    "f": "Failed",
+    
+    # Error variations
+    "err": "Error",
+    "e": "Error",
+    
+    # Terminated variations
+    "term": "Terminated",
+    "abort": "Terminated",
+    "aborted": "Terminated",
+    "t": "Terminated",
+    
+    # Done variations
+    "complete": "Done",
+    "completed": "Done",
+    "d": "Done",
+    
+    # Skipped variations
+    "skip": "Skipped",
+    "s": "Skipped",
+}
 
 
 class RunFilter(IntEnum):

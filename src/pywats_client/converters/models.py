@@ -361,13 +361,13 @@ class ConverterResult:
             pn="PART-001", sn="SN-001", rev="A",
             process_code=10, station_name="Station1",
             location="Lab", purpose="Test",
-            result="P", start=datetime.now().astimezone()
+            result="Passed", start=datetime.now().astimezone()
         )
         root = report.get_root_sequence_call()
         root.add_numeric_step(
             name="Voltage Test", value=5.0, unit="V",
             comp_op=CompOp.GELE, low_limit=4.5, high_limit=5.5,
-            status="P"
+            status=StepStatus.Passed
         )
         return ConverterResult.success_result(report=report)
     """

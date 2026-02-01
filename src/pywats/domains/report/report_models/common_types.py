@@ -61,22 +61,226 @@ from .wats_base import WATSBase, DeserializationContext
 # ============================================================================
 
 class StepStatus(str, Enum):
-    """Step execution status."""
+    """
+    Step execution status with flexible string conversion.
+    
+    Accepts multiple input formats:
+    - Exact values: "P", "F", "S", "D", "E", "T"
+    - Full names: "Passed", "Failed", "Skipped", "Done", "Error", "Terminated"
+    - Case-insensitive: "PASSED", "passed", "Pass", etc.
+    - Common aliases: "OK", "pass", "fail", etc.
+    
+    Always serializes to single-letter WATS API format ("P", "F", etc.).
+    
+    Examples:
+        >>> StepStatus("P")           # Exact value
+        >>> StepStatus("Passed")      # Full name
+        >>> StepStatus("PASSED")      # Case-insensitive
+        >>> StepStatus("pass")        # Lowercase
+        >>> StepStatus("OK")          # Alias for Passed
+        >>> status.value              # Always returns "P"
+    """
     Passed = "P"
     Failed = "F"
     Skipped = "S"
     Done = "D"
     Error = "E"
     Terminated = "T"
+    
+    @classmethod
+    def _missing_(cls, value: Any) -> "StepStatus":
+        """
+        Handle flexible string conversion.
+        
+        Tries:
+        1. Case-insensitive match against enum values ("P", "F", etc.)
+        2. Case-insensitive match against member names ("Passed", "Failed", etc.)
+        3. Alias lookup ("OK" → "P", "fail" → "F", etc.)
+        
+        Raises:
+            ValueError: If value cannot be converted to valid status
+        """
+        if not isinstance(value, str):
+            raise ValueError(
+                f"StepStatus value must be string, got {type(value).__name__}"
+            )
+        
+        # Try case-insensitive match against enum values ("P", "F", etc.)
+        value_upper = value.upper()
+        for member in cls:
+            if member.value.upper() == value_upper:
+                return member
+        
+        # Try case-insensitive match against member names ("Passed", "Failed", etc.)
+        value_lower = value.lower()
+        for member in cls:
+            if member.name.lower() == value_lower:
+                return member
+        
+        # Try alias lookup (defined outside class as class attribute)
+        canonical = StepStatus._STEP_ALIASES.get(value_lower)
+        if canonical:
+            return cls._value2member_map_[canonical]
+        
+        # No match found - provide helpful error message
+        valid_options = ", ".join(m.name for m in cls)
+        raise ValueError(
+            f"Invalid step status: '{value}'. "
+            f"Valid options: {valid_options} "
+            "(case-insensitive, also accepts single letters and aliases like 'OK')"
+        )
+    
+    @property
+    def full_name(self) -> str:
+        """Get full word representation (e.g., 'Passed')."""
+        return self.name
+    
+    @property
+    def is_passing(self) -> bool:
+        """True if status indicates a passing result."""
+        return self in (StepStatus.Passed, StepStatus.Done)
+    
+    @property
+    def is_failure(self) -> bool:
+        """True if status indicates a failure."""
+        return self in (StepStatus.Failed, StepStatus.Error, StepStatus.Terminated)
+
+# Alias mappings for StepStatus (defined outside class to avoid becoming enum member)
+StepStatus._STEP_ALIASES = {
+    # Passed variations
+    "p": "P",
+    "pass": "P",
+    "passed": "P",
+    "ok": "P",
+    "success": "P",
+    "successful": "P",
+    
+    # Failed variations
+    "f": "F",
+    "fail": "F",
+    "failed": "F",
+    "failure": "F",
+    "ng": "F",  # Common in manufacturing (Not Good)
+    
+    # Skipped variations
+    "s": "S",
+    "skip": "S",
+    "skipped": "S",
+    
+    # Done variations
+    "d": "D",
+    "done": "D",
+    "complete": "D",
+    "completed": "D",
+    
+    # Error variations
+    "e": "E",
+    "err": "E",
+    "error": "E",
+    
+    # Terminated variations
+    "t": "T",
+    "term": "T",
+    "terminated": "T",
+    "abort": "T",
+    "aborted": "T",
+}
 
 
 class ReportStatus(str, Enum):
-    """Overall report status."""
+    """
+    Overall report status with flexible string conversion.
+    
+    Accepts multiple input formats:
+    - Exact values: "P", "F", "D", "E", "T"
+    - Full names: "Passed", "Failed", "Done", "Error", "Terminated"
+    - Case-insensitive: "PASSED", "passed", etc.
+    - Common aliases: "OK", "pass", "fail", etc.
+    
+    Always serializes to single-letter WATS API format ("P", "F", etc.).
+    
+    Note: ReportStatus does not include "Skipped" (only at step level).
+    """
     Passed = "P"
     Failed = "F"
     Done = "D"
     Error = "E"
     Terminated = "T"
+    
+    @classmethod
+    def _missing_(cls, value: Any) -> "ReportStatus":
+        """Handle flexible string conversion (same logic as StepStatus)."""
+        if not isinstance(value, str):
+            raise ValueError(
+                f"ReportStatus value must be string, got {type(value).__name__}"
+            )
+        
+        value_upper = value.upper()
+        for member in cls:
+            if member.value.upper() == value_upper:
+                return member
+        
+        value_lower = value.lower()
+        for member in cls:
+            if member.name.lower() == value_lower:
+                return member
+        
+        canonical = ReportStatus._REPORT_ALIASES.get(value_lower)
+        if canonical:
+            return cls._value2member_map_[canonical]
+        
+        valid_options = ", ".join(m.name for m in cls)
+        raise ValueError(
+            f"Invalid report status: '{value}'. "
+            f"Valid options: {valid_options} "
+            "(case-insensitive, also accepts single letters and aliases like 'OK')"
+        )
+    
+    @property
+    def full_name(self) -> str:
+        """Get full word representation."""
+        return self.name
+    
+    @property
+    def is_passing(self) -> bool:
+        """True if status indicates a passing result."""
+        return self in (ReportStatus.Passed, ReportStatus.Done)
+    
+    @property
+    def is_failure(self) -> bool:
+        """True if status indicates a failure."""
+        return self in (ReportStatus.Failed, ReportStatus.Error, ReportStatus.Terminated)
+
+# Alias mappings for ReportStatus (same as StepStatus but without Skipped)
+ReportStatus._REPORT_ALIASES = {
+    "p": "P",
+    "pass": "P",
+    "passed": "P",
+    "ok": "P",
+    "success": "P",
+    "successful": "P",
+    
+    "f": "F",
+    "fail": "F",
+    "failed": "F",
+    "failure": "F",
+    "ng": "F",
+    
+    "d": "D",
+    "done": "D",
+    "complete": "D",
+    "completed": "D",
+    
+    "e": "E",
+    "err": "E",
+    "error": "E",
+    
+    "t": "T",
+    "term": "T",
+    "terminated": "T",
+    "abort": "T",
+    "aborted": "T",
+}
 
 
 # Alias for backwards compatibility (if needed)

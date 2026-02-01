@@ -6,6 +6,7 @@ Demonstrates various ways to use the ReportBuilder for creating test reports.
 
 from datetime import datetime
 from pywats.tools.report_builder import ReportBuilder, quick_report
+from pywats.domains.report.report_models.common_types import StepStatus
 
 # =============================================================================
 # Example 1: Simple Flat Report
@@ -192,10 +193,10 @@ def example_messy_data():
     
     builder = ReportBuilder("TEST-PN", "TEST-SN")
     
-    # Different status formats - all work
-    builder.add_step("Test 1", 5.0, status="PASS")
-    builder.add_step("Test 2", 5.0, status="P")
-    builder.add_step("Test 3", 5.0, status="Passed")
+    # Different status formats - all work (but "Passed" is recommended)
+    builder.add_step("Test 1", 5.0, status=StepStatus.Passed)  # Best practice: full word
+    builder.add_step("Test 2", 5.0, status=StepStatus.Passed)  # Best practice: full word  
+    builder.add_step("Test 3", 5.0, status=StepStatus.Passed)  # Best practice: full word
     builder.add_step("Test 4", 5.0, status=True)
     builder.add_step("Test 5", 5.0, status="1")
     

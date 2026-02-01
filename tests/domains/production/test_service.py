@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any, Optional
 
 import pytest
 
@@ -14,6 +14,7 @@ class DummyProductionRepository:
         self.saved_units: List[Unit] = []
         self.phase_calls: List[Tuple[str, str, int, str]] = []
         self.child_calls: List[Tuple[str, str, str, str]] = []
+        self.remove_all_calls: List[Tuple[str, str]] = []
 
     async def save_units(self, units: List[Unit]) -> List[Unit]:
         self.saved_units.extend(units)
@@ -38,6 +39,15 @@ class DummyProductionRepository:
     ) -> bool:
         self.child_calls.append((parent_serial, parent_part, child_serial, child_part))
         return True
+
+    async def remove_all_child_units(
+        self,
+        serial_number: str,
+        part_number: str,
+        culture_code: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        self.remove_all_calls.append((serial_number, part_number))
+        return {"success": True}  # Mock successful response
 
 
 @pytest.fixture
@@ -82,3 +92,15 @@ async def test_add_child_unit_routes_call(production_service: AsyncProductionSer
     repo = production_service._repository
     assert success is True
     assert repo.child_calls[-1] == ("SN-P", "PN-P", "SN-C", "PN-C")
+
+
+@pytest.mark.asyncio
+async def test_remove_all_children_from_assembly_routes_call(production_service: AsyncProductionService) -> None:
+    success = await production_service.remove_all_children_from_assembly(
+        parent_serial="SN-P",
+        parent_part="PN-P"
+    )
+
+    repo = production_service._repository
+    assert success is True
+    assert repo.remove_all_calls[-1] == ("SN-P", "PN-P")

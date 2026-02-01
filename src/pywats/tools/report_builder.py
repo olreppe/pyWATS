@@ -16,8 +16,8 @@ For production code, use the RECOMMENDED approach:
     ... )
     >>> root = report.get_root_sequence_call()
     >>> root.add_numeric_step("Voltage", value=5.02, unit="V", comp_op=CompOp.GELE, 
-    ...                       low_limit=4.5, high_limit=5.5, status="P")
-    >>> root.add_boolean_step("Power OK", value=True, status="P")
+    ...                       low_limit=4.5, high_limit=5.5, status=StepStatus.Passed)
+    >>> root.add_boolean_step("Power OK", value=True, status=StepStatus.Passed)
     >>> api.report.submit_report(report)
 
 Alternative: Direct constructor
@@ -70,7 +70,7 @@ from dataclasses import dataclass, field
 from ..domains.report.report_models.uut.uut_report import UUTReport
 from ..domains.report.report_models.uut.uut_info import UUTInfo
 from ..domains.report.report_models.uut.steps.sequence_call import SequenceCall
-from ..domains.report.report_models.common_types import ReportStatus
+from ..domains.report.report_models.common_types import ReportStatus, StepStatus
 from pywats.shared.enums import CompOp
 
 
@@ -108,8 +108,8 @@ class ReportBuilder:
         )
         root = report.get_root_sequence_call()
         root.add_numeric_step("Voltage", value=5.0, unit="V", comp_op=CompOp.GELE,
-                             low_limit=4.5, high_limit=5.5, status="P")
-        root.add_boolean_step("Power OK", value=True, status="P")
+                             low_limit=4.5, high_limit=5.5, status=StepStatus.Passed)
+        root.add_boolean_step("Power OK", value=True, status=StepStatus.Passed)
         api.report.submit_report(report)
     
     This ReportBuilder is designed for:
@@ -535,7 +535,7 @@ class ReportBuilder:
         """Infer status from value and limits"""
         # Boolean value
         if isinstance(value, bool):
-            return "P" if value else "F"
+            return StepStatus.Passed if value else StepStatus.Failed
         
         # String that looks like a status
         if isinstance(value, str):
@@ -550,22 +550,22 @@ class ReportBuilder:
                 
                 if comp_op == CompOp.GELE:
                     if low_limit is not None and high_limit is not None:
-                        return "P" if low_limit <= value_float <= high_limit else "F"
+                        return StepStatus.Passed if low_limit <= value_float <= high_limit else StepStatus.Failed
                 elif comp_op == CompOp.GE:
                     if low_limit is not None:
-                        return "P" if value_float >= low_limit else "F"
+                        return StepStatus.Passed if value_float >= low_limit else StepStatus.Failed
                 elif comp_op == CompOp.LE:
                     if high_limit is not None:
-                        return "P" if value_float <= high_limit else "F"
+                        return StepStatus.Passed if value_float <= high_limit else StepStatus.Failed
                 elif comp_op == CompOp.GT:
                     if low_limit is not None:
-                        return "P" if value_float > low_limit else "F"
+                        return StepStatus.Passed if value_float > low_limit else StepStatus.Failed
                 elif comp_op == CompOp.LT:
                     if high_limit is not None:
-                        return "P" if value_float < high_limit else "F"
+                        return StepStatus.Passed if value_float < high_limit else StepStatus.Failed
                 elif comp_op == CompOp.EQ:
                     if low_limit is not None:
-                        return "P" if abs(value_float - low_limit) < 0.0001 else "F"
+                        return StepStatus.Passed if abs(value_float - low_limit) < 0.0001 else StepStatus.Failed
             except (ValueError, TypeError):
                 pass
         
@@ -664,7 +664,7 @@ class ReportBuilder:
         # Determine step type and add accordingly
         if isinstance(value, bool):
             # Boolean step - status is derived from boolean value
-            bool_status = "P" if value else "F"
+            bool_status = StepStatus.Passed if value else StepStatus.Failed
             sequence.add_boolean_step(
                 name=step_data.name,
                 status=step_data.status or bool_status
@@ -697,14 +697,14 @@ class ReportBuilder:
             
             if isinstance(first_elem, bool):
                 # Multi-boolean - convert to status
-                multi_bool_status = "P" if all(value) else "F"
+                multi_bool_status = StepStatus.Passed if all(value) else StepStatus.Failed
                 bool_step = sequence.add_multi_boolean_step(
                     name=step_data.name,
                     status=step_data.status or multi_bool_status
                 )
                 # Add individual boolean measurements
                 for i, v in enumerate(value):
-                    bool_step.add_measurement(name=f"Value {i+1}", status="P" if v else "F")
+                    bool_step.add_measurement(name=f"Value {i+1}", status=StepStatus.Passed if v else "Failed")
             
             elif isinstance(first_elem, (int, float)):
                 # Multi-numeric - create step and add measurements

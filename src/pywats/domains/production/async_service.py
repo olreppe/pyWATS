@@ -590,6 +590,45 @@ class AsyncProductionService:
             parent_serial, parent_part, child_serial, child_part
         )
 
+    async def remove_all_children_from_assembly(
+        self,
+        parent_serial: str,
+        parent_part: str
+    ) -> bool:
+        """
+        Remove all child units from a parent assembly (convenience method).
+
+        This is equivalent to C#'s RemoveAllChildUnits() method. It removes
+        all child units from the parent assembly in a single operation.
+
+        Useful for:
+        - Complete disassembly of a unit
+        - Rework scenarios requiring full rebuild
+        - Scrapping/recycling assemblies
+
+        Args:
+            parent_serial: Parent unit serial number
+            parent_part: Parent product part number
+
+        Returns:
+            True if successful
+
+        Example:
+            >>> # Disassemble a complete module
+            >>> await api.production.remove_all_children_from_assembly(
+            ...     parent_serial="MODULE-001",
+            ...     parent_part="MAIN-MODULE"
+            ... )
+
+        See Also:
+            remove_child_from_assembly(): Remove individual child units
+            verify_assembly(): Check assembly against box build template
+        """
+        result = await self._repository.remove_all_child_units(
+            parent_serial, parent_part, culture_code=None
+        )
+        return result is not None
+
     async def verify_assembly(
         self,
         serial_number: str,

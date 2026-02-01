@@ -226,7 +226,7 @@ class MultiStringStep(Step):
         *,
         name: str | None = None,
         value: Union[str, float],
-        status: str,
+        status: StepStatus | str,
         comp_op: CompOp,
         limit: str | None = None,
     ) -> MultiStringMeasurement:
@@ -236,7 +236,7 @@ class MultiStringStep(Step):
         Args:
             name: Measurement name (optional, uses step name if not provided)
             value: Measured string value
-            status: Status ("P", "F", etc.)
+            status: Status (StepStatus enum or "P"/"F")
             comp_op: Comparison operator
             limit: Expected string value
             

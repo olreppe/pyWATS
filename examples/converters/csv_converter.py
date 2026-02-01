@@ -25,6 +25,7 @@ from pywats.domains.report.report_models import UUTReport
 from pywats.domains.report.report_models.uut.uut_info import UUTInfo
 from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
 from pywats.shared.enums import CompOp
+from pywats.domains.report.report_models.common_types import StepStatus
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Converter Infrastructure Imports
@@ -248,7 +249,7 @@ class CsvConverter(FileConverter):
                 station_name=station_name,
                 location=location,
                 purpose=purpose,
-                result="P" if overall_result == "PASSED" else "F",
+                result=StepStatus.Passed if overall_result == "PASSED" else StepStatus.Failed,
                 start=datetime.now().astimezone(),
             )
             
@@ -340,7 +341,7 @@ class CsvConverter(FileConverter):
                             low_limit=low_limit,
                             high_limit=high_limit,
                             comp_op=CompOp.GELE,
-                            status="P" if passed else "F",
+                            status=StepStatus.Passed if passed else "Failed",
                         )
                     elif low_limit is not None:
                         # Only low limit - use GE (Greater Equal)
@@ -350,7 +351,7 @@ class CsvConverter(FileConverter):
                             unit=unit,
                             low_limit=low_limit,
                             comp_op=CompOp.GE,
-                            status="P" if passed else "F",
+                            status=StepStatus.Passed if passed else "Failed",
                         )
                     elif high_limit is not None:
                         # Only high limit - use LE (Less Equal)
@@ -360,7 +361,7 @@ class CsvConverter(FileConverter):
                             unit=unit,
                             high_limit=high_limit,
                             comp_op=CompOp.LE,
-                            status="P" if passed else "F",
+                            status=StepStatus.Passed if passed else "Failed",
                         )
                     else:
                         # No limits - use LOG (just log the value)
@@ -369,21 +370,21 @@ class CsvConverter(FileConverter):
                             value=value,
                             unit=unit,
                             comp_op=CompOp.LOG,
-                            status="P" if passed else "F",
+                            status=StepStatus.Passed if passed else "Failed",
                         )
                 except ValueError:
                     # Not a number - add as string step
                     sequence.add_string_step(
                         name=test_name,
                         value=measured,
-                        status="P" if passed else "F",
+                        status=StepStatus.Passed if passed else "Failed",
                     )
             else:
                 # No measured value - add as boolean pass/fail step
                 sequence.add_boolean_step(
                     name=test_name,
                     value=passed,
-                    status="P" if passed else "F",
+                    status=StepStatus.Passed if passed else "Failed",
                 )
             
             return True

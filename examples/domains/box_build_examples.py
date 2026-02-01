@@ -344,18 +344,30 @@ def example_7_disassemble_units(api: pyWATS):
     child_serial = "SENSOR-SN-790"  # Remove one sensor board
     child_part = "SENSOR-300"
     
-    print(f"\n✓ Removing {child_serial} from assembly {parent_serial}...")
+    # Option 1: Remove individual child unit
+    print(f"\n✓ Removing individual child: {child_serial} from {parent_serial}...")
     api.production.remove_child_from_assembly(
         parent_serial=parent_serial,
         parent_part=parent_part,
         child_serial=child_serial,
-        child_part=child_part,
-        reason="Sensor board needs recalibration"  # Optional but recommended
+        child_part=child_part
     )
     
     print(f"\n✅ Child unit {child_serial} removed from assembly!")
     print(f"   Status: {child_serial} is now available for other assemblies")
-    print(f"   History: Disassembly reason and timestamp recorded")
+    
+    # Option 2: Remove ALL children at once (convenience method)
+    print(f"\n✓ Removing ALL remaining children from {parent_serial}...")
+    print("   This is a convenience method equivalent to C#'s RemoveAllChildUnits()")
+    api.production.remove_all_children_from_assembly(
+        parent_serial=parent_serial,
+        parent_part=parent_part
+    )
+    
+    print(f"\n✅ All child units removed from assembly {parent_serial}!")
+    print(f"   Assembly is now empty and can be rebuilt")
+    print(f"   All child units (PSU-SN-456, SENSOR-SN-789) are now available")
+    print(f"   History: Disassembly timestamp recorded")
 
 
 def example_8_validation_and_template_checking(api: pyWATS):

@@ -17,7 +17,7 @@ import math
 from ..domains.report.report_models.uut.uut_report import UUTReport
 from ..domains.report.report_models.uut.uut_info import UUTInfo
 from ..domains.report.report_models.uut.steps.sequence_call import SequenceCall, SequenceCallInfo
-from ..domains.report.report_models.common_types import ReportStatus
+from ..domains.report.report_models.common_types import ReportStatus, StepStatus
 from pywats.shared.enums import CompOp
 from ..domains.report.report_models.uut.steps.generic_step import FlowType
 from ..domains.report.report_models.chart import Chart, ChartSeries, ChartType
@@ -111,7 +111,7 @@ def create_test_uut_report(
         value=12.45,
         unit="V",
         comp_op=CompOp.LOG,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # EQ - Equal to
@@ -121,7 +121,7 @@ def create_test_uut_report(
         unit="V",
         comp_op=CompOp.EQ,
         low_limit=5.0,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # GE - Greater than or Equal
@@ -131,7 +131,7 @@ def create_test_uut_report(
         unit="A",
         comp_op=CompOp.GE,
         low_limit=1.0,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # LE - Less than or Equal
@@ -141,7 +141,7 @@ def create_test_uut_report(
         unit="C",
         comp_op=CompOp.LE,
         low_limit=85.0,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # GT - Greater Than (strict)
@@ -151,7 +151,7 @@ def create_test_uut_report(
         unit="dBm",
         comp_op=CompOp.GT,
         low_limit=-50.0,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # LT - Less Than (strict)
@@ -161,7 +161,7 @@ def create_test_uut_report(
         unit="V",
         comp_op=CompOp.LT,
         low_limit=0.01,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # GELE - Between (inclusive)
@@ -172,7 +172,7 @@ def create_test_uut_report(
         comp_op=CompOp.GELE,
         low_limit=3.0,
         high_limit=3.6,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # GELT - Low inclusive, high exclusive
@@ -183,7 +183,7 @@ def create_test_uut_report(
         comp_op=CompOp.GELT,
         low_limit=24.0,
         high_limit=26.0,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # GTLT - Strictly between
@@ -194,7 +194,7 @@ def create_test_uut_report(
         comp_op=CompOp.GTLT,
         low_limit=45.0,
         high_limit=65.0,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # GTLE - Low exclusive, high inclusive
@@ -205,13 +205,13 @@ def create_test_uut_report(
         comp_op=CompOp.GTLE,
         low_limit=0.0,
         high_limit=20.0,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # Multi-numeric step
     multi_num = numeric_seq.add_multi_numeric_step(
         name="Power Supply Measurements",
-        status="P"
+        status=StepStatus.Passed
     )
     multi_num.add_measurement(
         name="3V3 Rail",
@@ -220,7 +220,7 @@ def create_test_uut_report(
         comp_op=CompOp.GELE,
         low_limit=3.1,
         high_limit=3.5,
-        status="P"
+        status=StepStatus.Passed
     )
     multi_num.add_measurement(
         name="5V Rail",
@@ -229,7 +229,7 @@ def create_test_uut_report(
         comp_op=CompOp.GELE,
         low_limit=4.8,
         high_limit=5.2,
-        status="P"
+        status=StepStatus.Passed
     )
     multi_num.add_measurement(
         name="12V Rail",
@@ -238,7 +238,7 @@ def create_test_uut_report(
         comp_op=CompOp.GELE,
         low_limit=11.5,
         high_limit=12.5,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # =========================================================================
@@ -252,20 +252,20 @@ def create_test_uut_report(
     )
     
     # Simple pass/fail tests
-    pf_seq.add_boolean_step(name="Self-Test", status="P")
-    pf_seq.add_boolean_step(name="Communication Check", status="P")
-    pf_seq.add_boolean_step(name="Hardware Present", status="P")
-    pf_seq.add_boolean_step(name="Firmware Valid", status="P")
+    pf_seq.add_boolean_step(name="Self-Test", status=StepStatus.Passed)
+    pf_seq.add_boolean_step(name="Communication Check", status=StepStatus.Passed)
+    pf_seq.add_boolean_step(name="Hardware Present", status=StepStatus.Passed)
+    pf_seq.add_boolean_step(name="Firmware Valid", status=StepStatus.Passed)
     
     # Multi-boolean step
     multi_bool = pf_seq.add_multi_boolean_step(
         name="System Health Checks",
-        status="P"
+        status=StepStatus.Passed
     )
-    multi_bool.add_measurement(name="CPU OK", status="P")
-    multi_bool.add_measurement(name="Memory OK", status="P")
-    multi_bool.add_measurement(name="Storage OK", status="P")
-    multi_bool.add_measurement(name="Network OK", status="P")
+    multi_bool.add_measurement(name="CPU OK", status=StepStatus.Passed)
+    multi_bool.add_measurement(name="Memory OK", status=StepStatus.Passed)
+    multi_bool.add_measurement(name="Storage OK", status=StepStatus.Passed)
+    multi_bool.add_measurement(name="Network OK", status=StepStatus.Passed)
     
     # =========================================================================
     # Sequence 3: String Tests
@@ -282,7 +282,7 @@ def create_test_uut_report(
         name="Firmware Version",
         value="v2.5.1-build-1234",
         comp_op=CompOp.LOG,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # CASESENSIT - Case sensitive comparison
@@ -291,7 +291,7 @@ def create_test_uut_report(
         value="PROD-ABC-123",
         comp_op=CompOp.CASESENSIT,
         limit="PROD-ABC-123",
-        status="P"
+        status=StepStatus.Passed
     )
     
     # IGNORECASE - Case insensitive comparison
@@ -300,32 +300,32 @@ def create_test_uut_report(
         value="OK",
         comp_op=CompOp.IGNORECASE,
         limit="ok",
-        status="P"
+        status=StepStatus.Passed
     )
     
     # Multi-string step
     multi_str = string_seq.add_multi_string_step(
         name="Device Information",
-        status="P"
+        status=StepStatus.Passed
     )
     multi_str.add_measurement(
         name="Manufacturer",
         value="pyWATS Test Corp",
         comp_op=CompOp.LOG,
-        status="P"
+        status=StepStatus.Passed
     )
     multi_str.add_measurement(
         name="Model",
         value="TEST-MODEL-X",
         comp_op=CompOp.CASESENSIT,
         limit="TEST-MODEL-X",
-        status="P"
+        status=StepStatus.Passed
     )
     multi_str.add_measurement(
         name="Calibration Date",
         value=datetime.now().strftime("%Y-%m-%d"),
         comp_op=CompOp.LOG,
-        status="P"
+        status=StepStatus.Passed
     )
     
     # =========================================================================
@@ -369,7 +369,7 @@ def create_test_uut_report(
         y_label="Amplitude",
         y_unit="V",
         series=[sine_series, upper_limit_series, lower_limit_series],
-        status="P"
+        status=StepStatus.Passed
     )
     
     # Power consumption over time
@@ -391,7 +391,7 @@ def create_test_uut_report(
         y_label="Power",
         y_unit="W",
         series=[power_series],
-        status="P"
+        status=StepStatus.Passed
     )
     
     # =========================================================================
@@ -407,28 +407,28 @@ def create_test_uut_report(
     action_seq.add_generic_step(
         step_type=FlowType.Action,
         name="Initialize Hardware",
-        status="P",
+        status=StepStatus.Passed,
         tot_time=0.5
     )
     
     action_seq.add_generic_step(
         step_type=FlowType.Action,
         name="Load Firmware",
-        status="P",
+        status=StepStatus.Passed,
         tot_time=1.2
     )
     
     action_seq.add_generic_step(
         step_type=FlowType.Action,
         name="Configure DUT",
-        status="P",
+        status=StepStatus.Passed,
         tot_time=0.3
     )
     
     action_seq.add_generic_step(
         step_type=FlowType.Action,
         name="Cleanup",
-        status="P",
+        status=StepStatus.Passed,
         tot_time=0.2
     )
     
@@ -500,7 +500,7 @@ def create_minimal_test_report(
     
     # Add one simple pass step
     root = report.get_root_sequence_call()
-    root.add_boolean_step(name="Connection Test", status="P")
+    root.add_boolean_step(name="Connection Test", status=StepStatus.Passed)
     
     report.add_misc_info("Test Type", "Minimal Connection Test")
     

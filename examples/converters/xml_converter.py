@@ -324,7 +324,7 @@ class XMLConverter(FileConverter):
         except (ValueError, TypeError):
             value = 0.0
         
-        step_status = "P" if in_range == "true" else "F"
+        step_status = StepStatus.Passed if in_range == "true" else StepStatus.Failed
         
         # Add numeric step using API (LOG mode since we don't have limits)
         sequence.add_numeric_step(
@@ -380,7 +380,7 @@ class XMLConverter(FileConverter):
         sequence.add_chart_step(
             name=f"{name} Chart",
             chart_type=ChartType.XY,
-            status="P",
+            status=StepStatus.Passed,
             label=name,
             x_label="X",
             x_unit=unit_x,
@@ -392,28 +392,28 @@ class XMLConverter(FileConverter):
         # Add multi-numeric step with statistics
         stats_step = sequence.add_multi_numeric_step(
             name=f"{name} Statistics",
-            status="P",
+            status=StepStatus.Passed,
         )
         
         stats_step.add_measurement(
             name="Average",
             value=avg_y,
             unit=unit_y,
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.LOG,
         )
         stats_step.add_measurement(
             name="Minimum",
             value=min_y,
             unit=unit_y,
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.LOG,
         )
         stats_step.add_measurement(
             name="Maximum",
             value=max_y,
             unit=unit_y,
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.LOG,
         )
     

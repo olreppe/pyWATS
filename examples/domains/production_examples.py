@@ -74,6 +74,7 @@ from pywats import pyWATS
 from pywats.domains.production import Unit
 from pywats.domains.report.enums import UUTStepType
 from pywats.domains.report import UUTStepPassFailUpdate
+from pywats.domains.report.report_models.common_types import StepStatus
 from datetime import datetime
 import os
 
@@ -183,7 +184,7 @@ def example_2_unit_through_operations(api: pyWATS):
         report_id=report.id,
         step_name="Power-On Test",
         step_type=UUTStepType.PassFailTest,
-        step_data=UUTStepPassFailUpdate(status="Passed")
+        step_data=UUTStepPassFailUpdate(status=StepStatus.Passed)
     )
     api.report.set_uut_result(report_id=report.id, result=True)
     api.report.end_uut_report(report_id=report.id)
@@ -223,7 +224,7 @@ def example_2_unit_through_operations(api: pyWATS):
         report_id=report.id,
         step_name="Full Functional Test",
         step_type=UUTStepType.PassFailTest,
-        step_data=UUTStepPassFailUpdate(status="Passed")
+        step_data=UUTStepPassFailUpdate(status=StepStatus.Passed)
     )
     api.report.set_uut_result(report_id=report.id, result=True)
     api.report.end_uut_report(report_id=report.id)
@@ -284,7 +285,7 @@ def example_3_batch_production(api: pyWATS):
             report_id=report.id,
             step_name="Quick Check",
             step_type=UUTStepType.PassFailTest,
-            step_data=UUTStepPassFailUpdate(status="Passed")
+            step_data=UUTStepPassFailUpdate(status=StepStatus.Passed)
         )
         api.report.set_uut_result(report_id=report.id, result=True)
         api.report.end_uut_report(report_id=report.id)
@@ -338,7 +339,7 @@ def example_4_unit_with_failure(api: pyWATS):
         report_id=report.id,
         step_name="Voltage Test",
         step_type=UUTStepType.PassFailTest,
-        step_data=UUTStepPassFailUpdate(status="Failed")
+        step_data=UUTStepPassFailUpdate(status=StepStatus.Failed)
     )
     
     api.report.set_uut_result(report_id=report.id, result=False)
@@ -373,7 +374,7 @@ def example_4_unit_with_failure(api: pyWATS):
         report_id=uur_report.id,
         step_name="Voltage Test (Post-Repair)",
         step_type=UUTStepType.PassFailTest,
-        step_data=UUTStepPassFailUpdate(status="Passed")
+        step_data=UUTStepPassFailUpdate(status=StepStatus.Passed)
     )
     
     api.report.set_uur_result(report_id=uur_report.id, result=True)
@@ -427,7 +428,7 @@ def example_5_query_unit_history(api: pyWATS):
             report_id=report.id,
             step_name=f"{op} Check",
             step_type=UUTStepType.PassFailTest,
-            step_data=UUTStepPassFailUpdate(status="Passed")
+            step_data=UUTStepPassFailUpdate(status=StepStatus.Passed)
         )
         api.report.set_uut_result(report_id=report.id, result=True)
         api.report.end_uut_report(report_id=report.id)

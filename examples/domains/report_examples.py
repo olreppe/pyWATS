@@ -68,6 +68,7 @@ from pywats.domains.report import (
     UUTStepMessageLogUpdate,
     NumericMeasurement,
 )
+from pywats.domains.report.report_models.common_types import StepStatus
 from datetime import datetime
 import os
 
@@ -132,7 +133,7 @@ def example_1_create_simple_uut_report(api: pyWATS):
             low_limit=4.9,
             high_limit=5.1,
             units="V",
-            status="Passed"
+            status=StepStatus.Passed
         )
     )
     print(f"  Step 1: {step1.name} = {step1.measured_value}V → {step1.status}")
@@ -147,7 +148,7 @@ def example_1_create_simple_uut_report(api: pyWATS):
             low_limit=1.0,
             high_limit=2.0,
             units="A",
-            status="Passed"
+            status=StepStatus.Passed
         )
     )
     print(f"  Step 2: {step2.name} = {step2.measured_value}A → {step2.status}")
@@ -158,7 +159,7 @@ def example_1_create_simple_uut_report(api: pyWATS):
         step_name="Visual Inspection",
         step_type=UUTStepType.PassFailTest,
         step_data=UUTStepPassFailUpdate(
-            status="Passed"
+            status=StepStatus.Passed
         )
     )
     print(f"  Step 3: {step3.name} → {step3.status}")
@@ -170,7 +171,7 @@ def example_1_create_simple_uut_report(api: pyWATS):
         step_type=UUTStepType.StringValueTest,
         step_data=UUTStepStringValueUpdate(
             string_value="v2.4.1",
-            status="Passed"
+            status=StepStatus.Passed
         )
     )
     print(f"  Step 4: {step4.name} = {step4.string_value} → {step4.status}")
@@ -231,7 +232,7 @@ def example_2_create_failing_uut_report(api: pyWATS):
             low_limit=4.9,
             high_limit=5.1,
             units="V",
-            status="Passed"
+            status=StepStatus.Passed
         )
     )
     print("  ✓ 5V Rail: PASS")
@@ -246,7 +247,7 @@ def example_2_create_failing_uut_report(api: pyWATS):
             low_limit=3.2,
             high_limit=3.4,
             units="V",
-            status="Failed"
+            status=StepStatus.Failed
         )
     )
     print(f"  ✗ 3.3V Rail: FAIL ({failing_step.measured_value}V, limit: {failing_step.high_limit}V)")
@@ -256,7 +257,7 @@ def example_2_create_failing_uut_report(api: pyWATS):
         report_id=report.id,
         step_name="Visual Inspection",
         step_type=UUTStepType.PassFailTest,
-        step_data=UUTStepPassFailUpdate(status="Passed")
+        step_data=UUTStepPassFailUpdate(status=StepStatus.Passed)
     )
     print("  ✓ Visual: PASS")
     
@@ -330,7 +331,7 @@ def example_3_multiple_numeric_measurements(api: pyWATS):
                     low_limit=245.0,
                     high_limit=260.0,
                     units="intensity",
-                    status="Passed"
+                    status=StepStatus.Passed
                 ),
                 NumericMeasurement(
                     name="Green Channel",
@@ -338,7 +339,7 @@ def example_3_multiple_numeric_measurements(api: pyWATS):
                     low_limit=120.0,
                     high_limit=135.0,
                     units="intensity",
-                    status="Passed"
+                    status=StepStatus.Passed
                 ),
                 NumericMeasurement(
                     name="Blue Channel",
@@ -346,10 +347,10 @@ def example_3_multiple_numeric_measurements(api: pyWATS):
                     low_limit=60.0,
                     high_limit=70.0,
                     units="intensity",
-                    status="Passed"
+                    status=StepStatus.Passed
                 )
             ],
-            status="Passed"  # Overall status
+            status=StepStatus.Passed  # Overall status
         )
     )
     
@@ -418,7 +419,7 @@ def example_4_message_logs(api: pyWATS):
             low_limit=11.8,
             high_limit=12.2,
             units="V",
-            status="Passed"
+            status=StepStatus.Passed
         )
     )
     print("  ✓ Power test: PASS")
@@ -483,7 +484,7 @@ def example_5_uur_report_rework(api: pyWATS):
             low_limit=3.2,
             high_limit=3.4,
             units="V",
-            status="Passed"
+            status=StepStatus.Passed
         )
     )
     print("  ✓ 3.3V Rail (after repair): PASS (3.32V)")
@@ -498,7 +499,7 @@ def example_5_uur_report_rework(api: pyWATS):
             low_limit=4.9,
             high_limit=5.1,
             units="V",
-            status="Passed"
+            status=StepStatus.Passed
         )
     )
     print("  ✓ 5V Rail: PASS")
@@ -588,7 +589,7 @@ def example_7_report_by_serial(api: pyWATS):
         report_id=report1.id,
         step_name="Quick Test",
         step_type=UUTStepType.PassFailTest,
-        step_data=UUTStepPassFailUpdate(status="Passed")
+        step_data=UUTStepPassFailUpdate(status=StepStatus.Passed)
     )
     api.report.set_uut_result(report_id=report1.id, result=True)
     api.report.end_uut_report(report_id=report1.id)
@@ -604,7 +605,7 @@ def example_7_report_by_serial(api: pyWATS):
         report_id=report2.id,
         step_name="Full Test",
         step_type=UUTStepType.PassFailTest,
-        step_data=UUTStepPassFailUpdate(status="Passed")
+        step_data=UUTStepPassFailUpdate(status=StepStatus.Passed)
     )
     api.report.set_uut_result(report_id=report2.id, result=True)
     api.report.end_uut_report(report_id=report2.id)

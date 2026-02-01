@@ -8,6 +8,7 @@ from datetime import datetime
 from pywats import pyWATS
 from pywats.core import Station
 from pywats.models import UUTReport
+from pywats.domains.report.report_models.common_types import StepStatus
 
 # =============================================================================
 # Setup
@@ -31,7 +32,7 @@ report = UUTReport(pn="DEMO", sn="SN001", rev="A", start=datetime.now())
 
 report.add_numeric_limit_step(
     name="Voltage Test",
-    status="Passed",
+    status=StepStatus.Passed,
     value=5.02,
     units="V",
     low_limit=4.8,
@@ -59,12 +60,12 @@ report.add_numeric_limit_step(
 # For simple pass/fail tests
 report.add_pass_fail_step(
     name="Visual Inspection",
-    status="Passed"
+    status=StepStatus.Passed
 )
 
 report.add_pass_fail_step(
     name="LED Check",
-    status="Passed"
+    status=StepStatus.Passed
 )
 
 
@@ -75,13 +76,13 @@ report.add_pass_fail_step(
 # For text/string results
 report.add_string_value_step(
     name="Firmware Version",
-    status="Passed",
+    status=StepStatus.Passed,
     value="v2.1.3"
 )
 
 report.add_string_value_step(
     name="MAC Address",
-    status="Passed",
+    status=StepStatus.Passed,
     value="00:1A:2B:3C:4D:5E"
 )
 
@@ -93,13 +94,13 @@ report.add_string_value_step(
 # Create a sequence to group related steps
 power_tests = report.add_sequence_call(
     name="Power Supply Tests",
-    status="Passed"
+    status=StepStatus.Passed
 )
 
 # Add steps to the sequence
 power_tests.add_numeric_limit_step(
     name="3.3V Rail",
-    status="Passed",
+    status=StepStatus.Passed,
     value=3.31,
     units="V",
     low_limit=3.2,
@@ -108,7 +109,7 @@ power_tests.add_numeric_limit_step(
 
 power_tests.add_numeric_limit_step(
     name="5V Rail",
-    status="Passed",
+    status=StepStatus.Passed,
     value=5.01,
     units="V",
     low_limit=4.9,
@@ -123,25 +124,25 @@ power_tests.add_numeric_limit_step(
 # Sequences can be nested
 main_sequence = report.add_sequence_call(
     name="Functional Tests",
-    status="Passed"
+    status=StepStatus.Passed
 )
 
 # Sub-sequence 1
 comm_tests = main_sequence.add_sequence_call(
     name="Communication Tests",
-    status="Passed"
+    status=StepStatus.Passed
 )
-comm_tests.add_pass_fail_step(name="UART", status="Passed")
-comm_tests.add_pass_fail_step(name="SPI", status="Passed")
-comm_tests.add_pass_fail_step(name="I2C", status="Passed")
+comm_tests.add_pass_fail_step(name="UART", status=StepStatus.Passed)
+comm_tests.add_pass_fail_step(name="SPI", status=StepStatus.Passed)
+comm_tests.add_pass_fail_step(name="I2C", status=StepStatus.Passed)
 
 # Sub-sequence 2
 io_tests = main_sequence.add_sequence_call(
     name="I/O Tests",
-    status="Passed"
+    status=StepStatus.Passed
 )
-io_tests.add_pass_fail_step(name="GPIO Input", status="Passed")
-io_tests.add_pass_fail_step(name="GPIO Output", status="Passed")
+io_tests.add_pass_fail_step(name="GPIO Input", status=StepStatus.Passed)
+io_tests.add_pass_fail_step(name="GPIO Output", status=StepStatus.Passed)
 
 
 # =============================================================================
@@ -151,7 +152,7 @@ io_tests.add_pass_fail_step(name="GPIO Output", status="Passed")
 # For waveform or multi-point data
 report.add_chart(
     name="Frequency Response",
-    status="Passed",
+    status=StepStatus.Passed,
     chart_type="line",
     x_label="Frequency (Hz)",
     y_label="Amplitude (dB)",
@@ -191,28 +192,28 @@ def create_comprehensive_report(serial_number: str):
     )
     
     # Setup sequence
-    setup = report.add_sequence_call(name="Setup", status="Passed")
-    setup.add_string_value_step(name="Firmware", status="Passed", value="v2.1.3")
-    setup.add_pass_fail_step(name="Initialize", status="Passed")
+    setup = report.add_sequence_call(name="Setup", status=StepStatus.Passed)
+    setup.add_string_value_step(name="Firmware", status=StepStatus.Passed, value="v2.1.3")
+    setup.add_pass_fail_step(name="Initialize", status=StepStatus.Passed)
     
     # Power tests
-    power = report.add_sequence_call(name="Power Tests", status="Passed")
+    power = report.add_sequence_call(name="Power Tests", status=StepStatus.Passed)
     power.add_numeric_limit_step(
-        name="Voltage", status="Passed",
+        name="Voltage", status=StepStatus.Passed,
         value=5.01, units="V", low_limit=4.8, high_limit=5.2
     )
     power.add_numeric_limit_step(
-        name="Current", status="Passed",
+        name="Current", status=StepStatus.Passed,
         value=0.152, units="A", low_limit=0.1, high_limit=0.2
     )
     
     # Functional tests
-    func = report.add_sequence_call(name="Functional Tests", status="Passed")
-    func.add_pass_fail_step(name="Self Test", status="Passed")
-    func.add_pass_fail_step(name="Memory Test", status="Passed")
+    func = report.add_sequence_call(name="Functional Tests", status=StepStatus.Passed)
+    func.add_pass_fail_step(name="Self Test", status=StepStatus.Passed)
+    func.add_pass_fail_step(name="Memory Test", status=StepStatus.Passed)
     
     # Final inspection
-    report.add_pass_fail_step(name="Visual Inspection", status="Passed")
+    report.add_pass_fail_step(name="Visual Inspection", status=StepStatus.Passed)
     
     # Set result
     report.result = "Passed"

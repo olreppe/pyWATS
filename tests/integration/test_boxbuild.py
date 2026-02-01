@@ -39,6 +39,7 @@ import random
 from pywats.domains.product import Product, ProductRevision, BomItem, ProductRevisionRelation
 from pywats.domains.product.enums import ProductState
 from pywats.domains.production import Unit
+from pywats.domains.report.report_models.common_types import StepStatus
 from pywats.shared.enums import CompOp
 from pywats.shared import Setting
 from pywats.core.exceptions import NotFoundError
@@ -650,12 +651,12 @@ class TestBoxBuildCompleteWorkflow:
         
         # Power-on test sequence
         power_seq = root.add_sequence_call(name="PowerOnSequence")
-        power_seq.add_boolean_step(name="PowerSupplyInit", status="P")
+        power_seq.add_boolean_step(name="PowerSupplyInit", status=StepStatus.Passed)
         power_seq.add_numeric_step(
             name="InputVoltage", 
             value=24.1, 
             unit="V",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=22.8,
             high_limit=25.2
@@ -667,7 +668,7 @@ class TestBoxBuildCompleteWorkflow:
             name="Output5V",
             value=5.02,
             unit="V",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=4.75,
             high_limit=5.25
@@ -676,7 +677,7 @@ class TestBoxBuildCompleteWorkflow:
             name="Output3V3",
             value=3.31,
             unit="V",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=3.135,
             high_limit=3.465
@@ -685,7 +686,7 @@ class TestBoxBuildCompleteWorkflow:
             name="Output12V",
             value=12.05,
             unit="V",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=11.4,
             high_limit=12.6
@@ -696,7 +697,7 @@ class TestBoxBuildCompleteWorkflow:
             name="Efficiency",
             value=92.5,
             unit="%",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GE,
             low_limit=90.0
         )
@@ -850,13 +851,13 @@ class TestBoxBuildCompleteWorkflow:
         
         # === Power-On Tests ===
         power_tests = root.add_sequence_call(name="PowerOnTests")
-        power_tests.add_boolean_step(name="SystemInit", status="P")
-        power_tests.add_boolean_step(name="BootSequence", status="P")
+        power_tests.add_boolean_step(name="SystemInit", status=StepStatus.Passed)
+        power_tests.add_boolean_step(name="BootSequence", status=StepStatus.Passed)
         power_tests.add_numeric_step(
             name="BootTime",
             value=2.3,
             unit="s",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=0.0,
             high_limit=5.0
@@ -864,13 +865,13 @@ class TestBoxBuildCompleteWorkflow:
         
         # === Communication Tests ===
         comm_tests = root.add_sequence_call(name="CommunicationTests")
-        comm_tests.add_boolean_step(name="USBEnumeration", status="P")
-        comm_tests.add_boolean_step(name="I2CBusScan", status="P")
+        comm_tests.add_boolean_step(name="USBEnumeration", status=StepStatus.Passed)
+        comm_tests.add_boolean_step(name="I2CBusScan", status=StepStatus.Passed)
         comm_tests.add_numeric_step(
             name="I2CDevicesFound",
             value=4,
             unit="devices",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=4,
             high_limit=4
@@ -882,7 +883,7 @@ class TestBoxBuildCompleteWorkflow:
             name="Rail_5V",
             value=5.01,
             unit="V",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=4.75,
             high_limit=5.25
@@ -891,7 +892,7 @@ class TestBoxBuildCompleteWorkflow:
             name="Rail_3V3",
             value=3.29,
             unit="V",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=3.135,
             high_limit=3.465
@@ -900,7 +901,7 @@ class TestBoxBuildCompleteWorkflow:
             name="Rail_1V8",
             value=1.81,
             unit="V",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=1.71,
             high_limit=1.89
@@ -908,26 +909,26 @@ class TestBoxBuildCompleteWorkflow:
         
         # === MCU Tests ===
         mcu_tests = root.add_sequence_call(name="MCUTests")
-        mcu_tests.add_boolean_step(name="CPUTest", status="P")
-        mcu_tests.add_boolean_step(name="RAMTest", status="P")
-        mcu_tests.add_boolean_step(name="FlashTest", status="P")
+        mcu_tests.add_boolean_step(name="CPUTest", status=StepStatus.Passed)
+        mcu_tests.add_boolean_step(name="RAMTest", status=StepStatus.Passed)
+        mcu_tests.add_boolean_step(name="FlashTest", status=StepStatus.Passed)
         mcu_tests.add_numeric_step(
             name="ClockFrequency",
             value=168.0,
             unit="MHz",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=167.0,
             high_limit=169.0
         )
         
         # === Final Check ===
-        root.add_boolean_step(name="FinalCheck", status="P")
+        root.add_boolean_step(name="FinalCheck", status=StepStatus.Passed)
         root.add_numeric_step(
             name="TotalTestTime",
             value=45.2,
             unit="s",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.GELE,
             low_limit=0.0,
             high_limit=120.0

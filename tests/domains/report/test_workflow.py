@@ -25,6 +25,7 @@ from pywats import pyWATS
 from pywats.domains.report.report_models.uut.uut_report import UUTReport
 from pywats.domains.report.report_models.uut.steps.sequence_call import SequenceCall
 from pywats.shared.enums import CompOp
+from pywats.domains.report.report_models.common_types import StepStatus
 from pywats.domains.report.report_models.uut.steps.generic_step import FlowType
 from pywats.domains.report.report_models.chart import ChartType, ChartSeries
 
@@ -103,7 +104,7 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=4.75,
             high_limit=5.25,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -113,7 +114,7 @@ class TestAdvancedUUTComprehensive:
             unit="V",
             comp_op=CompOp.GT,
             low_limit=3.3,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -123,7 +124,7 @@ class TestAdvancedUUTComprehensive:
             unit="V",
             comp_op=CompOp.LT,
             low_limit=12.5,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -133,7 +134,7 @@ class TestAdvancedUUTComprehensive:
             unit="V",
             comp_op=CompOp.EQ,
             low_limit=3.30,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -143,7 +144,7 @@ class TestAdvancedUUTComprehensive:
             unit="V",
             comp_op=CompOp.NE,
             low_limit=0.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -158,7 +159,7 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=1.7,
             high_limit=1.9,
-            status="P"
+            status=StepStatus.Passed
         )
         multi_voltage.add_measurement(
             name="2.5V",
@@ -167,7 +168,7 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=2.4,
             high_limit=2.6,
-            status="P"
+            status=StepStatus.Passed
         )
         multi_voltage.add_measurement(
             name="-12V",
@@ -176,7 +177,7 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=-12.5,
             high_limit=-11.5,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -195,7 +196,7 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=15.0,
             high_limit=30.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -205,14 +206,14 @@ class TestAdvancedUUTComprehensive:
             unit="°C",
             comp_op=CompOp.LT,
             low_limit=85.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         # Boolean checks
         temp_seq.add_boolean_step(
             name="Temperature Sensor OK",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -239,17 +240,17 @@ class TestAdvancedUUTComprehensive:
         multi_bool = dio_seq.add_multi_boolean_step(
             name="Digital Input Status"
         )
-        multi_bool.add_measurement(name="DI_0", status="P")
-        multi_bool.add_measurement(name="DI_1", status="P")
-        multi_bool.add_measurement(name="DI_2", status="P")
-        multi_bool.add_measurement(name="DI_3", status="P")
+        multi_bool.add_measurement(name="DI_0", status=StepStatus.Passed)
+        multi_bool.add_measurement(name="DI_1", status=StepStatus.Passed)
+        multi_bool.add_measurement(name="DI_2", status=StepStatus.Passed)
+        multi_bool.add_measurement(name="DI_3", status=StepStatus.Passed)
         step_count += 1
         
         # String tests
         dio_seq.add_string_step(
             name="Device Serial",
             value="DEV-12345-ABCDE",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.LOG,
             unit=""
         )
@@ -262,19 +263,19 @@ class TestAdvancedUUTComprehensive:
         multi_str.add_measurement(
             name="Firmware Version",
             value="v2.3.1",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.LOG
         )
         multi_str.add_measurement(
             name="Hardware Revision",
             value="RevC",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.LOG
         )
         multi_str.add_measurement(
             name="Manufacture Date",
             value="2025-12-12",
-            status="P",
+            status=StepStatus.Passed,
             comp_op=CompOp.LOG
         )
         step_count += 1
@@ -306,7 +307,7 @@ class TestAdvancedUUTComprehensive:
                 comp_op=CompOp.GELE,
                 low_limit=expected - 0.05,
                 high_limit=expected + 0.05,
-                status="P"
+                status=StepStatus.Passed
             )
             step_count += 1
         
@@ -330,7 +331,7 @@ class TestAdvancedUUTComprehensive:
                 comp_op=CompOp.GELE,
                 low_limit=2.4 + (ch * 0.1),
                 high_limit=2.6 + (ch * 0.1),
-                status="P"
+                status=StepStatus.Passed
             )
         step_count += 1
         
@@ -357,13 +358,13 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=390.0,
             high_limit=410.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         i2c_seq.add_boolean_step(
             name="I2C Device Detected",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -382,7 +383,7 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=9.5,
             high_limit=10.5,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -400,14 +401,14 @@ class TestAdvancedUUTComprehensive:
             unit="bps",
             comp_op=CompOp.EQ,
             low_limit=115200,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         uart_seq.add_string_step(
             name="UART Response",
             value="OK",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -456,7 +457,7 @@ class TestAdvancedUUTComprehensive:
             y_label="Gain",
             y_unit="dB",
             series=[freq_series],
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -469,7 +470,7 @@ class TestAdvancedUUTComprehensive:
             y_label="Phase",
             y_unit="°",
             series=[phase_series],
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -506,7 +507,7 @@ class TestAdvancedUUTComprehensive:
             y_label="Amplitude",
             y_unit="V",
             series=[step_series, target_series],
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -518,7 +519,7 @@ class TestAdvancedUUTComprehensive:
             unit="ms",
             comp_op=CompOp.LT,
             low_limit=50.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -530,7 +531,7 @@ class TestAdvancedUUTComprehensive:
             unit="ms",
             comp_op=CompOp.LT,
             low_limit=80.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -561,7 +562,7 @@ class TestAdvancedUUTComprehensive:
             y_label="Magnitude",
             y_unit="dBc",
             series=[harmonic_series],
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -573,7 +574,7 @@ class TestAdvancedUUTComprehensive:
             unit="%",
             comp_op=CompOp.LT,
             low_limit=5.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -604,7 +605,7 @@ class TestAdvancedUUTComprehensive:
             y_label="Power",
             y_unit="dBm",
             series=[noise_series],
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -615,7 +616,7 @@ class TestAdvancedUUTComprehensive:
             unit="µVrms",
             comp_op=CompOp.LT,
             low_limit=20.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -654,7 +655,7 @@ class TestAdvancedUUTComprehensive:
             y_label="Current",
             y_unit="mA",
             series=[current_series, limit_series],
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -665,7 +666,7 @@ class TestAdvancedUUTComprehensive:
             unit="mA",
             comp_op=CompOp.LT,
             low_limit=350.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -677,7 +678,7 @@ class TestAdvancedUUTComprehensive:
             unit="mA",
             comp_op=CompOp.LT,
             low_limit=250.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -719,7 +720,7 @@ class TestAdvancedUUTComprehensive:
             y_label="Temperature",
             y_unit="°C",
             series=[temp_profile_series],
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -730,7 +731,7 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=80.0,
             high_limit=90.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -749,13 +750,13 @@ class TestAdvancedUUTComprehensive:
             comp_op=CompOp.GELE,
             low_limit=5.4,
             high_limit=5.6,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         voltage_stress_seq.add_boolean_step(
             name="Overvoltage Protection Active",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -774,35 +775,35 @@ class TestAdvancedUUTComprehensive:
         flow_seq.add_generic_step(
             step_type=FlowType.If,
             name="If Condition Check",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         flow_seq.add_generic_step(
             step_type=FlowType.For,
             name="For Loop Iteration",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         flow_seq.add_generic_step(
             step_type=FlowType.While,
             name="While Loop Condition",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         flow_seq.add_generic_step(
             step_type=FlowType.Statement,
             name="Execute Statement",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         flow_seq.add_generic_step(
             step_type=FlowType.Action,
             name="Perform Action",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -820,20 +821,20 @@ class TestAdvancedUUTComprehensive:
         cleanup_seq.add_generic_step(
             step_type=FlowType.Action,
             name="Shutdown Power Supplies",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         cleanup_seq.add_generic_step(
             step_type=FlowType.Action,
             name="Disconnect Interfaces",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         cleanup_seq.add_boolean_step(
             name="Safe State Confirmed",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -850,7 +851,7 @@ class TestAdvancedUUTComprehensive:
             value=125.5,
             unit="s",
             comp_op=CompOp.LOG,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
@@ -860,14 +861,14 @@ class TestAdvancedUUTComprehensive:
             unit="%",
             comp_op=CompOp.GE,
             low_limit=95.0,
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         
         summary_seq.add_string_step(
             name="Test Result",
             value="PASSED",
-            status="P"
+            status=StepStatus.Passed
         )
         step_count += 1
         

@@ -18,6 +18,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QIcon, QFont, QCloseEvent
 
 from ..core.config import ClientConfig
+from ..core.constants import LogLevel
 
 if TYPE_CHECKING:
     from pywats.core.config import APISettings
@@ -844,7 +845,7 @@ class GUIStartupPanel(SettingsPanel):
         # Logging group
         logging_group, logging_layout = self._create_group("Logging")
         
-        self.log_level_combo = self._create_combobox(["DEBUG", "INFO", "WARNING", "ERROR"])
+        self.log_level_combo = self._create_combobox([level.value for level in LogLevel])
         logging_layout.addRow("Log Level:", self.log_level_combo)
         logging_layout.addRow(self._create_description_label(
             "Minimum severity level for log messages"

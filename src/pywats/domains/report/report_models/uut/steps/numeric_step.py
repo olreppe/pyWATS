@@ -254,7 +254,7 @@ class MultiNumericStep(Step):
     # Helpers
     # ========================================================================
     
-    def add_measurement(self, *, name:str, value:float, unit:str = "", status:str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float | None = None, low_limit:float | None = None):
+    def add_measurement(self, *, name:str, value:float, unit:str = "", status: StepStatus | str = "P", comp_op: CompOp = CompOp.LOG, high_limit: float | None = None, low_limit:float | None = None):
         """
         Add a measurement to this step.
         
@@ -262,7 +262,7 @@ class MultiNumericStep(Step):
             name: Measurement name (required, keyword-only)
             value: Measured value
             unit: Unit of measurement
-            status: Measurement status ("P" or "F")
+            status: Measurement status (StepStatus enum or "P"/"F")
             comp_op: Comparison operator
             high_limit: High limit value
             low_limit: Low limit value

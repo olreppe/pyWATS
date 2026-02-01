@@ -19,7 +19,7 @@ from dataclasses import dataclass, field, asdict, fields
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 
-from .constants import ConverterType, FolderName
+from .constants import ConverterType, FolderName, LogLevel
 from .file_utils import SafeFileWriter, SafeFileReader, locked_file
 
 logger = logging.getLogger(__name__)
@@ -344,7 +344,7 @@ class ClientConfig:
     service_auto_start: bool = True  # Start service on system startup
     
     # Logging
-    log_level: str = "INFO"
+    log_level: str = LogLevel.INFO.value
     log_file: str = "client.log"
     
     # GUI settings
@@ -720,9 +720,9 @@ class ClientConfig:
             repairs.append("Clamped yield_threshold to 100.0")
         
         # Repair invalid log level
-        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        valid_log_levels = {level.value for level in LogLevel}
         if self.log_level.upper() not in valid_log_levels:
-            self.log_level = "INFO"
+            self.log_level = LogLevel.INFO.value
             repairs.append("Reset invalid log_level to 'INFO'")
         
         # Repair invalid station_name_source

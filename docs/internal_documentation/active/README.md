@@ -8,17 +8,9 @@
 
 ## Current Active Items
 
-### 1. Sphinx Documentation Enhancement
-**File:** [SPHINX_DOCUMENTATION_ENHANCEMENT_PLAN.md](SPHINX_DOCUMENTATION_ENHANCEMENT_PLAN.md)  
-**Status:** 🚧 In Progress  
-**Started:** February 1, 2026  
-**Goal:** Enhance Sphinx documentation with domain knowledge and examples  
-**Progress:** Analytics domain ✅ complete, 8 domains remaining
+**No active items** - All documentation initiatives have been consolidated and moved to `planned/`.
 
-**Next Steps:**
-- [ ] Report domain documentation (~600 lines)
-- [ ] Product domain documentation (~450 lines)
-- [ ] Production domain documentation (~500 lines)
+See: [../planned/DOCUMENTATION_IMPROVEMENT_INITIATIVES.md](../planned/DOCUMENTATION_IMPROVEMENT_INITIATIVES.md)
 
 ---
 

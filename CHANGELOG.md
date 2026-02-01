@@ -17,6 +17,22 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ---
 
+## [Unreleased]
+
+### Improved
+- **Status Enums**: Enhanced `StepStatus`, `ReportStatus`, and `StatusFilter` with flexible string conversion and best practice enforcement
+  - **Flexible Conversion**: Accepts multiple input formats via `_missing_` hook - exact values ("P", "F"), full names ("Passed", "Failed"), case-insensitive variants ("PASSED", "passed"), and 30+ common aliases ("OK", "pass", "fail", "NG", "success")
+  - **Best Practices**: All examples, internal tools, and tests refactored to use enum members (`StepStatus.Passed`) instead of string literals (`"Passed"`)
+  - **Type Safety**: Function signatures updated to use `StepStatus | str` for better IDE support and type checking
+  - **Properties**: New helper properties - `full_name`, `is_passing`, `is_failure` for convenient status checking
+  - **Backward Compatible**: String inputs still work via flexible conversion - zero breaking changes
+  - **Serialization**: Format unchanged - StepStatus/ReportStatus use single letters ("P", "F"), StatusFilter uses full words
+  - **Refactored**: 13 example files, 4 internal tools, 3 test files (150+ string-to-enum replacements)
+
+- **Configuration**: LogLevel enum properly used in GUI settings dialog and config validation (replaced hardcoded string lists)
+
+---
+
 ## [0.2.0b3] - 2026-01-29
 
 ### Added
