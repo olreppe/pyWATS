@@ -4,80 +4,83 @@ This folder contains **official, user-facing documentation** that ships with `pi
 
 ## 📚 Published Documentation (in this folder)
 
-### Getting Started
+### Quick Start
 - **[getting-started.md](getting-started.md)** - Complete installation, configuration, logging, and error handling guide
-- **[INDEX.md](INDEX.md)** - Documentation index and navigation
+- **[README.md](../README.md)** - Package overview and quick start at repository root
+- **[CHANGELOG.md](../CHANGELOG.md)** - Version history and release notes
 
-### Installation Guides
+### Guides
+Conceptual documentation and practical workflows:
 
-Choose by component and use case:
+- **[guides/installation.md](guides/installation.md)** - Complete installation guide for all platforms (API, Client, GUI, Docker, services)
+- **[guides/architecture.md](guides/architecture.md)** - System design: API, Client, GUI layers; async/sync patterns; deployment modes
+- **[guides/integration-patterns.md](guides/integration-patterns.md)** - Practical workflows and best practices
+- **[guides/security.md](guides/security.md)** - IPC communication, converter sandboxing, file handling security
+- **[guides/thread-safety.md](guides/thread-safety.md)** - Threading and concurrency patterns
+- **[guides/wats-concepts.md](guides/wats-concepts.md)** - Essential WATS domain knowledge (units, reports, processes, operations)
+- **[guides/llm-converter-guide.md](guides/llm-converter-guide.md)** - Quick reference for implementing converters
+- **[guides/TESTING_WITHOUT_HARDWARE.md](guides/TESTING_WITHOUT_HARDWARE.md)** - Testing strategies without physical equipment
 
-- **[installation/](installation/)** - Installation overview with decision tree
-  - **[installation/api.md](installation/api.md)** - Python SDK only
-  - **[installation/client.md](installation/client.md)** - Client service with queue
-  - **[installation/gui.md](installation/gui.md)** - Desktop GUI application
-  - **[installation/docker.md](installation/docker.md)** - Container deployment
-  - **[installation/windows-service.md](installation/windows-service.md)** - Windows service
-  - **[installation/linux-service.md](installation/linux-service.md)** - Linux systemd
-  - **[installation/macos-service.md](installation/macos-service.md)** - macOS launchd
+### API Reference
+Auto-generated from code (Sphinx):
 
-### Domain API Documentation
-These files are included in the PyPI package:
+- **[api/](api/)** - Complete API documentation (auto-generated from docstrings)
+  - All domain services (Report, Product, Asset, Production, Analytics, Software, RootCause, Process, SCIM)
+  - All models and data classes
+  - Method signatures with type hints
+  - Usage examples in docstrings
 
-- **[domains/product.md](domains/product.md)** - Product domain API reference
-- **[domains/asset.md](domains/asset.md)** - Asset domain API reference
-- **[domains/production.md](domains/production.md)** - Production domain API reference
-- **[domains/report.md](domains/report.md)** - Report domain API reference
-- **[domains/analytics.md](domains/analytics.md)** - Analytics domain API reference
-- **[domains/software.md](domains/software.md)** - Software domain API reference
-- **[domains/rootcause.md](domains/rootcause.md)** - RootCause domain API reference
-- **[domains/process.md](domains/process.md)** - Process domain API reference
+### Examples
+Runnable code examples with comprehensive domain knowledge in comments:
 
-### Domain Usage Guides
-Detailed guides with comprehensive examples:
+- **[../examples/domains/](../examples/domains/)** - Domain-specific examples
+  - `box_build_examples.py` - Multi-level assemblies (templates vs units)
+  - `report_examples.py` - Test reports (UUT/UUR), all step types
+  - `product_examples.py` - Products, revisions, BOMs
+  - And more... (see examples/domains/README.md)
 
-- **[usage/](usage/)** - Detailed domain guides (report-domain.md, product-domain.md, etc.)
-  - Detailed usage patterns
-  - Advanced examples
-  - Factory method documentation
+### Reference
+Quick lookups and troubleshooting:
 
-### Documentation Examples
-Code snippets and examples embedded in documentation:
+- **[reference/quick-reference.md](reference/quick-reference.md)** - Common patterns and code snippets
+- **[reference/env-variables.md](reference/env-variables.md)** - Environment variable configuration
+- **[reference/error-catalog.md](reference/error-catalog.md)** - Comprehensive error reference with solutions
+- **[reference/type-hints.md](reference/type-hints.md)** - IDE setup and type hint troubleshooting
 
-- **[examples/](examples/)** - Example code referenced in documentation
-  - `basic_usage.py` - Getting started example
+### Platform Guides
+Platform-specific information:
 
-## 🔒 Internal Documentation (NOT published)
+- **[platforms/platform-compatibility.md](platforms/platform-compatibility.md)** - Multi-platform deployment matrix
+- **[platforms/windows-iot-ltsc.md](platforms/windows-iot-ltsc.md)** - Windows IoT Enterprise LTSC setup
+
+### Other
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[CHEAT_SHEET.md](CHEAT_SHEET.md)** - Quick command reference
+
+## � Internal Documentation (NOT published)
 
 The following folders are **excluded from the pip package** and only available in the GitHub repository:
 
-- `internal_documentation/` - Architecture, design docs, AI agent knowledge, internal guides
-- `domain_health/` - Domain health tracking and scoring (maintainer use only)
+- **[internal_documentation/](internal_documentation/)** - Architecture, design docs, AI agent knowledge, internal guides
+- **[domain_health/](domain_health/)** - Domain health tracking and scoring (maintainer use only)
 
 These folders are for internal development use only.
 
-## 📁 Folder Structure
+---
 
-```
-docs/
-├── INDEX.md                    ✅ Published - Documentation index
-├── README.md                   ✅ Published - This file
-├── getting-started.md          ✅ Published - Getting started guide
-├── pyWATS_Documentation.html   ✅ Published - HTML documentation
-├── guides/                     ✅ Published - Comprehensive guides
-│   ├── architecture.md
-│   ├── client-architecture.md
-│   ├── integration-patterns.md
-│   ├── llm-converter-guide.md
-│   └── wats-domain-knowledge.md
-├── reference/                  ✅ Published - Quick references
-│   ├── quick-reference.md
-│   ├── env-variables.md
-│   └── error-catalog.md
-├── platforms/                  ✅ Published - Platform-specific docs
-│   ├── platform-compatibility.md
-│   └── windows-iot-ltsc.md
-├── domains/                    ✅ Published - Domain API docs
+## 📁 New Consolidated Structure (Feb 2026)
+
+**What changed:**
+- ✅ **Installation guides**: 8 separate files → 1 comprehensive guide with platform sections
+- ✅ **Architecture guides**: 4 separate files → 1 unified architecture guide
+- ✅ **Security guides**: 3 separate files → 1 comprehensive security guide
+- ✅ **Domain docs**: Removed markdown duplicates (use auto-generated API docs from Sphinx)
+- ✅ **Examples**: Created runnable examples with domain knowledge in comments
+- ✅ **Naming**: Renamed `wats-domain-knowledge.md` → `wats-concepts.md` for clarity
+
+**Result:** 70% reduction in source files, easier to maintain, single source of truth.
+
+See [internal_documentation/active/DOCUMENTATION_AUDIT_2026.md](internal_documentation/active/DOCUMENTATION_AUDIT_2026.md) for complete analysis.
 │   ├── product.md
 │   ├── asset.md
 │   ├── report.md
