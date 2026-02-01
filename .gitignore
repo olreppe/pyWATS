@@ -584,3 +584,18 @@ scripts/sync_to_ghe.ps1
 scripts/remove_ghe_workflows.ps1
 scripts/GHE_SYNC_README.md
 scripts/GHE_CREDENTIALS_SECURITY.md
+
+# C# reference code (keep local only, don't track in git)
+# These files are for implementation reference only
+docs/internal_documentation/reference/csharp_code_*/
+*.cs
+*.csproj
+*.sln
+*.snk
+*.resx
+*.designer.cs
+*.Designer.cs
+*.config
+*.datasource
+*.xsd
+*.cd
