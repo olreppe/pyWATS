@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def create_test_file():
+def create_test_file() -> Path:
     """Create a test file for demonstration."""
     test_file = Path("test_document.txt")
     test_file.write_text("This is a test document for pyWATS attachment example.\n" * 10)
@@ -30,7 +30,7 @@ def create_test_file():
     return test_file
 
 
-def basic_attachment_loading():
+def basic_attachment_loading() -> None:
     """Load an attachment from a file."""
     logger.info("\n=== Basic Attachment Loading ===")
     
@@ -60,7 +60,7 @@ def basic_attachment_loading():
         logger.info(f"Cleaned up test file")
 
 
-def custom_attachment_name():
+def custom_attachment_name() -> None:
     """Load attachment with custom name."""
     logger.info("\n=== Custom Attachment Name ===")
     
@@ -81,7 +81,7 @@ def custom_attachment_name():
         test_file.unlink()
 
 
-def file_size_limit():
+def file_size_limit() -> None:
     """Handle file size limits."""
     logger.info("\n=== File Size Limits ===")
     
@@ -106,7 +106,7 @@ def file_size_limit():
         logger.info("Cleaned up large test file")
 
 
-def save_attachment_to_disk():
+def save_attachment_to_disk() -> None:
     """Save attachment to disk."""
     logger.info("\n=== Saving Attachments ===")
     
@@ -133,7 +133,7 @@ def save_attachment_to_disk():
         test_file.unlink()
 
 
-def bulk_attachment_operations():
+def bulk_attachment_operations() -> None:
     """Save multiple attachments at once."""
     logger.info("\n=== Bulk Attachment Operations ===")
     
@@ -173,7 +173,7 @@ def bulk_attachment_operations():
         logger.info("Cleaned up test files")
 
 
-def read_file_info():
+def read_file_info() -> None:
     """Read file information without creating an attachment."""
     logger.info("\n=== Reading File Info ===")
     
@@ -193,7 +193,7 @@ def read_file_info():
         test_file.unlink()
 
 
-def delete_after_read():
+def delete_after_read() -> None:
     """Delete source file after reading."""
     logger.info("\n=== Delete After Read ===")
     
@@ -206,7 +206,7 @@ def delete_after_read():
     logger.info(f"Source file exists: {test_file.exists()}")  # Should be False
 
 
-def error_handling_example():
+def error_handling_example() -> None:
     """Demonstrate error handling for file operations."""
     logger.info("\n=== Error Handling ===")
     
