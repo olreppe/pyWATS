@@ -71,7 +71,7 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 - **Configuration**: LogLevel enum properly used in GUI settings dialog and config validation (replaced hardcoded string lists)
 
-- **Test Suite**: Total test count: 1567 tests (79 new tests from recent projects - priority queue and sync wrapper)
+- **Test Suite**: Total test count increased to 1597 tests (109 new tests from recent projects)
 
 ---
 
