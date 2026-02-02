@@ -5,7 +5,7 @@ Provides system tray functionality for the pyWATS Client service.
 Shows service status, pending uploads, and provides quick actions.
 
 Note: This is a GUI component that legitimately requires Qt (PySide6).
-It uses the async IPC client for communication with the headless service.
+It uses the async IPC client for status updates and ServiceManager for service control.
 """
 
 import asyncio
@@ -18,6 +18,7 @@ from PySide6.QtCore import QTimer, Signal, QObject
 from PySide6.QtGui import QAction, QIcon
 
 from .async_ipc_client import AsyncIPCClient
+from ..service_manager import ServiceManager
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class ServiceTrayIcon(QObject):
         
         self.instance_id = instance_id
         self._ipc_client = AsyncIPCClient(instance_id)
+        self._service_manager = ServiceManager(instance_id)
         self._tray_icon: Optional[QSystemTrayIcon] = None
         
         # Status update timer
@@ -257,7 +259,7 @@ class ServiceTrayIcon(QObject):
             )
     
     def _restart_service(self) -> None:
-        """Restart the service"""
+        """Restart the service using ServiceManager"""
         from PySide6.QtWidgets import QMessageBox
         
         reply = QMessageBox.question(
@@ -269,21 +271,48 @@ class ServiceTrayIcon(QObject):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            # TODO: Implement service restart via IPC
-            QMessageBox.information(
+            asyncio.create_task(self._async_restart_service())
+    
+    async def _async_restart_service(self) -> None:
+        """Async restart service using ServiceManager"""
+        try:
+            # Run restart in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            success = await loop.run_in_executor(None, self._service_manager.restart)
+            
+            if success:
+                QMessageBox.information(
+                    None,
+                    "Service Restarted",
+                    "Service restarted successfully."
+                )
+                # Reconnect IPC
+                await asyncio.sleep(2)  # Give service time to start
+                await self._async_connect_to_service()
+            else:
+                QMessageBox.critical(
+                    None,
+                    "Restart Failed",
+                    "Failed to restart service. Check logs for details."
+                )
+        except Exception as e:
+            logger.error(f"Error restarting service: {e}", exc_info=True)
+            QMessageBox.critical(
                 None,
-                "Not Implemented",
-                "Service restart will be implemented in a future update.\n\n"
-                "For now, please stop the service manually and restart it."
+                "Error",
+                f"Error restarting service:\n{e}"
             )
     
     def _stop_service(self) -> None:
         """Stop the service"""
         from PySide6.QtWidgets import QMessageBox
         
-        if not self._service_connected:
-            QMessageBox.warning(
-                None,
+        if not self._service_cusing ServiceManager"""
+        try:
+            # Run stop in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            success = await loop.run_in_executor(None, self._service_manager.stop)
+            
                 "Service Not Connected",
                 "Cannot stop service: not connected."
             )

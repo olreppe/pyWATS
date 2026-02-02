@@ -972,7 +972,38 @@ pywats-client stop
 # Converters
 pywats-client converters list
 pywats-client converters enable my_converter
+
+# Priority configuration (prevents batch uploads from blocking real-time data)
+# See docs/guides/converter-priority.md for detailed guide
 ```
+
+### Converter Priority
+
+Configure converter priority to ensure critical real-time production data is processed before batch uploads:
+
+```json
+{
+  "converters": [
+    {
+      "name": "Real-Time Production",
+      "priority": 1,
+      "watch_folder": "/data/production"
+    },
+    {
+      "name": "Historical Batch Upload",
+      "priority": 8,
+      "watch_folder": "/data/archive"
+    }
+  ]
+}
+```
+
+**Priority Scale:**
+- **1-2**: Critical real-time production (highest priority)
+- **5**: Normal converters (default)
+- **8-10**: Batch uploads, migrations (lowest priority)
+
+See **[Converter Priority Guide](guides/converter-priority.md)** for complete documentation.
 
 See **[Headless Operation Guide](../src/pywats_client/control/HEADLESS_GUIDE.md)** for complete documentation.
 

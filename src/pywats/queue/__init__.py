@@ -31,6 +31,9 @@ from .memory_queue import (
 # Format converters (in-memory transformations)
 from .formats import WSJFConverter, convert_to_wsjf, convert_from_wsxf, convert_from_wstf
 
+# Async adapter for MemoryQueue
+from .async_adapter import AsyncQueueAdapter
+
 __all__ = [
     # Unified status enum
     "QueueItemStatus",
@@ -39,6 +42,8 @@ __all__ = [
     "BaseQueue",
     "QueueItem",
     "QueueHooks",
+    # Async adapter
+    "AsyncQueueAdapter",
     # Format converters
     "WSJFConverter",
     "convert_to_wsjf",

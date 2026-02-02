@@ -20,6 +20,25 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Async Queue Consolidation**: Unified queue architecture with priority support for converters
+  - **AsyncQueueAdapter**: Bridge between thread-safe MemoryQueue and async/await patterns (289 lines, fully tested)
+  - **Converter Priority**: All converters now support priority parameter (1=highest, 10=lowest, default=5)
+  - **Configuration Support**: Priority field added to ConverterConfig for GUI/JSON configuration
+  - **Priority-Based Processing**: AsyncConverterPool uses heap-based priority queue for converter task ordering
+  - **Real-Time Protection**: High-priority converters (priority=1-2) processed before low-priority batch uploads (priority=8-10)
+  - **Zero Duplication**: Eliminated duplicate queue implementations (removed asyncio.Queue usage in favor of MemoryQueue foundation)
+  - **Test Coverage**: 13 AsyncConverterPool tests passing, leverages 29 existing MemoryQueue priority tests
+
+### Changed
+- **AsyncConverterPool**: Replaced plain asyncio.Queue with AsyncQueueAdapter + MemoryQueue (priority-based ordering)
+- **ConverterBase**: Added priority field with documentation for real-time vs batch use cases
+- **Test Compatibility**: Updated AsyncConverterPool tests for new API signatures (_process_with_limit, size property)
+
+---
+
+## [0.3.0b1] - 2026-02-02
+
+### Added
 - **Priority Queue System**: Universal priority-based processing for all queue implementations
   - **Priority Field**: Integer 1-10 (1=highest priority, 10=lowest, default=5) added to `QueueItem` base class
   - **Heap-Based Ordering**: MemoryQueue uses min-heap for priority-first, then FIFO processing (replaces deque)

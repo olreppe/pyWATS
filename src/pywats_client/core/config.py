@@ -54,6 +54,9 @@ class ConverterConfig:
     # State
     enabled: bool = True
     
+    # Processing priority (1=highest, 10=lowest, default=5)
+    priority: int = 5
+    
     # Configuration arguments (passed to converter)
     arguments: Dict[str, Any] = field(default_factory=dict)
     

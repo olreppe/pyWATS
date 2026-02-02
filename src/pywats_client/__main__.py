@@ -300,7 +300,13 @@ def main():
             print("Install with: pip install pywats-api[client]")
             sys.exit(1)
         
-        from .service.service_tray import main as tray_main
+        try:
+            from .service.service_tray import main as tray_main
+        except ImportError:
+            print("Error: Tray icon module not available")
+            print("Install with: pip install pywats-api[client]")
+            sys.exit(1)
+        
         sys.exit(tray_main(args.instance_id))
     
     # Handle Service installation commands (Windows/Linux/macOS)
