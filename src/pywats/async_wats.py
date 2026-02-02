@@ -124,9 +124,20 @@ class AsyncWATS:
             enable_throttling: Enable/disable rate limiting (default: True)
             retry_config: Custom retry configuration. If None, uses defaults.
             retry_enabled: Enable/disable retry (default: True).
-            enable_cache: Enable response caching for GET requests (default: True)
-            cache_ttl: Cache TTL in seconds (default: 300 = 5 minutes)
-            cache_max_size: Maximum cache entries (default: 1000)
+            enable_cache: Enable HTTP response caching for GET requests (default: True).
+                         Caching dramatically improves performance for read-heavy workloads.
+                         GET requests are cached, POST/PUT/DELETE invalidate related cache entries.
+            cache_ttl: Cache time-to-live in seconds (default: 300 = 5 minutes).
+                      Tune based on data change frequency:
+                      - Real-time data: Use enable_cache=False
+                      - Reports (change frequently): 60-300 seconds
+                      - Products/processes (change occasionally): 600-3600 seconds
+                      - Configuration (rarely changes): 3600-7200 seconds
+            cache_max_size: Maximum number of cached responses (default: 1000).
+                           Size based on workload:
+                           - Scripts: 100-500
+                           - Applications: 500-1000
+                           - Dashboards: 1000-5000
             instance_id: pyWATS Client instance ID for auto-discovery (default: "default")
             settings: APISettings object for injected configuration. Settings from this
                      object are used as defaults, but can be overridden by explicit parameters.
@@ -143,10 +154,28 @@ class AsyncWATS:
             async with AsyncWATS() as api:  # Uses default instance
                 products = await api.product.get_products()
             
-            # Custom caching configuration
-            async with AsyncWATS(base_url="...", token="...", 
-                                enable_cache=True, cache_ttl=600, cache_max_size=2000) as api:
-                products = await api.product.get_products()  # Cached for 10 minutes
+            # Enable caching for read-heavy workloads (default)
+            async with AsyncWATS(
+                base_url="...", 
+                token="...",
+                enable_cache=True,      # Enable HTTP caching
+                cache_ttl=600,          # Cache for 10 minutes
+                cache_max_size=2000     # Store up to 2000 responses
+            ) as api:
+                # First call hits server
+                products = await api.product.get_products()  # ~100ms
+                # Subsequent calls return cached data
+                products = await api.product.get_products()  # ~1ms (100x faster!)
+                products = await api.product.get_products()  # ~1ms
+            
+            # Disable caching for real-time data
+            async with AsyncWATS(
+                base_url="...",
+                token="...",
+                enable_cache=False  # Always fetch fresh data
+            ) as api:
+                # Every call hits the server
+                latest_reports = await api.report.get_recent_reports()
         """
         # Import APISettings for type checking and defaults
         from .core.config import APISettings, get_default_settings
