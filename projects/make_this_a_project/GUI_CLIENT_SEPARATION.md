@@ -5,5 +5,5 @@ What I want to know is:
 - Best options for design and implementation
 - Gains vs Added complexity and maintenance
 
-Once we agree we will make the choise into a implementation plan and a project.
+Once we agree we will make the choice into a implementation plan and a project.
 

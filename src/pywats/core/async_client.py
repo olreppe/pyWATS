@@ -35,6 +35,12 @@ from .throttle import RateLimiter, get_default_limiter
 from .retry import RetryConfig, should_retry
 from .client import Response  # Reuse the Response model
 from .cache import AsyncTTLCache
+from .circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerConfig,
+    CircuitBreakerOpenError,
+    CircuitState
+)
 
 if TYPE_CHECKING:
     from .metrics import MetricsCollector
@@ -68,6 +74,8 @@ class AsyncHttpClient:
         cache_ttl: float = 300.0,
         cache_max_size: int = 1000,
         metrics_collector: Optional['MetricsCollector'] = None,
+        circuit_breaker_config: Optional[CircuitBreakerConfig] = None,
+        enable_circuit_breaker: bool = True,
     ):
         """
         Initialize the async HTTP client.
@@ -84,6 +92,8 @@ class AsyncHttpClient:
             cache_ttl: Cache TTL in seconds (default: 300 = 5 minutes)
             cache_max_size: Maximum cache entries (default: 1000)
             metrics_collector: Optional MetricsCollector for request tracking
+            circuit_breaker_config: Circuit breaker configuration (default: reasonable defaults)
+            enable_circuit_breaker: Enable circuit breaker pattern (default: True)
         """
         # Clean up base URL
         self.base_url = base_url.rstrip("/")
@@ -117,6 +127,20 @@ class AsyncHttpClient:
         
         # Metrics collection
         self._metrics_collector = metrics_collector
+        
+        # Circuit breaker for preventing cascade failures
+        self._circuit_breaker_enabled = enable_circuit_breaker
+        if enable_circuit_breaker:
+            config = circuit_breaker_config or CircuitBreakerConfig(
+                failure_threshold=5,
+                success_threshold=2,
+                timeout_seconds=60.0,
+                excluded_exceptions=(ValidationError, AuthenticationError, NotFoundError)
+            )
+            self._circuit_breaker = CircuitBreaker(f"http-{base_url}", config)
+            logger.debug(f"Circuit breaker enabled for {base_url}")
+        else:
+            self._circuit_breaker = None
 
         # Default headers
         self._headers = {
@@ -301,6 +325,57 @@ class AsyncHttpClient:
             headers: Additional headers to merge with defaults
             retry: Override retry behavior (True/False/None for default)
 
+        Returns:
+            Response object
+        """
+        # Circuit breaker check
+        if self._circuit_breaker_enabled and self._circuit_breaker:
+            if self._circuit_breaker.is_open:
+                if not self._circuit_breaker._should_attempt_reset():
+                    raise CircuitBreakerOpenError(
+                        f"Circuit breaker for {self.base_url} is OPEN - failing fast"
+                    )
+                # Transition to HALF_OPEN for recovery attempt
+                logger.info(f"Circuit breaker: Attempting recovery for {self.base_url}")
+                self._circuit_breaker._state = CircuitState.HALF_OPEN
+                self._circuit_breaker._success_count = 0
+        
+        try:
+            # Execute the actual request
+            response = await self._execute_request(method, endpoint, params, data, headers, retry)
+            
+            # Record success with circuit breaker
+            if self._circuit_breaker_enabled and self._circuit_breaker:
+                self._circuit_breaker._on_success()
+            
+            return response
+        except Exception as e:
+            # Record failure with circuit breaker (unless excluded exception type)
+            if self._circuit_breaker_enabled and self._circuit_breaker:
+                if not isinstance(e, (ValidationError, AuthenticationError, NotFoundError)):
+                    self._circuit_breaker._on_failure()
+            raise
+    
+    async def _execute_request(
+        self,
+        method: str,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        data: Any = None,
+        headers: Optional[Dict[str, str]] = None,
+        retry: Optional[bool] = None
+    ) -> Response:
+        """
+        Execute the actual HTTP request (extracted from _make_request for circuit breaker).
+        
+        Args:
+            method: HTTP method
+            endpoint: API endpoint
+            params: Query parameters
+            data: Request body
+            headers: Additional headers
+            retry: Override retry behavior
+            
         Returns:
             Response object
         """
