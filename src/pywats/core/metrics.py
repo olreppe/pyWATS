@@ -346,7 +346,7 @@ class MetricsCollector:
 metrics = MetricsCollector()
 
 
-def start_metrics_server(port: int = 9090, addr: str = '0.0.0.0') -> Optional[Any]:
+def start_metrics_server(port: int = 9090, addr: str = '0.0.0.0') -> Optional[bool]:
     """
     Start HTTP server to expose metrics on /metrics endpoint.
     
@@ -355,12 +355,14 @@ def start_metrics_server(port: int = 9090, addr: str = '0.0.0.0') -> Optional[An
         addr: Address to bind to (default: '0.0.0.0')
         
     Returns:
-        Server object or None if metrics not available
+        True if server started successfully, None if metrics not available
         
     Example:
         >>> from pywats.core.metrics import start_metrics_server
-        >>> server = start_metrics_server(port=9090)
-        >>> # Metrics available at http://localhost:9090/metrics
+        >>> started = start_metrics_server(port=9090)
+        >>> if started:
+        ...     # Metrics available at http://localhost:9090/metrics
+        ...     print("Metrics enabled")
     """
     if not PROMETHEUS_AVAILABLE:
         logger.warning(
