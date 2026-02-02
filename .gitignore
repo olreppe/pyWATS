@@ -73,6 +73,7 @@ docs/_build/
 docs/api/_build/
 docs/api/_static/
 docs/api/_templates/
+docs/pyWATS_Documentation.html
 
 # PyBuilder
 .pybuilder/
