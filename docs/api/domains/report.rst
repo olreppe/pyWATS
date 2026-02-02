@@ -35,6 +35,7 @@ status is automatically calculated based on measurements and limits:
 
    from pywats import AsyncWATS
    from pywats.domains.report import ImportMode, set_import_mode
+   from pywats.shared.enums import CompOp
    from datetime import datetime
    
    async with AsyncWATS(base_url="https://wats.example.com", token="your-token") as api:
@@ -58,7 +59,7 @@ status is automatically calculated based on measurements and limits:
            name="Voltage Test",
            value=5.02,
            unit="V",
-           comp_op="GELE",      # Greater/Equal and Less/Equal
+           comp_op=CompOp.GELE,  # Type-safe enum
            low_limit=4.8,
            high_limit=5.2
            # status NOT needed - automatically Passed since value is in range
@@ -69,7 +70,7 @@ status is automatically calculated based on measurements and limits:
            name="Current Test",
            value=0.350,          # Out of range!
            unit="A",
-           comp_op="GELE",
+           comp_op=CompOp.GELE,
            low_limit=0.100,
            high_limit=0.200
            # status automatically Failed since value exceeds high_limit
@@ -88,6 +89,7 @@ The Report service provides factory methods for creating UUT and UUR reports:
 
    # Sync API example
    from pywats import pyWATS
+   from pywats.shared.enums import CompOp
    
    api = pyWATS(base_url="https://wats.example.com", token="your-token")
    
@@ -106,7 +108,7 @@ The Report service provides factory methods for creating UUT and UUR reports:
        name="3.3V Rail",
        value=3.31,
        unit="V",
-       comp_op="GELE",
+       comp_op=CompOp.GELE,  # Type-safe enum
        low_limit=3.2,
        high_limit=3.4
    )
@@ -225,6 +227,7 @@ UUT reports contain hierarchical test steps:
        ChartStep,         # Chart/graph data
        GenericStep,       # Generic step type
    )
+   from pywats.shared.enums import CompOp
    
    # Sequence calls contain child steps
    root = report.get_root_sequence_call()
@@ -241,7 +244,7 @@ UUT reports contain hierarchical test steps:
        name="3.3V Rail",
        value=3.31,
        unit="V",
-       comp_op="GELE",
+       comp_op=CompOp.GELE,  # Type-safe enum
        low_limit=3.2,
        high_limit=3.4
    )
@@ -397,6 +400,7 @@ Integrate test equipment with WATS:
 
    from pywats import AsyncWATS
    from pywats.domains.report import ImportMode, set_import_mode
+   from pywats.shared.enums import CompOp
    from datetime import datetime
    
    async with AsyncWATS(base_url="...", token="...") as api:
@@ -426,7 +430,7 @@ Integrate test equipment with WATS:
                name="5V Rail",
                value=voltage,
                unit="V",
-               comp_op="GELE",
+               comp_op=CompOp.GELE,  # Type-safe enum
                low_limit=4.8,
                high_limit=5.2
                # No status needed - auto-calculated from limits
@@ -437,7 +441,7 @@ Integrate test equipment with WATS:
                name="Current",
                value=current,
                unit="A",
-               comp_op="GELE",
+               comp_op=CompOp.GELE,
                low_limit=0.1,
                high_limit=0.2
                # Auto-fails if current out of range
@@ -777,6 +781,7 @@ Control automatic status calculation:
 .. code-block:: python
 
    from pywats.domains.report import ImportMode
+   from pywats.shared.enums import CompOp
    
    # Active Mode (default) - automatic behaviors:
    # - Auto-calculate status from comp/limits
@@ -789,7 +794,7 @@ Control automatic status calculation:
    root.add_numeric_step(
        name="Voltage",
        value=5.0,
-       comp_op="GELE",
+       comp_op=CompOp.GELE,  # Type-safe enum
        low_limit=4.5,
        high_limit=5.5
        # Status auto-calculated: Passed (value within limits)
