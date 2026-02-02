@@ -1,13 +1,27 @@
 # Performance Optimization - Progress
 
 **Project:** Performance Optimization  
-**Status:** 🟢 90% Complete (HTTP caching, metrics, health endpoints complete)  
+**Status:** 🟢 92% Complete (AsyncHttpClient caching complete)  
 **Started:** 2026-02-02  
 **Last Updated:** 2026-02-02
 
 ---
 
 ## Recent Updates
+
+**2026-02-02 18:30** - Sprint 3: AsyncHttpClient Caching Complete ✅
+- ✅ src/pywats/core/async_client.py enhanced with async caching (mirroring sync client)
+  - **Cache Parameters**: enable_cache, cache_ttl, cache_max_size (defaults match HttpClient)
+  - **AsyncTTLCache Integration**: Full async cache support using AsyncTTLCache[Response]
+  - **GET Caching**: Automatic caching of successful GET responses (2xx)
+  - **Auto-Invalidation**: POST/PUT/DELETE invalidate cache for endpoint prefix
+  - **Cache Properties**: cache, cache_enabled, clear_cache(), invalidate_cache()
+  - **Metrics Integration**: metrics_collector parameter and HTTP request tracking
+  - **Manual Controls**: _make_cache_key() helper, cache=False bypass option
+- ✅ Zero breaking changes - all new parameters have defaults
+- ✅ All async domain services now benefit from caching (9 domains)
+- 🎯 Critical path complete - ready for AsyncWATS/pyWATS integration
+- 📊 Next: Wire cache params through AsyncWATS and pyWATS constructors
 
 **2026-02-02 16:00** - Sprint 2: Health & Metrics Endpoints Added
 - ✅ src/pywats_client/service/health_server.py enhanced with /metrics endpoint
