@@ -1,15 +1,89 @@
-# Windows Service Launcher
+# Cross-Platform Service Launcher
 
-**Project ID:** windows-service-launcher  
-**Sprint Size:** 1-2 weeks  
-**Priority:** High  
-**Status:** Ready to Start  
+**Created:** February 2, 2026  
+**Status:** 🚧 In Progress  
+**Priority:** HIGH
 
 ---
 
-## 🎯 Goal
+## Quick Links
+- [Analysis](01_ANALYSIS.md)
+- [Implementation Plan](02_IMPLEMENTATION_PLAN.md)
+- [Progress Tracker](03_PROGRESS.md)
+- [TODO List](04_TODO.md)
 
-Make pyWATS Client service easy to start, stop, and manage for Windows users without requiring technical knowledge or PowerShell commands.
+---
+
+## Objective
+
+Make pyWATS Client service easy to start, stop, and manage across all platforms (Windows, Linux, macOS) without requiring GUI dependencies or technical knowledge. Eliminate the circular dependency where the tray icon (which requires Qt/GUI) is needed to manage a headless service.
+
+**Key Goals:**
+1. Cross-platform CLI for service management (`pywats-client start/stop/status`)
+2. Remove Qt dependency from headless service core
+3. Automatic stale lock file cleanup
+4. Platform-native service integration (Windows Service, systemd, launchd)
+5. Optional tray icon for GUI installations only
+
+---
+
+## Success Criteria
+- [ ] CLI commands work on Windows, Linux, and macOS
+- [ ] Service can start/stop without any GUI components
+- [ ] Stale lock files automatically cleaned on startup
+- [ ] Tray icon is optional (only loaded if Qt available)
+- [ ] `psutil`-based cross-platform process management
+- [ ] All existing tests pass
+- [ ] New tests for ServiceManager and CLI
+
+---
+
+## Current Status
+
+**Phase 1: Analysis** ✅ Complete
+- Analyzed current tray icon dependency problem
+- Evaluated cross-platform service management options
+- Recommended hybrid approach (CLI + optional tray)
+
+**Phase 2: Implementation Plan** 🚧 In Progress
+- Creating detailed implementation plan
+- Structuring project files
+
+**Next:** Begin implementation of ServiceManager and CLI
+
+---
+
+## Architecture Decision
+
+**Chosen Approach:** Hybrid CLI + Optional Tray
+
+```
+┌─────────────────────────────────────────┐
+│         pywats-client CLI               │
+│  (Cross-platform, no GUI deps)          │
+├─────────────────────────────────────────┤
+│ • start    - Start service              │
+│ • stop     - Stop service               │
+│ • restart  - Restart service            │
+│ • status   - Check status               │
+│ • gui      - Launch GUI (if Qt avail)   │
+└─────────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────────┐
+│  ServiceManager (psutil-based)          │
+│  Platform detection + process control   │
+└─────────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────────┐
+│    Headless Service (No Qt/GUI)         │
+│    Pure background processing           │
+└─────────────────────────────────────────┘
+              ↓ (optional)
+┌─────────────────────────────────────────┐
+│   Qt GUI/Tray (Separate, Optional)      │
+│   Only if pywats-api[client] installed  │
+└─────────────────────────────────────────┘
+```
 
 ---
 
