@@ -14,12 +14,15 @@ Example usage:
     $ pywats-client gui
 """
 
+import json
 import logging
 import sys
 from pathlib import Path
+from typing import Optional
 
 import click
 
+from .core.config_manager import ConfigManager
 from .service_manager import ServiceManager
 
 # Set up logging
@@ -78,6 +81,7 @@ def cli(ctx, instance_id, verbose):
     # Store ServiceManager in context for commands
     ctx.ensure_object(dict)
     ctx.obj['manager'] = ServiceManager(instance_id)
+    ctx.obj['config_manager'] = ConfigManager(instance_id=instance_id)
     ctx.obj['instance_id'] = instance_id
 
 
@@ -299,6 +303,284 @@ def gui(ctx):
         click.secho(f"✗ Error launching GUI: {e}", fg='red', err=True)
         logger.exception("GUI launch failed")
         sys.exit(1)
+
+
+@cli.group()
+@click.pass_context
+def config(ctx):
+    """Manage pyWATS Client configuration settings.
+    
+    View, modify, and reset configuration settings. Settings are stored
+    in JSON format and can be edited directly or via CLI commands.
+    """
+    pass
+
+
+@config.command('show')
+@click.option(
+    '--format',
+    type=click.Choice(['json', 'text']),
+    default='text',
+    help='Output format (json or text)'
+)
+@click.pass_context
+def config_show(ctx, format):
+    """Display current configuration settings.
+    
+    Shows all configuration values in either human-readable text format
+    or JSON format for parsing/piping.
+    """
+    config_mgr: ConfigManager = ctx.obj['config_manager']
+    
+    try:
+        settings = config_mgr.load()
+        
+        if format == 'json':
+            # Output as JSON
+            click.echo(json.dumps(settings.to_dict(), indent=2))
+        else:
+            # Output as formatted text
+            click.echo("pyWATS Client Configuration")
+            click.echo("=" * 60)
+            click.echo(f"Config File: {config_mgr.config_path}")
+            click.echo(f"Instance ID: {config_mgr.instance_id}")
+            click.echo("")
+            
+            # Connection settings
+            click.echo("Connection:")
+            click.echo(f"  Timeout:         {settings.timeout_seconds}s")
+            click.echo(f"  Max Retries:     {settings.max_retries}")
+            click.echo(f"  Retry Delay:     {settings.retry_delay_seconds}s")
+            click.echo(f"  Verify SSL:      {settings.verify_ssl}")
+            click.echo("")
+            
+            # Error Handling
+            click.echo("Error Handling:")
+            click.echo(f"  Error Mode:      {settings.error_mode.value if hasattr(settings.error_mode, 'value') else settings.error_mode}")
+            click.echo("")
+            
+            # Logging settings
+            click.echo("Logging:")
+            click.echo(f"  Log Requests:    {settings.log_requests}")
+            click.echo(f"  Log Responses:   {settings.log_responses}")
+            click.echo("")
+            
+            # Domain settings summary
+            click.echo("Domain Settings:")
+            for domain_name in ['product', 'report', 'production', 'process', 'software', 'asset', 'rootcause', 'app']:
+                if hasattr(settings, domain_name):
+                    domain = getattr(settings, domain_name)
+                    enabled = getattr(domain, 'enabled', True)
+                    cache_enabled = getattr(domain, 'cache_enabled', True)
+                    status = "✓" if enabled else "✗"
+                    cache_status = "cached" if cache_enabled else "no cache"
+                    click.echo(f"  {domain_name.capitalize():12} {status} ({cache_status})")
+            click.echo("")
+            
+            click.echo("=" * 60)
+    
+    except Exception as e:
+        click.secho(f"✗ Error loading configuration: {e}", fg='red', err=True)
+        sys.exit(1)
+
+
+@config.command('get')
+@click.argument('key')
+@click.pass_context
+def config_get(ctx, key):
+    """Get a specific configuration value.
+    
+    Retrieves a single configuration value by key name.
+    Supports nested keys using dot notation (e.g., 'domains.report.timeout').
+    
+    Examples:
+        pywats-client config get server_url
+        pywats-client config get cache_ttl_seconds
+    """
+    config_mgr: ConfigManager = ctx.obj['config_manager']
+    
+    try:
+        settings = config_mgr.load()
+        settings_dict = settings.to_dict()
+        
+        # Support dot notation for nested keys
+        value = settings_dict
+        for part in key.split('.'):
+            if isinstance(value, dict):
+                value = value.get(part)
+            else:
+                value = None
+                break
+        
+        if value is None:
+            click.secho(f"✗ Key not found: {key}", fg='red', err=True)
+            click.echo(f"\nAvailable keys:", err=True)
+            _print_available_keys(settings_dict)
+            sys.exit(1)
+        
+        # Output the value
+        if isinstance(value, (dict, list)):
+            click.echo(json.dumps(value, indent=2))
+        else:
+            click.echo(str(value))
+    
+    except Exception as e:
+        click.secho(f"✗ Error: {e}", fg='red', err=True)
+        sys.exit(1)
+
+
+@config.command('set')
+@click.argument('key')
+@click.argument('value')
+@click.option(
+    '--type',
+    type=click.Choice(['string', 'int', 'float', 'bool']),
+    default='string',
+    help='Value type (string, int, float, bool)'
+)
+@click.pass_context
+def config_set(ctx, key, value, type):
+    """Set a configuration value.
+    
+    Updates a single configuration value and saves to disk.
+    Supports type conversion for int, float, and bool values.
+    
+    Examples:
+        pywats-client config set server_url https://wats.example.com
+        pywats-client config set cache_ttl_seconds 600 --type int
+        pywats-client config set enable_cache true --type bool
+    """
+    config_mgr: ConfigManager = ctx.obj['config_manager']
+    
+    try:
+        settings = config_mgr.load()
+        
+        # Convert value to appropriate type
+        converted_value = _convert_value(value, type)
+        
+        # Set the value using setattr
+        if '.' in key:
+            click.secho(f"✗ Nested keys not supported for set operation", fg='red', err=True)
+            click.echo("  Use 'pywats-client config edit' to modify nested values", err=True)
+            sys.exit(1)
+        
+        if not hasattr(settings, key):
+            click.secho(f"✗ Unknown key: {key}", fg='yellow')
+            click.echo(f"\nAvailable keys:", err=True)
+            _print_available_keys(settings.to_dict())
+            click.echo(f"\nProceeding anyway (custom key)...")
+        
+        setattr(settings, key, converted_value)
+        
+        # Save the configuration
+        config_mgr.save(settings)
+        
+        click.secho(f"✓ Configuration updated: {key} = {converted_value}", fg='green')
+        click.echo(f"  Saved to: {config_mgr.config_path}")
+    
+    except Exception as e:
+        click.secho(f"✗ Error: {e}", fg='red', err=True)
+        sys.exit(1)
+
+
+@config.command('reset')
+@click.confirmation_option(prompt='Are you sure you want to reset all settings to defaults?')
+@click.pass_context
+def config_reset(ctx):
+    """Reset all configuration to defaults.
+    
+    Resets all settings to their default values and saves to disk.
+    This action requires confirmation and cannot be undone.
+    """
+    config_mgr: ConfigManager = ctx.obj['config_manager']
+    
+    try:
+        settings = config_mgr.reset_to_defaults()
+        click.secho("✓ Configuration reset to defaults", fg='green')
+        click.echo(f"  Saved to: {config_mgr.config_path}")
+    
+    except Exception as e:
+        click.secho(f"✗ Error: {e}", fg='red', err=True)
+        sys.exit(1)
+
+
+@config.command('path')
+@click.pass_context
+def config_path(ctx):
+    """Show the configuration file path.
+    
+    Displays the path to the configuration file for this instance.
+    Useful for finding and editing the config file directly.
+    """
+    config_mgr: ConfigManager = ctx.obj['config_manager']
+    
+    click.echo(f"Config File: {config_mgr.config_path}")
+    
+    if config_mgr.exists():
+        click.secho("  Status: Exists ✓", fg='green')
+    else:
+        click.secho("  Status: Not found (will be created on first save)", fg='yellow')
+
+
+@config.command('edit')
+@click.pass_context
+def config_edit(ctx):
+    """Open configuration file in default editor.
+    
+    Opens the configuration file in your system's default text editor.
+    Changes are applied immediately when the file is saved.
+    """
+    config_mgr: ConfigManager = ctx.obj['config_manager']
+    
+    # Ensure config file exists
+    if not config_mgr.exists():
+        click.echo("Creating default configuration file...")
+        config_mgr.save()
+    
+    # Open in default editor
+    try:
+        import os
+        import subprocess
+        import platform
+        
+        if platform.system() == 'Windows':
+            os.startfile(str(config_mgr.config_path))  # type: ignore
+        elif platform.system() == 'Darwin':
+            subprocess.call(['open', str(config_mgr.config_path)])
+        else:
+            subprocess.call(['xdg-open', str(config_mgr.config_path)])
+        
+        click.secho(f"✓ Opened: {config_mgr.config_path}", fg='green')
+    
+    except Exception as e:
+        click.secho(f"✗ Error opening editor: {e}", fg='red', err=True)
+        click.echo(f"\nManually edit: {config_mgr.config_path}", err=True)
+        sys.exit(1)
+
+
+def _convert_value(value: str, type: str):
+    """Convert string value to specified type."""
+    if type == 'int':
+        return int(value)
+    elif type == 'float':
+        return float(value)
+    elif type == 'bool':
+        return value.lower() in ('true', '1', 'yes', 'on')
+    else:
+        return value
+
+
+def _print_available_keys(settings_dict: dict, prefix: str = '', indent: int = 0):
+    """Print available configuration keys."""
+    for key, value in settings_dict.items():
+        full_key = f"{prefix}.{key}" if prefix else key
+        indent_str = "  " * indent
+        
+        if isinstance(value, dict):
+            click.echo(f"{indent_str}{key}:")
+            _print_available_keys(value, full_key, indent + 1)
+        else:
+            click.echo(f"{indent_str}{key}")
 
 
 if __name__ == '__main__':

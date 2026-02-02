@@ -250,20 +250,71 @@ def configuration_from_file():
     logger.info(f"Config to save: {config_to_save}")
 
 
+def http_caching_configuration():
+    """Configure HTTP response caching."""
+    logger.info("\n=== HTTP Caching Configuration ===")
+    
+    # Enable caching for read-heavy workloads
+    cached_client = Client(
+        base_url="https://api.example.com",
+        auth_token="token",
+        enable_cache=True,  # Enable HTTP response caching
+        cache_ttl=300,  # Cache responses for 5 minutes
+        cache_max_size=1000  # Store up to 1000 cached responses
+    )
+    logger.info("HTTP caching enabled:")
+    logger.info("  Cache TTL: 300 seconds (5 minutes)")
+    logger.info("  Max cache size: 1000 entries")
+    
+    # Disable caching for real-time data
+    realtime_client = Client(
+        base_url="https://api.example.com",
+        auth_token="token",
+        enable_cache=False  # Disable caching for real-time data
+    )
+    logger.info("Caching disabled for real-time data")
+    
+    # Custom cache configuration for different workloads
+    # Long TTL for rarely-changing data (products, processes)
+    product_client = Client(
+        base_url="https://api.example.com",
+        auth_token="token",
+        enable_cache=True,
+        cache_ttl=3600,  # 1 hour for product data
+        cache_max_size=500
+    )
+    logger.info("Product client: 1 hour cache TTL")
+    
+    # Short TTL for frequently-changing data (reports, metrics)
+    report_client = Client(
+        base_url="https://api.example.com",
+        auth_token="token",
+        enable_cache=True,
+        cache_ttl=60,  # 1 minute for report data
+        cache_max_size=2000
+    )
+    logger.info("Report client: 1 minute cache TTL")
+    
+    # Monitor cache statistics (if client supports it)
+    # Example: cached_client.get_cache_stats()
+    # Would return: {'hits': 150, 'misses': 50, 'size': 200, 'max_size': 1000}
+
+
 def performance_tuning():
     """Configure for optimal performance."""
     logger.info("\n=== Performance Tuning ===")
     
-    # High-performance configuration
+    # High-performance configuration with caching
     high_perf_client = Client(
         base_url="https://api.example.com",
         auth_token="token",
         timeout=10,  # Short timeout
         max_retries=1,  # Minimal retries
-        # enable_cache=True,  # Enable caching (if supported)
-        # cache_ttl=300  # 5 minute cache
+        enable_cache=True,  # Enable caching
+        cache_ttl=300,  # 5 minute cache
+        cache_max_size=1000
     )
-    logger.info("High-performance client configured")
+    logger.info("High-performance client configured with caching")
     
     # Reliability-focused configuration
     reliable_client = Client(
@@ -335,6 +386,7 @@ if __name__ == "__main__":
     domain_settings_configuration()
     environment_specific_config()
     configuration_from_file()
+    http_caching_configuration()
     performance_tuning()
     logging_configuration()
     secure_credential_management()
@@ -347,5 +399,8 @@ if __name__ == "__main__":
     print("1. Use environment variables for credentials")
     print("2. Choose error mode based on use case (STRICT for prod, LENIENT for scripts)")
     print("3. Tune timeouts and retries for your workload")
-    print("4. Enable debug logging during development")
-    print("5. Keep credentials secure and never commit them to source control")
+    print("4. Enable HTTP caching for read-heavy workloads (300-3600 second TTL)")
+    print("5. Disable caching for real-time data (enable_cache=False)")
+    print("6. Monitor cache statistics to optimize TTL and size")
+    print("7. Enable debug logging during development")
+    print("8. Keep credentials secure and never commit them to source control")

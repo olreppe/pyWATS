@@ -13,7 +13,7 @@ For GUI applications using Qt/PySide6, use with qasync:
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
 """
-from typing import Optional, Dict, Any, AsyncIterator
+from typing import Optional, Dict, Any, AsyncIterator, TYPE_CHECKING
 from contextlib import asynccontextmanager
 import asyncio
 import time
@@ -34,6 +34,10 @@ from .exceptions import (
 from .throttle import RateLimiter, get_default_limiter
 from .retry import RetryConfig, should_retry
 from .client import Response  # Reuse the Response model
+from .cache import AsyncTTLCache
+
+if TYPE_CHECKING:
+    from .metrics import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +64,10 @@ class AsyncHttpClient:
         rate_limiter: Optional[RateLimiter] = None,
         enable_throttling: bool = True,
         retry_config: Optional[RetryConfig] = None,
+        enable_cache: bool = True,
+        cache_ttl: float = 300.0,
+        cache_max_size: int = 1000,
+        metrics_collector: Optional['MetricsCollector'] = None,
     ):
         """
         Initialize the async HTTP client.
@@ -72,6 +80,10 @@ class AsyncHttpClient:
             rate_limiter: Custom RateLimiter instance (default: global limiter)
             enable_throttling: Enable/disable rate limiting (default: True)
             retry_config: Retry configuration (default: RetryConfig())
+            enable_cache: Enable response caching for GET requests (default: True)
+            cache_ttl: Cache TTL in seconds (default: 300 = 5 minutes)
+            cache_max_size: Maximum cache entries (default: 1000)
+            metrics_collector: Optional MetricsCollector for request tracking
         """
         # Clean up base URL
         self.base_url = base_url.rstrip("/")
@@ -92,6 +104,19 @@ class AsyncHttpClient:
         
         # Retry configuration
         self._retry_config = retry_config if retry_config is not None else RetryConfig()
+
+        # Cache configuration
+        self._cache_enabled = enable_cache
+        self._cache: Optional[AsyncTTLCache[Response]] = None
+        if enable_cache:
+            self._cache = AsyncTTLCache[Response](
+                default_ttl=cache_ttl,
+                max_size=cache_max_size
+            )
+            logger.debug(f"Async HTTP cache enabled: TTL={cache_ttl}s, max_size={cache_max_size}")
+        
+        # Metrics collection
+        self._metrics_collector = metrics_collector
 
         # Default headers
         self._headers = {
@@ -160,6 +185,48 @@ class AsyncHttpClient:
     def retry_config(self, value: RetryConfig) -> None:
         """Set the retry configuration instance."""
         self._retry_config = value
+
+    @property
+    def cache(self) -> Optional[AsyncTTLCache[Response]]:
+        """Get the async cache instance (if caching is enabled)."""
+        return self._cache
+
+    @property
+    def cache_enabled(self) -> bool:
+        """Check if caching is enabled."""
+        return self._cache_enabled
+
+    async def clear_cache(self) -> None:
+        """Clear all cached responses."""
+        if self._cache:
+            await self._cache.clear()
+            logger.debug("Async HTTP cache cleared")
+
+    async def invalidate_cache(self, endpoint_pattern: Optional[str] = None) -> None:
+        """
+        Invalidate cached responses matching a pattern.
+        
+        Args:
+            endpoint_pattern: Pattern to match (e.g., "/api/Product" invalidates all product endpoints)
+                            If None, clears entire cache.
+        """
+        if not self._cache:
+            return
+            
+        if endpoint_pattern is None:
+            await self.clear_cache()
+            return
+            
+        # Invalidate entries matching pattern
+        keys_to_remove = [
+            key for key in self._cache._cache.keys()
+            if endpoint_pattern in key
+        ]
+        for key in keys_to_remove:
+            await self._cache.delete(key)
+        
+        if keys_to_remove:
+            logger.debug(f"Invalidated {len(keys_to_remove)} async cache entries matching '{endpoint_pattern}'")
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create the async httpx client with connection pooling."""
@@ -267,6 +334,10 @@ class AsyncHttpClient:
         last_exception: Optional[Exception] = None
         last_response: Optional[Response] = None
         
+        # Track metrics if collector is available
+        metrics_start_time = time.time() if self._metrics_collector else None
+        final_status = 0
+        
         client = await self._get_client()
         
         for attempt in range(max_attempts):
@@ -277,6 +348,7 @@ class AsyncHttpClient:
             try:
                 response = await client.request(**kwargs)
                 duration_ms = (time.perf_counter() - started) * 1000.0
+                final_status = response.status_code
                 
                 self._emit_trace({
                     "method": method,
@@ -306,6 +378,20 @@ class AsyncHttpClient:
                         await asyncio.sleep(delay)
                         last_response = parsed_response
                         continue
+                
+                # Track successful completion
+                if self._metrics_collector and metrics_start_time:
+                    duration = time.time() - metrics_start_time
+                    status_label = str(final_status)
+                    self._metrics_collector.http_requests_total.labels(
+                        method=method,
+                        endpoint=endpoint,
+                        status=status_label
+                    ).inc()
+                    self._metrics_collector.http_request_duration_seconds.labels(
+                        method=method,
+                        endpoint=endpoint
+                    ).observe(duration)
                 
                 return parsed_response
                 
@@ -366,13 +452,75 @@ class AsyncHttpClient:
         raise PyWATSError("Unexpected state: no response or exception after retries")
 
     # Convenience methods
+    def _make_cache_key(self, method: str, endpoint: str, params: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Generate a cache key for a request.
+        
+        Args:
+            method: HTTP method
+            endpoint: API endpoint
+            params: Query parameters
+            
+        Returns:
+            Cache key string
+        """
+        # Normalize endpoint
+        if not endpoint.startswith("/"):
+            endpoint = f"/{endpoint}"
+        
+        # Sort params for consistent keys
+        params_str = ""
+        if params:
+            sorted_params = sorted(params.items())
+            params_str = "&".join(f"{k}={v}" for k, v in sorted_params)
+        
+        return f"{method}:{endpoint}?{params_str}" if params_str else f"{method}:{endpoint}"
+
     async def get(
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Response:
-        """Make an async GET request."""
+        """
+        Make an async GET request with automatic caching.
+        
+        Args:
+            endpoint: API endpoint
+            params: Query parameters
+            **kwargs: Additional arguments for _make_request
+            
+        Returns:
+            Response object (from cache or fresh HTTP request)
+            
+        Note:
+            Successful responses (2xx) are cached based on TTL configuration.
+            Cache can be disabled per-request using cache=False in kwargs.
+        """
+        # Check if caching should be bypassed
+        use_cache = kwargs.pop('cache', True) and self._cache_enabled
+        
+        if use_cache and self._cache:
+            cache_key = self._make_cache_key("GET", endpoint, params)
+            
+            # Try cache hit
+            cached_response = await self._cache.get(cache_key)
+            if cached_response is not None:
+                logger.debug(f"Async cache hit: {cache_key}")
+                return cached_response
+            
+            # Cache miss - make request
+            logger.debug(f"Async cache miss: {cache_key}")
+            response = await self._make_request("GET", endpoint, params=params, **kwargs)
+            
+            # Cache successful responses
+            if 200 <= response.status_code < 300:
+                await self._cache.put(cache_key, response)
+                logger.debug(f"Cached async response: {cache_key}")
+            
+            return response
+        
+        # Caching disabled - direct request
         return await self._make_request("GET", endpoint, params=params, **kwargs)
 
     async def post(
@@ -382,8 +530,21 @@ class AsyncHttpClient:
         params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Response:
-        """Make an async POST request."""
-        return await self._make_request("POST", endpoint, data=data, params=params, **kwargs)
+        """
+        Make an async POST request with cache invalidation.
+        
+        Note:
+            POST to an endpoint invalidates all cached entries for that endpoint prefix.
+        """
+        response = await self._make_request(
+            "POST", endpoint, data=data, params=params, **kwargs
+        )
+        
+        # Invalidate cache for this endpoint
+        if self._cache:
+            await self.invalidate_cache(endpoint)
+        
+        return response
 
     async def put(
         self,
@@ -392,8 +553,21 @@ class AsyncHttpClient:
         params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Response:
-        """Make an async PUT request."""
-        return await self._make_request("PUT", endpoint, data=data, params=params, **kwargs)
+        """
+        Make an async PUT request with cache invalidation.
+        
+        Note:
+            PUT to an endpoint invalidates all cached entries for that endpoint prefix.
+        """
+        response = await self._make_request(
+            "PUT", endpoint, data=data, params=params, **kwargs
+        )
+        
+        # Invalidate cache for this endpoint
+        if self._cache:
+            await self.invalidate_cache(endpoint)
+        
+        return response
 
     async def delete(
         self,
@@ -401,8 +575,19 @@ class AsyncHttpClient:
         params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Response:
-        """Make an async DELETE request."""
-        return await self._make_request("DELETE", endpoint, params=params, **kwargs)
+        """
+        Make an async DELETE request with cache invalidation.
+        
+        Note:
+            DELETE to an endpoint invalidates all cached entries for that endpoint prefix.
+        """
+        response = await self._make_request("DELETE", endpoint, params=params, **kwargs)
+        
+        # Invalidate cache for this endpoint
+        if self._cache:
+            await self.invalidate_cache(endpoint)
+        
+        return response
 
     async def patch(
         self,
@@ -412,4 +597,6 @@ class AsyncHttpClient:
         **kwargs: Any
     ) -> Response:
         """Make an async PATCH request."""
-        return await self._make_request("PATCH", endpoint, data=data, params=params, **kwargs)
+        return await self._make_request(
+            "PATCH", endpoint, data=data, params=params, **kwargs
+        )

@@ -51,13 +51,16 @@ Learn how to:
 ---
 
 #### [Configuration](configuration.py)
-**Topics:** Environment configs, authentication, connection settings, performance tuning
+**Topics:** Environment configs, authentication, connection settings, performance tuning, HTTP caching
 
 Learn how to:
 - Configure clients for different environments (dev, staging, prod)
 - Manage authentication securely with environment variables
 - Set timeouts and retry parameters
 - Configure proxy settings
+- **Enable HTTP response caching for performance**
+- **Tune cache TTL and size for your workload**
+- **Monitor cache statistics**
 - Tune performance settings
 - Enable debug logging
 - Load configuration from files
@@ -65,6 +68,8 @@ Learn how to:
 **Key Concepts:**
 - Environment-specific configurations
 - Secure credential management
+- **HTTP caching for read-heavy workloads**
+- **Cache tuning (TTL, size, hit rate)**
 - Performance vs reliability trade-offs
 - Logging configuration
 
@@ -179,14 +184,53 @@ Each example is self-contained and can be modified to fit your specific needs. R
 - Leave temporary files after use
 - Assume all files are valid
 
----
-
 ## Additional Resources
 
 - **[API Documentation](../../docs/)** - Full API reference
 - **[Getting Started Guide](../../docs/guides/quickstart.md)** - Quick start tutorial
+- **[Performance Guide](../../docs/guides/performance.md)** - HTTP caching & optimization
+- **[Observability Guide](../../docs/guides/observability.md)** - Metrics & monitoring
+- **[Performance Benchmarks](../performance/benchmarks.py)** - Benchmark caching performance
 - **[Troubleshooting Guide](../../docs/guides/troubleshooting.md)** - Common issues and solutions
-- **[Performance Guide](../../docs/guides/performance.md)** - Performance optimization tips
+
+---
+
+## Performance & Caching
+
+pyWATS includes HTTP response caching to speed up read-heavy workloads. See:
+
+- **[Getting Started: Caching](../getting_started/05_caching_performance.py)** - Caching basics
+- **[Configuration Example](configuration.py)** - `http_caching_configuration()`
+- **[Performance Guide](../../docs/guides/performance.md)** - Complete tuning guide
+- **[Benchmarks](../performance/benchmarks.py)** - Measure cache performance
+
+**Quick Example:**
+```python
+from pywats import pyWATS
+
+# Enable caching for read-heavy workloads
+api = pyWATS(
+    base_url="https://your-server.com",
+    token="your-token",
+    enable_cache=True,      # Enable HTTP caching
+    cache_ttl=300,          # Cache for 5 minutes
+    cache_max_size=1000     # Store up to 1000 responses
+)
+
+# Disable caching for real-time data
+realtime_api = pyWATS(
+    base_url="https://your-server.com",
+    token="your-token",
+    enable_cache=False      # Always fetch fresh data
+)
+```
+
+**Cache Tuning Guidelines:**
+- **Products/Processes:** `cache_ttl=600-3600` (10 min - 1 hour)
+- **Reports/Metrics:** `cache_ttl=60-300` (1-5 minutes)
+- **Real-time Data:** `enable_cache=False`
+- **Cache Size:** 100 (scripts), 1000 (apps), 5000 (dashboards)
+- **Target Hit Rate:** >70% (monitor with `get_cache_stats()`)
 
 ---
 

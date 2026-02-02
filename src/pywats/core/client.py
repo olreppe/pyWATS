@@ -39,6 +39,7 @@ from .exceptions import (
 )
 from .throttle import RateLimiter, get_default_limiter
 from .retry import RetryConfig, should_retry
+from .cache import TTLCache
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +139,10 @@ class HttpClient:
         rate_limiter: Optional[RateLimiter] = None,
         enable_throttling: bool = True,
         retry_config: Optional[RetryConfig] = None,
+        enable_cache: bool = True,
+        cache_ttl: float = 300.0,
+        cache_max_size: int = 1000,
+        metrics_collector: Optional['MetricsCollector'] = None,
     ):
         """
         Initialize the HTTP client.
@@ -150,6 +155,10 @@ class HttpClient:
             rate_limiter: Custom RateLimiter instance (default: global limiter)
             enable_throttling: Enable/disable rate limiting (default: True)
             retry_config: Retry configuration (default: RetryConfig())
+            enable_cache: Enable response caching for GET requests (default: True)
+            cache_ttl: Cache TTL in seconds (default: 300 = 5 minutes)
+            cache_max_size: Maximum cache entries (default: 1000)
+            metrics_collector: Optional MetricsCollector for request tracking
         """
         # Clean up base URL - remove trailing slashes and /api suffixes
         self.base_url = base_url.rstrip("/")
@@ -170,6 +179,19 @@ class HttpClient:
         
         # Retry configuration
         self._retry_config = retry_config if retry_config is not None else RetryConfig()
+
+        # Cache configuration
+        self._cache_enabled = enable_cache
+        self._cache: Optional[TTLCache[Response]] = None
+        if enable_cache:
+            self._cache = TTLCache[Response](
+                default_ttl=cache_ttl,
+                max_size=cache_max_size
+            )
+            logger.debug(f"HTTP cache enabled: TTL={cache_ttl}s, max_size={cache_max_size}")
+        
+        # Metrics collection
+        self._metrics_collector = metrics_collector
 
         # Default headers
         self._headers = {
@@ -270,6 +292,48 @@ class HttpClient:
     def retry_config(self, value: RetryConfig) -> None:
         """Set the retry configuration instance."""
         self._retry_config = value
+
+    @property
+    def cache(self) -> Optional[TTLCache[Response]]:
+        """Get the cache instance (if caching is enabled)."""
+        return self._cache
+
+    @property
+    def cache_enabled(self) -> bool:
+        """Check if caching is enabled."""
+        return self._cache_enabled
+
+    def clear_cache(self) -> None:
+        """Clear all cached responses."""
+        if self._cache:
+            self._cache.clear()
+            logger.debug("HTTP cache cleared")
+
+    def invalidate_cache(self, endpoint_pattern: Optional[str] = None) -> None:
+        """
+        Invalidate cached responses matching a pattern.
+        
+        Args:
+            endpoint_pattern: Pattern to match (e.g., "/api/Product" invalidates all product endpoints)
+                            If None, clears entire cache.
+        """
+        if not self._cache:
+            return
+            
+        if endpoint_pattern is None:
+            self.clear_cache()
+            return
+            
+        # Invalidate entries matching pattern
+        keys_to_remove = [
+            key for key in self._cache._cache.keys()
+            if endpoint_pattern in key
+        ]
+        for key in keys_to_remove:
+            self._cache.delete(key)
+        
+        if keys_to_remove:
+            logger.debug(f"Invalidated {len(keys_to_remove)} cache entries matching '{endpoint_pattern}'")
 
     @property
     def client(self) -> httpx.Client:
@@ -397,6 +461,10 @@ class HttpClient:
         last_exception: Optional[Exception] = None
         last_response: Optional[Response] = None
         
+        # Track metrics if collector is available
+        metrics_start_time = time.time() if self._metrics_collector else None
+        final_status = 0
+        
         for attempt in range(max_attempts):
             # Acquire rate limiter slot (blocks if limit reached)
             self._rate_limiter.acquire()
@@ -405,6 +473,8 @@ class HttpClient:
             try:
                 response = self.client.request(**kwargs)
                 duration_ms = (time.perf_counter() - started) * 1000.0
+                final_status = response.status_code
+                
                 self._emit_trace(
                     {
                         "method": method,
@@ -437,6 +507,20 @@ class HttpClient:
                         time.sleep(delay)
                         last_response = parsed_response
                         continue
+                
+                # Track successful completion
+                if self._metrics_collector and metrics_start_time:
+                    duration = time.time() - metrics_start_time
+                    status_label = str(final_status)
+                    self._metrics_collector.http_requests_total.labels(
+                        method=method,
+                        endpoint=endpoint,
+                        status=status_label
+                    ).inc()
+                    self._metrics_collector.http_request_duration_seconds.labels(
+                        method=method,
+                        endpoint=endpoint
+                    ).observe(duration)
                 
                 return parsed_response
                 
@@ -498,13 +582,75 @@ class HttpClient:
         raise PyWATSError("Unexpected state: no response or exception after retries")
 
     # Convenience methods
+    def _make_cache_key(self, method: str, endpoint: str, params: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Generate a cache key for a request.
+        
+        Args:
+            method: HTTP method
+            endpoint: API endpoint
+            params: Query parameters
+            
+        Returns:
+            Cache key string
+        """
+        # Normalize endpoint
+        if not endpoint.startswith("/"):
+            endpoint = f"/{endpoint}"
+        
+        # Sort params for consistent keys
+        params_str = ""
+        if params:
+            sorted_params = sorted(params.items())
+            params_str = "&".join(f"{k}={v}" for k, v in sorted_params)
+        
+        return f"{method}:{endpoint}?{params_str}" if params_str else f"{method}:{endpoint}"
+
     def get(
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Response:
-        """Make a GET request."""
+        """
+        Make a GET request with automatic caching.
+        
+        Args:
+            endpoint: API endpoint
+            params: Query parameters
+            **kwargs: Additional arguments for _make_request
+            
+        Returns:
+            Response object (from cache or fresh HTTP request)
+            
+        Note:
+            Successful responses (2xx) are cached based on TTL configuration.
+            Cache can be disabled per-request using cache=False in kwargs.
+        """
+        # Check if caching should be bypassed
+        use_cache = kwargs.pop('cache', True) and self._cache_enabled
+        
+        if use_cache and self._cache:
+            cache_key = self._make_cache_key("GET", endpoint, params)
+            
+            # Try cache hit
+            cached_response = self._cache.get(cache_key)
+            if cached_response is not None:
+                logger.debug(f"Cache hit: {cache_key}")
+                return cached_response
+            
+            # Cache miss - make request
+            logger.debug(f"Cache miss: {cache_key}")
+            response = self._make_request("GET", endpoint, params=params, **kwargs)
+            
+            # Cache successful responses
+            if 200 <= response.status_code < 300:
+                self._cache.put(cache_key, response)
+                logger.debug(f"Cached response: {cache_key}")
+            
+            return response
+        
+        # Caching disabled - direct request
         return self._make_request("GET", endpoint, params=params, **kwargs)
 
     def post(
@@ -514,10 +660,21 @@ class HttpClient:
         params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Response:
-        """Make a POST request."""
-        return self._make_request(
+        """
+        Make a POST request with cache invalidation.
+        
+        Note:
+            POST to an endpoint invalidates all cached entries for that endpoint prefix.
+        """
+        response = self._make_request(
             "POST", endpoint, data=data, params=params, **kwargs
         )
+        
+        # Invalidate cache for this endpoint
+        if self._cache:
+            self.invalidate_cache(endpoint)
+        
+        return response
 
     def put(
         self,
@@ -526,10 +683,21 @@ class HttpClient:
         params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Response:
-        """Make a PUT request."""
-        return self._make_request(
+        """
+        Make a PUT request with cache invalidation.
+        
+        Note:
+            PUT to an endpoint invalidates all cached entries for that endpoint prefix.
+        """
+        response = self._make_request(
             "PUT", endpoint, data=data, params=params, **kwargs
         )
+        
+        # Invalidate cache for this endpoint
+        if self._cache:
+            self.invalidate_cache(endpoint)
+        
+        return response
 
     def delete(
         self,
@@ -537,8 +705,19 @@ class HttpClient:
         params: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Response:
-        """Make a DELETE request."""
-        return self._make_request("DELETE", endpoint, params=params, **kwargs)
+        """
+        Make a DELETE request with cache invalidation.
+        
+        Note:
+            DELETE to an endpoint invalidates all cached entries for that endpoint prefix.
+        """
+        response = self._make_request("DELETE", endpoint, params=params, **kwargs)
+        
+        # Invalidate cache for this endpoint
+        if self._cache:
+            self.invalidate_cache(endpoint)
+        
+        return response
 
     def patch(
         self,

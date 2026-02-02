@@ -19,7 +19,126 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ## [Unreleased]
 
+### Completed Projects
+- **performance-optimization**: HTTP caching, metrics, benchmarks (100% complete, archived 2026-02-02)
+- **observability-enhancement**: Prometheus metrics, health endpoints, Grafana dashboards (100% complete, archived 2026-02-02)
+- **client-components-polish**: Client examples and caching documentation (95% complete, Sprint 1 & 3 done, Sprint 2 deferred, archived 2026-02-02)
+- **windows-service-launcher**: Cross-platform CLI service management (90% complete, Phases 1-4 done, Phase 5 deferred, archived 2026-02-02)
+
 ### Added
+- **Cross-Platform Service Launcher**: Complete CLI for service management without GUI dependency
+  - **Service Commands**: start, stop, restart, status, gui (11 commands total)
+    - Cross-platform support (Windows/Linux/macOS) via psutil
+    - Automatic stale lock cleanup on startup
+    - Multi-instance support via --instance-id flag
+    - Graceful shutdown with 30s timeout then force kill
+  - **Config Management**: show, get, set, reset, path, edit (6 commands)
+    - View all settings in text or JSON format
+    - Get/set individual values with type conversion (string/int/float/bool)
+    - Reset to defaults with confirmation
+    - Cross-platform editor integration (Windows/macOS/Linux)
+    - Multi-instance config isolation
+  - **ServiceManager**: Cross-platform process management (550 lines)
+    - psutil-based process detection
+    - Platform-specific service commands (Windows Service, systemd, launchd)
+    - Fallback to subprocess for non-service environments
+    - Status reporting with PID, uptime, platform info
+  - **Documentation**: docs/CLI_REFERENCE.md (400+ lines)
+    - Complete command reference with examples
+    - Multi-instance support guide
+    - Troubleshooting and performance tuning
+    - Monitoring setup examples
+  - **Tests**: 40+ tests (20+ unit, 20+ integration)
+    - tests/client/test_service_manager.py (existing)
+    - tests/client/test_cli.py (new)
+  - **Impact**: Service fully manageable via CLI on any platform, no Qt/GUI required
+- **GUI Settings Dialog**: Performance and Observability panels for v0.3.0 features
+  - **Performance Panel**: HTTP cache configuration (enable/disable, TTL slider with presets, cache size, statistics display, clear cache button)
+  - **Observability Panel**: Metrics configuration (enable/disable, port selection, endpoint preview, open in browser, health endpoints display)
+  - **Queue Settings**: Max queue size and concurrent uploads configuration in Performance panel
+  - Panels integrated into Client Settings section with proper load/save handlers
+- **Caching Documentation & Examples**: Complete reference documentation for HTTP response caching feature
+  - **Performance Guide**: docs/guides/performance.md (350+ lines) - comprehensive caching reference
+    - HTTP response caching overview with behavioral details
+    - Configuration parameters (enable_cache, cache_ttl, cache_max_size)
+    - Cache tuning guidelines (TTL: 60-7200s by data type, size: 100-5000 by workload)
+    - Monitoring cache performance (statistics, Prometheus metrics, target metrics)
+    - Best practices (6 key recommendations with examples)
+    - Troubleshooting guide (4 common issues with solutions)
+    - Benchmarking instructions and async API performance comparison
+  - **Getting Started Guide**: HTTP Response Caching section in docs/getting-started.md
+    - Quick caching configuration examples
+    - Cache tuning guidelines table by data type
+    - Performance impact data (20-50x faster, 70-90% hit rate typical)
+    - Link to complete performance guide
+  - **Caching Tutorial**: examples/getting_started/05_caching_performance.py (200+ lines)
+    - When to enable/disable caching with examples
+    - Cache TTL tuning guidelines (60-7200s) for different data types
+    - Cache size recommendations (100-5000) by workload
+    - Cache statistics monitoring examples
+    - Performance best practices and automatic cache invalidation
+  - **Configuration Examples**: HTTP caching section in examples/client/configuration.py
+    - `http_caching_configuration()` function with 4 examples
+    - Cache statistics monitoring examples
+    - Updated `performance_tuning()` with caching integration
+  - **Client Examples README**: Performance & Caching section in examples/client/README.md
+    - Quick reference for cache configuration
+    - TTL and size tuning guidelines by use case
+    - Links to performance guide and benchmarks
+  - **API Docstrings**: Enhanced parameter documentation in AsyncWATS/pyWATS
+    - enable_cache: Detailed behavior description (GET caching, POST/PUT/DELETE invalidation)
+    - cache_ttl: Tuning guidelines by data type (real-time → configuration)
+    - cache_max_size: Size recommendations by workload (scripts → dashboards)
+    - Complete caching examples for both sync and async APIs
+  - **Impact**: Users have complete reference for HTTP caching feature configuration and tuning
+
+- **Service Integration for Caching & Observability**: Complete end-to-end integration in AsyncClientService
+  - **Configuration**: ClientConfig now includes enable_cache, cache_ttl_seconds, cache_max_size, enable_metrics, metrics_port
+  - **MetricsCollector**: Automatically created in AsyncClientService if config.enable_metrics=True
+  - **Component Wiring**: HealthServer receives metrics_collector, http_client, converter_pool for /metrics endpoint
+  - **Cache Integration**: Cache parameters passed from config through AsyncWATS to AsyncHttpClient
+  - **Debug Logging**: Component wiring logged for troubleshooting
+  - **User Control**: Users can enable/disable caching and metrics via config.json or GUI
+  - **Full Pipeline**: Config → Service → API → Health Server → /metrics with cache/queue stats
+  - **Location**: src/pywats_client/core/config.py, src/pywats_client/service/async_client_service.py
+
+- **Async HTTP Response Caching**: Full HTTP caching support for AsyncHttpClient (mirroring sync client)
+  - **AsyncTTLCache Integration**: Async-safe response caching using AsyncTTLCache[Response]
+  - **GET Caching**: Automatic caching of successful GET responses (2xx) with configurable TTL
+  - **Cache Invalidation**: POST/PUT/DELETE automatically invalidate related cache entries by endpoint prefix
+  - **Cache Properties**: `cache`, `cache_enabled`, `clear_cache()`, `invalidate_cache()` methods
+  - **Metrics Integration**: Optional `metrics_collector` parameter for HTTP request tracking
+  - **Manual Controls**: `_make_cache_key()` helper, `cache=False` bypass option
+  - **Configuration**: `enable_cache`, `cache_ttl`, `cache_max_size` parameters (defaults: True, 300s, 1000)
+  - **API Integration**: Cache parameters wired through AsyncWATS and pyWATS constructors
+  - **Domain Services**: All 9 async domain repositories automatically benefit from caching
+  - **Zero Breaking Changes**: All parameters optional with sensible defaults
+  - **Location**: src/pywats/core/async_client.py, src/pywats/async_wats.py, src/pywats/pywats.py
+
+- **HTTP Response Caching**: Automatic caching for HTTP GET requests in src/pywats/core/client.py (sync)
+  - **Cache Key Generation**: Method + endpoint + sorted params for consistent cache keys
+  - **Automatic Caching**: Successful GET responses (2xx) cached with configurable TTL (default: 5 minutes)
+  - **Cache Invalidation**: POST/PUT/DELETE automatically invalidate related cache entries by endpoint prefix
+  - **Manual Control**: `clear_cache()`, `invalidate_cache(pattern)`, and per-request `cache=False` option
+  - **Cache Properties**: `cache`, `cache_enabled` properties for inspection and statistics access
+  - **Configuration**: `enable_cache`, `cache_ttl`, `cache_max_size` constructor parameters
+  - **Examples**: examples/performance/http_caching.py with 6 comprehensive examples (456 lines)
+  - **Performance**: Domain services automatically benefit (no code changes required)
+  - **Tests**: New comprehensive example demonstrating cache hits/misses, TTL expiration, invalidation
+
+- **Metrics Integration**: HttpClient now supports MetricsCollector for request tracking
+  - **Optional Parameter**: `metrics_collector` constructor parameter for Prometheus integration
+  - **Automatic Tracking**: HTTP requests tracked by method, endpoint, status code, and duration
+  - **Integrates With**: Existing src/pywats/core/metrics.py Prometheus metrics infrastructure
+  - **No Breaking Changes**: Metrics collection is opt-in via parameter
+
+- **Health & Metrics Endpoints**: Enhanced health_server.py with /metrics endpoint
+  - **GET /metrics**: Prometheus text format (if MetricsCollector configured) or JSON summary
+  - **HTTP Cache Metrics**: hit_rate, size, evictions, requests/hits/misses from HttpClient cache
+  - **Converter Queue Metrics**: size, active_workers, total_processed from AsyncConverterPool
+  - **Backward Compatible**: Existing /health endpoints unchanged, /metrics is new addition
+  - **Location**: src/pywats_client/service/health_server.py
+
 - **Async Queue Consolidation**: Unified queue architecture with priority support for converters
   - **AsyncQueueAdapter**: Bridge between thread-safe MemoryQueue and async/await patterns (289 lines, fully tested)
   - **Converter Priority**: All converters now support priority parameter (1=highest, 10=lowest, default=5)
