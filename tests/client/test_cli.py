@@ -1,6 +1,7 @@
 """Integration tests for CLI commands."""
 
 import json
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
@@ -32,6 +33,7 @@ def mock_service_manager():
     with patch('pywats_client.cli.ServiceManager') as mock:
         manager = Mock()
         manager.is_running.return_value = False
+        manager.clean_stale_locks.return_value = 0
         manager.get_status.return_value = {
             'running': False,
             'pid': None,
@@ -332,11 +334,26 @@ class TestCLIOptions:
 class TestGUICommand:
     """Test GUI command."""
     
-    @patch('pywats_client.cli.QApplication', side_effect=ImportError)
-    def test_gui_without_qt(self, mock_qt, runner, mock_service_manager):
+    def test_gui_without_qt(self, runner, mock_service_manager):
         """Test gui command fails gracefully without Qt."""
-        result = runner.invoke(cli, ['gui'])
+        # Save and remove PySide6 from sys.modules
+        pyside6_backup = {}
+        for key in list(sys.modules.keys()):
+            if key.startswith('PySide6'):
+                pyside6_backup[key] = sys.modules.pop(key)
         
-        assert result.exit_code == 1
-        assert 'GUI not available' in result.output
-        assert 'pip install pywats-api[client]' in result.output
+        # Add a fake PySide6 module that raises ImportError when accessed
+        sys.modules['PySide6'] = None  # This will cause import to fail
+        sys.modules['PySide6.QtWidgets'] = None
+        
+        try:
+            result = runner.invoke(cli, ['gui'])
+            
+            assert result.exit_code == 1
+            assert 'GUI not available' in result.output
+            assert 'pip install pywats-api[client]' in result.output
+        finally:
+            # Restore original modules
+            for key in ['PySide6', 'PySide6.QtWidgets']:
+                sys.modules.pop(key, None)
+            sys.modules.update(pyside6_backup)

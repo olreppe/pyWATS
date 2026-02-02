@@ -383,9 +383,9 @@ class TestPlatformSpecificMethods:
         # Mock subprocess.Popen
         mock_popen = Mock()
         
-        with patch('subprocess.Popen', return_value=mock_popen):
-            with patch.object(manager, 'is_running', side_effect=[False, True]):
-                with patch('time.sleep'):
+        with patch('pywats_client.service_manager.subprocess.Popen', return_value=mock_popen):
+            with patch.object(manager, 'is_running', return_value=True):
+                with patch('pywats_client.service_manager.time.sleep'):
                     result = manager._start_subprocess()
                     
                     assert result is True
