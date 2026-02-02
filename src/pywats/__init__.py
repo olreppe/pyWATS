@@ -46,7 +46,12 @@ from .exceptions import (
     ConfigurationError,
     ServiceError,
 )
-from .core.logging import enable_debug_logging
+from .core.logging import (
+    enable_debug_logging,
+    set_logging_context,
+    clear_logging_context,
+    get_logging_context,
+)
 from .core.station import Station, StationRegistry, StationConfig, Purpose
 from .core.throttle import configure_throttling, RateLimiter
 from .core.retry import RetryConfig, RetryExhaustedError
@@ -132,6 +137,9 @@ __all__ = [
     "ReportHeaderValidationWarning",
     # Logging utilities
     "enable_debug_logging",
+    "set_logging_context",
+    "clear_logging_context",
+    "get_logging_context",
     # Exceptions
     "PyWATSError",
     "AuthenticationError",
