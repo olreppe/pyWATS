@@ -20,6 +20,41 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Caching Documentation & Examples**: Complete reference documentation for HTTP response caching feature
+  - **Performance Guide**: docs/guides/performance.md (350+ lines) - comprehensive caching reference
+    - HTTP response caching overview with behavioral details
+    - Configuration parameters (enable_cache, cache_ttl, cache_max_size)
+    - Cache tuning guidelines (TTL: 60-7200s by data type, size: 100-5000 by workload)
+    - Monitoring cache performance (statistics, Prometheus metrics, target metrics)
+    - Best practices (6 key recommendations with examples)
+    - Troubleshooting guide (4 common issues with solutions)
+    - Benchmarking instructions and async API performance comparison
+  - **Getting Started Guide**: HTTP Response Caching section in docs/getting-started.md
+    - Quick caching configuration examples
+    - Cache tuning guidelines table by data type
+    - Performance impact data (20-50x faster, 70-90% hit rate typical)
+    - Link to complete performance guide
+  - **Caching Tutorial**: examples/getting_started/05_caching_performance.py (200+ lines)
+    - When to enable/disable caching with examples
+    - Cache TTL tuning guidelines (60-7200s) for different data types
+    - Cache size recommendations (100-5000) by workload
+    - Cache statistics monitoring examples
+    - Performance best practices and automatic cache invalidation
+  - **Configuration Examples**: HTTP caching section in examples/client/configuration.py
+    - `http_caching_configuration()` function with 4 examples
+    - Cache statistics monitoring examples
+    - Updated `performance_tuning()` with caching integration
+  - **Client Examples README**: Performance & Caching section in examples/client/README.md
+    - Quick reference for cache configuration
+    - TTL and size tuning guidelines by use case
+    - Links to performance guide and benchmarks
+  - **API Docstrings**: Enhanced parameter documentation in AsyncWATS/pyWATS
+    - enable_cache: Detailed behavior description (GET caching, POST/PUT/DELETE invalidation)
+    - cache_ttl: Tuning guidelines by data type (real-time → configuration)
+    - cache_max_size: Size recommendations by workload (scripts → dashboards)
+    - Complete caching examples for both sync and async APIs
+  - **Impact**: Users have complete reference for HTTP caching feature configuration and tuning
+
 - **Service Integration for Caching & Observability**: Complete end-to-end integration in AsyncClientService
   - **Configuration**: ClientConfig now includes enable_cache, cache_ttl_seconds, cache_max_size, enable_metrics, metrics_port
   - **MetricsCollector**: Automatically created in AsyncClientService if config.enable_metrics=True
