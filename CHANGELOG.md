@@ -20,34 +20,6 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
-- **Async Queue Consolidation**: Unified queue architecture with priority support for converters
-  - **AsyncQueueAdapter**: Bridge between thread-safe MemoryQueue and async/await patterns (289 lines, fully tested)
-  - **Converter Priority**: All converters now support priority parameter (1=highest, 10=lowest, default=5)
-  - **Configuration Support**: Priority field added to ConverterConfig for GUI/JSON configuration
-  - **Priority-Based Processing**: AsyncConverterPool uses heap-based priority queue for converter task ordering
-  - **Real-Time Protection**: High-priority converters (priority=1-2) processed before low-priority batch uploads (priority=8-10)
-  - **Zero Duplication**: Eliminated duplicate queue implementations (removed asyncio.Queue usage in favor of MemoryQueue foundation)
-  - **Test Coverage**: 13 AsyncConverterPool tests passing, leverages 29 existing MemoryQueue priority tests
-
-### Changed
-- **AsyncConverterPool**: Replaced plain asyncio.Queue with AsyncQueueAdapter + MemoryQueue (priority-based ordering)
-- **ConverterBase**: Added priority field with documentation for real-time vs batch use cases
-- **Test Compatibility**: Updated AsyncConverterPool tests for new API signatures (_process_with_limit, size property)
-
----
-
-## [0.3.0b1] - 2026-02-02
-
-### Added
-- **Priority Queue System**: Universal priority-based processing for all queue implementations
-  - **Priority Field**: Integer 1-10 (1=highest priority, 10=lowest, default=5) added to `QueueItem` base class
-  - **Heap-Based Ordering**: MemoryQueue uses min-heap for priority-first, then FIFO processing (replaces deque)
-  - **Lazy Cleanup**: Efficient heap management - invalid items discarded during retrieval rather than maintaining separate heaps
-  - **File Persistence**: PersistentQueue stores priority in `.meta.json` files and rebuilds heap on reload
-  - **Retry Support**: Failed items re-added to heap with original or updated priority
-  - **Backward Compatible**: Default priority=5, `from_dict()` handles missing priority field, all existing tests pass
-  - **Test Coverage**: 29 comprehensive tests (10 QueueItem + 17 MemoryQueue + 12 PersistentQueue) - all passing
-
 - **Sync Wrapper Enhancements**: Comprehensive reliability features for synchronous API usage
   - **Timeout Control**: Configurable timeout for all sync operations (default 30s, customizable per-client or disabled via `timeout=None`)
   - **Retry Logic**: Exponential backoff retry with configurable max retries, backoff factor, and error types (disabled by default for safety)
@@ -71,7 +43,7 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 - **Configuration**: LogLevel enum properly used in GUI settings dialog and config validation (replaced hardcoded string lists)
 
-- **Test Suite**: Total test count: 1567 tests (79 new tests from recent projects - priority queue and sync wrapper)
+- **Test Suite**: Total test count increased to 1570 tests (80 new tests from recent projects)
 
 ---
 
