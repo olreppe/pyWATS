@@ -398,12 +398,11 @@ class UURReport(Report[UURSubUnit]):
             code: Repair process code
             name: Optional process name
         """
-        if self.info:
-            self.info.repair_process_code = code
-            self.info.process_code = code
-            if name:
-                self.info.repair_process_name = name
-                self.info.process_name = name
+        # Repair process info is stored at Report level, not in UURInfo
+        # UURInfo.process_code stores the TEST operation that failed
+        self.process_code = code
+        if name:
+            self.process_name = name
     
     def set_test_operation(
         self,
