@@ -17,7 +17,7 @@ import logging
 from typing import Optional, Any, Generic, TypeVar
 from datetime import datetime
 
-from .memory_queue import MemoryQueue, QueueItem, QueueItemStatus, QueueHooks
+from .memory_queue import MemoryQueue, QueueItem, QueueItemStatus
 
 logger = logging.getLogger(__name__)
 
@@ -79,24 +79,20 @@ class AsyncQueueAdapter(Generic[T]):
         # Event for async notification when items added
         self._not_empty = asyncio.Event()
         
-        # Hook into MemoryQueue to set event when items added
-        original_hooks = self._queue._hooks
+        # Store original add method
+        self._original_add = self._queue.add
         
-        def on_add_wrapper(item: QueueItem) -> None:
+        # Monkey-patch add method to set asyncio event
+        def add_with_notification(*args, **kwargs):
             """Wrapper to set asyncio event when item added"""
-            if original_hooks and original_hooks.on_add:
-                original_hooks.on_add(item)
+            result = self._original_add(*args, **kwargs)
             # Set event to wake up waiting get() calls
             # Note: This is thread-safe - asyncio.Event.set() can be called from any thread
             self._not_empty.set()
+            return result
         
-        # Install our hook
-        new_hooks = QueueHooks(
-            on_add=on_add_wrapper,
-            on_update=original_hooks.on_update if original_hooks else None,
-            on_remove=original_hooks.on_remove if original_hooks else None,
-        )
-        self._queue._hooks = new_hooks
+        # Install our wrapper
+        self._queue.add = add_with_notification
         
         logger.debug(f"AsyncQueueAdapter initialized (max_size={max_size or 'unlimited'})")
     

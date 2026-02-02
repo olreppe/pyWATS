@@ -227,8 +227,10 @@ class TestAsyncConverterPoolConcurrency:
             test_file.write_text(f"<test{i}/>")
             items.append(AsyncConversionItem(test_file, mock_converter))
         
-        # Process all with semaphore
-        tasks = [pool._process_with_limit(item) for item in items]
+        # Process all with semaphore - need to create queue items
+        from pywats.queue import QueueItem
+        queue_items = [QueueItem.create(item, priority=5) for item in items]
+        tasks = [pool._process_with_limit(item, qi) for item, qi in zip(items, queue_items)]
         await asyncio.gather(*tasks)
         
         assert max_concurrent_seen <= 2
@@ -247,7 +249,7 @@ class TestAsyncConverterPoolFileWatching:
         pool._on_file_created(test_file, mock_converter)
         
         # Should be in queue
-        assert pool._queue.qsize() == 1
+        assert pool._queue.size == 1
     
     def test_on_file_created_ignores_non_matching(self, pool, temp_watch_dir, mock_converter):
         """Test that non-matching files are ignored"""
@@ -260,7 +262,7 @@ class TestAsyncConverterPoolFileWatching:
         pool._on_file_created(test_file, mock_converter)
         
         # Should not be in queue
-        assert pool._queue.qsize() == 0
+        assert pool._queue.size == 0
 
 
 class TestAsyncConverterPoolLifecycle:

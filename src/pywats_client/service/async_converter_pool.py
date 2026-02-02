@@ -369,7 +369,13 @@ class AsyncConverterPool:
             return None
         
         # Create instance
-        return converter_class(config)
+        converter = converter_class(config)
+        
+        # Set priority from config (default to 5 if not specified)
+        if hasattr(converter, 'priority'):
+            converter.priority = config.get("priority", 5)
+        
+        return converter
     
     # =========================================================================
     # File Watching
