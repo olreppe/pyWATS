@@ -19,6 +19,10 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ## [Unreleased]
 
+### Completed Projects
+- **performance-optimization**: HTTP caching, metrics, benchmarks (100% complete, archived 2026-02-02)
+- **observability-enhancement**: Prometheus metrics, health endpoints, Grafana dashboards (100% complete, archived 2026-02-02)
+
 ### Added
 - **Caching Documentation & Examples**: Complete reference documentation for HTTP response caching feature
   - **Performance Guide**: docs/guides/performance.md (350+ lines) - comprehensive caching reference
