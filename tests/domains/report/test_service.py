@@ -105,7 +105,7 @@ def test_create_uur_report_from_uut_copies_sub_units(report_service: AsyncReport
     uur = report_service.create_uur_report(uut)
 
     assert uur.process_code == 500
-    assert uur.uur_info.test_operation_code == 100
+    assert uur.info.test_operation_code == 100
     assert uur.sub_units is not None
     assert any(sub.sn == "SUBSN" for sub in uur.sub_units)
 

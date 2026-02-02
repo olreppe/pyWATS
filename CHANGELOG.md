@@ -19,6 +19,31 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ## [Unreleased]
 
+### Removed
+- **Experimental Code Cleanup**: Removed incomplete report_builder module
+  - Removed `src/pywats/tools/report_builder.py` (experimental, incomplete)
+  - Removed `tests/domains/report/test_report_builder.py`
+  - Removed `examples/report/report_builder_examples.py`
+  - Updated `src/pywats/tools/__init__.py` exports
+  - **Migration**: Remove any imports of `report_builder`, `ReportBuilder`, or `quick_report`
+
+### Removed (Breaking Changes)
+- **Backward Compatibility Properties**: Removed deprecated `uur_info` property
+  - `UURReport.uur_info` property removed (use `UURReport.info` instead)
+  - **Migration**: Replace all `.uur_info` with `.info` in UUR report code
+  - See [MIGRATION.md](MIGRATION.md#uur-report-property-changes) for details
+
+### Improved
+- **UUR Failure API**: Enhanced failure management with sub-unit support
+  - `add_failure()` now accepts optional `sub_unit_idx` parameter
+    - Example: `uur.add_failure(category="Component", code="FAIL", sub_unit_idx=1)`
+  - Added `add_failure_to_sub_unit()` method with serial_number or idx parameters
+    - By serial: `uur.add_failure_to_sub_unit(category="...", code="...", serial_number="SN-123")`
+    - By index: `uur.add_failure_to_sub_unit(category="...", code="...", idx=2)`
+  - `UURSubUnit.add_failure()` method now documented and fully supported
+  - Comprehensive error handling (IndexError for invalid idx, ValueError for not found)
+  - **Tests**: 10 new tests in `tests/domains/report/test_uur_failure_enhancements.py`
+
 ### Completed Projects
 - **performance-optimization**: HTTP caching, metrics, benchmarks (100% complete, archived 2026-02-02)
 - **observability-enhancement**: Prometheus metrics, health endpoints, Grafana dashboards (100% complete, archived 2026-02-02)

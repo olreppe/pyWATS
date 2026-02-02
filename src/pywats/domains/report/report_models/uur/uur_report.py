@@ -199,20 +199,6 @@ class UURReport(Report[UURSubUnit]):
         return self.all_failures
     
     # ========================================================================
-    # Backward compatibility property (uur_info -> info)
-    # ========================================================================
-    
-    @property
-    def uur_info(self) -> Optional[UURInfo]:
-        """Backward compatibility: uur_info is now just info."""
-        return self.info
-    
-    @uur_info.setter
-    def uur_info(self, value: UURInfo) -> None:
-        """Backward compatibility: uur_info is now just info."""
-        self.info = value
-    
-    # ========================================================================
     # Sub-Unit Access
     # ========================================================================
     
@@ -257,15 +243,131 @@ class UURReport(Report[UURSubUnit]):
         code: str,
         comment: Optional[str] = None,
         component_ref: Optional[str] = None,
-        ref_step_id: Optional[int] = None
+        ref_step_id: Optional[int] = None,
+        sub_unit_idx: Optional[int] = None
     ) -> UURFailure:
-        """Add failure to main unit."""
-        main = self.get_main_unit()
-        return main.add_failure(
+        """Add failure to main unit or specific sub-unit.
+        
+        Args:
+            category: Failure category
+            code: Failure code
+            comment: Optional comment
+            component_ref: Component reference (e.g., 'C12')
+            ref_step_id: ID of UUT step that found this
+            sub_unit_idx: Optional sub-unit index (default: 0 for main unit)
+            
+        Returns:
+            The created UURFailure.
+            
+        Raises:
+            IndexError: If sub_unit_idx doesn't exist
+            
+        Example:
+            # Add failure to main unit (idx=0)
+            uur.add_failure(category="Component", code="CAP_FAIL")
+            
+            # Add failure to sub-unit at idx=1
+            uur.add_failure(
+                category="Component",
+                code="RES_FAIL",
+                sub_unit_idx=1
+            )
+        """
+        if sub_unit_idx is None:
+            # Default to main unit
+            target_unit = self.get_main_unit()
+        else:
+            # Find specific sub-unit
+            target_unit = self.get_sub_unit(sub_unit_idx)
+            if target_unit is None:
+                raise IndexError(
+                    f"Sub-unit with idx={sub_unit_idx} not found. "
+                    f"Available indices: {[su.idx for su in self.sub_units]}"
+                )
+        
+        return target_unit.add_failure(
             category, 
             code, 
             comment=comment, 
             component_ref=component_ref, 
+            ref_step_id=ref_step_id
+        )
+    
+    def add_failure_to_sub_unit(
+        self,
+        category: str,
+        code: str,
+        serial_number: Optional[str] = None,
+        idx: Optional[int] = None,
+        comment: Optional[str] = None,
+        component_ref: Optional[str] = None,
+        ref_step_id: Optional[int] = None
+    ) -> UURFailure:
+        """Add failure to a specific sub-unit by serial number or index.
+        
+        Args:
+            category: Failure category
+            code: Failure code
+            serial_number: Serial number of sub-unit to add failure to
+            idx: Index of sub-unit (alternative to serial_number)
+            comment: Optional comment
+            component_ref: Component reference
+            ref_step_id: ID of UUT step that found this
+            
+        Returns:
+            The created UURFailure.
+            
+        Raises:
+            ValueError: If neither serial_number nor idx provided, or sub-unit not found
+            
+        Example:
+            # By serial number
+            uur.add_failure_to_sub_unit(
+                category="Component",
+                code="CAP_FAIL",
+                serial_number="SN-SUBUNIT-123"
+            )
+            
+            # By index
+            uur.add_failure_to_sub_unit(
+                category="Component",
+                code="RES_FAIL",
+                idx=2
+            )
+        """
+        if serial_number is None and idx is None:
+            raise ValueError(
+                "Must provide either 'serial_number' or 'idx' parameter"
+            )
+        
+        target_unit: Optional[UURSubUnit] = None
+        
+        if idx is not None:
+            # Find by index
+            target_unit = self.get_sub_unit(idx)
+            if target_unit is None:
+                raise ValueError(
+                    f"Sub-unit with idx={idx} not found. "
+                    f"Available indices: {[su.idx for su in self.sub_units]}"
+                )
+        elif serial_number is not None:
+            # Find by serial number
+            for su in self.sub_units:
+                if su.sn == serial_number:
+                    target_unit = su
+                    break
+            
+            if target_unit is None:
+                raise ValueError(
+                    f"Sub-unit with serial_number='{serial_number}' not found. "
+                    f"Available serial numbers: {[su.sn for su in self.sub_units if su.sn]}"
+                )
+        
+        return target_unit.add_failure(
+            category,
+            code,
+            comment=comment,
+            component_ref=component_ref,
             ref_step_id=ref_step_id
         )
     

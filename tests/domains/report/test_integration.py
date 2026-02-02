@@ -346,7 +346,7 @@ class TestUURReport:
         assert report.sn == "REPAIR-001"
         assert report.pn == "PN-12345"
         assert report.rev == "A"
-        assert report.uur_info is not None
+        assert report.info is not None
 
     def test_send_uur_report(self, wats_client: Any) -> None:
         """Test sending a UUR report
@@ -433,7 +433,7 @@ class TestUURReport:
         
         print(f"\n=== CREATE UUR FROM UUT OBJECT ===")
         print(f"UUT ID: {uut.id}")
-        print(f"UUR references UUT: {uur.uur_info.ref_uut}")
+        print(f"UUR references UUT: {uur.info.ref_uut}")
         print(f"UUR part_number: {uur.pn}")
         print(f"UUR serial: {uur.sn}")
         print("==================================\n")
@@ -441,7 +441,7 @@ class TestUURReport:
         assert uur is not None
         assert uur.pn == uut.pn
         assert uur.sn == uut.sn
-        assert uur.uur_info.ref_uut == uut.id
+        assert uur.info.ref_uut == uut.id
 
     def test_create_uur_from_part_and_process(self, wats_client: Any) -> None:
         """Test creating UUR from part number and process code"""
@@ -458,14 +458,14 @@ class TestUURReport:
         print(f"\n=== CREATE UUR FROM PART/PROCESS ===")
         print(f"UUR part_number: {uur.pn}")
         print(f"UUR repair_process_code: {uur.process_code}")
-        print(f"UUR test_operation_code: {uur.uur_info.test_operation_code}")
+        print(f"UUR test_operation_code: {uur.info.test_operation_code}")
         print("====================================\n")
         
         assert uur is not None
         assert uur.pn == "PN-DIRECT-CREATE"
         # UUR has dual process codes:
         assert uur.process_code == 500  # repair_process_code (default)
-        assert uur.uur_info.test_operation_code == 100  # original test that failed
+        assert uur.info.test_operation_code == 100  # original test that failed
 
 
 class TestRepairScenario:
@@ -589,7 +589,7 @@ class TestRepairScenario:
         )
         
         print(f"  - UUR ID: {repair_report.id}")
-        print(f"  - References UUT: {repair_report.uur_info.ref_uut}")  # Use snake_case
+        print(f"  - References UUT: {repair_report.info.ref_uut}")  # Use snake_case
         print(f"  - Operator: {repair_report.operator}")
         print(f"  - Comment: {repair_report.comment}")
         
@@ -672,7 +672,7 @@ class TestRepairScenario:
         print(f"   - Status: F")
         print(f"2. Repair UUR:  {repair_report.id}")
         print(f"   - Server ID: {repair_result}")
-        print(f"   - Linked to: {repair_report.uur_info.ref_uut}")
+        print(f"   - Linked to: {repair_report.info.ref_uut}")
         print(f"3. Retest UUT:  {retest_uut.id}")
         print(f"   - Server ID: {retest_result}")
         print(f"   - Status: P")
@@ -680,7 +680,7 @@ class TestRepairScenario:
         
         # Assertions
         assert failed_uut.result == "F", "Initial UUT should be failed"
-        assert repair_report.uur_info.ref_uut == failed_uut.id, "UUR should reference failed UUT"
+        assert repair_report.info.ref_uut == failed_uut.id, "UUR should reference failed UUT"
         assert retest_uut.result == "P", "Retest UUT should be passed"
         assert retest_uut.sn == failed_uut.sn, "Retest should have same serial number"
         
