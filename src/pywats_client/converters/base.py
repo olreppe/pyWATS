@@ -113,10 +113,24 @@ class ConverterBase(ABC):
                 )
     """
     
-    def __init__(self) -> None:
+    def __init__(self, priority: int = 5) -> None:
+        """
+        Initialize converter.
+        
+        Args:
+            priority: Processing priority (1=highest, 10=lowest, default=5).
+                     Lower numbers = higher priority.
+                     Use for controlling processing order:
+                     - Priority 1-2: Critical real-time production data
+                     - Priority 5: Normal converters (default)
+                     - Priority 8-10: Low priority batch uploads
+        """
         # Configuration loaded from settings
         self.user_settings: Dict[str, Any] = {}
         self._api_client: Optional[Any] = None
+        
+        # Processing priority
+        self.priority: int = priority
         
         # Sandbox configuration
         self._source_path: Optional[Path] = None  # Path to converter source file

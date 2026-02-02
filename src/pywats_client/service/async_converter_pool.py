@@ -30,6 +30,9 @@ except ImportError:
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+# Priority queue implementation
+from pywats.queue import MemoryQueue, AsyncQueueAdapter, QueueItem
+
 # Import sandbox for secure converter execution
 from ..converters.sandbox import (
     ConverterSandbox,
@@ -60,15 +63,22 @@ class AsyncConversionItemState(Enum):
 class AsyncConversionItem:
     """
     Represents a file to be converted asynchronously.
+    
+    Priority:
+        1 = Highest priority (real-time production data)
+        5 = Normal priority (default)
+        10 = Lowest priority (batch uploads, migrations)
     """
     
     def __init__(
         self,
         file_path: Path,
-        converter: 'Converter'
+        converter: 'Converter',
+        priority: int = 5
     ) -> None:
         self.file_path = file_path
         self.converter = converter
+        self.priority = priority  # 1=highest, 10=lowest
         self.state = AsyncConversionItemState.PENDING
         self.queued_at = datetime.now()
         self.process_start: Optional[datetime] = None
@@ -77,6 +87,15 @@ class AsyncConversionItem:
         self.file_date = datetime.fromtimestamp(
             file_path.stat().st_mtime
         ) if file_path.exists() else None
+    
+    def __lt__(self, other: 'AsyncConversionItem') -> bool:
+        """
+        Comparison for priority queue ordering.
+        
+        Lower priority number = higher priority.
+        Within same priority, FIFO by queued_at.
+        """
+        return (self.priority, self.queued_at) < (other.priority, other.queued_at)
     
     @property
     def processing_time(self) -> Optional[float]:
@@ -129,8 +148,12 @@ class AsyncConverterPool:
         self._sandbox: Optional[ConverterSandbox] = None
         self._sandbox_config = sandbox_config
         
-        # Processing queue and semaphore
-        self._queue: asyncio.Queue[AsyncConversionItem] = asyncio.Queue()
+        # Priority queue using MemoryQueue foundation
+        # This gives us heap-based priority ordering (tested, reliable)
+        memory_queue = MemoryQueue(max_size=None)  # No size limit for converter queue
+        self._queue = AsyncQueueAdapter(memory_queue)
+        
+        # Semaphore for concurrency control
         self._semaphore = asyncio.Semaphore(max_concurrent)
         self._active_count = 0  # Track active conversions explicitly (not _semaphore._value)
         
@@ -167,7 +190,7 @@ class AsyncConverterPool:
     @property
     def stats(self) -> Dict[str, Any]:
         """Get pool statistics"""
-        self._stats["queue_size"] = self._queue.qsize()
+        self._stats["queue_size"] = self._queue.size
         self._stats["active_conversions"] = self._active_count
         return self._stats.copy()
     
@@ -209,25 +232,31 @@ class AsyncConverterPool:
             while not self._stop_event.is_set():
                 try:
                     # Wait for item with timeout (allows checking stop event)
-                    item = await asyncio.wait_for(
-                        self._queue.get(),
-                        timeout=1.0
-                    )
+                    # AsyncQueueAdapter.get() returns QueueItem, extract data
+                    queue_item = await self._queue.get(timeout=1.0)
                     
-                    # Process with semaphore limiting concurrency
-                    task = asyncio.create_task(
-                        self._process_with_limit(item)
-                    )
-                    self._active_tasks.append(task)
-                    
-                    # Clean up completed tasks
-                    self._active_tasks = [
-                        t for t in self._active_tasks if not t.done()
-                    ]
+                    if queue_item:
+                        # Extract the AsyncConversionItem from queue item data
+                        item = queue_item.data
+                        
+                        # Mark as processing in queue
+                        queue_item.mark_processing()
+                        self._queue.update(queue_item)
+                        
+                        # Process with semaphore limiting concurrency
+                        task = asyncio.create_task(
+                            self._process_with_limit(item, queue_item)
+                        )
+                        self._active_tasks.append(task)
+                        
+                        # Clean up completed tasks
+                        self._active_tasks = [
+                            t for t in self._active_tasks if not t.done()
+                        ]
                     
                 except asyncio.TimeoutError:
-                    # Check for archive queue processing (after 10s idle)
-                    if self._queue.empty():
+                    # No item within timeout - check for archive processing
+                    if self._queue.is_empty:
                         await self._process_archive_queues()
                     continue
                     
@@ -398,36 +427,48 @@ class AsyncConverterPool:
         if not converter.matches_file(file_path):
             return
         
-        # Queue for conversion - use thread-safe method
-        item = AsyncConversionItem(file_path, converter)
+        # Get priority from converter (default to 5 if not set)
+        priority = getattr(converter, 'priority', 5)
         
-        # IMPORTANT: This is called from watchdog's thread, not the asyncio thread.
-        # We must use call_soon_threadsafe to safely add to the asyncio queue
-        if self._loop is not None and self._loop.is_running():
-            self._loop.call_soon_threadsafe(
-                lambda: self._queue.put_nowait(item) if not self._queue.full() else logger.warning(f"Queue full, cannot queue: {file_path.name}")
+        # Queue for conversion with priority
+        # AsyncQueueAdapter.put_nowait is thread-safe, can call directly
+        try:
+            item = AsyncConversionItem(file_path, converter, priority=priority)
+            self._queue.put_nowait(
+                data=item,
+                priority=priority,
+                metadata={'file': str(file_path), 'converter': converter.name}
             )
-            logger.debug(f"Queued (thread-safe): {file_path.name}")
-        else:
-            # Fallback for edge cases
-            try:
-                self._queue.put_nowait(item)
-                logger.debug(f"Queued: {file_path.name}")
-            except asyncio.QueueFull:
-                logger.warning(f"Queue full, cannot queue: {file_path.name}")
+            logger.debug(
+                f"Queued (priority={priority}): {file_path.name} via {converter.name}"
+            )
+        except Exception as e:
+            logger.warning(f"Cannot queue {file_path.name}: {e}")
     
     # =========================================================================
     # Conversion Processing
     # =========================================================================
     
-    async def _process_with_limit(self, item: AsyncConversionItem) -> None:
+    async def _process_with_limit(
+        self,
+        item: AsyncConversionItem,
+        queue_item: 'QueueItem'
+    ) -> None:
         """Process conversion item with semaphore limiting"""
         async with self._semaphore:
             self._active_count += 1
             try:
                 await self._process_item(item)
+                # Mark completed in queue
+                queue_item.mark_completed()
+            except Exception as e:
+                # Mark failed in queue
+                queue_item.mark_failed(str(e))
+                logger.error(f"Conversion failed: {item.file_path.name}: {e}")
             finally:
                 self._active_count -= 1
+                # Update queue item status
+                self._queue.update(queue_item)
     
     async def _process_item(self, item: AsyncConversionItem) -> None:
         """
