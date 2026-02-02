@@ -61,10 +61,15 @@
 - [ ] Integration tests for /metrics endpoint
 - [ ] Load testing (measure overhead)
 
-### Documentation
-- [ ] Create `docs/guides/observability.md`
-- [ ] Prometheus scraping setup
-- [ ] Grafana dashboard examples
+### Documentation ✅ COMPLETE
+- ✅ Create `docs/guides/observability.md`
+  - ✅ Prometheus scraping setup with example prometheus.yml
+  - ✅ Grafana dashboard examples (HTTP, cache, queue panels)
+  - ✅ Kubernetes health check configuration
+  - ✅ Common Prometheus queries (request rate, latency, cache hit rate)
+  - ✅ Troubleshooting guide
+  - ✅ Best practices for production deployment
+  - ✅ 600+ lines comprehensive guide
 
 ---
 
