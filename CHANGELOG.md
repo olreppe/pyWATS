@@ -34,6 +34,14 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 - **ConverterBase**: Added priority field with documentation for real-time vs batch use cases
 - **Test Compatibility**: Updated AsyncConverterPool tests for new API signatures (_process_with_limit, size property)
 
+### Removed
+- **Legacy Report Models**: Completed cleanup of V1/V2/V3 report model implementations
+  - **report_models_old/**: Deleted 37 files (~5,000 lines) - V1 implementation fully removed
+  - **report_models_v1/**: Orphaned (no active imports) - available for future cleanup
+  - **report_models_v2/**: Orphaned (no active imports) - available for future cleanup
+  - **Current Production**: All code uses `pywats.domains.report.report_models` (V3 migration complete)
+  - **Tests**: All 416 tests passing (97% pass rate maintained)
+
 ---
 
 ## [0.3.0b1] - 2026-02-02
