@@ -35,7 +35,7 @@ if bom:
 # BOM Tree Structure
 # =============================================================================
 
-def print_bom_tree(part_number: str, level: int = 0):
+def print_bom_tree(part_number: str, level: int = 0) -> None:
     """Recursively print BOM as a tree."""
     indent = "  " * level
     product = api.product.get_product(part_number)
