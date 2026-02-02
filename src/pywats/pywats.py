@@ -323,6 +323,9 @@ class pyWATS:
         error_mode: Optional[ErrorMode] = None,
         retry_config: Optional['RetryConfig'] = None,
         retry_enabled: bool = False,
+        enable_cache: bool = True,
+        cache_ttl: float = 300.0,
+        cache_max_size: int = 1000,
         instance_id: str = "default",
         settings: Optional['APISettings'] = None,
         sync_config: Optional['SyncConfig'] = None,
@@ -358,6 +361,9 @@ class pyWATS:
                      Separate from sync wrapper retry.
             retry_enabled: Enable/disable HTTP retry (default: False). 
                 Shorthand for RetryConfig(enabled=False).
+            enable_cache: Enable response caching for GET requests (default: True)
+            cache_ttl: Cache TTL in seconds (default: 300 = 5 minutes)
+            cache_max_size: Maximum cache entries (default: 1000)
             instance_id: pyWATS Client instance ID for auto-discovery (default: "default")
             settings: APISettings object for injected configuration. Settings from this
                      object are used as defaults, but can be overridden by explicit parameters.
@@ -468,6 +474,9 @@ class pyWATS:
             timeout=self._timeout,
             verify_ssl=self._verify_ssl,
             retry_config=self._retry_config,
+            enable_cache=enable_cache,
+            cache_ttl=cache_ttl,
+            cache_max_size=cache_max_size,
         )
         
         # Service instances (lazy initialization)

@@ -93,6 +93,9 @@ class AsyncWATS:
         enable_throttling: bool = True,
         retry_config: Optional[RetryConfig] = None,
         retry_enabled: bool = True,
+        enable_cache: bool = True,
+        cache_ttl: float = 300.0,
+        cache_max_size: int = 1000,
         instance_id: str = "default",
         settings: Optional['APISettings'] = None,
     ):
@@ -121,6 +124,9 @@ class AsyncWATS:
             enable_throttling: Enable/disable rate limiting (default: True)
             retry_config: Custom retry configuration. If None, uses defaults.
             retry_enabled: Enable/disable retry (default: True).
+            enable_cache: Enable response caching for GET requests (default: True)
+            cache_ttl: Cache TTL in seconds (default: 300 = 5 minutes)
+            cache_max_size: Maximum cache entries (default: 1000)
             instance_id: pyWATS Client instance ID for auto-discovery (default: "default")
             settings: APISettings object for injected configuration. Settings from this
                      object are used as defaults, but can be overridden by explicit parameters.
@@ -136,6 +142,11 @@ class AsyncWATS:
             # Auto-discover from running service
             async with AsyncWATS() as api:  # Uses default instance
                 products = await api.product.get_products()
+            
+            # Custom caching configuration
+            async with AsyncWATS(base_url="...", token="...", 
+                                enable_cache=True, cache_ttl=600, cache_max_size=2000) as api:
+                products = await api.product.get_products()  # Cached for 10 minutes
         """
         # Import APISettings for type checking and defaults
         from .core.config import APISettings, get_default_settings
@@ -198,6 +209,9 @@ class AsyncWATS:
             rate_limiter=rate_limiter,
             enable_throttling=enable_throttling,
             retry_config=self._retry_config,
+            enable_cache=enable_cache,
+            cache_ttl=cache_ttl,
+            cache_max_size=cache_max_size,
         )
         
         # Service instances (lazy initialization)

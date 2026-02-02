@@ -53,14 +53,14 @@
   - ✅ Add metrics_collector parameter and tracking
   - ✅ Mirror all HttpClient caching functionality
 
-### AsyncWATS Integration
-- [ ] 🚧 Wire caching params to `src/pywats/async_wats.py`
-  - [ ] Add enable_cache, cache_ttl, cache_max_size constructor params
-  - [ ] Pass to AsyncHttpClient initialization
-- [ ] Wire caching params to `src/pywats/pywats.py` (sync wrapper)
+### AsyncWATS Integration ✅ COMPLETE
+- ✅ Wire caching params to `src/pywats/async_wats.py`
+  - ✅ Add enable_cache, cache_ttl, cache_max_size constructor params
+  - ✅ Pass to AsyncHttpClient initialization
+- ✅ Wire caching params to `src/pywats/pywats.py` (sync wrapper)
 
 ### Configuration
-- [ ] Add config options to `src/pywats_client/core/config.py`
+- [ ] 🚧 Add config options to `src/pywats_client/core/config.py`
   - [ ] enable_cache, cache_ttl_seconds, cache_max_size
   - [ ] Document in config schema
 
