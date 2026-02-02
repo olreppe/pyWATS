@@ -341,7 +341,7 @@ class CsvConverter(FileConverter):
                             low_limit=low_limit,
                             high_limit=high_limit,
                             comp_op=CompOp.GELE,
-                            status=StepStatus.Passed if passed else "Failed",
+                            status=StepStatus.Passed if passed else StepStatus.Failed,
                         )
                     elif low_limit is not None:
                         # Only low limit - use GE (Greater Equal)
@@ -351,7 +351,7 @@ class CsvConverter(FileConverter):
                             unit=unit,
                             low_limit=low_limit,
                             comp_op=CompOp.GE,
-                            status=StepStatus.Passed if passed else "Failed",
+                            status=StepStatus.Passed if passed else StepStatus.Failed,
                         )
                     elif high_limit is not None:
                         # Only high limit - use LE (Less Equal)
@@ -361,7 +361,7 @@ class CsvConverter(FileConverter):
                             unit=unit,
                             high_limit=high_limit,
                             comp_op=CompOp.LE,
-                            status=StepStatus.Passed if passed else "Failed",
+                            status=StepStatus.Passed if passed else StepStatus.Failed,
                         )
                     else:
                         # No limits - use LOG (just log the value)
@@ -370,21 +370,21 @@ class CsvConverter(FileConverter):
                             value=value,
                             unit=unit,
                             comp_op=CompOp.LOG,
-                            status=StepStatus.Passed if passed else "Failed",
+                            status=StepStatus.Passed if passed else StepStatus.Failed,
                         )
                 except ValueError:
                     # Not a number - add as string step
                     sequence.add_string_step(
                         name=test_name,
                         value=measured,
-                        status=StepStatus.Passed if passed else "Failed",
+                        status=StepStatus.Passed if passed else StepStatus.Failed,
                     )
             else:
                 # No measured value - add as boolean pass/fail step
                 sequence.add_boolean_step(
                     name=test_name,
                     value=passed,
-                    status=StepStatus.Passed if passed else "Failed",
+                    status=StepStatus.Passed if passed else StepStatus.Failed,
                 )
             
             return True

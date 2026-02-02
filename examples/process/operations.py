@@ -107,7 +107,8 @@ if process:
 # Using Process Codes in Reports
 # =============================================================================
 
-from pywats.models import UUTReport, UURReport
+from pywats.domains.report.report_models import UUTReport, UURReport
+from pywats.domains.report.report_models.common_types import ReportStatus
 from datetime import datetime
 
 # UUT Report with specific process
@@ -115,7 +116,7 @@ uut_report = UUTReport(
     pn="WIDGET-001",
     sn="SN-001",
     rev="A",
-    result="Passed",
+    result=ReportStatus.Passed,
     start=datetime.now(),
     processCode=100  # EOL Test
 )
@@ -125,7 +126,7 @@ uur_report = UURReport(
     pn="WIDGET-001",
     sn="SN-001",
     rev="A",
-    result="Passed",
+    result=ReportStatus.Passed,
     start=datetime.now(),
     processCode=500  # Repair
 )
