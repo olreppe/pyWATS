@@ -22,6 +22,7 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ### Completed Projects
 - **performance-optimization**: HTTP caching, metrics, benchmarks (100% complete, archived 2026-02-02)
 - **observability-enhancement**: Prometheus metrics, health endpoints, Grafana dashboards (100% complete, archived 2026-02-02)
+- **client-components-polish**: Client examples and caching documentation (95% complete, Sprint 1 & 3 done, Sprint 2 deferred, archived 2026-02-02)
 
 ### Added
 - **GUI Settings Dialog**: Performance and Observability panels for v0.3.0 features
