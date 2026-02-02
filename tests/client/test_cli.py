@@ -194,8 +194,8 @@ class TestConfigCommands:
         assert result.exit_code == 0
         assert 'pyWATS Client Configuration' in result.output
         assert 'Connection:' in result.output
-        assert 'Caching:' in result.output
-        assert 'Metrics:' in result.output
+        assert 'Timeout:' in result.output
+        assert 'Domain Settings:' in result.output
     
     def test_config_show_json(self, runner, mock_service_manager, mock_config_manager):
         """Test config show command with JSON format."""
@@ -204,14 +204,15 @@ class TestConfigCommands:
         assert result.exit_code == 0
         # Should be valid JSON
         data = json.loads(result.output)
-        assert 'server_url' in data
+        assert 'timeout_seconds' in data
+        assert 'domains' in data
     
     def test_config_get_valid_key(self, runner, mock_service_manager, mock_config_manager):
         """Test config get with valid key."""
-        result = runner.invoke(cli, ['config', 'get', 'server_url'])
+        result = runner.invoke(cli, ['config', 'get', 'timeout_seconds'])
         
         assert result.exit_code == 0
-        assert 'http' in result.output.lower()
+        assert '30' in result.output
     
     def test_config_get_invalid_key(self, runner, mock_service_manager, mock_config_manager):
         """Test config get with invalid key."""
@@ -224,7 +225,7 @@ class TestConfigCommands:
         """Test config set with string value."""
         result = runner.invoke(cli, [
             'config', 'set',
-            'server_url', 'https://new.example.com'
+            'error_mode', 'lenient'
         ])
         
         assert result.exit_code == 0
@@ -246,7 +247,7 @@ class TestConfigCommands:
         """Test config set with boolean value."""
         result = runner.invoke(cli, [
             'config', 'set',
-            'enable_cache', 'true',
+            'verify_ssl', 'false',
             '--type', 'bool'
         ])
         

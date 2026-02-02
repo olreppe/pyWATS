@@ -348,34 +348,33 @@ def config_show(ctx, format):
             
             # Connection settings
             click.echo("Connection:")
-            click.echo(f"  Server URL:      {settings.server_url}")
-            click.echo(f"  API Key:         {settings.api_key[:8]}... (hidden)" if settings.api_key else "  API Key:         (not set)")
-            click.echo(f"  Username:        {settings.username or '(not set)'}")
             click.echo(f"  Timeout:         {settings.timeout_seconds}s")
-            click.echo(f"  Retry Attempts:  {settings.retry_attempts}")
+            click.echo(f"  Max Retries:     {settings.max_retries}")
+            click.echo(f"  Retry Delay:     {settings.retry_delay_seconds}s")
+            click.echo(f"  Verify SSL:      {settings.verify_ssl}")
             click.echo("")
             
-            # Caching settings
-            click.echo("Caching:")
-            cache_enabled = getattr(settings, 'enable_cache', True)
-            cache_ttl = getattr(settings, 'cache_ttl_seconds', 300.0)
-            cache_size = getattr(settings, 'cache_max_size', 1000)
-            click.echo(f"  Enabled:         {cache_enabled}")
-            click.echo(f"  TTL:             {cache_ttl}s")
-            click.echo(f"  Max Size:        {cache_size} entries")
-            click.echo("")
-            
-            # Metrics settings
-            click.echo("Metrics:")
-            metrics_enabled = getattr(settings, 'enable_metrics', True)
-            metrics_port = getattr(settings, 'metrics_port', 9090)
-            click.echo(f"  Enabled:         {metrics_enabled}")
-            click.echo(f"  Port:            {metrics_port}")
+            # Error Handling
+            click.echo("Error Handling:")
+            click.echo(f"  Error Mode:      {settings.error_mode.value if hasattr(settings.error_mode, 'value') else settings.error_mode}")
             click.echo("")
             
             # Logging settings
             click.echo("Logging:")
-            click.echo(f"  Level:           {settings.log_level}")
+            click.echo(f"  Log Requests:    {settings.log_requests}")
+            click.echo(f"  Log Responses:   {settings.log_responses}")
+            click.echo("")
+            
+            # Domain settings summary
+            click.echo("Domain Settings:")
+            for domain_name in ['product', 'report', 'production', 'process', 'software', 'asset', 'rootcause', 'app']:
+                if hasattr(settings, domain_name):
+                    domain = getattr(settings, domain_name)
+                    enabled = getattr(domain, 'enabled', True)
+                    cache_enabled = getattr(domain, 'cache_enabled', True)
+                    status = "✓" if enabled else "✗"
+                    cache_status = "cached" if cache_enabled else "no cache"
+                    click.echo(f"  {domain_name.capitalize():12} {status} ({cache_status})")
             click.echo("")
             
             click.echo("=" * 60)
@@ -540,6 +539,7 @@ def config_edit(ctx):
     
     # Open in default editor
     try:
+        import os
         import subprocess
         import platform
         
