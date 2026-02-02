@@ -20,6 +20,16 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Service Integration for Caching & Observability**: Complete end-to-end integration in AsyncClientService
+  - **Configuration**: ClientConfig now includes enable_cache, cache_ttl_seconds, cache_max_size, enable_metrics, metrics_port
+  - **MetricsCollector**: Automatically created in AsyncClientService if config.enable_metrics=True
+  - **Component Wiring**: HealthServer receives metrics_collector, http_client, converter_pool for /metrics endpoint
+  - **Cache Integration**: Cache parameters passed from config through AsyncWATS to AsyncHttpClient
+  - **Debug Logging**: Component wiring logged for troubleshooting
+  - **User Control**: Users can enable/disable caching and metrics via config.json or GUI
+  - **Full Pipeline**: Config → Service → API → Health Server → /metrics with cache/queue stats
+  - **Location**: src/pywats_client/core/config.py, src/pywats_client/service/async_client_service.py
+
 - **Async HTTP Response Caching**: Full HTTP caching support for AsyncHttpClient (mirroring sync client)
   - **AsyncTTLCache Integration**: Async-safe response caching using AsyncTTLCache[Response]
   - **GET Caching**: Automatic caching of successful GET responses (2xx) with configurable TTL
