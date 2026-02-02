@@ -1,119 +1,146 @@
-# Domain Health Checks
+# pyWATS Health Checks
 
-**Purpose:** Living documentation tracking the health and quality of each pyWATS domain.
+**Purpose:** Living documentation tracking the health and quality of all pyWATS components.
 
-**Last Updated:** 2026-01-26  
-**Status:** Active - Updated with each domain change
+**Last Updated:** 2026-02-02  
+**Status:** Active - Updated with each component change
 
 ---
 
 ## Overview
 
-This directory contains **unified health checks** for all pyWATS domains, replacing the previous separate `release_reviews/` and `DOMAIN_STATUS/` folders. Each domain gets a single, comprehensive health check document that combines:
+This directory contains **comprehensive health checks** for all pyWATS components including domains, API components, and client components. Each health check document provides:
 
-- ✅ **Quality scoring** (architecture, models, error handling, docs, testing)
+- ✅ **Quality scoring** (8 categories: architecture, models, error handling, docs, testing, API surface, performance, observability)
 - ✅ **Current status** (what's good, what needs work)
 - ✅ **Pending work** (high/medium/low priority tasks)
 - ✅ **Change history** (evolution over time)
 
 ---
 
-## Current Health Scores
+## Health Check Summary
 
-| Domain | Score | Grade | Status | Last Updated |
-|--------|-------|-------|--------|--------------|
-| [Analytics](analytics.md) | 54/60 | A | ✅ Excellent | 2026-01-26 |
-| [Production](production.md) | 54/60 | A | ✅ Excellent | 2026-01-26 |
-| [Product](product.md) | 53/60 | A- | ✅ Very Good | 2026-01-26 |
-| [Report](report.md) | 53/60 | A- | ✅ Very Good | 2026-01-26 |
-| [RootCause](rootcause.md) | 52/60 | A- | ✅ Very Good | 2026-01-26 |
-| [Software](software.md) | 52/60 | A- | ✅ Very Good | 2026-01-26 |
-| [Asset](asset.md) | 52/60 | A- | ✅ Very Good | 2026-01-26 |
-| [Process](process.md) | 52/60 | A- | ✅ Very Good | 2026-01-26 |
+### Domains (src/pywats/domains)
 
-**Overall Average:** 52.8/60 (A-) ✅
+| Component | Score | Grade | Status | Last Updated |
+|-----------|-------|-------|--------|--------------|
+| [Analytics](analytics.md) | 68/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Production](production.md) | 68/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Product](product.md) | 67/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Report](report.md) | 67/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Asset](asset.md) | 66/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Process](process.md) | 66/80 | A- | ✅ Very Good | 2026-02-02 |
+| [RootCause](rootcause.md) | 66/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Software](software.md) | 66/80 | A- | ✅ Very Good | 2026-02-02 |
 
-> **Scale Change:** Upgraded from 50-point (5 categories) to 60-point (6 categories) system on 2026-01-26.
-> New "API Surface Quality" category added. Previous A grades normalized to new scale.
+**Domain Average:** 66.8/80 (A-) ✅
+
+### API Components (src/pywats)
+
+| Component | Score | Grade | Status | Last Updated |
+|-----------|-------|-------|--------|--------------|
+| [Shared](api_shared.md) | 70/80 | A | ✅ Excellent | 2026-02-02 |
+| [Core](api_core.md) | 68/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Queue](api_queue.md) | 66/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Tools](api_tools.md) | 58/80 | B+ | ⚠️ Good | 2026-02-02 |
+
+**API Average:** 65.5/80 (A-) ✅
+
+### Client Components (src/pywats_client)
+
+| Component | Score | Grade | Status | Last Updated |
+|-----------|-------|-------|--------|--------------|
+| [Service](client_service.md) | 66/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Core](client_core.md) | 64/80 | A- | ✅ Very Good | 2026-02-02 |
+| [Converters](client_converters.md) | 62/80 | B+ | ⚠️ Good | 2026-02-02 |
+| [Queue](client_queue.md) | 62/80 | B+ | ⚠️ Good | 2026-02-02 |
+| [GUI](client_gui.md) | 60/80 | B+ | ⚠️ Good | 2026-02-02 |
+| [Control](client_control.md) | 58/80 | B+ | ⚠️ Good | 2026-02-02 |
+| [Examples](client_examples.md) | 54/80 | B | ⚠️ Acceptable | 2026-02-02 |
+
+**Client Average:** 60.9/80 (B+) ✅
+
+### Overall Summary
+
+| Category | Count | Average Score | Grade | Status |
+|----------|-------|---------------|-------|--------|
+| **Domains** | 8 | 66.8/80 | A- | ✅ Very Good |
+| **API Components** | 4 | 65.5/80 | A- | ✅ Very Good |
+| **Client Components** | 7 | 60.9/80 | B+ | ✅ Good |
+| **TOTAL** | **19** | **64.4/80** | **A-** | **✅ Very Good** |
 
 ---
 
-## Grading Scale
+## Grading Scale (80-point system)
 
 | Grade | Score | Description |
 |-------|-------|-------------|
-| **A+** | 58-60 | Elite - Industry benchmark quality |
-| **A** | 54-57 | Excellent - Production ready, highly polished |
-| **A-** | 50-53 | Very Good - Minor refinements possible |
-| **B+** | 46-49 | Good - Some improvements needed |
-| **B** | 42-45 | Acceptable - Notable improvements needed |
-| **B-** | 38-41 | Fair - Multiple areas need work |
-| **C** | 30-37 | Needs Work - Significant improvements required |
-| **D** | 20-29 | Poor - Major refactoring needed |
-| **F** | <20 | Critical - Not production ready |
+| **A+** | 76-80 | Elite - Industry benchmark quality |
+| **A** | 70-75 | Excellent - Production ready, highly polished |
+| **A-** | 64-69 | Very Good - Minor refinements possible |
+| **B+** | 58-63 | Good - Some improvements needed |
+| **B** | 52-57 | Acceptable - Notable improvements needed |
+| **B-** | 46-51 | Fair - Multiple areas need work |
+| **C** | 36-45 | Needs Work - Significant improvements required |
+| **D** | 26-35 | Poor - Major refactoring needed |
+| **F** | <26 | Critical - Not production ready |
 
-> **Note:** Grading scale upgraded Jan 2026 from 50-point to 60-point system with stricter criteria.
-> Previous A (45-50) roughly maps to B+ (46-49) in new system.
+> **System Upgrade:** Updated from 60-point (6 categories) to 80-point (8 categories) system on 2026-02-02.  
+> New categories: **Performance** and **Observability** added based on industry best practices.
 
 ---
 
-## Scoring Categories (60 points total)
+## Scoring Categories (80 points total)
 
-Each domain is scored across **6 categories** (max 10 points each):
+Each component is scored across **8 categories** (max 10 points each):
 
 ### 1. Architecture (10 points)
-| Score | Criteria |
-|-------|----------|
-| 10 | Perfect layering, injectable dependencies, no circular imports, <500 LOC per file |
-| 8-9 | Service→Repository→HttpClient compliant, proper separation, internal API isolation |
-| 6-7 | Minor layering violations, some large files (>800 LOC) |
-| 4-5 | Mixed business logic in repository, inconsistent patterns |
-| <4 | No clear architecture, spaghetti code |
+- Layering and separation of concerns
+- Dependency management and injection
+- File organization and module cohesion
+- Pattern compliance
 
-### 2. Models (10 points)
-| Score | Criteria |
-|-------|----------|
-| 10 | All fields documented, computed properties, validation, examples in docstrings |
-| 8-9 | Pydantic with AliasChoices, good documentation, reasonable file sizes |
-| 6-7 | Models work but documentation sparse, some large model files |
-| 4-5 | Missing validations, poor documentation, >1000 LOC model files |
-| <4 | Incorrect types, no Pydantic, no documentation |
+### 2. Models/Types (10 points)
+- Type hint coverage and quality
+- Model documentation and validation
+- Schema design and size management
+- Use of appropriate data structures
 
 ### 3. Error Handling (10 points)
-| Score | Criteria |
-|-------|----------|
-| 10 | ErrorHandler 100%, custom exceptions for all error types, detailed error context |
-| 8-9 | ErrorHandler consistent, ValueError validations, clear messages |
-| 6-7 | Some raw HTTP errors escape, inconsistent validation |
-| 4-5 | Many unhandled errors, unclear messages |
-| <4 | No error handling, crashes on bad input |
+- Exception coverage and handling
+- Custom exception types
+- Error messages and context
+- Recovery strategies
 
 ### 4. Documentation (10 points)
-| Score | Criteria |
-|-------|----------|
-| 10 | 100% docstrings with Args/Returns/Raises/Examples, usage guide in docs/modules/ |
-| 8-9 | >90% docstrings, Raises complete, good examples directory coverage |
-| 6-7 | >80% docstrings, missing some Raises or examples |
-| 4-5 | <80% docstrings, sparse or missing Args/Returns |
-| <4 | No docstrings, no documentation |
+- Docstring coverage and quality
+- Args/Returns/Raises documentation
+- Code examples and usage guides
+- Type hint documentation
 
 ### 5. Testing (10 points)
-| Score | Criteria |
-|-------|----------|
-| 10 | >90% unit coverage, integration tests, edge cases, mocked + live test modes |
-| 8-9 | >80% coverage, main scenarios covered, acceptance tests present |
-| 6-7 | >70% coverage, some gaps in edge cases |
-| 4-5 | <70% coverage, missing critical test scenarios |
-| <4 | <50% coverage or no tests |
+- Unit test coverage (>80% target)
+- Integration and acceptance tests
+- Edge case and error scenario coverage
+- Test quality and maintainability
 
-### 6. API Surface Quality (10 points) — NEW
-| Score | Criteria |
-|-------|----------|
-| 10 | Intuitive naming, consistent patterns, full type hints, deprecation handled |
-| 8-9 | Good naming, types complete, follows pyWATS conventions |
-| 6-7 | Some naming inconsistencies, missing type hints |
-| 4-5 | Confusing API, mixed naming conventions, incomplete types |
-| <4 | Unpythonic API, no types, breaking changes without deprecation |
+### 6. API Surface (10 points)
+- Naming consistency and intuition
+- Type hint coverage
+- API stability and versioning
+- Usability and sensible defaults
+
+### 7. Performance (10 points) — NEW
+- Resource consumption (memory, CPU, I/O)
+- Performance optimizations (caching, pooling, batching)
+- Known bottlenecks identification
+- Performance testing and benchmarks
+
+### 8. Observability (10 points) — NEW
+- Logging quality and coverage
+- Metrics and monitoring
+- Distributed tracing support
+- Diagnostics and debugging tools
 
 ---
 
@@ -123,187 +150,133 @@ Each domain is scored across **6 categories** (max 10 points each):
 
 **Required Updates:**
 - ✅ Before each release (part of `scripts/bump.ps1`)
-- ✅ After major refactoring of a domain
+- ✅ After major refactoring of a component
 - ✅ When fixing identified issues
+- ✅ When adding new components
 
 **Recommended Updates:**
-- ⚠️ Monthly review of all domains
+- ⚠️ Quarterly review of all components
 - ⚠️ When adding significant new features
-- ⚠️ When changing domain architecture
+- ⚠️ When changing component architecture
 
 ### How to Update
 
-**Manual Update:**
-1. Open the domain health check file (e.g., `analytics.md`)
+1. Open the component health check file
 2. Update the relevant sections:
    - Quick Status scores
    - Pending Work (mark completed tasks)
    - Change History (add new row)
 3. Update **Last Updated** date and **Version**
-4. Commit changes with message: `docs: Update {domain} health check - {reason}`
-
-**Automated Update (Recommended):**
-```powershell
-# Run the health check script for a specific domain
-.\scripts\domain_health_check.ps1 -Domain analytics
-
-# Or check all domains
-.\scripts\domain_health_check.ps1 -All
-
-# Dry run to preview changes
-.\scripts\domain_health_check.ps1 -Domain report -DryRun
-```
+4. Commit with message: `docs: Update {component} health check - {reason}`
 
 ---
 
-## Common Patterns
+## Component Types
 
-### All Domains (✅ Excellent Across Board)
+### Domains
+Business logic domains that encapsulate specific WATS functionality:
+- Analytics, Asset, Process, Product, Production, Report, RootCause, Software
 
-1. **Architecture Compliance** - All follow Service→Repository→HttpClient
-2. **Error Handling** - ErrorHandler.handle_response() implemented (Jan 2026)
-3. **Magic Numbers** - Eliminated (Jan 2026)
-4. **Internal API Separation** - Properly isolated where applicable
-5. **Pydantic Models** - All use AliasChoices for camelCase/snake_case
+### API Components
+Core infrastructure for the pyWATS API library:
+- **Core**: HTTP client, caching, retry, throttling
+- **Shared**: Base models, common types, utilities
+- **Queue**: Message queue and async adapters
+- **Tools**: Utility tools and builders
+
+### Client Components
+Components for the pyWATS client application:
+- **Control**: Service management and CLI
+- **Converters**: Data conversion framework
+- **Core**: Client infrastructure (auth, config, encryption)
+- **Examples**: Example applications
+- **GUI**: PySide6 user interface
+- **Queue**: Persistent queue
+- **Service**: Background service and IPC
+
+---
+
+## Key Improvements
+
+### Strengths Across All Components
+
+1. ✅ **Error Handling** - ErrorHandler implementation across all domains (2026-01)
+2. ✅ **Type Hints** - Comprehensive type coverage (90%+ average)
+3. ✅ **Architecture** - Clear separation of concerns and patterns
+4. ✅ **Documentation** - Good docstring coverage (85%+ average)
+5. ✅ **API Shared** - Highest score (70/80) with excellent type system
 
 ### Common Improvement Areas
 
-| Issue | Affected Domains | Priority |
-|-------|------------------|----------|
-| `Raises:` docstrings | ✅ ALL COMPLETE | ~~LOW~~ DONE |
-| More code examples needed | Report | MEDIUM |
-| Large model files (>500 lines) | Report (UURReport 650+), Analytics (models.py 1802) | LOW |
-
----
-
-## Integration with Development Workflow
-
-### Pre-Release Checklist
-
-Before running `scripts/bump.ps1`, ensure:
-- [ ] Domain health checks are up-to-date (< 3 months old)
-- [ ] All identified HIGH priority issues are resolved or documented
-- [ ] New features have corresponding health check updates
-
-### Pull Request Checklist
-
-When modifying domain code:
-- [ ] Update corresponding health check file
-- [ ] Mark completed pending work items
-- [ ] Add new pending work if issues identified
-- [ ] Update score if significant changes made
-
-### Issue Tracking
-
-When creating GitHub issues for domain improvements:
-- Link to specific health check section
-- Reference current score and target score
-- Tag with domain label (`domain:analytics`, `domain:report`, etc.)
-
----
-
-## Historical Context
-
-### Previous Documentation Systems
-
-**`release_reviews/` (Archived Jan 2026):**
-- Purpose: Pre-release quality audits
-- Format: Detailed function-by-function reviews
-- Status: ✅ Migrated to domain_health/
-- Location: `docs/internal_documentation/archived/release_reviews/`
-
-**`DOMAIN_STATUS/` (Archived Jan 2026):**
-- Purpose: Living development documentation
-- Format: Template-driven with architecture diagrams
-- Status: ✅ Migrated to domain_health/
-- Location: `docs/internal_documentation/archived/DOMAIN_STATUS/`
-
-### Why Merge Them?
-
-1. **Single source of truth** - No conflicting information
-2. **Less maintenance** - One file to update per domain
-3. **Actionable** - Clear scores drive prioritization
-4. **Lightweight** - Not overwhelming like old STATUS docs
-5. **Trackable** - Change history shows evolution
+| Issue | Affected Components | Priority |
+|-------|---------------------|----------|
+| Test coverage <80% | Most client components | HIGH |
+| Limited observability | All components | MEDIUM |
+| Performance benchmarks | All components | MEDIUM |
+| Large model files | Analytics, Report | LOW |
+| Examples documentation | Tools, Examples | LOW |
 
 ---
 
 ## Files in This Directory
 
-| File | Purpose |
-|------|---------|
-| **README.md** | This file - Overview and workflow guide |
-| **TEMPLATE.md** | Standard template for creating new domain health checks |
-| **analytics.md** | Analytics domain health check |
-| **asset.md** | Asset domain health check |
-| **process.md** | Process domain health check |
-| **product.md** | Product domain health check |
-| **production.md** | Production domain health check |
-| **report.md** | Report domain health check |
-| **rootcause.md** | RootCause domain health check |
-| **software.md** | Software domain health check |
+### Template
+- **TEMPLATE.md** - Standard template for new health checks
+
+### Domains (8 files)
+- analytics.md, asset.md, process.md, product.md
+- production.md, report.md, rootcause.md, software.md
+
+### API Components (4 files)
+- api_core.md, api_queue.md, api_shared.md, api_tools.md
+
+### Client Components (7 files)
+- client_control.md, client_converters.md, client_core.md, client_examples.md
+- client_gui.md, client_queue.md, client_service.md
+
+**Total:** 20 files (1 template + 19 health checks)
 
 ---
 
-## Maintenance Scripts
+## Best Practices Applied
 
-### Domain Health Check Script
+Based on industry standards for software health checks:
 
-Location: `scripts/domain_health_check.ps1`
-
-**Features:**
-- Automated score calculation
-- Stale check detection (>3 months old)
-- Markdown formatting validation
-- Git commit integration
-
-**Usage:**
-```powershell
-# Check single domain
-.\scripts\domain_health_check.ps1 -Domain analytics
-
-# Check all domains
-.\scripts\domain_health_check.ps1 -All
-
-# Find stale checks (>3 months)
-.\scripts\domain_health_check.ps1 -FindStale
-
-# Preview without committing
-.\scripts\domain_health_check.ps1 -Domain report -DryRun
-```
-
-### Integration with Bump Script
-
-The `scripts/bump.ps1` script now includes a health check reminder:
-```powershell
-Write-Step "Checking Domain Health"
-$staleHealthChecks = Get-ChildItem "docs/internal_documentation/domain_health/*.md" | 
-    Where-Object { $_.LastWriteTime -lt (Get-Date).AddMonths(-3) }
-    
-if ($staleHealthChecks) {
-    Write-Warning "Health checks older than 3 months: $($staleHealthChecks.Name -join ', ')"
-    # Prompts user to update before continuing
-}
-```
+1. **Comprehensive Coverage** - 8 categories cover all aspects of software quality
+2. **Performance Monitoring** - Resource usage, optimizations, bottlenecks
+3. **Observability** - Logging, metrics, tracing, diagnostics (Google SRE practices)
+4. **Actionable Metrics** - Clear scoring with specific improvement areas
+5. **Living Documentation** - Updated regularly, tracks evolution over time
+6. **Consistent Format** - Standardized template for all components
 
 ---
 
-## FAQ
+## Integration with Development
 
-**Q: How often should health checks be updated?**
-A: Minimum every 3 months, or whenever making significant changes to a domain.
+### Pre-Release Checklist
+- [ ] Health checks are up-to-date
+- [ ] All HIGH priority issues resolved or documented
+- [ ] New features have health check updates
 
-**Q: What if a domain score drops?**
-A: Document the reason in Change History, create GitHub issues for improvements, prioritize based on severity.
+### Pull Request Checklist
+- [ ] Update corresponding health check file
+- [ ] Mark completed pending work items
+- [ ] Update score if significant changes made
 
-**Q: Can I add custom categories to health checks?**
-A: Yes, but update TEMPLATE.md first and apply consistently across all domains.
+---
 
-**Q: What happens if I don't update health checks?**
-A: The bump script will warn you. It's not blocking, but keeping them updated ensures release quality.
+## Historical Context
 
-**Q: How do I add a new domain?**
-A: Copy TEMPLATE.md to `{domain}.md`, fill in all sections, add to README.md table, update scripts.
+**Previous Systems:**
+- `release_reviews/` (Archived 2026-01) - Pre-release quality audits
+- `DOMAIN_STATUS/` (Archived 2026-01) - Living development docs
+
+**Why Unified Health Checks?**
+1. Single source of truth
+2. Less maintenance overhead
+3. Actionable scores drive prioritization
+4. Comprehensive coverage (domains + components)
+5. Trackable evolution over time
 
 ---
 
@@ -311,9 +284,9 @@ A: Copy TEMPLATE.md to `{domain}.md`, fill in all sections, add to README.md tab
 
 For questions or suggestions about the health check system:
 - GitHub Issues: https://github.com/olreppe/pyWATS/issues
-- Tag: `documentation`, `internal-docs`
+- Tag: `documentation`, `health-check`
 
 ---
 
-**Last System Update:** 2026-01-26  
-**Next Review:** 2026-04-26 (3 months)
+**Last System Update:** 2026-02-02  
+**Next Review:** 2026-05-02 (3 months)
