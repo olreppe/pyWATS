@@ -20,7 +20,18 @@ include src/pywats_client/control/HEADLESS_GUIDE.md
 
 # Exclude internal documentation in src
 exclude src/pywats_client/GUI_REDESIGN.md
+exclude src/pywats_client/service/README.md
 exclude src/pywats/domains/report/report_models/uur/UUR_IMPLEMENTATION_INSTRUCTIONS.md
+exclude src/pywats/domains/report/report_models_v2/DO_NOT_USE.md
+exclude src/pywats/domains/report/report_models_v2/IMPORT_STRATEGY.md
+exclude src/pywats/domains/report/report_models_v2/TEST_FIXES_SUMMARY.md
+exclude src/pywats/domains/report/report_models_v1/DO_NOT_USE.md
+exclude src/pywats/domains/report/report_models_old/DO_NOT_USE.md
+
+# Exclude deprecated/experimental code directories from src
+prune src/pywats/domains/report/report_models_v1
+prune src/pywats/domains/report/report_models_v2
+prune src/pywats/domains/report/report_models_old
 
 # Include official domain documentation
 include docs/INDEX.md
@@ -48,6 +59,8 @@ prune scripts
 prune .github
 prune packages
 prune deployment
+prune projects
+prune reference
 prune referenced_code
 prune referenced_code_net_core
 prune docs/internal_documentation

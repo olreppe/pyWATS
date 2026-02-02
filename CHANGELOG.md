@@ -19,6 +19,10 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ## [Unreleased]
 
+---
+
+## [0.3.0b1] - 2026-02-02
+
 ### Added
 - **Priority Queue System**: Universal priority-based processing for all queue implementations
   - **Priority Field**: Integer 1-10 (1=highest priority, 10=lowest, default=5) added to `QueueItem` base class
@@ -52,7 +56,7 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 - **Configuration**: LogLevel enum properly used in GUI settings dialog and config validation (replaced hardcoded string lists)
 
-- **Test Suite**: Total test count increased to 1597 tests (109 new tests from recent projects)
+- **Test Suite**: Total test count: 1567 tests (79 new tests from recent projects - priority queue and sync wrapper)
 
 ---
 
