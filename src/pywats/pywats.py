@@ -13,7 +13,7 @@ from typing import Optional, Any, TypeVar, Coroutine, TYPE_CHECKING, Callable
 from functools import wraps
 
 from .core.async_client import AsyncHttpClient
-from .core.station import Station, StationRegistry
+from .core.station import Station, StationRegistry, get_default_station
 from .core.retry import RetryConfig as CoreRetryConfig
 from .core.exceptions import ErrorMode, ErrorHandler
 from .core.sync_runner import run_sync
@@ -321,9 +321,11 @@ class pyWATS:
                      If None, attempts to discover from running service.
             token: API token (Base64-encoded credentials)
                    If None, attempts to discover from running service.
-            station: Default station configuration for reports. If provided,
-                     this station's name, location, and purpose will be used
-                     when creating reports (unless overridden).
+            station: Default station configuration for reports. If None, auto-detects from:
+                     1. PYWATS_STATION environment variable (highest priority)
+                     2. COMPUTERNAME environment variable (Windows)
+                     3. socket.gethostname() (cross-platform fallback)
+                     If provided, uses explicit station name, location, and purpose.
             timeout: Request timeout in seconds (for HTTP requests).
                      Also used as default for sync wrapper timeout if sync_config not provided.
                      If None, uses settings or default (30).
@@ -468,7 +470,12 @@ class pyWATS:
             )
         self._sync_config = sync_config
         
-        # Station configuration
+        # Station configuration with auto-detection
+        if station is None:
+            # Auto-detect station from environment/hostname
+            station = get_default_station()
+            logger.info(f"Auto-detected station: {station.name}")
+        
         self._station: Optional[Station] = station
         self._station_registry = StationRegistry()
         if station:

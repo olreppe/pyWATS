@@ -11,9 +11,15 @@ A Station represents the test station identity that appears in reports:
 
 This module also provides StationRegistry for managing multiple stations
 from a single client (hub mode).
+
+Auto-detection: Station names can be auto-detected from:
+1. PYWATS_STATION environment variable (highest priority)
+2. COMPUTERNAME environment variable (Windows)
+3. socket.gethostname() (cross-platform)
 """
 
 import socket
+import os
 from typing import Dict, Optional, Any, Iterator, List
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
@@ -436,18 +442,66 @@ class StationRegistry:
     def __bool__(self) -> bool:
         """True if registry has any stations."""
         return len(self._stations) > 0 or self._default is not None
+    
+    @staticmethod
+    def auto_detect() -> Station:
+        """
+        Auto-detect station from environment/hostname.
+        
+        This is a convenience method that calls get_default_station().
+        Useful for zero-configuration setups.
+        
+        Detection priority (highest to lowest):
+        1. PYWATS_STATION environment variable
+        2. COMPUTERNAME environment variable (Windows)
+        3. socket.gethostname() (cross-platform fallback)
+        
+        Returns:
+            Station with auto-detected name
+            
+        Example:
+            >>> station = StationRegistry.auto_detect()
+            >>> print(f"Detected: {station.name}")
+            Detected: MY-TEST-STATION
+        """
+        return get_default_station()
 
 
 def get_default_station() -> Station:
     """
-    Get a sensible default station.
+    Get a sensible default station with auto-detection.
     
-    Uses the computer hostname as the station name with default values.
+    Detection priority (highest to lowest):
+    1. PYWATS_STATION environment variable
+    2. COMPUTERNAME environment variable (Windows)
+    3. socket.gethostname() (cross-platform fallback)
     
     Returns:
-        Default Station instance
+        Default Station instance with auto-detected name
+        
+    Example:
+        >>> # Set via environment variable
+        >>> os.environ['PYWATS_STATION'] = 'PRODUCTION-LINE-01'
+        >>> station = get_default_station()
+        >>> print(station.name)
+        PRODUCTION-LINE-01
     """
-    return Station.from_hostname(
+    # Priority 1: PYWATS_STATION environment variable
+    station_name = os.environ.get('PYWATS_STATION')
+    
+    if not station_name:
+        # Priority 2: COMPUTERNAME (Windows)
+        station_name = os.environ.get('COMPUTERNAME')
+    
+    if not station_name:
+        # Priority 3: socket.gethostname() (cross-platform)
+        station_name = socket.gethostname()
+    
+    # Normalize: uppercase, strip whitespace
+    station_name = station_name.strip().upper()
+    
+    return Station(
+        name=station_name,
         location="",
         purpose=Purpose.DEVELOPMENT
     )
