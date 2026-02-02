@@ -23,8 +23,35 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 - **performance-optimization**: HTTP caching, metrics, benchmarks (100% complete, archived 2026-02-02)
 - **observability-enhancement**: Prometheus metrics, health endpoints, Grafana dashboards (100% complete, archived 2026-02-02)
 - **client-components-polish**: Client examples and caching documentation (95% complete, Sprint 1 & 3 done, Sprint 2 deferred, archived 2026-02-02)
+- **windows-service-launcher**: Cross-platform CLI service management (90% complete, Phases 1-4 done, Phase 5 deferred, archived 2026-02-02)
 
 ### Added
+- **Cross-Platform Service Launcher**: Complete CLI for service management without GUI dependency
+  - **Service Commands**: start, stop, restart, status, gui (11 commands total)
+    - Cross-platform support (Windows/Linux/macOS) via psutil
+    - Automatic stale lock cleanup on startup
+    - Multi-instance support via --instance-id flag
+    - Graceful shutdown with 30s timeout then force kill
+  - **Config Management**: show, get, set, reset, path, edit (6 commands)
+    - View all settings in text or JSON format
+    - Get/set individual values with type conversion (string/int/float/bool)
+    - Reset to defaults with confirmation
+    - Cross-platform editor integration (Windows/macOS/Linux)
+    - Multi-instance config isolation
+  - **ServiceManager**: Cross-platform process management (550 lines)
+    - psutil-based process detection
+    - Platform-specific service commands (Windows Service, systemd, launchd)
+    - Fallback to subprocess for non-service environments
+    - Status reporting with PID, uptime, platform info
+  - **Documentation**: docs/CLI_REFERENCE.md (400+ lines)
+    - Complete command reference with examples
+    - Multi-instance support guide
+    - Troubleshooting and performance tuning
+    - Monitoring setup examples
+  - **Tests**: 40+ tests (20+ unit, 20+ integration)
+    - tests/client/test_service_manager.py (existing)
+    - tests/client/test_cli.py (new)
+  - **Impact**: Service fully manageable via CLI on any platform, no Qt/GUI required
 - **GUI Settings Dialog**: Performance and Observability panels for v0.3.0 features
   - **Performance Panel**: HTTP cache configuration (enable/disable, TTL slider with presets, cache size, statistics display, clear cache button)
   - **Observability Panel**: Metrics configuration (enable/disable, port selection, endpoint preview, open in browser, health endpoints display)
