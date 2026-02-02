@@ -142,6 +142,211 @@ The ``Ticket`` model represents a complete ticket with all metadata:
 
 ---
 
+Common Use Cases
+----------------
+
+Complete Ticket Lifecycle Workflow
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Track an issue from creation to resolution and archival:
+
+.. code-block:: python
+
+   from pywats import AsyncWATS
+   from pywats.domains.rootcause import TicketPriority, TicketStatus
+   
+   async with AsyncWATS(base_url="...", token="...") as api:
+       
+       # Create ticket for investigation
+       ticket = await api.rootcause.create_ticket(
+           subject="High Failure Rate - Assembly Line 3",
+           priority=TicketPriority.HIGH,
+           assignee="engineer@company.com",
+           team="Manufacturing Engineering",
+           initial_comment="20% failure rate detected starting at 2pm"
+       )
+       ticket_id = ticket.ticket_id
+       
+       # Update status as work progresses
+       await api.rootcause.change_status(
+           ticket_id,
+           TicketStatus.IN_PROGRESS,
+           assignee="engineer@company.com"
+       )
+       
+       # Add investigation findings
+       await api.rootcause.add_comment(
+           ticket_id,
+           "Root cause identified: fixture alignment issue on station 3",
+           assignee="engineer@company.com"
+       )
+       
+       # Mark as solved
+       await api.rootcause.change_status(
+           ticket_id,
+           TicketStatus.SOLVED,
+           assignee="engineer@company.com"
+       )
+       
+       # Archive after verification
+       await api.rootcause.change_status(
+           ticket_id,
+           TicketStatus.ARCHIVED,
+           assignee="engineer@company.com"
+       )
+
+Linking Tickets to Failed Test Reports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Automatically create tickets for failed units:
+
+.. code-block:: python
+
+   from pywats.domains.report import ReportType
+   from datetime import datetime, timedelta
+   
+   async def create_tickets_for_failures():
+       """Create tickets for units that failed in last hour."""
+       
+       # Query failed reports
+       failed_reports = await api.report.query_headers(
+           report_type=ReportType.UUT,
+           odata_filter=f"result eq 'Failed' and start ge {datetime.now() - timedelta(hours=1)}",
+           orderby="start desc"
+       )
+       
+       for report in failed_reports:
+           # Create linked ticket
+           ticket = await api.rootcause.create_ticket(
+               subject=f"Test Failure: {report.part_number} SN:{report.serial_number}",
+               priority=TicketPriority.MEDIUM,
+               assignee="quality@company.com",
+               team="Quality Assurance",
+               report_uuid=report.uuid,  # Link to test report
+               initial_comment=f"Unit failed at {report.station_name}"
+           )
+           print(f"Created ticket #{ticket.ticket_number} for {report.serial_number}")
+
+Team Collaboration with Comments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Multi-user collaboration on ticket resolution:
+
+.. code-block:: python
+
+   async def collaborate_on_ticket(ticket_id: str):
+       """Multiple team members working on same ticket."""
+       
+       # Engineer adds finding
+       await api.rootcause.add_comment(
+           ticket_id,
+           "Found intermittent power supply issue during vibration test",
+           assignee="test.engineer@company.com"
+       )
+       
+       # Designer adds component analysis
+       await api.rootcause.add_comment(
+           ticket_id,
+           "Reviewing PCB layout - suspect trace routing near U5",
+           assignee="pcb.designer@company.com"
+       )
+       
+       # Quality adds verification plan
+       await api.rootcause.add_comment(
+           ticket_id,
+           "Will verify fix with 50 unit sample run on Line 2",
+           assignee="quality@company.com"
+       )
+       
+       # Manager assigns corrective action
+       await api.rootcause.add_comment(
+           ticket_id,
+           "ECO-2026-045 created to update PCB layout",
+           assignee="manager@company.com"
+       )
+
+Batch Ticket Processing
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Process multiple tickets efficiently with async operations:
+
+.. code-block:: python
+
+   import asyncio
+   from pywats.domains.rootcause import TicketView, TicketStatus
+   
+   async def process_my_tickets():
+       """Batch process all assigned tickets."""
+       
+       # Get all tickets assigned to me
+       tickets = await api.rootcause.get_active_tickets(
+           view=TicketView.ASSIGNED
+       )
+       
+       print(f"Processing {len(tickets)} tickets...")
+       
+       # Process high priority tickets first
+       high_priority = [t for t in tickets if t.priority == TicketPriority.HIGH]
+       
+       # Update all tickets in parallel
+       tasks = []
+       for ticket in high_priority:
+           task = api.rootcause.add_comment(
+               ticket.ticket_id,
+               "High priority - escalating to team lead",
+               assignee="current.user@company.com"
+           )
+           tasks.append(task)
+       
+       await asyncio.gather(*tasks)
+       print(f"Updated {len(high_priority)} high priority tickets")
+
+Ticket Analytics and Reporting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Analyze ticket patterns for continuous improvement:
+
+.. code-block:: python
+
+   from collections import Counter
+   from datetime import datetime, timedelta
+   
+   async def analyze_ticket_trends():
+       """Generate ticket metrics for the past month."""
+       
+       # Get all active tickets
+       all_tickets = await api.rootcause.get_active_tickets(
+           view=TicketView.ALL
+       )
+       
+       # Analyze by status
+       status_counts = Counter(t.status.name for t in all_tickets)
+       print("\nTickets by Status:")
+       for status, count in status_counts.most_common():
+           print(f"  {status}: {count}")
+       
+       # Analyze by priority
+       priority_counts = Counter(t.priority.name for t in all_tickets)
+       print("\nTickets by Priority:")
+       for priority, count in priority_counts.most_common():
+           print(f"  {priority}: {count}")
+       
+       # Analyze by team
+       team_counts = Counter(t.team for t in all_tickets if t.team)
+       print("\nTickets by Team:")
+       for team, count in team_counts.most_common(5):
+           print(f"  {team}: {count}")
+       
+       # Find oldest open tickets
+       open_tickets = [t for t in all_tickets if t.status == TicketStatus.OPEN]
+       oldest = sorted(open_tickets, key=lambda t: t.created_utc)[:5]
+       print("\nOldest Open Tickets:")
+       for ticket in oldest:
+           age = datetime.now() - ticket.created_utc
+           print(f"  #{ticket.ticket_number}: {age.days} days - {ticket.subject}")
+
+---
+
 API Reference
 -------------
 
