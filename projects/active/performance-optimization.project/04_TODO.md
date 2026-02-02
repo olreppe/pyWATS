@@ -59,12 +59,14 @@
   - ✅ Pass to AsyncHttpClient initialization
 - ✅ Wire caching params to `src/pywats/pywats.py` (sync wrapper)
 
-### Configuration
-- [ ] 🚧 Add config options to `src/pywats_client/core/config.py`
-  - [ ] enable_cache, cache_ttl_seconds, cache_max_size
-  - [ ] Document in config schema
+### Configuration ✅ COMPLETE
+- ✅ Add config options to `src/pywats_client/core/config.py`
+  - ✅ enable_cache: bool = True
+  - ✅ cache_ttl_seconds: float = 300.0
+  - ✅ cache_max_size: int = 1000
+  - ✅ Documented in config schema with inline comments
 
-### Performance Benchmarks
+### Performance Benchmarks (Optional)
 - [ ] Benchmark cache hit rates
 - [ ] Benchmark response time improvements
 - [ ] Memory usage profiling

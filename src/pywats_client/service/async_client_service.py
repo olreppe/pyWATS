@@ -96,6 +96,9 @@ class AsyncClientService:
         self._converter_pool: Optional['AsyncConverterPool'] = None
         self._pending_queue: Optional['AsyncPendingQueue'] = None
         
+        # Metrics collector (optional - created if enabled in config)
+        self._metrics_collector: Optional['MetricsCollector'] = None
+        
         # Background tasks
         self._tasks: List[asyncio.Task] = []
         
@@ -343,18 +346,32 @@ class AsyncClientService:
         Supports:
         - Explicit credentials from config
         - Auto-discovery from running service
+        - Optional metrics collection
+        - Optional HTTP caching
         """
         logger.info("Initializing async API...")
         
         try:
+            # Initialize metrics collector if enabled
+            if self.config.enable_metrics:
+                from pywats.core.metrics import MetricsCollector
+                self._metrics_collector = MetricsCollector(
+                    instance_id=self.instance_id,
+                    enabled=True
+                )
+                logger.info("Metrics collection enabled")
+            
             # Get runtime credentials
             service_address, api_token = self.config.get_runtime_credentials()
             
-            # Create async API client
+            # Create async API client with cache and metrics configuration
             self.api = AsyncWATS(
                 base_url=service_address,
                 token=api_token,
-                instance_id=self.instance_id
+                instance_id=self.instance_id,
+                enable_cache=self.config.enable_cache,
+                cache_ttl=self.config.cache_ttl_seconds,
+                cache_max_size=self.config.cache_max_size
             )
             
             # Enter async context
@@ -580,11 +597,25 @@ class AsyncClientService:
     # =========================================================================
     
     async def _start_health_server(self) -> None:
-        """Start health check server"""
+        """Start health check server with metrics and component wiring"""
         try:
             from .health_server import HealthServer
             self._health_server = HealthServer(port=self._health_port)
             self._health_server.set_health_check(self._get_health_status)
+            
+            # Wire components for /metrics endpoint
+            if self._metrics_collector:
+                self._health_server._metrics_collector = self._metrics_collector
+                logger.debug("Wired MetricsCollector to health server")
+            
+            if self.api and hasattr(self.api, '_http_client'):
+                self._health_server._http_client = self.api._http_client
+                logger.debug("Wired HTTP client to health server for cache stats")
+            
+            if self._converter_pool:
+                self._health_server._converter_pool = self._converter_pool
+                logger.debug("Wired converter pool to health server for queue stats")
+            
             self._health_server.start()
             logger.info(f"Health server started on port {self._health_port}")
         except Exception as e:

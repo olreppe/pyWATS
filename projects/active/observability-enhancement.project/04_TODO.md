@@ -6,48 +6,69 @@
 
 ---
 
-## Sprint 1: Prometheus Metrics Foundation (Week 1)
+## Sprint 1: Prometheus Metrics Foundation ✅ COMPLETE
 
-### Core Metrics Module
-- [ ] Create `src/pywats/core/metrics.py`
-  - [ ] Define MetricsCollector class
-  - [ ] Implement Counter, Gauge, Histogram wrappers
-  - [ ] Create @track_request decorator
-  - [ ] Add standard metrics (HTTP, system, queue, converter)
-  - [ ] Write unit tests
+### Core Metrics Module ✅
+- ✅ Created `src/pywats/core/metrics.py` (396 lines)
+  - ✅ MetricsCollector class
+  - ✅ Counter, Gauge, Histogram wrappers
+  - ✅ @track_request_metrics decorator
+  - ✅ HTTP, system, queue, converter metrics
 
-### Metrics Endpoint
-- [ ] Create `src/pywats/core/metrics_server.py`
-  - [ ] Implement HTTP handler for /metrics
-  - [ ] Support Prometheus text format
-  - [ ] Make thread-safe
-  - [ ] Add optional authentication
-  - [ ] Add start/stop functions
-  - [ ] Write integration tests
+### Metrics Endpoint ✅
+- ✅ Enhanced `src/pywats_client/service/health_server.py`
+  - ✅ GET /metrics endpoint
+  - ✅ Prometheus text format support
+  - ✅ JSON fallback for cache/queue stats
 
-### HTTP Client Instrumentation
-- [ ] Modify `src/pywats/core/http_client.py`
-  - [ ] Add metrics to GET method
-  - [ ] Add metrics to POST method
-  - [ ] Add metrics to PUT method
-  - [ ] Add metrics to DELETE method
-  - [ ] Track request duration
-  - [ ] Track status codes
-  - [ ] Track retry metrics
-  - [ ] Ensure backward compatibility
-  - [ ] Write tests
+### HTTP Client Instrumentation ✅
+- ✅ Modified `src/pywats/core/client.py`
+  - ✅ Added metrics_collector parameter
+  - ✅ Track request duration, status codes, method, endpoint
 
-### System Metrics
-- [ ] Create `src/pywats/core/system_metrics.py`
-  - [ ] Implement SystemMetricsCollector class
-  - [ ] Collect CPU usage (psutil)
-  - [ ] Collect memory usage
-  - [ ] Collect thread count
-  - [ ] Create background collection thread
-  - [ ] Add start/stop functionality
-  - [ ] Write tests
+---
 
-### Dependencies
+## Sprint 2: Integration ✅ COMPLETE
+
+- ✅ /metrics endpoint in health_server.py
+- ✅ HTTP cache statistics exposed
+
+---
+
+## Sprint 3: Service Integration & Production (CURRENT)
+
+### AsyncClientService Integration ✅ COMPLETE
+- ✅ Create MetricsCollector in `async_client_service.py`
+  - ✅ Add _metrics_collector instance variable
+  - ✅ Initialize in _initialize_api if config.enable_metrics
+  - ✅ Pass cache params to AsyncWATS when creating API client
+  - ✅ Wire to health_server for /metrics endpoint
+
+### Component Wiring ✅ COMPLETE
+- ✅ Wire components to HealthServer in _start_health_server
+  - ✅ Set health_server._metrics_collector (if enabled)
+  - ✅ Set health_server._http_client (for cache stats)
+  - ✅ Set health_server._converter_pool (for queue stats)
+  - ✅ Added debug logging for each wired component
+
+### Configuration ✅ COMPLETE
+- ✅ Add metrics config to `config.py`
+  - ✅ enable_metrics: bool = True
+  - ✅ metrics_port: int = 9090
+  - ✅ Also added cache config (enable_cache, cache_ttl_seconds, cache_max_size)
+
+### Testing & Validation (Optional)
+- [ ] Integration tests for /metrics endpoint
+- [ ] Load testing (measure overhead)
+
+### Documentation
+- [ ] Create `docs/guides/observability.md`
+- [ ] Prometheus scraping setup
+- [ ] Grafana dashboard examples
+
+---
+
+## Sprint 2: Correlation IDs (DEFERRED)
 - [ ] Update `pyproject.toml`
   - [ ] Add prometheus-client>=0.19.0
   - [ ] Add psutil>=5.9.0

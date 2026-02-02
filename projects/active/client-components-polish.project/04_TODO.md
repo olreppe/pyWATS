@@ -5,46 +5,57 @@
 
 ---
 
-## Sprint 1: Examples & Error Handling
+## Sprint 1: Examples & Error Handling ✅ COMPLETE
 
-### Missing Examples
-- [ ] Create `examples/client/` directory
-- [ ] Create `examples/client/attachment_io.py`
-  - [ ] File upload example
-  - [ ] File download example
-  - [ ] Large file handling
-  - [ ] Metadata management
-- [ ] Create `examples/client/error_handling.py`
-  - [ ] Exception type handling
-  - [ ] Retry strategies
-  - [ ] Graceful degradation
-  - [ ] Error logging
-- [ ] Create `examples/client/configuration.py`
-  - [ ] Environment configs
-  - [ ] Authentication patterns
-  - [ ] Connection settings
-  - [ ] Performance tuning
-- [ ] Create `examples/client/batch_operations.py`
-  - [ ] Bulk create/update
-  - [ ] Parallel processing
-  - [ ] Progress tracking
-  - [ ] Error handling
-- [ ] Create `examples/client/async_advanced.py`
-  - [ ] Concurrent operations
-  - [ ] Async error handling
-  - [ ] Context managers
+### Missing Examples ✅
+- ✅ Created `examples/client/` directory
+- ✅ Created `examples/client/attachment_io.py` (329 lines)
+- ✅ Created `examples/client/error_handling.py` (359 lines)
+- ✅ Created `examples/client/configuration.py` (381 lines)
+- ✅ Created `examples/client/batch_operations.py` (362 lines)
+- ✅ Created `examples/client/README.md` (209 lines)
+
+---
+
+## Sprint 3: Caching Examples & Documentation (CURRENT)
+
+### Caching Configuration Examples
+- [ ] 🚧 Update `examples/getting_started/basic_usage.py`
+  - [ ] Add caching configuration section
+  - [ ] Show enable_cache=False for real-time data
+  - [ ] Show cache_ttl customization
+
+- [ ] Update `examples/client/configuration.py`
+  - [ ] Add HTTP caching configuration section
+  - [ ] Show cache statistics monitoring
+
+- [ ] Update `examples/client/README.md`
+  - [ ] Add Performance & Caching section
+  - [ ] Link to performance/http_caching.py
+
+### User Guides
+- [ ] Create `docs/guides/performance.md`
+  - [ ] HTTP response caching overview
+  - [ ] Configuration options
   - [ ] Best practices
+  - [ ] Cache statistics monitoring
 
-### Error Handling Standardization
-- [ ] Audit current error handling patterns
-- [ ] Define standard patterns
-- [ ] Create `src/pywats_client/core/error_handler.py`
-  - [ ] StandardErrorHandler class
-  - [ ] Retry decorator
-  - [ ] Response handler
-- [ ] Update inconsistent code
-- [ ] Add error handling tests
-- [ ] Document patterns
+- [ ] Update `docs/guides/configuration.md`
+  - [ ] Add caching configuration section
+  - [ ] Add metrics configuration section
+
+- [ ] Update `docs/getting-started.md`
+  - [ ] Add performance section
+  - [ ] Link to caching guide
+
+### API Documentation
+- [ ] Update docstrings in `src/pywats/async_wats.py`
+  - [ ] Document enable_cache parameter
+  - [ ] Document cache_ttl parameter
+  - [ ] Add examples in docstring
+
+- [ ] Update docstrings in `src/pywats/pywats.py`
+  - [ ] Same parameters as AsyncWATS
 
 ### Testing
 - [ ] Create `tests/examples/test_examples.py`

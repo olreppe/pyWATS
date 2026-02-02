@@ -20,7 +20,20 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
-- **HTTP Response Caching**: Automatic caching for HTTP GET requests in src/pywats/core/client.py
+- **Async HTTP Response Caching**: Full HTTP caching support for AsyncHttpClient (mirroring sync client)
+  - **AsyncTTLCache Integration**: Async-safe response caching using AsyncTTLCache[Response]
+  - **GET Caching**: Automatic caching of successful GET responses (2xx) with configurable TTL
+  - **Cache Invalidation**: POST/PUT/DELETE automatically invalidate related cache entries by endpoint prefix
+  - **Cache Properties**: `cache`, `cache_enabled`, `clear_cache()`, `invalidate_cache()` methods
+  - **Metrics Integration**: Optional `metrics_collector` parameter for HTTP request tracking
+  - **Manual Controls**: `_make_cache_key()` helper, `cache=False` bypass option
+  - **Configuration**: `enable_cache`, `cache_ttl`, `cache_max_size` parameters (defaults: True, 300s, 1000)
+  - **API Integration**: Cache parameters wired through AsyncWATS and pyWATS constructors
+  - **Domain Services**: All 9 async domain repositories automatically benefit from caching
+  - **Zero Breaking Changes**: All parameters optional with sensible defaults
+  - **Location**: src/pywats/core/async_client.py, src/pywats/async_wats.py, src/pywats/pywats.py
+
+- **HTTP Response Caching**: Automatic caching for HTTP GET requests in src/pywats/core/client.py (sync)
   - **Cache Key Generation**: Method + endpoint + sorted params for consistent cache keys
   - **Automatic Caching**: Successful GET responses (2xx) cached with configurable TTL (default: 5 minutes)
   - **Cache Invalidation**: POST/PUT/DELETE automatically invalidate related cache entries by endpoint prefix

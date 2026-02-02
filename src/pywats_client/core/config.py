@@ -298,6 +298,15 @@ class ClientConfig:
     max_queue_size: int = 10000  # Maximum reports in queue (0 = unlimited)
     max_concurrent_uploads: int = 5  # Concurrent upload threads
     
+    # HTTP Cache settings
+    enable_cache: bool = True  # Enable HTTP response caching for GET requests
+    cache_ttl_seconds: float = 300.0  # Cache TTL (default: 5 minutes)
+    cache_max_size: int = 1000  # Maximum cache entries
+    
+    # Metrics & Observability settings
+    enable_metrics: bool = True  # Enable Prometheus metrics collection
+    metrics_port: int = 9090  # Prometheus metrics port (if standalone)
+    
     # Converter settings
     converters_folder: str = "converters"
     converters: List[ConverterConfig] = field(default_factory=list)
