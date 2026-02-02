@@ -16,6 +16,7 @@ For file-based persistence, use PersistentQueue from pywats_client.
 import logging
 import asyncio
 import threading
+import heapq
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Union, Callable, Iterator
@@ -40,9 +41,14 @@ class QueueItem:
     
     This is a pure data class with no file operations.
     The 'data' field holds the actual payload (report dict, pydantic model, etc.)
+    
+    Priority:
+        Integer priority value (1=highest, 10=lowest, default=5).
+        Items are processed in priority order, with FIFO within same priority.
     """
     id: str
     data: Any  # The actual payload (report data)
+    priority: int = 5  # Priority for queue ordering (1=highest, 10=lowest)
     status: QueueItemStatus = QueueItemStatus.PENDING
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
@@ -51,11 +57,27 @@ class QueueItem:
     last_error: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     
+    def __lt__(self, other: "QueueItem") -> bool:
+        """
+        Compare queue items for heap ordering.
+        
+        Orders by priority first (lower number = higher priority),
+        then by creation time (FIFO within same priority).
+        
+        Args:
+            other: Another QueueItem to compare against
+            
+        Returns:
+            True if self should be processed before other
+        """
+        return (self.priority, self.created_at) < (other.priority, other.created_at)
+    
     @classmethod
     def create(
         cls,
         data: Any,
         item_id: Optional[str] = None,
+        priority: int = 5,
         max_attempts: int = 3,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> "QueueItem":
@@ -65,6 +87,7 @@ class QueueItem:
         Args:
             data: The payload data (report, dict, etc.)
             item_id: Optional custom ID (auto-generated if not provided)
+            priority: Queue priority (1=highest, 10=lowest, default=5)
             max_attempts: Maximum retry attempts
             metadata: Optional metadata dictionary
             
@@ -74,6 +97,7 @@ class QueueItem:
         return cls(
             id=item_id or str(uuid.uuid4()),
             data=data,
+            priority=priority,
             max_attempts=max_attempts,
             metadata=metadata or {},
         )
@@ -133,6 +157,7 @@ class QueueItem:
         """Serialize to dictionary."""
         return {
             "id": self.id,
+            "priority": self.priority,
             "status": self.status.value,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
@@ -149,6 +174,7 @@ class QueueItem:
         return cls(
             id=d["id"],
             data=data,
+            priority=d.get("priority", 5),  # Default for backward compatibility
             status=QueueItemStatus(d["status"]),
             created_at=datetime.fromisoformat(d["created_at"]),
             updated_at=datetime.fromisoformat(d["updated_at"]),
@@ -286,7 +312,7 @@ class MemoryQueue(BaseQueue):
             default_max_attempts: Default retry attempts for new items
         """
         self._items: Dict[str, QueueItem] = {}
-        self._order: deque = deque()  # Maintains insertion order for FIFO
+        self._heap: List[QueueItem] = []  # Min-heap for priority ordering
         self._lock = threading.RLock()
         self._max_size = max_size
         self._default_max_attempts = default_max_attempts
@@ -300,15 +326,17 @@ class MemoryQueue(BaseQueue):
         self,
         data: Any,
         item_id: Optional[str] = None,
+        priority: int = 5,
         max_attempts: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> QueueItem:
         """
-        Add an item to the queue.
+        Add an item to the queue with priority.
         
         Args:
             data: The payload data (report dict, pydantic model, etc.)
             item_id: Optional custom ID
+            priority: Queue priority (1=highest, 10=lowest, default=5)
             max_attempts: Override default max attempts
             metadata: Optional metadata
             
@@ -325,12 +353,13 @@ class MemoryQueue(BaseQueue):
             item = QueueItem.create(
                 data=data,
                 item_id=item_id,
+                priority=priority,
                 max_attempts=max_attempts or self._default_max_attempts,
                 metadata=metadata,
             )
             
             self._items[item.id] = item
-            self._order.append(item.id)
+            heapq.heappush(self._heap, item)
             
             # Signal async waiters
             try:
@@ -338,21 +367,32 @@ class MemoryQueue(BaseQueue):
             except:
                 pass  # May fail if no event loop
             
-            logger.debug(f"Added item {item.id} to queue")
+            logger.debug(f"Added item {item.id} to queue with priority {priority}")
             return item
     
     def get_next(self) -> Optional[QueueItem]:
         """
-        Get the next pending item for processing (FIFO order).
+        Get the next pending item for processing (priority order).
+        
+        Uses lazy cleanup: pops items from heap and checks if they are
+        still valid and pending. Invalid or non-pending items are discarded.
         
         Returns:
             Next pending QueueItem or None if queue is empty
         """
         with self._lock:
-            for item_id in self._order:
-                item = self._items.get(item_id)
-                if item and item.status == QueueItemStatus.PENDING:
-                    return item
+            while self._heap:
+                item = heapq.heappop(self._heap)
+                
+                # Check if item still exists and is pending
+                current_item = self._items.get(item.id)
+                if current_item and current_item.status == QueueItemStatus.PENDING:
+                    # Item is valid and pending, return it
+                    # Note: We don't re-add to heap since it's being processed
+                    return current_item
+                
+                # Item was removed or status changed, continue to next
+            
             return None
     
     def get_next_any(self, include_suspended: bool = True) -> Optional[QueueItem]:
@@ -366,23 +406,37 @@ class MemoryQueue(BaseQueue):
             Next processable QueueItem or None
         """
         with self._lock:
-            for item_id in self._order:
-                item = self._items.get(item_id)
-                if item is None:
-                    continue
-                
-                if item.status == QueueItemStatus.PENDING:
-                    return item
-                
-                if include_suspended and item.status == QueueItemStatus.SUSPENDED:
-                    if item.can_retry:
-                        return item
+            # Use heap-based approach with lazy cleanup
+            temp_items = []
+            result = None
             
+            while self._heap and not result:
+                item = heapq.heappop(self._heap)
+                current_item = self._items.get(item.id)
+                
+                if not current_item:
+                    continue  # Item was removed
+                
+                if current_item.status == QueueItemStatus.PENDING:
+                    result = current_item
+                    break
+                
+                if include_suspended and current_item.status == QueueItemStatus.SUSPENDED:
+                    if current_item.can_retry:
+                        result = current_item
+                        break
+                
+                # Item doesn't match criteria, discard
+            
+            return result
             return None
     
     def update(self, item: QueueItem) -> None:
         """
         Update an item's status in the queue.
+        
+        When an item is updated to PENDING status (e.g., retry), it is
+        re-added to the heap for priority-based processing.
         
         Args:
             item: The QueueItem to update
@@ -390,11 +444,19 @@ class MemoryQueue(BaseQueue):
         with self._lock:
             if item.id in self._items:
                 self._items[item.id] = item
+                
+                # If item is now pending, add it back to the heap for processing
+                if item.status == QueueItemStatus.PENDING:
+                    heapq.heappush(self._heap, item)
+                
                 logger.debug(f"Updated item {item.id} to status {item.status.value}")
     
     def remove(self, item_id: str) -> bool:
         """
         Remove an item from the queue.
+        
+        Note: The item is removed from _items but not from the heap.
+        The heap uses lazy cleanup in get_next() and get_next_any().
         
         Args:
             item_id: ID of item to remove
@@ -405,10 +467,7 @@ class MemoryQueue(BaseQueue):
         with self._lock:
             if item_id in self._items:
                 del self._items[item_id]
-                try:
-                    self._order.remove(item_id)
-                except ValueError:
-                    pass
+                # Note: We don't remove from heap (lazy cleanup approach)
                 logger.debug(f"Removed item {item_id} from queue")
                 return True
             return False
@@ -434,13 +493,11 @@ class MemoryQueue(BaseQueue):
             status: Status to filter by
             
         Returns:
-            List of matching QueueItems (ordered by creation time)
+            List of matching QueueItems (ordered by priority, then creation time)
         """
         with self._lock:
-            return [
-                item for item_id in self._order
-                if (item := self._items.get(item_id)) and item.status == status
-            ]
+            items = [item for item in self._items.values() if item.status == status]
+            return sorted(items)  # Uses QueueItem.__lt__ for priority ordering
     
     def list_pending(self) -> List[QueueItem]:
         """List all pending items."""
@@ -489,7 +546,7 @@ class MemoryQueue(BaseQueue):
             if status is None:
                 count = len(self._items)
                 self._items.clear()
-                self._order.clear()
+                self._heap.clear()
                 logger.debug(f"Cleared all {count} items from queue")
                 return count
             
@@ -500,12 +557,10 @@ class MemoryQueue(BaseQueue):
             
             for item_id in to_remove:
                 del self._items[item_id]
-                try:
-                    self._order.remove(item_id)
-                except ValueError:
-                    pass
+                # Note: We don't remove from heap (lazy cleanup approach)
             
             logger.debug(f"Cleared {len(to_remove)} {status.value} items from queue")
+            return len(to_remove)
             return len(to_remove)
     
     def clear_completed(self) -> int:
@@ -564,8 +619,8 @@ class MemoryQueue(BaseQueue):
         """
         with self._lock:
             # Create snapshot to avoid holding lock during iteration
-            items = [self._items[item_id] for item_id in self._order if item_id in self._items]
-        return iter(items)
+            items = list(self._items.values())
+        return iter(sorted(items))  # Uses QueueItem.__lt__ for priority ordering
     
     def get_stats(self) -> QueueStats:
         """
