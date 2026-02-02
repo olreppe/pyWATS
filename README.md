@@ -59,12 +59,17 @@ See [Platform Compatibility Guide](docs/platforms/platform-compatibility.md) for
     - Metadata tracking and statistics
 
 - **PyWATS Client** - Desktop and headless client application
-  - **Security Features** ✅ NEW
+  - **Priority-Based Converter Processing** ✅ NEW
+    - Configure converter priority (1=highest, 10=lowest)
+    - Prevents batch uploads from blocking real-time production data
+    - Heap-based priority queue with AsyncQueueAdapter
+    - Zero code changes - set priority in config or GUI
+  - **Security Features** ✅
     - IPC authentication with shared secrets
     - Converter process isolation and sandboxing
     - Safe file handling with atomic writes and locking
     - Rate limiting on IPC connections
-  - **Configuration & Versioning** ✅ NEW
+  - **Configuration & Versioning** ✅
     - Protocol version tracking (2.0+)
     - Config schema versioning (1.0→2.0 auto-upgrade)
     - Queue size limits and concurrent upload control
