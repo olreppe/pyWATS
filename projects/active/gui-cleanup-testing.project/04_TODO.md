@@ -91,60 +91,59 @@
 ## Sprint 2: Settings Dialog Updates (Days 3-4)
 
 ### Phase 2.1: Design & Planning
-- ✗ Review CONFIG_SETTINGS_REFERENCE.md
-- ✗ Design Performance panel layout
-- ✗ Design Observability panel layout
-- ✗ Create mockups/wireframes
-- ✗ Plan widget types
+- ✅ Review CONFIG_SETTINGS_REFERENCE.md
+- ✅ Design Performance panel layout
+- ✅ Design Observability panel layout
+- ✅ Plan widget types (implemented directly)
 
 ### Phase 2.2: Performance Panel Implementation
-- ✗ Create PerformancePanelWidget class
-- ✗ Add cache enable/disable checkbox
-- ✗ Add cache TTL slider (60-7200s)
-- ✗ Add cache TTL value label
-- ✗ Add TTL preset buttons (1min, 5min, 10min, 1hour)
-- ✗ Add cache size slider (100-5000)
-- ✗ Add cache size value label
-- ✗ Add cache statistics display
-- ✗ Add cache statistics refresh timer
-- ✗ Add clear cache button
-- ✗ Add queue max size spinner
-- ✗ Add max concurrent uploads spinner
-- ✗ Connect signals to config
-- ✗ Implement load_from_config()
-- ✗ Implement save_to_config()
-- ✗ Add to settings dialog
+- ✅ Create ClientPerformancePanel class
+- ✅ Add cache enable/disable checkbox
+- ✅ Add cache TTL slider (60-7200s)
+- ✅ Add cache TTL value label with smart formatting
+- ✅ Add TTL preset buttons (1min, 5min, 10min, 1hour)
+- ✅ Add cache size slider (100-5000)
+- ✅ Add cache size value label
+- ✅ Add cache statistics display (read-only placeholder)
+- ⏸️ Add cache statistics refresh timer (requires service integration)
+- ✅ Add clear cache button
+- ✅ Add queue max size spinner
+- ✅ Add max concurrent uploads spinner
+- ✅ Connect signals to config
+- ✅ Implement load_settings()
+- ✅ Implement save_settings()
+- ✅ Add to settings dialog tree
 
 ### Phase 2.3: Observability Panel Implementation
-- ✗ Create ObservabilityPanelWidget class
-- ✗ Add metrics enable/disable checkbox
-- ✗ Add metrics port spinner (1024-65535)
-- ✗ Add metrics endpoint preview (read-only)
-- ✗ Add "Open in Browser" button
-- ✗ Add health check interval spinner
-- ✗ Add health endpoint URLs display
-- ✗ Connect signals to config
-- ✗ Implement load_from_config()
-- ✗ Implement save_to_config()
-- ✗ Add to settings dialog
+- ✅ Create ClientObservabilityPanel class
+- ✅ Add metrics enable/disable checkbox
+- ✅ Add metrics port spinner (1024-65535)
+- ✅ Add metrics endpoint preview with auto-update
+- ✅ Add "Open in Browser" button
+- ✅ Add health check interval spinner
+- ✅ Add all health endpoint URLs display (/health, /ready, /live, /metrics)
+- ✅ Connect signals to config
+- ✅ Implement load_settings()
+- ✅ Implement save_settings()
+- ✅ Add to settings dialog tree
 
 ### Phase 2.4: Integration & Testing
-- ✗ Add Performance panel to settings dialog tabs
-- ✗ Add Observability panel to settings dialog tabs
-- ✗ Update tab order
-- ✗ Test save/load functionality
+- ✅ Add Performance panel to settings dialog tree (under Client Settings)
+- ✅ Add Observability panel to settings dialog tree (under Client Settings)
+- ✅ Update load/save handlers in _load_all_settings and _save_all_settings
+- ✗ Test save/load functionality (requires GUI runtime testing)
 - ✗ Test validation (port range, TTL range, cache size range)
 - ✗ Test with service running/stopped
-- ✗ Test cache statistics refresh
+- ⏸️ Test cache statistics refresh (requires service integration)
 - ✗ Test metrics endpoint opening
 - ✗ Test preset buttons
-- ✗ Test cache enable/disable (field dependencies)
+- ✗ Test cache enable/disable field dependencies
 
 ### Sprint 2 Deliverables
-- ✗ Performance panel fully functional
-- ✗ Observability panel fully functional
-- ✗ Settings dialog updated with v0.3.0 features
-- ✗ Test report
+- ✅ Performance panel fully implemented
+- ✅ Observability panel fully implemented
+- ✅ Settings dialog updated with v0.3.0 features
+- ✗ Test report (pending runtime testing)
 
 ---
 

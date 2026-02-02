@@ -793,6 +793,375 @@ class ClientLocationPanel(SettingsPanel):
         config.location_services_enabled = self.location_enabled_check.isChecked()
 
 
+class ClientPerformancePanel(SettingsPanel):
+    """Client performance settings - HTTP caching and queue configuration."""
+    
+    def setup_ui(self) -> None:
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        scroll, form_layout = self._create_scrollable_form()
+        
+        # Header
+        header = QLabel("Performance Settings")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #f0a30a;")
+        form_layout.addRow(header)
+        form_layout.addRow(self._create_description_label(
+            "Configure HTTP response caching and queue performance settings."
+        ))
+        
+        # HTTP Cache Section
+        cache_group, cache_layout = self._create_group("HTTP Response Caching")
+        
+        self.enable_cache_check = self._create_checkbox(
+            "Enable HTTP response caching"
+        )
+        self.enable_cache_check.stateChanged.connect(self._on_cache_enabled_changed)
+        cache_layout.addRow(self.enable_cache_check)
+        cache_layout.addRow(self._create_description_label(
+            "Cache GET responses to reduce API load and improve performance.\n"
+            "Recommended: Enabled (default)"
+        ))
+        
+        # Cache TTL slider with presets
+        ttl_label = QLabel("Cache TTL (Time-To-Live):")
+        self.cache_ttl_slider = self._create_slider(60, 7200, " seconds")
+        self.cache_ttl_value_label = QLabel("300 seconds (5 minutes)")
+        self.cache_ttl_slider.valueChanged.connect(self._on_ttl_changed)
+        
+        ttl_container = QWidget()
+        ttl_layout = QVBoxLayout(ttl_container)
+        ttl_layout.setContentsMargins(0, 0, 0, 0)
+        ttl_layout.setSpacing(8)
+        ttl_layout.addWidget(self.cache_ttl_slider)
+        ttl_layout.addWidget(self.cache_ttl_value_label)
+        
+        # Preset buttons
+        preset_layout = QHBoxLayout()
+        preset_layout.setSpacing(5)
+        
+        self.ttl_preset_1min = QPushButton("1 min")
+        self.ttl_preset_5min = QPushButton("5 min")
+        self.ttl_preset_10min = QPushButton("10 min")
+        self.ttl_preset_1hour = QPushButton("1 hour")
+        
+        for btn in [self.ttl_preset_1min, self.ttl_preset_5min, 
+                    self.ttl_preset_10min, self.ttl_preset_1hour]:
+            btn.setFixedWidth(70)
+            btn.setStyleSheet("QPushButton { padding: 4px 8px; }")
+        
+        self.ttl_preset_1min.clicked.connect(lambda: self.cache_ttl_slider.setValue(60))
+        self.ttl_preset_5min.clicked.connect(lambda: self.cache_ttl_slider.setValue(300))
+        self.ttl_preset_10min.clicked.connect(lambda: self.cache_ttl_slider.setValue(600))
+        self.ttl_preset_1hour.clicked.connect(lambda: self.cache_ttl_slider.setValue(3600))
+        
+        preset_layout.addWidget(QLabel("Presets:"))
+        preset_layout.addWidget(self.ttl_preset_1min)
+        preset_layout.addWidget(self.ttl_preset_5min)
+        preset_layout.addWidget(self.ttl_preset_10min)
+        preset_layout.addWidget(self.ttl_preset_1hour)
+        preset_layout.addStretch()
+        
+        ttl_layout.addLayout(preset_layout)
+        
+        cache_layout.addRow(ttl_label, ttl_container)
+        cache_layout.addRow(self._create_description_label(
+            "How long to cache responses. Higher values reduce API calls but may show stale data."
+        ))
+        
+        # Cache size slider
+        size_label = QLabel("Cache Max Size:")
+        self.cache_size_slider = self._create_slider(100, 5000, " entries")
+        self.cache_size_value_label = QLabel("1000 entries")
+        self.cache_size_slider.valueChanged.connect(self._on_size_changed)
+        
+        size_container = QWidget()
+        size_layout = QVBoxLayout(size_container)
+        size_layout.setContentsMargins(0, 0, 0, 0)
+        size_layout.setSpacing(8)
+        size_layout.addWidget(self.cache_size_slider)
+        size_layout.addWidget(self.cache_size_value_label)
+        
+        cache_layout.addRow(size_label, size_container)
+        cache_layout.addRow(self._create_description_label(
+            "Maximum number of cached entries. Oldest entries are evicted when full."
+        ))
+        
+        # Cache statistics (read-only)
+        stats_label = QLabel("Cache Statistics:")
+        self.cache_stats_text = QLabel("No statistics available (service not running)")
+        self.cache_stats_text.setStyleSheet("color: #808080; font-family: monospace;")
+        self.cache_stats_text.setWordWrap(True)
+        cache_layout.addRow(stats_label, self.cache_stats_text)
+        
+        # Clear cache button
+        self.clear_cache_btn = QPushButton("Clear Cache Now")
+        self.clear_cache_btn.setFixedWidth(150)
+        self.clear_cache_btn.clicked.connect(self._on_clear_cache)
+        cache_layout.addRow("", self.clear_cache_btn)
+        
+        form_layout.addRow(cache_group)
+        
+        # Queue Settings Section
+        queue_group, queue_layout = self._create_group("Queue Settings")
+        
+        self.max_queue_size_spin = self._create_spinbox(0, 100000, " items")
+        queue_layout.addRow("Max Queue Size:", self.max_queue_size_spin)
+        queue_layout.addRow(self._create_description_label(
+            "Maximum number of items in the converter queue. 0 = unlimited."
+        ))
+        
+        self.max_concurrent_uploads_spin = self._create_spinbox(1, 20, " concurrent")
+        queue_layout.addRow("Max Concurrent Uploads:", self.max_concurrent_uploads_spin)
+        queue_layout.addRow(self._create_description_label(
+            "Number of reports to upload simultaneously."
+        ))
+        
+        form_layout.addRow(queue_group)
+        form_layout.addRow(QWidget())
+        main_layout.addWidget(scroll)
+    
+    def _create_slider(self, min_val: int, max_val: int, suffix: str = "") -> object:
+        """Create a slider widget."""
+        from PySide6.QtWidgets import QSlider
+        slider = QSlider(Qt.Orientation.Horizontal)
+        slider.setRange(min_val, max_val)
+        slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        slider.setTickInterval((max_val - min_val) // 10)
+        return slider
+    
+    def _on_cache_enabled_changed(self, state: int) -> None:
+        """Handle cache enabled checkbox change."""
+        enabled = state == Qt.CheckState.Checked.value
+        self.cache_ttl_slider.setEnabled(enabled)
+        self.cache_size_slider.setEnabled(enabled)
+        for btn in [self.ttl_preset_1min, self.ttl_preset_5min, 
+                    self.ttl_preset_10min, self.ttl_preset_1hour]:
+            btn.setEnabled(enabled)
+        self.clear_cache_btn.setEnabled(enabled)
+        self.mark_modified()
+    
+    def _on_ttl_changed(self, value: int) -> None:
+        """Handle TTL slider change."""
+        if value < 120:
+            text = f"{value} seconds"
+        elif value < 3600:
+            minutes = value // 60
+            text = f"{value} seconds ({minutes} minutes)"
+        else:
+            hours = value // 3600
+            minutes = (value % 3600) // 60
+            if minutes > 0:
+                text = f"{value} seconds ({hours}h {minutes}m)"
+            else:
+                text = f"{value} seconds ({hours} hour{'s' if hours != 1 else ''})"
+        self.cache_ttl_value_label.setText(text)
+        self.mark_modified()
+    
+    def _on_size_changed(self, value: int) -> None:
+        """Handle size slider change."""
+        self.cache_size_value_label.setText(f"{value} entries")
+        self.mark_modified()
+    
+    def _on_clear_cache(self) -> None:
+        """Handle clear cache button click."""
+        # TODO: Implement cache clearing via service API
+        QMessageBox.information(
+            self,
+            "Clear Cache",
+            "Cache clearing will be implemented when service is running."
+        )
+    
+    def load_settings(self, config: ClientConfig) -> None:
+        self.enable_cache_check.setChecked(
+            getattr(config, 'enable_cache', True)
+        )
+        self.cache_ttl_slider.setValue(
+            int(getattr(config, 'cache_ttl_seconds', 300.0))
+        )
+        self.cache_size_slider.setValue(
+            getattr(config, 'cache_max_size', 1000)
+        )
+        self.max_queue_size_spin.setValue(
+            getattr(config, 'max_queue_size', 0)
+        )
+        self.max_concurrent_uploads_spin.setValue(
+            getattr(config, 'max_concurrent_uploads', 3)
+        )
+        self._on_cache_enabled_changed(
+            Qt.CheckState.Checked.value if getattr(config, 'enable_cache', True) 
+            else Qt.CheckState.Unchecked.value
+        )
+        self.clear_modified()
+    
+    def save_settings(self, config: ClientConfig) -> None:
+        config.enable_cache = self.enable_cache_check.isChecked()
+        config.cache_ttl_seconds = float(self.cache_ttl_slider.value())
+        config.cache_max_size = self.cache_size_slider.value()
+        config.max_queue_size = self.max_queue_size_spin.value()
+        config.max_concurrent_uploads = self.max_concurrent_uploads_spin.value()
+
+
+class ClientObservabilityPanel(SettingsPanel):
+    """Client observability settings - metrics and health endpoints."""
+    
+    def setup_ui(self) -> None:
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        scroll, form_layout = self._create_scrollable_form()
+        
+        # Header
+        header = QLabel("Observability Settings")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #f0a30a;")
+        form_layout.addRow(header)
+        form_layout.addRow(self._create_description_label(
+            "Configure Prometheus metrics and health check endpoints."
+        ))
+        
+        # Metrics Section
+        metrics_group, metrics_layout = self._create_group("Prometheus Metrics")
+        
+        self.enable_metrics_check = self._create_checkbox(
+            "Enable Prometheus metrics collection"
+        )
+        self.enable_metrics_check.stateChanged.connect(self._on_metrics_enabled_changed)
+        metrics_layout.addRow(self.enable_metrics_check)
+        metrics_layout.addRow(self._create_description_label(
+            "Collect and expose metrics in Prometheus format for monitoring.\n"
+            "Includes HTTP, cache, queue, and system metrics."
+        ))
+        
+        # Metrics port
+        self.metrics_port_spin = self._create_spinbox(1024, 65535, "")
+        self.metrics_port_spin.setValue(9090)
+        self.metrics_port_spin.valueChanged.connect(self._on_metrics_port_changed)
+        metrics_layout.addRow("Metrics Port:", self.metrics_port_spin)
+        metrics_layout.addRow(self._create_description_label(
+            "Port for the /metrics endpoint (default: 9090)."
+        ))
+        
+        # Endpoint preview
+        self.metrics_endpoint_label = QLabel("http://localhost:9090/metrics")
+        self.metrics_endpoint_label.setStyleSheet(
+            "color: #4EC9B0; font-family: monospace; font-size: 11px;"
+        )
+        self.metrics_endpoint_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        metrics_layout.addRow("Endpoint:", self.metrics_endpoint_label)
+        
+        # Open in browser button
+        self.open_metrics_btn = QPushButton("Open in Browser")
+        self.open_metrics_btn.setFixedWidth(150)
+        self.open_metrics_btn.clicked.connect(self._on_open_metrics)
+        metrics_layout.addRow("", self.open_metrics_btn)
+        
+        form_layout.addRow(metrics_group)
+        
+        # Health Endpoints Section
+        health_group, health_layout = self._create_group("Health Check Endpoints")
+        
+        self.health_check_interval_spin = self._create_spinbox(10, 300, " seconds")
+        health_layout.addRow("Health Check Interval:", self.health_check_interval_spin)
+        health_layout.addRow(self._create_description_label(
+            "How often to update health status (for Kubernetes probes)."
+        ))
+        
+        # Health endpoints display (read-only)
+        endpoints_label = QLabel("Available Endpoints:")
+        endpoints_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        health_layout.addRow(endpoints_label)
+        
+        self.health_endpoint_label = self._create_endpoint_label("http://localhost:9090/health")
+        health_layout.addRow("  /health:", self.health_endpoint_label)
+        health_layout.addRow(self._create_description_label(
+            "    Overall health status"
+        ))
+        
+        self.ready_endpoint_label = self._create_endpoint_label("http://localhost:9090/ready")
+        health_layout.addRow("  /ready:", self.ready_endpoint_label)
+        health_layout.addRow(self._create_description_label(
+            "    Kubernetes readiness probe"
+        ))
+        
+        self.live_endpoint_label = self._create_endpoint_label("http://localhost:9090/live")
+        health_layout.addRow("  /live:", self.live_endpoint_label)
+        health_layout.addRow(self._create_description_label(
+            "    Kubernetes liveness probe"
+        ))
+        
+        self.metrics_endpoint_label2 = self._create_endpoint_label("http://localhost:9090/metrics")
+        health_layout.addRow("  /metrics:", self.metrics_endpoint_label2)
+        health_layout.addRow(self._create_description_label(
+            "    Prometheus metrics + cache/queue stats"
+        ))
+        
+        form_layout.addRow(health_group)
+        form_layout.addRow(QWidget())
+        main_layout.addWidget(scroll)
+    
+    def _create_endpoint_label(self, text: str) -> QLabel:
+        """Create a styled endpoint URL label."""
+        label = QLabel(text)
+        label.setStyleSheet("color: #4EC9B0; font-family: monospace; font-size: 11px;")
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        return label
+    
+    def _on_metrics_enabled_changed(self, state: int) -> None:
+        """Handle metrics enabled checkbox change."""
+        enabled = state == Qt.CheckState.Checked.value
+        self.metrics_port_spin.setEnabled(enabled)
+        self.open_metrics_btn.setEnabled(enabled)
+        self.health_check_interval_spin.setEnabled(enabled)
+        self.mark_modified()
+    
+    def _on_metrics_port_changed(self, value: int) -> None:
+        """Handle metrics port change - update endpoint previews."""
+        base_url = f"http://localhost:{value}"
+        self.metrics_endpoint_label.setText(f"{base_url}/metrics")
+        self.health_endpoint_label.setText(f"{base_url}/health")
+        self.ready_endpoint_label.setText(f"{base_url}/ready")
+        self.live_endpoint_label.setText(f"{base_url}/live")
+        self.metrics_endpoint_label2.setText(f"{base_url}/metrics")
+        self.mark_modified()
+    
+    def _on_open_metrics(self) -> None:
+        """Open metrics endpoint in browser."""
+        import webbrowser
+        port = self.metrics_port_spin.value()
+        url = f"http://localhost:{port}/metrics"
+        try:
+            webbrowser.open(url)
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                "Open Browser",
+                f"Could not open browser: {e}\n\nURL: {url}"
+            )
+    
+    def load_settings(self, config: ClientConfig) -> None:
+        self.enable_metrics_check.setChecked(
+            getattr(config, 'enable_metrics', True)
+        )
+        port = getattr(config, 'metrics_port', 9090)
+        self.metrics_port_spin.setValue(port)
+        self.health_check_interval_spin.setValue(
+            getattr(config, 'health_check_interval', 30)
+        )
+        self._on_metrics_enabled_changed(
+            Qt.CheckState.Checked.value if getattr(config, 'enable_metrics', True) 
+            else Qt.CheckState.Unchecked.value
+        )
+        self._on_metrics_port_changed(port)
+        self.clear_modified()
+    
+    def save_settings(self, config: ClientConfig) -> None:
+        config.enable_metrics = self.enable_metrics_check.isChecked()
+        config.metrics_port = self.metrics_port_spin.value()
+        config.health_check_interval = self.health_check_interval_spin.value()
+
+
 # ==============================================================================
 # GUI Settings Panels
 # ==============================================================================
@@ -1215,6 +1584,20 @@ class SettingsDialog(QDialog):
         location_panel.settings_changed.connect(self._on_panel_modified)
         self._add_panel("client_location", location_item, location_panel)
         
+        # Client Performance (NEW)
+        performance_item = QTreeWidgetItem(["Performance"])
+        client_item.addChild(performance_item)
+        performance_panel = ClientPerformancePanel()
+        performance_panel.settings_changed.connect(self._on_panel_modified)
+        self._add_panel("client_performance", performance_item, performance_panel)
+        
+        # Client Observability (NEW)
+        observability_item = QTreeWidgetItem(["Observability"])
+        client_item.addChild(observability_item)
+        observability_panel = ClientObservabilityPanel()
+        observability_panel.settings_changed.connect(self._on_panel_modified)
+        self._add_panel("client_observability", observability_item, observability_panel)
+        
         # GUI Settings
         gui_item = QTreeWidgetItem(["GUI Settings"])
         font = gui_item.font(0)
@@ -1317,6 +1700,10 @@ class SettingsDialog(QDialog):
             self._panels["client_converter"].load_settings(self.client_config)
         if "client_location" in self._panels:
             self._panels["client_location"].load_settings(self.client_config)
+        if "client_performance" in self._panels:
+            self._panels["client_performance"].load_settings(self.client_config)
+        if "client_observability" in self._panels:
+            self._panels["client_observability"].load_settings(self.client_config)
         
         # Load GUI settings
         if "gui_startup" in self._panels:
@@ -1372,6 +1759,10 @@ class SettingsDialog(QDialog):
             self._panels["client_converter"].save_settings(self.client_config)
         if "client_location" in self._panels:
             self._panels["client_location"].save_settings(self.client_config)
+        if "client_performance" in self._panels:
+            self._panels["client_performance"].save_settings(self.client_config)
+        if "client_observability" in self._panels:
+            self._panels["client_observability"].save_settings(self.client_config)
         
         # Save GUI settings
         if "gui_startup" in self._panels:

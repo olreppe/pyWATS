@@ -24,6 +24,11 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 - **observability-enhancement**: Prometheus metrics, health endpoints, Grafana dashboards (100% complete, archived 2026-02-02)
 
 ### Added
+- **GUI Settings Dialog**: Performance and Observability panels for v0.3.0 features
+  - **Performance Panel**: HTTP cache configuration (enable/disable, TTL slider with presets, cache size, statistics display, clear cache button)
+  - **Observability Panel**: Metrics configuration (enable/disable, port selection, endpoint preview, open in browser, health endpoints display)
+  - **Queue Settings**: Max queue size and concurrent uploads configuration in Performance panel
+  - Panels integrated into Client Settings section with proper load/save handlers
 - **Caching Documentation & Examples**: Complete reference documentation for HTTP response caching feature
   - **Performance Guide**: docs/guides/performance.md (350+ lines) - comprehensive caching reference
     - HTTP response caching overview with behavioral details

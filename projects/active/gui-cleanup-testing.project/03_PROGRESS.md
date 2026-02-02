@@ -1,12 +1,41 @@
 # GUI Cleanup and Testing - Progress Log
 
 **Project:** GUI Cleanup and Testing  
-**Status:** 🟡 In Progress  
-**Last Updated:** 2026-02-02
+**Status:** 🟡 In Progress (Sprint 2: 40% complete)  
+**Last Updated:** 2026-02-02 22:00
 
 ---
 
 ## Progress Timeline
+
+### 2026-02-02 22:00 - Sprint 2 Partially Complete
+
+**Completed:**
+- ✅ Performance panel implemented (ClientPerformancePanel)
+  - HTTP cache settings (enable/disable, TTL slider, size slider)
+  - TTL presets (1min, 5min, 10min, 1hour)
+  - Cache statistics display (read-only)
+  - Clear cache button
+  - Queue settings (max queue size, max concurrent uploads)
+- ✅ Observability panel implemented (ClientObservabilityPanel)
+  - Metrics settings (enable/disable, port configuration)
+  - Metrics endpoint preview with auto-update
+  - "Open in Browser" button
+  - Health check interval configuration
+  - All health endpoint URLs displayed (/health, /ready, /live, /metrics)
+- ✅ Panels registered in settings dialog tree under Client Settings
+- ✅ Load/save handlers wired correctly
+- ✅ No compilation errors
+
+**Impact:**
+- All v0.3.0 configuration settings now accessible in GUI
+- Users can configure cache and metrics without editing JSON files
+- Real-time endpoint preview helps users verify configuration
+
+**Remaining Sprint 2:**
+- Integration testing with running service
+- Cache statistics refresh implementation
+- UI polish and validation
 
 ### 2026-02-02 14:00 - Project Initialization
 
@@ -55,21 +84,24 @@
 
 ---
 
-### Sprint 2: Settings Dialog Updates (Days 3-4) - 0%
+### Sprint 2: Settings Dialog Updates (Days 3-4) - 40%
 
-**Status:** 🔴 Not Started  
+**Status:** 🟡 In Progress  
 **Target:** 2 days (14 hours)
 
-**Planned Phases:**
-- [ ] Phase 2.1: Design & Planning (2h)
-- [ ] Phase 2.2: Performance Panel Implementation (4h)
-- [ ] Phase 2.3: Observability Panel Implementation (4h)
-- [ ] Phase 2.4: Integration & Testing (4h)
+**Completed Phases:**
+- [x] Phase 2.2: Performance Panel Implementation (4h) ✅
+- [x] Phase 2.3: Observability Panel Implementation (4h) ✅
+
+**Remaining Phases:**
+- [ ] Phase 2.1: Design & Planning (2h) - Skipped (implemented directly)
+- [ ] Phase 2.4: Integration & Testing (4h) - Remaining
 
 **Deliverables:**
-- [ ] Performance panel (cache, queue settings)
-- [ ] Observability panel (metrics, health endpoints)
-- [ ] Updated settings dialog
+- [x] Performance panel (cache, queue settings) ✅
+- [x] Observability panel (metrics, health endpoints) ✅
+- [ ] Integration testing
+- [ ] Cache statistics refresh implementation
 
 ---
 
