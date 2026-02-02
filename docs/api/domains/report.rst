@@ -25,82 +25,95 @@ The Report domain provides comprehensive test report creation, submission, and q
 Quick Start
 -----------
 
-Create and Submit a Simple Test Report
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create and Submit a Simple Test Report (Active Mode)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Create a basic UUT report with test steps:
+Create a basic UUT report using the service factory method. In Active mode (default), 
+status is automatically calculated based on measurements and limits:
 
 .. code-block:: python
 
-   from pywats import pyWATS
-   from pywats.domains.report import UUTReport, StepStatus
+   from pywats import AsyncWATS
+   from pywats.domains.report import ImportMode, set_import_mode
    from datetime import datetime
+   
+   async with AsyncWATS(base_url="https://wats.example.com", token="your-token") as api:
+       # Active mode is the default - status auto-calculated from measurements
+       set_import_mode(ImportMode.Active)
+       
+       # Create UUT report using service factory
+       report = api.report.create_uut_report(
+           operator="TestOperator",
+           part_number="WIDGET-001",
+           revision="A",
+           serial_number="SN-2026-12345",
+           operation_type=100,  # FCT test operation
+       )
+       
+       # Get root sequence and add test steps
+       root = report.get_root_sequence_call()
+       
+       # Add numeric test - status auto-calculated from limits
+       root.add_numeric_step(
+           name="Voltage Test",
+           value=5.02,
+           unit="V",
+           comp_op="GELE",      # Greater/Equal and Less/Equal
+           low_limit=4.8,
+           high_limit=5.2
+           # status NOT needed - automatically Passed since value is in range
+       )
+       
+       # Add another test that will auto-fail
+       root.add_numeric_step(
+           name="Current Test",
+           value=0.350,          # Out of range!
+           unit="A",
+           comp_op="GELE",
+           low_limit=0.100,
+           high_limit=0.200
+           # status automatically Failed since value exceeds high_limit
+       )
+       
+       # Submit to WATS
+       response = await api.report.submit_report(report)
+       print(f"Report submitted: {response.id}")
+
+Using Service Methods for Report Creation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Report service provides factory methods for creating UUT and UUR reports:
+
+.. code-block:: python
+
+   # Sync API example
+   from pywats import pyWATS
    
    api = pyWATS(base_url="https://wats.example.com", token="your-token")
    
-   # Create UUT report
-   report = UUTReport(
-       pn="WIDGET-001",          # Part number
-       sn="SN-2026-12345",       # Serial number
-       rev="A",                   # Revision
-       process_code=100,          # Test operation code (e.g., FCT)
-       station_name="TEST-01",
-       location="Factory A",
-       purpose="Production",
-       result="Passed",
-       start=datetime.now()
-   )
-   
-   # Get root sequence and add test steps
-   root = report.get_root_sequence_call()
-   
-   # Add numeric test
-   root.add_numeric_step(
-       name="Voltage Test",
-       value=5.02,
-       unit="V",
-       comp_op="GELE",           # Greater/Equal and Less/Equal
-       low_limit=4.8,
-       high_limit=5.2,
-       status=StepStatus.Passed
-   )
-   
-   # Add pass/fail test
-   root.add_boolean_step(
-       name="LED Check",
-       status=StepStatus.Passed
-   )
-   
-   # Submit to WATS
-   response = await api.report.submit_report(report)
-   print(f"Report submitted: {response}")
-
-Using TestUUT Factory for Test Reports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The ``TestUUT`` factory provides a convenient way to create test reports:
-
-.. code-block:: python
-
-   from pywats.tools.test_uut import create_test_uut_report
-   
-   # Create comprehensive test report with all step types
-   report = create_test_uut_report(
-       part_number="DEMO-001",
+   # Service factory automatically applies station info if configured
+   report = api.report.create_uut_report(
+       operator="TestOperator",
+       part_number="BOARD-PCB-2000",
+       revision="B",
        serial_number="SN-TEST-001",
-       station_name="TEST-STATION",
-       operator_name="Operator"
+       operation_type=100,
    )
    
-   # Report includes examples of:
-   # - Numeric tests with all comparison operators
-   # - Pass/fail tests
-   # - String tests
-   # - Charts/graphs
-   # - Misc info
-   # - Sub-units
+   # Add test steps - status auto-calculated in Active mode
+   root = report.get_root_sequence_call()
+   root.add_numeric_step(
+       name="3.3V Rail",
+       value=3.31,
+       unit="V",
+       comp_op="GELE",
+       low_limit=3.2,
+       high_limit=3.4
+   )
    
-   await api.report.submit_report(report)
+   # Submit
+   response = api.report.submit_report(report)
+   print(f"Report ID: {response.id}")
 
 Query Reports
 ^^^^^^^^^^^^^
@@ -382,67 +395,60 @@ Integrate test equipment with WATS:
 
 .. code-block:: python
 
-   from pywats import pyWATS
-   from pywats.domains.report import UUTReport, StepStatus
+   from pywats import AsyncWATS
+   from pywats.domains.report import ImportMode, set_import_mode
    from datetime import datetime
    
-   api = pyWATS(base_url="...", token="...")
-   
-   def run_test_and_report(part_number: str, serial_number: str):
-       """Run automated test and submit results to WATS."""
+   async with AsyncWATS(base_url="...", token="...") as api:
        
-       # Create report
-       report = UUTReport(
-           pn=part_number,
-           sn=serial_number,
-           rev="A",
-           process_code=100,
-           station_name="ATE-STATION-01",
-           location="Production",
-           purpose="Production",
-           start=datetime.now()
-       )
-       
-       root = report.get_root_sequence_call()
-       all_passed = True
-       
-       # Run power supply tests
-       power_seq = root.add_sequence_call(name="Power Tests")
-       
-       voltage = measure_voltage()  # Your test equipment code
-       v_status = StepStatus.Passed if 4.8 <= voltage <= 5.2 else StepStatus.Failed
-       power_seq.add_numeric_step(
-           name="5V Rail",
-           value=voltage,
-           unit="V",
-           comp_op="GELE",
-           low_limit=4.8,
-           high_limit=5.2,
-           status=v_status
-       )
-       if v_status == StepStatus.Failed:
-           all_passed = False
-       
-       current = measure_current()
-       i_status = StepStatus.Passed if 0.1 <= current <= 0.2 else StepStatus.Failed
-       power_seq.add_numeric_step(
-           name="Current",
-           value=current,
-           unit="A",
-           comp_op="GELE",
-           low_limit=0.1,
-           high_limit=0.2,
-           status=i_status
-       )
-       if i_status == StepStatus.Failed:
-           all_passed = False
-       
-       # Set overall result
-       report.result = ReportStatus.Passed if all_passed else ReportStatus.Failed
-       
-       # Submit to WATS
-       response = await api.report.submit_report(report)
-       return response
+       async def run_test_and_report(part_number: str, serial_number: str):
+           """Run automated test and submit results to WATS."""
+           
+           # Active mode (default) - status auto-calculated
+           set_import_mode(ImportMode.Active)
+           
+           # Create report using service factory
+           report = api.report.create_uut_report(
+               operator="ATE-System",
+               part_number=part_number,
+               serial_number=serial_number,
+               revision="A",
+               operation_type=100,
+           )
+           
+           root = report.get_root_sequence_call()
+           
+           # Run power supply tests
+           power_seq = root.add_sequence_call(name="Power Tests")
+           
+           voltage = measure_voltage()  # Your test equipment code
+           power_seq.add_numeric_step(
+               name="5V Rail",
+               value=voltage,
+               unit="V",
+               comp_op="GELE",
+               low_limit=4.8,
+               high_limit=5.2
+               # No status needed - auto-calculated from limits
+           )
+           
+           current = measure_current()
+           power_seq.add_numeric_step(
+               name="Current",
+               value=current,
+               unit="A",
+               comp_op="GELE",
+               low_limit=0.1,
+               high_limit=0.2
+               # Auto-fails if current out of range
+           )
+           
+           # Report result auto-calculated from step failures
+           # No need to manually track all_passed or set report.result
+           
+           # Submit to WATS
+           response = await api.report.submit_report(report)
+           return response
 
 Repair Workflow
 ^^^^^^^^^^^^^^^
@@ -709,14 +715,17 @@ Add chart data for waveforms and multi-point measurements:
 
    from pywats.domains.report import Chart, ChartSeries, ChartType
    
-   report = UUTReport(pn="WIDGET-001", sn="SN-001", rev="A", ...)
+   report = api.report.create_uut_report(
+       operator="TestOp",
+       part_number="WIDGET-001",
+       serial_number="SN-001",
+       revision="A",
+       operation_type=100
+   )
    root = report.get_root_sequence_call()
    
-   # Add chart step
-   chart = root.add_chart_step(
-       name="Frequency Response",
-       status=StepStatus.Passed
-   )
+   # Add chart step (status can be omitted for non-measurement steps)
+   chart = root.add_chart_step(name="Frequency Response")
    
    # Create chart with series data
    chart.chart = Chart(
