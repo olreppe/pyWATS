@@ -7,7 +7,7 @@ done
 loading intersphinx inventory 'python' from https://docs.python.org/3/objects.inv ...
 loading intersphinx inventory 'httpx' from https://www.python-httpx.org/objects.inv ...
 loading intersphinx inventory 'pydantic' from https://docs.pydantic.dev/latest/objects.inv ...
-[01mmyst v5.0.0:[39;49;00m MdParserConfig(commonmark_only=False, gfm_only=False, enable_extensions={'deflist', 'tasklist', 'colon_fence'}, disable_syntax=[], all_links_external=False, links_external_new_tab=False, url_schemes=('http', 'https', 'mailto', 'ftp'), ref_domains=None, fence_as_directive=set(), number_code_blocks=[], title_to_header=False, heading_anchors=3, heading_slug_func=None, html_meta={}, footnote_sort=True, footnote_transition=True, words_per_minute=200, substitutions={}, linkify_fuzzy_links=True, dmath_allow_labels=True, dmath_allow_space=True, dmath_allow_digits=True, dmath_double_inline=False, update_mathjax=True, mathjax_classes='tex2jax_process|mathjax_process|math|output_area', enable_checkboxes=False, suppress_warnings=[], highlight_code_blocks=True)
+[01mmyst v5.0.0:[39;49;00m MdParserConfig(commonmark_only=False, gfm_only=False, enable_extensions={'colon_fence', 'tasklist', 'deflist'}, disable_syntax=[], all_links_external=False, links_external_new_tab=False, url_schemes=('http', 'https', 'mailto', 'ftp'), ref_domains=None, fence_as_directive=set(), number_code_blocks=[], title_to_header=False, heading_anchors=3, heading_slug_func=None, html_meta={}, footnote_sort=True, footnote_transition=True, words_per_minute=200, substitutions={}, linkify_fuzzy_links=True, dmath_allow_labels=True, dmath_allow_space=True, dmath_allow_digits=True, dmath_double_inline=False, update_mathjax=True, mathjax_classes='tex2jax_process|mathjax_process|math|output_area', enable_checkboxes=False, suppress_warnings=[], highlight_code_blocks=True)
 [01mbuilding [mo]: [39;49;00mtargets for 0 po files that are out of date
 [01mwriting output... [39;49;00m
 [01mbuilding [html]: [39;49;00mtargets for 0 source files that are out of date
@@ -68,24 +68,16 @@ The HTML pages are in _build.
 
 
 STDERR:
+[91mWARNING: Failed to import pywats.domains.production.enums.
+Possible hints:
+* TypeError: typing.Union[pywats.shared.result.Success, pywats.shared.result.Failure] is not a generic class
+* NameError: name 'RetryConfig' is not defined
+* KeyError: 'pywats'[39;49;00m
 [91mWARNING: Failed to import pywats.domains.product.enums.
 Possible hints:
-* KeyError: 'pywats'
 * NameError: name 'RetryConfig' is not defined
-* TypeError: typing.Union[pywats.shared.result.Success, pywats.shared.result.Failure] is not a generic class[39;49;00m
+* KeyError: 'pywats'[39;49;00m
 [91mWARNING: Failed to import pywats.domains.product.enums.
-Possible hints:
-* NameError: name 'RetryConfig' is not defined
-* KeyError: 'pywats'[39;49;00m
-[91mWARNING: Failed to import pywats.domains.analytics.enums.
-Possible hints:
-* NameError: name 'RetryConfig' is not defined
-* KeyError: 'pywats'[39;49;00m
-[91mWARNING: Failed to import pywats.domains.software.enums.
-Possible hints:
-* NameError: name 'RetryConfig' is not defined
-* KeyError: 'pywats'[39;49;00m
-[91mWARNING: Failed to import pywats.domains.rootcause.enums.
 Possible hints:
 * NameError: name 'RetryConfig' is not defined
 * KeyError: 'pywats'[39;49;00m
@@ -97,28 +89,36 @@ Possible hints:
 Possible hints:
 * NameError: name 'RetryConfig' is not defined
 * KeyError: 'pywats'[39;49;00m
-[91mWARNING: Failed to import pywats.shared.models.
-Possible hints:
-* ModuleNotFoundError: No module named 'pywats.shared.models'
-* AttributeError: module 'pywats.shared' has no attribute 'models'[39;49;00m
-[91mWARNING: Failed to import pywats.shared.step_path.
-Possible hints:
-* AttributeError: module 'pywats.shared' has no attribute 'step_path'
-* ModuleNotFoundError: No module named 'pywats.shared.step_path'[39;49;00m
 [91mWARNING: Failed to import pywats.pywats.
 Possible hints:
 * NameError: name 'RetryConfig' is not defined
 * KeyError: 'pywats'[39;49;00m
-[91mWARNING: Failed to import pywats.domains.production.enums.
+[91mWARNING: Failed to import pywats.domains.rootcause.enums.
+Possible hints:
+* NameError: name 'RetryConfig' is not defined
+* KeyError: 'pywats'[39;49;00m
+[91mWARNING: Failed to import pywats.shared.models.
+Possible hints:
+* AttributeError: module 'pywats.shared' has no attribute 'models'
+* ModuleNotFoundError: No module named 'pywats.shared.models'[39;49;00m
+[91mWARNING: Failed to import pywats.shared.step_path.
+Possible hints:
+* AttributeError: module 'pywats.shared' has no attribute 'step_path'
+* ModuleNotFoundError: No module named 'pywats.shared.step_path'[39;49;00m
+[91mWARNING: Failed to import pywats.domains.analytics.enums.
+Possible hints:
+* NameError: name 'RetryConfig' is not defined
+* KeyError: 'pywats'[39;49;00m
+[91mWARNING: Failed to import pywats.domains.software.enums.
 Possible hints:
 * NameError: name 'RetryConfig' is not defined
 * KeyError: 'pywats'[39;49;00m
 [91mWARNING: failed to reach any of the inventories with the following issues:
-intersphinx inventory 'https://docs.python.org/3/objects.inv' not fetchable due to <class 'requests.exceptions.ConnectionError'>: HTTPSConnectionPool(host='docs.python.org', port=443): Max retries exceeded with url: /3/objects.inv (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f706f539550>: Failed to resolve 'docs.python.org' ([Errno -5] No address associated with hostname)"))[39;49;00m
+intersphinx inventory 'https://docs.python.org/3/objects.inv' not fetchable due to <class 'requests.exceptions.ConnectionError'>: HTTPSConnectionPool(host='docs.python.org', port=443): Max retries exceeded with url: /3/objects.inv (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f03a4d43110>: Failed to resolve 'docs.python.org' ([Errno -5] No address associated with hostname)"))[39;49;00m
 [91mWARNING: failed to reach any of the inventories with the following issues:
-intersphinx inventory 'https://docs.pydantic.dev/latest/objects.inv' not fetchable due to <class 'requests.exceptions.ConnectionError'>: HTTPSConnectionPool(host='docs.pydantic.dev', port=443): Max retries exceeded with url: /latest/objects.inv (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f706f3e8530>: Failed to resolve 'docs.pydantic.dev' ([Errno -5] No address associated with hostname)"))[39;49;00m
+intersphinx inventory 'https://www.python-httpx.org/objects.inv' not fetchable due to <class 'requests.exceptions.ConnectionError'>: HTTPSConnectionPool(host='www.python-httpx.org', port=443): Max retries exceeded with url: /objects.inv (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f03a4a22ba0>: Failed to resolve 'www.python-httpx.org' ([Errno -5] No address associated with hostname)"))[39;49;00m
 [91mWARNING: failed to reach any of the inventories with the following issues:
-intersphinx inventory 'https://www.python-httpx.org/objects.inv' not fetchable due to <class 'requests.exceptions.ConnectionError'>: HTTPSConnectionPool(host='www.python-httpx.org', port=443): Max retries exceeded with url: /objects.inv (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f706f3b47a0>: Failed to resolve 'www.python-httpx.org' ([Errno -5] No address associated with hostname)"))[39;49;00m
+intersphinx inventory 'https://docs.pydantic.dev/latest/objects.inv' not fetchable due to <class 'requests.exceptions.ConnectionError'>: HTTPSConnectionPool(host='docs.pydantic.dev', port=443): Max retries exceeded with url: /latest/objects.inv (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f03a4a23440>: Failed to resolve 'docs.pydantic.dev' ([Errno -5] No address associated with hostname)"))[39;49;00m
 :12: (WARNING/2) Definition list ends without a blank line; unexpected unindent.
 [91mWARNING: autodoc: failed to import 'pywats' from module 'pywats'; the following exception was raised:
 Traceback (most recent call last):
