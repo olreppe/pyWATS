@@ -12,6 +12,14 @@ Endpoints:
     GET /health/live    - Liveness probe (is the process alive?)
     GET /health/ready   - Readiness probe (is the service ready to accept work?)
     GET /health/details - Detailed health information (JSON)
+    GET /metrics        - Prometheus metrics or JSON summary
+
+Metrics Endpoint:
+    Returns Prometheus text format if MetricsCollector is configured, otherwise
+    returns JSON summary with:
+    - HTTP cache statistics (hit rate, size, evictions)
+    - Converter queue statistics (size, active workers)
+    - Service metadata (timestamp, version)
 
 Usage:
     from pywats_client.service.health_server import HealthServer
@@ -23,6 +31,9 @@ Usage:
     
     # In Docker/Kubernetes:
     # HEALTHCHECK CMD curl -f http://localhost:8080/health || exit 1
+    
+    # For Prometheus scraping:
+    # curl http://localhost:8080/metrics
 """
 
 import json
@@ -82,6 +93,8 @@ class HealthRequestHandler(BaseHTTPRequestHandler):
             self._handle_readiness()
         elif self.path == "/health/details":
             self._handle_details()
+        elif self.path == "/metrics":
+            self._handle_metrics()
         else:
             self._send_response(404, {"error": "Not found"})
     
@@ -127,6 +140,68 @@ class HealthRequestHandler(BaseHTTPRequestHandler):
             200 if status.healthy else 503,
             status.to_dict()
         )
+    
+    def _handle_metrics(self) -> None:
+        """
+        Prometheus-compatible metrics endpoint.
+        
+        Returns metrics in Prometheus text format if MetricsCollector is available,
+        otherwise returns JSON summary of HTTP cache stats and basic info.
+        """
+        if self.health_server and hasattr(self.health_server, '_metrics_collector'):
+            metrics_collector = self.health_server._metrics_collector
+            if metrics_collector and hasattr(metrics_collector, 'registry'):
+                # Return Prometheus metrics
+                try:
+                    from prometheus_client import generate_latest
+                    metrics_data = generate_latest(metrics_collector.registry)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/plain; version=0.0.4")
+                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                    self.end_headers()
+                    self.wfile.write(metrics_data)
+                    return
+                except ImportError:
+                    pass
+        
+        # Fallback: Return JSON metrics summary
+        metrics_data = self._collect_metrics_summary()
+        self._send_response(200, metrics_data)
+    
+    def _collect_metrics_summary(self) -> Dict[str, Any]:
+        """Collect metrics summary from available sources"""
+        summary: Dict[str, Any] = {
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "service": "pywats_client",
+        }
+        
+        # Get HTTP cache stats if available
+        if self.health_server and hasattr(self.health_server, '_http_client'):
+            http_client = self.health_server._http_client
+            if http_client and hasattr(http_client, 'cache') and http_client.cache:
+                cache_stats = http_client.cache.stats()
+                summary["http_cache"] = {
+                    "enabled": http_client.cache_enabled,
+                    "size": cache_stats.size,
+                    "max_size": cache_stats.max_size,
+                    "requests": cache_stats.requests,
+                    "hits": cache_stats.hits,
+                    "misses": cache_stats.misses,
+                    "hit_rate": (cache_stats.hits / cache_stats.requests * 100) if cache_stats.requests > 0 else 0.0,
+                    "evictions": cache_stats.evictions
+                }
+        
+        # Get converter queue stats if available
+        if self.health_server and hasattr(self.health_server, '_converter_pool'):
+            converter_pool = self.health_server._converter_pool
+            if converter_pool and hasattr(converter_pool, 'queue_size'):
+                summary["converter_queue"] = {
+                    "size": converter_pool.queue_size,
+                    "active_workers": getattr(converter_pool, 'active_workers', 0),
+                    "total_processed": getattr(converter_pool, 'total_processed', 0)
+                }
+        
+        return summary
     
     def _get_health_status(self) -> HealthStatus:
         """Get current health status from the health server"""

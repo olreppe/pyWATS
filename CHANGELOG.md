@@ -37,6 +37,13 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Integrates With**: Existing src/pywats/core/metrics.py Prometheus metrics infrastructure
   - **No Breaking Changes**: Metrics collection is opt-in via parameter
 
+- **Health & Metrics Endpoints**: Enhanced health_server.py with /metrics endpoint
+  - **GET /metrics**: Prometheus text format (if MetricsCollector configured) or JSON summary
+  - **HTTP Cache Metrics**: hit_rate, size, evictions, requests/hits/misses from HttpClient cache
+  - **Converter Queue Metrics**: size, active_workers, total_processed from AsyncConverterPool
+  - **Backward Compatible**: Existing /health endpoints unchanged, /metrics is new addition
+  - **Location**: src/pywats_client/service/health_server.py
+
 - **Async Queue Consolidation**: Unified queue architecture with priority support for converters
   - **AsyncQueueAdapter**: Bridge between thread-safe MemoryQueue and async/await patterns (289 lines, fully tested)
   - **Converter Priority**: All converters now support priority parameter (1=highest, 10=lowest, default=5)
