@@ -20,6 +20,23 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **HTTP Response Caching**: Automatic caching for HTTP GET requests in src/pywats/core/client.py
+  - **Cache Key Generation**: Method + endpoint + sorted params for consistent cache keys
+  - **Automatic Caching**: Successful GET responses (2xx) cached with configurable TTL (default: 5 minutes)
+  - **Cache Invalidation**: POST/PUT/DELETE automatically invalidate related cache entries by endpoint prefix
+  - **Manual Control**: `clear_cache()`, `invalidate_cache(pattern)`, and per-request `cache=False` option
+  - **Cache Properties**: `cache`, `cache_enabled` properties for inspection and statistics access
+  - **Configuration**: `enable_cache`, `cache_ttl`, `cache_max_size` constructor parameters
+  - **Examples**: examples/performance/http_caching.py with 6 comprehensive examples (456 lines)
+  - **Performance**: Domain services automatically benefit (no code changes required)
+  - **Tests**: New comprehensive example demonstrating cache hits/misses, TTL expiration, invalidation
+
+- **Metrics Integration**: HttpClient now supports MetricsCollector for request tracking
+  - **Optional Parameter**: `metrics_collector` constructor parameter for Prometheus integration
+  - **Automatic Tracking**: HTTP requests tracked by method, endpoint, status code, and duration
+  - **Integrates With**: Existing src/pywats/core/metrics.py Prometheus metrics infrastructure
+  - **No Breaking Changes**: Metrics collection is opt-in via parameter
+
 - **Async Queue Consolidation**: Unified queue architecture with priority support for converters
   - **AsyncQueueAdapter**: Bridge between thread-safe MemoryQueue and async/await patterns (289 lines, fully tested)
   - **Converter Priority**: All converters now support priority parameter (1=highest, 10=lowest, default=5)
