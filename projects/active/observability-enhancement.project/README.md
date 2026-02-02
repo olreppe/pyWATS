@@ -1,8 +1,8 @@
 # Observability Enhancement Project
 
-**Status:** � 65% Complete (Sprint 1 done, Sprint 2 pending)  
+**Status:** 🟢 80% Complete (Sprint 1 MERGED, Sprint 2 pending integration)  
 **Priority:** P1 (High Impact, Medium Effort)  
-**Timeline:** 1-2 Sprints  
+**Timeline:** 1-2 Sprints (Sprint 1 complete)  
 **Owner:** Development Team  
 **Last Updated:** February 2, 2026
 
@@ -34,18 +34,20 @@ Elevate observability from **6.5/10** to **8.5/10** by adding:
 - ⏳ Request/response logging with correlation IDs **[PENDING]**
 - ✅ Error rate and latency metrics captured **[DONE - metrics module]**
 
-### Sprint 1 Completed (80%):
-- ✅ src/pywats/core/metrics.py (395 lines)
-  - HTTP request tracking decorator
-  - Error metrics tracking
-  - System resource metrics (CPU, memory, threads)
-  - Queue depth and processing metrics
-  - Converter execution metrics
-  - Metrics server with /metrics endpoint
-  - Background system monitoring
-  - Thread-safe operations
-- ✅ examples/observability/prometheus_monitoring.py (261 lines)
-- ✅ prometheus-client dependency added
+### Sprint 1 Completed (100% ✅ MERGED to main):
+- ✅ src/pywats/core/metrics.py (396 lines) - MERGED commit ddaf2dc
+  - HTTP request tracking decorator (@track_request_metrics)
+  - Error metrics tracking (track_error)
+  - System resource metrics (CPU, memory, threads via psutil)
+  - Queue depth and processing metrics (track_queue_metrics)
+  - Converter execution metrics (track_converter_execution)
+  - Metrics server with /metrics endpoint (start_metrics_server)
+  - Background system monitoring thread
+  - Thread-safe operations with prometheus_client
+  - Graceful degradation if dependencies missing
+- ✅ examples/observability/prometheus_monitoring.py (261 lines) - MERGED commit 1814d71
+- ✅ prometheus-client dependency added to pyproject.toml
+- ✅ psutil dependency added for system metrics
 
 ### Sprint 2 Remaining:
 - ⏳ HTTP client instrumentation integration
