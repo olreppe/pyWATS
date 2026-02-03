@@ -8,7 +8,38 @@
 
 ## Current Active Items
 
-### 1. ✅ Code Quality Review (COMPLETED)
+### 1. 📋 Logging Consolidation (P1 - PLANNING COMPLETE)
+
+**Status:** Ready for Implementation  
+**Priority:** P1 (Highest)  
+**Timeline:** 2 weeks (12-14 days)  
+**Location:** [logging-consolidation.project/](logging-consolidation.project/)
+
+**Objective:** Consolidate dispersed logging into unified framework with top-level pywats.log, per-conversion logs, and exception bubbling pipeline.
+
+**Deliverables:**
+- Top-level pywats.log in client installation directory (rotating)
+- Per-conversion ConversionLog in ConverterBase
+- Exception bubbling: converter → client → GUI
+- Reusable framework across API-Client-GUI-Application
+- 70+ new tests, comprehensive documentation
+
+---
+
+### 2. 📋 GUI/Client Separation (P2 - ANALYSIS COMPLETE)
+
+**Status:** Awaiting Architecture Decision  
+**Priority:** P2  
+**Timeline:** 2-3 weeks  
+**Location:** [gui-client-separation.project/](gui-client-separation.project/)
+
+**Objective:** Separate GUI into standalone package with clean service interface.
+
+**Next Step:** Review 3 architecture options and select approach.
+
+---
+
+### 3. ✅ Code Quality Review (COMPLETED)
 
 **Status:** Completed and Merged  
 **Priority:** P1 (was)  
