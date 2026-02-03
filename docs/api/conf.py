@@ -31,7 +31,7 @@ extensions = [
 templates_path = ['_templates']
 
 # Patterns to exclude
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '../guides', '../internal_documentation', '../platforms', '../reference', '../release']
 
 # Source file suffixes
 source_suffix = {

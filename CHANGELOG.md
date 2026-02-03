@@ -20,6 +20,40 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Unified Logging Infrastructure**: Consolidated logging across API, client, and converters
+  - **configure_logging()**: Single unified API for all logging configuration (pywats.core.logging)
+    - Text and JSON format support with `format` parameter
+    - File rotation with configurable size/backups (10MB/5 default)
+    - Correlation ID and context support
+    - Custom handlers support
+    - Clean, typed API replacing multiple patterns
+  - **FileRotatingHandler**: Convenience wrapper for RotatingFileHandler with pyWATS defaults
+    - UTF-8 encoding enforced
+    - Automatic directory creation
+    - Extends Python's RotatingFileHandler
+  - **LoggingContext**: Context manager for scoped logging metadata
+    - Nested context support via ContextVar
+    - Exception-safe cleanup
+    - Automatic restoration on exit
+  - **Client Logging Module** (pywats_client.core.logging):
+    - `setup_client_logging()`: Top-level pywats.log with rotation in installation directory
+    - `get_client_log_path()`: Returns path to main client log file
+    - `get_conversion_log_dir()`: Returns conversion logs directory
+    - `cleanup_old_conversion_logs()`: Log cleanup utility with configurable retention
+  - **ConversionLog**: Per-conversion detailed logging with JSON line format
+    - Step-by-step tracking with `step()`, `warning()`, `error()`, `finalize()` methods
+    - Auto-flush for crash safety
+    - Context manager support with automatic finalization
+    - Unique timestamped files: `{install_dir}/logs/conversions/{filename}_{timestamp}.log`
+    - Exception capture with full metadata
+  - **Converter Integration**: ConversionLog support in ConverterBase
+    - Optional `conversion_log` parameter in ConverterArguments
+    - Updated examples showing usage patterns
+  - **Examples**: examples/converters/logging_example_converter.py (290+ lines)
+  - **Documentation**: docs/guides/logging.md (comprehensive logging guide)
+  - **Tests**: 63 new tests (26 core + 17 client + 20 conversion)
+  - **Migration**: 5+ client files migrated to use setup_client_logging()
+
 - **Structured Logging Foundation**: JSON logging with correlation IDs for production observability
   - **StructuredFormatter**: JSON formatter for log aggregation systems (ELK, Splunk, CloudWatch)
     - ISO 8601 timestamps with UTC timezone
@@ -63,6 +97,26 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Tests**: 6 performance benchmarks validating all improvements
 
 ### Improved
+- **Sphinx API Documentation**: Complete logging infrastructure documentation
+  - **docs/api/logging.rst**: Comprehensive API-layer logging reference (340 lines)
+    - Complete configuration guide with configure_logging(), get_logger()
+    - Contextual logging patterns (LoggingContext, set/get/clear_logging_context)
+    - File rotation with FileRotatingHandler examples
+    - Structured logging with StructuredFormatter and CorrelationFilter
+    - Integration patterns for production, development, web applications
+    - Cross-references to client logging and guides
+  - **docs/api/client/logging.rst**: Client-side logging documentation (450 lines)
+    - Client application logging with setup_client_logging()
+    - Platform-aware log paths (Windows/Linux/macOS)
+    - ConversionLog API for file transformation tracking
+    - Filtering and statistics examples
+    - Integration patterns for desktop apps and batch conversions
+  - **docs/api/client.rst**: Client services overview
+    - Comparison table: API layer vs client layer
+    - Architecture rationale for separation
+    - Quick start examples
+  - **Sphinx Build**: Clean build with 8 acceptable warnings (7 autodoc duplicates, 1 missing guide reference)
+  - **Type Safety**: All examples follow type-safe patterns (no dict/Any returns, proper enums)
 - **Event Loop Performance**: Thread-local event loop pooling for 10-100x sync API speedup
   - **EventLoopPool**: Reuses event loops instead of creating new ones per call
     - Thread-local storage prevents conflicts

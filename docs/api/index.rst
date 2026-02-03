@@ -11,6 +11,8 @@ Welcome to the pyWATS API reference documentation. This documentation is auto-ge
    api/index
    domains/index
    models/index
+   logging
+   client
    changelog
 
 Quick Links
@@ -20,6 +22,8 @@ Quick Links
 * :doc:`api/index` - Main pyWATS class reference
 * :doc:`domains/index` - Domain service reference (Product, Asset, Report, etc.)
 * :doc:`models/index` - Data model reference
+* :doc:`logging` - API logging infrastructure
+* :doc:`client` - Client services (GUI, conversions)
 
 Installation
 ------------
