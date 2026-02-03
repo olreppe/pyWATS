@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.abspath('../../src'))
 project = 'pyWATS'
 copyright = '2024-2026, The WATS Company AS'
 author = 'The WATS Company AS | Design & Implementation: Ola Lund Reppe, Integration Architect'
-release = '0.2.0b2'
-version = '0.2.0'
+release = '0.4.0b1'
+version = '0.4.0'
 
 # -- General configuration ---------------------------------------------------
 extensions = [
