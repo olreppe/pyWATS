@@ -26,9 +26,11 @@ Quick debugging:
 import json
 import logging
 import sys
-from contextvars import ContextVar
+from contextvars import ContextVar, copy_context
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Union
 
 
 # Context variable for structured logging metadata
@@ -202,6 +204,178 @@ def get_logging_context() -> Dict[str, Any]:
     return _logging_context.get({}).copy()
 
 
+class FileRotatingHandler(RotatingFileHandler):
+    """
+    File handler with automatic rotation based on size.
+    
+    Extends Python's RotatingFileHandler with pyWATS-specific defaults
+    and UTF-8 encoding enforcement.
+    
+    Args:
+        file_path: Path to log file
+        max_bytes: Maximum file size before rotation (default: 10MB)
+        backup_count: Number of backup files to keep (default: 5)
+        
+    Example:
+        >>> from pywats.core.logging import FileRotatingHandler
+        >>> handler = FileRotatingHandler("app.log", max_bytes=5*1024*1024, backup_count=3)
+    """
+    
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        max_bytes: int = 10 * 1024 * 1024,  # 10MB default
+        backup_count: int = 5
+    ):
+        """Initialize rotating file handler with UTF-8 encoding."""
+        file_path = Path(file_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        super().__init__(
+            filename=str(file_path),
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding='utf-8'
+        )
+
+
+class LoggingContext:
+    """
+    Context manager for scoped logging context.
+    
+    Automatically adds context key-value pairs to all log messages
+    within the context scope. Context is cleaned up on exit.
+    
+    Args:
+        **kwargs: Key-value pairs to add to logging context
+        
+    Example:
+        >>> from pywats.core.logging import LoggingContext, get_logger
+        >>> logger = get_logger(__name__)
+        >>> with LoggingContext(request_id="req123", user="alice"):
+        ...     logger.info("Processing request")  # Includes request_id and user
+        >>> logger.info("Outside context")  # No request_id or user
+    """
+    
+    def __init__(self, **kwargs: Any):
+        """Initialize context with key-value pairs."""
+        self.context = kwargs
+        self.previous_context: Optional[Dict[str, Any]] = None
+    
+    def __enter__(self):
+        """Enter context: save previous and set new context."""
+        self.previous_context = _logging_context.get({}).copy()
+        current = self.previous_context.copy()
+        current.update(self.context)
+        _logging_context.set(current)
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context: restore previous context."""
+        if self.previous_context is not None:
+            _logging_context.set(self.previous_context)
+        return False
+
+
+def configure_logging(
+    level: Union[str, int] = "INFO",
+    format: Literal["text", "json"] = "text",
+    handlers: Optional[List[logging.Handler]] = None,
+    file_path: Optional[Path] = None,
+    rotate_size_mb: int = 10,
+    rotate_backups: int = 5,
+    enable_correlation_ids: bool = True,
+    enable_context: bool = True
+) -> None:
+    """
+    Configure unified logging for pyWATS with support for text/JSON formats and file rotation.
+    
+    This is the recommended way to configure logging in pyWATS applications.
+    Replaces enable_debug_logging() and enable_json_logging() with a unified API.
+    
+    Args:
+        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL) or numeric value
+        format: Output format - "text" for human-readable or "json" for structured
+        handlers: Optional list of custom handlers (if provided, file_path is ignored)
+        file_path: Optional path to log file (enables file rotation if provided)
+        rotate_size_mb: Maximum log file size in MB before rotation (default: 10)
+        rotate_backups: Number of backup files to keep (default: 5)
+        enable_correlation_ids: Include correlation IDs in log output (default: True)
+        enable_context: Include logging context in log output (default: True)
+        
+    Example (text logging to console):
+        >>> from pywats.core.logging import configure_logging
+        >>> configure_logging(level="DEBUG", format="text")
+        
+    Example (JSON logging to file with rotation):
+        >>> from pathlib import Path
+        >>> from pywats.core.logging import configure_logging
+        >>> configure_logging(
+        ...     level="INFO",
+        ...     format="json",
+        ...     file_path=Path("logs/pywats.log"),
+        ...     rotate_size_mb=20,
+        ...     rotate_backups=10
+        ... )
+        
+    Example (custom handlers):
+        >>> import logging
+        >>> from pywats.core.logging import configure_logging
+        >>> custom_handler = logging.StreamHandler()
+        >>> configure_logging(handlers=[custom_handler])
+    """
+    # Convert string level to numeric if needed
+    if isinstance(level, str):
+        level = getattr(logging, level.upper())
+    
+    # Get root logger
+    root_logger = logging.getLogger()
+    
+    # Clear existing handlers to avoid duplicates
+    root_logger.handlers.clear()
+    
+    # Determine handlers to use
+    if handlers is not None:
+        # Use custom handlers
+        handler_list = handlers
+    elif file_path is not None:
+        # Create rotating file handler
+        max_bytes = rotate_size_mb * 1024 * 1024
+        handler_list = [FileRotatingHandler(file_path, max_bytes, rotate_backups)]
+    else:
+        # Default to console handler
+        handler_list = [logging.StreamHandler(sys.stdout)]
+    
+    # Configure each handler
+    for handler in handler_list:
+        # Set formatter based on format type
+        if format == "json":
+            formatter = StructuredFormatter()
+        else:
+            # Use detailed format with correlation IDs if enabled
+            if enable_correlation_ids:
+                format_string = DEFAULT_FORMAT_DETAILED
+            else:
+                format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            formatter = logging.Formatter(format_string)
+        
+        handler.setFormatter(formatter)
+        
+        # Add correlation filter if enabled (for both JSON and text)
+        if enable_correlation_ids:
+            handler.addFilter(CorrelationFilter())
+        
+        # Add handler to root logger
+        root_logger.addHandler(handler)
+    
+    # Set root logger level
+    root_logger.setLevel(level)
+    
+    # Set pyWATS logger level
+    pywats_logger = logging.getLogger('pywats')
+    pywats_logger.setLevel(level)
+
+
 def enable_debug_logging(
     format_string: Optional[str] = None,
     use_correlation_ids: bool = True,
@@ -273,10 +447,13 @@ logging.getLogger('pywats').addHandler(logging.NullHandler())
 
 __all__ = [
     'get_logger',
+    'configure_logging',
     'enable_debug_logging',
     'set_logging_context',
     'clear_logging_context',
     'get_logging_context',
+    'FileRotatingHandler',
+    'LoggingContext',
     'CorrelationFilter',
     'StructuredFormatter',
     'DEFAULT_FORMAT',
