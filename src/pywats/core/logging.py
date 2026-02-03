@@ -385,6 +385,9 @@ def enable_debug_logging(
     """
     Convenience function to enable debug logging for pyWATS.
     
+    .. deprecated:: 0.5.0
+        Use :func:`configure_logging` instead for a more flexible API.
+    
     This is a helper for quick debugging but applications should
     configure logging properly for production use.
     
@@ -406,37 +409,39 @@ def enable_debug_logging(
         >>> from pywats import enable_debug_logging
         >>> enable_debug_logging(use_json=True)
         >>> # All logs will be output as JSON with structured fields
+    
+    Note:
+        This function is deprecated. Use configure_logging() instead:
+        
+        Instead of:
+            enable_debug_logging(use_json=True, level=logging.INFO)
+        
+        Use:
+            configure_logging(level="INFO", format="json")
     """
-    # Remove existing handlers to avoid duplicates
-    root_logger = logging.getLogger()
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
+    import warnings
+    warnings.warn(
+        "enable_debug_logging() is deprecated and will be removed in v1.0.0. "
+        "Use configure_logging() instead for a more flexible API.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     
-    # Create console handler
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setLevel(level)
-    
-    # Choose formatter based on settings
-    if use_json:
-        formatter = StructuredFormatter()
+    # If custom format_string provided, we need to create a custom handler
+    if format_string is not None and not use_json:
+        # Create custom handler with user's format
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter(format_string))
+        if use_correlation_ids:
+            handler.addFilter(CorrelationFilter())
+        configure_logging(level=level, handlers=[handler], enable_correlation_ids=use_correlation_ids)
     else:
-        if format_string is None:
-            format_string = DEFAULT_FORMAT_DETAILED if use_correlation_ids else '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        formatter = logging.Formatter(format_string)
-    
-    handler.setFormatter(formatter)
-    
-    # Add correlation filter if enabled (for both JSON and text)
-    if use_correlation_ids:
-        handler.addFilter(CorrelationFilter())
-    
-    # Configure root logger
-    root_logger.addHandler(handler)
-    root_logger.setLevel(level)
-    
-    # Set pyWATS logger level
-    pywats_logger = logging.getLogger('pywats')
-    pywats_logger.setLevel(level)
+        # Use configure_logging with appropriate settings
+        configure_logging(
+            level=level,
+            format="json" if use_json else "text",
+            enable_correlation_ids=use_correlation_ids
+        )
 
 
 # Suppress warnings about unconfigured logging
