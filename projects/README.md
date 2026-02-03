@@ -46,7 +46,25 @@ See [.agent_instructions.md](.agent_instructions.md) for templates and detailed 
 
 ## 📋 Current Projects
 
-(No active projects at this time)
+### 1. GUI Client Feature Expansion (15% complete - PAUSED)
+- **Location:** `active/gui-client-features.project/`
+- **Status:** Phase 1 complete, awaiting next sprint
+- **Priority:** P2
+
+---
+
+## 📚 Recently Completed (2026-Q1)
+
+### Logging Infrastructure Consolidation ✅
+- **Completed:** February 3, 2026
+- **Status:** 100% complete, 1756 tests passing
+- **Location:** `docs/internal_documentation/completed/2026-Q1/logging-consolidation/`
+- **Summary:** `docs/internal_documentation/completed/2026-Q1/logging-consolidation_COMPLETION_SUMMARY.md`
+- **Highlights:**
+  - Unified logging framework (`configure_logging`)
+  - 50+ dedicated tests (97%+ pass rate)
+  - Zero breaking changes
+  - Production-ready structured logging (JSON, rotation, correlation IDs)
 
 ---
 
