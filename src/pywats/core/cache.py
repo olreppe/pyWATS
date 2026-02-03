@@ -353,7 +353,7 @@ class AsyncTTLCache(Generic[T]):
         self._cleanup_task: Optional[asyncio.Task] = None
         self._last_cleanup = datetime.now()
     
-    async def get_async(self, key: str, default: Optional[T] = None) -> Optional[T]:
+    async def get(self, key: str, default: Optional[T] = None) -> Optional[T]:
         """
         Get value from cache asynchronously.
         
@@ -383,7 +383,7 @@ class AsyncTTLCache(Generic[T]):
             self._stats.hits += 1
             return entry.value
     
-    async def set_async(
+    async def set(
         self,
         key: str,
         value: T,
@@ -412,7 +412,7 @@ class AsyncTTLCache(Generic[T]):
                 ttl_seconds=effective_ttl
             )
     
-    async def delete_async(self, key: str) -> bool:
+    async def delete(self, key: str) -> bool:
         """
         Delete entry from cache asynchronously.
         
@@ -428,13 +428,17 @@ class AsyncTTLCache(Generic[T]):
                 return True
             return False
     
-    async def clear_async(self) -> None:
+    async def put(self, key: str, value: T, ttl: Optional[float] = None) -> None:
+        """Alias for set() - put value in cache."""
+        await self.set(key, value, ttl)
+    
+    async def clear(self) -> None:
         """Clear entire cache asynchronously."""
         async with self._lock:
             self._cache.clear()
             self._stats = CacheStats()
     
-    async def cleanup_expired_async(self) -> int:
+    async def cleanup_expired(self) -> int:
         """
         Remove all expired entries asynchronously.
         
@@ -527,7 +531,7 @@ class AsyncTTLCache(Generic[T]):
         while True:
             try:
                 await asyncio.sleep(self._cleanup_interval)
-                removed = await self.cleanup_expired_async()
+                removed = await self.cleanup_expired()
                 if removed > 0:
                     logger.debug(f"Cache cleanup removed {removed} expired entries")
             except asyncio.CancelledError:

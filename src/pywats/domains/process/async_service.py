@@ -145,7 +145,7 @@ class AsyncProcessService:
         await self._ensure_cache_started()
         
         processes = await self._repository.get_processes()
-        await self._cache.set_async('processes', processes)
+        await self._cache.set('processes', processes)
         
         logger.info(f"Process cache refreshed ({len(processes)} processes)")
 
@@ -154,19 +154,19 @@ class AsyncProcessService:
         await self._ensure_cache_started()
         
         # Try to get from cache
-        processes = await self._cache.get_async('processes')
+        processes = await self._cache.get('processes')
         
         if processes is None:
             # Cache miss - fetch from server
             logger.debug("Process cache miss - fetching from server")
             await self.refresh()
-            processes = await self._cache.get_async('processes')
+            processes = await self._cache.get('processes')
         
         return processes if processes is not None else []
 
     async def clear_cache(self) -> None:
         """Clear the process cache."""
-        await self._cache.clear_async()
+        await self._cache.clear()
         logger.info("Process cache cleared")
     async def get_processes(self) -> List[ProcessInfo]:
         """
