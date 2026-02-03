@@ -371,20 +371,16 @@ API Reference
 Main Service
 ^^^^^^^^^^^^
 
-.. autoclass:: pywats.domains.analytics.service.AsyncAnalyticsService
+.. autoclass:: pywats.domains.analytics.async_service.AsyncAnalyticsService
    :members:
    :undoc-members:
    :show-inheritance:
    :member-order: bysource
 
-Internal Service
-^^^^^^^^^^^^^^^^
+Repository
+^^^^^^^^^^
 
-.. note::
-   Internal APIs are for advanced use cases and direct WATS server integration.
-   Most users should use the main service above.
-
-.. autoclass:: pywats.domains.analytics.service_internal.AnalyticsServiceInternal
+.. autoclass:: pywats.domains.analytics.async_repository.AsyncAnalyticsRepository
    :members:
    :undoc-members:
    :show-inheritance:
@@ -404,11 +400,6 @@ Measurement Models
 ^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: pywats.domains.analytics.models.AggregatedMeasurement
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. autoclass:: pywats.domains.analytics.models.MeasurementStatistics
    :members:
    :undoc-members:
    :show-inheritance:
@@ -435,11 +426,6 @@ Enums
 -----
 
 .. automodule:: pywats.domains.analytics.enums
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. autoclass:: pywats.domains.analytics.dimension_enums.DimensionBuilder
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,12 +1,20 @@
 Data Models
 ===========
 
-This section documents all data models used by pyWATS.
+This section documents all data models and shared utilities used by pyWATS.
 
-Common Models
--------------
+Base Models
+-----------
 
-.. automodule:: pywats.shared.models
+.. automodule:: pywats.shared.base_model
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Common Types
+------------
+
+.. automodule:: pywats.shared.common_types
    :members:
    :undoc-members:
    :show-inheritance:
@@ -19,20 +27,10 @@ Result Types
    :undoc-members:
    :show-inheritance:
 
-Query Enums
------------
+Enums
+-----
 
-.. autoclass:: pywats.shared.query_enums.StatusFilter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. autoclass:: pywats.shared.query_enums.RunFilter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. autoclass:: pywats.shared.query_enums.StepType
+.. automodule:: pywats.shared.enums
    :members:
    :undoc-members:
    :show-inheritance:
@@ -40,7 +38,31 @@ Query Enums
 Path Utilities
 --------------
 
-.. automodule:: pywats.shared.step_path
+.. automodule:: pywats.shared.paths
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Statistics
+----------
+
+.. automodule:: pywats.shared.stats
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+OData Helpers
+-------------
+
+.. automodule:: pywats.shared.odata
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Discovery Tools
+---------------
+
+.. automodule:: pywats.shared.discovery
    :members:
    :undoc-members:
    :show-inheritance:
