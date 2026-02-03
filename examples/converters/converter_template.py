@@ -79,7 +79,7 @@ from pywats.domains.report.report_models.uut.steps.sequence_call import Sequence
 from pywats.shared.enums import CompOp
 
 # Optional: Import step status enum for type hints
-from pywats.domains.report.report_models.uut.step import StepStatus
+from pywats.domains.report.report_models.common_types import StepStatus, ReportStatus
 
 # Misc info for additional metadata
 from pywats.domains.report.report_models.misc_info import MiscInfo

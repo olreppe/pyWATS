@@ -18,7 +18,7 @@ from datetime import datetime
 # Example 1: Synchronous Usage (Default - Simplest)
 # =============================================================================
 
-def sync_example():
+def sync_example() -> None:
     """Standard synchronous usage - blocking but simple."""
     from pywats import pyWATS
     
@@ -79,7 +79,7 @@ async def async_example():
 # Example 3: Using run_sync() for Mixed Code
 # =============================================================================
 
-def mixed_example():
+def mixed_example() -> tuple:
     """Call async code from synchronous context using run_sync()."""
     from pywats.core.sync_runner import run_sync
     from pywats import AsyncWATS
@@ -108,7 +108,7 @@ def mixed_example():
 # Example 4: Service Layer Architecture
 # =============================================================================
 
-def service_architecture_example():
+def service_architecture_example() -> None:
     """Understanding the pyWATS architecture.
     
     pyWATS uses an async-first architecture with two main entry points:

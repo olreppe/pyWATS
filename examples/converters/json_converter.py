@@ -44,6 +44,7 @@ from pywats.domains.report.report_models.uut.steps.sequence_call import Sequence
 from pywats.shared.enums import CompOp
 from pywats.domains.report.report_models.misc_info import MiscInfo
 from pywats.domains.report.report_models.sub_unit import SubUnit
+from pywats.domains.report.report_models.common_types import StepStatus, ReportStatus
 
 # Converter infrastructure
 from pywats_client.converters.file_converter import FileConverter
@@ -173,13 +174,23 @@ class JSONConverter(FileConverter):
             if has_test_groups and len(data.get('testGroups', {})) > 0:
                 confidence += 0.15
             
+            # Map result to StepStatus for detected_result
+            result_mapping = {
+                "P": "Passed",
+                "F": "Failed", 
+                "S": "Skipped",
+                "E": "Error",
+                "D": "Done"
+            }
+            detected_result_str = result_mapping.get(result, result)
+            
             return ValidationResult(
                 can_convert=True,
                 confidence=min(0.95, confidence),
                 message=f"Valid JSON test file ({len(found_fields)}/{len(required_fields)} fields)",
                 detected_serial_number=serial_number,
                 detected_part_number=part_number,
-                detected_result="Passed" if result == "P" else "Failed" if result == "F" else result,
+                detected_result=detected_result_str,
                 detected_process=process,
             )
             

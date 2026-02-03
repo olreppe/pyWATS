@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def basic_configuration():
+def basic_configuration() -> None:
     """Basic client configuration."""
     logger.info("\n=== Basic Configuration ===")
     
@@ -52,7 +52,7 @@ def basic_configuration():
     logger.info("Created client from environment variables")
 
 
-def error_mode_configuration():
+def error_mode_configuration() -> None:
     """Configure error handling mode."""
     logger.info("\n=== Error Mode Configuration ===")
     
@@ -73,7 +73,7 @@ def error_mode_configuration():
     logger.info("LENIENT mode: Returns None for empty responses")
 
 
-def timeout_configuration():
+def timeout_configuration() -> None:
     """Configure request timeouts."""
     logger.info("\n=== Timeout Configuration ===")
     
