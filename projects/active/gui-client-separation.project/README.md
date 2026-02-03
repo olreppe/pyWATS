@@ -1,51 +1,83 @@
-# GUI/Client Separation & Framework Refactoring
+# GUI Applications & Shared Framework
 
-**Status:** 🚧 In Progress  
+**Status:** 🚧 Active - Phase 1 (Analysis)  
+**Progress:** 15% → Restarting with new requirements  
 **Priority:** P2  
-**Timeline:** 2-3 weeks  
+**Timeline:** 3-4 weeks  
 **Created:** February 3, 2026  
+**Updated:** February 4, 2026  
 **Owner:** Architecture Team
 
 ---
 
 ## 📋 Objective
 
-Analyze and implement separation of GUI components from the pyWATS Client service, establishing a reusable UI framework architecture that supports multiple applications (Client Configurator, standalone tools) without code duplication.
+Design and implement a shared UI framework supporting 4+ independent GUI applications that maximize code reuse while maintaining clean separation. Applications should be able to communicate with each other (optional) and all share access to the same pyWATS API and client service.
+
+**Target Applications (C# Reference):**
+1. **Client Configurator** - Service configuration and management
+2. **Yield Monitor** - Real-time yield/analytics dashboard
+3. **Software Package Manager** - Package distribution and deployment
+4. **Client Monitor** - Service health and diagnostics
+
+**Future Potential:**
+- Additional monitoring tools
+- Report analyzers
+- Data visualization apps
+- Name changes and new applications expected
 
 **Key Goals:**
-- Separate GUI concerns from client service logic
-- Rename and reorganize "gui" → proper application structure
-- Create reusable UI framework for future applications
-- Establish clear boundaries and interfaces
+- ✅ Shared UI framework (minimal code duplication)
+- ✅ Independent applications (can run standalone)
+- ✅ Common API/client access
+- ✅ Optional inter-app communication (IPC/message bus)
+- ✅ Consistent look & feel
+- ✅ Extensible architecture for future apps
 
 ---
 
 ## 🎯 Success Criteria
 
 ⏳ **Analysis Phase:**
-- [ ] Complete architecture analysis of current GUI/client coupling
-- [ ] Evaluate framework options (PySide6 patterns, widget libraries)
-- [ ] Document recommended separation strategy
-- [ ] Cost/benefit analysis (complexity vs gains)
+- [ ] Map current C# application features and architecture
+- [ ] Define 4 target applications with feature sets
+- [ ] Identify common framework components needed
+- [ ] Research Qt/PySide6 patterns for multi-app architecture
+- [ ] Evaluate IPC options (message bus, shared memory, sockets)
+- [ ] Cost/benefit analysis (shared framework vs independent apps)
 
 ⏳ **Design Phase:**
-- [ ] Proposed folder structure and naming conventions
-- [ ] Reusable framework components identified
-- [ ] Interface contracts defined (GUI ↔ Client)
-- [ ] Migration path for existing GUI code
+- [ ] Folder structure for `pywats_ui` framework + 4 apps
+- [ ] Shared framework API (widgets, dialogs, themes, config)
+- [ ] IPC architecture (if implementing communication)
+- [ ] Data models and validation strategies
+- [ ] Authentication/connection sharing patterns
 
-⏳ **Decision:**
-- [ ] Architecture decision recorded (ADR)
-- [ ] Implementation plan approved
-- [ ] Breaking changes documented
+⏳ **Implementation Phase:**
+- [ ] Create `pywats_ui` framework package
+- [ ] Implement shared components (base windows, dialogs, etc.)
+- [ ] Port Client Configurator to new structure
+- [ ] Implement Yield Monitor (new)
+- [ ] Implement Software Package Manager (new)
+- [ ] Implement Client Monitor (new)
+- [ ] IPC/communication layer (if designed)
+
+⏳ **Testing & Deployment:**
+- [ ] All 4 applications launch independently
+- [ ] Shared framework reduces code duplication by 60%+
+- [ ] Applications can access same API/client
+- [ ] Inter-app communication functional (if implemented)
+- [ ] Documentation and examples
 
 ---
 
 ## 📊 Metrics
 
-- **Current State:** GUI tightly coupled with `pywats_client`
-- **Target State:** Modular UI framework + decoupled applications
-- **Breaking Changes:** TBD (minimize via adapters)
+- **Target Applications:** 4 (Configurator, Yield Monitor, Package Manager, Monitor)
+- **Shared Framework Goal:** 60%+ code reuse across apps
+- **Current State:** 1 tightly coupled GUI (configurator)
+- **Target State:** Independent apps + shared `pywats_ui` framework
+- **Breaking Changes:** Import paths only (user-facing APIs stable)
 
 ---
 
@@ -61,4 +93,18 @@ Analyze and implement separation of GUI components from the pyWATS Client servic
 
 ## 📝 Notes
 
-This is an **analysis and design project** leading to an implementation project. Focus is on making the right architectural decisions before refactoring code.
+**C# Reference Applications:**
+- Client Configurator: Service setup, station configuration
+- Yield Monitor: Real-time analytics dashboard
+- Software Package Manager: Distribution and deployment
+- Client Monitor: Service health and diagnostics
+
+**Python Implementation Considerations:**
+- PySide6 for Qt-based GUI framework
+- Shared base classes (BaseApplication, BaseMainWindow)
+- Common dialogs and widgets library
+- Theme/styling system
+- Optional IPC via QLocalSocket, message bus, or REST API
+- Plugin architecture for extensibility
+
+This project will create **NEW applications** (Yield Monitor, Package Manager, Monitor) while refactoring the existing configurator into the new framework.
