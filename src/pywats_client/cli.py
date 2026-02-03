@@ -23,12 +23,17 @@ from typing import Optional
 import click
 
 from .core.config_manager import ConfigManager
+from .core.logging import setup_client_logging
 from .service_manager import ServiceManager
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Set up logging using unified client logging
+setup_client_logging(
+    instance_id="cli",
+    log_level="INFO",
+    log_format="text",
+    enable_console=True,
+    rotate_size_mb=5,  # Smaller for CLI logs
+    rotate_backups=3
 )
 logger = logging.getLogger(__name__)
 

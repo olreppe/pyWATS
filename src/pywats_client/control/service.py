@@ -87,27 +87,17 @@ class HeadlessService:
     
     def _setup_logging(self) -> None:
         """Configure logging for headless operation"""
-        log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        from ..core.logging import setup_client_logging
         
-        # Console handler
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(logging.Formatter(log_format))
-        
-        handlers = [console_handler]
-        
-        # File handler if enabled
-        if self.service_config.log_to_file:
-            from ..core.config import ClientConfig
-            config = self.client_config or ClientConfig.load_for_instance(self.instance_id)
-            log_path = config.get_reports_path().parent / self.service_config.log_file
-            log_path.parent.mkdir(parents=True, exist_ok=True)
-            file_handler = logging.FileHandler(log_path)
-            file_handler.setFormatter(logging.Formatter(log_format))
-            handlers.append(file_handler)
-        
-        # Configure root logger
-        log_level = getattr(logging, self.service_config.log_level.upper(), logging.INFO)
-        logging.basicConfig(level=log_level, handlers=handlers, force=True)
+        # Use unified client logging setup
+        setup_client_logging(
+            instance_id=self.instance_id,
+            log_level=self.service_config.log_level.upper(),
+            log_format="text",
+            enable_console=True,  # Headless service needs console output
+            rotate_size_mb=10,
+            rotate_backups=5
+        )
     
     def run(self) -> int:
         """

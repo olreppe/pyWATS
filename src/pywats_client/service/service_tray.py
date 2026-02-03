@@ -385,6 +385,15 @@ def main(instance_id: str = "default"):
     Args:
         instance_id: Instance identifier
     """
+    # Setup logging before app creation
+    from ..core.logging import setup_client_logging
+    setup_client_logging(
+        instance_id=instance_id,
+        log_level="INFO",
+        log_format="text",
+        enable_console=True
+    )
+    
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)  # Keep running with no windows
     

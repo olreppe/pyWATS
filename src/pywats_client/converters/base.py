@@ -8,7 +8,7 @@ to convert various file formats to WATS report structures.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, BinaryIO, List, Union, Tuple
+from typing import Optional, Dict, Any, BinaryIO, List, Union, Tuple, TYPE_CHECKING
 from pathlib import Path
 from enum import Enum
 import mimetypes
@@ -16,6 +16,10 @@ import mimetypes
 # Import canonical models from models.py to avoid duplication
 # Re-exported for convenient imports
 from .models import ConversionStatus, PostProcessAction, FileInfo, ConverterResult
+
+# Import ConversionLog for type hints
+if TYPE_CHECKING:
+    from .conversion_log import ConversionLog
 
 
 @dataclass
@@ -30,6 +34,7 @@ class ConverterArguments:
         done_folder: Folder for successfully processed files
         error_folder: Folder for failed conversions
         user_settings: User-configured settings for this converter
+        conversion_log: Optional ConversionLog for detailed step tracking
     """
     api_client: Any  # pyWATS client instance
     file_info: FileInfo
@@ -37,6 +42,7 @@ class ConverterArguments:
     done_folder: Path
     error_folder: Path
     user_settings: Dict[str, Any] = field(default_factory=dict)
+    conversion_log: Optional['ConversionLog'] = None
 
 
 class ConverterBase(ABC):
@@ -283,6 +289,7 @@ class ConverterBase(ABC):
         Args:
             file_path: Path to the file to convert
             args: ConverterArguments with API client, file info, folders, settings
+                  and optional ConversionLog for detailed tracking
         
         Returns:
             ConverterResult with status and report data

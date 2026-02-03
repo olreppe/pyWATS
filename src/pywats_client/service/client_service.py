@@ -189,10 +189,13 @@ def main(instance_id: str = "default"):
     Usage:
         python -m pywats_client.service.client_service
     """
-    # Setup logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    # Setup logging using unified client logging
+    from pywats_client.core.logging import setup_client_logging
+    setup_client_logging(
+        instance_id=instance_id,
+        log_level="INFO",
+        log_format="text",
+        enable_console=True
     )
     
     # Create and start service

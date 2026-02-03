@@ -364,7 +364,7 @@ if __name__ == "__main__":
     if converters_path not in sys.path:
         sys.path.insert(0, converters_path)
     
-    # Setup logging
+    # Setup logging (using basic for test/demo)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     
     # Create test files

@@ -16,11 +16,14 @@ from typing import Optional
 
 from pywats_client.service import AsyncClientService, ServiceStatus
 from pywats_client.service.async_ipc_client import AsyncIPCClient
+from pywats_client.core.logging import setup_client_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Configure logging using unified client logging
+setup_client_logging(
+    instance_id="example_service",
+    log_level="INFO",
+    log_format="text",
+    enable_console=True
 )
 logger = logging.getLogger(__name__)
 

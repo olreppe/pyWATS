@@ -267,5 +267,90 @@ def get_product(product_id: str, include_bom: bool = False) -> Optional[Product]
 
 ---
 
-**Last Updated:** February 2, 2026  
-**Reference:** `projects/.agent_instructions.md` for detailed workflows
+---
+
+## 🎯 Context-Specific Instruction Overlays
+
+Agents MUST load additional instruction files based on task context using the **combined approach**.
+
+### Instruction Manifest
+See `.instruction_manifest.md` for complete overlay system and loading algorithm.
+
+### Combined Loading Approach
+
+**Load overlays from THREE sources (in order):**
+
+1. **Context Keywords** (from task description)
+   - "implement", "service", "model", "api" → `.source_code_instructions.md`
+   - "doc", "example" → `.docs_instructions.md`
+   - "test", "fixture" → `.test_instructions.md`
+   - "release", "changelog" → `.deployment_instructions.md`
+   - "project" → `projects/.agent_instructions.md`
+
+2. **File Path Patterns** (from current file)
+   - `src/**` → `.source_code_instructions.md` (P0 - MOST CRITICAL!)
+   - `docs/**`, `examples/**` → `.docs_instructions.md`
+   - `tests/**` → `.test_instructions.md`
+   - `CHANGELOG.md`, `pyproject.toml` → `.deployment_instructions.md`
+   - `projects/active/**` → `projects/.agent_instructions.md`
+
+3. **Directory Walk** (walk up from current file)
+   - Check each parent directory for `.agent_instructions.md`
+   - Load all found (most specific = highest priority)
+   - Example: `src/pywats/domains/.agent_instructions.md`
+
+### Active Overlays
+
+| Overlay | Context | Priority | Purpose |
+|---------|---------|----------|---------|
+| `.source_code_instructions.md` | src/ (production code) | **P0** | Type-safe source code (MOST CRITICAL) |
+| `.docs_instructions.md` | docs/, examples/ | **P0** | Type-safe documentation code |
+| `.test_instructions.md` | tests/ | **P0** | Type-safe test fixtures |
+| `.deployment_instructions.md` | CHANGELOG, releases | **P1** | Release standards, endpoint risk |
+| `projects/.agent_instructions.md` | projects/active/ | **P1** | Project structure |
+| `{dir}/.agent_instructions.md` | Any directory | **P2** | Directory-specific patterns |
+
+### Agent Workflow (MANDATORY)
+
+**Before starting ANY task:**
+
+```
+1. Parse task description for keywords
+2. Identify current file path
+3. Load base instructions (.github/copilot-instructions.md)
+4. Load context overlays (from keywords)
+5. Load file path overlays
+6. Walk directory tree for .agent_instructions.md files
+7. Announce loaded overlays to user
+8. Proceed with combined instruction set
+```
+
+### Agent Announcement (REQUIRED)
+
+**ALWAYS state which overlays are loaded:**
+
+```
+"Loading instruction overlays for this task:
+ - .docs_instructions.md (P0 - type-safe documentation)
+ - .test_instructions.md (P0 - type-safe tests)
+ - src/pywats/domains/.agent_instructions.md (P2 - domain patterns)
+
+Proceeding with combined instruction set..."
+```
+
+### Creating New Directory Overlays
+
+**To add directory-specific instructions:**
+
+1. Create `.agent_instructions.md` in target directory
+2. Use standard instruction template (see `.instruction_manifest.md`)
+3. Define priority level (P0/P1/P2)
+4. Include validation steps
+5. Update `.instruction_manifest.md` registry
+
+**No need to modify base instructions** - directory overlays are auto-discovered!
+
+---
+
+**Last Updated:** February 3, 2026  
+**Reference:** `.instruction_manifest.md` for complete overlay system
