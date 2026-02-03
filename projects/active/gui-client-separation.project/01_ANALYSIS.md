@@ -640,6 +640,235 @@ src/pywats_ui/
 
 ---
 
+## 🔄 Transition Strategy (Keep Both During Migration)
+
+### Coexistence Approach (Recommended)
+
+**Keep old GUI alongside new framework during transition period:**
+
+```
+src/
+  pywats_client/
+    gui/                           # LEGACY (deprecated but functional)
+      main_window.py               # ⚠️ Shows deprecation warning
+      config_dialog.py
+      __init__.py                  # ⚠️ "This module is deprecated..."
+      
+  pywats_ui/                       # NEW (recommended)
+    framework/
+    apps/
+      configurator/                # New implementation
+```
+
+### Benefits ✅
+
+1. **Zero Breaking Changes**
+   - Existing users' code continues to work
+   - `pywats-client gui` command still launches (old or new version)
+   - Gradual user migration with deprecation warnings
+
+2. **Incremental Testing**
+   - New framework can be tested independently
+   - Easy A/B comparison between old and new
+   - Quick rollback if issues found
+
+3. **User-Friendly Migration**
+   - Users can switch when ready
+   - Clear documentation on migration path
+   - Deprecation warnings guide users to new API
+
+4. **Development Flexibility**
+   - Can iterate on new framework without breaking old code
+   - Test coverage for both implementations during overlap
+   - Learn from old implementation while building new
+
+### Drawbacks ⚠️
+
+1. **Temporary Code Duplication** (~500 lines of GUI code duplicated)
+   - Mitigation: Only keep old code for 1-2 releases
+   
+2. **Package Size** (+2-3 MB during transition)
+   - Mitigation: Both are optional (`pip install pywats[gui]`)
+   
+3. **Maintenance Burden** (Bug fixes in both places)
+   - Mitigation: Only critical bugs in old code, focus on new
+   
+4. **User Confusion** (Which GUI to use?)
+   - Mitigation: Clear deprecation warnings and documentation
+
+### Implementation Plan
+
+**Phase 1: Add Deprecation Warnings (Week 3)**
+```python
+# src/pywats_client/gui/__init__.py
+import warnings
+
+warnings.warn(
+    "pywats_client.gui is deprecated and will be removed in v1.0.0. "
+    "Use pywats_ui.apps.configurator instead. "
+    "See migration guide: https://docs.pywats.com/migration",
+    DeprecationWarning,
+    stacklevel=2
+)
+```
+
+**Phase 2: Dual CLI Commands (Week 4)**
+```python
+# pyproject.toml
+[project.scripts]
+pywats-client = "pywats_client.cli:main"
+
+# Legacy GUI (shows deprecation notice)
+pywats-client-gui-legacy = "pywats_client.gui.main:main"  
+
+# New GUI (recommended)
+pywats-configurator = "pywats_ui.apps.configurator.main:main"
+```
+
+**Phase 3: Documentation (Week 9)**
+```markdown
+# docs/guides/migration_gui.md
+
+## Migrating from Legacy GUI
+
+The old `pywats_client.gui` is deprecated. Use the new framework:
+
+**Old (Deprecated):**
+```python
+from pywats_client.gui import ClientGUI
+app = ClientGUI()
+```
+
+**New (Recommended):**
+```python
+from pywats_ui.apps.configurator import ConfiguratorApp
+app = ConfiguratorApp()
+```
+
+See full migration guide...
+```
+
+**Phase 4: Removal Schedule**
+- **v0.3.0** (Current) - Both coexist, old shows warnings
+- **v0.4.0** (3 months) - Both still available, louder warnings
+- **v0.5.0** (6 months) - Both still available, warning on import
+- **v1.0.0** (9-12 months) - **Remove old GUI completely**
+
+### File Organization During Transition
+
+```
+src/
+  pywats_client/
+    gui/                           # LEGACY
+      __init__.py                  # ⚠️ DeprecationWarning on import
+      main_window.py               # ⚠️ Shows banner: "Please migrate..."
+      config_dialog.py
+      README_DEPRECATED.md         # Migration instructions
+      
+  pywats_ui/                       # NEW
+    framework/
+    apps/
+      configurator/
+        README.md                  # "This is the new configurator"
+```
+
+### CHANGELOG Entries
+
+```markdown
+## [0.3.0] - 2026-XX-XX
+
+### Added
+- **New GUI Framework**: pywats_ui with 4 applications
+  - Client Configurator (replacement for old GUI)
+  - Yield Monitor (NEW)
+  - Software Package Manager (NEW)
+  - Client Monitor (NEW)
+
+### Deprecated
+- **pywats_client.gui**: Old GUI is deprecated, use pywats_ui.apps.configurator
+  - Will be removed in v1.0.0
+  - Shows deprecation warning on import
+  - See migration guide: docs/guides/migration_gui.md
+
+### Changed
+- CLI command `pywats-client gui` now launches new configurator by default
+  - Use `pywats-client-gui-legacy` for old version (temporary)
+```
+
+### Migration Timeline
+
+| Date | Version | Status | Action |
+|------|---------|--------|--------|
+| Week 3-4 | v0.3.0 dev | Development | Add deprecation warnings to old GUI |
+| Week 10 | v0.3.0 | Release | Both coexist, old shows warnings |
+| +3 months | v0.4.0 | Update | Old GUI shows prominent "migrate now" banner |
+| +6 months | v0.5.0 | Final warning | Old GUI throws warning on import |
+| +9-12 months | v1.0.0 | Cleanup | **Remove pywats_client/gui/ completely** |
+
+### Testing Both Implementations
+
+```python
+# tests/gui/test_legacy_gui.py (temporary)
+def test_legacy_gui_shows_deprecation_warning():
+    """Ensure old GUI shows deprecation warning."""
+    with pytest.warns(DeprecationWarning, match="pywats_client.gui is deprecated"):
+        from pywats_client.gui import ClientGUI
+
+# tests/gui/test_new_configurator.py
+def test_new_configurator_launches():
+    """Ensure new configurator works."""
+    from pywats_ui.apps.configurator import ConfiguratorApp
+    # No warning expected
+```
+
+### User Communication
+
+**In-App Notice (Old GUI):**
+```
+╔═══════════════════════════════════════════════════════════╗
+║  ⚠️  DEPRECATION NOTICE                                   ║
+║                                                           ║
+║  This GUI is deprecated and will be removed in v1.0.0.   ║
+║                                                           ║
+║  Please migrate to the new Client Configurator:          ║
+║  $ pywats-configurator                                    ║
+║                                                           ║
+║  See migration guide: docs/guides/migration_gui.md       ║
+╚═══════════════════════════════════════════════════════════╝
+```
+
+**CHANGELOG.md Entry Template:**
+```markdown
+### Migration Required: GUI Framework
+
+The old `pywats_client.gui` module is deprecated. No immediate action
+required - both versions will coexist until v1.0.0.
+
+**Recommended Actions:**
+1. Test new configurator: `pywats-configurator`
+2. Report any issues: GitHub Issues
+3. Migrate custom GUI code to new framework (if any)
+4. Update documentation/scripts to use new entry points
+
+**Timeline:**
+- v0.3.0-v0.5.0: Both available with warnings
+- v1.0.0: Old GUI removed completely
+```
+
+---
+
+**Recommendation:** ✅ **Keep both during transition**
+
+**Benefits outweigh drawbacks:**
+- Users not forced to migrate immediately
+- Extensive testing period for new framework
+- Easy rollback if critical issues found
+- Professional deprecation process
+
+**Clutter concern:** Minimal - old GUI is ~10 files (~500 lines), clearly marked as deprecated, removed in v1.0.0 (9-12 months).
+
+---
+
 **Analysis Status:** ✅ Complete  
 **Next Document:** [02_IMPLEMENTATION_PLAN.md](02_IMPLEMENTATION_PLAN.md)
 - ❌ Less clear separation
