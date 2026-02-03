@@ -46,8 +46,8 @@ See [.agent_instructions.md](.agent_instructions.md) for templates and detailed 
 
 ## 📋 Current Projects
 
-### 1. GUI Client Feature Expansion (15% complete - PAUSED)
-- **Location:** `active/gui-client-features.project/`
+### 1. GUI Client Separation (15% complete - PAUSED)
+- **Location:** `active/gui-client-separation.project/`
 - **Status:** Phase 1 complete, awaiting next sprint
 - **Priority:** P2
 
@@ -65,6 +65,17 @@ See [.agent_instructions.md](.agent_instructions.md) for templates and detailed 
   - 50+ dedicated tests (97%+ pass rate)
   - Zero breaking changes
   - Production-ready structured logging (JSON, rotation, correlation IDs)
+
+### Sphinx Logging Documentation ✅
+- **Completed:** February 3, 2026
+- **Status:** 100% complete, clean Sphinx build
+- **Location:** `docs/internal_documentation/completed/2026-Q1/sphinx-logging-docs/`
+- **Summary:** `docs/internal_documentation/completed/2026-Q1/sphinx-logging-docs/COMPLETION_SUMMARY.md`
+- **Highlights:**
+  - Complete API reference for logging infrastructure
+  - 800+ lines of documentation (logging.rst, client/logging.rst)
+  - 35+ type-safe code examples
+  - Fixed Sphinx import errors (models, analytics)
 
 ---
 
