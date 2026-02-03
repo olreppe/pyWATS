@@ -1,11 +1,252 @@
-# TODO: Multi-Application GUI Framework
+# TODO: GUI Framework + Template + AI Chat Pilot
 
 **Updated:** February 4, 2026  
-**Scope:** 4 applications + shared framework
+**Scope:** Framework + Configurator + Template + AI Chat (Phase 1 only)
 
 ---
 
-## 🧠 Phase 0: Analysis & Research (Week 1-2)
+## 🧠 Phase 0: Analysis & Research (Week 1)
+
+### Configurator Research
+- [ ] **Audit existing GUI code** - Review `src/pywats_client/gui/`
+- [ ] **Map Configurator features** - Connection, station setup, service control
+- [ ] **Identify reusable patterns** - Dialogs, widgets, layouts
+- [ ] **Document current limitations** - Areas for improvement
+
+### Qt/PySide6 Research
+- [ ] **Qt app architecture patterns** - Best practices for framework design
+- [ ] **Widget library design** - Research reusable component strategies
+- [ ] **Dialog management** - Modal, modeless, stacked dialogs
+- [ ] **Theme/styling** - QSS stylesheets and theme switching
+- [ ] **MVC/MVP patterns** - Separation of concerns
+
+### AI Chat Pilot Research
+- [ ] **LLM integration options** - OpenAI API, Anthropic, local models (llama.cpp)
+- [ ] **Data analysis requirements** - Process capability (Cp/Cpk), SPC, RCA
+- [ ] **Chat UI patterns** - Message history, streaming responses, code snippets
+- [ ] **Analytics visualization** - Charts for SPC, capability analysis
+- [ ] **Security considerations** - API key management, data privacy
+
+### Application Template Design
+- [ ] **Template structure** - Folder layout, boilerplate files
+- [ ] **Cookiecutter vs manual** - Evaluate scaffold tool options
+- [ ] **Required components** - main.py, main_window.py, config, tests
+- [ ] **Documentation strategy** - README template, code comments
+- [ ] **Example customization** - How to extend template
+
+### Architecture Design
+- [ ] **Framework API specification** - Define BaseApplication, BaseMainWindow
+- [ ] **Shared component catalog** - List all reusable dialogs/widgets
+- [ ] **Configuration strategy** - Per-app settings, shared connection
+- [ ] **Create ADR (Architecture Decision Record)** - Document chosen approach
+
+---
+
+## 🏗️ Phase 1: Framework Foundation (Week 2)
+
+### Core Framework (`pywats_ui/framework/`)
+- [ ] **Create package structure** - Set up `pywats_ui/framework/` folders
+- [ ] **BaseApplication class** - App initialization, config, logging, API connection
+- [ ] **BaseMainWindow class** - Menu bar, toolbar, status bar templates
+- [ ] **Configuration management** - AppConfig class with JSON persistence
+- [ ] **Logging integration** - Connect to `pywats.core.logging`
+- [ ] **API connection helper** - Shared pyWATS client management
+- [ ] **Error handling** - Consistent exception→UI feedback pattern
+
+### Common Dialogs (`pywats_ui/framework/dialogs/`)
+- [ ] **ConnectionDialog** - Server URL, credentials input with validation
+- [ ] **SettingsDialog** - Extensible tabbed settings dialog
+- [ ] **ProgressDialog** - Task execution with progress bar and cancel
+- [ ] **ErrorDialog** - Formatted error display with traceback
+- [ ] **ConfirmationDialog** - Standard yes/no/cancel with custom text
+- [ ] **AboutDialog** - App name, version, credits
+
+### Widget Library (`pywats_ui/framework/widgets/`)
+- [ ] **ValidatedLineEdit** - Input validation with visual feedback (red border)
+- [ ] **ConnectionStatusWidget** - Traffic light indicator (red/yellow/green)
+- [ ] **LogViewerWidget** - Real-time log display with filtering
+- [ ] **ProductSelector** - Dropdown/autocomplete for products (API-aware)
+- [ ] **ProcessSelector** - Process type selection (ICT, FCT, EOL)
+- [ ] **DateRangeSelector** - Start/end date picker with presets
+
+### Theming (`pywats_ui/framework/themes/`)
+- [ ] **ThemeManager** - Theme loading, switching, persistence
+- [ ] **default.qss** - Default light theme stylesheet
+- [ ] **dark.qss** - Dark theme stylesheet
+- [ ] **Theme API** - `app.set_theme("dark")`
+
+### Framework Tests
+- [ ] **test_base_app.py** - BaseApplication initialization, config
+- [ ] **test_base_window.py** - BaseMainWindow layout, menus
+- [ ] **test_dialogs.py** - All dialog functionality
+- [ ] **test_widgets.py** - Widget validation and behavior
+- [ ] **test_themes.py** - Theme loading and switching
+
+---
+
+## 🔧 Phase 2: Client Configurator Refactor (Week 2-3)
+
+### Migration to New Framework
+- [ ] **Create `pywats_ui/apps/configurator/`** - New package structure
+- [ ] **main.py** - Entry point using BaseApplication
+- [ ] **main_window.py** - Refactor to extend BaseMainWindow
+- [ ] **Connection tab** - Server URL, credentials (use ConnectionDialog)
+- [ ] **Station tab** - Converter settings, test configuration
+- [ ] **Service tab** - Start/stop/restart controls, status display
+- [ ] **Logs tab** - Use LogViewerWidget for real-time logs
+- [ ] **Settings** - Use framework SettingsDialog
+
+### Testing
+- [ ] **Unit tests** - Configurator-specific logic (settings persistence, etc.)
+- [ ] **Integration tests** - End-to-end workflows (connect, configure, start service)
+- [ ] **Comparison testing** - Feature parity with old GUI
+- [ ] **Cross-platform** - Windows, Linux, macOS
+
+### Deprecation
+- [ ] **Add warnings to old GUI** - DeprecationWarning in `pywats_client.gui.__init__`
+- [ ] **Migration banner** - In-app notice in old GUI
+- [ ] **Update CLI** - New `pywats-configurator` command
+- [ ] **Documentation** - Migration guide (`docs/guides/migration_gui.md`)
+
+---
+
+## 📋 Phase 3: Application Template (Week 3)
+
+### Template Structure
+```
+template/
+  {{app_name}}/
+    __init__.py
+    main.py                 # Entry point
+    main_window.py          # Main window (extends BaseMainWindow)
+    config.py               # App-specific configuration
+    README.md               # Usage instructions
+    tests/
+      test_{{app_name}}.py  # Starter tests
+```
+
+### Template Implementation
+- [ ] **Create template folder** - `pywats_ui/template/` with placeholders
+- [ ] **main.py template** - Boilerplate BaseApplication setup
+- [ ] **main_window.py template** - Basic window with menu/toolbar
+- [ ] **config.py template** - Configuration class example
+- [ ] **README.md template** - Instructions for customization
+- [ ] **test template** - Basic test structure
+
+### Template Generator (Optional - Manual Copy is Fine)
+- [ ] **generator.py script** - Copy template with name replacement
+- [ ] **CLI command** - `pywats-create-app <name>` (optional)
+- [ ] **Interactive prompts** - App name, description, author (optional)
+
+### Template Documentation
+- [ ] **Template usage guide** - `docs/guides/creating_apps.md`
+- [ ] **Customization examples** - Adding tabs, custom widgets
+- [ ] **Best practices** - Code organization, testing
+- [ ] **Example walkthrough** - Create "HelloWorld" app from template
+
+---
+
+## 🤖 Phase 4: AI Chat Pilot (Week 4)
+
+### AI Chat Application (`pywats_ui/apps/aichat/`)
+- [ ] **Create app structure** - Using application template
+- [ ] **main_window.py** - Chat interface layout (input, history, results)
+- [ ] **chat_widget.py** - Message display with bubbles (user/assistant)
+- [ ] **input_widget.py** - Multi-line text input with send button
+- [ ] **results_panel.py** - Visualization panel for analysis results
+
+### LLM Integration
+- [ ] **llm_service.py** - Abstract LLM interface (OpenAI, Anthropic, local)
+- [ ] **openai_provider.py** - OpenAI API integration (GPT-4)
+- [ ] **anthropic_provider.py** - Claude API integration (optional)
+- [ ] **local_provider.py** - Local model support (llama.cpp, optional)
+- [ ] **Streaming support** - Real-time token streaming for responses
+- [ ] **API key management** - Secure credential storage
+
+### Analytics Integration
+- [ ] **process_capability.py** - Cp, Cpk, Pp, Ppk calculations (use pyWATS analytics)
+- [ ] **spc_analysis.py** - Control charts, limits, violations
+- [ ] **rca_prompts.py** - Pre-built prompts for root cause analysis
+- [ ] **data_fetcher.py** - Query pyWATS API for test data
+- [ ] **Chart widgets** - Capability histogram, SPC chart (use Qt Charts)
+
+### Chat Features
+- [ ] **Query types** - Process capability, SPC analysis, RCA, general questions
+- [ ] **Context awareness** - Remember conversation history
+- [ ] **Data visualization** - Generate charts based on analysis
+- [ ] **Export results** - Save chat, export charts (PDF/PNG)
+- [ ] **Preset queries** - Quick buttons ("Analyze last 100 units", "SPC for ICT")
+
+### Testing
+- [ ] **LLM mock tests** - Test chat logic without real API calls
+- [ ] **Analytics tests** - Verify capability/SPC calculations
+- [ ] **UI tests** - Chat widget functionality
+- [ ] **Integration tests** - End-to-end with real API (optional, slow)
+
+---
+
+## 📚 Phase 5: Documentation & Examples (Week 5)
+
+### User Documentation
+- [ ] **docs/guides/gui_framework.md** - Framework overview and concepts
+- [ ] **docs/guides/creating_apps.md** - Application template usage
+- [ ] **docs/guides/configurator_guide.md** - User guide for Configurator
+- [ ] **docs/guides/aichat_guide.md** - AI Chat pilot user guide
+- [ ] **Application READMEs** - Per-app user instructions
+
+### API Documentation
+- [ ] **Sphinx docs for pywats_ui** - Auto-generated framework API reference
+- [ ] **Framework examples** - Minimal app, custom widget, custom dialog
+- [ ] **Code documentation** - Comprehensive docstrings for all public APIs
+
+### Examples
+- [ ] **examples/gui/minimal_app.py** - Simplest BaseApplication usage
+- [ ] **examples/gui/custom_widget.py** - Creating reusable widgets
+- [ ] **examples/gui/theme_demo.py** - Theme switching demonstration
+- [ ] **examples/gui/llm_integration.py** - LLM provider usage (for AI Chat)
+
+### Migration Guide
+- [ ] **docs/guides/migration_gui.md** - Old GUI → New Configurator
+- [ ] **Breaking changes** - Document import path changes
+- [ ] **Feature comparison** - Old vs new feature matrix
+
+---
+
+## 🚀 Phase 6: Testing & Release (Week 5)
+
+### Quality Assurance
+- [ ] **Full test suite execution** - All apps + framework tests
+- [ ] **Cross-platform testing** - Windows, Linux, macOS
+- [ ] **Performance profiling** - App startup, LLM response times
+- [ ] **Memory leak testing** - Long-running app stability
+- [ ] **Code linting** - flake8, mypy type checking (if available)
+
+### Release Preparation
+- [ ] **Update CHANGELOG.md** - Framework, Configurator, Template, AI Chat
+- [ ] **Migration guide finalization** - Breaking changes and upgrade path
+- [ ] **pyproject.toml updates** - Entry points for apps
+- [ ] **Package distribution** - `pip install pywats[gui]` with new apps
+- [ ] **Version bump** - Semantic versioning (v0.3.0)
+- [ ] **Git tag and release** - GitHub release with notes
+
+### Cleanup
+- [ ] **Remove unused code** - Clean up experimental code
+- [ ] **Documentation review** - Ensure all docs are accurate
+- [ ] **Example verification** - All examples run successfully
+
+---
+
+## 🚧 In Progress
+
+(None - starting Phase 0)
+
+---
+
+## ✅ Completed
+
+- ✅ Project scope defined (Framework + Configurator + Template + AI Chat)
+- ✅ Transition strategy documented (old GUI coexists)
+- ✅ Initial analysis and architecture options
 
 ### C# Application Research
 - [ ] **Study Client Configurator** (C# codebase) - Features, workflows, dialogs

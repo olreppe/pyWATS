@@ -1,9 +1,9 @@
-# GUI Applications & Shared Framework
+# GUI Framework & Application Template
 
-**Status:** 🚧 Active - Phase 1 (Analysis)  
-**Progress:** 15% → Restarting with new requirements  
-**Priority:** P2  
-**Timeline:** 3-4 weeks  
+**Status:** 🚧 Active - Phase 0 (Analysis & Research)  
+**Progress:** 5% → Updated scope (focused delivery)  
+**Priority:** P1  
+**Timeline:** 4-5 weeks (reduced from 10)  
 **Created:** February 3, 2026  
 **Updated:** February 4, 2026  
 **Owner:** Architecture Team
@@ -12,22 +12,24 @@
 
 ## 📋 Objective
 
-Design and implement a shared UI framework supporting 4+ independent GUI applications that maximize code reuse while maintaining clean separation. Applications should be able to communicate with each other (optional) and all share access to the same pyWATS API and client service.
+Create a reusable GUI framework with proven implementation (Configurator refactor), scaffolded template for future apps, and pilot AI-powered analytics application.
 
-**Target Applications (C# Reference):**
-1. **Client Configurator** - Service configuration and management
-2. **Yield Monitor** - Real-time yield/analytics dashboard
-3. **Software Package Manager** - Package distribution and deployment
-4. **Client Monitor** - Service health and diagnostics
+**Phase 1 Deliverables:**
+1. **Shared Framework** (`pywats_ui.framework`) - Reusable base classes, dialogs, widgets
+2. **Client Configurator** (Refactored) - Migrate existing GUI to new framework
+3. **Application Template** - Scaffolded starter for new apps (cookiecutter-style)
+4. **AI Chat Pilot** - LLM-powered test data analysis (process capability, SPC, RCA)
 
-**Future Potential:**
-- Additional monitoring tools
-- Report analyzers
-- Data visualization apps
-- Name changes and new applications expected
+**Future Applications** (Post-Phase 1):
+- Yield Monitor - Real-time dashboards
+- Software Package Manager - Package distribution
+- Client Monitor - Service health monitoring
+- Additional apps using template
 
 **Key Goals:**
-- ✅ Shared UI framework (minimal code duplication)
+- ✅ Shared UI framework (proven with Configurator)
+- ✅ Application template (accelerates new app development)
+- ✅ AI Chat pilot (validates framework for data-intensive apps)
 - ✅ Independent applications (can run standalone)
 - ✅ Common API/client access
 - ✅ Optional inter-app communication (IPC/message bus)
@@ -40,45 +42,45 @@ Design and implement a shared UI framework supporting 4+ independent GUI applica
 ## 🎯 Success Criteria
 
 ⏳ **Analysis Phase:**
-- [ ] Map current C# application features and architecture
-- [ ] Define 4 target applications with feature sets
-- [ ] Identify common framework components needed
-- [ ] Research Qt/PySide6 patterns for multi-app architecture
-- [ ] Evaluate IPC options (message bus, shared memory, sockets)
-- [ ] Cost/benefit analysis (shared framework vs independent apps)
+- [ ] Map current Configurator features and architecture
+- [ ] Research Qt/PySide6 patterns for reusable framework
+- [ ] Design application template structure
+- [ ] Define AI Chat pilot requirements (LLM integration, data analysis)
+- [ ] Cost/benefit analysis (framework investment vs gains)
 
 ⏳ **Design Phase:**
-- [ ] Folder structure for `pywats_ui` framework + 4 apps
-- [ ] Shared framework API (widgets, dialogs, themes, config)
-- [ ] IPC architecture (if implementing communication)
-- [ ] Data models and validation strategies
-- [ ] Authentication/connection sharing patterns
+- [ ] Framework API specification (BaseApplication, BaseMainWindow)
+- [ ] Shared component library (dialogs, widgets, themes)
+- [ ] Application template scaffold (cookiecutter or manual)
+- [ ] AI Chat architecture (LLM integration, data pipeline)
+- [ ] IPC architecture (optional, if needed)
 
 ⏳ **Implementation Phase:**
-- [ ] Create `pywats_ui` framework package
-- [ ] Implement shared components (base windows, dialogs, etc.)
-- [ ] Port Client Configurator to new structure
-- [ ] Implement Yield Monitor (new)
-- [ ] Implement Software Package Manager (new)
-- [ ] Implement Client Monitor (new)
+- [ ] Create `pywats_ui.framework` package
+- [ ] Implement shared components (base classes, dialogs, widgets)
+- [ ] Refactor Configurator to use new framework
+- [ ] Create application template with documentation
+- [ ] Implement AI Chat pilot (LLM integration, analytics UI)
 - [ ] IPC/communication layer (if designed)
 
 ⏳ **Testing & Deployment:**
-- [ ] All 4 applications launch independently
-- [ ] Shared framework reduces code duplication by 60%+
-- [ ] Applications can access same API/client
-- [ ] Inter-app communication functional (if implemented)
-- [ ] Documentation and examples
+- [ ] Configurator fully functional in new framework
+- [ ] Template generates working starter app
+- [ ] AI Chat pilot demonstrates LLM analytics
+- [ ] Framework reduces code duplication by 50%+
+- [ ] Documentation and examples complete
 
 ---
 
 ## 📊 Metrics
 
-- **Target Applications:** 4 (Configurator, Yield Monitor, Package Manager, Monitor)
-- **Shared Framework Goal:** 60%+ code reuse across apps
+- **Phase 1 Applications:** 2 (Configurator refactor + AI Chat pilot)
+- **Application Template:** 1 scaffolded starter
+- **Shared Framework Goal:** 50%+ code reuse
 - **Current State:** 1 tightly coupled GUI (configurator)
-- **Target State:** Independent apps + shared `pywats_ui` framework
+- **Target State:** Independent apps + reusable framework + template
 - **Breaking Changes:** Import paths only (user-facing APIs stable)
+- **Timeline:** 4-5 weeks (vs 10 weeks for full 4-app implementation)
 
 ---
 
@@ -92,20 +94,33 @@ Design and implement a shared UI framework supporting 4+ independent GUI applica
 
 ---
 
-## 📝 Notes
+##Phase 1 Focus (This Project):**
+- **Configurator:** Prove framework works (refactor existing GUI)
+- **Template:** Enable rapid app development (scaffold with docs)
+- **AI Chat:** Pilot LLM integration (process capability, SPC, RCA)
 
-**C# Reference Applications:**
-- Client Configurator: Service setup, station configuration
+**AI Chat Pilot Requirements (User to provide details):**
+- LLM-powered test data analysis
+- Process capability analysis (Cp, Cpk, Pp, Ppk)
+- Statistical Process Control (SPC charts, control limits)
+- Root Cause Analysis (RCA) suggestions
+- Interactive chat interface for queries
+- Integration with pyWATS analytics APIs
+
+**Future Applications (Phase 2+):**
 - Yield Monitor: Real-time analytics dashboard
 - Software Package Manager: Distribution and deployment
 - Client Monitor: Service health and diagnostics
+- Any new apps using the template
 
 **Python Implementation Considerations:**
 - PySide6 for Qt-based GUI framework
 - Shared base classes (BaseApplication, BaseMainWindow)
 - Common dialogs and widgets library
 - Theme/styling system
-- Optional IPC via QLocalSocket, message bus, or REST API
-- Plugin architecture for extensibility
+- LLM integration (OpenAI API, local models, or custom)
+- Optional IPC via QLocalSocket or message bus
+
+This project creates **framework + template** first, then validates with 2 apps (Configurator + AI Chat)
 
 This project will create **NEW applications** (Yield Monitor, Package Manager, Monitor) while refactoring the existing configurator into the new framework.
