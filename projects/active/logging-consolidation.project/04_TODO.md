@@ -2,19 +2,35 @@
 
 ---
 
+## ✅ Done
+
+### Phase 1: Core Framework Enhancement (Days 1-3) - COMPLETED 2026-02-03
+- [x] **Add `configure_logging()` function** - Unified logging configuration ✅
+- [x] **Implement `FileRotatingHandler` class** - Wrapper with pyWATS defaults ✅
+- [x] **Create `LoggingContext` context manager** - Scoped logging metadata ✅
+- [x] **Write tests for configure_logging** - All configuration options (12 tests) ✅
+- [x] **Write tests for FileRotatingHandler** - Rotation behavior (8 tests) ✅
+- [x] **Write tests for LoggingContext** - Context management (6 tests) ✅
+- [x] **Update existing helpers** - Use configure_logging() internally ✅
+- [x] **Verify backward compatibility** - All existing code works (45 tests) ✅
+
+**Commits:** e5fd8e3, 6038b58, 168ea4e  
+**Files:** src/pywats/core/logging.py (+179 lines), tests/cross_cutting/test_logging.py (+481 lines)  
+**Tests:** 26 new tests, all passing
+
+---
+
 ## 🧠 Planned
 
-### Phase 1: Core Framework Enhancement (Days 1-3)
-- [ ] **Add `configure_logging()` function** - Unified logging configuration
-- [ ] **Implement `FileRotatingHandler` class** - Wrapper with pyWATS defaults
-- [ ] **Create `LoggingContext` context manager** - Scoped logging metadata
-- [ ] **Write tests for configure_logging** - All configuration options (15 tests)
-- [ ] **Write tests for FileRotatingHandler** - Rotation behavior
-- [ ] **Write tests for LoggingContext** - Context management
-- [ ] **Update existing helpers** - Use configure_logging() internally
-- [ ] **Verify backward compatibility** - All existing code works
-
 ### Phase 2: Client Logging Module (Days 3-5)
+- [ ] **Create `pywats_client/core/logging.py`** - New module file
+- [ ] **Implement `setup_client_logging()`** - Top-level pywats.log setup
+- [ ] **Implement `get_conversion_log_dir()`** - Conversion log directory
+- [ ] **Write tests for client logging** - Setup, paths, rotation (12 tests)
+- [ ] **Update `ClientService._setup_logging()`** - Use new setup_client_logging()
+- [ ] **Update CLI logging** - Replace basicConfig with new module
+- [ ] **Add CLI --log-format option** - Support text/json
+- [ ] **Test client service logging** - End-to-end verification
 - [ ] **Create `pywats_client/core/logging.py`** - New module file
 - [ ] **Implement `setup_client_logging()`** - Top-level pywats.log setup
 - [ ] **Implement `get_conversion_log_dir()`** - Conversion log directory
