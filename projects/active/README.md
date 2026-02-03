@@ -8,7 +8,71 @@
 
 ## Current Active Items
 
-### ✅ All Projects Complete - Active Queue Empty
+### 1. ✅ Code Quality Review (COMPLETED)
+
+**Status:** Completed and Merged  
+**Priority:** P1 (was)  
+**Completed:** 2026-02-03  
+**Location:** [code_quality_review.project/](code_quality_review.project/)
+
+**Objective:** Review and improve code quality across examples and documentation.
+
+**Deliverables:**
+- ✅ Fixed 11 example files (enum consistency, type hints, imports)
+- ✅ Created new DimensionBuilder example (232 lines)
+- ✅ Added comprehensive documentation (CODE_QUALITY_SUMMARY.md, 239 lines)
+- ✅ Fixed 32+ code quality issues
+- ✅ Complete project documentation with findings and recommendations
+
+**Outcome:** Examples now demonstrate best practices with proper type safety and enum usage.
+
+---
+
+### 2. 🚧 Logging Infrastructure Consolidation
+
+**Status:** Planning Complete, Ready for Implementation  
+**Priority:** P1  
+**Timeline:** 2 weeks  
+**Location:** [logging-consolidation.project/](logging-consolidation.project/)
+
+**Objective:** Consolidate and standardize logging across entire pyWATS ecosystem (API, Client, GUI, Converters) with unified framework, client persistence, and per-conversion detailed logging.
+
+**Current Phase:** Phase 0 - Analysis & Planning Complete
+- Identified 6 logging patterns across 50+ files
+- Mapped ~150 lines of duplicate code
+- Designed unified architecture
+- Detailed 6-phase implementation plan
+
+**Key Features:**
+- Top-level `pywats.log` with rotation (10MB, 5 backups)
+- Per-conversion `ConversionLog` for detailed tracking
+- Exception bubbling: Converter → Client → GUI
+- Structured JSON logging everywhere
+- Reusable framework across all components
+
+**Next Steps:** Begin Phase 1 - Core framework enhancement
+
+---
+
+### 3. 🚧 GUI/Client Separation & Framework Refactoring
+
+**Status:** Analysis Phase  
+**Priority:** P3  
+**Timeline:** 2-3 weeks  
+**Location:** [gui-client-separation.project/](gui-client-separation.project/)
+
+**Objective:** Analyze and implement separation of GUI components from pyWATS Client service, establishing a reusable UI framework architecture.
+
+**Current Phase:** Phase 0 - Architecture Analysis & Decision
+- Evaluating 3 architecture options (separate package, subpackage, monorepo)
+- Defining requirements and constraints
+- Planning migration strategy
+
+**Next Steps:** Architecture decision (ADR), stakeholder approval, begin implementation
+
+---
+
+### ✅ Previous Work - Completed February 2-3, 2026
 
 All previous active projects have been completed and moved to `docs/internal_documentation/completed/2026-q1/`:
 
@@ -17,8 +81,6 @@ All previous active projects have been completed and moved to `docs/internal_doc
 3. **Sync Wrapper Enhancements** - ✅ Complete (Timeout, retry, correlation IDs)
 4. **Windows Service Launcher** - ✅ 90% Complete (CLI, tests, docs - installers deferred)
 5. **Sphinx Domain Documentation** - ✅ Complete (8/8 domains, 137 examples)
-
-**Next Steps:** Review `projects/planned/` or `projects/ideas/` for next priorities.
 
 ---
 
@@ -47,4 +109,4 @@ All previous active projects have been completed and moved to `docs/internal_doc
 
 ---
 
-Last Updated: February 2, 2026
+Last Updated: February 3, 2026
