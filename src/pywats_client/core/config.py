@@ -392,6 +392,26 @@ class ClientConfig:
         # DO NOT apply environment variables here - they are runtime-only
         # and should not be persisted to config files
     
+    # Dict-like interface for dynamic access (useful for GUIs)
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get config value by key with optional default."""
+        return getattr(self, key, default)
+    
+    def set(self, key: str, value: Any) -> None:
+        """Set config value by key."""
+        setattr(self, key, value)
+    
+    def __getitem__(self, key: str) -> Any:
+        """Dict-style get: config['api_token']"""
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            raise KeyError(f"Config key not found: {key}")
+    
+    def __setitem__(self, key: str, value: Any) -> None:
+        """Dict-style set: config['api_token'] = 'xxx'"""
+        setattr(self, key, value)
+    
     def get_runtime_credentials(self) -> tuple[str, str]:
         """
         Get runtime credentials with environment variable fallback.
