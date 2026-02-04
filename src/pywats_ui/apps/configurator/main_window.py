@@ -29,8 +29,7 @@ from pywats_client.core.config import ClientConfig
 from .pages import (
     ConnectionPage, AboutPage, LogPage, SerialNumberHandlerPage,
     DashboardPage, APISettingsPage, SetupPage, SoftwarePage,
-    LocationPage, ProxySettingsPage
-    # ConvertersPageV2 - TODO: Add when migrated
+    LocationPage, ProxySettingsPage, ConvertersPageV2
 )
 
 logger = logging.getLogger(__name__)
@@ -176,6 +175,7 @@ class ConfiguratorMainWindow(BaseMainWindow):
             "Connection",
             "Serial Numbers",
             "API Settings",
+            "Converters",
             "Software",
             "Location",
             "Proxy",
@@ -229,6 +229,7 @@ class ConfiguratorMainWindow(BaseMainWindow):
             "Connection": ConnectionPage(self._config),
             "Serial Numbers": SerialNumberHandlerPage(self._config),
             "API Settings": APISettingsPage(self._config),
+            "Converters": ConvertersPageV2(self._config, main_window=self),
             "Software": SoftwarePage(self._config),
             "Location": LocationPage(self._config),
             "Proxy": ProxySettingsPage(self._config),
