@@ -8,10 +8,11 @@
 ## 🧠 Phase 0: Analysis & Research (Week 1)
 
 ### Configurator Research
-- [ ] **Audit existing GUI code** - Review `src/pywats_client/gui/`
+- [ ] **Audit existing GUI code** - Review `src/pywats_client/gui/` (DO NOT MODIFY)
 - [ ] **Map Configurator features** - Connection, station setup, service control
 - [ ] **Identify reusable patterns** - Dialogs, widgets, layouts
 - [ ] **Document current limitations** - Areas for improvement
+- [ ] **Platform independence analysis** - How existing client handles cross-platform
 
 ### Qt/PySide6 Research
 - [ ] **Qt app architecture patterns** - Best practices for framework design

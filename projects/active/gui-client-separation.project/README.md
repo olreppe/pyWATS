@@ -1,12 +1,23 @@
 # GUI Framework & Application Template
 
-**Status:** 🚧 Active - Phase 0 (Analysis & Research)  
-**Progress:** 5% → Updated scope (focused delivery)  
+**Status:** ⚠️ EXPERIMENTAL - Not Approved for Production  
+**Progress:** 15% (Framework + Template + Configurator scaffold created)  
 **Priority:** P1  
 **Timeline:** 4-5 weeks (reduced from 10)  
 **Created:** February 3, 2026  
 **Updated:** February 4, 2026  
 **Owner:** Architecture Team
+
+---
+
+## ⚠️ CRITICAL CONSTRAINTS
+
+1. **Platform Independence**: DO NOT alter `src/pywats_client/` or service implementation
+2. **Scope**: Simple config/alarming GUIs only (not advanced features)
+3. **Old GUI**: DO NOT deprecate - old GUI must remain fully functional
+4. **Documentation**: NO user-facing docs or examples until approved
+5. **Release**: NOT in release flow - this is an experiment
+6. **Revert-Ready**: User must be able to go back to old GUI at any time
 
 ---
 

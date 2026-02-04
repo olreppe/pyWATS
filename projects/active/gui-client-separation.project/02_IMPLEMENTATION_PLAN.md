@@ -2,7 +2,19 @@
 
 **Version:** 1.0  
 **Date:** February 3, 2026  
-**Status:** Draft - Pending Architecture Decision
+**Status:** EXPERIMENTAL - Not Approved for Production
+
+---
+
+## ⚠️ EXPERIMENTAL PROJECT
+
+**Status**: Concept validation phase - NOT approved for production  
+**Constraints**:  
+- DO NOT alter existing `pywats_client/` implementation
+- DO NOT deprecate old GUI (must stay functional)
+- DO NOT add user-facing documentation or examples
+- Keep framework minimal (simple config/alarming GUIs only)
+- Analyze existing framework patterns before extending
 
 ---
 
