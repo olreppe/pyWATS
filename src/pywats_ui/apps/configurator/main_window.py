@@ -1,327 +1,416 @@
-"""Main window for pyWATS Client Configurator."""
+"""Configurator Main Window - Simplified reliable version.
+
+Changes from original:
+- H5 fix: REMOVED QLocalServer single-instance enforcement (allows multi-instance)
+- H4 fix: cleanup() on closeEvent to cancel pending tasks
+- Integrates QueueManager and ConnectionMonitor from framework
+- Instance selector dialog for multi-instance support
+- Simplified navigation (no advanced/compact modes for now)
+"""
+
+import asyncio
+import logging
+from typing import Optional, Dict
+from pathlib import Path
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-    QLabel, QTabWidget, QLineEdit, QTextEdit,
-    QFormLayout, QGroupBox, QStatusBar, QMessageBox
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget,
+    QListWidget, QListWidgetItem, QLabel, QFrame, QPushButton,
+    QMessageBox, QDialog, QFormLayout, QLineEdit, QDialogButtonBox
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize, QTimer
+from PySide6.QtGui import QCloseEvent, QPixmap
+
 from pywats_ui.framework import BaseMainWindow
-from .config import ConfiguratorConfig
+from pywats_ui.framework.reliability import QueueManager, ConnectionMonitor
+from pywats_client.core.config import ClientConfig
+
+# Import migrated pages
+from .pages import (
+    ConnectionPage, AboutPage, LogPage, SerialNumberHandlerPage,
+    DashboardPage, APISettingsPage, SetupPage, SoftwarePage,
+    LocationPage, ProxySettingsPage
+    # ConvertersPageV2 - TODO: Add when migrated
+)
+
+logger = logging.getLogger(__name__)
 
 
-class ConfiguratorWindow(BaseMainWindow):
-    """Main window for pyWATS Client Configurator."""
+class InstanceSelectorDialog(QDialog):
+    """Dialog for selecting which client instance to manage."""
     
-    def __init__(self):
-        super().__init__("pyWATS Client Configurator")
-        self.config = ConfiguratorConfig()
-        self.setup_ui()
-        self.setup_menu_bar()
-        self.setup_status_bar()
-        self.load_settings()
+    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self._config = config
+        self.setWindowTitle("Select Instance")
+        self.setModal(True)
+        self.resize(400, 150)
+        self._setup_ui()
     
-    def setup_ui(self):
-        """Set up the user interface."""
+    def _setup_ui(self) -> None:
+        """Setup dialog UI"""
+        layout = QVBoxLayout(self)
+        
+        info_label = QLabel(
+            "Multiple instances allow you to manage different stations or configurations.\n"
+            "Select or create an instance:"
+        )
+        info_label.setWordWrap(True)
+        info_label.setStyleSheet("color: #b0b0b0; padding: 10px 0;")
+        layout.addWidget(info_label)
+        
+        form = QFormLayout()
+        
+        self._instance_edit = QLineEdit()
+        self._instance_edit.setText(self._config.get("instance_name", "default"))
+        self._instance_edit.setPlaceholderText("e.g., Production-Line-1")
+        form.addRow("Instance Name:", self._instance_edit)
+        
+        layout.addLayout(form)
+        
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+    
+    def get_instance_name(self) -> str:
+        """Get the selected instance name"""
+        return self._instance_edit.text().strip() or "default"
+
+
+class ConfiguratorMainWindow(BaseMainWindow):
+    """Main window for pyWATS Configurator with reliability improvements.
+    
+    Features:
+    - Multi-instance support (no QLocalServer enforcement)
+    - Sidebar navigation with all configuration pages
+    - Integrated QueueManager and ConnectionMonitor
+    - Proper cleanup on close (H4 fix)
+    """
+    
+    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
+        super().__init__(config, parent)
+        
+        # Reliability components
+        self._queue_manager: Optional[QueueManager] = None
+        self._connection_monitor: Optional[ConnectionMonitor] = None
+        self._pending_tasks: list = []
+        
+        # Setup UI
+        self._setup_window()
+        self._setup_ui()
+        self._setup_reliability()
+        self._apply_styles()
+    
+    def _setup_window(self) -> None:
+        """Configure window properties"""
+        instance_name = self._config.get("instance_name", "default")
+        self.setWindowTitle(f"pyWATS Configurator - {instance_name}")
+        self.setMinimumSize(900, 650)
+        self.resize(1100, 800)
+        
+        # Set window icon
+        icon_path = Path(__file__).parent.parent / "resources" / "favicon.ico"
+        if icon_path.exists():
+            from PySide6.QtGui import QIcon
+            self.setWindowIcon(QIcon(str(icon_path)))
+    
+    def _setup_ui(self) -> None:
+        """Setup main UI layout"""
+        # Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
-        layout = QVBoxLayout(central_widget)
+        # Main layout
+        main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # Header
-        header = QLabel("pyWATS Client Configurator")
-        header.setStyleSheet("font-size: 18px; font-weight: bold; padding: 10px;")
-        layout.addWidget(header)
+        # Create sidebar
+        self._create_sidebar(main_layout)
         
-        # Tab widget
-        self.tabs = QTabWidget()
+        # Create content area
+        self._create_content_area(main_layout)
         
-        # Connection Tab
-        self.tabs.addTab(self.create_connection_tab(), "Connection")
-        
-        # Station Tab
-        self.tabs.addTab(self.create_station_tab(), "Station Setup")
-        
-        # Service Tab
-        self.tabs.addTab(self.create_service_tab(), "Service Control")
-        
-        # Logs Tab
-        self.tabs.addTab(self.create_logs_tab(), "Logs")
-        
-        layout.addWidget(self.tabs)
-        
-        # Button bar
-        button_layout = QHBoxLayout()
-        
-        self.btn_save = QPushButton("Save Configuration")
-        self.btn_save.clicked.connect(self.save_settings)
-        button_layout.addWidget(self.btn_save)
-        
-        self.btn_test = QPushButton("Test Connection")
-        self.btn_test.clicked.connect(self.test_connection)
-        button_layout.addWidget(self.btn_test)
-        
-        button_layout.addStretch()
-        
-        self.btn_close = QPushButton("Close")
-        self.btn_close.clicked.connect(self.close)
-        button_layout.addWidget(self.btn_close)
-        
-        layout.addLayout(button_layout)
+        # Create status bar
+        self._create_status_bar()
     
-    def create_connection_tab(self) -> QWidget:
-        """Create connection configuration tab."""
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
+    def _create_sidebar(self, layout: QHBoxLayout) -> None:
+        """Create navigation sidebar"""
+        sidebar = QFrame()
+        sidebar.setObjectName("sidebar")
+        sidebar.setFixedWidth(200)
+        sidebar.setStyleSheet("background-color: #252526;")
         
-        # Connection settings group
-        conn_group = QGroupBox("pyWATS Server Connection")
-        conn_layout = QFormLayout(conn_group)
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.setSpacing(0)
         
-        self.txt_url = QLineEdit()
-        self.txt_url.setPlaceholderText("https://your-wats-server.com")
-        conn_layout.addRow("Server URL:", self.txt_url)
+        # Logo/Title area
+        logo_frame = QFrame()
+        logo_layout = QHBoxLayout(logo_frame)
+        logo_layout.setContentsMargins(15, 15, 15, 15)
         
-        self.txt_username = QLineEdit()
-        self.txt_username.setPlaceholderText("username")
-        conn_layout.addRow("Username:", self.txt_username)
+        # Logo icon
+        logo_icon = QLabel("🔧")
+        logo_icon.setStyleSheet("font-size: 24px;")
+        logo_layout.addWidget(logo_icon)
         
-        self.txt_password = QLineEdit()
-        self.txt_password.setEchoMode(QLineEdit.EchoMode.Password)
-        self.txt_password.setPlaceholderText("password")
-        conn_layout.addRow("Password:", self.txt_password)
+        title_label = QLabel("Configurator")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #ffffff;")
+        logo_layout.addWidget(title_label)
+        logo_layout.addStretch()
         
-        layout.addWidget(conn_group)
+        sidebar_layout.addWidget(logo_frame)
         
-        # Info label
-        info = QLabel(
-            "Configure your connection to the pyWATS server.\n"
-            "Credentials are stored securely in your user directory."
-        )
-        info.setStyleSheet("color: gray; padding: 10px;")
-        layout.addWidget(info)
+        # Navigation list
+        self._nav_list = QListWidget()
+        self._nav_list.setObjectName("navList")
         
-        layout.addStretch()
+        # Build navigation items
+        nav_items = [
+            "Dashboard",
+            "Setup",
+            "Connection",
+            "Serial Numbers",
+            "API Settings",
+            "Software",
+            "Location",
+            "Proxy",
+            "Log",
+            "About"
+        ]
         
-        return tab
+        for name in nav_items:
+            item = QListWidgetItem(name)
+            item.setData(Qt.ItemDataRole.UserRole, name)
+            item.setSizeHint(QSize(0, 50))
+            self._nav_list.addItem(item)
+        
+        self._nav_list.currentRowChanged.connect(self._on_nav_changed)
+        sidebar_layout.addWidget(self._nav_list, 1)
+        
+        # Footer with version
+        footer = QFrame()
+        footer_layout = QVBoxLayout(footer)
+        footer_layout.setContentsMargins(15, 10, 15, 15)
+        
+        try:
+            from pywats_client import __version__
+            version_text = f"pyWATS v{__version__}"
+        except ImportError:
+            version_text = "pyWATS v(dev)"
+        
+        footer_label = QLabel(version_text)
+        footer_label.setStyleSheet("color: #808080; font-size: 11px;")
+        footer_layout.addWidget(footer_label)
+        
+        sidebar_layout.addWidget(footer)
+        
+        layout.addWidget(sidebar)
     
-    def create_station_tab(self) -> QWidget:
-        """Create station setup tab."""
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
+    def _create_content_area(self, layout: QHBoxLayout) -> None:
+        """Create main content area with pages"""
+        content_frame = QFrame()
+        content_frame.setObjectName("contentFrame")
         
-        # Station settings group
-        station_group = QGroupBox("Test Station Configuration")
-        station_layout = QFormLayout(station_group)
+        content_layout = QVBoxLayout(content_frame)
+        content_layout.setContentsMargins(20, 20, 20, 20)
         
-        self.txt_station_name = QLineEdit()
-        self.txt_station_name.setPlaceholderText("Station-001")
-        station_layout.addRow("Station Name:", self.txt_station_name)
+        # Stacked widget for pages
+        self._page_stack = QStackedWidget()
         
-        self.txt_station_id = QLineEdit()
-        self.txt_station_id.setPlaceholderText("12345")
-        station_layout.addRow("Station ID:", self.txt_station_id)
+        # Create pages - all migrated pages
+        self._pages: Dict[str, QWidget] = {
+            "Dashboard": DashboardPage(self._config),
+            "Setup": SetupPage(self._config),
+            "Connection": ConnectionPage(self._config),
+            "Serial Numbers": SerialNumberHandlerPage(self._config),
+            "API Settings": APISettingsPage(self._config),
+            "Software": SoftwarePage(self._config),
+            "Location": LocationPage(self._config),
+            "Proxy": ProxySettingsPage(self._config),
+            "Log": LogPage(self._config),
+            "About": AboutPage(self._config),
+        }
         
-        layout.addWidget(station_group)
+        # Add pages to stack
+        for page in self._pages.values():
+            self._page_stack.addWidget(page)
         
-        # Converter settings group
-        converter_group = QGroupBox("Converter Configuration")
-        converter_layout = QVBoxLayout(converter_group)
+        content_layout.addWidget(self._page_stack)
         
-        converter_info = QLabel(
-            "Converter settings allow pyWATS to process test result files\n"
-            "from various test equipment formats (Teradyne, Seica, etc.)"
-        )
-        converter_info.setStyleSheet("color: gray; padding: 5px;")
-        converter_layout.addWidget(converter_info)
+        layout.addWidget(content_frame)
         
-        # TODO: Add converter list/config when needed
-        
-        layout.addWidget(converter_group)
-        
-        layout.addStretch()
-        
-        return tab
+        # Select first page
+        if self._nav_list.count() > 0:
+            self._nav_list.setCurrentRow(0)
     
-    def create_service_tab(self) -> QWidget:
-        """Create service control tab."""
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
+    def _create_status_bar(self) -> None:
+        """Create status bar with connection info"""
+        status_bar = self.statusBar()
         
-        # Service status group
-        status_group = QGroupBox("pyWATS Client Service Status")
-        status_layout = QVBoxLayout(status_group)
+        # Connection status label
+        self._connection_status_label = QLabel("⚪ Initializing...")
+        self._connection_status_label.setStyleSheet("color: #808080; padding: 5px;")
+        status_bar.addPermanentWidget(self._connection_status_label)
         
-        self.lbl_service_status = QLabel("Status: Unknown")
-        self.lbl_service_status.setStyleSheet("font-size: 14px; padding: 10px;")
-        status_layout.addWidget(self.lbl_service_status)
-        
-        # Service control buttons
-        control_layout = QHBoxLayout()
-        
-        self.btn_start_service = QPushButton("Start Service")
-        self.btn_start_service.clicked.connect(self.start_service)
-        control_layout.addWidget(self.btn_start_service)
-        
-        self.btn_stop_service = QPushButton("Stop Service")
-        self.btn_stop_service.clicked.connect(self.stop_service)
-        control_layout.addWidget(self.btn_stop_service)
-        
-        self.btn_restart_service = QPushButton("Restart Service")
-        self.btn_restart_service.clicked.connect(self.restart_service)
-        control_layout.addWidget(self.btn_restart_service)
-        
-        control_layout.addStretch()
-        
-        status_layout.addLayout(control_layout)
-        
-        layout.addWidget(status_group)
-        
-        layout.addStretch()
-        
-        return tab
+        status_bar.showMessage("Ready")
     
-    def create_logs_tab(self) -> QWidget:
-        """Create logs viewer tab."""
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-        
-        # Log viewer
-        self.txt_logs = QTextEdit()
-        self.txt_logs.setReadOnly(True)
-        self.txt_logs.setPlaceholderText("Service logs will appear here...")
-        layout.addWidget(self.txt_logs)
-        
-        # Log controls
-        log_controls = QHBoxLayout()
-        
-        btn_refresh_logs = QPushButton("Refresh")
-        btn_refresh_logs.clicked.connect(self.refresh_logs)
-        log_controls.addWidget(btn_refresh_logs)
-        
-        btn_clear_logs = QPushButton("Clear")
-        btn_clear_logs.clicked.connect(lambda: self.txt_logs.clear())
-        log_controls.addWidget(btn_clear_logs)
-        
-        log_controls.addStretch()
-        
-        layout.addLayout(log_controls)
-        
-        return tab
-    
-    def setup_menu_bar(self):
-        """Set up the menu bar."""
-        menubar = self.menuBar()
-        
-        # File menu
-        file_menu = menubar.addMenu("&File")
-        save_action = file_menu.addAction("&Save Configuration")
-        save_action.triggered.connect(self.save_settings)
-        file_menu.addSeparator()
-        exit_action = file_menu.addAction("E&xit")
-        exit_action.triggered.connect(self.close)
-        
-        # Tools menu
-        tools_menu = menubar.addMenu("&Tools")
-        test_action = tools_menu.addAction("&Test Connection")
-        test_action.triggered.connect(self.test_connection)
-        
-        # Help menu
-        help_menu = menubar.addMenu("&Help")
-        about_action = help_menu.addAction("&About")
-        about_action.triggered.connect(self.show_about)
-    
-    def setup_status_bar(self):
-        """Set up the status bar."""
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("Ready - pyWATS Client Configurator")
-    
-    def load_settings(self):
-        """Load settings from configuration."""
-        self.txt_url.setText(self.config.get("server_url", ""))
-        self.txt_username.setText(self.config.get("username", ""))
-        # Don't load password for security
-        self.txt_station_name.setText(self.config.get("station_name", ""))
-        self.txt_station_id.setText(self.config.get("station_id", ""))
-    
-    def save_settings(self):
-        """Save settings to configuration."""
-        self.config.set("server_url", self.txt_url.text())
-        self.config.set("username", self.txt_username.text())
-        # Password should be stored securely (TODO: use keyring)
-        self.config.set("station_name", self.txt_station_name.text())
-        self.config.set("station_id", self.txt_station_id.text())
-        
-        self.status_bar.showMessage("Configuration saved", 3000)
-        QMessageBox.information(
-            self,
-            "Settings Saved",
-            "pyWATS Client Configurator settings have been saved successfully."
-        )
-    
-    def test_connection(self):
-        """Test connection to pyWATS server."""
-        self.status_bar.showMessage("Testing connection...", 0)
-        
-        # TODO: Actual connection test using pyWATS API
-        # For now, just show placeholder
-        url = self.txt_url.text()
-        username = self.txt_username.text()
-        
-        if not url or not username:
+    def _setup_reliability(self) -> None:
+        """Setup reliability components (QueueManager, ConnectionMonitor)"""
+        try:
+            # Initialize queue manager
+            queue_path = Path.home() / ".pywats" / "queue"
+            self._queue_manager = QueueManager(str(queue_path))
+            
+            # Initialize connection monitor
+            service_address = self._config.get("service_address", "")
+            if service_address:
+                self._connection_monitor = ConnectionMonitor(service_address)
+                self._connection_monitor.status_changed.connect(self._on_connection_status_changed)
+                self._connection_monitor.start_monitoring()
+            
+            logger.info("Reliability components initialized")
+            
+        except Exception as e:
+            logger.exception(f"Failed to setup reliability components: {e}")
             QMessageBox.warning(
                 self,
-                "Missing Information",
-                "Please enter server URL and username before testing connection."
+                "Initialization Warning",
+                f"Failed to initialize reliability components.\n\nError: {e}\n\n"
+                "Some features may not work correctly."
             )
-            self.status_bar.showMessage("Connection test cancelled", 3000)
+    
+    def _on_connection_status_changed(self, is_connected: bool, message: str) -> None:
+        """Handle connection status change from ConnectionMonitor"""
+        if is_connected:
+            self._connection_status_label.setText(f"🟢 {message}")
+            self._connection_status_label.setStyleSheet("color: #4ec9b0; padding: 5px;")
+        else:
+            self._connection_status_label.setText(f"🔴 {message}")
+            self._connection_status_label.setStyleSheet("color: #f48771; padding: 5px;")
+    
+    def _on_nav_changed(self, row: int) -> None:
+        """Handle navigation item selection"""
+        if row < 0:
             return
         
-        # Placeholder success message
-        QMessageBox.information(
-            self,
-            "Connection Test",
-            f"Connection test placeholder.\n\n"
-            f"Server: {url}\n"
-            f"Username: {username}\n\n"
-            f"TODO: Implement actual pyWATS API connection test"
-        )
-        self.status_bar.showMessage("Connection test complete", 3000)
+        item = self._nav_list.item(row)
+        if not item:
+            return
+        
+        page_name = item.data(Qt.ItemDataRole.UserRole)
+        if page_name in self._pages:
+            page = self._pages[page_name]
+            self._page_stack.setCurrentWidget(page)
+            
+            # Load config when page is shown
+            if hasattr(page, 'load_config'):
+                try:
+                    page.load_config()
+                except Exception as e:
+                    logger.exception(f"Failed to load config for {page_name}: {e}")
     
-    def start_service(self):
-        """Start pyWATS client service."""
-        self.status_bar.showMessage("Starting service...", 3000)
-        # TODO: Implement service start
-        self.lbl_service_status.setText("Status: Starting...")
+    def _apply_styles(self) -> None:
+        """Apply dark theme styles"""
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #1e1e1e;
+                color: #d4d4d4;
+            }
+            QFrame#sidebar {
+                background-color: #252526;
+                border-right: 1px solid #3c3c3c;
+            }
+            QFrame#contentFrame {
+                background-color: #1e1e1e;
+            }
+            QListWidget#navList {
+                background-color: #252526;
+                border: none;
+                outline: none;
+                color: #d4d4d4;
+                font-size: 14px;
+            }
+            QListWidget#navList::item {
+                padding: 15px 20px;
+                border: none;
+            }
+            QListWidget#navList::item:selected {
+                background-color: #37373d;
+                color: #ffffff;
+            }
+            QListWidget#navList::item:hover {
+                background-color: #2a2d2e;
+            }
+            QStatusBar {
+                background-color: #007acc;
+                color: #ffffff;
+            }
+        """)
     
-    def stop_service(self):
-        """Stop pyWATS client service."""
-        self.status_bar.showMessage("Stopping service...", 3000)
-        # TODO: Implement service stop
-        self.lbl_service_status.setText("Status: Stopping...")
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Handle window close - cleanup resources (H4 fix)"""
+        try:
+            logger.info("Configurator window closing, cleaning up...")
+            
+            # Save all page configs
+            for page_name, page in self._pages.items():
+                if hasattr(page, 'save_config'):
+                    try:
+                        page.save_config()
+                    except Exception as e:
+                        logger.exception(f"Failed to save config for {page_name}: {e}")
+                
+                # Cleanup page resources
+                if hasattr(page, 'cleanup'):
+                    try:
+                        page.cleanup()
+                    except Exception as e:
+                        logger.exception(f"Failed to cleanup {page_name}: {e}")
+            
+            # Stop connection monitor
+            if self._connection_monitor:
+                self._connection_monitor.stop_monitoring()
+            
+            # Cancel pending async tasks
+            for task in self._pending_tasks:
+                if not task.done():
+                    task.cancel()
+            
+            logger.info("Configurator cleanup complete")
+            
+        except Exception as e:
+            logger.exception(f"Error during cleanup: {e}")
+        
+        super().closeEvent(event)
+
+
+def show_instance_selector(config: ClientConfig) -> Optional[str]:
+    """Show instance selector dialog and return selected instance name.
     
-    def restart_service(self):
-        """Restart pyWATS client service."""
-        self.status_bar.showMessage("Restarting service...", 3000)
-        # TODO: Implement service restart
-        self.lbl_service_status.setText("Status: Restarting...")
+    Returns:
+        Instance name if user confirmed, None if cancelled
+    """
+    from PySide6.QtWidgets import QApplication
     
-    def refresh_logs(self):
-        """Refresh log viewer."""
-        self.status_bar.showMessage("Refreshing logs...", 2000)
-        # TODO: Load actual logs from file
-        self.txt_logs.append("[INFO] Log refresh placeholder")
-        self.txt_logs.append("[INFO] TODO: Implement actual log file reading")
+    # Create temporary app if needed (for standalone testing)
+    app = QApplication.instance()
+    temp_app = None
+    if app is None:
+        import sys
+        temp_app = QApplication(sys.argv)
     
-    def show_about(self):
-        """Show about dialog."""
-        QMessageBox.about(
-            self,
-            "About pyWATS Client Configurator",
-            "<h2>pyWATS Client Configurator</h2>"
-            "<p>Version 0.3.0</p>"
-            "<p>Configure and manage pyWATS client service.</p>"
-            "<p>Part of the pyWATS GUI framework.</p>"
-            "<p>© 2026 Virinco AS</p>"
-        )
+    dialog = InstanceSelectorDialog(config)
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        instance_name = dialog.get_instance_name()
+        if temp_app:
+            temp_app.quit()
+        return instance_name
+    else:
+        if temp_app:
+            temp_app.quit()
+        return None
