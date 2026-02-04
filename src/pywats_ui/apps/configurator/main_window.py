@@ -263,9 +263,14 @@ class ConfiguratorMainWindow(BaseMainWindow):
     def _setup_reliability(self) -> None:
         """Setup reliability components (QueueManager, ConnectionMonitor)"""
         try:
-            # Initialize queue manager
+            # Initialize queue manager with send callback
             queue_path = Path.home() / ".pywats" / "queue"
-            self._queue_manager = QueueManager(str(queue_path))
+            self._queue_manager = QueueManager(
+                queue_dir=queue_path,
+                send_callback=self._send_queued_operation,
+                retry_interval_ms=30000,
+                max_retries=10
+            )
             
             # Initialize connection monitor
             service_address = self._config.get("service_address", "")
@@ -284,6 +289,27 @@ class ConfiguratorMainWindow(BaseMainWindow):
                 f"Failed to initialize reliability components.\n\nError: {e}\n\n"
                 "Some features may not work correctly."
             )
+    
+    async def _send_queued_operation(self, operation: dict) -> None:
+        """Send queued operation (callback for QueueManager).
+        
+        Args:
+            operation: Operation dict with 'type' and 'data' keys
+            
+        Raises:
+            Exception if send fails (triggers retry)
+        """
+        operation_type = operation.get("type")
+        data = operation.get("data", {})
+        
+        logger.debug(f"Sending queued operation: {operation_type}")
+        
+        # For now, just log - specific send logic will be added later
+        # This prevents QueueManager initialization errors
+        if operation_type == "send_report":
+            logger.info(f"Would send report: {data.get('serial_number', 'unknown')}")
+        else:
+            logger.info(f"Would send operation: {operation_type}")
     
     def _on_connection_status_changed(self, is_connected: bool, message: str) -> None:
         """Handle connection status change from ConnectionMonitor"""
