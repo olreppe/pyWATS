@@ -50,6 +50,11 @@ client = [
     "psutil>=5.9.0",  # Cross-platform process management
     "click>=8.0.0",  # CLI framework
 ]
+# GUI applications (new framework)
+gui = [
+    "PySide6>=6.4.0",
+    "openai>=1.0.0",  # For AI Chat
+]
 # Headless client without Qt (Raspberry Pi, servers, embedded)
 client-headless = [
     "watchdog>=3.0.0",
@@ -90,6 +95,7 @@ Changelog = "https://github.com/olreppe/pyWATS/blob/main/CHANGELOG.md"
 
 [project.scripts]
 pywats-client = "pywats_client.__main__:main"
+pywats-aichat = "pywats_ui.apps.aichat.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
