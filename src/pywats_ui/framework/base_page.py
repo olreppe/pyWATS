@@ -24,10 +24,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt
 
-from ...core.config import ClientConfig
-from ...core.event_bus import AppEvent, event_bus
-from ...core.async_runner import TaskResult, AsyncTaskRunner
-from ..error_mixin import ErrorHandlingMixin
+from pywats_client.core.config import ClientConfig
+from pywats_client.core.event_bus import AppEvent, event_bus
+from pywats_client.core.async_runner import TaskResult, AsyncTaskRunner
+from pywats_ui.framework.error_mixin import ErrorHandlingMixin
 
 if TYPE_CHECKING:
     from ..async_api_runner import AsyncAPIRunner
@@ -83,6 +83,7 @@ class BasePage(QWidget, ErrorHandlingMixin):
     ) -> None:
         super().__init__(parent)
         self.config = config
+        self._config = config  # Alias for backward compatibility
         self.async_api: Optional['AsyncAPIRunner'] = async_api_runner
         self._event_subscriptions: List[tuple[AppEvent, Callable]] = []
         self._running_tasks: Dict[str, str] = {}  # task_id -> name

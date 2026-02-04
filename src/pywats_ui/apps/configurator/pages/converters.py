@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QAction, QIcon
 
-from ...framework.base import BasePage
+from pywats_ui.framework.base_page import BasePage
 from pywats_client.core.config import ClientConfig, ConverterConfig
 
 if TYPE_CHECKING:

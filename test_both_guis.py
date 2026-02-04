@@ -58,8 +58,8 @@ def get_old_gui_token(instance_name: str) -> Optional[str]:
     """
     try:
         # Load old GUI config
-        config_a = ClientConfig(instance=instance_name)
-        token = config_a.get("api_token")
+        config_a = ClientConfig(instance_id=instance_name)
+        token = config_a.api_token
         
         if token:
             logger.info(f"✓ Found token in Client A config (length: {len(token)})")
@@ -84,10 +84,10 @@ def share_token_to_new_gui(instance_name: str) -> bool:
     """
     try:
         # Load new GUI config
-        config_b = ClientConfig(instance=f"{instance_name}_new")
+        config_b = ClientConfig(instance_id=f"{instance_name}_new")
         
         # Check if B already has a token
-        token_b = config_b.get("api_token")
+        token_b = config_b.api_token
         if token_b:
             logger.info("✓ Client B already has a token")
             return False
@@ -99,7 +99,7 @@ def share_token_to_new_gui(instance_name: str) -> bool:
             return False
         
         # Share token to B
-        config_b.set("api_token", token_a)
+        config_b.api_token = token_a
         config_b.save()
         
         logger.info("✓ Token shared from Client A to Client B")
@@ -128,7 +128,7 @@ def launch_old_gui(instance_name: str, event_loop) -> bool:
         from pywats_client.gui.main_window import MainWindow
         
         # Load config for Client A
-        config_a = ClientConfig(instance=instance_name)
+        config_a = ClientConfig(instance_id=instance_name)
         
         # Create and show window
         window_a = MainWindow(config=config_a)
@@ -169,8 +169,8 @@ def launch_new_gui(instance_name: str, event_loop) -> bool:
         from pywats_ui.apps.configurator.main_window import ConfiguratorMainWindow
         
         # Load config for Client B (separate instance to avoid conflicts)
-        config_b = ClientConfig(instance=f"{instance_name}_new")
-        config_b.set("instance_name", f"{instance_name} (New)")
+        config_b = ClientConfig(instance_id=f"{instance_name}_new")
+        config_b.instance_name = f"{instance_name} (New)"
         
         # Create and show window
         window_b = ConfiguratorMainWindow(config=config_b)

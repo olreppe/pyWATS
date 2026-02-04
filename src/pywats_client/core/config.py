@@ -115,6 +115,15 @@ class ConverterConfig:
         """True if this is a scheduled converter"""
         return self.converter_type == ConverterType.SCHEDULED or self.converter_type == "scheduled"
     
+    # Dict-like interface for dynamic access
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get config value by key with optional default."""
+        return getattr(self, key, default)
+    
+    def set(self, key: str, value: Any) -> None:
+        """Set config value by key."""
+        setattr(self, key, value)
+    
     def validate(self) -> List[str]:
         """
         Validate the configuration.
