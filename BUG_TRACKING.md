@@ -7,6 +7,16 @@
 
 ---
 
+## Process Failures
+
+### Agent/Workflow Issues
+- [CRITICAL] Agent Workflow | February 6, 2026 | ProcessFailure | Agent failed to track progress in files during code duplication analysis. VS Code reload caused complete loss of analysis work. User had to halt work to recover context. **ROOT CAUSE:** Agent did not follow mandatory instruction to update PROGRESS.md and save analysis results to files in real-time. **LESSON:** All work must be tracked in files DURING work, not after. Created 03_PROGRESS.md and 01_ANALYSIS.md recovery files in gui-feature-completion.project.
+
+### Type Stub Maintenance Issues  
+- [FIXED] Type Stubs | pywats.pyi:22-33 | TypeError | Stale type stub showed old pyWATS signature (username/password/api_key) instead of current signature (token). Last regenerated Feb 3, 2026 but class signature changed Jan 24-25. generate_type_stubs.py only generates service stubs, not main pyWATS class stub. **FIX:** Manually updated src/pywats/pywats.pyi to match actual pyWATS.__init__ signature. **LESSON:** pyWATS class stub must be manually maintained when signature changes.
+
+---
+
 ## Bugs Discovered
 
 ### Import/Architecture Issues
