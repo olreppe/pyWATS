@@ -88,7 +88,7 @@ class AsyncPendingQueue:
         api: 'AsyncWATS',
         reports_dir: Path,
         max_concurrent: int = 5,
-        max_queue_size: int = 0
+        max_queue_size: int = DEFAULT_MAX_QUEUE_SIZE  # Use 10000 default instead of unlimited
     ) -> None:
         """
         Initialize async pending queue.
@@ -97,7 +97,7 @@ class AsyncPendingQueue:
             api: AsyncWATS API client
             reports_dir: Directory containing queued report files
             max_concurrent: Maximum concurrent uploads
-            max_queue_size: Maximum reports allowed in queue (0 = unlimited)
+            max_queue_size: Maximum reports allowed in queue (default: 10000, 0 = unlimited)
         """
         self.api = api
         self.reports_dir = Path(reports_dir)

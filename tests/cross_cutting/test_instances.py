@@ -380,9 +380,9 @@ def main():
         print(f"Launching GUI with Test Instance {args.client}...")
         client_config = manager.get_client_config(args.client)
 
-        # Import and run GUI
-        from pywats_client.gui.app import run_gui
-        run_gui(client_config)
+        # Import and run GUI (using new pywats_ui package)
+        from pywats_ui.apps.configurator.main import main as run_gui
+        run_gui()  # Uses default config
         return
 
     # Default: show help
