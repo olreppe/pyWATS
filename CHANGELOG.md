@@ -19,6 +19,15 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ## [Unreleased]
 
+### Improved
+- **Architecture Reliability Fixes**: Comprehensive stability and data integrity improvements across async client architecture
+  - **Two-Phase Shutdown** (async_client_service.py): Prevents data loss during service shutdown with graceful 60s + force 120s periods, component pause mechanisms, and operation completion tracking
+  - **Exception Handlers**: All background tasks wrapped with safety handlers to prevent silent failures, task monitoring every 30s, service status reflects critical task health
+  - **Config Validation** (config.py): Dict-like interface validates types, ranges, and enums to prevent config corruption - port ranges, positive values, enum validation
+  - **IPC Timeouts** (async_ipc_server.py): Connection/read/write/request timeouts prevent hung clients from blocking server, graceful disconnection on timeout
+  - **Verified Pre-Implementations**: QueueManager save-before-send pattern, GUI page resource cleanup, AsyncPendingQueue size limits - all working correctly from GUI migration
+  - **Tests**: 340 lines of reliability code, comprehensive project documentation (active/architecture-reliability-fixes.project/)
+
 ### Added
 - **Unified Logging Infrastructure**: Consolidated logging across API, client, and converters
   - **configure_logging()**: Single unified API for all logging configuration (pywats.core.logging)
