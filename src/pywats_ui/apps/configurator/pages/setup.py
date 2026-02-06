@@ -363,21 +363,21 @@ class SetupPage(BasePage):
                 return
             
             # Update config
-            self._config["instance_name"] = instance_name
-            self._config["client_id"] = self._client_id.text().strip()
+            self._config.instance_name = instance_name
             
             # Station settings
-            self._config["station_name"] = station_name
-            self._config["use_hostname"] = self._use_hostname.isChecked()
-            self._config["station_location"] = self._location.text().strip()
-            self._config["station_purpose"] = self._purpose.text().strip()
+            self._config.station_name = station_name
+            # Map use_hostname checkbox to station_name_source field
+            self._config.station_name_source = "hostname" if self._use_hostname.isChecked() else "config"
+            self._config.location = self._location.text().strip()
+            self._config.purpose = self._purpose.text().strip()
             
-            # Hub mode
-            self._config["hub_mode_enabled"] = self._hub_mode.isChecked()
+            # Hub mode - map to new field name
+            self._config.multi_station_enabled = self._hub_mode.isChecked()
             
             # Advanced options
-            self._config["sync_interval"] = self._sync_interval.value()
-            self._config["auto_start_service"] = self._auto_start_service.isChecked()
+            self._config.sync_interval_seconds = self._sync_interval.value()
+            self._config.service_auto_start = self._auto_start_service.isChecked()
             
             # Save to disk
             self._config.save()
@@ -387,11 +387,7 @@ class SetupPage(BasePage):
                 f"station={station_name}, hub_mode={self._hub_mode.isChecked()}"
             )
             
-            QMessageBox.information(
-                self,
-                "Configuration Saved",
-                "Station setup has been saved successfully."
-            )
+            # Success - no popup needed (prevents multiple popups on close)
             
         except Exception as e:
             logger.exception(f"Failed to save station setup: {e}")
@@ -406,34 +402,35 @@ class SetupPage(BasePage):
     def load_config(self) -> None:
         """Load station setup from config"""
         try:
-            # Client identification
-            self._instance_name.setText(self._config.get("instance_name", ""))
-            self._client_id.setText(self._config.get("client_id", ""))
+            # Client identification (client_id removed - not in new schema)
+            self._instance_name.setText(self._config.instance_name or "")
+            self._client_id.setText("")  # Always empty - field deprecated
             
             # Station settings
-            self._station_name.setText(self._config.get("station_name", ""))
-            use_hostname = self._config.get("use_hostname", False)
+            self._station_name.setText(self._config.station_name or "")
+            # Map station_name_source to use_hostname checkbox
+            use_hostname = self._config.station_name_source == "hostname"
             self._use_hostname.setChecked(use_hostname)
             self._station_name.setEnabled(not use_hostname)
             
-            self._location.setText(self._config.get("station_location", ""))
-            self._purpose.setText(self._config.get("station_purpose", ""))
+            self._location.setText(self._config.location or "")
+            self._purpose.setText(self._config.purpose or "")
             
-            # Hub mode
-            hub_mode = self._config.get("hub_mode_enabled", False)
+            # Hub mode - use new field name
+            hub_mode = self._config.multi_station_enabled
             self._hub_mode.setChecked(hub_mode)
             self._manage_stations_btn.setEnabled(hub_mode)
             
-            # Update stations summary
-            stations = self._config.get("stations", [])
+            # Update stations summary - use new field name
+            stations = self._config.station_presets or []
             self._stations_summary.setText(f"{len(stations)} stations configured")
             
             # Advanced options
-            self._sync_interval.setValue(self._config.get("sync_interval", 60))
-            self._auto_start_service.setChecked(self._config.get("auto_start_service", False))
+            self._sync_interval.setValue(self._config.sync_interval_seconds)
+            self._auto_start_service.setChecked(self._config.service_auto_start)
             
             # Connection status summary
-            service_address = self._config.get("service_address", "")
+            service_address = self._config.service_address or ""
             if service_address:
                 self._conn_status_label.setText(f"✓ Connected to: {service_address}")
                 self._conn_status_label.setStyleSheet("color: #4ec9b0; padding: 10px;")

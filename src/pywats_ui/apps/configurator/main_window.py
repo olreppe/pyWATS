@@ -417,13 +417,19 @@ class ConfiguratorMainWindow(BaseMainWindow):
         try:
             logger.info("Configurator window closing, cleaning up...")
             
+            # Track if any config changed (for consolidated message)
+            config_saved = False
+            save_errors = []
+            
             # Save all page configs
             for page_name, page in self._pages.items():
                 if hasattr(page, 'save_config'):
                     try:
                         page.save_config()
+                        config_saved = True
                     except Exception as e:
                         logger.exception(f"Failed to save config for {page_name}: {e}")
+                        save_errors.append(f"{page_name}: {str(e)}")
                 
                 # Cleanup page resources
                 if hasattr(page, 'cleanup'):
@@ -431,6 +437,21 @@ class ConfiguratorMainWindow(BaseMainWindow):
                         page.cleanup()
                     except Exception as e:
                         logger.exception(f"Failed to cleanup {page_name}: {e}")
+            
+            # Show consolidated message if configs were saved
+            if config_saved and not save_errors:
+                QMessageBox.information(
+                    self,
+                    "Configuration Saved",
+                    "All configuration changes have been saved.\n\n"
+                    "⚠️ Note: Some changes require a service restart to take effect."
+                )
+            elif save_errors:
+                QMessageBox.warning(
+                    self,
+                    "Save Errors",
+                    f"Some configurations failed to save:\n\n" + "\n".join(save_errors[:3])
+                )
             
             # Stop connection monitor
             if self._connection_monitor:

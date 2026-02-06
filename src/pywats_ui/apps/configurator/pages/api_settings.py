@@ -361,34 +361,27 @@ class APISettingsPage(BasePage):
                 )
                 return
             
-            # Update config
-            self._config["api_enabled"] = self._api_enabled.isChecked()
-            self._config["api_port"] = self._api_port.value()
-            self._config["api_host"] = host
-            self._config["api_base_path"] = self._api_base_path.text()
-            self._config["api_cors_enabled"] = self._api_cors_enabled.isChecked()
-            self._config["api_cors_origins"] = self._api_cors_origins.text()
-            self._config["api_auth_type"] = self._auth_type.currentText()
-            self._config["api_rate_limit_enabled"] = self._rate_limit_enabled.isChecked()
-            self._config["api_rate_limit_requests"] = self._rate_limit_requests.value()
-            self._config["api_rate_limit_window"] = self._rate_limit_window.value()
+            # Update config - map directly to ClientConfig fields
+            self._config.api_enabled = self._api_enabled.isChecked()
+            self._config.api_port = self._api_port.value()
+            self._config.api_host = host
+            self._config.api_base_path = self._api_base_path.text()
+            self._config.api_cors_enabled = self._api_cors_enabled.isChecked()
+            self._config.api_cors_origins = self._api_cors_origins.text()
+            self._config.api_auth_type = self._auth_type.currentText()
+            self._config.api_rate_limit_enabled = self._rate_limit_enabled.isChecked()
+            self._config.api_rate_limit_requests = self._rate_limit_requests.value()
+            self._config.api_rate_limit_window = self._rate_limit_window.value()
             
             # Webhook settings
-            self._config["webhook_converter_url"] = self._webhook_converter_url.text()
-            self._config["webhook_report_url"] = self._webhook_report_url.text()
-            self._config["webhook_service_url"] = self._webhook_service_url.text()
-            self._config["webhook_auth_header"] = self._webhook_auth_header.text()
-            self._config["webhook_auth_value"] = self._webhook_auth_value.text()
+            self._config.webhook_converter_url = self._webhook_converter_url.text()
+            self._config.webhook_report_url = self._webhook_report_url.text()
+            self._config.webhook_service_url = self._webhook_service_url.text()
+            self._config.webhook_auth_header = self._webhook_auth_header.text()
+            self._config.webhook_auth_value = self._webhook_auth_value.text()
             
-            # Collect tokens from table
-            tokens = []
-            for row in range(self._tokens_table.rowCount()):
-                tokens.append({
-                    "name": self._tokens_table.item(row, 0).text(),
-                    "token": self._tokens_table.item(row, 1).text(),
-                    "created": self._tokens_table.item(row, 2).text()
-                })
-            self._config["api_tokens"] = tokens
+            # api_tokens field removed - not in new schema
+            # Token management handled externally via api_auth_type
             
             # Save to disk
             self._config.save()
@@ -398,12 +391,8 @@ class APISettingsPage(BasePage):
                 f"port={self._api_port.value()}, host={host}"
             )
             
-            QMessageBox.information(
-                self,
-                "Configuration Saved",
-                "API settings have been saved successfully.\n\n"
-                "Restart the application for changes to take effect."
-            )
+            # Success - no popup needed (prevents multiple popups on close)
+            # Note: Service restart needed for API changes to take effect
             
         except Exception as e:
             logger.exception(f"Failed to save API settings: {e}")
@@ -418,44 +407,33 @@ class APISettingsPage(BasePage):
     def load_config(self) -> None:
         """Load API settings from config"""
         try:
-            self._api_enabled.setChecked(self._config.get("api_enabled", False))
-            self._api_port.setValue(self._config.get("api_port", 8080))
-            self._api_host.setText(self._config.get("api_host", "127.0.0.1"))
-            self._api_base_path.setText(self._config.get("api_base_path", "/api/v1"))
-            self._api_cors_enabled.setChecked(self._config.get("api_cors_enabled", False))
-            self._api_cors_origins.setText(self._config.get("api_cors_origins", ""))
+            self._api_enabled.setChecked(self._config.api_enabled)
+            self._api_port.setValue(self._config.api_port)
+            self._api_host.setText(self._config.api_host or "127.0.0.1")
+            self._api_base_path.setText(self._config.api_base_path or "/api/v1")
+            self._api_cors_enabled.setChecked(self._config.api_cors_enabled)
+            self._api_cors_origins.setText(self._config.api_cors_origins or "")
             
             # Set auth type
-            auth_type = self._config.get("api_auth_type", "None")
+            auth_type = self._config.api_auth_type or "None"
             index = self._auth_type.findText(auth_type)
             if index >= 0:
                 self._auth_type.setCurrentIndex(index)
             
-            self._rate_limit_enabled.setChecked(self._config.get("api_rate_limit_enabled", False))
-            self._rate_limit_requests.setValue(self._config.get("api_rate_limit_requests", 100))
-            self._rate_limit_window.setValue(self._config.get("api_rate_limit_window", 60))
+            self._rate_limit_enabled.setChecked(self._config.api_rate_limit_enabled)
+            self._rate_limit_requests.setValue(self._config.api_rate_limit_requests)
+            self._rate_limit_window.setValue(self._config.api_rate_limit_window)
             
             # Load webhook settings
-            self._webhook_converter_url.setText(self._config.get("webhook_converter_url", ""))
-            self._webhook_report_url.setText(self._config.get("webhook_report_url", ""))
-            self._webhook_service_url.setText(self._config.get("webhook_service_url", ""))
-            self._webhook_auth_header.setText(self._config.get("webhook_auth_header", ""))
-            self._webhook_auth_value.setText(self._config.get("webhook_auth_value", ""))
+            self._webhook_converter_url.setText(self._config.webhook_converter_url or "")
+            self._webhook_report_url.setText(self._config.webhook_report_url or "")
+            self._webhook_service_url.setText(self._config.webhook_service_url or "")
+            self._webhook_auth_header.setText(self._config.webhook_auth_header or "")
+            self._webhook_auth_value.setText(self._config.webhook_auth_value or "")
             
-            # Load tokens
-            tokens = self._config.get("api_tokens", [])
+            # Tokens table removed - api_tokens not in new schema
+            # Token management handled externally
             self._tokens_table.setRowCount(0)
-            for token_data in tokens:
-                row = self._tokens_table.rowCount()
-                self._tokens_table.insertRow(row)
-                
-                self._tokens_table.setItem(row, 0, QTableWidgetItem(token_data.get("name", "")))
-                self._tokens_table.setItem(row, 1, QTableWidgetItem(token_data.get("token", "")))
-                self._tokens_table.setItem(row, 2, QTableWidgetItem(token_data.get("created", "")))
-                
-                delete_btn = QPushButton("Delete")
-                delete_btn.clicked.connect(lambda checked, r=row: self._delete_token(r))
-                self._tokens_table.setCellWidget(row, 3, delete_btn)
             
             logger.debug("API settings loaded")
             

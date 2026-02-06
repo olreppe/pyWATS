@@ -181,12 +181,8 @@ class ProxySettingsPage(BasePage):
             
             logger.info(f"Proxy settings saved: mode={proxy_mode}")
             
-            QMessageBox.information(
-                self,
-                "Configuration Saved",
-                "Proxy settings have been saved successfully.\n\n"
-                "Restart the application for changes to take effect."
-            )
+            # Success - no popup needed (prevents multiple popups on close)
+            # Note: Service restart needed for proxy changes to take effect
             
         except Exception as e:
             logger.exception(f"Failed to save proxy settings: {e}")

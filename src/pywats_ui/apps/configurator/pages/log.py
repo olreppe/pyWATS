@@ -135,13 +135,14 @@ class LogPage(BasePage):
         """Setup logging handler to capture logs with error handling."""
         try:
             self._log_handler = QTextEditLogger()
+            self._log_handler.setLevel(logging.DEBUG)  # Capture all log levels
             self._log_handler.log_signal.connect(self._append_log)
             
             # Add handler to root logger to capture all logs
             root_logger = logging.getLogger()
             root_logger.addHandler(self._log_handler)
             
-            logger.info("Log viewer initialized")
+            logger.info("Log viewer initialized - capturing all log levels")
             
         except Exception as e:
             logger.exception(f"Failed to setup log handler: {e}")

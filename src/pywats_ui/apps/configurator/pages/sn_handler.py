@@ -161,41 +161,37 @@ class SerialNumberHandlerPage(BasePage):
     def save_config(self) -> None:
         """Save serial number handler configuration (H1 fix - error handling)."""
         try:
-            # Validate inputs
-            if self._batch_size_spin.value() <= self._fetch_threshold_spin.value():
-                QMessageBox.warning(
-                    self,
-                    "Invalid Configuration",
-                    "Batch size must be greater than fetch threshold to maintain a serial number buffer.\n\n"
-                    "Please adjust the values before saving."
-                )
-                return
+            # No batch size validation - removed in new schema (async handles batching)
             
-            # Update config
-            sn_config = self._config.get("serial_number_handler", {})
-            sn_config["type"] = self._type_combo.currentText()
-            sn_config["allow_reuse"] = self._reuse_cb.isChecked()
-            sn_config["reserve_offline"] = self._reserve_offline_cb.isChecked()
-            sn_config["batch_size"] = self._batch_size_spin.value()
-            sn_config["fetch_threshold"] = self._fetch_threshold_spin.value()
-            sn_config["enforce_sequential"] = self._in_sequence_cb.isChecked()
+            # Update config - map to flat fields (no nested dict)
+            # Map old type selector to new sn_mode field
+            type_mapping = {
+                "WATS Sequential": "Auto-increment",
+                "Station Generated": "Auto-increment",
+                "External System": "External Source",
+                "Manual Entry": "Manual Entry"
+            }
+            current_type = self._type_combo.currentText()
+            self._config.sn_mode = type_mapping.get(current_type, "Manual Entry")
             
-            self._config["serial_number_handler"] = sn_config
+            # Map reuse checkbox to duplicate checking (opposite logic)
+            self._config.sn_check_duplicates = not self._reuse_cb.isChecked()
+            
+            # Offline reservations handled by offline_queue_enabled (global setting)
+            self._config.offline_queue_enabled = self._reserve_offline_cb.isChecked()
+            
+            # Batch settings removed from schema (async framework handles this)
+            # In-sequence enforcement removed (not in new schema)
             
             # Save to disk
             self._config.save()
             
             logger.info(
-                f"Serial number handler config saved: type={sn_config['type']}, "
-                f"batch={sn_config['batch_size']}, threshold={sn_config['fetch_threshold']}"
+                f"Serial number handler config saved: mode={self._config.sn_mode}, "
+                f"check_duplicates={self._config.sn_check_duplicates}"
             )
             
-            QMessageBox.information(
-                self,
-                "Configuration Saved",
-                "Serial number handler configuration has been saved successfully."
-            )
-            
+            # Success - no popup needed (prevents multiple popups on close)
             self._update_status()
             
         except Exception as e:
@@ -211,29 +207,34 @@ class SerialNumberHandlerPage(BasePage):
     def load_config(self) -> None:
         """Load serial number handler configuration from config"""
         try:
-            sn_config = self._config.get("serial_number_handler", {})
-            
-            # Load type
-            sn_type = sn_config.get("type", "WATS Sequential")
-            index = self._type_combo.findText(sn_type)
+            # Map new sn_mode field to old UI type selector
+            mode_mapping = {
+                "Manual Entry": "Manual Entry",
+                "Auto-increment": "WATS Sequential",
+                "Barcode Scanner": "External System",
+                "External Source": "External System"
+            }
+            current_mode = self._config.sn_mode or "Manual Entry"
+            ui_type = mode_mapping.get(current_mode, "Manual Entry")
+            index = self._type_combo.findText(ui_type)
             if index >= 0:
                 self._type_combo.setCurrentIndex(index)
             
-            # Load checkboxes
-            self._reuse_cb.setChecked(sn_config.get("allow_reuse", False))
-            self._reserve_offline_cb.setChecked(sn_config.get("reserve_offline", True))
-            self._in_sequence_cb.setChecked(sn_config.get("enforce_sequential", True))
+            # Map duplicate checking to reuse checkbox (opposite logic)
+            self._reuse_cb.setChecked(not self._config.sn_check_duplicates)
             
-            # Load numeric values
-            self._batch_size_spin.setValue(sn_config.get("batch_size", 10))
-            self._fetch_threshold_spin.setValue(sn_config.get("fetch_threshold", 5))
+            # Map offline queue enabled to reserve offline checkbox
+            self._reserve_offline_cb.setChecked(self._config.offline_queue_enabled)
             
-            # Update start-from display
-            start_from = sn_config.get("start_from_serial")
-            if start_from:
-                self._start_from_label.setText(str(start_from))
-            else:
-                self._start_from_label.setText("(None)")
+            # In-sequence checkbox - not in new schema, default to True
+            self._in_sequence_cb.setChecked(True)
+            
+            # Batch settings - not in new schema, use defaults
+            self._batch_size_spin.setValue(10)
+            self._fetch_threshold_spin.setValue(5)
+            
+            # Start-from display - not in new schema
+            self._start_from_label.setText("(Not configured)")
             
             self._update_status()
             

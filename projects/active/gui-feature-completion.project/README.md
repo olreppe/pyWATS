@@ -1,42 +1,73 @@
 # GUI Feature Completion Project
 
-**Status:** 🚧 IN PROGRESS  
-**Progress:** 0% (Just Created)  
-**Priority:** P2 (Post-Migration Polish)  
-**Timeline:** 1-2 days (9 hours total)  
+**Status:** ✅ Phase 1 Complete - Ready for Phase 2  
+**Progress:** 35% (Phase 1: 20min analysis + 30min implementation = Complete)  
+**Priority:** P1 (Critical - GUI Partially Functional)  
+**Timeline:** 3-4 hours remaining (Phase 2: 2-3h, Phases 3-4: 1-2h)  
 **Created:** February 5, 2026  
+**Analyzed:** February 6, 2026  
+**Phase 1 Complete:** February 6, 2026 16:15  
 **Owner:** Development Team
 
 ---
 
 ## 📋 Objective
 
-Complete the deferred features from GUI migration that require async event loop integration. These are polish features that enhance user experience but aren't blocking for release.
+**UPDATED:** Fix critical GUI configuration save errors discovered during testing.
 
-**Scope:** Short-term deferred features only (9 hours estimated)
+**Root Cause:** GUI pages migrated from old GUI without adapting to new ClientConfig schema. Pages expect different field names and types than ClientConfig provides.
 
----
+**Original Objective:** Complete deferred features (async event loop, connection testing, report submission)  
+**Current Objective:** Fix critical blockers preventing GUI from working at all
 
-## 🎯 Deliverables
+**Status Change:** Escalated from P2 (polish) to P1 (critical) after testing revealed save errors
+Phase 1: Critical Blockers (~1 hour) ⏸️ AWAITING USER DECISION
+**C1:** Fix converter migration type error (10 min)  
+**C3:** Add ConnectionMonitor callback (5 min)  
+**C4:** Integrate qasync for event loop (30 min)  
+**Benefit:** GUI launches without errors, async operations work
 
-### 1. Async Event Loop Integration (~2 hours)
-**Goal:** Integrate qasync for GUI async operations  
-**Files:** ConnectionPage, main GUI event loop  
-**Benefit:** Enable async API calls from GUI without blocking
+### Phase 2: Schema Mapping (~2-3 hours) ⏸️ PENDING
+**C2:** Map old schema fields to new  
+**Files:** setup.py, sn_handler.py, software.py  
+**Benefit:** All pages can save configuration without KeyError
 
-### 2. Report Submission (~4 hours)
-**Goal:** Implement QueueManager send callback  
+### Phase 3: Reliability Components (~1 hour) ⏸️ PENDING
+**Goal:** Complete QueueManager, AsyncAPIRunner error handling  
+**Benefit:** Robust async operations, never lose reports
+
+### Phase 4: Testing (~1-2 hours) ⏸️ PENDING
+**Goal:** Validate all fixes with 5 test cases  
+**Benefit:** Confidence in GUI reliability
+
+### Analysis Deliverables ✅ COMPLETE
+- ✅ [ARCHITECTURE_ANALYSIS.md](ARCHITECTURE_ANALYSIS.md) - Full stack analysis
+- ✅ [FIX_PLAN.md](FIX_PLAN.md) - Implementation roadmap
+- ✅ [EXECUTIVE_SUMMARY.md](EXECUTIVE_SUMMARY.md) - Quick reference
 **Files:** QueueManager, ConnectionPage  
 **Benefit:** Users can submit test reports directly from GUI
 
-### 3. Connection Testing (~3 hours)
-**Goal:** Add API connection validation in ConnectionPage  
-**Files:** ConnectionPage, AsyncAPIRunner  
-**Benefit:** Users can verify WATS API connection from GUI
+### Minimum (Must Have) ⏸️ PENDING
+- [ ] GUI launches without errors (C3 fix)
+- [ ] Config saves without crashes (C1, C2 fixes)
+- [ ] Migration from old GUI works (C1 fix)
+- [ ] Async operations work (C4 fix)
 
----
+### Target (Should Have) ⏸️ PENDING
+- [ ] All pages save/load correctly (Phase 2)
+- [ ] Multi-instance works (test both client A and B)
+- [ ] Offline queue never loses reports (Phase 3)
 
-## 📊 Success Criteria
+### Stretch (Nice to Have) ⏸️ PENDING
+- [ ] All reliability components complete
+- [ ] Integration tests pass
+- [ ] Type-safe attribute access throughout
+
+### Analysis Complete ✅
+- [x] Root cause identified
+- [x] All issues cataloged with severity
+- [x] Implementation plan created
+- [x] Fix estimates documen
 
 - [ ] qasync integrated and working with PySide6 event loop
 - [ ] Connection test button functional in ConnectionPage

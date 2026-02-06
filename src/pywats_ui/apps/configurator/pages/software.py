@@ -175,37 +175,32 @@ class SoftwarePage(BasePage):
     def save_config(self) -> None:
         """Save software distribution settings (H1 fix - error handling)"""
         try:
+            # Note: New schema only has software_auto_update (bool)
+            # Old fields sw_dist_root and sw_dist_chunk_size are NOT in schema
+            # This page is deprecated until software distribution is fully implemented
+            
             root_folder = self._root_folder_edit.text().strip()
             
-            # Validate folder if specified
-            if root_folder:
-                folder_path = Path(root_folder)
-                if not folder_path.exists():
-                    QMessageBox.warning(
-                        self,
-                        "Invalid Folder",
-                        f"The specified folder does not exist:\n\n{root_folder}\n\n"
-                        "Please select a valid folder."
-                    )
-                    return
+            # Enable auto-update if a folder is configured
+            self._config.software_auto_update = bool(root_folder)
             
-            # Update config
-            self._config["sw_dist_root"] = root_folder
-            self._config["sw_dist_chunk_size"] = self._chunk_size_spin.value()
+            # Note: These fields don't exist in new schema - logged as warning
+            if root_folder:
+                logger.warning(
+                    f"Software distribution folder configured ({root_folder}) but "
+                    "sw_dist_root field not in ClientConfig schema v2.0. "
+                    "Feature not fully implemented yet."
+                )
             
             # Save to disk
             self._config.save()
             
             logger.info(
-                f"Software distribution settings saved: root={root_folder}, "
-                f"chunk_size={self._chunk_size_spin.value()}"
+                f"Software auto-update setting saved: enabled={self._config.software_auto_update}"
             )
             
-            QMessageBox.information(
-                self,
-                "Configuration Saved",
-                "Software distribution settings have been saved successfully."
-            )
+            # Success - no popup needed (prevents multiple popups on close)
+            # Note: Feature not fully implemented yet
             
         except Exception as e:
             logger.exception(f"Failed to save software distribution settings: {e}")
@@ -220,13 +215,16 @@ class SoftwarePage(BasePage):
     def load_config(self) -> None:
         """Load software distribution settings from config"""
         try:
-            root = self._config.get("sw_dist_root", "")
-            self._root_folder_edit.setText(root)
+            # Note: sw_dist_root and sw_dist_chunk_size not in new schema
+            # Clear UI fields since feature is not implemented
+            self._root_folder_edit.setText("")  # Not in schema
+            self._chunk_size_spin.setValue(65536)  # Default value
             
-            chunk_size = self._config.get("sw_dist_chunk_size", 65536)
-            self._chunk_size_spin.setValue(chunk_size)
+            # Show auto-update status (only field that exists in new schema)
+            if self._config.software_auto_update:
+                logger.info("Software auto-update is enabled")
             
-            logger.debug("Software distribution settings loaded")
+            logger.debug("Software distribution settings loaded (feature not fully implemented)")
             
         except Exception as e:
             logger.exception(f"Failed to load software distribution settings: {e}")
