@@ -36,9 +36,14 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
     - **main_window.py**: Fixed ConnectionMonitor signal signature mismatch - _on_connection_status_changed now accepts ConnectionStatus object (resolves TypeError: missing 1 required positional argument 'message')
     - **converters.py**: Removed success popups from converter save actions (UX consistency with other pages)
     - Tests: GUI launches with no TypeError warnings, clean connection status updates
+  - **Phase 4: Documentation & Entry Point Updates**
+    - **cli.py**: Fixed `pywats-client gui` command to launch new Configurator (was broken - tried to import non-existent pywats_client.dashboard)
+    - **main.py**: Fixed Configurator entry point (import name + config loading logic)
+    - **README.md, docs/**: Updated all GUI documentation to reflect new Configurator (config-only tool, not full client app)
+    - **Result**: `pywats-client gui` command now works correctly, all docs accurate
   - **UX Improvements**: Removed all "Configuration Saved" success popups (prevents spam), added ONE consolidated message on window close, service restart note shown once
   - **Logging Improvements**: Log handler now captures DEBUG level (all log events visible in GUI)
-  - **Result**: GUI fully functional and production-ready (2.5 hours, 58% faster than estimate)
+  - **Result**: GUI fully functional and production-ready with complete documentation
 
 ### Improved
 - **Architecture Reliability Fixes**: Comprehensive stability and data integrity improvements across async client architecture
