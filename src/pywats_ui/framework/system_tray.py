@@ -65,7 +65,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         super().__init__(icon, parent)
         
         self._menu = QMenu()
-        self._app_actions: List[Tuple[str, QAction]] = []
+        self._app_items: List[Tuple[str, Callable, Optional[QIcon]]] = []
         
         self.setContextMenu(self._menu)
         self.setToolTip("pyWATS Applications")
@@ -81,17 +81,12 @@ class SystemTrayIcon(QSystemTrayIcon):
             callback: Function to call when menu item is clicked
             icon: Optional icon for the menu item
         """
-        action = QAction(name, self._menu)
-        if icon:
-            action.setIcon(icon)
-        action.triggered.connect(callback)
-        
-        self._app_actions.append((name, action))
+        self._app_items.append((name, callback, icon))
         self._rebuild_menu()
     
     def add_separator(self):
         """Add a separator line to the menu."""
-        self._app_actions.append(("__separator__", None))
+        self._app_items.append(("__separator__", None, None))
         self._rebuild_menu()
     
     def add_quit_action(self, callback: Optional[Callable] = None):
@@ -108,13 +103,20 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.add_application("Quit", callback)
     
     def _rebuild_menu(self):
-        """Rebuild the context menu from current actions."""
+        """Rebuild the context menu from current items."""
         self._menu.clear()
         
-        for name, action in self._app_actions:
+        for item in self._app_items:
+            name = item[0]
             if name == "__separator__":
                 self._menu.addSeparator()
             else:
+                callback = item[1]
+                icon = item[2]
+                action = QAction(name, self._menu)
+                if icon:
+                    action.setIcon(icon)
+                action.triggered.connect(callback)
                 self._menu.addAction(action)
     
     def _on_activated(self, reason: QSystemTrayIcon.ActivationReason):
