@@ -32,6 +32,10 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
     - **api_settings.py**: Removed api_tokens list (not in schema), all fields map directly to ClientConfig
     - **software.py**: Removed sw_dist_root/sw_dist_chunk_size (not in schema), feature marked as not fully implemented
     - Tests: All 11 pages save successfully, no KeyError
+  - **Phase 3: Final Polish**
+    - **main_window.py**: Fixed ConnectionMonitor signal signature mismatch - _on_connection_status_changed now accepts ConnectionStatus object (resolves TypeError: missing 1 required positional argument 'message')
+    - **converters.py**: Removed success popups from converter save actions (UX consistency with other pages)
+    - Tests: GUI launches with no TypeError warnings, clean connection status updates
   - **UX Improvements**: Removed all "Configuration Saved" success popups (prevents spam), added ONE consolidated message on window close, service restart note shown once
   - **Logging Improvements**: Log handler now captures DEBUG level (all log events visible in GUI)
   - **Result**: GUI fully functional and production-ready (2.5 hours, 58% faster than estimate)
