@@ -63,7 +63,7 @@ See [Platform Compatibility Guide](docs/platforms/platform-compatibility.md) for
     - Configure converter priority (1=highest, 10=lowest)
     - Prevents batch uploads from blocking real-time production data
     - Heap-based priority queue with AsyncQueueAdapter
-    - Zero code changes - set priority in config or GUI
+    - Zero code changes - set priority in config or GUI configurator
   - **Security Features** ✅
     - IPC authentication with shared secrets
     - Converter process isolation and sandboxing
@@ -73,12 +73,12 @@ See [Platform Compatibility Guide](docs/platforms/platform-compatibility.md) for
     - Protocol version tracking (2.0+)
     - Config schema versioning (1.0→2.0 auto-upgrade)
     - Queue size limits and concurrent upload control
+  - **GUI Configurator**: Qt-based configuration tool for editing client settings (Windows, macOS, Linux)
+  - **Service Mode**: Background Windows service or Unix daemon
+  - **Headless Mode**: CLI and HTTP API for servers, Raspberry Pi, embedded systems
   - Connection management with multi-instance support
   - Converter configuration and management
   - Report queue management
-  - **GUI Mode**: Qt-based desktop application (Windows, macOS, Linux)
-  - **Service Mode**: Background Windows service or Unix daemon
-  - **Headless Mode**: CLI and HTTP API for servers, Raspberry Pi, embedded systems
 
 ## Installation
 

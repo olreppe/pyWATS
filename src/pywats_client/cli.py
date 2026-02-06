@@ -252,12 +252,11 @@ def status(ctx):
 @cli.command()
 @click.pass_context
 def gui(ctx):
-    """Launch the pyWATS Client GUI dashboard.
+    """Launch the pyWATS Client Configurator GUI.
     
-    Checks for Qt availability and starts the service if not running.
-    Opens the graphical dashboard for configuration and monitoring.
+    Opens the configuration GUI for setting up and managing client configuration.
+    This is a standalone tool - the service does not need to be running.
     """
-    manager: ServiceManager = ctx.obj['manager']
     instance_id = ctx.obj['instance_id']
     
     # Check if Qt is available
@@ -276,32 +275,24 @@ def gui(ctx):
         click.echo("  pip install pywats-api[client]", err=True)
         click.echo("", err=True)
         click.echo("Or use CLI commands instead:", err=True)
-        click.echo("  pywats-client start", err=True)
-        click.echo("  pywats-client status", err=True)
+        click.echo("  pywats-client config show", err=True)
+        click.echo("  pywats-client config set <key> <value>", err=True)
         sys.exit(1)
     
-    # Check if service is running, start if not
-    if not manager.is_running():
-        click.echo("Service not running, starting...")
-        if not manager.start():
-            click.secho("✗ Failed to start service", fg='red', err=True)
-            sys.exit(1)
-        click.secho("✓ Service started", fg='green')
-    
-    # Launch GUI
-    click.echo(f"Launching GUI dashboard (instance: {instance_id})...")
+    # Launch GUI Configurator
+    click.echo(f"Launching configurator GUI (instance: {instance_id})...")
     
     try:
-        # Import and launch the GUI
-        # Note: This will need to be implemented in the actual dashboard module
-        from pywats_client.dashboard import launch_dashboard
+        # Import and launch the configurator GUI
+        from pywats_ui.apps.configurator.main import main as run_configurator
         
-        launch_dashboard(instance_id)
+        run_configurator(instance_id=instance_id)
         
-    except ImportError:
-        click.secho("✗ Dashboard module not found", fg='red', err=True)
+    except ImportError as e:
+        click.secho("✗ Configurator GUI module not found", fg='red', err=True)
         click.echo("", err=True)
-        click.echo("The dashboard module is not available.", err=True)
+        click.echo(f"Import error: {e}", err=True)
+        click.echo("The configurator GUI module is not available.", err=True)
         click.echo("Please ensure pywats-api[client] is properly installed.", err=True)
         sys.exit(1)
     except Exception as e:

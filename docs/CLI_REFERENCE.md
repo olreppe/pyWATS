@@ -123,7 +123,7 @@ pyWATS Client Service Status (instance: default)
 ---
 
 #### `pywats-client gui`
-Launch the GUI dashboard (requires Qt/PySide6).
+Launch the GUI configurator for editing client configuration.
 
 **Example:**
 ```bash
@@ -134,6 +134,12 @@ pywats-client gui
 ```bash
 pip install pywats-api[client]  # Includes Qt/PySide6
 ```
+
+**About the GUI:**
+- The GUI is a configuration-only tool (not a full client application)
+- Edit instance configuration in a visual interface
+- The service does not need to be running to use the configurator
+- Changes are saved to `~/.pywats/instances/<instance_id>/client_config.json`
 
 ---
 

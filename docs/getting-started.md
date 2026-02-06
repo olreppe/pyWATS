@@ -790,63 +790,87 @@ except ValidationError as e:
 
 ---
 
-## Client Installation
+## Configurator GUI (Optional)
 
-### GUI Client (Desktop)
+### What is the Configurator?
 
-#### Prerequisites
+The pyWATS Configurator is a standalone GUI tool for editing client configuration. It provides a visual interface for:
 
-- Python 3.10 or later
-- Qt6 support (Windows, macOS, Linux with display)
+- Server connection settings (URL, API token)
+- Station configuration (name, location, purpose)
+- Serial number handler settings
+- Converter priority and settings
+- Proxy configuration
+- Multi-station mode setup
 
-#### Installation
+### Installation
 
 ```bash
-# Install with client support
+# Install with GUI support
 pip install pywats-api[client]
-
-# Launch GUI
-python -m pywats_client
 ```
 
-Or from command line:
+### Launch the Configurator
 
+**Option 1: Using CLI command**
 ```bash
-pywats-client
+pywats-client gui
 ```
 
-#### First-Time Setup
+**Option 2: Using Python module**
+```bash
+python -m pywats_client.cli gui
+```
 
-1. Launch the client
-2. Go to **Setup** tab
+**Option 3: Direct launch (development)**
+```bash
+python run_client_a.py  # Default instance
+python run_client_b.py  # client_b instance
+```
+
+### Configuration Location
+
+All settings are saved to:
+```
+~/.pywats/instances/<instance_id>/client_config.json
+```
+
+Default instance: `~/.pywats/instances/default/client_config.json`
+
+### Important Notes
+
+- ⚠️ The configurator is for **configuration editing only**
+- ⚠️ It does **not** run or control the client service
+- ⚠️ Use `pywats-client start/stop/status` to manage the service
+- ⚠️ All changes require a service restart to take effect
+
+### Configuration Pages
+
+The configurator includes these pages:
+
+1. **Dashboard** - Quick overview and health status
+2. **Setup** - Server URL, API token, station name
+3. **Connection** - Connection testing and validation
+4. **Serial Numbers** - Serial number handler configuration
+5. **API Settings** - API endpoints and timeouts
+6. **Converters** - File converter priority and settings
+7. **Software** - Software update configuration  
+8. **Location** - Station location metadata
+9. **Proxy** - Network proxy settings
+10. **Logs** - View recent application logs
+11. **About** - Version and system information
+
+### First-Time Setup
+
+1. Launch the configurator: `pywats-client gui`
+2. Go to **Setup** page
 3. Configure:
-   - Server URL: `https://your-wats-server.com`
-   - API Token: Your Base64 token
-   - Station Name: `YOUR-STATION-01`
+   - **Server URL**: `https://your-wats-server.com`
+   - **API Token**: Your Base64-encoded token
+   - **Station Name**: `YOUR-STATION-01`
 4. Click **Save**
-5. Click **Test Connection**
-
-See **[GUI Configuration Guide](../src/pywats_client/GUI_CONFIGURATION.md)** for detailed setup.
-
-#### Using the File Menu
-
-The GUI includes helpful controls in the **File** menu:
-
-**Restart GUI** (Ctrl+R)
-- Restarts only the GUI application
-- Service continues running in the background
-- Configuration is reloaded automatically
-- Useful after GUI code changes during development
-
-**Stop Service** (Ctrl+Shift+S)
-- Sends stop command to the service process
-- Stops all file watching and converter workers
-- GUI remains open but shows [Disconnected] status
-- Useful before making service code changes
-
-**Exit** (Alt+F4)
-- Closes the GUI application
-- Service continues running if started separately
+5. Go to **Connection** page and click **Test Connection**
+6. If successful, start the service: `pywats-client start`
 
 **Window Title Status:**
 - Shows `[Connected]` when service is running
