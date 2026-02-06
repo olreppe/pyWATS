@@ -271,6 +271,30 @@ class AsyncPendingQueue:
         self.state = AsyncPendingQueueState.STOPPED
         logger.info("AsyncPendingQueue stopped")
     
+    async def pause(self) -> None:
+        """
+        Pause the queue (stop accepting new uploads).
+        
+        In-flight uploads will continue. New files will not be processed.
+        Used during graceful shutdown.
+        """
+        if self.state == AsyncPendingQueueState.RUNNING:
+            logger.info("Pausing AsyncPendingQueue (graceful shutdown)...")
+            self.state = AsyncPendingQueueState.PAUSED
+    
+    async def get_active_count(self) -> int:
+        """Get number of currently active uploads"""
+        return len(self._active_uploads)
+    
+    async def get_pending_count(self) -> int:
+        """Get number of pending files waiting to upload"""
+        try:
+            pending_files = list(self.reports_dir.glob(self.FILTER_QUEUED))
+            return len(pending_files)
+        except Exception as e:
+            logger.warning(f"Error counting pending files: {e}")
+            return 0
+    
     # =========================================================================
     # File Watching
     # =========================================================================

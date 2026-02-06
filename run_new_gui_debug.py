@@ -108,14 +108,14 @@ def main():
             config_path = Path.home() / ".pywats" / "instances" / "default" / "client_config.json"
             
             if config_path.exists():
-                config = ClientConfig.load_from_file(config_path)
+                config = ClientConfig.load(config_path)
                 logger.info(f"✓ Config loaded from: {config_path}")
             else:
                 logger.info("No existing config found, creating new config")
                 config = ClientConfig(instance_id="default")
                 # Create config directory
                 config_path.parent.mkdir(parents=True, exist_ok=True)
-                # Save to establish config path
+                # Set path and save
                 config._config_path = config_path
                 config.save()
                 logger.info(f"✓ New config created at: {config_path}")

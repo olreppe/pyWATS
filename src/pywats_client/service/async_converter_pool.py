@@ -308,6 +308,25 @@ class AsyncConverterPool:
         self._running = False
         logger.info("AsyncConverterPool stopped")
     
+    async def stop_accepting(self) -> None:
+        """
+        Stop accepting new conversions.
+        
+        In-flight conversions will continue. New files will not be queued.
+        Used during graceful shutdown.
+        """
+        logger.info("AsyncConverterPool stopping new work acceptance (graceful shutdown)...")
+        self._stop_event.set()  # Signal to stop processing new items from queue
+        
+        # Stop file watchers (no new files detected)
+        for observer in self._observers:
+            observer.stop()
+        self._observers.clear()
+    
+    async def get_active_count(self) -> int:
+        """Get number of currently active conversions"""
+        return self._active_count
+    
     async def reload_config(self, config: 'ClientConfig') -> None:
         """
         Reload configuration.

@@ -1,35 +1,28 @@
-"""Side-by-side GUI test fixture for comparing old (A) and new (B) GUIs.
+"""Dual instance test fixture for Client A (master) and Client B (secondary).
 
 Usage:
-    python test_both_guis.py                  # Launch both GUIs with default instance
-    python test_both_guis.py --instance dev   # Launch with specific instance name
+    python test_both_guis.py              # Launch both instances side-by-side
+    python test_both_guis.py --only-a     # Launch only Client A
+    python test_both_guis.py --only-b     # Launch only Client B
 
 Features:
-- Client A: Old GUI (pywats_client/gui) - Production stable version
-- Client B: New GUI (pywats_ui/apps/configurator) - Improved reliability version
-- Token sharing: Client B reads token from Client A if B's token is missing
-- Separate config instances to prevent conflicts
-- Easy comparison of features and reliability
+- Client A: Master instance (instance_id="default") - Primary testing instance
+- Client B: Secondary instance (instance_id="client_b") - Multi-instance testing
+- Token sharing: Client B inherits token from Client A if B's token is missing
+- Separate configs to prevent conflicts
+- Instance-isolated: queue, logs, reports, converters
+- Easy multi-instance testing
 """
 
 import sys
-import asyncio
 import logging
 import argparse
+import subprocess
 from pathlib import Path
 from typing import Optional
 
 # PySide6 imports
 from PySide6.QtWidgets import QApplication, QMessageBox
-from PySide6.QtCore import Qt
-
-# qasync for async support
-try:
-    import qasync
-except ImportError:
-    print("Error: qasync is required but not installed.")
-    print("Install with: pip install qasync")
-    sys.exit(1)
 
 # pyWATS imports
 from pywats_client.core.config import ClientConfig
@@ -46,63 +39,67 @@ def setup_logging():
     )
 
 
-def get_old_gui_token(instance_name: str) -> Optional[str]:
+def get_client_a_token() -> Optional[str]:
     """
-    Get token from old GUI (Client A) configuration.
+    Get token from Client A (master) configuration.
     
-    Args:
-        instance_name: Instance name for the config
-        
     Returns:
         Token string if found, None otherwise
     """
     try:
-        # Load old GUI config
-        config_a = ClientConfig(instance_id=instance_name)
-        token = config_a.api_token
+        # Load Client A config (instance_id="default")
+        config_path = Path.home() / ".pywats" / "instances" / "default" / "client_config.json"
+        if not config_path.exists():
+            logger.info("Client A config not found")
+            return None
+            
+        config_a = ClientConfig.load(config_path)
+        token = getattr(config_a, 'api_token', None)
         
         if token:
-            logger.info(f"✓ Found token in Client A config (length: {len(token)})")
+            logger.info(f"Found token in Client A config (length: {len(token)})")
             return token
         else:
-            logger.info("ℹ No token found in Client A config")
+            logger.info("No token found in Client A config")
             return None
     except Exception as e:
         logger.warning(f"Could not read Client A config: {e}")
         return None
 
 
-def share_token_to_new_gui(instance_name: str) -> bool:
+def share_token_to_client_b() -> bool:
     """
-    Share token from old GUI (A) to new GUI (B) if B is missing one.
+    Share token from Client A to Client B if B is missing one.
     
-    Args:
-        instance_name: Instance name for configs
-        
     Returns:
         True if token was shared, False otherwise
     """
     try:
-        # Load new GUI config
-        config_b = ClientConfig(instance_id=f"{instance_name}_new")
+        # Load Client B config
+        config_path_b = Path.home() / ".pywats" / "instances" / "client_b" / "client_config.json"
+        if not config_path_b.exists():
+            logger.info("Client B config not found, will create on first launch")
+            return False
+            
+        config_b = ClientConfig.load(config_path_b)
         
         # Check if B already has a token
-        token_b = config_b.api_token
+        token_b = getattr(config_b, 'api_token', None)
         if token_b:
-            logger.info("✓ Client B already has a token")
+            logger.info("Client B already has a token")
             return False
         
         # Get token from A
-        token_a = get_old_gui_token(instance_name)
+        token_a = get_client_a_token()
         if not token_a:
-            logger.info("ℹ No token to share from Client A")
+            logger.info("No token to share from Client A")
             return False
         
         # Share token to B
         config_b.api_token = token_a
         config_b.save()
         
-        logger.info("✓ Token shared from Client A to Client B")
+        logger.info("Token shared from Client A to Client B")
         return True
         
     except Exception as e:
@@ -110,35 +107,41 @@ def share_token_to_new_gui(instance_name: str) -> bool:
         return False
 
 
-def launch_old_gui(instance_name: str, event_loop) -> bool:
+def launch_client_a() -> bool:
     """
-    Launch old GUI (Client A) in a separate window.
+    Launch Client A (master instance) in a separate window.
     
-    Args:
-        instance_name: Instance name for the config
-        event_loop: qasync event loop
-        
     Returns:
         True if launched successfully
     """
     try:
-        logger.info("Launching Client A (Old GUI)...")
+        logger.info("Launching Client A (Master Instance)...")
         
-        # Import old GUI main window
-        from pywats_client.gui.main_window import MainWindow
+        # Import new GUI main window
+        from pywats_ui.apps.configurator.main_window import ConfiguratorMainWindow
         
-        # Load config for Client A
-        config_a = ClientConfig(instance_id=instance_name)
+        # Load or create config for Client A (instance_id="default")
+        instance_id = "default"
+        config_path = Path.home() / ".pywats" / "instances" / instance_id / "client_config.json"
+        
+        if config_path.exists():
+            config_a = ClientConfig.load(config_path)
+        else:
+            config_a = ClientConfig(instance_id=instance_id)
+            config_a.instance_name = "Client A (Master)"
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            config_a._config_path = config_path
+            config_a.save()
         
         # Create and show window
-        window_a = MainWindow(config=config_a)
-        window_a.setWindowTitle(f"pyWATS Client A (Original) - {instance_name}")
+        window_a = ConfiguratorMainWindow(config=config_a)
+        window_a.setWindowTitle(f"pyWATS Client A (Master) - {instance_id}")
         window_a.show()
         
         # Position on left side of screen
         window_a.move(50, 50)
         
-        logger.info("✓ Client A launched successfully")
+        logger.info("Client A launched successfully")
         return True
         
     except Exception as e:
@@ -146,41 +149,53 @@ def launch_old_gui(instance_name: str, event_loop) -> bool:
         QMessageBox.critical(
             None,
             "Launch Error",
-            f"Failed to launch old GUI (Client A):\n\n{e}"
+            f"Failed to launch Client A:\n\n{e}"
         )
         return False
 
 
-def launch_new_gui(instance_name: str, event_loop) -> bool:
+def launch_client_b() -> bool:
     """
-    Launch new GUI (Client B) in a separate window.
+    Launch Client B (secondary instance) in a separate window.
     
-    Args:
-        instance_name: Instance name for the config
-        event_loop: qasync event loop
-        
     Returns:
         True if launched successfully
     """
     try:
-        logger.info("Launching Client B (New GUI)...")
+        logger.info("Launching Client B (Secondary Instance)...")
         
         # Import new GUI main window
         from pywats_ui.apps.configurator.main_window import ConfiguratorMainWindow
         
-        # Load config for Client B (separate instance to avoid conflicts)
-        config_b = ClientConfig(instance_id=f"{instance_name}_new")
-        config_b.instance_name = f"{instance_name} (New)"
+        # Load or create config for Client B (instance_id="client_b")
+        instance_id = "client_b"
+        config_path = Path.home() / ".pywats" / "instances" / instance_id / "client_config.json"
+        
+        if config_path.exists():
+            config_b = ClientConfig.load(config_path)
+        else:
+            config_b = ClientConfig(instance_id=instance_id)
+            config_b.instance_name = "Client B (Secondary)"
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            config_b._config_path = config_path
+            
+            # Token sharing: inherit from Client A if B has no token
+            token_a = get_client_a_token()
+            if token_a:
+                config_b.api_token = token_a
+                logger.info("Inherited API token from Client A")
+            
+            config_b.save()
         
         # Create and show window
         window_b = ConfiguratorMainWindow(config=config_b)
-        window_b.setWindowTitle(f"pyWATS Client B (Improved) - {instance_name}")
+        window_b.setWindowTitle(f"pyWATS Client B (Secondary) - {instance_id}")
         window_b.show()
         
         # Position on right side of screen (offset from A)
         window_b.move(700, 50)
         
-        logger.info("✓ Client B launched successfully")
+        logger.info("Client B launched successfully")
         return True
         
     except Exception as e:
@@ -188,7 +203,7 @@ def launch_new_gui(instance_name: str, event_loop) -> bool:
         QMessageBox.critical(
             None,
             "Launch Error",
-            f"Failed to launch new GUI (Client B):\n\n{e}"
+            f"Failed to launch Client B:\n\n{e}"
         )
         return False
 
@@ -197,12 +212,17 @@ def main():
     """Main entry point"""
     # Parse arguments
     parser = argparse.ArgumentParser(
-        description="Launch old (A) and new (B) GUIs side-by-side for comparison"
+        description="Launch Client A (master) and Client B (secondary) side-by-side"
     )
     parser.add_argument(
-        "--instance",
-        default="default",
-        help="Instance name for configurations (default: 'default')"
+        "--only-a",
+        action="store_true",
+        help="Launch only Client A (master instance)"
+    )
+    parser.add_argument(
+        "--only-b",
+        action="store_true",
+        help="Launch only Client B (secondary instance)"
     )
     parser.add_argument(
         "--no-token-share",
@@ -214,59 +234,61 @@ def main():
     # Setup logging
     setup_logging()
     
-    logger.info("="*60)
-    logger.info("pyWATS Side-by-Side GUI Test Fixture")
-    logger.info("="*60)
-    logger.info(f"Instance: {args.instance}")
-    logger.info(f"Client A: Old GUI (pywats_client.gui)")
-    logger.info(f"Client B: New GUI (pywats_ui.apps.configurator)")
-    logger.info("="*60)
+    logger.info("="*80)
+    logger.info("pyWATS Dual Instance Test Fixture")
+    logger.info("="*80)
+    logger.info("Client A: Master instance (instance_id='default')")
+    logger.info("Client B: Secondary instance (instance_id='client_b')")
+    logger.info("="*80)
     
     # Create Qt application
     app = QApplication(sys.argv)
     
-    # Enable high DPI scaling
-    app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
-    app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
-    
-    # Setup async event loop
-    event_loop = qasync.QEventLoop(app)
-    asyncio.set_event_loop(event_loop)
-    
     # Share token from A to B if enabled
-    if not args.no_token_share:
+    if not args.no_token_share and not args.only_a:
         logger.info("\nChecking token sharing...")
-        shared = share_token_to_new_gui(args.instance)
+        shared = share_token_to_client_b()
         if shared:
-            logger.info("✓ Token sharing complete\n")
+            logger.info("Token sharing complete\n")
         else:
-            logger.info("ℹ Token sharing not needed\n")
+            logger.info("Token sharing not needed\n")
     
-    # Launch both GUIs
-    success_a = launch_old_gui(args.instance, event_loop)
-    success_b = launch_new_gui(args.instance, event_loop)
+    # Launch GUIs based on arguments
+    success_a = True
+    success_b = True
+    
+    if not args.only_b:
+        success_a = launch_client_a()
+    
+    if not args.only_a:
+        success_b = launch_client_b()
     
     if not success_a and not success_b:
-        logger.error("Failed to launch both GUIs. Exiting.")
+        logger.error("Failed to launch any GUIs. Exiting.")
         return 1
     
-    if not success_a:
+    if not success_a and not args.only_b:
         logger.warning("Client A failed to launch, but Client B is running")
     
-    if not success_b:
+    if not success_b and not args.only_a:
         logger.warning("Client B failed to launch, but Client A is running")
     
-    logger.info("\n" + "="*60)
-    logger.info("Both GUIs launched successfully!")
-    logger.info("Compare features, reliability, and UI improvements.")
-    logger.info("="*60 + "\n")
+    logger.info("\n" + "="*80)
+    if args.only_a:
+        logger.info("Client A launched successfully!")
+    elif args.only_b:
+        logger.info("Client B launched successfully!")
+    else:
+        logger.info("Both instances launched successfully!")
+    logger.info("="*80 + "\n")
     
     # Run event loop
-    try:
-        with event_loop:
-            event_loop.run_forever()
-    except KeyboardInterrupt:
-        logger.info("\nShutting down...")
+    return app.exec()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
     
     return 0
 

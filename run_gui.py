@@ -1,16 +1,24 @@
 #!/usr/bin/env python
 """
-Start pyWATS GUI with test Client A credentials.
+Start pyWATS GUI (New Configurator) with Client A credentials.
+
+This launcher uses the new GUI (pywats_ui) for Client A testing.
+The old GUI has been removed as part of the migration.
+
+For dual instance testing, use:
+- run_client_a.py - Client A (master instance)
+- run_client_b.py - Client B (secondary instance)  
+- test_both_guis.py - Both instances side-by-side
 """
 import sys
 from pathlib import Path
 
-# Add src to path so we can import pywats_client
+# Add src to path so we can import pywats modules
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from PySide6.QtWidgets import QApplication
 from pywats_client.core.config import ClientConfig
-from pywats_client.core.connection_config import ConnectionConfig, ConnectionState
-from pywats_client.gui.app import run_gui
+from pywats_ui.apps.configurator.main_window import ConfiguratorMainWindow
 
 if __name__ == "__main__":
     # Load Client A test config
@@ -20,21 +28,10 @@ if __name__ == "__main__":
         print(f"Loading test config: {config_path.name}")
         try:
             config = ClientConfig.load(config_path)
-            print(f"✓ Config loaded")
+            print(f"Config loaded")
             print(f"  - Service: {config.service_address}")
             print(f"  - Station: {config.station_name}")
             print(f"  - Instance: {config.instance_id}")
-            
-            # Set up connection config with credentials
-            connection = ConnectionConfig(
-                server_url=config.service_address,
-                username="test_user",
-                token_encrypted=config.api_token,  # Store token directly
-                connection_state=ConnectionState.CONNECTED.value
-            )
-            config.connection = connection
-            
-            print(f"✓ Connection config prepared (authenticated)")
             print()
             print("Starting GUI with Client A credentials...")
         except Exception as e:
@@ -43,9 +40,19 @@ if __name__ == "__main__":
             traceback.print_exc()
             config = None
     else:
-        print(f"Config not found at {config_path}")
-        config = None
+        print(f"Config not found at {config_path}, using default")
+        config = ClientConfig(instance_id="default")
     
-    # Start GUI with loaded config
-    exit_code = run_gui(config=config) if config else run_gui()
+    # Create Qt application
+    app = QApplication(sys.argv)
+    app.setApplicationName("pyWATS")
+    app.setOrganizationName("pyWATS")
+    
+    # Create main window with config
+    window = ConfiguratorMainWindow(config=config)
+    window.setWindowTitle("pyWATS Configurator (Client A)")
+    window.show()
+    
+    # Start event loop
+    exit_code = app.exec()
     sys.exit(exit_code)
