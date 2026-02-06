@@ -11,6 +11,7 @@ from pywats_client.core.event_bus import event_bus as EventBus
 from pywats_ui.framework.async_api_runner import AsyncAPIRunner
 from pywats_ui.framework.error_mixin import ErrorHandlingMixin
 from pywats_ui.framework.base_page import BasePage
+from pywats_ui.framework.system_tray import SystemTrayIcon, create_default_icon
 
 # Import reliability components
 from pywats_ui.framework.reliability import (
@@ -35,6 +36,8 @@ __all__ = [
     'AsyncAPIRunner',
     'ErrorHandlingMixin',
     'BasePage',
+    'SystemTrayIcon',
+    'create_default_icon',
     
     # Reliability components (offline-capable apps)
     'QueueManager',

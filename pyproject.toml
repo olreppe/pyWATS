@@ -95,8 +95,12 @@ Changelog = "https://github.com/olreppe/pyWATS/blob/main/CHANGELOG.md"
 
 [project.scripts]
 pywats-client = "pywats_client.__main__:main"
+pywats-launcher = "pywats_ui.launcher:main"
 pywats-aichat = "pywats_ui.apps.aichat.main:main"
 pywats-configurator = "pywats_ui.apps.configurator.main:main"
+pywats-yield-monitor = "pywats_ui.apps.yield_monitor.main:main"
+pywats-package-manager = "pywats_ui.apps.package_manager.main:main"
+pywats-client-monitor = "pywats_ui.apps.client_monitor.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
