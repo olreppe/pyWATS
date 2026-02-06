@@ -418,7 +418,108 @@ class ClientConfig:
             raise KeyError(f"Config key not found: {key}")
     
     def __setitem__(self, key: str, value: Any) -> None:
-        """Dict-style set: config['api_token'] = 'xxx'"""
+        """Dict-style set with validation: config['api_token'] = 'xxx'
+        
+        H4 Fix: Add type checking and value validation to prevent config corruption.
+        
+        Args:
+            key: Config attribute name
+            value: Value to set
+            
+        Raises:
+            KeyError: If key doesn't exist in config schema
+            TypeError: If value type doesn't match field type
+            ValueError: If value is invalid (e.g., negative number for positive field)
+        """
+        # Check if key exists in schema
+        if key not in self.__dataclass_fields__:
+            raise KeyError(
+                f"Invalid config key: '{key}'. Key not found in ClientConfig schema. "
+                f"Use only defined config fields."
+            )
+        
+        # Get field metadata for validation
+        field_info = self.__dataclass_fields__[key]
+        field_type = field_info.type
+        
+        # Type validation
+        # Handle Optional types (e.g., Optional[str])
+        if hasattr(field_type, '__origin__'):
+            # Optional[X] or Union[X, None]
+            if field_type.__origin__ is Union:
+                # Get the non-None type from Union
+                actual_types = [t for t in field_type.__args__ if t is not type(None)]
+                if value is not None and actual_types:
+                    field_type = actual_types[0]  # Use first non-None type
+        
+        # Validate type (allow None for Optional fields)
+        if value is not None:
+            # Basic type checking
+            if field_type in (str, int, float, bool):
+                if not isinstance(value, field_type):
+                    raise TypeError(
+                        f"Invalid type for '{key}': expected {field_type.__name__}, "
+                        f"got {type(value).__name__}"
+                    )
+            elif field_type == List[ConverterConfig]:
+                if not isinstance(value, list):
+                    raise TypeError(f"'{key}' must be a list")
+            elif field_type == List[StationPreset]:
+                if not isinstance(value, list):
+                    raise TypeError(f"'{key}' must be a list")
+            elif field_type == ProxyConfig:
+                if not isinstance(value, (ProxyConfig, dict)):
+                    raise TypeError(f"'{key}' must be ProxyConfig or dict")
+        
+        # Value range validation for specific fields
+        if isinstance(value, (int, float)):
+            # Positive-only fields
+            if key in ['max_concurrent_uploads', 'max_queue_size', 'cache_max_size', 
+                       'sync_interval_seconds', 'retry_interval_seconds', 'max_retry_attempts',
+                       'metrics_port', 'api_port', 'proxy_port', 'sn_start', 'sn_padding']:
+                if value < 0:
+                    raise ValueError(f"'{key}' must be >= 0, got {value}")
+            
+            # Percentage fields (0-100)
+            if key in ['yield_threshold']:
+                if not (0.0 <= value <= 100.0):
+                    raise ValueError(f"'{key}' must be between 0.0 and 100.0, got {value}")
+            
+            # Port numbers (1-65535)
+            if key in ['metrics_port', 'api_port', 'proxy_port']:
+                if not (1 <= value <= 65535):
+                    raise ValueError(f"'{key}' must be a valid port (1-65535), got {value}")
+        
+        # Enum validation for specific fields
+        if key == 'log_level' and isinstance(value, str):
+            valid_levels = [e.value for e in LogLevel]
+            if value not in valid_levels:
+                raise ValueError(
+                    f"Invalid log_level: '{value}'. Must be one of {valid_levels}"
+                )
+        
+        if key == 'sn_mode' and isinstance(value, str):
+            valid_modes = ["Manual Entry", "Auto-increment", "Barcode Scanner", "External Source"]
+            if value not in valid_modes:
+                raise ValueError(
+                    f"Invalid sn_mode: '{value}'. Must be one of {valid_modes}"
+                )
+        
+        if key == 'proxy_mode' and isinstance(value, str):
+            valid_modes = ["none", "system", "manual"]
+            if value not in valid_modes:
+                raise ValueError(
+                    f"Invalid proxy_mode: '{value}'. Must be one of {valid_modes}"
+                )
+        
+        if key == 'station_name_source' and isinstance(value, str):
+            valid_sources = ["hostname", "config", "manual"]
+            if value not in valid_sources:
+                raise ValueError(
+                    f"Invalid station_name_source: '{value}'. Must be one of {valid_sources}"
+                )
+        
+        # All validation passed - set the value
         setattr(self, key, value)
     
     def get_runtime_credentials(self) -> tuple[str, str]:

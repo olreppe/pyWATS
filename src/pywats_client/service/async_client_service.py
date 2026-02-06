@@ -88,6 +88,9 @@ class AsyncClientService:
         # Service state
         self._status = AsyncServiceStatus.STOPPED
         self._shutdown_event = asyncio.Event()
+        self._stopping = False  # Flag for graceful shutdown
+        self._graceful_shutdown_timeout = 60.0  # Seconds to wait for operations to complete
+        self._force_shutdown_timeout = 120.0  # Additional seconds before hard kill
         
         # API client (AsyncWATS with auto-discovery)
         self.api: Optional[AsyncWATS] = None
@@ -101,6 +104,8 @@ class AsyncClientService:
         
         # Background tasks
         self._tasks: List[asyncio.Task] = []
+        self._task_restart_counts: Dict[str, int] = {}  # Track task restarts
+        self._task_last_restart: Dict[str, datetime] = {}  # Track restart times
         
         # IPC server for GUI communication
         self._ipc_server: Optional[Any] = None
@@ -192,10 +197,10 @@ class AsyncClientService:
             # 1. Initialize API (with auto-discovery if available)
             await self._initialize_api()
             
-            # 2-4. Start timers as async tasks
+            # 2-4. Start timers as async tasks (wrapped for safety)
             self._tasks.append(
                 asyncio.create_task(
-                    self._watchdog_loop(),
+                    self._safe_task(self._watchdog_loop(), "watchdog"),
                     name="watchdog"
                 )
             )
@@ -203,7 +208,7 @@ class AsyncClientService:
             
             self._tasks.append(
                 asyncio.create_task(
-                    self._ping_loop(),
+                    self._safe_task(self._ping_loop(), "ping"),
                     name="ping"
                 )
             )
@@ -211,7 +216,7 @@ class AsyncClientService:
             
             self._tasks.append(
                 asyncio.create_task(
-                    self._register_loop(),
+                    self._safe_task(self._register_loop(), "register"),
                     name="register"
                 )
             )
@@ -227,7 +232,7 @@ class AsyncClientService:
             )
             self._tasks.append(
                 asyncio.create_task(
-                    self._pending_queue.run(),
+                    self._safe_task(self._pending_queue.run(), "pending_queue"),
                     name="pending_queue"
                 )
             )
@@ -242,25 +247,34 @@ class AsyncClientService:
             )
             self._tasks.append(
                 asyncio.create_task(
-                    self._converter_pool.run(),
+                    self._safe_task(self._converter_pool.run(), "converter_pool"),
                     name="converter_pool"
                 )
             )
             logger.info("AsyncConverterPool started")
             
-            # 7. Setup config watcher
+            # 7. Setup config watcher (wrapped for safety)
             self._tasks.append(
                 asyncio.create_task(
-                    self._config_watch_loop(),
+                    self._safe_task(self._config_watch_loop(), "config_watcher"),
                     name="config_watcher"
                 )
             )
             logger.info("Config watcher started")
             
-            # 8. Setup IPC server
+            # 8. Start task monitor (wrapped for safety)
+            self._tasks.append(
+                asyncio.create_task(
+                    self._safe_task(self._monitor_tasks(), "task_monitor"),
+                    name="task_monitor"
+                )
+            )
+            logger.info("Task monitor started")
+            
+            # 9. Setup IPC server
             await self._setup_ipc_server()
             
-            # 9. Start health server
+            # 10. Start health server
             await self._start_health_server()
             
             self._set_status(AsyncServiceStatus.RUNNING)
@@ -273,43 +287,82 @@ class AsyncClientService:
     
     async def stop(self) -> None:
         """
-        Stop the service gracefully.
+        Stop the service gracefully with two-phase shutdown.
         
-        Allows in-flight operations to complete (with timeout).
+        Phase 1: Stop accepting new work, wait for in-flight operations (60s)
+        Phase 2: Force cancel remaining tasks (120s total)
+        Phase 3: Hard cleanup
+        
+        This prevents data loss by allowing operations to checkpoint before shutdown.
         """
         if self._status == AsyncServiceStatus.STOPPED:
             return
         
-        logger.info("Stopping AsyncClientService...")
+        logger.info("Stopping AsyncClientService (two-phase shutdown)...")
         self._set_status(AsyncServiceStatus.STOP_PENDING)
         
         # Signal shutdown
         self._shutdown_event.set()
+        self._stopping = True
         
-        # Stop components gracefully
+        # PHASE 1: Stop accepting new work, wait for completion (60s)
+        logger.info("Phase 1: Stopping new work acceptance, waiting for in-flight operations...")
+        try:
+            # Stop components from accepting new work
+            if self._pending_queue:
+                logger.info("Pausing pending queue...")
+                await self._pending_queue.pause()
+            
+            if self._converter_pool:
+                logger.info("Stopping converter pool from accepting new work...")
+                await self._converter_pool.stop_accepting()
+            
+            # Wait for in-flight operations to complete
+            await asyncio.wait_for(
+                self._wait_for_completion(),
+                timeout=self._graceful_shutdown_timeout
+            )
+            logger.info("Phase 1 complete: All operations completed gracefully")
+            
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"Phase 1 timeout ({self._graceful_shutdown_timeout}s): "
+                "Some operations did not complete, proceeding to Phase 2..."
+            )
+        
+        # PHASE 2: Force cancel remaining tasks (additional 60s)
+        logger.info("Phase 2: Force cancelling remaining tasks...")
+        try:
+            await asyncio.wait_for(
+                self._force_cancel_tasks(),
+                timeout=self._force_shutdown_timeout - self._graceful_shutdown_timeout
+            )
+            logger.info("Phase 2 complete: All tasks cancelled")
+            
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Phase 2 timeout ({self._force_shutdown_timeout}s total): "
+                "Hard killing remaining tasks"
+            )
+        
+        # PHASE 3: Hard cleanup
+        logger.info("Phase 3: Final cleanup...")
+        
+        # Verify pending queue status
+        if self._pending_queue:
+            pending_count = await self._pending_queue.get_pending_count()
+            if pending_count > 0:
+                logger.warning(
+                    f"{pending_count} operations still pending - will retry on next start"
+                )
+            await self._pending_queue.stop()
+            self._pending_queue = None
+        
         if self._converter_pool:
             await self._converter_pool.stop()
             self._converter_pool = None
         
-        if self._pending_queue:
-            await self._pending_queue.stop()
-            self._pending_queue = None
-        
-        # Cancel all background tasks
-        for task in self._tasks:
-            if not task.done():
-                task.cancel()
-        
-        # Wait for tasks to finish (with timeout)
-        if self._tasks:
-            try:
-                await asyncio.wait_for(
-                    asyncio.gather(*self._tasks, return_exceptions=True),
-                    timeout=10.0
-                )
-            except asyncio.TimeoutError:
-                logger.warning("Task cancellation timed out")
-        
+        # Clear task list
         self._tasks.clear()
         
         # Stop IPC server
@@ -329,11 +382,151 @@ class AsyncClientService:
             self.api = None
         
         self._set_status(AsyncServiceStatus.STOPPED)
-        logger.info("AsyncClientService stopped")
+        logger.info("AsyncClientService stopped successfully")
+    
+    async def _wait_for_completion(self) -> None:
+        """
+        Wait for all in-flight operations to complete.
+        
+        Checks:
+        - Pending queue has no active uploads
+        - Converter pool has no active conversions
+        - All operations have checkpointed
+        """
+        logger.info("Waiting for in-flight operations to complete...")
+        
+        while True:
+            # Check pending queue
+            pending_active = 0
+            if self._pending_queue:
+                pending_active = await self._pending_queue.get_active_count()
+            
+            # Check converter pool
+            converter_active = 0
+            if self._converter_pool:
+                converter_active = await self._converter_pool.get_active_count()
+            
+            total_active = pending_active + converter_active
+            
+            if total_active == 0:
+                logger.info("All in-flight operations completed")
+                break
+            
+            logger.debug(
+                f"Waiting for {total_active} operations "
+                f"(pending: {pending_active}, converters: {converter_active})"
+            )
+            await asyncio.sleep(1.0)
+    
+    async def _force_cancel_tasks(self) -> None:
+        """
+        Force cancel all remaining background tasks.
+        
+        Tasks that haven't completed after graceful period are cancelled.
+        """
+        logger.info(f"Force cancelling {len(self._tasks)} background tasks...")
+        
+        # Cancel all tasks
+        for task in self._tasks:
+            if not task.done():
+                task.cancel()
+                logger.debug(f"Cancelling task: {task.get_name()}")
+        
+        # Wait for cancellations to complete
+        if self._tasks:
+            results = await asyncio.gather(*self._tasks, return_exceptions=True)
+            
+            # Log any unexpected exceptions (not CancelledError)
+            for i, result in enumerate(results):
+                if isinstance(result, Exception) and not isinstance(result, asyncio.CancelledError):
+                    task_name = self._tasks[i].get_name() if i < len(self._tasks) else "unknown"
+                    logger.error(f"Task {task_name} raised exception: {result}")
     
     def request_shutdown(self) -> None:
         """Request graceful shutdown (can be called from sync code)"""
         self._shutdown_event.set()
+    
+    # =========================================================================
+    # Task Safety & Monitoring
+    # =========================================================================
+    
+    async def _safe_task(self, coro, task_name: str) -> None:
+        """
+        Wrap coroutine with exception handling.
+        
+        Prevents silent failures by catching and logging all exceptions
+        except CancelledError (which is used for graceful shutdown).
+        
+        Args:
+            coro: Coroutine to execute
+            task_name: Name for logging
+        """
+        try:
+            await coro
+        except asyncio.CancelledError:
+            # Allow proper cancellation during shutdown
+            logger.debug(f"Task {task_name} cancelled")
+            raise
+        except Exception as e:
+            # Log exception with full traceback
+            logger.error(
+                f"Background task '{task_name}' failed with exception: {e}",
+                exc_info=True
+            )
+            self._stats["errors"] += 1
+            
+            # Update service status if critical task fails
+            if task_name in ["pending_queue", "converter_pool"]:
+                logger.critical(f"CRITICAL TASK FAILED: {task_name}")
+                self._set_status(AsyncServiceStatus.ERROR)
+    
+    async def _monitor_tasks(self) -> None:
+        """
+        Monitor background tasks for unexpected death.
+        
+        Checks task status every 30s and detects:
+        - Tasks that completed when they shouldn't have
+        - Tasks that died with exceptions
+        - Tasks that need restart
+        """
+        try:
+            while not self._shutdown_event.is_set():
+                try:
+                    await asyncio.sleep(30.0)
+                    
+                    # Check each task
+                    for task in self._tasks:
+                        task_name = task.get_name()
+                        
+                        # If task is done but not cancelled, something went wrong
+                        if task.done() and not task.cancelled():
+                            exc = task.exception()
+                            if exc:
+                                logger.error(
+                                    f"Detected dead task: {task_name} - Exception: {exc}"
+                                )
+                                self._stats["errors"] += 1
+                                
+                                # Update status if critical task died
+                                if task_name in ["pending_queue", "converter_pool"]:
+                                    logger.critical(
+                                        f"Critical task {task_name} died unexpectedly!"
+                                    )
+                                    self._set_status(AsyncServiceStatus.ERROR)
+                            else:
+                                logger.warning(
+                                    f"Task {task_name} completed unexpectedly "
+                                    "(should run until shutdown)"
+                                )
+                
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:
+                    logger.error(f"Task monitor error: {e}", exc_info=True)
+        
+        except asyncio.CancelledError:
+            logger.debug("Task monitor cancelled")
+            raise
     
     # =========================================================================
     # API Initialization

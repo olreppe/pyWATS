@@ -65,12 +65,20 @@ class AsyncIPCServer:
     Runs in service process, handles requests from GUI clients.
     Uses asyncio streams for cross-platform IPC without Qt dependency.
     
+    H6 Fix: Includes timeout handling to prevent hung/slow clients from blocking server.
+    
     Usage:
         server = AsyncIPCServer(instance_id, service)
         await server.start()
         # ... server runs until stopped
         await server.stop()
     """
+    
+    # H6: Timeout configuration (in seconds)
+    CONNECTION_TIMEOUT = 30.0   # Max time to establish connection and send hello
+    READ_TIMEOUT = 30.0         # Max time to read a request from client
+    WRITE_TIMEOUT = 10.0        # Max time to write response to client
+    REQUEST_TIMEOUT = 60.0      # Max time to process a request
     
     def __init__(
         self,
@@ -212,7 +220,7 @@ class AsyncIPCServer:
     
     async def _send_hello(self, writer: asyncio.StreamWriter) -> None:
         """
-        Send hello message to newly connected client.
+        Send hello message to newly connected client with timeout (H6 fix).
         
         Contains protocol version, capabilities, and auth requirements.
         """
@@ -226,27 +234,48 @@ class AsyncIPCServer:
         
         hello_bytes = json.dumps(hello.to_dict()).encode('utf-8')
         hello_length = len(hello_bytes).to_bytes(4, 'big')
-        writer.write(hello_length + hello_bytes)
-        await writer.drain()
-        logger.debug(f"Sent hello: protocol={self._protocol_version}, auth_required={self._secret is not None}")
+        
+        # H6: Add timeout to hello send
+        try:
+            writer.write(hello_length + hello_bytes)
+            await asyncio.wait_for(writer.drain(), timeout=self.WRITE_TIMEOUT)
+            logger.debug(f"Sent hello: protocol={self._protocol_version}, auth_required={self._secret is not None}")
+        except asyncio.TimeoutError:
+            logger.warning(f"Timeout sending hello message after {self.WRITE_TIMEOUT}s")
+            raise
 
     async def _handle_client(
         self,
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter
     ) -> None:
-        """Handle a client connection"""
+        """Handle a client connection with timeouts (H6 fix)"""
         self._clients.append(writer)
         peer = writer.get_extra_info('peername') or 'unknown'
         logger.debug(f"IPC client connected: {peer}")
         
         try:
-            # Send hello message with protocol version and capabilities
-            await self._send_hello(writer)
+            # H6: Send hello message with timeout
+            try:
+                await asyncio.wait_for(
+                    self._send_hello(writer),
+                    timeout=self.CONNECTION_TIMEOUT
+                )
+            except asyncio.TimeoutError:
+                logger.warning(f"Connection timeout for client {peer} during hello")
+                return
             
             while self._running:
-                # Read message length (4 bytes, big-endian)
-                length_bytes = await reader.read(4)
+                # H6: Read message length with timeout
+                try:
+                    length_bytes = await asyncio.wait_for(
+                        reader.read(4),
+                        timeout=self.READ_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"Read timeout for client {peer} (no data after {self.READ_TIMEOUT}s)")
+                    break
+                
                 if not length_bytes:
                     break
                 
@@ -259,22 +288,51 @@ class AsyncIPCServer:
                     logger.warning(f"Message too large: {msg_length}")
                     break
                 
-                # Read message body
-                data = await reader.read(msg_length)
+                # H6: Read message body with timeout
+                try:
+                    data = await asyncio.wait_for(
+                        reader.read(msg_length),
+                        timeout=self.READ_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"Read timeout for client {peer} (message body)")
+                    break
+                
                 if len(data) < msg_length:
                     logger.warning("Incomplete message body")
                     break
                 
-                # Process request
+                # Process request with timeout
                 try:
                     request = json.loads(data.decode('utf-8'))
-                    response = await self._process_request(request, writer)
+                    # H6: Add timeout to request processing
+                    response = await asyncio.wait_for(
+                        self._process_request(request, writer),
+                        timeout=self.REQUEST_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"Request processing timeout for client {peer} after {self.REQUEST_TIMEOUT}s")
+                    response = {
+                        "success": False,
+                        "error": f"Request processing timeout after {self.REQUEST_TIMEOUT}s",
+                        "data": None
+                    }
                 except json.JSONDecodeError as e:
                     response = {
                         "success": False,
                         "error": f"Invalid JSON: {e}",
                         "data": None
                     }
+                
+                # H6: Send response with timeout
+                try:
+                    response_bytes = json.dumps(response).encode('utf-8')
+                    response_length = len(response_bytes).to_bytes(4, 'big')
+                    writer.write(response_length + response_bytes)
+                    await asyncio.wait_for(writer.drain(), timeout=self.WRITE_TIMEOUT)
+                except asyncio.TimeoutError:
+                    logger.warning(f"Write timeout for client {peer} after {self.WRITE_TIMEOUT}s")
+                    break
                 
                 # Send response
                 response_bytes = json.dumps(response).encode('utf-8')
