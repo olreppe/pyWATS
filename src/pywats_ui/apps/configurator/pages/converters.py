@@ -847,7 +847,7 @@ class ConverterEditorDialogV2(QDialog):
                 if self._script_editor.save():
                     self._save_btn.setEnabled(False)
                     self.setWindowTitle(f"Edit: {self.converter_info.name}")
-                    QMessageBox.information(self, "Saved", "Changes saved successfully.")
+                    logger.info(f"Converter '{self.converter_info.name}' saved successfully")
                 else:
                     # H1: Save failed
                     QMessageBox.warning(self, "Save Failed", "Could not save changes.")
@@ -857,7 +857,7 @@ class ConverterEditorDialogV2(QDialog):
                 self.converter_info.file_path.write_text(content, encoding='utf-8')
                 self._save_btn.setEnabled(False)
                 self.setWindowTitle(f"Edit: {self.converter_info.name}")
-                QMessageBox.information(self, "Saved", "Changes saved successfully.")
+                logger.info(f"Converter '{self.converter_info.name}' saved successfully")
         except Exception as e:
             # H1: Handle save errors
             QMessageBox.critical(

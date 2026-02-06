@@ -315,8 +315,17 @@ class ConfiguratorMainWindow(BaseMainWindow):
         else:
             logger.info(f"Would send operation: {operation_type}")
     
-    def _on_connection_status_changed(self, is_connected: bool, message: str) -> None:
-        """Handle connection status change from ConnectionMonitor"""
+    def _on_connection_status_changed(self, status: 'ConnectionStatus') -> None:
+        """Handle connection status change from ConnectionMonitor.
+        
+        Args:
+            status: ConnectionStatus enum value (CONNECTED, DISCONNECTED, CONNECTING, RECONNECTING)
+        """
+        from pywats_ui.framework.reliability.connection_monitor import ConnectionStatus
+        
+        is_connected = (status == ConnectionStatus.CONNECTED)
+        message = f"Connection {status.value}"
+        
         if is_connected:
             self._connection_status_label.setText(f"🟢 {message}")
             self._connection_status_label.setStyleSheet("color: #4ec9b0; padding: 5px;")
