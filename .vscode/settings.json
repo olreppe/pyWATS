@@ -95,5 +95,11 @@
     // Exclude Downloads folder from workspace indexing
     "files.exclude": {
         "**/Downloads/**": true
+    },
+    "chat.tools.terminal.autoApprove": {
+        "/^python -m pywats_ui\\.launcher 2>&1 \\| Select-Object -First 20$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }

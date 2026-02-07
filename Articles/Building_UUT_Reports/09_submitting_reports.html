@@ -1,0 +1,284 @@
+<!-- KEYWORDS: submit, upload, Submit, SubmitOffline, UUT ID, online submission, offline submission, WATS server, retry -->
+
+<h2 id="h_01K9QH9A1B2C3D4E5F6G7H8I9J">Submitting UUT Reports to WATS Server</h2>
+<p>
+    After creating and validating your UUT report, submit it to the WATS server to make it available for analysis and
+    reporting. The API provides several submission options to handle different scenarios.
+</p>
+
+<h2 id="h_01K9QH9A1B2C3D4E5F6G7H8I9K">Basic Submission (Online)</h2>
+<p>
+    The simplest way to submit a report is using the <code>Submit()</code> method when you have an active connection to
+    the WATS server:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">using Virinco.WATS.Interface;
+
+// Create and populate UUT report
+UUTReport uut = api.CreateUUTReport(/* parameters */);
+SequenceCall rootSeq = uut.GetRootSequenceCall();
+// ... add test steps ...
+
+// Set required properties
+uut.StartDateTime = DateTime.Now;
+uut.Status = UUTStatusType.Passed;
+
+// Submit to server
+api.Submit(uut);
+
+Console.WriteLine($"Successfully submitted UUT: {uut.SerialNumber}");</code></pre>
+
+<h2 id="h_01K9QH9A1B2C3D4E5F6G7H8I9L">Getting the UUT ID After Submission</h2>
+<p>
+    When a UUT report is submitted successfully, the WATS server assigns it a unique ID. You can retrieve this ID to
+    reference the report later:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Method 1: Check UUT object after submission
+api.Submit(uut);
+
+if (uut.UUTId.HasValue)
+{
+    long uutId = uut.UUTId.Value;
+    Console.WriteLine($"UUT submitted with ID: {uutId}");
+
+    // Store the ID for later reference
+    SaveUUTIdToLog(uutId, uut.SerialNumber);
+}
+else
+{
+    Console.WriteLine("Warning: UUT submitted but ID not available");
+}
+
+// Method 2: Use Submit() return value (some API versions)
+try
+{
+    api.Submit(uut);
+
+    // UUT.UUTId is populated after successful submission
+    if (uut.UUTId.HasValue)
+    {
+        Console.WriteLine($"Submitted successfully. ID = {uut.UUTId.Value}");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Submission failed: {ex.Message}");
+}</code></pre>
+
+<h2 id="h_01K9QH9A1B2C3D4E5F6G7H8I9M">Handling Submission Errors</h2>
+<p>
+    Always wrap submission in error handling to detect and respond to failures:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">try
+{
+    api.Submit(uut);
+
+    if (uut.UUTId.HasValue)
+    {
+        Console.WriteLine($"✓ UUT {uut.SerialNumber} submitted. ID: {uut.UUTId.Value}");
+        return true;
+    }
+    else
+    {
+        Console.WriteLine($"⚠ UUT {uut.SerialNumber} submitted but no ID returned");
+        return false;
+    }
+}
+catch (System.Net.WebException webEx)
+{
+    Console.WriteLine($"✗ Network error: {webEx.Message}");
+    Console.WriteLine("Check WATS server connection and retry");
+    return false;
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"✗ Submission error: {ex.Message}");
+
+    // Log the error with additional context
+    LogError($"Failed to submit {uut.SerialNumber}: {ex}");
+    return false;
+}</code></pre>
+
+<h2 id="h_01K9QH9A1B2C3D4E5F6G7H8I9N">Submission Options</h2>
+<p>
+    The WATS Client API supports different submission modes to handle network availability:
+</p>
+
+<h3 id="h_01K9QH9A1B2C3D4E5F6G7H8I9O">Online Submission (Default)</h3>
+<p>
+    Submit directly to the WATS server when network connection is available:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Default behavior - submit immediately
+api.Submit(uut);
+
+// Report is immediately available in WATS</code></pre>
+
+<h3 id="h_01K9QH9A1B2C3D4E5F6G7H8I9P">Offline Submission (File-Based)</h3>
+<p>
+    When the WATS server is not reachable (e.g., test station has no network), save the report to a file for later
+    upload:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">using System.IO;
+
+// Submit offline - saves to file instead of uploading
+string offlineFolder = @"C:\WATS\OfflineReports";
+
+try
+{
+    // Ensure offline folder exists
+    Directory.CreateDirectory(offlineFolder);
+
+    // Submit offline - creates .wats file
+    string filePath = Path.Combine(offlineFolder, $"{uut.SerialNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.wats");
+
+    api.SubmitOffline(uut, filePath);
+
+    Console.WriteLine($"✓ Report saved offline: {filePath}");
+    Console.WriteLine("File will be submitted when WATS Client connects to server");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"✗ Failed to save offline report: {ex.Message}");
+}</code></pre>
+
+<h3 id="h_01K9QH9A1B2C3D4E5F6G7H8I9Q">Automatic Offline File Processing</h3>
+<p>
+    When using the WATS Client, offline files are automatically processed:
+</p>
+<ol>
+    <li>Your converter saves reports as .wats files in the offline folder</li>
+    <li>WATS Client monitors this folder</li>
+    <li>When network connectivity is restored, WATS Client automatically submits the files</li>
+    <li>Successfully submitted files are moved to a "completed" subfolder</li>
+    <li>Failed submissions remain in the folder for retry</li>
+</ol>
+
+<pre class="wysiwyg-code-block"><code class="language-auto">// Configure WATS Client to monitor offline folder
+// (configured in WATS Client settings, not in code)
+
+// Your converter just saves files:
+api.SubmitOffline(uut, offlineFilePath);
+
+// WATS Client handles the rest automatically</code></pre>
+
+<h2 id="h_01K9QH9A1B2C3D4E5F6G7H8I9R">Checking Submission Status</h2>
+<p>
+    Determine if submission was successful:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">public bool SubmitWithRetry(TDM api, UUTReport uut, int maxRetries = 3)
+{
+    for (int attempt = 1; attempt <= maxRetries; attempt++)
+    {
+        try
+        {
+            api.Submit(uut);
+
+            // Check if submission succeeded
+            if (uut.UUTId.HasValue)
+            {
+                Console.WriteLine($"✓ Success on attempt {attempt}. UUT ID: {uut.UUTId.Value}");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"⚠ Attempt {attempt}: Submitted but no ID returned");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ Attempt {attempt} failed: {ex.Message}");
+
+            if (attempt < maxRetries)
+            {
+                Console.WriteLine($"Retrying in 2 seconds...");
+                System.Threading.Thread.Sleep(2000);
+            }
+        }
+    }
+
+    Console.WriteLine($"✗ All {maxRetries} attempts failed. Saving offline...");
+
+    // Fall back to offline submission
+    try
+    {
+        string offlinePath = $@"C:\WATS\Offline\{uut.SerialNumber}.wats";
+        api.SubmitOffline(uut, offlinePath);
+        Console.WriteLine($"✓ Saved offline: {offlinePath}");
+        return true;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"✗ Offline save also failed: {ex.Message}");
+        return false;
+    }
+}</code></pre>
+
+<h2 id="h_01K9QH9A1B2C3D4E5F6G7H8I9S">Best Practices for Submission</h2>
+<ul>
+    <li>Always use try-catch when submitting reports</li>
+    <li>Check <code>uut.UUTId.HasValue</code> to verify successful submission</li>
+    <li>Implement offline fallback for production test stations</li>
+    <li>Log submission results with timestamps and serial numbers</li>
+    <li>Use retry logic with exponential backoff for network errors</li>
+    <li>Monitor offline folder size to prevent disk space issues</li>
+    <li>Validate reports before submission to catch errors early</li>
+</ul>
+
+<h2 id="h_01K9QH9A1B2C3D4E5F6G7H8I9T">Complete Submission Example</h2>
+<pre class="wysiwyg-code-block"><code class="language-auto">using System;
+using System.IO;
+using Virinco.WATS.Interface;
+
+public bool ProcessAndSubmitUUTReport(TDM api, UUTReport uut)
+{
+    // Validate before submitting
+    if (!api.ValidateForSubmit(uut))
+    {
+        Console.WriteLine("✗ Report failed validation");
+        return false;
+    }
+
+    // Try online submission first
+    try
+    {
+        api.Submit(uut);
+
+        if (uut.UUTId.HasValue)
+        {
+            Console.WriteLine($"✓ Submitted: {uut.SerialNumber} → UUT ID {uut.UUTId.Value}");
+
+            // Log success
+            File.AppendAllText(@"C:\WATS\submission_log.txt",
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss},{uut.SerialNumber},{uut.UUTId.Value},SUCCESS\n");
+
+            return true;
+        }
+    }
+    catch (System.Net.WebException)
+    {
+        Console.WriteLine("⚠ Server not reachable. Saving offline...");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"✗ Submission error: {ex.Message}");
+    }
+
+    // Fallback to offline
+    try
+    {
+        string offlineFolder = @"C:\WATS\Offline";
+        Directory.CreateDirectory(offlineFolder);
+
+        string fileName = $"{uut.SerialNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.wats";
+        string filePath = Path.Combine(offlineFolder, fileName);
+
+        api.SubmitOffline(uut, filePath);
+        Console.WriteLine($"✓ Saved offline: {filePath}");
+
+        return true;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"✗ Critical: Cannot submit online OR offline: {ex.Message}");
+        return false;
+    }
+}</code></pre>

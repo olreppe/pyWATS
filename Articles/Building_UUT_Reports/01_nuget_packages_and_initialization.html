@@ -1,0 +1,70 @@
+<!-- KEYWORDS: NuGet, installation, setup, API, initialization, WATS Client, .NET Framework, .NET Core, getting started, configure -->
+
+<h2 id="h_01K9QH1A1B2C3D4E5F6G7H8I9J">Installing the WATS Client API NuGet Package</h2>
+<p>
+    The WATS Client API is distributed as NuGet packages, with different packages for different .NET versions. Choose
+    the package that matches your project's target framework.
+</p>
+
+<h3 id="h_01K9QH1A1B2C3D4E5F6G7H8I9K">NuGet Packages</h3>
+<p><strong>For .NET Core, .NET 6, .NET 8, and newer:</strong></p>
+<pre
+    class="wysiwyg-code-block"><code class="language-auto">Install-Package Virinco.WATS.ClientAPI -Version 7.*</code></pre>
+
+<p><strong>For .NET Framework 4.7.2 and 4.8:</strong></p>
+<pre class="wysiwyg-code-block"><code class="language-auto">Install-Package WATS.Client -Version 6.*</code></pre>
+
+<p>
+    <strong>Important:</strong> The package name is different for .NET Framework vs. .NET Core/8+:
+</p>
+<ul>
+    <li>.NET Core/8+: <code>Virinco.WATS.ClientAPI</code></li>
+    <li>.NET Framework 4.8: <code>WATS.Client</code></li>
+</ul>
+
+<h2 id="h_01K9QH1A1B2C3D4E5F6G7H8I9L">Initializing the WATS Client API</h2>
+<p>
+    Before you can create and submit UUT reports, you must initialize the WATS Client API. The API provides the
+    <code>TDM</code> class (Test Data Model) which is your main interface for all operations.
+</p>
+
+<h3 id="h_01K9QH1A1B2C3D4E5F6G7H8I9M">Basic Initialization</h3>
+<p>Create and initialize the API client:</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">using Virinco.WATS.Interface;
+
+// Create the API instance
+TDM api = new TDM();
+
+// Initialize in mock mode (for testing without server)
+api.InitializeAPI(true);  // true = mock mode
+
+// Initialize in production mode
+api.InitializeAPI(false); // false = production mode</code></pre>
+
+<h3 id="h_01K9QH1A1B2C3D4E5F6G7H8I9N">Validation Mode</h3>
+<p>
+    Set the validation mode to control how the API handles data that exceeds database limits:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// AutoTruncate: Automatically truncate strings that exceed database limits
+api.ValidationMode = ValidationModeType.AutoTruncate;
+
+// Strict: Throw exception if data exceeds limits
+api.ValidationMode = ValidationModeType.Strict;</code></pre>
+<p>
+    <strong>Recommendation:</strong> Use <code>AutoTruncate</code> to prevent submission failures due to unexpectedly
+    long strings in your test data.
+</p>
+
+<h2 id="h_01K9QH1A1B2C3D4E5F6G7H8I9O">Namespace Reference</h2>
+<p>Add the following using statement to your code:</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">using Virinco.WATS.Interface;</code></pre>
+<p>
+    This namespace contains all the classes and enumerations you need for creating UUT reports, including:
+</p>
+<ul>
+    <li><code>TDM</code> - The main API client</li>
+    <li><code>UUTReport</code> - The UUT report object</li>
+    <li><code>UUTStatusType</code> - UUT status enumeration (Passed, Failed, etc.)</li>
+    <li><code>StepStatusType</code> - Step status enumeration</li>
+    <li><code>ValidationModeType</code> - Validation mode enumeration</li>
+</ul>

@@ -1,0 +1,137 @@
+<!-- KEYWORDS: numeric measurement, limits, NumericLimitStep, test limits, comparison operator, upper limit, lower limit, units, GELE -->
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9J">Adding Numeric Measurements with Limits</h2>
+<p>
+    Numeric Limit Steps are used for measurements that have numeric values and test limits. These are the most common
+    step types in electrical and functional testing.
+</p>
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9K">Creating a Numeric Limit Step</h2>
+<p>
+    Add a numeric limit step and specify the measurement value, limits, and units:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Get the root sequence
+SequenceCall rootSeq = uut.GetRootSequenceCall();
+
+// Add a numeric limit step
+NumericLimitStep voltageStep = rootSeq.AddNumericLimitStep("5V Supply Voltage");
+
+// Add the measurement with limits
+voltageStep.AddTest(
+    measurement: 5.02,              // Actual measured value
+    compOperator: CompOperatorType.GELE,  // Greater-Equal and Less-Equal
+    lowLimit: 4.90,                 // Lower limit
+    highLimit: 5.10,                // Upper limit
+    unit: "V",                      // Unit of measurement
+    status: StepStatusType.Passed   // Test result
+);</code></pre>
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9L">Comparison Operators</h2>
+<p>
+    The <code>CompOperatorType</code> defines how the measurement is compared to the limits:
+</p>
+<ul>
+    <li><code>CompOperatorType.GELE</code> - Greater than or Equal to low limit AND Less than or Equal to high limit
+        (most common)</li>
+    <li><code>CompOperatorType.GTLT</code> - Greater Than low limit AND Less Than high limit</li>
+    <li><code>CompOperatorType.GE</code> - Greater than or Equal to low limit only</li>
+    <li><code>CompOperatorType.LE</code> - Less than or Equal to high limit only</li>
+    <li><code>CompOperatorType.GT</code> - Greater Than low limit only</li>
+    <li><code>CompOperatorType.LT</code> - Less Than high limit only</li>
+    <li><code>CompOperatorType.EQ</code> - Equal to</li>
+    <li><code>CompOperatorType.NE</code> - Not Equal to</li>
+    <li><code>CompOperatorType.NONE</code> - No comparison (measurement only)</li>
+</ul>
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9M">Measurement with Only Lower Limit</h2>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Test that requires minimum value only
+NumericLimitStep resistanceStep = rootSeq.AddNumericLimitStep("Pull-up Resistance");
+
+resistanceStep.AddTest(
+    measurement: 10200.0,
+    compOperator: CompOperatorType.GE,  // Greater or Equal only
+    lowLimit: 10000.0,
+    highLimit: 0.0,                     // Not used
+    unit: "Ohm",
+    status: StepStatusType.Passed
+);</code></pre>
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9N">Measurement with Only Upper Limit</h2>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Test that requires maximum value only
+NumericLimitStep currentStep = rootSeq.AddNumericLimitStep("Idle Current");
+
+currentStep.AddTest(
+    measurement: 45.3,
+    compOperator: CompOperatorType.LE,  // Less or Equal only
+    lowLimit: 0.0,                      // Not used
+    highLimit: 50.0,
+    unit: "mA",
+    status: StepStatusType.Passed
+);</code></pre>
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9O">Measurement Without Limits</h2>
+<p>
+    Sometimes you want to record a measurement without pass/fail criteria:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Measurement for information only (no limits)
+NumericLimitStep tempStep = rootSeq.AddNumericLimitStep("Ambient Temperature");
+
+tempStep.AddTest(
+    measurement: 23.5,
+    compOperator: CompOperatorType.NONE,  // No comparison
+    lowLimit: 0.0,
+    highLimit: 0.0,
+    unit: "°C",
+    status: StepStatusType.Done           // Use Done instead of Passed
+);</code></pre>
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9P">Failed Measurement</h2>
+<p>
+    When a measurement is outside the limits, set the status to <code>Failed</code>:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Voltage out of tolerance
+NumericLimitStep voltageStep = rootSeq.AddNumericLimitStep("3.3V Reference");
+
+voltageStep.AddTest(
+    measurement: 3.55,                    // Out of range!
+    compOperator: CompOperatorType.GELE,
+    lowLimit: 3.20,
+    highLimit: 3.40,
+    unit: "V",
+    status: StepStatusType.Failed         // Test failed
+);
+
+// Add explanation
+voltageStep.ReportText = "Voltage regulator out of specification";</code></pre>
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9Q">Multiple Numeric Measurements Example</h2>
+<pre class="wysiwyg-code-block"><code class="language-auto">using Virinco.WATS.Interface;
+
+// Get root sequence
+SequenceCall rootSeq = uut.GetRootSequenceCall();
+
+// Test 1: Voltage measurement
+NumericLimitStep v5Step = rootSeq.AddNumericLimitStep("5V Rail");
+v5Step.AddTest(5.02, CompOperatorType.GELE, 4.90, 5.10, "V", StepStatusType.Passed);
+
+// Test 2: Current measurement
+NumericLimitStep currentStep = rootSeq.AddNumericLimitStep("Supply Current");
+currentStep.AddTest(125.5, CompOperatorType.LE, 0.0, 150.0, "mA", StepStatusType.Passed);
+
+// Test 3: Frequency measurement
+NumericLimitStep freqStep = rootSeq.AddNumericLimitStep("Clock Frequency");
+freqStep.AddTest(24.003, CompOperatorType.GELE, 23.95, 24.05, "MHz", StepStatusType.Passed);
+
+// Test 4: Temperature (no limits, informational)
+NumericLimitStep tempStep = rootSeq.AddNumericLimitStep("PCB Temperature");
+tempStep.AddTest(35.2, CompOperatorType.NONE, 0.0, 0.0, "°C", StepStatusType.Done);</code></pre>
+
+<h2 id="h_01K9QH5A1B2C3D4E5F6G7H8I9R">Best Practices</h2>
+<ul>
+    <li>Always include units for numeric measurements</li>
+    <li>Use appropriate precision (don't over-specify decimal places)</li>
+    <li>Set <code>StepStatusType.Failed</code> when measurement is outside limits</li>
+    <li>Use <code>CompOperatorType.GELE</code> for typical limit testing</li>
+    <li>Add <code>ReportText</code> to failed steps for troubleshooting context</li>
+    <li>Use <code>StepStatusType.Done</code> for informational measurements without limits</li>
+</ul>

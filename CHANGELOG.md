@@ -20,6 +20,18 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Endpoint Risk Assessment Tool** (`pywats-endpoint-scan`): Automated endpoint maintenance and risk analysis (Feb 7, 2026)
+  - **Automated Discovery**: Scans routes.py using AST analysis to extract all 60+ API endpoints across 9 domains
+  - **Usage Analysis**: Scans entire codebase to track where endpoints are used, counts frequency, maps endpoint → function relationships
+  - **Priority Classification**: Classifies endpoints by business impact (CRITICAL: core functions/repair ops, HIGH: reports/serial numbers, MEDIUM: production/software, LOW: analytics/SCIM)
+  - **Gap Analysis**: Identifies internal endpoints without public alternatives, estimates migration effort, generates roadmap
+  - **Risk Assessment**: Detects critical internal endpoints (2 found: Process.GetProcess, Process.GetRepairOperation - both low effort <5 usages)
+  - **Auto-Generated Reports**: Produces markdown tables with priority, usage stats, migration recommendations (docs/ENDPOINT_RISK_AUTOMATED.md)
+  - **CLI Command**: `pywats-endpoint-scan` with options (--stats-only, --dry-run, --output)
+  - **Module**: src/pywats_dev/endpoint_scanner/ (~1,040 LOC: scanner, classifier, analyzer, report_generator, cli)
+  - **Performance**: 2-3s scan time, identifies 26/60 used endpoints (43%), 38 total usages
+  - **Project**: backend-workflow-improvements complete (1 day, all success criteria met)
+
 - **GUI Application Suite**: Multi-application framework with system tray launcher (Feb 6-7, 2026)
   - **System Tray Launcher** (`pywats-launcher`): Centralized launcher with tray icon menu for all pyWATS GUI applications - click tray icon to launch any app
   - **Yield Monitor** (`pywats-yield-monitor`): Real-time yield analytics and dashboards (scaffold - "Hello WATS" placeholder ready for implementation)

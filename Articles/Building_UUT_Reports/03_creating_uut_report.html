@@ -1,0 +1,121 @@
+<!-- KEYWORDS: UUT, create report, serial number, part number, operation type, test report, header, CreateUUTReport -->
+
+<h2 id="h_01K9QH3A1B2C3D4E5F6G7H8I9J">Creating a UUT Report</h2>
+<p>
+    A UUT (Unit Under Test) report contains all the test data for a single tested unit. Before creating a UUT report,
+    you need to gather the required header information from your test data.
+</p>
+
+<h2 id="h_01K9QH3A1B2C3D4E5F6G7H8I9K">Required Information</h2>
+<p>To create a UUT report, you need the following information:</p>
+<ul>
+    <li><strong>Operator Name</strong> - The person or system that performed the test</li>
+    <li><strong>Part Number</strong> - The product/part identifier (SKU)</li>
+    <li><strong>Part Revision</strong> - The revision of the part (e.g., "A", "1.0", "Rev B")</li>
+    <li><strong>Serial Number</strong> - The unique identifier for this specific unit</li>
+    <li><strong>Operation Type</strong> - The test process (retrieved from WATS server)</li>
+    <li><strong>Sequence Name</strong> - The name of the test sequence</li>
+    <li><strong>Sequence Version</strong> - The version of the test sequence</li>
+</ul>
+
+<h2 id="h_01K9QH3A1B2C3D4E5F6G7H8I9L">Getting the Operation Type</h2>
+<p>
+    The Operation Type must be retrieved from the WATS server. Each test process in your WATS system has a unique
+    operation type code (e.g., "10" for SW-Debug, "30" for ICT, "40" for Final Test).
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Get operation type by code
+OperationType? operationType = api.GetOperationType("30");
+
+if (operationType == null)
+{
+    throw new Exception("Operation type '30' not found on WATS server!");
+}
+
+Console.WriteLine($"Using: {operationType.Name} (Code: {operationType.Code})");</code></pre>
+
+<p>
+    <strong>Important:</strong> Always verify that <code>GetOperationType()</code> returns a valid result. If it returns
+    <code>null</code>, the operation type code is not configured in your WATS Control Panel.
+</p>
+
+<h2 id="h_01K9QH3A1B2C3D4E5F6G7H8I9M">Creating the UUT Report Object</h2>
+<p>Use the <code>CreateUUTReport()</code> method to create a new UUT report:</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">using Virinco.WATS.Interface;
+
+// Get operation type from server
+OperationType? operationType = api.GetOperationType("30");
+
+// Create the UUT report
+UUTReport uut = api.CreateUUTReport(
+    operatorName: "John Smith",
+    partNumber: "PCB-1234",
+    partRevision: "B",
+    serialNumber: "SN123456789",
+    operationType: operationType,
+    sequenceFileName: "Final Test",
+    sequenceFileVersion: "2.5"
+);</code></pre>
+
+<h2 id="h_01K9QH3A1B2C3D4E5F6G7H8I9N">Setting Additional Header Properties</h2>
+<p>After creating the UUT report, set additional properties as needed:</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Set test start time
+uut.StartDateTime = DateTime.Parse("2026-02-07 14:30:00");
+
+// Set test execution time (in seconds)
+uut.ExecutionTime = 125.5;
+
+// Set the test station name
+uut.StationName = Environment.MachineName; // Or custom name
+
+// Set batch/lot number (optional)
+uut.BatchSerialNumber = "LOT2024-001";
+
+// Set work order number (optional)
+uut.Purpose = "WO-12345";
+
+// Set UUT status (will be set automatically based on test results, but can override)
+uut.Status = UUTStatusType.Passed; // or UUTStatusType.Failed</code></pre>
+
+<h2 id="h_01K9QH3A1B2C3D4E5F6G7H8I9O">UUT Status Types</h2>
+<p>The UUT status indicates the overall test result:</p>
+<ul>
+    <li><code>UUTStatusType.Passed</code> - All tests passed</li>
+    <li><code>UUTStatusType.Failed</code> - One or more tests failed</li>
+    <li><code>UUTStatusType.Error</code> - Test encountered an error</li>
+    <li><code>UUTStatusType.Terminated</code> - Test was terminated before completion</li>
+    <li><code>UUTStatusType.Running</code> - Test is in progress (rarely used)</li>
+</ul>
+
+<h2 id="h_01K9QH3A1B2C3D4E5F6G7H8I9P">Complete Example</h2>
+<pre class="wysiwyg-code-block"><code class="language-auto">using System;
+using Virinco.WATS.Interface;
+
+// Initialize API
+TDM api = new TDM();
+api.InitializeAPI(false);
+api.ValidationMode = ValidationModeType.AutoTruncate;
+
+// Get operation type
+OperationType? operationType = api.GetOperationType("30");
+if (operationType == null)
+{
+    throw new Exception("Operation type not found!");
+}
+
+// Create UUT report
+UUTReport uut = api.CreateUUTReport(
+    operatorName: "Auto",
+    partNumber: "PCB-1234",
+    partRevision: "B",
+    serialNumber: "SN123456789",
+    operationType: operationType,
+    sequenceFileName: "Final Test",
+    sequenceFileVersion: "2.5"
+);
+
+// Set additional properties
+uut.StartDateTime = DateTime.Now;
+uut.StationName = Environment.MachineName;
+uut.ExecutionTime = 120.0;
+
+// UUT is now ready for adding test steps (covered in next article)</code></pre>

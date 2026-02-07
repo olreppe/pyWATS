@@ -1,0 +1,95 @@
+<!-- KEYWORDS: authentication, API key, WATS Client, RegisterClient, login, credentials, security, server connection, token -->
+
+<h2 id="h_01K9QH2A1B2C3D4E5F6G7H8I9J">Authentication Overview</h2>
+<p>
+    The WATS Client API supports two authentication methods. The recommended approach is to use the installed WATS
+    Client's authentication, which handles credentials automatically. Alternatively, you can authenticate directly with
+    an API key (not recommended for production).
+</p>
+
+<h2 id="h_01K9QH2A1B2C3D4E5F6G7H8I9K">Method 1: Using Installed WATS Client (Recommended)</h2>
+<p>
+    When you have the WATS Client installed on your test station, the API can use its authentication credentials
+    automatically. This is the preferred method for production environments.
+</p>
+
+<h3 id="h_01K9QH2A1B2C3D4E5F6G7H8I9L">Prerequisites</h3>
+<ul>
+    <li>Download and install WATS Client from <a href="https://download.wats.com" target="_blank">download.wats.com</a>
+    </li>
+    <li>Configure the WATS Client with your server connection</li>
+    <li>Ensure the WATS Client service is running</li>
+</ul>
+
+<h3 id="h_01K9QH2A1B2C3D4E5F6G7H8I9M">Initialization with WATS Client</h3>
+<pre class="wysiwyg-code-block"><code class="language-auto">using Virinco.WATS.Interface;
+
+// Create and initialize the API
+TDM api = new TDM();
+api.InitializeAPI(false); // false = production mode
+
+// The API automatically uses WATS Client's authentication
+// No additional authentication code needed
+
+// Set validation mode
+api.ValidationMode = ValidationModeType.AutoTruncate;
+
+// You can now create and submit reports
+UUTReport uut = api.CreateUUTReport(/* parameters */);</code></pre>
+
+<p>
+    <strong>Note:</strong> When using the installed WATS Client, the API inherits the client's server URL, credentials,
+    and configuration. This ensures consistency across your test station.
+</p>
+
+<h2 id="h_01K9QH2A1B2C3D4E5F6G7H8I9N">Method 2: Direct Authentication with API Key (Not Recommended)</h2>
+<p>
+    For testing or development environments where installing the WATS Client is not practical, you can authenticate
+    directly using an API key. This method is <strong>not recommended for production</strong> as it requires storing
+    sensitive credentials in your code.
+</p>
+
+<h3 id="h_01K9QH2A1B2C3D4E5F6G7H8I9O">Getting a Client Registration Token</h3>
+<p>To authenticate with an API key, you first need to obtain a client registration token:</p>
+<ol>
+    <li>Log in to your WATS Control Panel (web application)</li>
+    <li>Navigate to <strong>Setup → API → Client Registration</strong></li>
+    <li>Generate a new registration token</li>
+    <li>Copy the token (it will only be displayed once)</li>
+</ol>
+
+<h3 id="h_01K9QH2A1B2C3D4E5F6G7H8I9P">Authentication Code</h3>
+<pre class="wysiwyg-code-block"><code class="language-auto">using Virinco.WATS.Interface;
+
+// Create and initialize the API
+TDM api = new TDM();
+api.InitializeAPI(false);
+
+// Register the client with your token
+string serverUrl = "https://your-wats-server.com";
+string registrationToken = "your-registration-token-here";
+string clientName = "MyTestStation";
+
+api.RegisterClient(serverUrl, clientName, registrationToken);
+
+// Set validation mode
+api.ValidationMode = ValidationModeType.AutoTruncate;
+
+// Now authenticated and ready to submit reports</code></pre>
+
+<h3 id="h_01K9QH2A1B2C3D4E5F6G7H8I9Q">Security Considerations</h3>
+<p>
+    <strong>Warning:</strong> When using direct authentication:
+</p>
+<ul>
+    <li>Never hardcode tokens in source code committed to version control</li>
+    <li>Store tokens in secure configuration files or environment variables</li>
+    <li>Use encrypted configuration storage when possible</li>
+    <li>Rotate tokens periodically</li>
+    <li>Restrict token permissions to only what's necessary</li>
+</ul>
+
+<p>
+    <strong>Production Recommendation:</strong> Always use the installed WATS Client authentication method for
+    production test stations. Reserve direct authentication for development and testing only.
+</p>

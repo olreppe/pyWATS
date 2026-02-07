@@ -1,0 +1,180 @@
+<!-- KEYWORDS: nested sequence, loop, SequenceCall, hierarchy, sub-sequence, iteration, LoopIndex, LoopCount, repeat -->
+
+<h2 id="h_01K9QH7A1B2C3D4E5F6G7H8I9J">Nested Sequences and Looping Steps</h2>
+<p>
+    Complex test programs often have hierarchical structures with sub-tests, repeated tests, and nested sequences. WATS
+    supports this through nested SequenceCalls and looping steps.
+</p>
+
+<h2 id="h_01K9QH7A1B2C3D4E5F6G7H8I9K">Creating Nested Sequences</h2>
+<p>
+    A nested sequence (or sub-sequence) is a SequenceCall that contains other steps. This helps organize complex tests
+    into logical groups.
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Get root sequence
+SequenceCall rootSeq = uut.GetRootSequenceCall();
+
+// Create a sub-sequence for power supply tests
+SequenceCall powerTests = rootSeq.AddSequenceCall("Power Supply Tests");
+
+// Add steps to the sub-sequence
+NumericLimitStep v5 = powerTests.AddNumericLimitStep("5V Rail");
+v5.AddTest(5.02, CompOperatorType.GELE, 4.90, 5.10, "V", StepStatusType.Passed);
+
+NumericLimitStep v3_3 = powerTests.AddNumericLimitStep("3.3V Rail");
+v3_3.AddTest(3.31, CompOperatorType.GELE, 3.20, 3.40, "V", StepStatusType.Passed);
+
+// Create another sub-sequence for communication tests
+SequenceCall commTests = rootSeq.AddSequenceCall("Communication Tests");
+
+PassFailStep uart = commTests.AddPassFailStep("UART Test");
+uart.AddTest(true, StepStatusType.Passed);
+
+PassFailStep i2c = commTests.AddPassFailStep("I2C Test");
+i2c.AddTest(true, StepStatusType.Passed);</code></pre>
+
+<h2 id="h_01K9QH7A1B2C3D4E5F6G7H8I9L">Multi-Level Nesting</h2>
+<p>
+    You can nest sequences multiple levels deep:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">SequenceCall rootSeq = uut.GetRootSequenceCall();
+
+// Level 1: Main test groups
+SequenceCall functionalTests = rootSeq.AddSequenceCall("Functional Tests");
+
+// Level 2: Sub-groups
+SequenceCall analogTests = functionalTests.AddSequenceCall("Analog Tests");
+SequenceCall digitalTests = functionalTests.AddSequenceCall("Digital Tests");
+
+// Level 3: Individual tests
+NumericLimitStep adcTest = analogTests.AddNumericLimitStep("ADC Linearity");
+adcTest.AddTest(0.998, CompOperatorType.GE, 0.995, 0.0, "LSB", StepStatusType.Passed);
+
+PassFailStep gpioTest = digitalTests.AddPassFailStep("GPIO Bit Test");
+gpioTest.AddTest(true, StepStatusType.Passed);</code></pre>
+
+<h2 id="h_01K9QH7A1B2C3D4E5F6G7H8I9M">Looping Steps</h2>
+<p>
+    When you repeat the same test multiple times (e.g., testing multiple channels, multiple iterations), use the looping
+    feature to keep your report organized.
+</p>
+
+<h3 id="h_01K9QH7A1B2C3D4E5F6G7H8I9N">Simple Loop Example</h3>
+<pre class="wysiwyg-code-block"><code class="language-auto">SequenceCall rootSeq = uut.GetRootSequenceCall();
+
+// Test 4 analog input channels
+for (int channel = 1; channel <= 4; channel++)
+{
+    // Create a sequence call for each iteration
+    SequenceCall channelTest = rootSeq.AddSequenceCall($"Channel {channel} Test");
+
+    // Mark this as a loop iteration
+    channelTest.LoopIndex = channel;
+    channelTest.LoopCount = 4;
+
+    // Add tests for this channel
+    NumericLimitStep linearityTest = channelTest.AddNumericLimitStep("Linearity");
+    linearityTest.AddTest(0.997, CompOperatorType.GE, 0.995, 0.0, "R²", StepStatusType.Passed);
+
+    NumericLimitStep offsetTest = channelTest.AddNumericLimitStep("Offset Error");
+    offsetTest.AddTest(2.5, CompOperatorType.GELE, -5.0, 5.0, "mV", StepStatusType.Passed);
+}</code></pre>
+
+<h3 id="h_01K9QH7A1B2C3D4E5F6G7H8I9O">Advanced Loop with Array Data</h3>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Test data for multiple units
+string[] serialNumbers = { "SN001", "SN002", "SN003" };
+double[] voltages = { 5.02, 5.01, 4.99 };
+bool[] passResults = { true, true, true };
+
+SequenceCall batchTest = rootSeq.AddSequenceCall("Batch Programming Test");
+
+for (int i = 0; i < serialNumbers.Length; i++)
+{
+    // Create loop iteration
+    SequenceCall unit = batchTest.AddSequenceCall($"Unit {serialNumbers[i]}");
+    unit.LoopIndex = i + 1;
+    unit.LoopCount = serialNumbers.Length;
+
+    // Record serial number
+    StringValueStep snStep = unit.AddStringValueStep("Serial Number");
+    snStep.AddTest(serialNumbers[i], StepStatusType.Done);
+
+    // Record voltage
+    NumericLimitStep vStep = unit.AddNumericLimitStep("Verify Voltage");
+    vStep.AddTest(voltages[i], CompOperatorType.GELE, 4.90, 5.10, "V",
+                  passResults[i] ? StepStatusType.Passed : StepStatusType.Failed);
+}</code></pre>
+
+<h2 id="h_01K9QH7A1B2C3D4E5F6G7H8I9P">Loop Properties</h2>
+<p>
+    When creating a loop, set these properties on each iteration's SequenceCall:
+</p>
+<ul>
+    <li><code>LoopIndex</code> - The current iteration number (1-based)</li>
+    <li><code>LoopCount</code> - The total number of iterations</li>
+</ul>
+
+<p>
+    <strong>Important:</strong> Both properties must be set for WATS to recognize the sequence as a loop iteration.
+</p>
+
+<h2 id="h_01K9QH7A1B2C3D4E5F6G7H8I9Q">Setting Sequence Status</h2>
+<p>
+    Nested sequences can have their own status:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">SequenceCall subSeq = rootSeq.AddSequenceCall("Sub-Test Group");
+
+// Add steps...
+NumericLimitStep step1 = subSeq.AddNumericLimitStep("Test 1");
+step1.AddTest(5.0, CompOperatorType.GELE, 4.9, 5.1, "V", StepStatusType.Passed);
+
+NumericLimitStep step2 = subSeq.AddNumericLimitStep("Test 2");
+step2.AddTest(3.5, CompOperatorType.GELE, 3.2, 3.4, "V", StepStatusType.Failed);
+
+// Set the overall status of the sub-sequence
+subSeq.Status = StepStatusType.Failed; // Because one test failed</code></pre>
+
+<h2 id="h_01K9QH7A1B2C3D4E5F6G7H8I9R">Complete Example with Nested Sequences and Loops</h2>
+<pre class="wysiwyg-code-block"><code class="language-auto">using Virinco.WATS.Interface;
+
+SequenceCall rootSeq = uut.GetRootSequenceCall();
+
+// Main test groups
+SequenceCall setupTests = rootSeq.AddSequenceCall("Setup & Initialization");
+PassFailStep powerOn = setupTests.AddPassFailStep("Power On");
+powerOn.AddTest(true, StepStatusType.Passed);
+
+// Looping test for multiple channels
+SequenceCall channelTests = rootSeq.AddSequenceCall("Channel Tests");
+
+for (int ch = 1; ch <= 8; ch++)
+{
+    SequenceCall channel = channelTests.AddSequenceCall($"Channel {ch}");
+    channel.LoopIndex = ch;
+    channel.LoopCount = 8;
+
+    NumericLimitStep voltage = channel.AddNumericLimitStep("Input Voltage");
+    voltage.AddTest(3.3, CompOperatorType.GELE, 3.2, 3.4, "V", StepStatusType.Passed);
+
+    PassFailStep comm = channel.AddPassFailStep("Communication");
+    comm.AddTest(true, StepStatusType.Passed);
+
+    channel.Status = StepStatusType.Passed;
+}
+
+channelTests.Status = StepStatusType.Passed;
+
+// Final verification
+SequenceCall verification = rootSeq.AddSequenceCall("Final Verification");
+PassFailStep finalCheck = verification.AddPassFailStep("Self-Test");
+finalCheck.AddTest(true, StepStatusType.Passed);
+verification.Status = StepStatusType.Passed;</code></pre>
+
+<h2 id="h_01K9QH7A1B2C3D4E5F6G7H8I9S">Best Practices</h2>
+<ul>
+    <li>Use nested sequences to organize complex test programs</li>
+    <li>Set <code>LoopIndex</code> and <code>LoopCount</code> for all repeated tests</li>
+    <li>Keep nesting depth reasonable (typically 2-3 levels maximum)</li>
+    <li>Set status on nested sequences to reflect their content</li>
+    <li>Use descriptive names for sub-sequences to improve report readability</li>
+</ul>

@@ -101,6 +101,7 @@ pywats-configurator = "pywats_ui.apps.configurator.main:main"
 pywats-yield-monitor = "pywats_ui.apps.yield_monitor.main:main"
 pywats-package-manager = "pywats_ui.apps.package_manager.main:main"
 pywats-client-monitor = "pywats_ui.apps.client_monitor.main:main"
+pywats-endpoint-scan = "pywats_dev.endpoint_scanner.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

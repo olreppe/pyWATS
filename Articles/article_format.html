@@ -1,0 +1,71 @@
+<!-- KEYWORDS: UUR, repair, RepairType, FailCode, GetRepairType, CreateUURReport, repair report, repair actions -->
+
+<h2 id="h_01K9QG3DB66PY72RBXARTCJZP4">Getting the RepirType</h2>
+<p>
+  Before creating a UUR report we need to get the repair-type associated to the
+  repair-process. The repair type will let us load the repair categories and codes
+  (FailCodes) for a specific repair process.
+</p>
+<p>
+  in this example we will be using the repair process with process code 500.
+</p>
+<p>Here is how you can get the repair type:</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">RepairType repairType = api.GetRepairType(api.GetOperationType(500).Id);   </code></pre>
+<h2 id="h_01K9QG4H0Q9KBE26QQG9HHX6S3">Creating the UUR Report.</h2>
+<p>
+  Ideally a UUR report should be linked to the failed step of a failed UUT report.
+  In this example a loaded UUTReport failed_uut will be used as the target for
+  our repair. When no failed UUT exists, consider using a MI (Manual Inspection)
+  to create one, or link the UUR to the PartNumber, Process, Serial and Revision
+  with no report.
+</p>
+<p>Creating the UUR object:</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Option 1 - preferred - Link the repair to a failed UUT
+UURReport uur = api.CreateUURReport("RepairTech", repairType, uut);
+
+// Option 2 - link the repair to a process/part
+UURReport uur = api.CreateUURReport("RepairOperator", repairType, api.GetOperationType("Final Function Test"), "0001", "ABC123", "1.0");</code></pre>
+<h2 id="h_01K9QGCKEMCZVP7QMMKNCQTA74">Copying Misc and SubUnit info.</h2>
+<p>
+  If the repaired unit is a system, or module, and has sub units, therse can be
+  copied from the UUT to the UUR for traceability. This also allows you to assign
+  repair-actions (FailCodes) to the subunits rather than the module/system itself.
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// Copy subunits:
+foreach (UUTPartInfo subUnit in uut.PartInfo)
+{
+   uur.AddUURPartInfo(subUnit.PartNumber, subUnit.SerialNumber, subUnit.PartRevisionNumber);
+}</code></pre>
+<h2 id="h_01K9QGCKEM0TW30VA4QAYP8HBG">Getting the FailCodes</h2>
+<p>
+  The failcodes exists in a category &gt; code hierarchy where you will have to
+  get the categories and codes separately using the api-reference.
+</p>
+<p>
+  Get all fail-categories (root level failcodes) then children (child level failcodes):
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">FailCode[] root_codes = api.GetRootFailCodes(repairType);
+FailCode[] child_codes = api.GetChildFailCodes(root_codes[0]);
+</code></pre>
+<p>
+  You can access these, by name, in a more efficient syntax, like this:
+</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">FailCode? specificFailCode = api.GetRootFailCodes(repairType).Where(c =&gt; c.Description == "Misc").SelectMany(c =&gt; api.GetChildFailCodes(c)).FirstOrDefault(fc =&gt; fc.Description == "Scrapped");</code></pre>
+<p>
+  Note that only the child failcode is reported in the repair.
+</p>
+<p>Adding the FailCode to your UUR:</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">// One-liner to get a specific fail code by category and code description
+FailCode? specificFailCode = api.GetRootFailCodes(repairType).Where(c =&gt; c.Description == "Misc").SelectMany(c =&gt; api.GetChildFailCodes(c)).FirstOrDefault(fc =&gt; fc.Description == "Scrapped");
+
+// Add the failure to tghe repaired module.
+uur.AddFailure(specificFailCode, "A100", "Comment", uut.GetStepCausedUUTFail().StepOrderNumber);
+
+// Add a sub-repair failcode:
+uur.PartInfo[1].AddFailure(specificFailCode, "A100", "Comment", uut.GetStepCausedUUTFail().StepOrderNumber);</code></pre>
+<p>
+  Note that a failcode can be assigned either to the module itself, or to a child
+  unit by accessing the uur.PartInfo[n].AddFailure()
+</p>
+<p>Now the report is ready to be submitted to the WATS Server:</p>
+<pre class="wysiwyg-code-block"><code class="language-auto">api.Submit(uur);</code></pre>
