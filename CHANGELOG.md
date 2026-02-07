@@ -20,16 +20,20 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
-- **GUI Application Suite**: Multi-application framework with system tray launcher
-  - **System Tray Launcher** (`pywats-launcher`): Centralized launcher with tray icon menu for all pyWATS GUI applications
-  - **Yield Monitor** (`pywats-yield-monitor`): Real-time yield analytics and dashboards (scaffold - "Hello WATS" placeholder)
-  - **Package Manager** (`pywats-package-manager`): Software package distribution and deployment (scaffold - "Hello WATS" placeholder)
-  - **Client Monitor** (`pywats-client-monitor`): Service health monitoring and diagnostics (scaffold - "Hello WATS" placeholder)
-  - **Framework Components**: SystemTrayIcon with menu support, create_default_icon() for pyWATS branding
-  - **Entry Points**: 4 new CLI commands + launcher, all applications accessible from system tray
-  - **Architecture**: Foundation for multi-app GUI framework with shared components and consistent UX
+- **GUI Application Suite**: Multi-application framework with system tray launcher (Feb 6-7, 2026)
+  - **System Tray Launcher** (`pywats-launcher`): Centralized launcher with tray icon menu for all pyWATS GUI applications - click tray icon to launch any app
+  - **Yield Monitor** (`pywats-yield-monitor`): Real-time yield analytics and dashboards (scaffold - "Hello WATS" placeholder ready for implementation)
+  - **Package Manager** (`pywats-package-manager`): Software package distribution and deployment (scaffold - "Hello WATS" placeholder ready for implementation)
+  - **Client Monitor** (`pywats-client-monitor`): Service health monitoring and diagnostics (scaffold - "Hello WATS" placeholder ready for implementation)
+  - **Framework Components**: SystemTrayIcon with menu support, create_default_icon() for pyWATS branding (blue 'W' circle)
+  - **Entry Points**: 4 new CLI commands + launcher (pywats-launcher, pywats-yield-monitor, pywats-package-manager, pywats-client-monitor)
+  - **Architecture**: Foundation for multi-app GUI framework with shared components, window management, and consistent UX
+  - **Project Completion**: gui-client-separation project archived as 60% complete (foundation + scaffolds delivered)
 
 ### Fixed
+- **System Tray Icon Bug**: Fixed QAction deletion error in SystemTrayIcon that caused RuntimeError - now stores callbacks/icons instead of QAction objects, recreates menu on each rebuild
+  - Resolves: RuntimeError: Internal C++ object (PySide6.QtGui.QAction) already deleted
+  - Result: Launcher runs without errors, menu works correctly
 - **GUI Configurator - Schema Mapping & UX** (pywats_ui.apps.configurator): Production-ready configurator with ClientConfig v2.0 support
   - **Phase 1: Critical Blockers Fixed**
     - Converter migration creates ConverterConfig objects (not dicts) - resolves AttributeError 'dict' has no attribute 'to_dict'
