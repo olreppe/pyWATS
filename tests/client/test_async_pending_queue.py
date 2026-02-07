@@ -287,9 +287,9 @@ class TestQueueSizeLimits:
     """Test queue size limiting functionality"""
     
     def test_default_no_limit(self, mock_api, temp_reports_dir):
-        """Test that default max_queue_size is 0 (unlimited)"""
+        """Test that default max_queue_size is 10000"""
         queue = AsyncPendingQueue(mock_api, temp_reports_dir)
-        assert queue._max_queue_size == 0
+        assert queue._max_queue_size == 10000  # Changed from 0 to 10000 default
         assert not queue.is_queue_full
     
     def test_custom_max_queue_size(self, mock_api, temp_reports_dir):

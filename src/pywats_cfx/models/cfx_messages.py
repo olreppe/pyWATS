@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 
 class TestResult(str, Enum):
     """Test result status per IPC-CFX."""
+    __test__ = False  # Not a pytest test class
     PASSED = "Passed"
     FAILED = "Failed"
     ERROR = "Error"
@@ -127,6 +128,7 @@ class Measurement(BaseModel):
 
 class Test(BaseModel):
     """A test step with multiple measurements."""
+    __test__ = False  # Not a pytest test class
     TestName: str = Field(..., description="Name of test")
     Result: TestResult = Field(..., description="Test result")
     TestStartTime: Optional[datetime] = Field(None, description="Test start time")
@@ -138,6 +140,7 @@ class Test(BaseModel):
 
 class TestedUnit(BaseModel):
     """Test results for a single unit."""
+    __test__ = False  # Not a pytest test class
     UnitIdentifier: str = Field(..., description="Unique unit identifier")
     UnitPositionNumber: Optional[int] = Field(None, description="Position on carrier")
     OverallResult: TestResult = Field(..., description="Overall test result")

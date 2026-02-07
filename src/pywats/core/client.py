@@ -24,7 +24,7 @@ Retry Logic:
     >>> config = RetryConfig(max_attempts=5, base_delay=2.0)
     >>> api = pyWATS(base_url="...", token="...", retry_config=config)
 """
-from typing import Optional, Dict, Any, Iterator
+from typing import Optional, Dict, Any, Iterator, TYPE_CHECKING
 from contextlib import contextmanager
 import time
 from pydantic import BaseModel, Field, ConfigDict, computed_field
@@ -40,6 +40,9 @@ from .exceptions import (
 from .throttle import RateLimiter, get_default_limiter
 from .retry import RetryConfig, should_retry
 from .cache import TTLCache
+
+if TYPE_CHECKING:
+    from .metrics import MetricsCollector
 
 logger = logging.getLogger(__name__)
 

@@ -45,7 +45,7 @@ TestInstanceID = Literal["A", "B"]
 
 
 @dataclass
-class TestInstanceConfig:
+class InstanceConfig:
     """Configuration for a test instance."""
     instance_id: TestInstanceID
     name: str
@@ -77,7 +77,7 @@ class TestInstanceConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TestInstanceConfig":
+    def from_dict(cls, data: Dict[str, Any]) -> "InstanceConfig":
         # Map JSON keys to dataclass field names
         mapped = {
             "instance_id": data.get("instance_id", ""),
@@ -94,15 +94,15 @@ class TestInstanceConfig:
 
 
 # Default configurations for test instances
-DEFAULT_INSTANCES: Dict[TestInstanceID, TestInstanceConfig] = {
-    "A": TestInstanceConfig(
+DEFAULT_INSTANCES: Dict[TestInstanceID, InstanceConfig] = {
+    "A": InstanceConfig(
         instance_id="A",
         name="Test Client A",
         description="Primary test instance - standard configuration",
         station_name="TEST-STATION-A",
         location="Test Lab Alpha",
     ),
-    "B": TestInstanceConfig(
+    "B": InstanceConfig(
         instance_id="B",
         name="Test Client B",
         description="Secondary test instance - alternative configuration",
@@ -113,7 +113,7 @@ DEFAULT_INSTANCES: Dict[TestInstanceID, TestInstanceConfig] = {
 }
 
 
-class TestInstanceManager:
+class InstanceManager:
     """
     Manages test client instances.
 
@@ -146,7 +146,7 @@ class TestInstanceManager:
         data_dir.mkdir(exist_ok=True)
         return data_dir
 
-    def get_test_instance_config(self, instance_id: TestInstanceID) -> TestInstanceConfig:
+    def get_test_instance_config(self, instance_id: TestInstanceID) -> InstanceConfig:
         """
         Load or create test instance configuration.
 
@@ -158,7 +158,7 @@ class TestInstanceManager:
         if config_path.exists():
             with open(config_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            config = TestInstanceConfig.from_dict(data)
+            config = InstanceConfig.from_dict(data)
             
             # Check if using placeholder token
             if not config.token or config.token == "YOUR_BASE64_ENCODED_TOKEN_HERE":
@@ -195,7 +195,7 @@ class TestInstanceManager:
         )
         return config
 
-    def save_test_instance_config(self, config: TestInstanceConfig) -> None:
+    def save_test_instance_config(self, config: InstanceConfig) -> None:
         """Save test instance configuration."""
         config_path = self.get_instance_config_path(config.instance_id)
         with open(config_path, 'w', encoding='utf-8') as f:
@@ -251,7 +251,7 @@ class TestInstanceManager:
             token=test_config.token
         )
 
-    def list_instances(self) -> Dict[TestInstanceID, TestInstanceConfig]:
+    def list_instances(self) -> Dict[TestInstanceID, InstanceConfig]:
         """List all configured test instances."""
         instances = {}
         for instance_id in ["A", "B"]:
@@ -279,14 +279,14 @@ class TestInstanceManager:
 
 
 # Global manager instance
-_manager: Optional[TestInstanceManager] = None
+_manager: Optional[InstanceManager] = None
 
 
-def get_test_instance_manager() -> TestInstanceManager:
+def get_test_instance_manager() -> InstanceManager:
     """Get the global test instance manager."""
     global _manager
     if _manager is None:
-        _manager = TestInstanceManager()
+        _manager = InstanceManager()
     return _manager
 
 

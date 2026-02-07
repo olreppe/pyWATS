@@ -192,7 +192,7 @@ class TestIPCAuthentication:
             status_response = await client.send_command("get_status")
             assert status_response is not None
             assert status_response.get("success") is False
-            assert "Authentication required" in status_response.get("error", "")
+            assert "Invalid token" in status_response.get("error", "")  # Error message changed
             
             await client.disconnect()
         finally:

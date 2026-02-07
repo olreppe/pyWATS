@@ -96,27 +96,32 @@ class TestAsyncClientServiceLifecycle:
     """Test service lifecycle (start/stop)"""
     
     @pytest.mark.asyncio
-    @patch('pywats_client.service.async_pending_queue.AsyncPendingQueue')
-    @patch('pywats_client.service.async_converter_pool.AsyncConverterPool')
-    @patch('pywats_client.service.async_client_service.ClientConfig')
     @patch('pywats_client.service.async_client_service.AsyncWATS')
-    async def test_start_stop(self, mock_wats_cls, mock_config_cls, mock_pool_cls, mock_queue_cls, mock_config, mock_async_wats):
+    @patch('pywats_client.service.async_client_service.ClientConfig')
+    @patch('pywats_client.service.async_converter_pool.AsyncConverterPool')
+    @patch('pywats_client.service.async_pending_queue.AsyncPendingQueue')
+    async def test_start_stop(self, mock_queue_cls, mock_pool_cls, mock_config_cls, mock_wats_cls, mock_config, mock_async_wats):
         """Test basic start and stop"""
         mock_config_cls.load_for_instance.return_value = mock_config
         mock_wats_cls.return_value = mock_async_wats
         
-        # Set up mock queue
-        mock_queue_instance = MagicMock()
-        mock_queue_instance.run = AsyncMock()
-        mock_queue_instance.stop = AsyncMock()
+        # Set up mock queue - use AsyncMock to auto-handle all async methods
+        mock_queue_instance = AsyncMock()
         mock_queue_instance.stats = {}
+        # Configure return values for methods that return data
+        mock_queue_instance.get_pending_count = AsyncMock(return_value=0)
+        mock_queue_instance.get_active_count = AsyncMock(return_value=0)
+        # Make run() return immediately (don't actually run the queue loop)
+        mock_queue_instance.run = AsyncMock()
         mock_queue_cls.return_value = mock_queue_instance
         
-        # Set up mock pool
-        mock_pool_instance = MagicMock()
-        mock_pool_instance.run = AsyncMock()
-        mock_pool_instance.stop = AsyncMock()
+        # Set up mock pool - use AsyncMock to auto-handle all async methods
+        mock_pool_instance = AsyncMock()
         mock_pool_instance.stats = {}
+        # Configure return values for methods that return data
+        mock_pool_instance.get_active_count = AsyncMock(return_value=0)
+        # Make run() return immediately (don't actually run the pool loop)
+        mock_pool_instance.run = AsyncMock()
         mock_pool_cls.return_value = mock_pool_instance
         
         service = AsyncClientService()
