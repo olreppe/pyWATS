@@ -7,17 +7,18 @@ Improvements:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QComboBox,
-    QCheckBox, QSpinBox, QPushButton, QMessageBox, QLabel, QGroupBox
+    QCheckBox, QSpinBox, QPushButton, QLabel, QGroupBox
 )
 from PySide6.QtCore import Qt
 
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SerialNumberHandlerPage(BasePage):
@@ -195,14 +196,7 @@ class SerialNumberHandlerPage(BasePage):
             self._update_status()
             
         except Exception as e:
-            logger.exception(f"Failed to save serial number handler config: {e}")
-            QMessageBox.critical(
-                self,
-                "Save Failed",
-                f"Failed to save serial number handler configuration.\n\n"
-                f"Error: {e}\n\n"
-                "Please check the logs for details and try again."
-            )
+            self.handle_error(e, "saving serial number handler configuration")
     
     def load_config(self) -> None:
         """Load serial number handler configuration from config"""
@@ -241,14 +235,7 @@ class SerialNumberHandlerPage(BasePage):
             logger.debug("Serial number handler config loaded")
             
         except Exception as e:
-            logger.exception(f"Failed to load serial number handler config: {e}")
-            QMessageBox.warning(
-                self,
-                "Load Failed",
-                f"Failed to load serial number handler configuration.\n\n"
-                f"Error: {e}\n\n"
-                "Using default values."
-            )
+            self.handle_error(e, "loading serial number handler configuration")
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix - consistency)."""

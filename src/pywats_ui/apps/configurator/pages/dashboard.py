@@ -8,11 +8,12 @@ Improvements:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, Dict, Any
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QGroupBox, QTableWidget, QTableWidgetItem, QHeaderView,
-    QFrame, QMessageBox
+    QFrame
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QFont
@@ -20,7 +21,7 @@ from PySide6.QtGui import QColor, QFont
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StatusIndicator(QFrame):
@@ -239,13 +240,7 @@ class DashboardPage(BasePage):
             logger.info("Dashboard status refreshed")
             
         except Exception as e:
-            logger.exception(f"Failed to refresh dashboard status: {e}")
-            QMessageBox.warning(
-                self,
-                "Refresh Failed",
-                f"Failed to refresh dashboard status.\n\nError: {e}\n\n"
-                "Check logs for details."
-            )
+            self.handle_error(e, "refreshing dashboard status")
     
     def _update_converter_health(self) -> None:
         """Update converter health table from local config."""

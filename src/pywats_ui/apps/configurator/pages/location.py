@@ -6,18 +6,19 @@ Improvements:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
-    QGroupBox, QCheckBox, QMessageBox
+    QGroupBox, QCheckBox
 )
 from PySide6.QtCore import Qt
 
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LocationPage(BasePage):
@@ -94,12 +95,7 @@ class LocationPage(BasePage):
             logger.info(f"Location services: {self._location_enabled_cb.isChecked()}")
             
         except Exception as e:
-            logger.exception(f"Failed to save location settings: {e}")
-            QMessageBox.critical(
-                self,
-                "Save Failed",
-                f"Failed to save location settings.\n\nError: {e}"
-            )
+            self.handle_error(e, "saving location settings")
     
     def load_config(self) -> None:
         """Load configuration"""
@@ -110,13 +106,7 @@ class LocationPage(BasePage):
             logger.debug("Location settings loaded")
             
         except Exception as e:
-            logger.exception(f"Failed to load location settings: {e}")
-            QMessageBox.warning(
-                self,
-                "Load Failed",
-                f"Failed to load location settings.\n\nError: {e}\n\n"
-                "Using default values."
-            )
+            self.handle_error(e, "loading location settings")
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix - consistency)"""

@@ -7,10 +7,11 @@ Improvements:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit,
-    QPushButton, QComboBox, QLabel, QCheckBox, QMessageBox
+    QPushButton, QComboBox, QLabel, QCheckBox
 )
 from PySide6.QtCore import Qt, Signal, QObject
 from PySide6.QtGui import QTextCursor, QFont
@@ -18,7 +19,7 @@ from PySide6.QtGui import QTextCursor, QFont
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class QTextEditLogger(logging.Handler, QObject):
@@ -145,13 +146,7 @@ class LogPage(BasePage):
             logger.info("Log viewer initialized - capturing all log levels")
             
         except Exception as e:
-            logger.exception(f"Failed to setup log handler: {e}")
-            QMessageBox.warning(
-                self,
-                "Log Setup Error",
-                f"Failed to initialize log viewer.\n\nError: {e}\n\n"
-                "Logs will not be displayed in this window."
-            )
+            self.handle_error(e, "setting up log handler")
     
     def _append_log(self, message: str) -> None:
         """Append log message to display (thread-safe via Qt signal)."""
@@ -199,12 +194,7 @@ class LogPage(BasePage):
             logger.info(f"Copied {len(text)} characters to clipboard")
             
         except Exception as e:
-            logger.exception(f"Failed to copy logs: {e}")
-            QMessageBox.warning(
-                self,
-                "Copy Failed",
-                f"Failed to copy logs to clipboard.\n\nError: {e}"
-            )
+            self.handle_error(e, "copying logs to clipboard")
     
     def save_config(self) -> None:
         """Save configuration (nothing to save for log viewer)"""
