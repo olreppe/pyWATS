@@ -26,7 +26,7 @@ from pywats_client.core.constants import FolderName
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QTableWidget,
+    QPushButton, QFileDialog, QMessageBox, QTableWidget,  # QMessageBox: Used by dialog classes (ConverterSettingsDialogV2, ConverterEditorDialogV2) which don't have ErrorHandlingMixin
     QTableWidgetItem, QHeaderView, QDialog, QPlainTextEdit,
     QFormLayout, QComboBox, QCheckBox, QGroupBox, QSpinBox,
     QDialogButtonBox, QTabWidget, QSplitter, QFrame, QInputDialog,
@@ -1189,10 +1189,7 @@ class ConvertersPageV2(BasePage):
             self._refresh_list()
         except Exception as e:
             # H1: Handle config loading errors
-            QMessageBox.warning(
-                self, "Load Error",
-                f"Could not load configuration:\n{e}"
-            )
+            self.handle_error(e, "loading converter configuration")
     
     def _initialize_default_converters(self) -> None:
         """Initialize default standard converters with ProgramData folders (H1: with error handling)"""
@@ -1211,33 +1208,24 @@ class ConvertersPageV2(BasePage):
             
             # Show info message
             if self._main_window:
-                QMessageBox.information(
-                    self,
-                    "Default Converters Initialized",
+                self.show_success(
                     f"Created {len(default_configs)} default converter configurations.\n\n"
                     f"Watch folders created in:\n{data_path}\n\n"
-                    "Files will be automatically moved to Done/ subdirectories after processing."
+                    "Files will be automatically moved to Done/ subdirectories after processing.",
+                    "Default Converters Initialized"
                 )
         except Exception as e:
             # H1: Handle initialization errors
-            QMessageBox.warning(
-                self,
-                "Initialization Failed",
-                f"Could not initialize default converters:\n{e}"
-            )
+            self.handle_error(e, "initializing default converters")
     
     def _on_setup_defaults(self) -> None:
         """Handle setup defaults button click"""
         if self.config.converters:
-            reply = QMessageBox.question(
-                self,
-                "Setup Default Converters",
+            if not self.confirm_action(
                 "This will replace your existing converter configurations with defaults.\n\n"
                 "Do you want to continue?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
-            )
-            if reply != QMessageBox.StandardButton.Yes:
+                "Setup Default Converters"
+            ):
                 return
         
         self._initialize_default_converters()
@@ -1257,10 +1245,7 @@ class ConvertersPageV2(BasePage):
                 self._refresh_list()
         except Exception as e:
             # H1: Handle browse errors
-            QMessageBox.warning(
-                self, "Browse Error",
-                f"Could not browse for folder:\n{e}"
-            )
+            self.handle_error(e, "browsing for folder")
     
     def _refresh_list(self) -> None:
         """Refresh the unified converter list (H1: with error handling)"""
@@ -1397,10 +1382,7 @@ class ConvertersPageV2(BasePage):
                 name_item.setData(Qt.ItemDataRole.UserRole, conv)
         except Exception as e:
             # H1: Handle refresh errors
-            QMessageBox.warning(
-                self, "Refresh Error",
-                f"Could not refresh converter list:\n{e}"
-            )
+            self.handle_error(e, "refreshing converter list")
     
     def _on_row_double_clicked(self, index) -> None:
         """Handle double-click on row"""
@@ -1430,9 +1412,9 @@ class ConvertersPageV2(BasePage):
                 # Check for duplicate names
                 for cfg in self.config.converters:
                     if cfg.name == new_config.name:
-                        QMessageBox.warning(
-                            self, "Duplicate Name",
-                            f"A configuration named '{new_config.name}' already exists."
+                        self.show_warning(
+                            f"A configuration named '{new_config.name}' already exists.",
+                            "Duplicate Name"
                         )
                         return
                 
@@ -1441,10 +1423,7 @@ class ConvertersPageV2(BasePage):
                 self._emit_changed()
         except Exception as e:
             # H1: Handle add config errors
-            QMessageBox.critical(
-                self, "Add Config Error",
-                f"Failed to add configuration:\n{e}"
-            )
+            self.handle_error(e, "adding converter configuration")
     
     def _on_configure(self, conv: ConverterInfo) -> None:
         """Configure an existing converter configuration (H1: with error handling)"""
@@ -1475,10 +1454,7 @@ class ConvertersPageV2(BasePage):
                 self._emit_changed()
         except Exception as e:
             # H1: Handle configure errors
-            QMessageBox.critical(
-                self, "Configure Error",
-                f"Failed to configure converter:\n{e}"
-            )
+            self.handle_error(e, "configuring converter")
     
     def _on_remove_config(self, conv: ConverterInfo) -> None:
         """Remove converter configuration (H1: with error handling)"""
@@ -1486,14 +1462,13 @@ class ConvertersPageV2(BasePage):
             if not conv.config:
                 return
             
-            reply = QMessageBox.question(
-                self, "Remove Configuration",
+            reply = self.confirm_action(
                 f"Remove configuration for '{conv.name}'?\n\n"
                 "This only removes the configuration, not the converter file.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                "Remove Configuration"
             )
             
-            if reply == QMessageBox.StandardButton.Yes:
+            if reply:
                 self.config.converters = [
                     cfg for cfg in self.config.converters 
                     if cfg.module_path != conv.module_path
@@ -1502,10 +1477,7 @@ class ConvertersPageV2(BasePage):
                 self._emit_changed()
         except Exception as e:
             # H1: Handle removal errors
-            QMessageBox.critical(
-                self, "Remove Error",
-                f"Failed to remove configuration:\n{e}"
-            )
+            self.handle_error(e, "removing converter configuration")
     
     def _on_view_code(self, conv: ConverterInfo) -> None:
         """View system converter code (read-only)"""
@@ -1516,10 +1488,7 @@ class ConvertersPageV2(BasePage):
             self._refresh_list()  # Refresh in case user customized
         except Exception as e:
             # H1: Handle view errors
-            QMessageBox.warning(
-                self, "View Error",
-                f"Could not view converter code:\n{e}"
-            )
+            self.handle_error(e, "viewing converter code")
     
     def _on_edit_code(self, conv: ConverterInfo) -> None:
         """Edit user converter code"""
@@ -1530,20 +1499,14 @@ class ConvertersPageV2(BasePage):
             self._refresh_list()
         except Exception as e:
             # H1: Handle edit errors
-            QMessageBox.warning(
-                self, "Edit Error",
-                f"Could not edit converter code:\n{e}"
-            )
+            self.handle_error(e, "editing converter code")
     
     def _on_customize(self, conv: ConverterInfo) -> None:
         """Create customized copy of system converter"""
         try:
             user_folder = Path(self._folder_edit.text()) if self._folder_edit.text() else None
             if not user_folder:
-                QMessageBox.warning(
-                    self, "No Folder",
-                    "Please configure a user converters folder first."
-                )
+                self.show_warning("Please configure a user converters folder first.", "No Folder")
                 return
             
             dialog = ConverterEditorDialogV2(conv, user_folder, self)
@@ -1551,30 +1514,22 @@ class ConvertersPageV2(BasePage):
             self._refresh_list()
         except Exception as e:
             # H1: Handle customization errors
-            QMessageBox.warning(
-                self, "Customize Error",
-                f"Could not customize converter:\n{e}"
-            )
+            self.handle_error(e, "customizing converter")
     
     def _on_new_converter(self) -> None:
         """Create a new converter from template (H1: with error handling)"""
         try:
             folder = self._folder_edit.text()
             if not folder:
-                QMessageBox.warning(
-                    self, "No Folder",
-                    "Please configure a user converters folder first."
-                )
+                self.show_warning("Please configure a user converters folder first.", "No Folder")
                 return
             
             folder_path = Path(folder)
             if not folder_path.exists():
-                reply = QMessageBox.question(
-                    self, "Create Folder?",
+                if self.confirm_action(
                     f"Folder does not exist:\n{folder}\n\nCreate it?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                )
-                if reply == QMessageBox.StandardButton.Yes:
+                    "Create Folder?"
+                ):
                     folder_path.mkdir(parents=True, exist_ok=True)
                 else:
                     return
@@ -1602,18 +1557,15 @@ class ConvertersPageV2(BasePage):
                         self._on_edit_code(new_conv)
             except ImportError:
                 # H1: Fallback if NewConverterDialog is not available
-                QMessageBox.information(
-                    self, "Template Not Available",
+                self.show_success(
                     "Converter template dialog is not available.\n"
                     "Please create a new converter file manually in:\n"
-                    f"{folder}"
+                    f"{folder}",
+                    "Template Not Available"
                 )
         except Exception as e:
             # H1: Handle new converter errors
-            QMessageBox.critical(
-                self, "New Converter Error",
-                f"Failed to create new converter:\n{e}"
-            )
+            self.handle_error(e, "creating new converter")
     
     # H4: Cleanup method
     def cleanup(self) -> None:
