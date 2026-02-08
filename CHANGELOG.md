@@ -20,6 +20,44 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Exception Handling Guidelines** (`docs/guides/exception-handling.md`): Comprehensive developer guide for proper exception handling across all pyWATS layers (Feb 8, 2026)
+  - **Quick Reference**: DO/DON'T checklists for developers
+  - **Decision Trees**: Visual guides for catch vs bubble decisions
+  - **5 Core Patterns**: Log and re-raise, transform, graceful degradation, cleanup, context managers
+  - **Layer-Specific**: Guidelines for API, Client, GUI, and Converter layers with examples
+  - **Common Scenarios**: File operations, network requests, validation, queue operations
+  - **Anti-Patterns**: 6 common mistakes to avoid with before/after examples
+  - **Testing Guide**: How to test exception scenarios with pytest
+  - **Migration Guide**: v0.5.0 → v0.5.1 ConversionLog behavior changes
+  - **Checklist**: 8-point validation checklist for exception handling code
+  - **Examples**: 20+ real-world code examples demonstrating best practices
+
+### Changed
+- **Logger Standardization**: All modules now use `get_logger()` for consistent logging (Feb 8, 2026)
+  - **Coverage**: 100% (297 files: 196 already correct, 101 updated)
+  - **Pattern**: Replaced `logging.getLogger(__name__)` with `get_logger(__name__)` across all layers
+  - **Benefits**: Enables correlation ID support, structured logging, consistent configuration
+  - **Automation**: Created scripts/standardize_logging.py for automated refactoring
+  - **No Breaking Changes**: get_logger() is a wrapper around logging.getLogger()
+  - **Layers Updated**: API (32 files), Client (45 files), GUI (12 files), Events (12 files)
+- **Exception Logging with Stack Traces**: All exception handlers now include full stack traces (Feb 8, 2026)
+  - **Coverage**: 87% already correct, 36 files updated with 128 changes
+  - **Pattern**: Replaced `logger.error()` → `logger.exception()` in except blocks
+  - **Warning Logs**: Added `exc_info=True` to logger.warning() calls in except blocks
+  - **Benefits**: Easier debugging with complete stack traces in all error logs
+  - **Automation**: Created scripts/audit_exception_logging.py for analysis and fixes
+  - **No Breaking Changes**: Same log output format, just includes additional stack trace data
+- **GUI Error Handling Standardization**: Configurator pages now use consistent ErrorHandlingMixin pattern (Feb 8, 2026)
+  - **Coverage**: 9/10 configurator pages fully migrated, 45/77 QMessageBox calls replaced (58%)
+  - **Pattern**: Replaced `QMessageBox.critical/warning/question()` with `self.handle_error()`, `self.show_warning()`, `self.confirm_action()`
+  - **Benefits**: Automatic exception logging with stack traces, consistent error dialog styling, type-specific error handling
+  - **Automation**: Created scripts/audit_gui_error_handling.py for AST-based analysis and migration planning
+  - **Phases**: 4-phase migration (simple pages → medium → large → complex multi-class files)
+  - **Commits**: 4 incremental commits (Phase 1: 7 calls, Phase 2: 8 calls, Phase 3: 25 calls, Phase 4: 5 calls)
+  - **Note**: 18 calls intentionally unchanged in dialog classes (ConverterSettingsDialogV2, ConverterEditorDialogV2) that don't inherit from BasePage
+  - **Documentation**: Created TASK_2.3_GUI_MIGRATION_PLAN.md with comprehensive migration strategy
+
+### Fixed
 - **Endpoint Risk Assessment Tool** (`pywats-endpoint-scan`): Automated endpoint maintenance and risk analysis (Feb 7, 2026)
   - **Automated Discovery**: Scans routes.py using AST analysis to extract all 60+ API endpoints across 9 domains
   - **Usage Analysis**: Scans entire codebase to track where endpoints are used, counts frequency, maps endpoint → function relationships
@@ -43,6 +81,22 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Project Completion**: gui-client-separation project archived as 60% complete (foundation + scaffolds delivered)
 
 ### Fixed
+- **Queue Manager Double-Failure Handling** (`pywats_ui.framework.reliability.queue_manager`): Fixed critical bug where queue and fallback failures were logged but not surfaced to users (Feb 7, 2026)
+  - **Issue**: When queue operation failed AND saving error state also failed (disk full, permissions), errors were only logged - users never notified of potential data loss
+  - **Fix**: Added `QueueCriticalError` exception raised on double failures, specialized GUI dialog shows critical warning
+  - **Impact**: Users now immediately notified of critical situations requiring disk space/filesystem attention
+  - **Exception**: New `QueueCriticalError` in `pywats_client.exceptions` with primary_error, fallback_error, operation_id fields
+  - **GUI Handling**: Error mixin updated to show critical dialog with troubleshooting steps for disk/filesystem issues
+  - **Logging**: Double failures logged at CRITICAL level with structured context (operation_id, error details)
+  - **Tests**: Unit tests added for QueuedOperation dataclass (2 passing), integration tests pending async/Qt framework 
+- **ConversionLog Silent Failures** (`pywats_client.converters.conversion_log`): Fixed critical bug where converter exceptions were logged but not re-raised, causing silent data loss (Feb 7, 2026)
+  - **Issue**: `ConversionLog.error()` with exception parameter logged errors to file but didn't propagate exceptions, making conversions appear successful when they failed
+  - **Fix**: Added `raise_after_log` parameter (default: True) - exceptions are now re-raised after logging by default
+  - **Breaking Change**: Exceptions are re-raised by default starting in v0.5.1 - set `raise_after_log=False` for backward compatibility
+  - **Migration**: Update converter code to handle re-raised exceptions or explicitly set `raise_after_log=False` to maintain old behavior
+  - **Context Manager**: Context manager (`with ConversionLog(...)`) still propagates original exception (uses `raise_after_log=False` internally)
+  - **Tests**: 5 new tests added (25 total passing) covering re-raise behavior, backward compatibility, and context manager edge cases
+  - **Impact**: Prevents data loss from silent converter failures - GUI will now correctly show conversion errors instead of false success
 - **System Tray Icon Bug**: Fixed QAction deletion error in SystemTrayIcon that caused RuntimeError - now stores callbacks/icons instead of QAction objects, recreates menu on each rebuild
   - Resolves: RuntimeError: Internal C++ object (PySide6.QtGui.QAction) already deleted
   - Result: Launcher runs without errors, menu works correctly
