@@ -11,10 +11,11 @@ User requirement: "Fix weaknesses, ensure reliability, NEVER lose customer data"
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QGroupBox, QFrame, QMessageBox
+    QPushButton, QGroupBox, QFrame
 )
 from PySide6.QtCore import Qt, Slot
 
@@ -24,7 +25,7 @@ from pywats_client.core.config import ClientConfig
 if TYPE_CHECKING:
     pass  # Will be updated when ConfiguratorMainWindow is created
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ConnectionPage(BasePage, OfflineCapability):
@@ -199,11 +200,7 @@ class ConnectionPage(BasePage, OfflineCapability):
                     raise ValueError("Sync interval must be at least 5 seconds")
                 self.config.sync_interval_seconds = sync_interval
             except ValueError as e:
-                QMessageBox.warning(
-                    self,
-                    "Invalid Sync Interval",
-                    f"Sync interval must be a number >= 5.\n\nError: {e}"
-                )
+                self.handle_error(e, "validating sync interval")
                 return
             
             # Save to file
@@ -214,15 +211,7 @@ class ConnectionPage(BasePage, OfflineCapability):
                 logger.warning("Config path not set - changes only in memory")
                 
         except Exception as e:
-            logger.exception(f"Failed to save connection config: {e}")
-            QMessageBox.critical(
-                self,
-                "Save Failed",
-                f"Failed to save connection configuration.\n\n"
-                f"Error: {str(e)}\n\n"
-                f"Your changes have NOT been saved.\n"
-                f"Check file permissions and disk space."
-            )
+            self.handle_error(e, "saving connection configuration")
             raise  # Re-raise so caller knows save failed
     
     def save_config_locally(self) -> None:
@@ -270,10 +259,9 @@ class ConnectionPage(BasePage, OfflineCapability):
             loop = asyncio.get_event_loop()
             if not loop.is_running():
                 logger.warning("Event loop not running - cannot start async task")
-                QMessageBox.warning(
-                    self,
-                    "Application Initializing",
-                    "Please wait for application to finish starting before using this feature."
+                self.show_warning(
+                    "Please wait for application to finish starting before using this feature.",
+                    "Application Initializing"
                 )
                 return False
             
@@ -286,12 +274,7 @@ class ConnectionPage(BasePage, OfflineCapability):
             return True
             
         except RuntimeError as e:
-            logger.exception(f"Could not start async task: {e}")
-            QMessageBox.warning(
-                self,
-                "Error",
-                f"Could not start operation.\n\nError: {e}"
-            )
+            self.handle_error(e, "starting async task")
             return False
     
     def update_status(self, status: str) -> None:
@@ -447,11 +430,10 @@ class ConnectionPage(BasePage, OfflineCapability):
     def _on_test_send_uut(self) -> None:
         """Handle test send UUT button click with queue support (C1 fix)."""
         if not self.queue_manager:
-            QMessageBox.warning(
-                self,
-                "Queue Not Available",
+            self.show_warning(
                 "Local queue manager not configured.\n\n"
-                "Test UUT send requires queue manager to prevent data loss."
+                "Test UUT send requires queue manager to prevent data loss.",
+                "Queue Not Available"
             )
             return
         
@@ -479,10 +461,9 @@ class ConnectionPage(BasePage, OfflineCapability):
             
             url = self.config.service_address.rstrip('/')
             if not url:
-                QMessageBox.warning(
-                    self,
-                    "Configuration Required",
-                    "Please configure service address before sending test report."
+                self.show_warning(
+                    "Please configure service address before sending test report.",
+                    "Configuration Required"
                 )
                 return
             
@@ -530,29 +511,21 @@ class ConnectionPage(BasePage, OfflineCapability):
                 }
             )
             
-            QMessageBox.information(
-                self,
-                "Test Report Queued",
+            self.show_success(
                 f"Test UUT report queued successfully!\n\n"
                 f"Operation ID: {operation_id}\n"
                 f"Serial: {test_report['sn']}\n"
                 f"Part Number: {test_report['pn']}\n\n"
                 f"✨ Report will be sent automatically when server is reachable.\n"
-                f"Check queue status in main window status bar."
+                f"Check queue status in main window status bar.",
+                "Test Report Queued"
             )
             
             self._client_status_label.setText("Online - Test Queued")
             self._client_status_label.setStyleSheet("font-weight: bold; color: #4ec9b0;")
                     
         except Exception as e:
-            logger.exception("Test UUT queue error")
-            QMessageBox.critical(
-                self,
-                "Queue Error",
-                f"Failed to queue test report.\n\n"
-                f"Error: {str(e)}\n\n"
-                f"Please check application logs for details."
-            )
+            self.handle_error(e, "queueing test report")
         finally:
             self._test_uut_btn.setEnabled(True)
             self._test_uut_btn.setText("Send test report")

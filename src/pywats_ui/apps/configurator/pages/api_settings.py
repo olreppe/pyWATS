@@ -7,6 +7,7 @@ Improvements:
 """
 
 import logging
+from pywats.core.logging import get_logger
 import secrets
 from typing import Optional
 from datetime import datetime
@@ -15,7 +16,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QGroupBox, QFormLayout, QCheckBox, QSpinBox,
     QComboBox, QTableWidget, QTableWidgetItem,
-    QHeaderView, QMessageBox, QInputDialog
+    QHeaderView, QInputDialog
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
@@ -23,7 +24,7 @@ from PySide6.QtGui import QFont
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class APISettingsPage(BasePage):
@@ -267,11 +268,7 @@ class APISettingsPage(BasePage):
             
             # Validate name
             if len(name.strip()) == 0:
-                QMessageBox.warning(
-                    self,
-                    "Invalid Name",
-                    "Token name cannot be empty."
-                )
+                self.show_warning("Token name cannot be empty.", "Invalid Name")
                 return
             
             # Generate secure token
@@ -296,56 +293,38 @@ class APISettingsPage(BasePage):
             self._tokens_table.setCellWidget(row, 3, delete_btn)
             
             # Show token in message box
-            QMessageBox.information(
-                self,
-                "API Token Generated",
+            self.show_success(
                 f"<b>Token Name:</b> {name}<br><br>"
                 f"<b>Token:</b><br><code>{token}</code><br><br>"
                 "<b>Important:</b> Copy this token now. You won't be able to see it again.",
-                QMessageBox.StandardButton.Ok
+                "API Token Generated"
             )
             
             logger.info(f"Generated API token: {name}")
             
         except Exception as e:
-            logger.exception(f"Failed to generate API token: {e}")
-            QMessageBox.critical(
-                self,
-                "Token Generation Failed",
-                f"Failed to generate API token.\n\nError: {e}"
-            )
+            self.handle_error(e, "generating API token")
     
     def _delete_token(self, row: int) -> None:
         """Delete an API token with confirmation."""
         try:
-            reply = QMessageBox.question(
-                self,
-                "Delete Token",
+            if self.confirm_action(
                 "Are you sure you want to delete this API token?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            
-            if reply == QMessageBox.StandardButton.Yes:
+                "Delete Token"
+            ):
                 token_name = self._tokens_table.item(row, 0).text()
                 self._tokens_table.removeRow(row)
                 logger.info(f"Deleted API token: {token_name}")
                 
         except Exception as e:
-            logger.exception(f"Failed to delete API token: {e}")
-            QMessageBox.warning(
-                self,
-                "Delete Failed",
-                f"Failed to delete API token.\n\nError: {e}"
-            )
+            self.handle_error(e, "deleting API token")
     
     def _on_test_webhooks(self) -> None:
         """Test webhook configuration (placeholder)."""
-        QMessageBox.information(
-            self,
-            "Test Webhooks",
+        self.show_success(
             "Webhook testing will send sample events to configured URLs.\n\n"
             "This feature will be implemented in a future update.",
-            QMessageBox.StandardButton.Ok
+            "Test Webhooks"
         )
     
     def save_config(self) -> None:
@@ -354,10 +333,9 @@ class APISettingsPage(BasePage):
             # Validate inputs
             host = self._api_host.text().strip()
             if not host:
-                QMessageBox.warning(
-                    self,
-                    "Invalid Configuration",
-                    "API host cannot be empty.\n\nPlease enter a valid host (e.g., 127.0.0.1)"
+                self.show_warning(
+                    "API host cannot be empty.\n\nPlease enter a valid host (e.g., 127.0.0.1)",
+                    "Invalid Configuration"
                 )
                 return
             
@@ -395,14 +373,7 @@ class APISettingsPage(BasePage):
             # Note: Service restart needed for API changes to take effect
             
         except Exception as e:
-            logger.exception(f"Failed to save API settings: {e}")
-            QMessageBox.critical(
-                self,
-                "Save Failed",
-                f"Failed to save API settings.\n\n"
-                f"Error: {e}\n\n"
-                "Please check the logs for details and try again."
-            )
+            self.handle_error(e, "saving API settings")
     
     def load_config(self) -> None:
         """Load API settings from config"""
@@ -438,13 +409,7 @@ class APISettingsPage(BasePage):
             logger.debug("API settings loaded")
             
         except Exception as e:
-            logger.exception(f"Failed to load API settings: {e}")
-            QMessageBox.warning(
-                self,
-                "Load Failed",
-                f"Failed to load API settings.\n\nError: {e}\n\n"
-                "Using default values."
-            )
+            self.handle_error(e, "loading API settings")
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix - consistency)."""

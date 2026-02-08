@@ -8,19 +8,20 @@ Improvements:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, List, Dict, Any
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel,
     QLineEdit, QPushButton, QGroupBox, QCheckBox, QSpinBox,
     QDialog, QDialogButtonBox, QTableWidget, QTableWidgetItem,
-    QHeaderView, QMessageBox
+    QHeaderView
 )
 from PySide6.QtCore import Qt
 
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StationManagerDialog(QDialog):
@@ -115,23 +116,15 @@ class StationManagerDialog(QDialog):
         """Remove selected station"""
         selected = self._stations_table.selectedItems()
         if not selected:
-            QMessageBox.warning(
-                self,
-                "No Selection",
-                "Please select a station to remove."
-            )
+            self.show_warning("Please select a station to remove.", "No Selection")
             return
         
         row = self._stations_table.currentRow()
         if row >= 0:
-            reply = QMessageBox.question(
-                self,
-                "Remove Station",
+            if self.confirm_action(
                 f"Remove station '{self._stations_table.item(row, 0).text()}'?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            
-            if reply == QMessageBox.StandardButton.Yes:
+                "Remove Station"
+            ):
                 self._stations_table.removeRow(row)
     
     def get_stations(self) -> List[Dict[str, Any]]:
@@ -323,21 +316,15 @@ class SetupPage(BasePage):
                 logger.info(f"Stations updated: {len(updated_stations)} total")
                 
         except Exception as e:
-            logger.exception(f"Failed to manage stations: {e}")
-            QMessageBox.warning(
-                self,
-                "Station Management Failed",
-                f"Failed to open station manager.\n\nError: {e}"
-            )
+            self.handle_error(e, "managing stations")
     
     def _emit_page_change_request(self, page_name: str) -> None:
         """Request page change (will be connected by main window)"""
         # TODO: Implement page navigation signal
         logger.info(f"Page change requested: {page_name}")
-        QMessageBox.information(
-            self,
-            "Navigate",
-            f"Please manually navigate to the '{page_name}' page to configure connection settings."
+        self.show_success(
+            f"Please manually navigate to the '{page_name}' page to configure connection settings.",
+            "Navigate"
         )
     
     def save_config(self) -> None:
@@ -346,19 +333,17 @@ class SetupPage(BasePage):
             # Validate inputs
             instance_name = self._instance_name.text().strip()
             if not instance_name:
-                QMessageBox.warning(
-                    self,
-                    "Invalid Configuration",
-                    "Instance name is required.\n\nPlease enter a name for this client instance."
+                self.show_warning(
+                    "Instance name is required.\n\nPlease enter a name for this client instance.",
+                    "Invalid Configuration"
                 )
                 return
             
             station_name = self._station_name.text().strip()
             if not station_name and not self._use_hostname.isChecked():
-                QMessageBox.warning(
-                    self,
-                    "Invalid Configuration",
-                    "Station name is required.\n\nPlease enter a name or enable 'Use hostname'."
+                self.show_warning(
+                    "Station name is required.\n\nPlease enter a name or enable 'Use hostname'.",
+                    "Invalid Configuration"
                 )
                 return
             
@@ -390,14 +375,7 @@ class SetupPage(BasePage):
             # Success - no popup needed (prevents multiple popups on close)
             
         except Exception as e:
-            logger.exception(f"Failed to save station setup: {e}")
-            QMessageBox.critical(
-                self,
-                "Save Failed",
-                f"Failed to save station setup configuration.\n\n"
-                f"Error: {e}\n\n"
-                "Please check the logs for details and try again."
-            )
+            self.handle_error(e, "saving station setup configuration")
     
     def load_config(self) -> None:
         """Load station setup from config"""
@@ -441,13 +419,7 @@ class SetupPage(BasePage):
             logger.debug("Station setup loaded")
             
         except Exception as e:
-            logger.exception(f"Failed to load station setup: {e}")
-            QMessageBox.warning(
-                self,
-                "Load Failed",
-                f"Failed to load station setup.\n\nError: {e}\n\n"
-                "Using default values."
-            )
+            self.handle_error(e, "loading station setup")
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix - consistency)."""
