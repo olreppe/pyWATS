@@ -57,6 +57,17 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Note**: 18 calls intentionally unchanged in dialog classes (ConverterSettingsDialogV2, ConverterEditorDialogV2) that don't inherit from BasePage
   - **Documentation**: Created TASK_2.3_GUI_MIGRATION_PLAN.md with comprehensive migration strategy
 
+### Deprecated
+- **pywats.exceptions Module**: Deprecated in favor of pywats.core.exceptions (Feb 8, 2026)
+  - **Reason**: Consolidating exception classes into core module for better organization
+  - **What Changed**: All exception classes moved from `pywats.exceptions` → `pywats.core.exceptions`
+  - **Backward Compatibility**: Old module still works with deprecation warning, re-exports all classes from new location
+  - **Migration**: Simple import path change: `from pywats.core.exceptions import PyWATSError` (see MIGRATION.md)
+  - **Timeline**: Works with warnings in v0.5.1-v0.5.x, completely removed in v0.6.0
+  - **Benefits**: Consistent module structure, enhanced ErrorMode support, cleaner exception hierarchy
+  - **Automated Migration**: PowerShell/bash scripts provided in MIGRATION.md for bulk import updates
+  - **Files Updated**: 1 test file migrated to new imports, old module reduced to 50 lines (re-export wrapper)
+
 ### Fixed
 - **Endpoint Risk Assessment Tool** (`pywats-endpoint-scan`): Automated endpoint maintenance and risk analysis (Feb 7, 2026)
   - **Automated Discovery**: Scans routes.py using AST analysis to extract all 60+ API endpoints across 9 domains

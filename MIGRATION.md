@@ -5,6 +5,7 @@ For a summary of all changes, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Table of Contents
 
+- [v0.5.1 - Exception Module Consolidation](#v051---exception-module-consolidation)
 - [v0.1.0b40 - Async-First Client Architecture](#v010b40---async-first-client-architecture)
 - [v0.1.0b40 - File I/O Separation](#v010b40---file-io-separation)
 - [v0.1.0b40 - Deprecated UUR Classes Removed](#v010b40---deprecated-uur-classes-removed)
@@ -13,6 +14,101 @@ For a summary of all changes, see [CHANGELOG.md](CHANGELOG.md).
 - [v0.1.0b38 - Configuration Moved to Client](#v010b38---configuration-moved-to-client)
 - [v0.1.0b34 - Report Query API](#v010b34---report-query-api)
 - [v0.1.0b32 - Unified API Pattern](#v010b32---unified-api-pattern)
+
+---
+
+## v0.5.1 - Exception Module Consolidation
+
+**⚠️ Deprecation Notice:** The `pywats.exceptions` module is deprecated and will be removed in v0.6.0.
+
+All exception classes have been moved to `pywats.core.exceptions` with enhanced functionality.
+
+### What Changed
+
+- **Old location** (deprecated): `from pywats.exceptions import`
+- **New location** (recommended): `from pywats.core.exceptions import`
+
+The old module still works in v0.5.1 through v0.5.x (shows deprecation warning), but will be completely removed in v0.6.0.
+
+### Migration Steps
+
+**Step 1: Update Import Statements**
+
+```python
+# Before (deprecated - still works but shows warning):
+from pywats.exceptions import (
+    PyWATSError,
+    NotFoundError,
+    ValidationError,
+    AuthenticationError,
+)
+
+# After (recommended):
+from pywats.core.exceptions import (
+    PyWATSError,
+    NotFoundError,
+    ValidationError,
+    AuthenticationError,
+)
+```
+
+**Step 2: Update Exception Handling** (No changes needed)
+
+Your exception handling code works exactly the same:
+
+```python
+# This code works unchanged
+try:
+    product = api.product.get("PN-001")
+except NotFoundError as e:
+    print(f"Product not found: {e}")
+except PyWATSError as e:
+    print(f"API error: {e}")
+```
+
+**Step 3: Use New Exception Features** (Optional)
+
+The new exception module provides enhanced features:
+
+```python
+from pywats.core.exceptions import ErrorMode
+
+# ErrorMode.STRICT (default) - raises on empty/ambiguous responses
+api = pyWATS(error_mode=ErrorMode.STRICT)
+
+# ErrorMode.LENIENT - returns None for 404 and empty responses
+api = pyWATS(error_mode=ErrorMode.LENIENT)
+```
+
+### Automated Migration
+
+Update all import statements in your codebase:
+
+```bash
+# Find all files using old import
+find . -name "*.py" -exec grep -l "from pywats.exceptions import" {} \;
+
+# Update with sed (Linux/macOS)
+find . -name "*.py" -exec sed -i 's/from pywats\.exceptions import/from pywats.core.exceptions import/g' {} \;
+
+# Update with PowerShell (Windows)
+Get-ChildItem -Recurse -Filter *.py | ForEach-Object {
+    (Get-Content $_.FullName) -replace 'from pywats\.exceptions import', 'from pywats.core.exceptions import' | Set-Content $_.FullName
+}
+```
+
+### Why This Change?
+
+1. **Better organization**: Exceptions now in `pywats.core` alongside other core utilities
+2. **Enhanced features**: New `ErrorMode` for flexible error handling
+3. **Cleaner codebase**: Eliminates duplicate exception definitions
+4. **Consistency**: All core modules now under `pywats.core`
+
+### Timeline
+
+- **v0.5.1**: Deprecation warning added, old module still works
+- **v0.5.2 - v0.5.x**: Migration period (both modules work)
+- **v0.6.0**: Old module completely removed (imports will fail)
 
 ---
 

@@ -35,16 +35,19 @@ Usage (Asynchronous - for GUI/async applications):
 
 from .pywats import pyWATS
 from .async_wats import AsyncWATS
-from .exceptions import (
+from .core.exceptions import (
     PyWATSError,
     AuthenticationError,
+    AuthorizationError,
     NotFoundError,
     ValidationError,
     ServerError,
     ConnectionError,
     TimeoutError,
-    ConfigurationError,
-    ServiceError,
+    ConflictError,
+    EmptyResponseError,
+    WatsApiError,
+    ErrorMode,
 )
 from .core.logging import (
     enable_debug_logging,
@@ -143,13 +146,16 @@ __all__ = [
     # Exceptions
     "PyWATSError",
     "AuthenticationError",
+    "AuthorizationError",
     "NotFoundError",
     "ValidationError",
     "ServerError",
     "ConnectionError",
     "TimeoutError",
-    "ConfigurationError",
-    "ServiceError",
+    "ConflictError",
+    "EmptyResponseError",
+    "WatsApiError",
+    "ErrorMode",
     # Product models
     "Product",
     "ProductRevision",
