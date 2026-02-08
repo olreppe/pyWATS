@@ -7,19 +7,20 @@ Improvements:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from pathlib import Path
 from typing import Optional
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QGroupBox, QSpinBox, QFileDialog, QMessageBox
+    QPushButton, QGroupBox, QSpinBox, QFileDialog
 )
 from PySide6.QtCore import Qt
 
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SoftwarePage(BasePage):
@@ -139,38 +140,26 @@ class SoftwarePage(BasePage):
                 
                 # Validate folder exists
                 if not folder_path.exists():
-                    QMessageBox.warning(
-                        self,
-                        "Invalid Folder",
-                        "The selected folder does not exist."
-                    )
+                    self.show_warning("The selected folder does not exist.", "Invalid Folder")
                     return
                 
                 # Check if empty (only for new configuration)
                 if self._root_folder_edit.text() != folder:
                     contents = list(folder_path.iterdir())
                     if contents:
-                        reply = QMessageBox.question(
-                            self,
-                            "Folder Not Empty",
+                        if not self.confirm_action(
                             "The selected folder is not empty.\n\n"
                             "For new configurations, an empty folder is recommended.\n"
                             "Use this folder anyway?",
-                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                        )
-                        if reply != QMessageBox.StandardButton.Yes:
+                            "Folder Not Empty"
+                        ):
                             return
                 
                 self._root_folder_edit.setText(folder)
                 logger.info(f"Software distribution root folder set to: {folder}")
                 
         except Exception as e:
-            logger.exception(f"Failed to browse for folder: {e}")
-            QMessageBox.warning(
-                self,
-                "Browse Failed",
-                f"Failed to select folder.\n\nError: {e}"
-            )
+            self.handle_error(e, "browsing for folder")
     
     def save_config(self) -> None:
         """Save software distribution settings (H1 fix - error handling)"""
@@ -203,14 +192,7 @@ class SoftwarePage(BasePage):
             # Note: Feature not fully implemented yet
             
         except Exception as e:
-            logger.exception(f"Failed to save software distribution settings: {e}")
-            QMessageBox.critical(
-                self,
-                "Save Failed",
-                f"Failed to save software distribution settings.\n\n"
-                f"Error: {e}\n\n"
-                "Please check the logs for details and try again."
-            )
+            self.handle_error(e, "saving software distribution settings")
     
     def load_config(self) -> None:
         """Load software distribution settings from config"""
@@ -227,13 +209,7 @@ class SoftwarePage(BasePage):
             logger.debug("Software distribution settings loaded (feature not fully implemented)")
             
         except Exception as e:
-            logger.exception(f"Failed to load software distribution settings: {e}")
-            QMessageBox.warning(
-                self,
-                "Load Failed",
-                f"Failed to load software distribution settings.\n\nError: {e}\n\n"
-                "Using default values."
-            )
+            self.handle_error(e, "loading software distribution settings")
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix - consistency)"""

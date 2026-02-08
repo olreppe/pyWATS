@@ -7,19 +7,20 @@ Improvements:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QCheckBox, QRadioButton, QButtonGroup, QSpinBox, QGroupBox,
-    QMessageBox, QPushButton
+    QPushButton
 )
 from PySide6.QtCore import Qt
 
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProxySettingsPage(BasePage):
@@ -159,11 +160,10 @@ class ProxySettingsPage(BasePage):
                 # Validate manual proxy settings
                 host = self._host_edit.text().strip()
                 if not host:
-                    QMessageBox.warning(
-                        self,
-                        "Invalid Configuration",
+                    self.show_warning(
                         "Proxy host is required when using manual proxy configuration.\n\n"
-                        "Please enter a proxy host or select a different proxy mode."
+                        "Please enter a proxy host or select a different proxy mode.",
+                        "Invalid Configuration"
                     )
                     return
             
@@ -185,14 +185,7 @@ class ProxySettingsPage(BasePage):
             # Note: Service restart needed for proxy changes to take effect
             
         except Exception as e:
-            logger.exception(f"Failed to save proxy settings: {e}")
-            QMessageBox.critical(
-                self,
-                "Save Failed",
-                f"Failed to save proxy settings.\n\n"
-                f"Error: {e}\n\n"
-                "Please check the logs for details and try again."
-            )
+            self.handle_error(e, "saving proxy settings")
     
     def load_config(self) -> None:
         """Load configuration"""
@@ -218,13 +211,7 @@ class ProxySettingsPage(BasePage):
             logger.debug("Proxy settings loaded")
             
         except Exception as e:
-            logger.exception(f"Failed to load proxy settings: {e}")
-            QMessageBox.warning(
-                self,
-                "Load Failed",
-                f"Failed to load proxy settings.\n\nError: {e}\n\n"
-                "Using default values."
-            )
+            self.handle_error(e, "loading proxy settings")
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix - consistency)"""
