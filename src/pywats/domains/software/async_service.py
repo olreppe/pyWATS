@@ -8,12 +8,13 @@ Includes both public and internal API methods.
 from typing import Optional, List, Union, Dict, Any
 from uuid import UUID
 import logging
+from pywats.core.logging import get_logger
 
 from .async_repository import AsyncSoftwareRepository
 from .models import Package, PackageFile, PackageTag, VirtualFolder
 from .enums import PackageStatus
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncSoftwareService:

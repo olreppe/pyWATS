@@ -13,6 +13,7 @@ Usage:
 """
 
 import logging
+from pywats.core.logging import get_logger
 import sys
 import signal
 from pathlib import Path
@@ -22,7 +23,7 @@ from dataclasses import dataclass
 if TYPE_CHECKING:
     from ..core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

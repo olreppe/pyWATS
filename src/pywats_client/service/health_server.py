@@ -38,13 +38,14 @@ Usage:
 
 import json
 import logging
+from pywats.core.logging import get_logger
 import threading
 import socket
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Optional, Callable, Dict, Any
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class HealthStatus:
@@ -409,7 +410,7 @@ class HealthServer:
             return True
             
         except Exception as e:
-            logger.error(f"Failed to start health server: {e}")
+            logger.exception(f"Failed to start health server: {e}")
             return False
     
     def _serve(self) -> None:

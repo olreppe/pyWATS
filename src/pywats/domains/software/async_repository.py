@@ -9,6 +9,7 @@ Uses Routes class for all endpoint definitions.
 from typing import Optional, List, Union, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 import logging
+from pywats.core.logging import get_logger
 
 from ...core.routes import Routes
 
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 from .models import Package, PackageFile, VirtualFolder
 from .enums import PackageStatus
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncSoftwareRepository:

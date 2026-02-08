@@ -16,6 +16,7 @@ See CLIENT_ASYNC_ARCHITECTURE.md for design details.
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -48,7 +49,7 @@ if TYPE_CHECKING:
     from ..core.config import ClientConfig
     from ..converters.base import Converter
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncConversionItemState(Enum):
@@ -290,7 +291,7 @@ class AsyncConverterPool:
                     timeout=30.0
                 )
             except asyncio.TimeoutError:
-                logger.warning("Conversion tasks timed out, cancelling...")
+                logger.warning("Conversion tasks timed out, cancelling...", exc_info=True)
                 for task in self._active_tasks:
                     task.cancel()
         
@@ -302,7 +303,7 @@ class AsyncConverterPool:
             try:
                 await self._sandbox.shutdown()
             except Exception as e:
-                logger.warning(f"Error shutting down sandbox: {e}")
+                logger.warning(f"Error shutting down sandbox: {e}", exc_info=True)
             self._sandbox = None
         
         self._running = False
@@ -361,12 +362,12 @@ class AsyncConverterPool:
                         self._converters.append(converter)
                         logger.info(f"Loaded converter: {converter.name}")
                 except Exception as e:
-                    logger.error(f"Failed to load converter: {e}")
+                    logger.exception(f"Failed to load converter: {e}")
             
             logger.info(f"Loaded {len(self._converters)} converters")
             
         except Exception as e:
-            logger.error(f"Failed to load converters: {e}")
+            logger.exception(f"Failed to load converters: {e}")
     
     async def _create_converter(
         self,
@@ -410,7 +411,7 @@ class AsyncConverterPool:
                     self._observers.append(observer)
                     logger.info(f"Started watcher for {converter.name}")
             except Exception as e:
-                logger.error(f"Failed to start watcher for {converter.name}: {e}")
+                logger.exception(f"Failed to start watcher for {converter.name}: {e}")
     
     async def _restart_watchers(self) -> None:
         """Restart all file watchers"""
@@ -468,7 +469,7 @@ class AsyncConverterPool:
                 f"Queued (priority={priority}): {file_path.name} via {converter.name}"
             )
         except Exception as e:
-            logger.warning(f"Cannot queue {file_path.name}: {e}")
+            logger.warning(f"Cannot queue {file_path.name}: {e}", exc_info=True)
     
     # =========================================================================
     # Conversion Processing
@@ -489,7 +490,7 @@ class AsyncConverterPool:
             except Exception as e:
                 # Mark failed in queue
                 queue_item.mark_failed(str(e))
-                logger.error(f"Conversion failed: {item.file_path.name}: {e}")
+                logger.exception(f"Conversion failed: {item.file_path.name}: {e}")
             finally:
                 self._active_count -= 1
                 # Update queue item status
@@ -553,7 +554,7 @@ class AsyncConverterPool:
             self._stats["total_processed"] += 1
             self._stats["errors"] += 1
             
-            logger.error(f"Conversion failed: {item.file_path.name}: {e}")
+            logger.exception(f"Conversion failed: {item.file_path.name}: {e}")
             
             # Handle error (move to error folder, etc.)
             await self._handle_error(item, e)
@@ -626,17 +627,17 @@ class AsyncConverterPool:
                 
         except SandboxSecurityError as e:
             self._stats["sandbox_errors"] += 1
-            logger.error(f"Security violation in converter {converter.name}: {e}")
+            logger.exception(f"Security violation in converter {converter.name}: {e}")
             raise
         
         except SandboxTimeoutError as e:
             self._stats["sandbox_errors"] += 1
-            logger.error(f"Converter {converter.name} timed out: {e}")
+            logger.exception(f"Converter {converter.name} timed out: {e}")
             raise
         
         except SandboxError as e:
             self._stats["sandbox_errors"] += 1
-            logger.error(f"Sandbox error in converter {converter.name}: {e}")
+            logger.exception(f"Sandbox error in converter {converter.name}: {e}")
             raise
     
     async def _convert_unsandboxed(self, item: AsyncConversionItem) -> Optional[Dict[str, Any]]:
@@ -706,7 +707,7 @@ class AsyncConverterPool:
             try:
                 await asyncio.to_thread(item.file_path.rename, dest)
             except Exception as e:
-                logger.error(f"Failed to move error file: {e}")
+                logger.exception(f"Failed to move error file: {e}")
     
     async def _process_archive_queues(self) -> None:
         """Process archive queues for all converters (during idle)"""
@@ -714,7 +715,7 @@ class AsyncConverterPool:
             try:
                 await asyncio.to_thread(converter.process_archive_queue)
             except Exception as e:
-                logger.error(f"Archive queue error for {converter.name}: {e}")
+                logger.exception(f"Archive queue error for {converter.name}: {e}")
 
 
 class _FileEventHandler(FileSystemEventHandler):

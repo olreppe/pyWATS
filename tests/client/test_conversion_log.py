@@ -180,7 +180,7 @@ class TestConversionLog:
             assert entry["message"] == "Parse failed"
     
     def test_error_with_exception(self):
-        """Test error() with exception object."""
+        """Test error() with exception object (backward compat mode)."""
         with tempfile.TemporaryDirectory() as tmpdir:
             log_path = Path(tmpdir) / "test.log"
             
@@ -189,7 +189,8 @@ class TestConversionLog:
             try:
                 raise ValueError("Invalid value")
             except ValueError as e:
-                log.error("Validation error", exception=e)
+                # Use raise_after_log=False for backward compatibility testing
+                log.error("Validation error", exception=e, raise_after_log=False)
             
             log.finalize(success=False, error="Validation failed")
             
@@ -341,6 +342,115 @@ class TestConversionLog:
             # Directory should be created
             assert log_path.parent.exists()
             assert log_path.exists()
+    
+    def test_error_reraises_exception_by_default(self):
+        """Test that error() re-raises exceptions by default (v0.5.1+)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_path = Path(tmpdir) / "test.log"
+            
+            log = ConversionLog(log_path, "test.csv")
+            
+            # Exception should be re-raised after logging
+            with pytest.raises(ValueError) as exc_info:
+                try:
+                    raise ValueError("Test error")
+                except ValueError as e:
+                    log.error("Parse failed", exception=e)
+            
+            assert "Test error" in str(exc_info.value)
+            
+            # Exception should still be logged
+            lines = log_path.read_text().strip().split('\n')
+            error_entries = [line for line in lines if '"ERROR"' in line]
+            assert len(error_entries) >= 1
+            
+            error_entry = json.loads(error_entries[0])
+            assert error_entry["metadata"]["exception_type"] == "ValueError"
+            assert error_entry["metadata"]["exception_message"] == "Test error"
+            
+            log.finalize(success=False, error="Parse failed")
+    
+    def test_error_backward_compat_no_reraise(self):
+        """Test backward compatibility with raise_after_log=False."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_path = Path(tmpdir) / "test.log"
+            
+            log = ConversionLog(log_path, "test.csv")
+            
+            # Exception should NOT be re-raised when explicitly disabled
+            try:
+                raise ValueError("Test error")
+            except ValueError as e:
+                log.error("Parse failed", exception=e, raise_after_log=False)
+                # Should reach here without raising
+            
+            # Exception should still be logged
+            lines = log_path.read_text().strip().split('\n')
+            error_entries = [line for line in lines if '"ERROR"' in line]
+            assert len(error_entries) >= 1
+            
+            log.finalize(success=False, error="Parse failed")
+    
+    def test_error_without_exception_no_raise(self):
+        """Test that error() without exception doesn't raise."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_path = Path(tmpdir) / "test.log"
+            
+            log = ConversionLog(log_path, "test.csv")
+            
+            # Should not raise even with raise_after_log=True (no exception provided)
+            log.error("Generic error message", raise_after_log=True)
+            
+            # Should complete normally
+            log.finalize(success=False, error="Generic error")
+    
+    def test_context_manager_doesnt_double_raise(self):
+        """Test that context manager doesn't double-raise exceptions."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_path = Path(tmpdir) / "test.log"
+            
+            # Exception should propagate exactly once from context manager
+            with pytest.raises(ValueError) as exc_info:
+                with ConversionLog(log_path, "test.csv") as log:
+                    log.step("Processing")
+                    raise ValueError("Context manager test")
+            
+            assert "Context manager test" in str(exc_info.value)
+            
+            # Verify log captured the error
+            lines = log_path.read_text().strip().split('\n')
+            error_entries = [json.loads(line) for line in lines if '"ERROR"' in line]
+            
+            # Should have error entry from __exit__
+            assert any("Context manager test" in e.get("message", "") for e in error_entries)
+    
+    def test_multiple_errors_with_reraise(self):
+        """Test logging multiple exceptions with re-raising."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_path = Path(tmpdir) / "test.log"
+            
+            log = ConversionLog(log_path, "test.csv")
+            
+            # First error (disabled re-raise)
+            try:
+                raise ValueError("First error")
+            except ValueError as e:
+                log.error("First problem", exception=e, raise_after_log=False)
+            
+            # Second error (enabled re-raise - default)
+            with pytest.raises(RuntimeError):
+                try:
+                    raise RuntimeError("Second error")
+                except RuntimeError as e:
+                    log.error("Second problem", exception=e)
+            
+            # Finalize and close the log properly
+            log.finalize(success=False, error="Multiple errors")
+            
+            # Should have logged both
+            lines = log_path.read_text().strip().split('\n')
+            error_lines = [line for line in lines if '"ERROR"' in line]
+            assert len(error_lines) >= 2
 
 
 class TestConversionLogIntegration:

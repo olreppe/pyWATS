@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from pywats_events.policies.error_policy import ErrorPolicy
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncEventBus:

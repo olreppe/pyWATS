@@ -100,6 +100,14 @@
         "/^python -m pywats_ui\\.launcher 2>&1 \\| Select-Object -First 20$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^python scripts/audit_exception_logging\\.py --apply$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^python -m pytest tests/client/test_conversion_log\\.py::TestConversionLog::test_error_reraises_exception_by_default -v --tb=short$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

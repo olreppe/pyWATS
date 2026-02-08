@@ -10,13 +10,14 @@ from datetime import datetime, timedelta
 from uuid import UUID
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 
 from .async_repository import AsyncProcessRepository
 from .models import ProcessInfo, RepairOperationConfig, RepairCategory
 from ...core.cache import AsyncTTLCache
 from ...shared.stats import CacheStats
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncProcessService:

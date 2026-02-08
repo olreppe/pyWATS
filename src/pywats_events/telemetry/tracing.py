@@ -5,6 +5,7 @@ Distributed tracing support for event system.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from pywats_events.models.event import Event
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Context variable for current trace
@@ -201,7 +202,7 @@ class EventTracer:
         """
         self._service_name = service_name
         self._exporters: List[callable] = []
-        self._logger = logging.getLogger(__name__)
+        self._logger = get_logger(__name__)
     
     @staticmethod
     def get_current_trace() -> Optional[TraceContext]:

@@ -13,8 +13,9 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import logging
+from pywats.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_machine_id() -> str:
@@ -42,7 +43,7 @@ def get_machine_id() -> str:
                     machine_guid = winreg.QueryValueEx(key, "MachineGuid")[0]
                     return machine_guid
             except Exception as e:
-                logger.warning(f"Could not read MachineGuid: {e}")
+                logger.warning(f"Could not read MachineGuid: {e}", exc_info=True)
                 # Fallback to computername
                 return os.environ.get('COMPUTERNAME', 'default-machine')
         
@@ -73,7 +74,7 @@ def get_machine_id() -> str:
             return os.environ.get('HOSTNAME', 'default-machine')
     
     except Exception as e:
-        logger.error(f"Error getting machine ID: {e}")
+        logger.exception(f"Error getting machine ID: {e}")
         return 'default-machine'
 
 
@@ -126,7 +127,7 @@ def encrypt_token(token: str) -> str:
         encrypted = f.encrypt(token.encode())
         return base64.urlsafe_b64encode(encrypted).decode()
     except Exception as e:
-        logger.error(f"Error encrypting token: {e}")
+        logger.exception(f"Error encrypting token: {e}")
         raise
 
 
@@ -150,7 +151,7 @@ def decrypt_token(encrypted_token: str) -> str:
         decrypted = f.decrypt(encrypted)
         return decrypted.decode()
     except Exception as e:
-        logger.error(f"Error decrypting token: {e}")
+        logger.exception(f"Error decrypting token: {e}")
         raise
 
 

@@ -14,10 +14,11 @@ Usage:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, Callable
 from PySide6.QtWidgets import QMessageBox, QWidget
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Import exceptions conditionally to avoid circular imports
@@ -34,6 +35,8 @@ def _get_exception_types():
             TimeoutError,
             PyWATSError,
         )
+        from pywats_client.exceptions import QueueCriticalError
+        
         return {
             'AuthenticationError': AuthenticationError,
             'AuthorizationError': AuthorizationError,
@@ -43,6 +46,7 @@ def _get_exception_types():
             'ConnectionError': ConnectionError,
             'TimeoutError': TimeoutError,
             'PyWATSError': PyWATSError,
+            'QueueCriticalError': QueueCriticalError,
         }
     except ImportError:
         return {}
@@ -145,6 +149,36 @@ class ErrorHandlingMixin:
                 "Request Timeout",
                 f"The request timed out{context_str}.\n\n"
                 f"The server may be busy. Please try again."
+            )
+            return
+        
+        # Critical queue error - double failure (queue + fallback)
+        if exc_types.get('QueueCriticalError') and isinstance(error, exc_types['QueueCriticalError']):
+            error_details = (
+                f"Primary Error: {error.primary_error}\n"
+                f"Fallback Error: {error.fallback_error}"
+            )
+            if hasattr(error, 'operation_id') and error.operation_id:
+                error_details += f"\nOperation ID: {error.operation_id}"
+            
+            QMessageBox.critical(
+                widget,
+                "CRITICAL: Queue Failure",
+                f"A critical error occurred{context_str}.\n\n"
+                f"Both the primary operation and fallback storage failed.\n"
+                f"Data may be lost.\n\n"
+                f"{error_details}\n\n"
+                f"Please check available disk space and file system integrity immediately.\n"
+                f"Contact your system administrator if this issue persists."
+            )
+            logger.critical(
+                f"CRITICAL queue error displayed to user{context_str}",
+                exc_info=True,
+                extra={
+                    "primary_error": error.primary_error,
+                    "fallback_error": error.fallback_error,
+                    "operation_id": getattr(error, 'operation_id', None)
+                }
             )
             return
         

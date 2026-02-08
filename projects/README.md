@@ -12,7 +12,7 @@ All agents MUST follow the structured workflow defined there:
 1. Create project folder with 4 required markdown files
 2. Follow analysis → planning → implementation → completion phases
 3. Update TODO.md and PROGRESS.md continuously
-4. Move completed projects to `docs/internal_documentation/completed/{quarter}/`
+4. Move completed projects to `projects/completed/{quarter}/`
 
 ---
 
@@ -38,9 +38,9 @@ See [.agent_instructions.md](.agent_instructions.md) for templates and detailed 
 
 ## 🎯 Lifecycle
 
-1. **Active** - Projects in progress live in `projects/`
-2. **Complete** - Moved to `docs/internal_documentation/completed/{quarter}/`
-3. **Archived** - Cancelled projects go to `docs/internal_documentation/archive/`
+1. **Active** - Projects in progress live in `projects/active/`
+2. **Complete** - Moved to `projects/completed/{quarter}/` with timestamp
+3. **Archived** - Cancelled projects go to `projects/archive/`
 
 ---
 
@@ -58,8 +58,7 @@ See [.agent_instructions.md](.agent_instructions.md) for templates and detailed 
 ### Logging Infrastructure Consolidation ✅
 - **Completed:** February 3, 2026
 - **Status:** 100% complete, 1756 tests passing
-- **Location:** `docs/internal_documentation/completed/2026-Q1/logging-consolidation/`
-- **Summary:** `docs/internal_documentation/completed/2026-Q1/logging-consolidation_COMPLETION_SUMMARY.md`
+- **Location:** `projects/completed/2026-q1/02031400-logging-consolidation/`
 - **Highlights:**
   - Unified logging framework (`configure_logging`)
   - 50+ dedicated tests (97%+ pass rate)
@@ -69,8 +68,7 @@ See [.agent_instructions.md](.agent_instructions.md) for templates and detailed 
 ### Sphinx Logging Documentation ✅
 - **Completed:** February 3, 2026
 - **Status:** 100% complete, clean Sphinx build
-- **Location:** `docs/internal_documentation/completed/2026-Q1/sphinx-logging-docs/`
-- **Summary:** `docs/internal_documentation/completed/2026-Q1/sphinx-logging-docs/COMPLETION_SUMMARY.md`
+- **Location:** `projects/completed/2026-q1/` (see timestamped folders)
 - **Highlights:**
   - Complete API reference for logging infrastructure
   - 800+ lines of documentation (logging.rst, client/logging.rst)
@@ -84,7 +82,7 @@ See [.agent_instructions.md](.agent_instructions.md) for templates and detailed 
 - **Agent Workflow:** [.agent_instructions.md](.agent_instructions.md)
 - **Micro-Sprint Guide:** [planned/ai-assisted-micro-sprint-workflow.md](planned/ai-assisted-micro-sprint-workflow.md)
 - **GitHub Issues Workflow:** [planned/GitHubCopilot-BestPractices.md](planned/GitHubCopilot-BestPractices.md)
-- **Completed Projects:** `docs/internal_documentation/completed/`
+- **Completed Projects:** [completed/](completed/)
 
 ---
 

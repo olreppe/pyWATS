@@ -38,11 +38,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pywats.shared.result import Success, Failure, Result
 import logging
+from pywats.core.logging import get_logger
 
 T = TypeVar("T")
 K = TypeVar("K")
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

@@ -29,6 +29,7 @@ Architecture:
 
 import json
 import logging
+from pywats.core.logging import get_logger
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Union
@@ -52,7 +53,7 @@ from ..exceptions import (
     QueueCorruptedError,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PersistentQueue(MemoryQueue):
@@ -285,7 +286,7 @@ class PersistentQueue(MemoryQueue):
                         loaded += 1
                         
                 except Exception as ex:
-                    logger.warning(f"Failed to load {data_path}: {ex}")
+                    logger.warning(f"Failed to load {data_path}: {ex}", exc_info=True)
         
         if loaded > 0:
             logger.info(f"Loaded {loaded} items from disk ({recovered} recovered from processing)")
@@ -301,7 +302,7 @@ class PersistentQueue(MemoryQueue):
         try:
             report_data = WSJFConverter.from_wsjf(wsjf_data)
         except json.JSONDecodeError:
-            logger.warning(f"Invalid JSON in {data_path}")
+            logger.warning(f"Invalid JSON in {data_path}", exc_info=True)
             return None
         
         # Extract item ID from filename

@@ -22,13 +22,14 @@ Usage:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, Dict, Any, TypeVar, Type
 from pydantic import BaseModel, Field, ConfigDict
 
 # Import ErrorMode from exceptions to avoid duplication
 from .exceptions import ErrorMode
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Type variable for domain settings subclasses
 T = TypeVar('T', bound='DomainSettings')

@@ -11,6 +11,7 @@ Handles configuration for pyWATS Client instances including:
 
 import json
 import logging
+from pywats.core.logging import get_logger
 import os
 import socket
 import uuid
@@ -22,7 +23,7 @@ from datetime import datetime
 from .constants import ConverterType, FolderName, LogLevel
 from .file_utils import SafeFileWriter, SafeFileReader, locked_file
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -896,7 +897,7 @@ class ClientConfig:
             config = cls.load(path)
         except Exception as e:
             # Create default config if load fails
-            logger.warning(f"Failed to load config, creating default: {e}")
+            logger.warning(f"Failed to load config, creating default: {e}", exc_info=True)
             config = cls()
             config._config_path = path
         

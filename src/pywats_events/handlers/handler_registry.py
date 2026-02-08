@@ -8,6 +8,7 @@ enabling efficient routing of events to appropriate handlers.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 from collections import defaultdict
 from typing import Dict, List, Optional, Set, TYPE_CHECKING
 
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from pywats_events.models.event_types import EventType
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class HandlerRegistry:

@@ -14,6 +14,7 @@ For file-based persistence, use PersistentQueue from pywats_client.
 """
 
 import logging
+from pywats.core.logging import get_logger
 import asyncio
 import threading
 import heapq
@@ -27,7 +28,7 @@ import uuid
 from ..shared.stats import QueueStats
 from ..shared.enums import QueueItemStatus
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Re-export QueueItemStatus for convenient imports from this module

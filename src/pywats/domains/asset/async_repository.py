@@ -10,6 +10,7 @@ from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING, cast
 from datetime import datetime
 import base64
 import logging
+from pywats.core.logging import get_logger
 
 if TYPE_CHECKING:
     from ...core.async_client import AsyncHttpClient
@@ -19,7 +20,7 @@ from ...core.routes import Routes
 from .models import Asset, AssetType, AssetLog
 from .enums import AssetState
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncAssetRepository:

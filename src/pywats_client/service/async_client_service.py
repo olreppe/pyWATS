@@ -15,6 +15,7 @@ See CLIENT_ASYNC_ARCHITECTURE.md for design details.
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 import os
 import signal
 import sys
@@ -28,7 +29,7 @@ from pywats.core.exceptions import PyWATSError
 
 from ..core.config import ClientConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncServiceStatus(Enum):
@@ -340,7 +341,7 @@ class AsyncClientService:
             logger.info("Phase 2 complete: All tasks cancelled")
             
         except asyncio.TimeoutError:
-            logger.error(
+            logger.exception(
                 f"Phase 2 timeout ({self._force_shutdown_timeout}s total): "
                 "Hard killing remaining tasks"
             )
@@ -378,7 +379,7 @@ class AsyncClientService:
             try:
                 await self.api.__aexit__(None, None, None)
             except Exception as e:
-                logger.warning(f"API cleanup error (non-fatal): {e}")
+                logger.warning(f"API cleanup error (non-fatal): {e}", exc_info=True)
             self.api = None
         
         self._set_status(AsyncServiceStatus.STOPPED)
@@ -577,7 +578,7 @@ class AsyncClientService:
             self._stats["api_status"] = "Online"
             
         except Exception as e:
-            logger.error(f"API initialization failed: {e}")
+            logger.exception(f"API initialization failed: {e}")
             self._stats["api_status"] = "Error"
             # Continue in degraded mode (like C# implementation)
     
@@ -603,7 +604,7 @@ class AsyncClientService:
                 except asyncio.CancelledError:
                     raise  # Always re-raise CancelledError
                 except Exception as e:
-                    logger.error(f"Watchdog error: {e}")
+                    logger.exception(f"Watchdog error: {e}")
                     self._stats["errors"] += 1
                 
                 try:
@@ -654,7 +655,7 @@ class AsyncClientService:
                 except asyncio.CancelledError:
                     raise  # Always re-raise CancelledError
                 except Exception as e:
-                    logger.error(f"Ping error: {e}")
+                    logger.exception(f"Ping error: {e}")
                 
                 try:
                     await asyncio.wait_for(
@@ -676,7 +677,7 @@ class AsyncClientService:
                 self._stats["last_ping"] = datetime.now().isoformat()
                 logger.debug("Ping successful")
             except Exception as e:
-                logger.warning(f"Ping failed: {e}")
+                logger.warning(f"Ping failed: {e}", exc_info=True)
     
     async def _register_loop(self) -> None:
         """
@@ -693,7 +694,7 @@ class AsyncClientService:
                 except asyncio.CancelledError:
                     raise  # Always re-raise CancelledError
                 except Exception as e:
-                    logger.error(f"Registration error: {e}")
+                    logger.exception(f"Registration error: {e}")
                 
                 try:
                     await asyncio.wait_for(
@@ -733,7 +734,7 @@ class AsyncClientService:
                 except asyncio.CancelledError:
                     raise  # Always re-raise CancelledError
                 except Exception as e:
-                    logger.error(f"Config watch error: {e}")
+                    logger.exception(f"Config watch error: {e}")
                 
                 try:
                     await asyncio.wait_for(
@@ -758,7 +759,7 @@ class AsyncClientService:
             
             logger.info("Configuration reloaded")
         except Exception as e:
-            logger.error(f"Config reload failed: {e}")
+            logger.exception(f"Config reload failed: {e}")
     
     # =========================================================================
     # IPC Server (for GUI communication)
@@ -774,7 +775,7 @@ class AsyncClientService:
             else:
                 logger.warning("Async IPC server failed to start")
         except Exception as e:
-            logger.error(f"Async IPC server setup failed: {e}")
+            logger.exception(f"Async IPC server setup failed: {e}")
     
     async def _stop_ipc_server(self) -> None:
         """Stop IPC server"""
@@ -782,7 +783,7 @@ class AsyncClientService:
             try:
                 await self._ipc_server.stop()
             except Exception as e:
-                logger.error(f"IPC server stop failed: {e}")
+                logger.exception(f"IPC server stop failed: {e}")
             self._ipc_server = None
     
     # =========================================================================
@@ -812,9 +813,9 @@ class AsyncClientService:
             self._health_server.start()
             logger.info(f"Health server started on port {self._health_port}")
         except Exception as e:
-            logger.warning(f"Health server not started: {e}")
+            logger.warning(f"Health server not started: {e}", exc_info=True)
         except Exception as e:
-            logger.warning(f"Health server not started: {e}")
+            logger.warning(f"Health server not started: {e}", exc_info=True)
     
     async def _stop_health_server(self) -> None:
         """Stop health server"""
@@ -822,7 +823,7 @@ class AsyncClientService:
             try:
                 self._health_server.stop()
             except Exception as e:
-                logger.error(f"Health server stop failed: {e}")
+                logger.exception(f"Health server stop failed: {e}")
             self._health_server = None
     
     def _get_health_status(self) -> 'HealthStatus':
@@ -932,7 +933,7 @@ def run_async_service_with_qt(instance_id: str = "default") -> None:
         import qasync
         from PySide6.QtWidgets import QApplication
     except ImportError:
-        logger.error("qasync and PySide6 required for Qt mode")
+        logger.exception("qasync and PySide6 required for Qt mode")
         raise
     
     app = QApplication.instance() or QApplication(sys.argv)

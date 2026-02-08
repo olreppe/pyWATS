@@ -12,6 +12,7 @@ User requirement: "NEVER lose customer data - data must be in server OR kept loc
 import json
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from pathlib import Path
 from typing import Optional, Callable, Any, Dict, List
 from datetime import datetime
@@ -19,8 +20,9 @@ from enum import Enum
 from dataclasses import dataclass, asdict
 
 from PySide6.QtCore import QObject, Signal, QTimer
+from pywats_client.exceptions import QueueCriticalError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class QueueStatus(Enum):
@@ -154,8 +156,13 @@ class QueueManager(QObject):
             self.operation_queued.emit(unique_id)
             self.queue_changed.emit(self.get_pending_count())
             
-            # Attempt immediate send (async)
-            asyncio.create_task(self._send_operation(unique_id))
+            # Attempt immediate send (async) if event loop is running
+            # Otherwise, background worker will pick it up
+            try:
+                asyncio.create_task(self._send_operation(unique_id))
+            except RuntimeError as e:
+                # No event loop running (e.g., in tests) - background worker will handle it
+                logger.debug(f"Could not schedule immediate send (no event loop): {e}")
             
             return unique_id
             
@@ -227,7 +234,7 @@ class QueueManager(QObject):
             # Send failed
             self._sending.discard(operation_id)
             error_msg = str(e)
-            logger.warning(f"Operation {operation_id} failed (attempt {operation.attempts}): {error_msg}")
+            logger.warning(f"Operation {operation_id} failed (attempt {operation.attempts}): {error_msg}", exc_info=True)
             
             try:
                 # Reload operation (may have been modified)
@@ -247,7 +254,7 @@ class QueueManager(QObject):
                     
                     file_path.unlink()  # Remove from pending
                     
-                    logger.error(f"Operation {operation_id} failed after {operation.attempts} attempts: {error_msg}")
+                    logger.exception(f"Operation {operation_id} failed after {operation.attempts} attempts: {error_msg}")
                     self.operation_failed.emit(operation_id, error_msg)
                     self.queue_changed.emit(self.get_pending_count())
                 else:
@@ -256,7 +263,30 @@ class QueueManager(QObject):
                         json.dump(operation.to_dict(), f, indent=2)
                 
             except Exception as save_error:
-                logger.exception(f"Failed to save operation status: {save_error}")
+                # Double failure - CRITICAL situation (both send and fallback failed)
+                critical_msg = (
+                    f"CRITICAL: Both queue operation and fallback storage failed. "
+                    f"Data may be lost for operation {operation_id}."
+                )
+                logger.critical(
+                    critical_msg,
+                    exc_info=True,
+                    extra={
+                        "operation_id": operation_id,
+                        "operation_type": getattr(operation, 'operation_type', 'unknown'),
+                        "primary_error": error_msg,
+                        "fallback_error": str(save_error)
+                    }
+                )
+                
+                # Surface to user - this is unrecoverable
+                raise QueueCriticalError(
+                    message=f"Failed to queue operation. Both primary queue and fallback storage failed.",
+                    primary_error=error_msg,
+                    fallback_error=str(save_error),
+                    operation_id=operation_id,
+                    operation_type=getattr(operation, 'operation_type', 'unknown')
+                ) from save_error
             
             return False
     

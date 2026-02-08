@@ -8,6 +8,7 @@ and can receive events from any transport (CFX, MQTT, webhook, etc.).
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional, TYPE_CHECKING
 
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from pywats_events.models.event_types import EventType
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseHandler(ABC):

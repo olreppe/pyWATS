@@ -10,12 +10,13 @@ See the sync service module docstring for full details and workarounds.
 from typing import Optional, List, Union
 from uuid import UUID
 import logging
+from pywats.core.logging import get_logger
 
 from .async_repository import AsyncRootCauseRepository
 from .models import Ticket, TicketUpdate
 from .enums import TicketStatus, TicketPriority, TicketView
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncRootCauseService:

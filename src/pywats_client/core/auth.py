@@ -5,12 +5,13 @@ Provides simple authentication helpers that use pyWATS API directly.
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, Tuple
 from dataclasses import dataclass
 
 from pywats import pyWATS
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -69,7 +70,7 @@ def authenticate_with_password(
             
     except Exception as e:
         error_msg = str(e)
-        logger.error(f"Authentication failed: {error_msg}")
+        logger.exception(f"Authentication failed: {error_msg}")
         return AuthResult(
             success=False,
             error=error_msg

@@ -16,8 +16,9 @@ from dataclasses import dataclass, field
 from threading import RLock
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 P = ParamSpec('P')
@@ -538,7 +539,7 @@ class AsyncTTLCache(Generic[T]):
                 logger.debug("Cache cleanup task cancelled")
                 break
             except Exception as e:
-                logger.error(f"Error in cache cleanup: {e}")
+                logger.exception(f"Error in cache cleanup: {e}")
     
     async def __aenter__(self) -> "AsyncTTLCache[T]":
         """Context manager entry - start cleanup."""

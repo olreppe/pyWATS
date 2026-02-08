@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from pywats_events.models.event import Event
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CircuitState(Enum):
@@ -95,7 +96,7 @@ class DeadLetterQueue:
         self._max_size = max_size
         self._on_add = on_add
         self._entries: Deque[DeadLetterEntry] = deque(maxlen=max_size)
-        self._logger = logging.getLogger(__name__)
+        self._logger = get_logger(__name__)
     
     @property
     def size(self) -> int:
@@ -267,7 +268,7 @@ class CircuitBreaker:
         self._last_failure_time: Optional[float] = None
         self._half_open_calls = 0
         
-        self._logger = logging.getLogger(__name__)
+        self._logger = get_logger(__name__)
     
     @property
     def state(self) -> CircuitState:
@@ -405,7 +406,7 @@ class ErrorPolicy:
         self._dlq = dead_letter_queue or DeadLetterQueue()
         self._circuit_breaker = circuit_breaker
         self._failure_callbacks: List[Callable[["Event", Exception], None]] = []
-        self._logger = logging.getLogger(__name__)
+        self._logger = get_logger(__name__)
     
     @property
     def dead_letter_queue(self) -> DeadLetterQueue:

@@ -13,8 +13,9 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import logging
+from pywats.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class InstanceLock:

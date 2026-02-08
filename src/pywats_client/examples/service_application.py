@@ -11,6 +11,7 @@ to build a service application with:
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from pathlib import Path
 from typing import Optional
 
@@ -25,7 +26,7 @@ setup_client_logging(
     log_format="text",
     enable_console=True
 )
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ServiceApplication:
@@ -78,7 +79,7 @@ class ServiceApplication:
         except asyncio.CancelledError:
             logger.info("Service cancelled")
         except Exception as e:
-            logger.error(f"Service error: {e}")
+            logger.exception(f"Service error: {e}")
         finally:
             self._running = False
     
@@ -136,7 +137,7 @@ class IPCControlExample:
                 logger.info(f"Connected to service [instance: {self.instance_id}]")
             return connected
         except Exception as e:
-            logger.error(f"Failed to connect: {e}")
+            logger.exception(f"Failed to connect: {e}")
             return False
     
     async def disconnect(self) -> None:
@@ -159,7 +160,7 @@ class IPCControlExample:
                 'instance_id': status.instance_id
             }
         except Exception as e:
-            logger.error(f"Failed to get status: {e}")
+            logger.exception(f"Failed to get status: {e}")
             return None
     
     async def request_shutdown(self) -> bool:
@@ -171,7 +172,7 @@ class IPCControlExample:
             await self.client.stop_service()
             return True
         except Exception as e:
-            logger.error(f"Failed to request shutdown: {e}")
+            logger.exception(f"Failed to request shutdown: {e}")
             return False
 
 

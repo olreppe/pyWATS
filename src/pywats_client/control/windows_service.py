@@ -8,10 +8,11 @@ Service will auto-start on system boot.
 import sys
 import subprocess
 import logging
+from pywats.core.logging import get_logger
 from pathlib import Path
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class WindowsServiceInstaller:
@@ -379,5 +380,5 @@ def set_auto_start(enabled: bool, instance_id: str = "default") -> bool:
             logger.error(f"Failed to set auto-start: {result.stderr}")
             return False
     except Exception as e:
-        logger.error(f"Failed to set auto-start: {e}")
+        logger.exception(f"Failed to set auto-start: {e}")
         return False

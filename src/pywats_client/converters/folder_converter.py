@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, TYPE_CHECKING
 import fnmatch
 import logging
+from pywats.core.logging import get_logger
 
 from .models import (
     ConverterType,
@@ -26,7 +27,7 @@ from .models import (
 if TYPE_CHECKING:
     from .context import ConverterContext
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FolderConverter(ABC):

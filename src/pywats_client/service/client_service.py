@@ -9,6 +9,7 @@ Architecture: Async-first with sync entry point (Option D).
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 import signal
 import sys
 from typing import Optional, Dict, Any
@@ -16,7 +17,7 @@ from enum import Enum
 
 from .async_client_service import AsyncClientService, AsyncServiceStatus
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # ServiceStatus enum (sync alias for AsyncServiceStatus)

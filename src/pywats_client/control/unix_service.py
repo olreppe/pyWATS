@@ -12,6 +12,7 @@ import sys
 import os
 import subprocess
 import logging
+from pywats.core.logging import get_logger
 from pathlib import Path
 from typing import Optional
 
@@ -24,7 +25,7 @@ from .exit_codes import (
     EXIT_PERMISSION_DENIED,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LinuxServiceInstaller:

@@ -9,8 +9,9 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
 import logging
+from pywats.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ConnectionState(Enum):

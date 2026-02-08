@@ -14,6 +14,7 @@ Usage:
 """
 
 import logging
+from pywats.core.logging import get_logger
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal, Optional
@@ -166,7 +167,7 @@ def setup_client_logging(
     )
     
     # Log startup message
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
     logger.info(
         f"Client logging configured",
         extra={
@@ -220,7 +221,7 @@ def cleanup_old_conversion_logs(
     cutoff_timestamp = cutoff_date.timestamp()
     
     deleted_count = 0
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
     
     # Find and delete old log files
     for log_file in conversion_dir.glob("*.log"):
@@ -235,7 +236,7 @@ def cleanup_old_conversion_logs(
                     logger.debug(f"Deleted old conversion log: {log_file.name}")
                     deleted_count += 1
         except Exception as e:
-            logger.warning(f"Failed to process {log_file.name}: {e}")
+            logger.warning(f"Failed to process {log_file.name}: {e}", exc_info=True)
     
     if deleted_count > 0:
         logger.info(

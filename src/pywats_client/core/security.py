@@ -16,8 +16,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 import logging
+from pywats.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_secret_directory() -> Path:
@@ -42,7 +43,7 @@ def get_secret_directory() -> Path:
         try:
             base.chmod(0o700)  # rwx------ (owner only)
         except Exception as e:
-            logger.warning(f"Failed to set restrictive permissions on secrets directory: {e}")
+            logger.warning(f"Failed to set restrictive permissions on secrets directory: {e}", exc_info=True)
     
     return base
 
@@ -82,7 +83,7 @@ def save_secret(instance_id: str, secret: str) -> Path:
         try:
             secret_file.chmod(0o600)  # rw------- (owner read/write only)
         except Exception as e:
-            logger.warning(f"Failed to set restrictive permissions on secret file: {e}")
+            logger.warning(f"Failed to set restrictive permissions on secret file: {e}", exc_info=True)
     
     logger.info(f"Secret saved for instance '{instance_id}': {secret_file}")
     return secret_file
@@ -108,7 +109,7 @@ def load_secret(instance_id: str) -> Optional[str]:
         secret = secret_file.read_text(encoding='utf-8').strip()
         return secret
     except Exception as e:
-        logger.error(f"Failed to load secret for instance '{instance_id}': {e}")
+        logger.exception(f"Failed to load secret for instance '{instance_id}': {e}")
         return None
 
 
@@ -133,7 +134,7 @@ def delete_secret(instance_id: str) -> bool:
         logger.info(f"Secret deleted for instance '{instance_id}'")
         return True
     except Exception as e:
-        logger.error(f"Failed to delete secret for instance '{instance_id}': {e}")
+        logger.exception(f"Failed to delete secret for instance '{instance_id}': {e}")
         return False
 
 

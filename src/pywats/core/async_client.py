@@ -20,6 +20,7 @@ import time
 import httpx
 import json
 import logging
+from pywats.core.logging import get_logger
 
 from .exceptions import (
     ConnectionError,
@@ -45,7 +46,7 @@ from .circuit_breaker import (
 if TYPE_CHECKING:
     from .metrics import MetricsCollector
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncHttpClient:

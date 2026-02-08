@@ -19,6 +19,7 @@ See CLIENT_ASYNC_ARCHITECTURE.md for design details.
 import asyncio
 import json
 import logging
+from pywats.core.logging import get_logger
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
@@ -36,7 +37,7 @@ from watchdog.events import FileSystemEventHandler
 if TYPE_CHECKING:
     from pywats import AsyncWATS
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncPendingQueueState(Enum):
@@ -262,7 +263,7 @@ class AsyncPendingQueue:
                     timeout=30.0
                 )
             except asyncio.TimeoutError:
-                logger.warning("Upload tasks timed out, cancelling...")
+                logger.warning("Upload tasks timed out, cancelling...", exc_info=True)
                 for task in active_tasks:
                     task.cancel()
         
@@ -292,7 +293,7 @@ class AsyncPendingQueue:
             pending_files = list(self.reports_dir.glob(self.FILTER_QUEUED))
             return len(pending_files)
         except Exception as e:
-            logger.warning(f"Error counting pending files: {e}")
+            logger.warning(f"Error counting pending files: {e}", exc_info=True)
             return 0
     
     # =========================================================================
@@ -385,7 +386,7 @@ class AsyncPendingQueue:
         except FileNotFoundError:
             return  # File already processed by another worker
         except Exception as e:
-            logger.error(f"Failed to rename {file_path.name}: {e}")
+            logger.exception(f"Failed to rename {file_path.name}: {e}")
             return
         
         logger.debug(f"Submitting: {processing_path.name}")
@@ -411,11 +412,11 @@ class AsyncPendingQueue:
             # completed_path.unlink()
             
         except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON in {file_path.name}: {e}")
+            logger.exception(f"Invalid JSON in {file_path.name}: {e}")
             await self._mark_error(processing_path, f"Invalid JSON: {e}")
             
         except Exception as e:
-            logger.error(f"Submit failed for {file_path.name}: {e}")
+            logger.exception(f"Submit failed for {file_path.name}: {e}")
             await self._mark_error(processing_path, str(e))
     
     async def _mark_error(self, file_path: Path, error: str) -> None:
@@ -442,7 +443,7 @@ class AsyncPendingQueue:
             self._stats["errors"] += 1
             
         except Exception as e:
-            logger.error(f"Failed to mark error: {e}")
+            logger.exception(f"Failed to mark error: {e}")
     
     # =========================================================================
     # Recovery
@@ -472,7 +473,7 @@ class AsyncPendingQueue:
                     stuck_count += 1
                     
             except Exception as e:
-                logger.error(f"Recovery error for {file_path.name}: {e}")
+                logger.exception(f"Recovery error for {file_path.name}: {e}")
         
         self._stats["stuck_files"] = stuck_count
     
@@ -519,7 +520,7 @@ class AsyncPendingQueue:
                 self._stats["retries"] += 1
                 
             except Exception as e:
-                logger.error(f"Retry error for {file_path.name}: {e}")
+                logger.exception(f"Retry error for {file_path.name}: {e}")
     
     # =========================================================================
     # Utilities

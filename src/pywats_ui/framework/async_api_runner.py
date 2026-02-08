@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 import weakref
 from typing import (
     Any, Awaitable, Callable, Optional, TypeVar, Union, TYPE_CHECKING
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
     from pywats import pyWATS, AsyncWATS
     from .pages.base import BasePage
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 

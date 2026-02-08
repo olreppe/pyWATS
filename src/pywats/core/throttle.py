@@ -7,10 +7,11 @@ Default limit: 500 requests per minute.
 import time
 import threading
 import logging
+from pywats.core.logging import get_logger
 from collections import deque
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RateLimiter:

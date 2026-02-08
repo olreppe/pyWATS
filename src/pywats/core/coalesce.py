@@ -23,9 +23,10 @@ from typing import TypeVar, Generic, List, Callable, Awaitable, Optional, Dict, 
 from dataclasses import dataclass, field
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 R = TypeVar('R')
@@ -196,7 +197,7 @@ class RequestCoalescer(Generic[T, R]):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in coalesce processing loop: {e}")
+                logger.exception(f"Error in coalesce processing loop: {e}")
     
     async def _process_batch(self, batch: List[CoalesceItem[T, R]]) -> None:
         """
@@ -242,7 +243,7 @@ class RequestCoalescer(Generic[T, R]):
                 if not coalesce_item.future.done():
                     coalesce_item.future.set_exception(e)
             
-            logger.error(f"Error processing coalesced batch: {e}")
+            logger.exception(f"Error processing coalesced batch: {e}")
     
     @property
     def stats(self) -> Dict[str, Any]:

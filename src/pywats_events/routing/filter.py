@@ -5,6 +5,7 @@ Event filtering for selective event processing.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Callable, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     from pywats_events.models.event_types import EventType
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class EventFilter:
@@ -165,7 +166,7 @@ class EventFilter:
                 if not predicate(event):
                     return False
             except Exception as e:
-                logger.warning(f"Filter predicate error: {e}")
+                logger.warning(f"Filter predicate error: {e}", exc_info=True)
                 return False
         
         return True

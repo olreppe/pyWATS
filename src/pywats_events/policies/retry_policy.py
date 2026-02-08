@@ -8,6 +8,7 @@ maximum retry limits, and exception filtering.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 import random
 import time
 from dataclasses import dataclass, field
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from pywats_events.models.event import Event
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -100,7 +101,7 @@ class RetryPolicy:
         # Custom retry predicates
         self._retry_predicates: List[Callable[["Event", Exception], bool]] = []
         
-        self._logger = logging.getLogger(__name__)
+        self._logger = get_logger(__name__)
     
     @property
     def max_retries(self) -> int:

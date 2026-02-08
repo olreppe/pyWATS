@@ -6,6 +6,7 @@ Use this for GUI applications (with qasync) or async code.
 For synchronous scripts, use the pyWATS class instead.
 """
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, TYPE_CHECKING
 
 from .core.async_client import AsyncHttpClient
@@ -28,7 +29,7 @@ from .domains.rootcause import AsyncRootCauseService, AsyncRootCauseRepository
 from .domains.scim import AsyncScimService, AsyncScimRepository
 from .domains.process import AsyncProcessService, AsyncProcessRepository
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncWATS:

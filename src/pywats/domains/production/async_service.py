@@ -8,6 +8,7 @@ Includes both public and internal API methods.
 from typing import Optional, List, Dict, Any, Sequence, Union, TYPE_CHECKING
 from datetime import datetime
 import logging
+from pywats.core.logging import get_logger
 
 from .models import (
     Unit, UnitChange, ProductionBatch, SerialNumberType,
@@ -16,7 +17,7 @@ from .models import (
 from .enums import UnitPhaseFlag
 from .async_repository import AsyncProductionRepository
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncProductionService:

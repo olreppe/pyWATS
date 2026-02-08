@@ -13,6 +13,7 @@ Example usage:
 """
 
 import logging
+from pywats.core.logging import get_logger
 import os
 import platform
 import subprocess
@@ -24,7 +25,7 @@ from typing import Dict, List, Optional
 
 import psutil
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ServiceManager:
@@ -96,7 +97,7 @@ class ServiceManager:
             
             return False
         except Exception as e:
-            logger.error(f"Error checking service status: {e}")
+            logger.exception(f"Error checking service status: {e}")
             return False
     
     def get_pid(self) -> Optional[int]:
@@ -119,7 +120,7 @@ class ServiceManager:
             
             return None
         except Exception as e:
-            logger.error(f"Error getting PID: {e}")
+            logger.exception(f"Error getting PID: {e}")
             return None
     
     def get_status(self) -> Dict:
@@ -189,10 +190,10 @@ class ServiceManager:
                         lock_file.unlink()
                         removed += 1
                 except (ValueError, FileNotFoundError, PermissionError) as e:
-                    logger.warning(f"Error processing lock file {lock_file}: {e}")
+                    logger.warning(f"Error processing lock file {lock_file}: {e}", exc_info=True)
                     continue
         except Exception as e:
-            logger.error(f"Error cleaning stale locks: {e}")
+            logger.exception(f"Error cleaning stale locks: {e}")
         
         return removed
     
@@ -401,7 +402,7 @@ class ServiceManager:
                 return False
                 
         except Exception as e:
-            logger.error(f"Error starting subprocess: {e}")
+            logger.exception(f"Error starting subprocess: {e}")
             return False
     
     def _stop_windows(self) -> bool:
@@ -515,7 +516,7 @@ class ServiceManager:
                 logger.info(f"Process {pid} terminated gracefully")
                 return True
             except psutil.TimeoutExpired:
-                logger.warning(f"Process {pid} did not terminate gracefully, force killing")
+                logger.warning(f"Process {pid} did not terminate gracefully, force killing", exc_info=True)
                 proc.kill()
                 proc.wait(timeout=5)
                 logger.info(f"Process {pid} force killed")
@@ -525,7 +526,7 @@ class ServiceManager:
             logger.info(f"Process {pid} already exited")
             return True
         except Exception as e:
-            logger.error(f"Error stopping process: {e}")
+            logger.exception(f"Error stopping process: {e}")
             return False
     
     def _wait_for_stop(self, timeout: int = 30) -> bool:

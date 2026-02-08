@@ -9,6 +9,7 @@ translate messages into normalized pyWATS events.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from pywats_events.bus.async_event_bus import AsyncEventBus
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TransportState(Enum):

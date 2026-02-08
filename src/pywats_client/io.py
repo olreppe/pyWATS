@@ -12,6 +12,7 @@ Design Principle:
 import base64
 import mimetypes
 import logging
+from pywats.core.logging import get_logger
 from pathlib import Path
 from typing import Optional, Tuple, Union
 from dataclasses import dataclass
@@ -20,7 +21,7 @@ from pywats.domains.report import Attachment
 
 from .core.file_utils import SafeFileWriter, SafeFileReader
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Default max attachment size (10 MB)
@@ -123,7 +124,7 @@ class AttachmentIO:
                 path.unlink()
                 logger.debug(f"Deleted source file: {path}")
             except OSError as e:
-                logger.warning(f"Failed to delete source file {path}: {e}")
+                logger.warning(f"Failed to delete source file {path}: {e}", exc_info=True)
         
         return Attachment.from_bytes(
             name=name,

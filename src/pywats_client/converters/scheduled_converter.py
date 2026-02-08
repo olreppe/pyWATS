@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, TYPE_CHECKING
 import logging
+from pywats.core.logging import get_logger
 
 from .models import (
     ConverterType,
@@ -25,7 +26,7 @@ from .models import (
 if TYPE_CHECKING:
     from .context import ConverterContext
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ScheduledConverter(ABC):
@@ -508,7 +509,7 @@ class ScheduledConverter(ABC):
                 )
                 return None
             except Exception as e:
-                logger.error(f"Invalid cron expression '{self.cron_expression}': {e}")
+                logger.exception(f"Invalid cron expression '{self.cron_expression}': {e}")
                 return None
         
         return None

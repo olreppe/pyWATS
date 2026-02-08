@@ -73,6 +73,14 @@ TROUBLESHOOTING_HINTS: Dict[str, List[str]] = {
         "Check for disk errors that may have caused corruption",
         "Consider clearing the queue and re-importing files",
     ],
+    "queue_critical": [
+        "CRITICAL: Check available disk space immediately",
+        "Verify file system integrity (run disk check)",
+        "Check write permissions on queue directory",
+        "Review system logs for disk/filesystem errors",
+        "Contact system administrator if disk issues persist",
+        "Data may be lost - check application logs for operation details",
+    ],
     "offline": [
         "Check network connectivity to WATS server",
         "Verify server URL in configuration",
@@ -424,6 +432,61 @@ class QueueCorruptedError(ClientError):
             details["corrupted_file"] = str(corrupted_file)
         
         super().__init__(message, details)
+
+
+class QueueCriticalError(QueueError):
+    """
+    Raised when both queue operation and fallback storage fail (unrecoverable).
+    
+    This critical error indicates that:
+    1. The primary queue operation failed (e.g., sending data to server)
+    2. The fallback mechanism also failed (e.g., saving error state to disk)
+    
+    This represents a potential data loss situation that requires immediate attention.
+    
+    Troubleshooting:
+    - Check available disk space immediately
+    - Verify file system is not corrupted
+    - Check write permissions on queue directory
+    - Review system logs for disk/filesystem errors
+    - Consider backing up queue directory if accessible
+    """
+    
+    error_type = "queue_critical"
+    
+    def __init__(
+        self,
+        message: str,
+        primary_error: str,
+        fallback_error: str,
+        operation_id: Optional[str] = None,
+        operation_type: Optional[str] = None
+    ) -> None:
+        """
+        Initialize critical queue error.
+        
+        Args:
+            message: Human-readable error description
+            primary_error: Error from the primary operation (e.g., send failure)
+            fallback_error: Error from the fallback operation (e.g., save failure)  
+            operation_id: Unique identifier for the operation that failed
+            operation_type: Type of operation (e.g., "send_uut", "update_config")
+        """
+        self.primary_error = primary_error
+        self.fallback_error = fallback_error
+        self.operation_id = operation_id
+        self.operation_type = operation_type
+        
+        details = {
+            "primary_error": primary_error,
+            "fallback_error": fallback_error
+        }
+        if operation_id:
+            details["operation_id"] = operation_id
+        if operation_type:
+            details["operation_type"] = operation_type
+        
+        super().__init__(message, **details)
 
 
 class OfflineError(ClientError):

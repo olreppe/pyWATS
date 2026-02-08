@@ -12,6 +12,7 @@ Platform support:
 import asyncio
 import json
 import logging
+from pywats.core.logging import get_logger
 import uuid
 from dataclasses import dataclass, asdict, field
 from typing import Optional, Dict, Any, List
@@ -26,7 +27,7 @@ from .ipc_protocol import (
     VersionMismatchError,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -229,7 +230,7 @@ class AsyncIPCClient:
             logger.debug("No hello received (legacy server?)")
             self._server_hello = HelloMessage(protocol_version="1.0")
         except Exception as e:
-            logger.warning(f"Error receiving hello: {e}")
+            logger.warning(f"Error receiving hello: {e}", exc_info=True)
             self._server_hello = HelloMessage(protocol_version="1.0")
     
     async def _authenticate(self) -> None:
@@ -267,7 +268,7 @@ class AsyncIPCClient:
                 logger.warning(f"Authentication failed: {error}")
                 
         except Exception as e:
-            logger.warning(f"Error during authentication: {e}")
+            logger.warning(f"Error during authentication: {e}", exc_info=True)
     
     async def disconnect(self) -> None:
         """Disconnect from service"""
@@ -345,14 +346,14 @@ class AsyncIPCClient:
                 return response
                 
             except asyncio.TimeoutError:
-                logger.warning(f"Command timeout: {command}")
+                logger.warning(f"Command timeout: {command}", exc_info=True)
                 return None
             except ConnectionResetError:
-                logger.warning("Connection reset by service")
+                logger.warning("Connection reset by service", exc_info=True)
                 self._connected = False
                 return None
             except Exception as e:
-                logger.error(f"Error sending command {command}: {e}")
+                logger.exception(f"Error sending command {command}: {e}")
                 self._connected = False
                 return None
     
@@ -531,10 +532,10 @@ class ServiceDiscoveryAsync:
                             else:
                                 callback(list(new_discovered.values()))
                         except Exception as e:
-                            logger.error(f"Discovery callback error: {e}")
+                            logger.exception(f"Discovery callback error: {e}")
                 
             except Exception as e:
-                logger.error(f"Discovery poll error: {e}")
+                logger.exception(f"Discovery poll error: {e}")
             
             await asyncio.sleep(self.poll_interval)
     

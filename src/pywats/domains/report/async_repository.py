@@ -5,6 +5,7 @@ Uses Routes for centralized endpoint management.
 """
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 import logging
+from pywats.core.logging import get_logger
 
 from ...core.routes import Routes
 
@@ -16,7 +17,7 @@ from .models import ReportHeader
 from .report_models import UUTReport, UURReport
 from .enums import ImportMode, ReportType
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncReportRepository:

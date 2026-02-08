@@ -16,6 +16,7 @@ Example usage:
 
 import json
 import logging
+from pywats.core.logging import get_logger
 import sys
 from pathlib import Path
 from typing import Optional
@@ -35,7 +36,7 @@ setup_client_logging(
     rotate_size_mb=5,  # Smaller for CLI logs
     rotate_backups=3
 )
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def format_uptime(seconds: float) -> str:

@@ -12,6 +12,7 @@ Platform support:
 import asyncio
 import json
 import logging
+from pywats.core.logging import get_logger
 import sys
 import hashlib
 from pathlib import Path
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
     from .client_service import ClientService
     from .async_client_service import AsyncClientService
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_socket_address(socket_name: str) -> tuple:
@@ -163,7 +164,7 @@ class AsyncIPCServer:
                         socket_path.unlink()
                         logger.debug(f"Removed stale socket: {socket_path}")
                     except OSError as e:
-                        logger.warning(f"Failed to remove stale socket: {e}")
+                        logger.warning(f"Failed to remove stale socket: {e}", exc_info=True)
             
             # Create server
             if self._is_unix:
@@ -185,7 +186,7 @@ class AsyncIPCServer:
             return True
             
         except Exception as e:
-            logger.error(f"Failed to start async IPC server: {e}")
+            logger.exception(f"Failed to start async IPC server: {e}")
             return False
     
     async def stop(self) -> None:
@@ -241,7 +242,7 @@ class AsyncIPCServer:
             await asyncio.wait_for(writer.drain(), timeout=self.WRITE_TIMEOUT)
             logger.debug(f"Sent hello: protocol={self._protocol_version}, auth_required={self._secret is not None}")
         except asyncio.TimeoutError:
-            logger.warning(f"Timeout sending hello message after {self.WRITE_TIMEOUT}s")
+            logger.warning(f"Timeout sending hello message after {self.WRITE_TIMEOUT}s", exc_info=True)
             raise
 
     async def _handle_client(
@@ -262,7 +263,7 @@ class AsyncIPCServer:
                     timeout=self.CONNECTION_TIMEOUT
                 )
             except asyncio.TimeoutError:
-                logger.warning(f"Connection timeout for client {peer} during hello")
+                logger.warning(f"Connection timeout for client {peer} during hello", exc_info=True)
                 return
             
             while self._running:
@@ -273,7 +274,7 @@ class AsyncIPCServer:
                         timeout=self.READ_TIMEOUT
                     )
                 except asyncio.TimeoutError:
-                    logger.warning(f"Read timeout for client {peer} (no data after {self.READ_TIMEOUT}s)")
+                    logger.warning(f"Read timeout for client {peer} (no data after {self.READ_TIMEOUT}s)", exc_info=True)
                     break
                 
                 if not length_bytes:
@@ -295,7 +296,7 @@ class AsyncIPCServer:
                         timeout=self.READ_TIMEOUT
                     )
                 except asyncio.TimeoutError:
-                    logger.warning(f"Read timeout for client {peer} (message body)")
+                    logger.warning(f"Read timeout for client {peer} (message body)", exc_info=True)
                     break
                 
                 if len(data) < msg_length:
@@ -311,7 +312,7 @@ class AsyncIPCServer:
                         timeout=self.REQUEST_TIMEOUT
                     )
                 except asyncio.TimeoutError:
-                    logger.warning(f"Request processing timeout for client {peer} after {self.REQUEST_TIMEOUT}s")
+                    logger.warning(f"Request processing timeout for client {peer} after {self.REQUEST_TIMEOUT}s", exc_info=True)
                     response = {
                         "success": False,
                         "error": f"Request processing timeout after {self.REQUEST_TIMEOUT}s",
@@ -331,7 +332,7 @@ class AsyncIPCServer:
                     writer.write(response_length + response_bytes)
                     await asyncio.wait_for(writer.drain(), timeout=self.WRITE_TIMEOUT)
                 except asyncio.TimeoutError:
-                    logger.warning(f"Write timeout for client {peer} after {self.WRITE_TIMEOUT}s")
+                    logger.warning(f"Write timeout for client {peer} after {self.WRITE_TIMEOUT}s", exc_info=True)
                     break
                 
                 # Send response
@@ -345,7 +346,7 @@ class AsyncIPCServer:
         except ConnectionResetError:
             logger.debug(f"Client disconnected: {peer}")
         except Exception as e:
-            logger.error(f"Error handling client {peer}: {e}")
+            logger.exception(f"Error handling client {peer}: {e}")
         finally:
             if writer in self._clients:
                 self._clients.remove(writer)
@@ -460,7 +461,7 @@ class AsyncIPCServer:
             }
             
         except Exception as e:
-            logger.error(f"Error processing command {command}: {e}")
+            logger.exception(f"Error processing command {command}: {e}")
             return {
                 "success": False,
                 "error": str(e),

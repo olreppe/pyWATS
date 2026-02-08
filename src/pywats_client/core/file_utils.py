@@ -19,6 +19,7 @@ import json
 import os
 import time
 import logging
+from pywats.core.logging import get_logger
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, TypeVar, Callable
@@ -26,7 +27,7 @@ from dataclasses import dataclass
 from enum import Enum
 from contextlib import contextmanager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Platform-specific file locking
 if os.name == 'nt':
@@ -172,7 +173,7 @@ class SafeFileWriter:
                 except:
                     pass
             
-            logger.error(f"Failed to write {path}: {ex}")
+            logger.exception(f"Failed to write {path}: {ex}")
             return FileOperationResult(
                 success=False,
                 path=path,
@@ -203,7 +204,7 @@ class SafeFileWriter:
             content = json.dumps(data, indent=indent, ensure_ascii=False)
             return SafeFileWriter.write_text_atomic(path, content, backup=backup)
         except (TypeError, ValueError) as ex:
-            logger.error(f"Failed to serialize JSON for {path}: {ex}")
+            logger.exception(f"Failed to serialize JSON for {path}: {ex}")
             return FileOperationResult(
                 success=False,
                 path=Path(path),
@@ -280,7 +281,7 @@ class SafeFileWriter:
                 except:
                     pass
             
-            logger.error(f"Failed to write {path}: {ex}")
+            logger.exception(f"Failed to write {path}: {ex}")
             return FileOperationResult(
                 success=False,
                 path=path,
@@ -324,7 +325,7 @@ class SafeFileReader:
             try:
                 return path.read_text(encoding=encoding)
             except Exception as ex:
-                logger.warning(f"Failed to read {path}: {ex}")
+                logger.warning(f"Failed to read {path}: {ex}", exc_info=True)
         
         # Try backup file
         if try_backup:
@@ -337,7 +338,7 @@ class SafeFileReader:
                     SafeFileWriter.write_text_atomic(path, content)
                     return content
                 except Exception as ex:
-                    logger.warning(f"Failed to read backup {backup_path}: {ex}")
+                    logger.warning(f"Failed to read backup {backup_path}: {ex}", exc_info=True)
         
         return default
     
@@ -366,7 +367,7 @@ class SafeFileReader:
         try:
             return json.loads(content)
         except json.JSONDecodeError as ex:
-            logger.warning(f"JSON parse error in {path}: {ex}")
+            logger.warning(f"JSON parse error in {path}: {ex}", exc_info=True)
             
             # Try backup if we haven't already
             if try_backup:
@@ -407,7 +408,7 @@ class SafeFileReader:
             try:
                 return path.read_bytes()
             except Exception as ex:
-                logger.warning(f"Failed to read {path}: {ex}")
+                logger.warning(f"Failed to read {path}: {ex}", exc_info=True)
         
         if try_backup:
             backup_path = path.with_suffix(path.suffix + '.bak')
@@ -416,7 +417,7 @@ class SafeFileReader:
                     logger.info(f"Recovering from backup: {backup_path}")
                     return backup_path.read_bytes()
                 except Exception as ex:
-                    logger.warning(f"Failed to read backup {backup_path}: {ex}")
+                    logger.warning(f"Failed to read backup {backup_path}: {ex}", exc_info=True)
         
         return default
 
@@ -508,7 +509,7 @@ def safe_delete(path: Path, missing_ok: bool = True) -> FileOperationResult:
         )
         
     except Exception as ex:
-        logger.error(f"Failed to delete {path}: {ex}")
+        logger.exception(f"Failed to delete {path}: {ex}")
         return FileOperationResult(
             success=False,
             path=path,
@@ -567,7 +568,7 @@ def safe_rename(
         )
         
     except Exception as ex:
-        logger.error(f"Failed to rename {src} -> {dst}: {ex}")
+        logger.exception(f"Failed to rename {src} -> {dst}: {ex}")
         return FileOperationResult(
             success=False,
             path=src,
@@ -591,7 +592,7 @@ def ensure_directory(path: Path) -> bool:
         path.mkdir(parents=True, exist_ok=True)
         return True
     except Exception as ex:
-        logger.error(f"Failed to create directory {path}: {ex}")
+        logger.exception(f"Failed to create directory {path}: {ex}")
         return False
 
 

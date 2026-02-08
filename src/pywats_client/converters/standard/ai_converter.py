@@ -16,6 +16,7 @@ determines the correct converter to use.
 """
 
 import logging
+from pywats.core.logging import get_logger
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
@@ -40,7 +41,7 @@ from pywats_client.converters.models import (
     ArgumentType,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AIConverter(FileConverter):
@@ -232,7 +233,7 @@ class AIConverter(FileConverter):
                     best_validation = validation
                     
             except Exception as e:
-                logger.warning(f"Error validating with {name}: {e}")
+                logger.warning(f"Error validating with {name}: {e}", exc_info=True)
                 all_scores.append({
                     "converter": name,
                     "can_convert": False,

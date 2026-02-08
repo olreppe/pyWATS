@@ -20,6 +20,7 @@ import ast
 import asyncio
 import json
 import logging
+from pywats.core.logging import get_logger
 import os
 import platform
 import signal
@@ -38,7 +39,7 @@ if platform.system() != "Windows":
 else:
     unix_resource = None  # type: ignore
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # =============================================================================
@@ -460,7 +461,7 @@ class SandboxProcess:
             try:
                 shutil.rmtree(self._temp_dir)
             except Exception as e:
-                logger.warning(f"Failed to clean temp dir: {e}")
+                logger.warning(f"Failed to clean temp dir: {e}", exc_info=True)
         
         self._process = None
         self._stdin = None
@@ -526,7 +527,7 @@ class SandboxProcess:
                     timeout=5.0
                 )
             except asyncio.TimeoutError:
-                logger.error("Process did not terminate after SIGKILL")
+                logger.exception("Process did not terminate after SIGKILL")
     
     def _create_restricted_env(self) -> Dict[str, str]:
         """Create a restricted environment for the subprocess."""
@@ -807,7 +808,7 @@ class ConverterSandbox:
                 try:
                     await process.stop()
                 except Exception as e:
-                    logger.warning(f"Error stopping sandbox: {e}")
+                    logger.warning(f"Error stopping sandbox: {e}", exc_info=True)
             self._processes.clear()
     
     async def _get_process(

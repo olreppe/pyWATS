@@ -9,6 +9,7 @@ Uses Routes class for centralized endpoint definitions.
 from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING
 from uuid import UUID
 import logging
+from pywats.core.logging import get_logger
 import xml.etree.ElementTree as ET
 
 from ...core.routes import Routes
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 
 from .models import Product, ProductRevision, ProductGroup, BomItem, ProductRevisionRelation
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncProductRepository:

@@ -10,6 +10,7 @@ It uses the async IPC client for status updates and ServiceManager for service c
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 import sys
 from pathlib import Path
 from typing import Optional
@@ -20,7 +21,7 @@ from PySide6.QtGui import QAction, QIcon
 from .async_ipc_client import AsyncIPCClient
 from ..service_manager import ServiceManager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ServiceTrayIcon(QObject):

@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from pywats.core.logging import get_logger
 from datetime import datetime
 from typing import Any, Callable, Optional
 from uuid import uuid4
@@ -27,7 +28,7 @@ from ..models.cfx_messages import (
 )
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CFXTransport(BaseTransport):
@@ -157,11 +158,11 @@ class CFXTransport(BaseTransport):
                 await self._publish_endpoint_connected()
             
         except ImportError:
-            logger.error("aio_pika not installed. Run: pip install aio_pika")
+            logger.exception("aio_pika not installed. Run: pip install aio_pika")
             self._state = TransportState.ERROR
             raise
         except Exception as e:
-            logger.error(f"Failed to connect to CFX broker: {e}")
+            logger.exception(f"Failed to connect to CFX broker: {e}")
             self._state = TransportState.ERROR
             
             if self.config.auto_reconnect:
@@ -193,7 +194,7 @@ class CFXTransport(BaseTransport):
                 await self._connection.close()
             
         except Exception as e:
-            logger.warning(f"Error during disconnect: {e}")
+            logger.warning(f"Error during disconnect: {e}", exc_info=True)
         finally:
             self._connection = None
             self._channel = None
@@ -247,7 +248,7 @@ class CFXTransport(BaseTransport):
                 logger.debug(f"Sent CFX message: {routing_key}")
             
         except Exception as e:
-            logger.error(f"Failed to send CFX message: {e}")
+            logger.exception(f"Failed to send CFX message: {e}")
             raise
     
     async def _on_message(self, message: Any) -> None:
@@ -278,9 +279,9 @@ class CFXTransport(BaseTransport):
                     self._on_event(event)
                 
             except json.JSONDecodeError as e:
-                logger.error(f"Invalid JSON in CFX message: {e}")
+                logger.exception(f"Invalid JSON in CFX message: {e}")
             except Exception as e:
-                logger.error(f"Error processing CFX message: {e}")
+                logger.exception(f"Error processing CFX message: {e}")
     
     def _cfx_to_event(self, cfx_message: CFXMessage, routing_key: str) -> Event:
         """

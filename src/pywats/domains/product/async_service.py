@@ -8,6 +8,7 @@ Includes both public and internal API methods.
 from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from uuid import UUID
 import logging
+from pywats.core.logging import get_logger
 
 from .models import Product, ProductRevision, ProductGroup, ProductView, BomItem, ProductRevisionRelation
 from .enums import ProductState
@@ -16,7 +17,7 @@ from .async_repository import AsyncProductRepository
 if TYPE_CHECKING:
     from .async_box_build import AsyncBoxBuildTemplate
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncProductService:

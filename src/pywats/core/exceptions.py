@@ -23,11 +23,12 @@ Exception Hierarchy:
 from enum import Enum
 from typing import Optional, Dict, Any, Type, TYPE_CHECKING
 import logging
+from pywats.core.logging import get_logger
 
 if TYPE_CHECKING:
     from .client import Response
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ErrorMode(Enum):

@@ -24,6 +24,7 @@ from __future__ import annotations
 import time
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from typing import TYPE_CHECKING, Callable, Awaitable, Optional, TypeVar, Any
 from dataclasses import dataclass
 
@@ -33,7 +34,7 @@ from .throttle import RateLimiter
 if TYPE_CHECKING:
     from .client import Response
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 

@@ -6,6 +6,7 @@ providing hierarchical navigation through API, Client, and GUI settings.
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Dict, Any, Optional, Callable, Tuple, List, TYPE_CHECKING
 
 from PySide6.QtWidgets import (
@@ -23,7 +24,7 @@ from ..core.constants import LogLevel
 if TYPE_CHECKING:
     from pywats.core.config import APISettings
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # ==============================================================================
@@ -1748,7 +1749,7 @@ class SettingsDialog(QDialog):
                 from pywats_client.core import ConfigManager
                 ConfigManager().save(self._api_config)
         except Exception as e:
-            logger.error(f"Failed to save API config: {e}")
+            logger.exception(f"Failed to save API config: {e}")
         
         # Save client settings
         if "client_connection" in self._panels:

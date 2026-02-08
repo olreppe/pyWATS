@@ -9,6 +9,7 @@ Uses Routes class for centralized endpoint management.
 from typing import Optional, List, Dict, Any, Union, Sequence, TYPE_CHECKING
 from datetime import datetime
 import logging
+from pywats.core.logging import get_logger
 
 from ...core.routes import Routes
 
@@ -21,7 +22,7 @@ from .models import (
     UnitVerification, UnitVerificationGrade, UnitPhase
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncProductionRepository:

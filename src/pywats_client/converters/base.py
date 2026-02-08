@@ -6,6 +6,7 @@ Converters are Python scripts that run on the client (and potentially server)
 to convert various file formats to WATS report structures.
 """
 
+from pywats.core.logging import get_logger
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, BinaryIO, List, Union, Tuple, TYPE_CHECKING
@@ -654,7 +655,7 @@ class CSVConverter(ConverterBase):
         """Called after successful conversion"""
         # Log success
         import logging
-        logger = logging.getLogger(__name__)
+        logger = get_logger(__name__)
         logger.info(
             f"Successfully converted {file_path.name}: "
             f"SN={result.report.get('serialNumber') if result.report else 'N/A'}, "
@@ -670,7 +671,7 @@ class CSVConverter(ConverterBase):
         """Called after failed conversion"""
         # Log failure
         import logging
-        logger = logging.getLogger(__name__)
+        logger = get_logger(__name__)
         logger.error(
             f"Failed to convert {file_path.name}: {result.error}"
         )

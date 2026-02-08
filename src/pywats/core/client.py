@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field, ConfigDict, computed_field
 import httpx
 import json
 import logging
+from pywats.core.logging import get_logger
 
 from .exceptions import (
     ConnectionError,
@@ -44,7 +45,7 @@ from .cache import TTLCache
 if TYPE_CHECKING:
     from .metrics import MetricsCollector
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Response(BaseModel):

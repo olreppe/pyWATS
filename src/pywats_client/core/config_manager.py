@@ -22,6 +22,7 @@ Usage:
 
 import json
 import logging
+from pywats.core.logging import get_logger
 import os
 from pathlib import Path
 from typing import Optional
@@ -29,7 +30,7 @@ from typing import Optional
 from pywats.core.config import APISettings
 from .file_utils import SafeFileWriter, SafeFileReader
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ConfigManager:
@@ -109,7 +110,7 @@ class ConfigManager:
                     logger.debug("Config file empty or corrupted, using defaults")
                     self._settings = APISettings()
             except Exception as e:
-                logger.warning(f"Failed to load API config, using defaults: {e}")
+                logger.warning(f"Failed to load API config, using defaults: {e}", exc_info=True)
                 self._settings = APISettings()
         else:
             logger.debug("No API config file found, using defaults")
@@ -144,7 +145,7 @@ class ConfigManager:
             else:
                 raise IOError(result.error)
         except Exception as e:
-            logger.error(f"Failed to save API config: {e}")
+            logger.exception(f"Failed to save API config: {e}")
             raise
     
     @property

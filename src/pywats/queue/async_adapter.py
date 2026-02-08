@@ -14,12 +14,13 @@ This eliminates code duplication - one queue implementation used everywhere.
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, Any, Generic, TypeVar
 from datetime import datetime
 
 from .memory_queue import MemoryQueue, QueueItem, QueueItemStatus
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 

@@ -5,6 +5,7 @@ Provides a synchronous interface by wrapping async services.
 """
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 import inspect
 import contextvars
 import uuid
@@ -21,7 +22,7 @@ from .core.sync_runner import run_sync
 if TYPE_CHECKING:
     from .core.config import APISettings, SyncConfig, RetryConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 R = TypeVar('R')
@@ -114,7 +115,7 @@ def _with_retry(
                     )
                     time.sleep(wait_time)
                 else:
-                    logger.error(
+                    logger.exception(
                         f"[{correlation_id}] All {config.max_retries + 1} attempts failed"
                     )
         

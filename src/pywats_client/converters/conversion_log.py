@@ -210,7 +210,8 @@ class ConversionLog:
         message: str,
         step: str = "Conversion",
         metadata: Optional[Dict[str, Any]] = None,
-        exception: Optional[Exception] = None
+        exception: Optional[Exception] = None,
+        raise_after_log: bool = True
     ) -> None:
         """
         Log an error (ERROR level).
@@ -220,13 +221,29 @@ class ConversionLog:
             step: Step name where error occurred (default: "Conversion")
             metadata: Optional additional data
             exception: Optional exception object (will extract type and message)
+            raise_after_log: If True and exception is provided, re-raises the exception
+                           after logging (default: True). Set to False for backward
+                           compatibility or when exception handling is done elsewhere.
             
         Example:
             >>> log.error("Failed to parse CSV", metadata={"line": 5})
+            >>> 
+            >>> # Exception will be re-raised after logging (default behavior)
             >>> try:
             >>>     data = parse_file()
             >>> except ValueError as e:
-            >>>     log.error("Parse error", exception=e)
+            >>>     log.error("Parse error", exception=e)  # Logs and re-raises
+            >>> 
+            >>> # Suppress re-raise for backward compatibility
+            >>> try:
+            >>>     data = parse_file()
+            >>> except ValueError as e:
+            >>>     log.error("Parse error", exception=e, raise_after_log=False)
+            >>>     # Handle error without raising
+        
+        Note:
+            Starting in v0.5.1, exceptions are re-raised by default to prevent
+            silent failures. Set raise_after_log=False to maintain v0.5.0 behavior.
         """
         if self._finalized:
             logging.warning("Attempted to log error after finalization")
@@ -249,6 +266,10 @@ class ConversionLog:
             metadata=metadata
         )
         self._write_entry(entry)
+        
+        # Re-raise exception if configured (default behavior)
+        if exception and raise_after_log:
+            raise exception
     
     def finalize(
         self,
@@ -328,10 +349,12 @@ class ConversionLog:
         if not self._finalized:
             if exc_val:
                 # Exception occurred - log as failure
+                # Don't re-raise here - let the context manager propagate the original exception
                 self.error(
                     message=str(exc_val),
                     step="Conversion",
-                    exception=exc_val
+                    exception=exc_val,
+                    raise_after_log=False  # Context manager handles propagation
                 )
                 self.finalize(success=False, error=str(exc_val))
             else:

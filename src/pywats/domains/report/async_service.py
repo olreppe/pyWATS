@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Union, Callable, Protocol, overload
 from uuid import UUID, uuid4
 import logging
+from pywats.core.logging import get_logger
 
 from .models import WATSFilter, ReportHeader
 from .report_models import UUTReport, UURReport
@@ -25,7 +26,7 @@ from .filter_builders import (
 from .query_helpers import is_uut_report_type, get_expand_fields
 from ...shared.stats import QueueProcessingResult
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Default for recent_headers (days to look back)
 DEFAULT_RECENT_DAYS = 7

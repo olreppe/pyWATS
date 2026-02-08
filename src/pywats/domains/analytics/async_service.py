@@ -7,6 +7,7 @@ Includes internal API methods (marked with ⚠️ INTERNAL) that use undocumente
 endpoints. These may change without notice and should be used with caution.
 """
 import logging
+from pywats.core.logging import get_logger
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Union
 
@@ -37,7 +38,7 @@ from .enums import AlarmType
 from ..report.models import WATSFilter, ReportHeader
 from ...shared.paths import normalize_path, normalize_paths, StepPath
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncAnalyticsService:

@@ -25,11 +25,12 @@ Key Features:
 from typing import TypeVar, Callable, Iterator, Optional, Any, List, Generic
 from dataclasses import dataclass
 import logging
+from pywats.core.logging import get_logger
 
 T = TypeVar("T")
 R = TypeVar("R")  # Response type
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -140,7 +141,7 @@ def paginate(
         try:
             response = fetch_page(current_index, effective_page_size)
         except Exception as e:
-            logger.error(f"Error fetching page at index {current_index}: {e}")
+            logger.exception(f"Error fetching page at index {current_index}: {e}")
             raise
         
         # Extract items

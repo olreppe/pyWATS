@@ -21,13 +21,14 @@ import builtins
 import time
 import random
 import logging
+from pywats.core.logging import get_logger
 from dataclasses import dataclass, field
 from typing import Optional, Set, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .client import Response
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Status codes that indicate transient failures worth retrying

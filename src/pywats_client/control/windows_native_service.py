@@ -23,12 +23,13 @@ Removal:
 import sys
 import os
 import logging
+from pywats.core.logging import get_logger
 import time
 import subprocess
 from pathlib import Path
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Event Log constants
 EVENT_LOG_APPLICATION = "Application"

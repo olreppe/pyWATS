@@ -5,6 +5,7 @@ Event router for directing events to appropriate handlers.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from pywats_events.handlers.base_handler import BaseHandler
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RoutingRule:
@@ -46,7 +47,7 @@ class RoutingRule:
         try:
             return self.predicate(event)
         except Exception as e:
-            logger.warning(f"Rule {self.name} predicate error: {e}")
+            logger.warning(f"Rule {self.name} predicate error: {e}", exc_info=True)
             return False
     
     def __repr__(self) -> str:
@@ -86,7 +87,7 @@ class EventRouter:
         """Initialize router."""
         self._rules: List[tuple[RoutingRule, "BaseHandler"]] = []
         self._default_handler: Optional["BaseHandler"] = None
-        self._logger = logging.getLogger(__name__)
+        self._logger = get_logger(__name__)
     
     def add_rule(
         self,

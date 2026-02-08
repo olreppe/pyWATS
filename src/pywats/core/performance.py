@@ -9,8 +9,9 @@ Provides optional high-performance features:
 from typing import Any, Optional, Union
 import json
 import logging
+from pywats.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Optional msgpack support
 try:

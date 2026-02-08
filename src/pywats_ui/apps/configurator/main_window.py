@@ -10,6 +10,7 @@ Changes from original:
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, Dict
 from pathlib import Path
 
@@ -32,7 +33,7 @@ from .pages import (
     LocationPage, ProxySettingsPage, ConvertersPageV2
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class InstanceSelectorDialog(QDialog):

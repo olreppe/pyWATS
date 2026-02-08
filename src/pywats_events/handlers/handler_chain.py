@@ -8,13 +8,14 @@ the ability to modify, enrich, or short-circuit processing.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Any, Callable, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pywats_events.models.event import Event
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class HandlerChain:
@@ -141,7 +142,7 @@ class LoggingMiddleware(ChainMiddleware):
             logger.log(self.log_level, f"Event processed successfully: {event.id[:8]}...")
             return result
         except Exception as e:
-            logger.error(f"Event processing failed: {event.id[:8]}... - {e}")
+            logger.exception(f"Event processing failed: {event.id[:8]}... - {e}")
             raise
 
 

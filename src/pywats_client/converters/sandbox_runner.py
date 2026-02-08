@@ -17,6 +17,7 @@ import importlib.util
 import io
 import json
 import logging
+from pywats.core.logging import get_logger
 import os
 import sys
 import traceback
@@ -29,7 +30,7 @@ logging.basicConfig(
     format="[sandbox] %(levelname)s: %(message)s",
     stream=sys.stderr
 )
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # =============================================================================

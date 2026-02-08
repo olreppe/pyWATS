@@ -9,6 +9,7 @@ and error handling.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue, Empty
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from pywats_events.policies.error_policy import ErrorPolicy
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class EventBus:

@@ -13,10 +13,11 @@ This enables:
 from enum import Enum, auto
 from typing import Optional, Any, Dict, Callable, List
 import logging
+from pywats.core.logging import get_logger
 
 from PySide6.QtCore import QObject, Signal
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AppEvent(Enum):
@@ -205,7 +206,7 @@ class EventBus(QObject):
                 try:
                     callback(data)
                 except Exception as e:
-                    logger.error(f"Error in event handler for {event.name}: {e}")
+                    logger.exception(f"Error in event handler for {event.name}: {e}")
         
         # Store reference to prevent garbage collection
         if not hasattr(self, '_handlers'):

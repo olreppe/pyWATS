@@ -9,12 +9,13 @@ from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 from uuid import UUID
 import logging
+from pywats.core.logging import get_logger
 
 from .models import Asset, AssetType, AssetLog
 from .enums import AssetState
 from .async_repository import AsyncAssetRepository
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncAssetService:

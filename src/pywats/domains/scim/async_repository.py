@@ -5,6 +5,7 @@ All endpoints are defined in pywats.core.routes.Routes.
 """
 from typing import Optional, TYPE_CHECKING
 import logging
+from pywats.core.logging import get_logger
 
 if TYPE_CHECKING:
     from ...core.async_client import AsyncHttpClient
@@ -18,7 +19,7 @@ from .models import (
     ScimListResponse,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncScimRepository:

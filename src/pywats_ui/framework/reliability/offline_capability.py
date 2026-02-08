@@ -10,13 +10,14 @@ User requirement: "Fix weaknesses, ensure reliability"
 """
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional
 from enum import Enum
 
 from PySide6.QtWidgets import QWidget, QLabel
 from PySide6.QtCore import Signal, Slot
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OnlineMode(Enum):

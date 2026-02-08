@@ -13,6 +13,7 @@ from typing import Optional, Dict, Any, List, Union, Tuple, TYPE_CHECKING
 import fnmatch
 import mimetypes
 import logging
+from pywats.core.logging import get_logger
 
 # Type hints for UUTReport/UURReport (avoids circular import)
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ try:
 except ImportError:
     HAS_MAGIC = False
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # =============================================================================

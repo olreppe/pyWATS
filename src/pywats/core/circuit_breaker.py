@@ -18,12 +18,13 @@ This prevents retry storms and provides faster failure feedback.
 
 import time
 import logging
+from pywats.core.logging import get_logger
 from enum import Enum
 from typing import Optional, Callable, TypeVar, Any
 from dataclasses import dataclass
 import threading
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 

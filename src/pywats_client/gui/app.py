@@ -8,10 +8,11 @@ Note: The old GUI (pywats_client.gui) has been migrated to the new configurator
 
 import sys
 import logging
+from pywats.core.logging import get_logger
 from pathlib import Path
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def run_gui(config: 'ClientConfig', instance_id: str = "default") -> None:
@@ -41,7 +42,7 @@ def run_gui(config: 'ClientConfig', instance_id: str = "default") -> None:
         import qasync
         import asyncio
     except ImportError as e:
-        logger.error(f"Failed to import GUI dependencies: {e}")
+        logger.exception(f"Failed to import GUI dependencies: {e}")
         print("Error: GUI mode requires PySide6 and qasync")
         print("Install with: pip install pywats-api[client]")
         sys.exit(1)
@@ -49,7 +50,7 @@ def run_gui(config: 'ClientConfig', instance_id: str = "default") -> None:
     try:
         from pywats_ui.apps.configurator.main_window import ConfiguratorMainWindow
     except ImportError as e:
-        logger.error(f"Failed to import configurator: {e}")
+        logger.exception(f"Failed to import configurator: {e}")
         print("Error: Configurator GUI is not available")
         print("Please ensure pywats_ui package is installed")
         sys.exit(1)

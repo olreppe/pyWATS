@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -51,7 +52,7 @@ from functools import wraps
 
 from PySide6.QtCore import QObject, Signal, QThread
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar('T')
 
@@ -291,7 +292,7 @@ class AsyncTaskRunner(QObject):
                 try:
                     on_complete(result)
                 except Exception as e:
-                    logger.error(f"Error in completion callback: {e}")
+                    logger.exception(f"Error in completion callback: {e}")
             
         except asyncio.CancelledError:
             result = TaskResult(
@@ -313,7 +314,7 @@ class AsyncTaskRunner(QObject):
                 traceback=tb
             )
             
-            logger.error(f"Task failed: {name} ({task_id}): {e}")
+            logger.exception(f"Task failed: {name} ({task_id}): {e}")
             
             # Emit signals
             self.task_error.emit(result)
@@ -324,7 +325,7 @@ class AsyncTaskRunner(QObject):
                 try:
                     on_error(result)
                 except Exception as cb_error:
-                    logger.error(f"Error in error callback: {cb_error}")
+                    logger.exception(f"Error in error callback: {cb_error}")
         
         finally:
             # Clean up task info

@@ -8,6 +8,7 @@ without requiring actual network connections.
 from __future__ import annotations
 
 import logging
+from pywats.core.logging import get_logger
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from pywats_events.transports.base_transport import BaseTransport, TransportState
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from pywats_events.models.event import Event
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class MockTransport(BaseTransport):

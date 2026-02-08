@@ -11,13 +11,14 @@ User requirement: "Fix weaknesses, ensure reliability"
 
 import asyncio
 import logging
+from pywats.core.logging import get_logger
 from typing import Optional, Callable, Any
 from enum import Enum
 from datetime import datetime, timedelta
 
 from PySide6.QtCore import QObject, Signal, QTimer
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ConnectionStatus(Enum):
@@ -198,7 +199,7 @@ class ConnectionMonitor(QObject):
                 
         except Exception as e:
             error_msg = str(e)
-            logger.warning(f"Reconnect attempt {self._reconnect_attempt} failed: {error_msg}")
+            logger.warning(f"Reconnect attempt {self._reconnect_attempt} failed: {error_msg}", exc_info=True)
             self.reconnect_failed.emit(error_msg)
             
             # Schedule next retry with exponential backoff
@@ -238,7 +239,7 @@ class ConnectionMonitor(QObject):
                 
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"Manual connection failed: {error_msg}")
+            logger.exception(f"Manual connection failed: {error_msg}")
             self._set_status(ConnectionStatus.DISCONNECTED)
             self.reconnect_failed.emit(error_msg)
     

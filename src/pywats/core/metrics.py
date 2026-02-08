@@ -26,11 +26,12 @@ Features:
 
 import functools
 import logging
+from pywats.core.logging import get_logger
 import time
 from typing import Callable, Optional, TypeVar, Any
 import threading
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Optional dependency - only import if prometheus_client is installed
 try:
@@ -317,7 +318,7 @@ class MetricsCollector:
                     
                     time.sleep(interval)
                 except Exception as e:
-                    logger.error(f"Error in system monitoring: {e}")
+                    logger.exception(f"Error in system monitoring: {e}")
                     time.sleep(interval)
         
         thread = threading.Thread(target=monitor_loop, daemon=True, name="MetricsMonitor")
@@ -383,7 +384,7 @@ def start_metrics_server(port: int = 9090, addr: str = '0.0.0.0') -> Optional[bo
         return True  # Return something to indicate success
         
     except Exception as e:
-        logger.error(f"Failed to start metrics server: {e}")
+        logger.exception(f"Failed to start metrics server: {e}")
         return None
 
 
