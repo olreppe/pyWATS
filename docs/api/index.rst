@@ -54,6 +54,20 @@ Basic Usage
    filter = WATSFilter(part_number="WIDGET-001", period_count=30)
    headers = api.report.query_uut_headers(filter)
 
+Additional Resources
+====================
+
+**Object Model Diagrams** (Comprehensive class diagrams with all members)
+
+* `Report Object Models Overview <REPORT_OBJECT_MODELS.md>`_ - Complete guide to report structures
+* `UUTReport Object Model <UUT_OBJECT_MODEL.md>`_ - Unit Under Test report class diagram
+* `UURReport Object Model <UUR_OBJECT_MODEL.md>`_ - Unit Under Repair report class diagram
+
+**Class References** (Auto-generated from source code)
+
+* `Complete API Class Reference <class_reference/pywats_api_complete.md>`_ - All pyWATS API classes in one file
+* `Class Reference Index <class_reference/README.md>`_ - Browse by component/domain
+
 Indices and tables
 ==================
 
