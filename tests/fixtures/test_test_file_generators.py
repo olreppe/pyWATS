@@ -233,33 +233,37 @@ class TestJSONGeneration:
         with open(json_file, 'r') as f:
             data = json.load(f)
         
-        # Verify structure
-        assert 'reports' in data
-        assert len(data['reports']) == 1
-        
-        report = data['reports'][0]
-        assert 'serial_number' in report
-        assert 'part_number' in report
-        assert 'overall_result' in report
-        assert 'test_steps' in report
-        assert len(report['test_steps']) == 10
+        # Verify WSJF format (single report per file, not array)
+        assert 'type' in data  # 'T' for UUT, 'R' for Repair
+        assert 'sn' in data  # Serial number
+        assert 'pn' in data  # Part number
+        assert 'result' in data  # Overall result
+        assert 'root' in data  # Root sequence call
+        assert data['root'] is not None
+        assert 'steps' in data['root']  # Test steps
+        assert len(data['root']['steps']) == 10
     
     def test_json_multiple_uuts(self, temp_dir):
-        """Test JSON generation with multiple UUTs."""
+        """Test JSON generation with custom step count."""
+        # Note: WSJF format supports ONE report per file (uut_count ignored)
         json_file = TestFileGenerator.generate_json_file(
             temp_dir / "test.json",
-            uut_count=5,
+            uut_count=5,  # Ignored - WSJF has one report per file
             steps_per_uut=5
         )
         
         with open(json_file, 'r') as f:
             data = json.load(f)
         
-        assert len(data['reports']) == 5
+        # Verify WSJF format with 5 steps
+        assert 'root' in data
+        assert data['root'] is not None
+        assert 'steps' in data['root']
+        assert len(data['root']['steps']) == 5
         
-        # Each should have 5 steps
-        for report in data['reports']:
-            assert len(report['test_steps']) == 5
+        # Verify each step has required fields
+        for step in data['root']['steps']:
+            assert 'status' in step
     
     def test_malformed_json(self, temp_dir):
         """Test malformed JSON generation."""
