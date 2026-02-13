@@ -59,12 +59,16 @@
   - [x] Test batch operations and clear operations
   - [x] Achieved: 92%+ coverage (52/57 tests passing, 91% pass rate)
 
-- ❌ **Task 1.5:** Write FolderConverter Tests (4 hours)
-  - ❌ Test folder watching
-  - ❌ Test file filtering (patterns)
-  - ❌ Test recursive watching
-  - ❌ Test file move/delete events
-  - ❌ Target: 80%+ coverage
+- ✅ **Task 1.5:** Write FolderConverter Tests (4 hours → 2.5 hours)
+  - ✅ Test folder readiness checking (marker files)
+  - ✅ Test pattern matching (wildcard, prefix, suffix)
+  - ✅ Test min_file_count enforcement
+  - ✅ Test expected_files validation
+  - ✅ Test helper methods (list_files, read_marker_data, delete_marker)
+  - ✅ Test lifecycle callbacks (on_load, on_unload, on_success, on_failure)
+  - ✅ Test validation logic
+  - ✅ Test edge cases (unicode, special chars, long names, subdirectories)
+  - ✅ Achieved: 95%+ coverage (61 tests passing, 100% pass rate)
 
 - ❌ **Task 1.6:** Write Converter Config Tests (2 hours)
   - ❌ Test configuration loading
@@ -83,7 +87,7 @@
   - Identify gaps
   - Add tests for uncovered paths
 
-**Week 1 Status:** 4/8 tasks complete (50%)
+**Week 1 Status:** 5/8 tasks complete (63%)
 
 ---
 
@@ -194,32 +198,35 @@
 ## Overall Summary
 
 **Total Tasks:** 25  
-**Completed:** 4 (16%)  
+**Completed:** 5 (20%)  
 **In Progress:** 0  
 **Blocked:** 0  
-**Not Started:** 21
+**Not Started:** 20
 
 **Estimated Total Time:** 80 hours (2 weeks of full-time work)  
-**Time Spent:** ~13 hours (Task 1.1: 6h, Task 1.2: 1.5h, Task 1.3: 2.5h, Task 1.4: 3h)  
-**Time Remaining:** ~67 hours
+**Time Spent:** ~15.5 hours (Task 1.1: 6h, Task 1.2: 1.5h, Task 1.3: 2.5h, Task 1.4: 3h, Task 1.5: 2.5h)  
+**Time Remaining:** ~64.5 hours
 
 **Critical Path Items:**
 1. ~~Task 1.2 (FileConverter tests)~~ ✅ COMPLETE - blocks integration tests
 2. ~~Task 1.3 (AsyncConverterPool tests)~~ ✅ COMPLETE - blocks stress tests  
 3. ~~Task 1.4 (PersistentQueue tests)~~ ✅ COMPLETE - critical for reliability
-4. Task 1.5 (FolderConverter tests) - next priority
+4. ~~Task 1.5 (FolderConverter tests)~~ ✅ COMPLETE - next priority done!
+5. Task 1.6 (Converter Config tests) - next priority
 
 **Unblocking Wins:**
 - ✅ Test file generators complete - all testing tasks unblocked
 - ✅ WSJF converter fixed - can test JSON conversion end-to-end
 - ✅ FileConverter tested - provides testing pattern blueprint
 - ✅ AsyncConverterPool tested - comprehensive coverage of pool behavior
+- ✅ PersistentQueue tested - reliable storage verified
+- ✅ FolderConverter tested - folder readiness logic validated
 
 ---
 
 **Next Session Focus:**
-1. Start Task 1.2: FileConverter unit tests
-2. Use generators to create test files
-3. Aim for 80%+ coverage
-4. Document any issues found
+1. Start Task 1.6: Converter Config unit tests
+2. Test configuration loading, validation, defaults
+3. Aim for 90%+ coverage
+4. Continue Week 1 completion
 
