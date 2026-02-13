@@ -511,7 +511,7 @@ class TestPersistentQueueRecoveryEdgeCases:
         # assert recovered.attempts >= initial_attempts
     
     @pytest.mark.skip(reason="Recovery behavior verification needed")
-   def test_completed_items_not_recovered(self, temp_queue_dir, sample_report):
+    def test_completed_items_not_recovered(self, temp_queue_dir, sample_report):
         """Test that completed items are not reset during recovery"""
         queue1 = PersistentQueue(queue_dir=temp_queue_dir)
         item = queue1.add(sample_report, item_id="NO-RECOVERY-001")

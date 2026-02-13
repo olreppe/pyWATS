@@ -219,10 +219,16 @@ def pytest_configure(config):
         "markers", "client_b: mark test as using Client B instance"
     )
     config.addinivalue_line(
-        "markers", "integration: mark test as an integration test"
+        "markers", "integration: mark test as integration test (require external services)"
     )
     config.addinivalue_line(
         "markers", "slow: mark test as slow running"
+    )
+    config.addinivalue_line(
+        "markers", "stress: mark test as stress test (high load, long duration)"
+    )
+    config.addinivalue_line(
+        "markers", "benchmark: mark test as performance benchmark"
     )
 
 
@@ -295,4 +301,143 @@ def wats_client_balanced(wats_client_pool: LoadBalancedClientPool) -> pyWATS:
             result = wats_client_balanced.product.get_products()
     """
     return wats_client_pool.get_client()
+
+
+# =============================================================================
+# Converter Test File Generators
+# =============================================================================
+
+# Import test file generator utilities
+from tests.fixtures.test_file_generators import TestFileGenerator
+
+
+@pytest.fixture
+def temp_dir(tmp_path):
+    """
+    Temporary directory for test files.
+    
+    This is a wrapper around pytest's tmp_path that provides a consistent name.
+    """
+    return tmp_path
+
+
+@pytest.fixture
+def watch_dir(tmp_path):
+    """Temporary watch folder for converter tests."""
+    watch = tmp_path / "watch"
+    watch.mkdir()
+    return watch
+
+
+@pytest.fixture
+def done_dir(tmp_path):
+    """Temporary Done folder for post-processing tests."""
+    done = tmp_path / "Done"
+    done.mkdir()
+    return done
+
+
+@pytest.fixture
+def error_dir(tmp_path):
+    """Temporary Error folder for failure tests."""
+    error = tmp_path / "Error"
+    error.mkdir()
+    return error
+
+
+@pytest.fixture
+def pending_dir(tmp_path):
+    """Temporary Pending folder for retry tests."""
+    pending = tmp_path / "Pending"
+    pending.mkdir()
+    return pending
+
+
+@pytest.fixture
+def test_csv_file(temp_dir):
+    """Generate single CSV test file."""
+    return TestFileGenerator.generate_csv_file(
+        temp_dir / "test.csv",
+        rows=50
+    )
+
+
+@pytest.fixture
+def test_csv_files(temp_dir):
+    """Generate 10 CSV test files."""
+    return TestFileGenerator.generate_batch(
+        temp_dir,
+        'csv',
+        count=10,
+        rows=50
+    )
+
+
+@pytest.fixture
+def test_xml_file(temp_dir):
+    """Generate single XML test file."""
+    return TestFileGenerator.generate_xml_file(
+        temp_dir / "test.xml",
+        test_steps=10
+    )
+
+
+@pytest.fixture
+def test_xml_files(temp_dir):
+    """Generate 10 XML test files."""
+    return TestFileGenerator.generate_batch(
+        temp_dir,
+        'xml',
+        count=10,
+        test_steps=10
+    )
+
+
+@pytest.fixture
+def corrupted_csv_file(temp_dir):
+    """Generate single corrupted CSV file."""
+    return TestFileGenerator.generate_csv_file(
+        temp_dir / "corrupt.csv",
+        rows=100,
+        corrupt=True
+    )
+
+
+@pytest.fixture
+def malformed_xml_file(temp_dir):
+    """Generate malformed XML file."""
+    return TestFileGenerator.generate_xml_file(
+        temp_dir / "malformed.xml",
+        test_steps=5,
+        malformed=True
+    )
+
+
+@pytest.fixture
+def large_csv_file(temp_dir):
+    """Generate large CSV file (10,000 rows)."""
+    return TestFileGenerator.generate_csv_file(
+        temp_dir / "large.csv",
+        rows=10000
+    )
+
+
+@pytest.fixture
+def large_file_set(temp_dir):
+    """Generate large mixed file set for stress testing."""
+    return TestFileGenerator.generate_mixed_batch(
+        temp_dir,
+        {'csv': 100, 'xml': 100, 'txt': 50}
+    )
+
+
+@pytest.fixture
+def stress_file_set(temp_dir):
+    """Generate 1000 files for stress testing."""
+    return TestFileGenerator.generate_batch(
+        temp_dir,
+        'csv',
+        count=1000,
+        rows=10  # Small files for speed
+    )
 
