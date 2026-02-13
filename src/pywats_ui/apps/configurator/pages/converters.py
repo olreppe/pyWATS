@@ -26,7 +26,7 @@ from pywats_client.core.constants import FolderName
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QTableWidget,  # QMessageBox: Used by dialog classes (ConverterSettingsDialogV2, ConverterEditorDialogV2) which don't have ErrorHandlingMixin
+    QPushButton, QFileDialog, QMessageBox, QTableWidget,  # QMessageBox: Used for 3-button dialog in ConverterEditorDialogV2._on_close() (Save/Discard/Cancel)
     QTableWidgetItem, QHeaderView, QDialog, QPlainTextEdit,
     QFormLayout, QComboBox, QCheckBox, QGroupBox, QSpinBox,
     QDialogButtonBox, QTabWidget, QSplitter, QFrame, QInputDialog,
@@ -36,6 +36,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QAction, QIcon
 
 from pywats_ui.framework.base_page import BasePage
+from pywats_ui.framework.error_mixin import ErrorHandlingMixin
 from pywats_client.core.config import ClientConfig, ConverterConfig
 
 if TYPE_CHECKING:
@@ -243,7 +244,7 @@ def get_user_converters(user_folder: Path) -> List[ConverterInfo]:
     return converters
 
 
-class ConverterSettingsDialogV2(QDialog):
+class ConverterSettingsDialogV2(QDialog, ErrorHandlingMixin):
     """
     Dialog for configuring a converter instance.
     
@@ -543,10 +544,7 @@ class ConverterSettingsDialogV2(QDialog):
             self._reject_spin.setValue(int(cfg.reject_threshold * 100))
         except Exception as e:
             # H1: Handle config loading errors
-            QMessageBox.warning(
-                self, "Load Error",
-                f"Could not load configuration:\n{e}"
-            )
+            self.handle_error(e, "loading configuration")
     
     def _browse_folder(self, line_edit: QLineEdit) -> None:
         """Browse for a folder (H1: with error handling)"""
@@ -557,10 +555,7 @@ class ConverterSettingsDialogV2(QDialog):
                 line_edit.setText(folder)
         except Exception as e:
             # H1: Handle browse errors
-            QMessageBox.warning(
-                self, "Browse Error",
-                f"Could not browse for folder:\n{e}"
-            )
+            self.handle_error(e, "browsing for folder")
     
     def _on_watch_folder_changed(self, text: str) -> None:
         """Update folder preview when watch folder changes"""
@@ -612,16 +607,16 @@ class ConverterSettingsDialogV2(QDialog):
         watch = self._watch_edit.text().strip()
         
         if not name:
-            QMessageBox.warning(self, "Validation", "Configuration name is required.")
+            self.show_warning("Configuration name is required.", "Validation")
             return
         
         if not module:
-            QMessageBox.warning(self, "Validation", "Module path is required.")
+            self.show_warning("Module path is required.", "Validation")
             return
         
         converter_type = self._type_combo.currentText()
         if converter_type in ("file", "folder") and not watch:
-            QMessageBox.warning(self, "Validation", "Watch folder is required.")
+            self.show_warning("Watch folder is required.", "Validation")
             return
         
         # Create folders with M1 retry logic
@@ -643,10 +638,7 @@ class ConverterSettingsDialogV2(QDialog):
                 
             except Exception as e:
                 # H1: User-facing error dialog
-                QMessageBox.warning(
-                    self, "Folder Error",
-                    f"Failed to create folders:\n{e}"
-                )
+                self.handle_error(e, "creating folders")
                 return
         
         self.accept()
@@ -694,7 +686,7 @@ class ConverterSettingsDialogV2(QDialog):
         super().closeEvent(event)
 
 
-class ConverterEditorDialogV2(QDialog):
+class ConverterEditorDialogV2(QDialog, ErrorHandlingMixin):
     """
     Dialog for viewing/editing converter source code.
     
@@ -829,10 +821,7 @@ class ConverterEditorDialogV2(QDialog):
                 self._script_editor.setPlainText(content)
         except Exception as e:
             # H1: Handle file read errors
-            QMessageBox.critical(
-                self, "Load Error",
-                f"Failed to load converter file:\n{e}"
-            )
+            self.handle_error(e, "loading converter file")
     
     def _on_content_changed(self) -> None:
         """Handle content change"""
@@ -850,7 +839,7 @@ class ConverterEditorDialogV2(QDialog):
                     logger.info(f"Converter '{self.converter_info.name}' saved successfully")
                 else:
                     # H1: Save failed
-                    QMessageBox.warning(self, "Save Failed", "Could not save changes.")
+                    self.show_warning("Could not save changes.", "Save Failed")
             else:
                 # Fallback for QPlainTextEdit
                 content = self._script_editor.toPlainText()
@@ -860,10 +849,7 @@ class ConverterEditorDialogV2(QDialog):
                 logger.info(f"Converter '{self.converter_info.name}' saved successfully")
         except Exception as e:
             # H1: Handle save errors
-            QMessageBox.critical(
-                self, "Save Error",
-                f"Failed to save changes:\n{e}"
-            )
+            self.handle_error(e, "saving changes")
     
     def _on_save_new_version(self) -> None:
         """Save as new version (H1: with error handling)"""
@@ -902,10 +888,10 @@ class ConverterEditorDialogV2(QDialog):
                 
                 if updated == source:
                     # Version not found, add it
-                    QMessageBox.warning(
-                        self, "Version Update",
+                    self.show_warning(
                         "Could not find version property in source. "
-                        "Please update the version manually."
+                        "Please update the version manually.",
+                        "Version Update"
                     )
                     return
                 
@@ -915,9 +901,9 @@ class ConverterEditorDialogV2(QDialog):
                     if self._script_editor.save():
                         self.converter_info.version = new_version
                         self.setWindowTitle(f"Edit: {self.converter_info.name} v{new_version}")
-                        QMessageBox.information(
-                            self, "Version Updated",
-                            f"Saved as version {new_version}"
+                        self.show_success(
+                            f"Saved as version {new_version}",
+                            "Version Updated"
                         )
                 else:
                     # Fallback
@@ -925,23 +911,20 @@ class ConverterEditorDialogV2(QDialog):
                     self.converter_info.file_path.write_text(updated, encoding='utf-8')
                     self.converter_info.version = new_version
                     self.setWindowTitle(f"Edit: {self.converter_info.name} v{new_version}")
-                    QMessageBox.information(
-                        self, "Version Updated",
-                        f"Saved as version {new_version}"
+                    self.show_success(
+                        f"Saved as version {new_version}",
+                        "Version Updated"
                     )
         except Exception as e:
             # H1: Handle version update errors
-            QMessageBox.critical(
-                self, "Version Update Error",
-                f"Failed to update version:\n{e}"
-            )
+            self.handle_error(e, "updating version")
     
     def _on_customize(self) -> None:
         """Create customized copy of system converter (H1: with error handling)"""
         if not self.user_folder:
-            QMessageBox.warning(
-                self, "No Folder",
-                "Please configure a user converters folder first."
+            self.show_warning(
+                "Please configure a user converters folder first.",
+                "No Folder"
             )
             return
         
@@ -961,12 +944,10 @@ class ConverterEditorDialogV2(QDialog):
                 new_path = self.user_folder / f"{new_name}.py"
                 
                 if new_path.exists():
-                    reply = QMessageBox.question(
-                        self, "File Exists",
+                    if not self.confirm_action(
                         f"File {new_name}.py already exists. Overwrite?",
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                    )
-                    if reply != QMessageBox.StandardButton.Yes:
+                        "File Exists"
+                    ):
                         return
                 
                 # Read original
@@ -1011,21 +992,18 @@ class ConverterEditorDialogV2(QDialog):
                 self.user_folder.mkdir(parents=True, exist_ok=True)
                 new_path.write_text(source, encoding='utf-8')
                 
-                QMessageBox.information(
-                    self, "Customized",
+                self.show_success(
                     f"Created customized converter:\n{new_path}\n\n"
                     f"Class name: {new_class}\n"
-                    "You can now edit this converter."
+                    "You can now edit this converter.",
+                    "Customized"
                 )
                 
                 self.accept()
                 
         except Exception as e:
             # H1: Handle customization errors
-            QMessageBox.critical(
-                self, "Error",
-                f"Failed to create customized converter:\n{e}"
-            )
+            self.handle_error(e, "creating customized converter")
     
     def _on_close(self) -> None:
         """Close dialog (H1: with unsaved changes check)"""
@@ -1037,6 +1015,8 @@ class ConverterEditorDialogV2(QDialog):
                 is_modified = self._script_editor.document().isModified()
             
             if not self.is_system and is_modified:
+                # INTENTIONAL: QMessageBox.question with 3 buttons (Save/Discard/Cancel)
+                # ErrorHandlingMixin.confirm_action() only supports Yes/No confirmations
                 reply = QMessageBox.question(
                     self, "Unsaved Changes",
                     "You have unsaved changes. Save before closing?",
