@@ -20,6 +20,19 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 ## [Unreleased]
 
 ### Added
+- **Test File Generators for Converter Testing** (`tests/fixtures/test_file_generators.py`): Comprehensive synthetic test data generation (Feb 13, 2026)
+  - **TestFileGenerator Class**: Auto-generate CSV, XML, TXT, JSON test files with realistic manufacturing data
+  - **Batch Generation**: Create 1000+ files in seconds (550 files/sec) for stress testing
+  - **Mixed Batches**: Generate multiple file types simultaneously for integration tests
+  - **Corruption Support**: Generate malformed files (missing fields, invalid XML/JSON) for error handling tests
+  - **Controlled Parameters**: Configure size, row count, serial numbers, pass/fail ratios, encoding
+  - **LockedFile Helper**: Context manager for testing file lock scenarios
+  - **Pytest Fixtures**: 12 new fixtures in conftest.py (test_csv_file, test_xml_files, stress_file_set, etc.)
+  - **Performance**: Generate 1000 files in 1.8s, perfect for stress testing converter watch folders
+  - **24 Unit Tests**: Full test coverage ensuring generators work reliably
+  - **Demo Script**: examples/testing/test_file_generator_demo.py demonstrates all capabilities
+  - **Unblocks**: All converter testing tasks (no need to collect production files)
+
 - **Exception Handling Guidelines** (`docs/guides/exception-handling.md`): Comprehensive developer guide for proper exception handling across all pyWATS layers (Feb 8, 2026)
   - **Quick Reference**: DO/DON'T checklists for developers
   - **Decision Trees**: Visual guides for catch vs bubble decisions
@@ -93,6 +106,14 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Project Completion**: gui-client-separation project archived as 60% complete (foundation + scaffolds delivered)
 
 ### Fixed
+- **WSJF Converter Format Compatibility**: Fixed critical conversion bugs in WATS Standard JSON Format converter (Feb 13, 2026)
+  - **Issue 1**: Hardcoded `type='Test'` instead of using WSJF value `'T'`, causing Pydantic validation errors  
+  - **Issue 2**: Field mapping errors (`partNumber`/`serialNumber` → `pn`/`sn`) prevented UUTReport validation
+  - **Issue 3**: Step tree used wrong field names (`stepResults` → `steps`, `type` → `stepType`)
+  - **Issue 4**: Step data transformations discarded measurement arrays (`numericMeas`, `booleanMeas`, `stringMeas`)
+  - **Fix**: Converter now passes WSJF data through directly (format already matches UUTReport model)
+  - **Impact**: Files generated with pyWATS API now validate (0.98 confidence) AND convert successfully  
+  - **Tests**: test_wsjf_validation.py confirms end-to-end validation + conversion with step preservation
 - **Queue Manager Double-Failure Handling** (`pywats_ui.framework.reliability.queue_manager`): Fixed critical bug where queue and fallback failures were logged but not surfaced to users (Feb 7, 2026)
   - **Issue**: When queue operation failed AND saving error state also failed (disk full, permissions), errors were only logged - users never notified of potential data loss
   - **Fix**: Added `QueueCriticalError` exception raised on double failures, specialized GUI dialog shows critical warning

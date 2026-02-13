@@ -185,43 +185,33 @@ class WATSStandardJsonConverter(FileConverter):
         default_process_code = context.get_argument("defaultProcessCode", "10")
         
         # Build report from WSJF data
-        report: Dict[str, Any] = {
-            "type": "Test",
-        }
+        report: Dict[str, Any] = {}
         
-        # Map WSJF fields to WATS report fields
-        field_mapping = {
-            'pn': 'partNumber',
-            'sn': 'serialNumber',
-            'rev': 'partRevision',
-            'processCode': 'processCode',
-            'processName': 'processName',
-            'machineName': 'machineName',
-            'location': 'location',
-            'purpose': 'purpose',
-            'operator': 'operator',
-            'batchSn': 'batchSerialNumber',
-            'comment': 'comment',
-            'execTime': 'execTime',
-            'socketIdx': 'socketIdx',
-            'fixtureId': 'fixtureId',
-            'seqName': 'sequenceName',
-            'seqVersion': 'sequenceVersion',
-            'errorCode': 'errorCode',
-            'errorMessage': 'errorMessage',
-        }
+        # Map type field - WSJF uses 'T' for Test/UUT, 'R' or 'U' for Repair/UUR
+        report_type = wsjf_data.get('type', 'T')
+        if report_type in ('Test', 'UUT', 'T'):
+            report['type'] = 'T'
+        elif report_type in ('Repair', 'UUR', 'R', 'U'):
+            report['type'] = 'R'
+        else:
+            report['type'] = report_type
         
-        for wsjf_field, wats_field in field_mapping.items():
-            if wsjf_field in wsjf_data and wsjf_data[wsjf_field] is not None:
-                report[wats_field] = wsjf_data[wsjf_field]
+        # Direct field copies (WSJF field names match UUTReport model)
+        direct_fields = [
+            'id', 'pn', 'sn', 'rev', 'processCode', 'processName',
+            'machineName', 'location', 'purpose', 'start', 'startUTC',
+        ]
+        for field in direct_fields:
+            if field in wsjf_data and wsjf_data[field] is not None:
+                report[field] = wsjf_data[field]
         
-        # Handle alternate field names
+        # Handle alternate field names (for backwards compatibility)
         if 'partNumber' in wsjf_data:
-            report['partNumber'] = wsjf_data['partNumber']
+            report['pn'] = wsjf_data['partNumber']
         if 'serialNumber' in wsjf_data:
-            report['serialNumber'] = wsjf_data['serialNumber']
+            report['sn'] = wsjf_data['serialNumber']
         if 'partRevision' in wsjf_data:
-            report['partRevision'] = wsjf_data['partRevision']
+            report['rev'] = wsjf_data['partRevision']
         
         # Set default process code if not provided
         if 'processCode' not in report:
@@ -240,11 +230,9 @@ class WATSStandardJsonConverter(FileConverter):
         else:
             report['result'] = result
         
-        # Handle start time
-        if 'start' in wsjf_data:
-            report['start'] = wsjf_data['start']
-        elif 'startUTC' in wsjf_data:
-            report['start'] = wsjf_data['startUTC']
+        # Handle UUT info fields (nested in 'uut' object)
+        if 'uut' in wsjf_data and wsjf_data['uut']:
+            report['uut'] = wsjf_data['uut']
         
         # Handle misc infos
         if 'miscInfos' in wsjf_data:
@@ -262,10 +250,10 @@ class WATSStandardJsonConverter(FileConverter):
         else:
             # Create empty root
             report['root'] = {
-                "type": "SEQ",
+                "stepType": "SequenceCall",
                 "name": "Root",
                 "status": "Done",
-                "stepResults": []
+                "steps": []
             }
         
         # Parse dict into proper report model
@@ -292,98 +280,48 @@ class WATSStandardJsonConverter(FileConverter):
         """Convert a WSJF step to WATS step format"""
         
         step_type = wsjf_step.get('stepType', 'SequenceCall')
-        wats_type = STEP_TYPE_MAP.get(step_type, 'GEN')
         
         step: Dict[str, Any] = {
-            "type": wats_type,
+            "stepType": step_type,
             "name": wsjf_step.get('name', 'Step'),
         }
         
-        # Map status
-        status = wsjf_step.get('status', 'D')
-        step["status"] = self._map_status(status)
-        
-        # Add timing
-        if wsjf_step.get('totTime') is not None:
-            step["totTime"] = wsjf_step['totTime']
-        
-        # Add report text
-        if wsjf_step.get('reportText'):
-            step["reportText"] = wsjf_step['reportText']
-        
-        # Add error info
-        if wsjf_step.get('errorCode') is not None:
-            step["errorCode"] = wsjf_step['errorCode']
-        if wsjf_step.get('errorMessage'):
-            step["errorMessage"] = wsjf_step['errorMessage']
+        # Copy common fields
+        common_fields = ['id', 'group', 'status', 'errorCode', 'errorMessage', 
+                        'reportText', 'start', 'totTime', 'tsGuid', 
+                        'causedSeqFailure', 'causedUUTFailure']
+        for field in common_fields:
+            if field in wsjf_step and wsjf_step[field] is not None:
+                step[field] = wsjf_step[field]
         
         # Handle step-type-specific data
         if step_type == 'SequenceCall':
-            step["stepResults"] = []
+            step["stepType"] = "SequenceCall"
+            step["steps"] = []
             if 'steps' in wsjf_step and wsjf_step['steps']:
                 for child_step in wsjf_step['steps']:
                     converted = self._convert_step(child_step)
-                    step["stepResults"].append(converted)
+                    step["steps"].append(converted)
         
         elif step_type in ('ET_NLT', 'ET_MNLT'):
-            # Numeric limit test
-            if 'numericMeas' in wsjf_step and wsjf_step['numericMeas']:
-                meas = wsjf_step['numericMeas']
-                if isinstance(meas, list) and len(meas) > 0:
-                    first_meas = meas[0]
-                    step["numericValue"] = first_meas.get('value', 0)
-                    
-                    comp_op = first_meas.get('compOp', 'LOG')
-                    step["compOp"] = comp_op
-                    
-                    if first_meas.get('lowLimit') is not None:
-                        step["lowLimit"] = first_meas['lowLimit']
-                    if first_meas.get('highLimit') is not None:
-                        step["highLimit"] = first_meas['highLimit']
-                    if first_meas.get('unit'):
-                        step["unit"] = first_meas['unit']
-                    
-                    # Handle multiple measurements
-                    if len(meas) > 1:
-                        step["measurements"] = []
-                        for m in meas:
-                            measurement = {
-                                "numericValue": m.get('value', 0),
-                                "status": self._map_status(m.get('status', 'D')),
-                            }
-                            if m.get('name'):
-                                measurement["index"] = m['name']
-                            if m.get('compOp'):
-                                measurement["compOp"] = m['compOp']
-                            if m.get('lowLimit') is not None:
-                                measurement["lowLimit"] = m['lowLimit']
-                            if m.get('highLimit') is not None:
-                                measurement["highLimit"] = m['highLimit']
-                            if m.get('unit'):
-                                measurement["unit"] = m['unit']
-                            step["measurements"].append(measurement)
+            # Numeric limit test - copy numericMeas array
+            if 'numericMeas' in wsjf_step:
+                step["numericMeas"] = wsjf_step['numericMeas']
         
         elif step_type == 'ET_PFT':
-            # Pass/fail test
-            if 'passFail' in wsjf_step:
-                pf = wsjf_step['passFail']
-                if isinstance(pf, list) and len(pf) > 0:
-                    step["passFailStatus"] = pf[0].get('status') == 'P'
+            # Pass/fail test - copy booleanMeas array
+            if 'booleanMeas' in wsjf_step:
+                step["booleanMeas"] = wsjf_step['booleanMeas']
         
         elif step_type == 'ET_SVT':
-            # String value test
+            # String value test - copy stringMeas array
             if 'stringMeas' in wsjf_step:
-                sm = wsjf_step['stringMeas']
-                if isinstance(sm, list) and len(sm) > 0:
-                    step["stringValue"] = sm[0].get('value', '')
-                    if sm[0].get('stringLimit'):
-                        step["stringLimit"] = sm[0]['stringLimit']
-                    if sm[0].get('compOp'):
-                        step["compOp"] = sm[0]['compOp']
+                step["stringMeas"] = wsjf_step['stringMeas']
         
         elif step_type in ('ET_A', 'ET_GEN'):
             # Action/Generic step
-            step["stepType"] = wsjf_step.get('genStepType', 'Action')
+            if 'genStepType' in wsjf_step:
+                step["genStepType"] = wsjf_step['genStepType']
         
         # Handle charts
         if 'chart' in wsjf_step and wsjf_step['chart']:
