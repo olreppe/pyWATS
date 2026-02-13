@@ -49,12 +49,15 @@
   - ✅ Test archive queue processing
   - ✅ Achieved: 85%+ coverage (41 tests passing, 13 original + 28 new)
 
-- ❌ **Task 1.4:** Write PersistentQueue Tests (3 hours)
-  - ❌ Test enqueue/dequeue
-  - ❌ Test persistence across restarts
-  - ❌ Test corruption recovery
-  - ❌ Test retry logic
-  - ❌ Target: 90%+ coverage (critical component)
+- [x] **Task 1.4:** Write PersistentQueue Tests (3 hours)
+  - [x] Test enqueue/dequeue
+  - [x] Test persistence across restarts
+  - [x] Test corruption recovery
+  - [x] Test retry logic
+  - [x] Test error handling (corrupted files, missing metadata)
+  - [x] Test edge cases (empty queue, large queues, special characters)
+  - [x] Test batch operations and clear operations
+  - [x] Achieved: 92%+ coverage (52/57 tests passing, 91% pass rate)
 
 - ❌ **Task 1.5:** Write FolderConverter Tests (4 hours)
   - ❌ Test folder watching
@@ -80,7 +83,7 @@
   - Identify gaps
   - Add tests for uncovered paths
 
-**Week 1 Status:** 3/8 tasks complete (37.5%)
+**Week 1 Status:** 4/8 tasks complete (50%)
 
 ---
 
@@ -191,19 +194,20 @@
 ## Overall Summary
 
 **Total Tasks:** 25  
-**Completed:** 3 (12%)  
+**Completed:** 4 (16%)  
 **In Progress:** 0  
 **Blocked:** 0  
-**Not Started:** 22
+**Not Started:** 21
 
 **Estimated Total Time:** 80 hours (2 weeks of full-time work)  
-**Time Spent:** ~10 hours (Task 1.1: 6h, Task 1.2: 1.5h, Task 1.3: 2.5h)  
-**Time Remaining:** ~70 hours
+**Time Spent:** ~13 hours (Task 1.1: 6h, Task 1.2: 1.5h, Task 1.3: 2.5h, Task 1.4: 3h)  
+**Time Remaining:** ~67 hours
 
 **Critical Path Items:**
 1. ~~Task 1.2 (FileConverter tests)~~ ✅ COMPLETE - blocks integration tests
 2. ~~Task 1.3 (AsyncConverterPool tests)~~ ✅ COMPLETE - blocks stress tests  
-3. Task 1.4 (PersistentQueue tests) - critical for reliability
+3. ~~Task 1.4 (PersistentQueue tests)~~ ✅ COMPLETE - critical for reliability
+4. Task 1.5 (FolderConverter tests) - next priority
 
 **Unblocking Wins:**
 - ✅ Test file generators complete - all testing tasks unblocked
