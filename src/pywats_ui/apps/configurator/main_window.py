@@ -68,15 +68,26 @@ class InstanceSelectorDialog(QDialog):
             self._instance_combo = QComboBox()
             self._instance_combo.setEditable(True)  # Allow custom entry
             
-            # Load instance names from config files
+            # Load unique instance names from config files
             from pywats_client.core.config import ClientConfig
+            seen_names = set()  # Track unique names
+            
             for config_path in self._available_configs:
                 try:
                     cfg = ClientConfig.load(config_path)
                     instance_name = cfg.instance_name or cfg.instance_id or "default"
-                    self._instance_combo.addItem(instance_name)
-                except Exception:
-                    pass
+                    # Only add if we haven't seen this name before
+                    if instance_name not in seen_names:
+                        seen_names.add(instance_name)
+                        self._instance_combo.addItem(instance_name)
+                except Exception as e:
+                    logger.debug(f"Failed to load config {config_path}: {e}")
+            
+            # Sort alphabetically for easier selection
+            items = [self._instance_combo.itemText(i) for i in range(self._instance_combo.count())]
+            self._instance_combo.clear()
+            for item in sorted(items):
+                self._instance_combo.addItem(item)
             
             # Set current or default
             current_instance = self._config.get("instance_name", "default")
