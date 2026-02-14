@@ -13,7 +13,7 @@ from typing import Optional, Dict, Any
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QGroupBox, QTableWidget, QTableWidgetItem, QHeaderView,
-    QFrame
+    QFrame, QCheckBox, QFormLayout
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QFont

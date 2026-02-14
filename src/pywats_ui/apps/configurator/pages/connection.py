@@ -15,7 +15,7 @@ from pywats.core.logging import get_logger
 from typing import Optional, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QGroupBox, QFrame
+    QPushButton, QGroupBox, QFrame, QCheckBox
 )
 from PySide6.QtCore import Qt, Slot
 
