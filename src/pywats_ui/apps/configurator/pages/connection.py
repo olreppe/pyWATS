@@ -224,8 +224,25 @@ class ConnectionPage(BasePage, OfflineCapability):
                 return
             
             # Save proxy settings (Phase 4: GUI Cleanup)
-            self.config["proxy_enabled"] = self._proxy_enabled_cb.isChecked()
-            self.config["proxy_url"] = self._proxy_url_edit.text().strip()
+            # Use existing proxy_mode field: "none", "system", "manual"
+            if self._proxy_enabled_cb.isChecked():
+                self.config.proxy_mode = "manual"
+                # Parse URL into host and port
+                proxy_url = self._proxy_url_edit.text().strip()
+                if proxy_url:
+                    # Simple parsing (http://host:port or host:port)
+                    url = proxy_url.replace('http://', '').replace('https://', '')
+                    if ':' in url:
+                        host, port_str = url.rsplit(':', 1)
+                        try:
+                            self.config.proxy_host = host
+                            self.config.proxy_port = int(port_str)
+                        except ValueError:
+                            self.config.proxy_host = url
+                    else:
+                        self.config.proxy_host = url
+            else:
+                self.config.proxy_mode = "none"
             
             # Save to file
             if hasattr(self.config, '_config_path') and self.config._config_path:
@@ -257,8 +274,16 @@ class ConnectionPage(BasePage, OfflineCapability):
         self._identifier_label.setText(self.config.formatted_identifier)
         
         # Load proxy settings (Phase 4: GUI Cleanup)
-        self._proxy_enabled_cb.setChecked(self.config.get("proxy_enabled", False))
-        self._proxy_url_edit.setText(self.config.get("proxy_url", ""))
+        # Use existing proxy_mode field
+        proxy_enabled = self.config.proxy_mode == "manual"
+        self._proxy_enabled_cb.setChecked(proxy_enabled)
+        # Build URL from host and port
+        if self.config.proxy_host:
+            if self.config.proxy_port and self.config.proxy_port != 8080:
+                proxy_url = f"http://{self.config.proxy_host}:{self.config.proxy_port}"
+            else:
+                proxy_url = f"http://{self.config.proxy_host}"
+            self._proxy_url_edit.setText(proxy_url)
         self._on_proxy_enabled_changed(self._proxy_enabled_cb.checkState())  # Update enabled state
         
         # Status will be updated after auto-test
