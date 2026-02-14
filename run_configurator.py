@@ -64,21 +64,23 @@ def main():
         import asyncio
         asyncio.set_event_loop(loop)
         
-        # Load or create config
-        config = ClientConfig()
-        
         # Determine instance name
         instance_name = args.instance
         
         if args.select_instance or not instance_name:
-            # Show instance selector
-            instance_name = show_instance_selector(config)
+            # Show instance selector (pass a temporary config for reading existing instances)
+            temp_config = ClientConfig()
+            instance_name = show_instance_selector(temp_config)
             if not instance_name:
                 logger.info("Instance selection cancelled, exiting")
                 return 0
         
-        # Update config with instance name
-        if instance_name:
+        # Load or create config for the selected instance
+        instance_id = instance_name if instance_name else "default"
+        config = ClientConfig.load_for_instance(instance_id)
+        
+        # Ensure instance_name is set in config
+        if instance_name and config.get('instance_name') != instance_name:
             config["instance_name"] = instance_name
             config.save()
         
