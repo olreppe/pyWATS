@@ -108,8 +108,9 @@ class ConfiguratorMainWindow(BaseMainWindow):
         """Configure window properties"""
         instance_name = self._config.get("instance_name", "default")
         self.setWindowTitle(f"pyWATS Configurator - {instance_name}")
-        self.setMinimumSize(900, 650)
-        self.resize(1100, 800)
+        # Phase 2: GUI Cleanup - Reduce minimum size for better scaling
+        self.setMinimumSize(800, 600)  # Industry standard minimum
+        self.resize(1000, 700)          # Comfortable default
         
         # Set window icon
         icon_path = Path(__file__).parent.parent / "resources" / "favicon.ico"
@@ -169,7 +170,9 @@ class ConfiguratorMainWindow(BaseMainWindow):
         """Create navigation sidebar"""
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(200)
+        # Phase 2: GUI Cleanup - Allow slight resize instead of fixed width
+        sidebar.setMinimumWidth(180)
+        sidebar.setMaximumWidth(220)
         sidebar.setStyleSheet("background-color: #252526;")
         
         sidebar_layout = QVBoxLayout(sidebar)

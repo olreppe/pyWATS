@@ -75,7 +75,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         
         # Disconnect button
         self._disconnect_btn = QPushButton("Disconnect")
-        self._disconnect_btn.setFixedWidth(120)
+        self._disconnect_btn.setMinimumWidth(120)  # Phase 2: Scaling fix
         self._disconnect_btn.clicked.connect(self._on_disconnect)
         self._layout.addWidget(self._disconnect_btn, alignment=Qt.AlignmentFlag.AlignLeft)
         
@@ -94,7 +94,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         test_layout.addWidget(QLabel("Test connection"))
         
         self._test_btn = QPushButton("Run test")
-        self._test_btn.setFixedWidth(100)
+        self._test_btn.setMinimumWidth(100)  # Phase 2: Scaling fix
         self._test_btn.clicked.connect(self._on_test_connection)
         test_layout.addWidget(self._test_btn)
         test_layout.addStretch()
@@ -108,7 +108,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         test_uut_layout.addWidget(QLabel("Test send UUT"))
         
         self._test_uut_btn = QPushButton("Send test report")
-        self._test_uut_btn.setFixedWidth(130)
+        self._test_uut_btn.setMinimumWidth(130)  # Phase 2: Scaling fix
         self._test_uut_btn.setToolTip(
             "Creates and submits a comprehensive test UUT report to verify\n"
             "full connectivity and report submission functionality.\n\n"
@@ -177,7 +177,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         sync_layout = QHBoxLayout()
         sync_layout.addWidget(QLabel("Sync interval (seconds):"))
         self._sync_interval_edit = QLineEdit()
-        self._sync_interval_edit.setFixedWidth(100)
+        self._sync_interval_edit.setMinimumWidth(100)  # Phase 2: Scaling fix
         self._sync_interval_edit.textChanged.connect(self._emit_changed)
         sync_layout.addWidget(self._sync_interval_edit)
         sync_layout.addStretch()
