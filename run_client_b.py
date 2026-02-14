@@ -4,22 +4,26 @@ Client B Launcher (Secondary Instance)
 Launches the secondary pyWATS client instance with instance_id="client_b".
 This is the secondary instance for multi-instance testing scenarios.
 
-Instance Configuration:
+Instance Configuration (System-wide):
 - Instance ID: "client_b"
-- Config: ~/.pywats/instances/client_b/client_config.json
-- Queue: ~/.pywats/instances/client_b/queue/
-- Logs: ~/.pywats/instances/client_b/logs/
+- Config: C:/ProgramData/pyWATS/instances/client_b/client_config.json
+- Queue: C:/ProgramData/pyWATS/instances/client_b/queue/
+- Logs: C:/ProgramData/pyWATS/instances/client_b/logs/
 - API Port: 8081 (if enabled)
 
 Token Sharing:
 - If Client B has no API token, it will attempt to use Client A's token
 - This allows testing with a single WATS API connection
 
+Note: Uses system-wide paths so client can run as Windows Service
+      accessible by all users on the machine.
+
 Usage:
     python run_client_b.py
 """
 
 import sys
+import os
 import logging
 import json
 import asyncio
@@ -120,8 +124,14 @@ def main():
         app.setOrganizationName("pyWATS")
         
         # Load or create config for instance "client_b"
+        # Use system-wide path: C:\ProgramData\pyWATS\instances\client_b\
         instance_id = "client_b"
-        config_path = Path.home() / ".pywats" / "instances" / instance_id / "client_config.json"
+        if os.name == 'nt':
+            base_path = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS' / 'instances'
+        else:
+            base_path = Path('/var/lib/pywats/instances')
+        
+        config_path = base_path / instance_id / "client_config.json"
         
         if config_path.exists():
             config = ClientConfig.load(config_path)
@@ -134,7 +144,7 @@ def main():
             config._config_path = config_path
             
             # Token sharing: Use Client A's token if B has none
-            client_a_config_path = Path.home() / ".pywats" / "instances" / "default" / "client_config.json"
+            client_a_config_path = base_path / "default" / "client_config.json"
             if client_a_config_path.exists():
                 logger.info("Checking Client A for token sharing...")
                 try:

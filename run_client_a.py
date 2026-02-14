@@ -4,18 +4,22 @@ Client A Launcher (Master Instance)
 Launches the primary pyWATS client instance with instance_id="default".
 This is the master instance for testing single-instance and multi-instance scenarios.
 
-Instance Configuration:
+Instance Configuration (System-wide):
 - Instance ID: "default"
-- Config: ~/.pywats/instances/default/client_config.json
-- Queue: ~/.pywats/instances/default/queue/
-- Logs: ~/.pywats/instances/default/logs/
+- Config: C:/ProgramData/pyWATS/instances/default/client_config.json
+- Queue: C:/ProgramData/pyWATS/instances/default/queue/
+- Logs: C:/ProgramData/pyWATS/instances/default/logs/
 - API Port: 8080 (if enabled)
+
+Note: Uses system-wide paths so client can run as Windows Service
+      accessible by all users on the machine.
 
 Usage:
     python run_client_a.py
 """
 
 import sys
+import os
 import logging
 import json
 import asyncio
@@ -116,9 +120,15 @@ def main():
         app.setOrganizationName("pyWATS")
         
         # Load or create config for instance "default"
+        # Use system-wide path: C:\ProgramData\pyWATS\instances\default\
         instance_id = "default"
-        config_path = Path.home() / ".pywats" / "instances" / instance_id / "client_config.json"
-        old_config_path = Path.home() / ".pywats" / "config.json"
+        if os.name == 'nt':
+            base_path = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS' / 'instances'
+        else:
+            base_path = Path('/var/lib/pywats/instances')
+        
+        config_path = base_path / instance_id / "client_config.json"
+        old_config_path = Path.home() / ".pywats" / "config.json"  # Legacy user-level config for migration
         
         if config_path.exists():
             config = ClientConfig.load(config_path)

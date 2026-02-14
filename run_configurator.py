@@ -9,6 +9,7 @@ Example:
 """
 
 import sys
+import os
 import logging
 from pathlib import Path
 
@@ -68,8 +69,12 @@ def main():
         instance_name = args.instance
         
         if args.select_instance or not instance_name:
-            # Get list of instances from ~/.pywats/instances/ (matches run_client_a/b location)
-            instances_dir = Path.home() / ".pywats" / "instances"
+            # Get list of instances from C:\ProgramData\pyWATS\instances\ (system-wide)
+            if os.name == 'nt':
+                instances_dir = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS' / 'instances'
+            else:
+                instances_dir = Path('/var/lib/pywats/instances')
+            
             available_configs = []
             if instances_dir.exists():
                 available_configs = list(instances_dir.glob("*/client_config.json"))
@@ -92,7 +97,7 @@ def main():
                     logger.info("Instance selection cancelled, exiting")
                     return 0
         
-        # Load config from ~/.pywats/instances/{instance_id}/ (matches run_client_a/b)
+        # Load config from C:\ProgramData\pyWATS\instances\{instance_id}\ (system-wide)
         # Map display name to instance_id
         instance_id_map = {
             "Client A (Master)": "default",
@@ -101,7 +106,12 @@ def main():
         }
         instance_id = instance_id_map.get(instance_name, instance_name.lower().replace(" ", "_"))
         
-        config_path = Path.home() / ".pywats" / "instances" / instance_id / "client_config.json"
+        if os.name == 'nt':
+            base_path = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS' / 'instances'
+        else:
+            base_path = Path('/var/lib/pywats/instances')
+        
+        config_path = base_path / instance_id / "client_config.json"
         
         if config_path.exists():
             config = ClientConfig.load(config_path)
