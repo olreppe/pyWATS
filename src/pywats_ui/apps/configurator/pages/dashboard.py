@@ -8,6 +8,7 @@ Improvements:
 """
 
 import logging
+import asyncio
 from pywats.core.logging import get_logger
 from typing import Optional, Dict, Any
 from PySide6.QtWidgets import (
@@ -20,6 +21,7 @@ from PySide6.QtGui import QColor, QFont
 
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
+from pywats_client.service.async_client_service import AsyncClientService
 
 logger = get_logger(__name__)
 
@@ -68,6 +70,8 @@ class DashboardPage(BasePage):
     def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
         super().__init__(config, parent)
         self._refresh_timer: Optional[QTimer] = None
+        self._service: Optional[AsyncClientService] = None  # Running service instance
+        self._service_task: Optional[asyncio.Task] = None  # Background service task
         self._setup_ui()
         self.load_config()
     
@@ -86,9 +90,11 @@ class DashboardPage(BasePage):
         status_row = QHBoxLayout()
         
         self._service_indicator = StatusIndicator()
+        self._service_indicator.set_status("stopped")  # Initially stopped
         status_row.addWidget(self._service_indicator)
         
-        self._service_status_label = QLabel("Checking...")
+        self._service_status_label = QLabel("Stopped")
+        self._service_status_label.setStyleSheet("color: #808080;")  # Gray for stopped
         status_font = QFont()
         status_font.setPointSize(12)
         status_font.setBold(True)
@@ -104,6 +110,23 @@ class DashboardPage(BasePage):
         status_row.addWidget(self._refresh_btn)
         
         service_layout.addLayout(status_row)
+        
+        # Service control buttons
+        control_row = QHBoxLayout()
+        control_row.addStretch()
+        
+        self._start_btn = QPushButton("Start Service")
+        self._start_btn.setToolTip("Start the pyWATS client service")
+        self._start_btn.clicked.connect(self._on_start_service)
+        control_row.addWidget(self._start_btn)
+        
+        self._stop_btn = QPushButton("Stop Service")
+        self._stop_btn.setToolTip("Stop the pyWATS client service")
+        self._stop_btn.clicked.connect(self._on_stop_service)
+        self._stop_btn.setEnabled(False)  # Disabled until service starts
+        control_row.addWidget(self._stop_btn)
+        
+        service_layout.addLayout(control_row)
         
         # Service info
         info_layout = QHBoxLayout()
@@ -423,8 +446,100 @@ class DashboardPage(BasePage):
                 "Navigate to the 'Setup' page to edit station information."
             )
     
+    def _on_start_service(self) -> None:
+        """Start the client service (GUI Cleanup: Service Management)"""
+        try:
+            # Get event loop
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Create service instance
+            instance_id = self._config.get("instance_id", "default")
+            self._service = AsyncClientService(instance_id)
+            
+            # Start service in background task
+            async def run_service():
+                try:
+                    logger.info(f"Starting client service [instance: {instance_id}]")
+                    await self._service.start()
+                    logger.info("Client service started successfully")
+                except Exception as e:
+                    logger.error(f"Service error: {e}", exc_info=True)
+                    self._update_service_status("error", f"Error: {str(e)}")
+            
+            self._service_task = loop.create_task(run_service())
+            
+            # Update UI
+            self._update_service_status("running", "Running")
+            self._start_btn.setEnabled(False)
+            self._stop_btn.setEnabled(True)
+            
+        except Exception as e:
+            self.handle_error(e, "starting service")
+            self._update_service_status("error", f"Failed to start: {str(e)}")
+    
+    def _on_stop_service(self) -> None:
+        """Stop the client service (GUI Cleanup: Service Management)"""
+        try:
+            if not self._service:
+                logger.warning("No service instance to stop")
+                return
+            
+            # Stop service
+            async def stop_service():
+                try:
+                    logger.info("Stopping client service")
+                    await self._service.stop()
+                    logger.info("Client service stopped")
+                except Exception as e:
+                    logger.error(f"Error stopping service: {e}", exc_info=True)
+            
+            # Get event loop and run stop
+            try:
+                loop = asyncio.get_event_loop()
+                loop.create_task(stop_service())
+            except RuntimeError:
+                pass  # Event loop may not be running
+            
+            # Cancel service task
+            if self._service_task:
+                self._service_task.cancel()
+                self._service_task = None
+            
+            self._service = None
+            
+            # Update UI
+            self._update_service_status("stopped", "Stopped")
+            self._start_btn.setEnabled(True)
+            self._stop_btn.setEnabled(False)
+            
+        except Exception as e:
+            self.handle_error(e, "stopping service")
+    
+    def _update_service_status(self, status: str, text: str) -> None:
+        """Update service status indicator and label"""
+        self._service_indicator.set_status(status)
+        self._service_status_label.setText(text)
+        
+        # Update label color based on status
+        colors = {
+            "running": "color: #4ec9b0;",  # Green
+            "stopped": "color: #808080;",  # Gray
+            "error": "color: #f48771;",    # Red
+            "unknown": "color: #dcdcaa;",  # Yellow
+        }
+        self._service_status_label.setStyleSheet(colors.get(status, ""))
+    
     def cleanup(self) -> None:
         """Clean up resources (H4 fix)."""
+        # Stop service if running
+        if self._service:
+            logger.info("Stopping service during cleanup")
+            self._on_stop_service()
+        
         if self._refresh_timer:
             self._refresh_timer.stop()
             self._refresh_timer = None
