@@ -1,0 +1,643 @@
+<!DOCTYPE html><html><head>
+      <title>UUT_OBJECT_MODEL</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:///c:\Users\ola.lund.reppe\.vscode\extensions\shd101wyy.markdown-preview-enhanced-0.8.20\crossnote\dependencies\katex\katex.min.css">
+      
+      
+      <script type="text/javascript" src="file:///c:\Users\ola.lund.reppe\.vscode\extensions\shd101wyy.markdown-preview-enhanced-0.8.20\crossnote\dependencies\mermaid\mermaid.min.js" charset="UTF-8"></script>
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <!-- The content below will be included at the end of the <head> element. --><script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script></head><body for="html-export">
+    
+    
+      <div class="crossnote markdown-preview  ">
+      
+<h1 id="uutreport-object-model—class-diagram">UUTReport Object Model - Class Diagram </h1>
+<p><strong>Comprehensive class diagram for UUT (Unit Under Test) report structure</strong></p>
+<p><strong>Generated:</strong> February 8, 2026<br>
+<strong>Scope:</strong> All classes involved in UUTReport with public members and methods</p>
+<hr>
+<h2 id="uutreport-class-hierarchy">UUTReport Class Hierarchy </h2>
+<div class="mermaid">classDiagram
+    %% Core Report Hierarchy
+    class WATSBase {
+        &lt;&lt;abstract&gt;&gt;
+        +model_dump() dict
+        +model_dump_json() str
+        +model_validate(data) Self
+    }
+    
+    class Report~SubUnitT~ {
+        &lt;&lt;Generic Base&gt;&gt;
+        +id: UUID
+        +type: str
+        +pn: str
+        +sn: str
+        +rev: str
+        +process_code: int
+        +result: ReportResult
+        +station_name: str
+        +location: str
+        +purpose: str
+        +operator: str
+        +start: datetime
+        +exec_time: float
+        +comment: str
+        +misc_info: MiscInfo
+        +assets: List~Asset~
+        +binary_data: List~BinaryData~
+        +additional_data: List~AdditionalData~
+        +sub_units: List~SubUnitT~
+        +info: ReportInfo
+        +validate_sn(sn) str
+        +validate_pn(pn) str
+        +get_assets_by_type(asset_type) List~Asset~
+        +add_asset(asset) void
+        +add_binary_data(data) void
+    }
+    
+    class UUTReport {
+        +type: Literal["T"]
+        +info: UUTInfo
+        +root: SequenceCall
+        +sub_units: List~UUTSubUnit~
+        +test_operation_code: int
+        +get_root_sequence_call() SequenceCall
+        +add_sub_unit(pn, sn, rev) UUTSubUnit
+        +get_all_steps() List~Step~
+        +get_failed_steps() List~Step~
+        +get_steps_by_status(status) List~Step~
+        +calculate_totals() dict
+    }
+    
+    WATSBase &lt;|-- Report
+    Report &lt;|-- UUTReport
+    
+    %% UUT Info
+    class ReportInfo {
+        &lt;&lt;Base&gt;&gt;
+        +operator: str
+        +comment: str
+        +exec_time: float
+        +serialize_exec_time(value) float
+    }
+    
+    class UUTInfo {
+        +fixture_id: str
+        +socket_index: int
+        +socket_index_format: str
+        +error_code: int
+        +error_code_format: str
+        +error_message: str
+        +batch_number: str
+        +batch_fail_count: int
+        +batch_fail_count_format: str
+        +batch_loop_index: int
+        +batch_loop_index_format: str
+        +step_id_caused_uut_failure: int
+        +referenced_by_uurs: List~RefUURs~
+    }
+    
+    ReportInfo &lt;|-- UUTInfo
+    UUTReport --&gt; UUTInfo : info
+    
+    class RefUURs {
+        +id: UUID
+        +start: str
+    }
+    
+    UUTInfo --&gt; RefUURs : referenced_by_uurs
+    
+    %% Sub Units
+    class SubUnit {
+        +pn: str
+        +rev: str
+        +sn: str
+        +part_type: str
+        +validate_sn(sn) str
+        +validate_pn(pn) str
+    }
+    
+    class UUTSubUnit {
+        +root: SequenceCall
+    }
+    
+    SubUnit &lt;|-- UUTSubUnit
+    UUTReport --&gt; UUTSubUnit : sub_units
+    
+    %% Step Hierarchy
+    class Step {
+        &lt;&lt;abstract&gt;&gt;
+        +step_type: str
+        +name: str
+        +group: str
+        +status: StepStatus
+        +id: int|str
+        +error_code: int|str
+        +error_code_format: str
+        +error_message: str
+        +report_text: str
+        +start: str
+        +tot_time: float|str
+        +tot_time_format: str
+        +ts_guid: str
+        +caused_seq_failure: bool
+        +caused_uut_failure: bool
+        +parent: SequenceCall
+        +fail_parent_on_failure: bool
+        +attachments: List~Attachment~
+        +additional_data: List~AdditionalData~
+        +loop_info: LoopInfo
+        +charts: List~Chart~
+        +validate_step()* bool
+        +set_status(status) void
+        +add_attachment(attachment) void
+        +get_path() str
+        +is_failed() bool
+        +is_passed() bool
+    }
+    
+    class SequenceCall {
+        +step_type: Literal["SequenceCall"]
+        +sequence: SequenceCallInfo
+        +caller: SequenceCallInfo
+        +steps: StepList
+        +loop_info: LoopInfo
+        +add_step(step) Step
+        +add_numeric_step(name, value, comp, limit_l, limit_h, unit) NumericStep
+        +add_boolean_step(name, value) PassFailStep
+        +add_string_step(name, value) StringValueStep
+        +add_sequence_call(name) SequenceCall
+        +add_action_step(name) ActionStep
+        +add_generic_step(name, flow_type) GenericStep
+        +add_chart_step(name) ChartStep
+        +get_all_steps() List~Step~
+        +get_steps_by_status(status) List~Step~
+        +get_failed_steps() List~Step~
+        +calculate_totals() dict
+        +propagate_failure() void
+    }
+    
+    class NumericStep {
+        +step_type: Literal["ET_NLT"]
+        +measurement: NumericMeasurement
+        +value: float|str
+        +comp: CompOp
+        +limit_l: float|str
+        +limit_h: float|str
+        +unit: str
+        +set_limits(low, high, comp) void
+        +set_value(value, unit) void
+        +validate_limits() bool
+    }
+    
+    class MultiNumericStep {
+        +step_type: Literal["ET_MNLT"]
+        +measurements: List~NumericMeasurement~
+        +add_measurement(name, value, comp, limit_l, limit_h, unit) NumericMeasurement
+        +get_measurement(name) NumericMeasurement
+    }
+    
+    class PassFailStep {
+        +step_type: Literal["ET_PLT"]
+        +measurement: BooleanMeasurement
+        +value: bool
+        +set_value(value) void
+    }
+    
+    class MultiBooleanStep {
+        +step_type: Literal["ET_MPLT"]
+        +measurements: List~BooleanMeasurement~
+        +add_measurement(name, value) BooleanMeasurement
+    }
+    
+    class StringValueStep {
+        +step_type: Literal["ET_SLT"]
+        +measurement: StringMeasurement
+        +value: str
+        +set_value(value) void
+    }
+    
+    class MultiStringStep {
+        +step_type: Literal["ET_MSLT"]
+        +measurements: List~StringMeasurement~
+        +add_measurement(name, value) StringMeasurement
+    }
+    
+    class GenericStep {
+        +step_type: Literal["ET_STR"]
+        +flow_type: FlowType
+        +string_value: str
+    }
+    
+    class ActionStep {
+        +step_type: Literal["ActionStep"]
+        +action_type: str
+    }
+    
+    class ChartStep {
+        +step_type: Literal["ChartStep"]
+        +charts: List~Chart~
+        +add_chart(chart) Chart
+    }
+    
+    class UnknownStep {
+        +step_type: str
+        +raw_data: dict
+    }
+    
+    Step &lt;|-- SequenceCall
+    Step &lt;|-- NumericStep
+    Step &lt;|-- MultiNumericStep
+    Step &lt;|-- PassFailStep
+    Step &lt;|-- MultiBooleanStep
+    Step &lt;|-- StringValueStep
+    Step &lt;|-- MultiStringStep
+    Step &lt;|-- GenericStep
+    Step &lt;|-- ActionStep
+    Step &lt;|-- ChartStep
+    Step &lt;|-- UnknownStep
+    
+    UUTReport --&gt; SequenceCall : root
+    UUTSubUnit --&gt; SequenceCall : root
+    SequenceCall --&gt; Step : steps
+    
+    %% Measurement Classes
+    class BaseMeasurement {
+        &lt;&lt;abstract&gt;&gt;
+        +status: StepStatus
+        +name: str
+    }
+    
+    class NumericMeasurement {
+        +value: float|str
+        +value_format: str
+        +comp: CompOp
+        +limit_l: float|str
+        +limit_h: float|str
+        +limit_l_format: str
+        +limit_h_format: str
+        +unit: str
+        +evaluate() bool
+        +validate_limits() bool
+    }
+    
+    class BooleanMeasurement {
+        +value: bool
+    }
+    
+    class StringMeasurement {
+        +value: str
+    }
+    
+    BaseMeasurement &lt;|-- NumericMeasurement
+    BaseMeasurement &lt;|-- BooleanMeasurement
+    BaseMeasurement &lt;|-- StringMeasurement
+    
+    NumericStep --&gt; NumericMeasurement : measurement
+    MultiNumericStep --&gt; NumericMeasurement : measurements
+    PassFailStep --&gt; BooleanMeasurement : measurement
+    MultiBooleanStep --&gt; BooleanMeasurement : measurements
+    StringValueStep --&gt; StringMeasurement : measurement
+    MultiStringStep --&gt; StringMeasurement : measurements
+    
+    %% Supporting Classes
+    class Asset {
+        +sn: str
+        +asset_type: str
+        +pn: str
+        +usage_count: int
+        +calibration_date: datetime
+        +calibration_due: datetime
+        +validate_sn(sn) str
+    }
+    
+    class BinaryData {
+        +content_type: str
+        +data: str
+        +name: str
+        +get_bytes() bytes
+        +from_bytes(data, name, content_type)$ BinaryData
+    }
+    
+    class Attachment {
+        +name: str
+        +content_type: str
+        +data: str
+        +size: int
+        +get_bytes() bytes
+        +from_file(path)$ Attachment
+        +from_bytes(data, name)$ Attachment
+    }
+    
+    class AdditionalData {
+        +name: str
+        +value: str
+    }
+    
+    class Chart {
+        +chart_type: ChartType
+        +name: str
+        +x_axis: List~float~
+        +y_axis: List~float~
+        +x_label: str
+        +y_label: str
+        +create_xy_chart(name, x_data, y_data)$ Chart
+    }
+    
+    class LoopInfo {
+        +loop_index: int
+        +loop_count: int
+    }
+    
+    class SequenceCallInfo {
+        +path: str
+        +name: str
+        +version: str
+        +file_path: str
+    }
+    
+    class MiscInfo {
+        +items: List~MiscInfoItem~
+        +add_item(key, value) void
+        +get_item(key) str
+        +remove_item(key) bool
+    }
+    
+    UUTReport --&gt; Asset : assets
+    UUTReport --&gt; BinaryData : binary_data
+    UUTReport --&gt; MiscInfo : misc_info
+    Step --&gt; Attachment : attachments
+    Step --&gt; AdditionalData : additional_data
+    Step --&gt; Chart : charts
+    Step --&gt; LoopInfo : loop_info
+    SequenceCall --&gt; SequenceCallInfo : sequence, caller
+    
+    %% Enums
+    class StepStatus {
+        &lt;&lt;enumeration&gt;&gt;
+        Passed
+        Failed
+        Done
+        Error
+        Skipped
+        Terminated
+        Running
+    }
+    
+    class ReportResult {
+        &lt;&lt;enumeration&gt;&gt;
+        Passed
+        Failed
+        Done
+        Error
+        Terminated
+    }
+    
+    class StepGroup {
+        &lt;&lt;enumeration&gt;&gt;
+        Setup
+        Main
+        Cleanup
+    }
+    
+    class CompOp {
+        &lt;&lt;enumeration&gt;&gt;
+        EQ
+        NE
+        LT
+        LE
+        GT
+        GE
+        GTLT
+        GTLE
+        GELT
+        GELE
+        +evaluate(value, low, high) bool
+        +get_limits_requirement() tuple
+        +validate_limits(low, high) bool
+    }
+    
+    class ChartType {
+        &lt;&lt;enumeration&gt;&gt;
+        XY
+        Histogram
+        Polar
+    }
+    
+    class FlowType {
+        &lt;&lt;enumeration&gt;&gt;
+        If
+        Else
+        Case
+        Default
+        Loop
+        End
+    }
+</div><hr>
+<h2 id="key-relationships">Key Relationships </h2>
+<h3 id="composition">Composition </h3>
+<ul>
+<li><strong>UUTReport</strong> contains:
+<ul>
+<li><code>info: UUTInfo</code> - Test execution information</li>
+<li><code>root: SequenceCall</code> - Root sequence with all test steps</li>
+<li><code>sub_units: List[UUTSubUnit]</code> - Sub-components tested</li>
+<li><code>assets: List[Asset]</code> - Test equipment used</li>
+<li><code>binary_data: List[BinaryData]</code> - Embedded data</li>
+<li><code>misc_info: MiscInfo</code> - Key-value metadata</li>
+</ul>
+</li>
+</ul>
+<h3 id="hierarchy">Hierarchy </h3>
+<ul>
+<li><strong>Step Types</strong> (all inherit from Step):
+<ul>
+<li><code>SequenceCall</code> - Container for child steps</li>
+<li><code>NumericStep</code> - Numeric limit test</li>
+<li><code>MultiNumericStep</code> - Multiple numeric measurements</li>
+<li><code>PassFailStep</code> - Boolean pass/fail test</li>
+<li><code>MultiBooleanStep</code> - Multiple boolean tests</li>
+<li><code>StringValueStep</code> - String value test</li>
+<li><code>MultiStringStep</code> - Multiple string tests</li>
+<li><code>GenericStep</code> - Generic flow control step</li>
+<li><code>ActionStep</code> - Action execution step</li>
+<li><code>ChartStep</code> - Chart data step</li>
+<li><code>UnknownStep</code> - Fallback for unknown types</li>
+</ul>
+</li>
+</ul>
+<h3 id="measurement-types">Measurement Types </h3>
+<ul>
+<li><code>NumericMeasurement</code> - Value with limits and comparison operator</li>
+<li><code>BooleanMeasurement</code> - True/false value</li>
+<li><code>StringMeasurement</code> - String value</li>
+</ul>
+<hr>
+<h2 id="usage-example">Usage Example </h2>
+<pre data-role="codeBlock" data-info="python" class="language-python python"><code><span class="token keyword keyword-from">from</span> pywats<span class="token punctuation">.</span>domains<span class="token punctuation">.</span>report <span class="token keyword keyword-import">import</span> UUTReport<span class="token punctuation">,</span> CompOp
+
+<span class="token comment"># Create UUT report</span>
+report <span class="token operator">=</span> UUTReport<span class="token punctuation">(</span>
+    pn<span class="token operator">=</span><span class="token string">"WIDGET-001"</span><span class="token punctuation">,</span>
+    sn<span class="token operator">=</span><span class="token string">"SN123456"</span><span class="token punctuation">,</span>
+    rev<span class="token operator">=</span><span class="token string">"A"</span><span class="token punctuation">,</span>
+    process_code<span class="token operator">=</span><span class="token number">100</span><span class="token punctuation">,</span>
+    station_name<span class="token operator">=</span><span class="token string">"Station1"</span><span class="token punctuation">,</span>
+    location<span class="token operator">=</span><span class="token string">"Lab"</span><span class="token punctuation">,</span>
+    purpose<span class="token operator">=</span><span class="token string">"Production"</span>
+<span class="token punctuation">)</span>
+
+<span class="token comment"># Add root sequence</span>
+root <span class="token operator">=</span> report<span class="token punctuation">.</span>root
+root<span class="token punctuation">.</span>name <span class="token operator">=</span> <span class="token string">"MainSequence"</span>
+
+<span class="token comment"># Add numeric test</span>
+voltage_step <span class="token operator">=</span> root<span class="token punctuation">.</span>add_numeric_step<span class="token punctuation">(</span>
+    name<span class="token operator">=</span><span class="token string">"Supply Voltage"</span><span class="token punctuation">,</span>
+    value<span class="token operator">=</span><span class="token number">5.0</span><span class="token punctuation">,</span>
+    comp<span class="token operator">=</span>CompOp<span class="token punctuation">.</span>GELE<span class="token punctuation">,</span>
+    limit_l<span class="token operator">=</span><span class="token number">4.5</span><span class="token punctuation">,</span>
+    limit_h<span class="token operator">=</span><span class="token number">5.5</span><span class="token punctuation">,</span>
+    unit<span class="token operator">=</span><span class="token string">"V"</span>
+<span class="token punctuation">)</span>
+
+<span class="token comment"># Add sub-sequence</span>
+functional_tests <span class="token operator">=</span> root<span class="token punctuation">.</span>add_sequence_call<span class="token punctuation">(</span><span class="token string">"Functional Tests"</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Add boolean test</span>
+led_test <span class="token operator">=</span> functional_tests<span class="token punctuation">.</span>add_boolean_step<span class="token punctuation">(</span>
+    name<span class="token operator">=</span><span class="token string">"LED Check"</span><span class="token punctuation">,</span>
+    value<span class="token operator">=</span><span class="token boolean">True</span>
+<span class="token punctuation">)</span>
+
+<span class="token comment"># Add asset</span>
+report<span class="token punctuation">.</span>add_asset<span class="token punctuation">(</span>Asset<span class="token punctuation">(</span>
+    sn<span class="token operator">=</span><span class="token string">"DMM-001"</span><span class="token punctuation">,</span>
+    asset_type<span class="token operator">=</span><span class="token string">"Multimeter"</span>
+<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Submit report</span>
+<span class="token keyword keyword-await">await</span> api<span class="token punctuation">.</span>report<span class="token punctuation">.</span>submit_uut<span class="token punctuation">(</span>report<span class="token punctuation">)</span>
+</code></pre><hr>
+<p><strong>Related Documentation:</strong></p>
+<ul>
+<li><a href="UUR_OBJECT_MODEL.md">UURReport Object Model</a></li>
+<li><a href="../../../docs/guides/report-domain.md">Report Domain Guide</a></li>
+<li><a href="../../../docs/api/report-steps.md">Step Types Reference</a></li>
+</ul>
+
+      </div>
+      <div class="md-sidebar-toc">
+<div class="md-toc">
+<details style="padding:0;;padding-left:0px;" open="">
+        <summary class="md-toc-link-wrapper">
+          <a href="#uutreport-object-model---class-diagram" class="md-toc-link"><p>UUTReport Object Model - Class Diagram</p>
+</a>
+          </summary>
+        <div>
+          <div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#uutreport-class-hierarchy" class="md-toc-link">
+            <p>UUTReport Class Hierarchy</p>
+
+          </a></div><details style="padding:0;;padding-left:24px;" open="">
+        <summary class="md-toc-link-wrapper">
+          <a href="#key-relationships" class="md-toc-link"><p>Key Relationships</p>
+</a>
+          </summary>
+        <div>
+          <div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#composition" class="md-toc-link">
+            <p>Composition</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#hierarchy" class="md-toc-link">
+            <p>Hierarchy</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#measurement-types" class="md-toc-link">
+            <p>Measurement Types</p>
+
+          </a></div>
+        </div>
+      </details>
+    <div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#usage-example" class="md-toc-link">
+            <p>Usage Example</p>
+
+          </a></div>
+        </div>
+      </details>
+    
+</div>
+</div>
+      <a id="sidebar-toc-btn">≡</a>
+    
+    
+    <script type="module">
+// TODO: If ZenUML gets integrated into mermaid in the future,
+//      we can remove the following lines.
+
+
+var MERMAID_CONFIG = ({"startOnLoad":false});
+if (typeof MERMAID_CONFIG !== 'undefined') {
+  MERMAID_CONFIG.startOnLoad = false
+  MERMAID_CONFIG.cloneCssStyles = false
+  MERMAID_CONFIG.theme = "dark"
+}
+
+mermaid.initialize(MERMAID_CONFIG || {})
+if (typeof(window['Reveal']) !== 'undefined') {
+  function mermaidRevealHelper(event) {
+    var currentSlide = event.currentSlide
+    var diagrams = currentSlide.querySelectorAll('.mermaid')
+    for (var i = 0; i < diagrams.length; i++) {
+      var diagram = diagrams[i]
+      if (!diagram.hasAttribute('data-processed')) {
+        mermaid.init(null, diagram, ()=> {
+          Reveal.slide(event.indexh, event.indexv)
+        })
+      }
+    }
+  }
+  Reveal.addEventListener('slidetransitionend', mermaidRevealHelper)
+  Reveal.addEventListener('ready', mermaidRevealHelper)
+  await mermaid.run({
+    nodes: document.querySelectorAll('.mermaid')
+  })
+} else {
+  await mermaid.run({
+    nodes: document.querySelectorAll('.mermaid')
+  })
+}
+</script>
+    
+    
+    
+<script>
+
+var sidebarTOCBtn = document.getElementById('sidebar-toc-btn')
+sidebarTOCBtn.addEventListener('click', function(event) {
+  event.stopPropagation()
+  if (document.body.hasAttribute('html-show-sidebar-toc')) {
+    document.body.removeAttribute('html-show-sidebar-toc')
+  } else {
+    document.body.setAttribute('html-show-sidebar-toc', true)
+  }
+})
+</script>
+      
+  
+    </body></html>

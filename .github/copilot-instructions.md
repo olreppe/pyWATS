@@ -25,12 +25,14 @@
   - `02_IMPLEMENTATION_PLAN.md` - Step-by-step phases
   - `03_PROGRESS.md` - Real-time updates with timestamps
   - `04_TODO.md` - Task checklist (✅ ✗ 🚧)
+- **Timestamps:** All documents MUST include `Created` and `Last Updated` timestamps
 - **Reference:** See `projects/.agent_instructions.md` for full templates
 
 ### When Updating Projects
 - **TODO.md:** Mark task 🚧 BEFORE starting, ✅ IMMEDIATELY after completion
 - **PROGRESS.md:** Add timestamped entry after each significant step
 - **README.md:** Update status percentage when phases complete
+- **Last Updated:** Update timestamp header when making significant changes
 - **Frequency:** Update during work (not batched at end) for crash recovery
 
 ### When Closing Projects
@@ -39,9 +41,10 @@ Follow completion checklist in `.agent_instructions.md`:
 2. Move project tests to `tests/` suite
 3. Move examples to `examples/`
 4. Update `CHANGELOG.md` under `[Unreleased]`
-5. Create `COMPLETION_SUMMARY.md`
-6. Move to `docs/internal_documentation/completed/{quarter}/`
-7. Commit and push
+5. Create `COMPLETION_SUMMARY.md` with timestamps
+6. Rename folder to `MMDDHHMM-{project-name}.project/` format
+7. Move to `projects/completed/{quarter}/` (e.g., `projects/completed/2026-q1/`)
+8. Commit and push
 
 ---
 

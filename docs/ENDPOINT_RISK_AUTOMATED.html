@@ -1,0 +1,769 @@
+<!DOCTYPE html><html><head>
+      <title>ENDPOINT_RISK_AUTOMATED</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:///c:\Users\ola.lund.reppe\.vscode\extensions\shd101wyy.markdown-preview-enhanced-0.8.20\crossnote\dependencies\katex\katex.min.css">
+      
+      
+      
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <!-- The content below will be included at the end of the <head> element. --><script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script></head><body for="html-export">
+    
+    
+      <div class="crossnote markdown-preview  ">
+      
+<h1 id="endpoint-risk-assessment-report">Endpoint Risk Assessment Report </h1>
+<p><strong>Generated:</strong> 2026-02-07 02:01:22<br>
+<strong>Total Endpoints:</strong> 60<br>
+<strong>Internal Endpoints:</strong> 16<br>
+<strong>Public Endpoints:</strong> 44</p>
+<hr>
+<h2 id="-executive-summary">📊 Executive Summary </h2>
+<h3 id="priority-breakdown">Priority Breakdown </h3>
+<ul>
+<li><strong>CRITICAL:</strong> 2 endpoints (2 internal)</li>
+<li><strong>HIGH:</strong> 10 endpoints (1 internal)</li>
+<li><strong>MEDIUM:</strong> 33 endpoints</li>
+<li><strong>LOW:</strong> 15 endpoints</li>
+</ul>
+<h3 id="risk-assessment">Risk Assessment </h3>
+<ul>
+<li><strong>2</strong> critical internal endpoints need public alternatives</li>
+<li><strong>1</strong> high-priority internal endpoints at risk</li>
+<li><strong>6</strong> internal endpoints have identified alternatives</li>
+</ul>
+<hr>
+<h2 id="critical-priority-endpoints-2-total">CRITICAL Priority Endpoints (2 total) </h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Domain</th>
+<th>Type</th>
+<th>Usage</th>
+<th>Used By (Sample)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{...}/GetProcess/{...}</code></td>
+<td>Process</td>
+<td>⚠️ Internal</td>
+<td>1x</td>
+<td>async_repository.get_process</td>
+<td>⚠️ <strong>No public alternative</strong></td>
+</tr>
+<tr>
+<td><code>{...}/GetRepairOperation/{...}</code></td>
+<td>Process</td>
+<td>⚠️ Internal</td>
+<td>1x</td>
+<td>async_repository.get_repair_operation</td>
+<td>⚠️ <strong>No public alternative</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="high-priority-endpoints-10-total">HIGH Priority Endpoints (10 total) </h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Domain</th>
+<th>Type</th>
+<th>Usage</th>
+<th>Used By (Sample)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{...}/Attachments/{...}</code></td>
+<td>Report</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.get_attachments_as_zip</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/Certificate/{...}</code></td>
+<td>Report</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.get_certificate</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/Wsjf/{...}</code></td>
+<td>Report</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.get_wsjf</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/Wsxf/{...}</code></td>
+<td>Report</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.get_wsxf</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>/api/Process</code></td>
+<td>Process</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/internal/Process</code></td>
+<td>Process</td>
+<td>⚠️ Internal</td>
+<td>0x</td>
+<td>-</td>
+<td>Alt: <code>/api/Process</code> <em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Process</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/Report</code></td>
+<td>Report</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Report</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Report</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+</tbody>
+</table>
+<h2 id="medium-priority-endpoints-33-total">MEDIUM Priority Endpoints (33 total) </h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Domain</th>
+<th>Type</th>
+<th>Usage</th>
+<th>Used By (Sample)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/Asset</code></td>
+<td>Asset</td>
+<td>✅ Public</td>
+<td>3x</td>
+<td>async_repository.delete, async_repository.get_all (+1 more)</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Software</td>
+<td>✅ Public</td>
+<td>3x</td>
+<td>async_repository.delete_package, async_repository.get_package (+1 more)</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>/api/internal/Blob/Asset</code></td>
+<td>Asset</td>
+<td>⚠️ Internal</td>
+<td>2x</td>
+<td>async_repository.download_file, async_repository.upload_file</td>
+<td>Alt: <code>/api/Asset</code></td>
+</tr>
+<tr>
+<td><code>/api/Product</code></td>
+<td>Product</td>
+<td>✅ Public</td>
+<td>2x</td>
+<td>async_repository.get_revision, async_repository.save</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>/api/internal/Product</code></td>
+<td>Product</td>
+<td>⚠️ Internal</td>
+<td>2x</td>
+<td>async_repository.get_revision, async_repository.save</td>
+<td>Alt: <code>/api/Product</code></td>
+</tr>
+<tr>
+<td><code>/api/internal/Blob/Assets</code></td>
+<td>Asset</td>
+<td>⚠️ Internal</td>
+<td>1x</td>
+<td>async_repository.delete_files</td>
+<td>Alt: <code>/api/Assets</code></td>
+</tr>
+<tr>
+<td><code>{...}/List/{...}</code></td>
+<td>Asset</td>
+<td>⚠️ Internal</td>
+<td>1x</td>
+<td>async_repository.list_files</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Product</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.get_by_part_number</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Product</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.delete_vendor</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Production</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.delete_unit_change</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/{...}/{...}</code></td>
+<td>Production</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.get_unit</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/File/{...}</code></td>
+<td>Software</td>
+<td>⚠️ Internal</td>
+<td>1x</td>
+<td>async_repository.get_file</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/FileAttribute/{...}</code></td>
+<td>Software</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.update_file_attribute</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/PackageFiles/{...}</code></td>
+<td>Software</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.get_package_files</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/PackageStatus/{...}</code></td>
+<td>Software</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.update_package_status</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/UploadZip/{...}</code></td>
+<td>Software</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.upload_package_zip</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>/api/App</code></td>
+<td>App</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Asset</td>
+<td>⚠️ Internal</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/Calibrations</code></td>
+<td>Asset</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/Maintenance</code></td>
+<td>Asset</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/Status</code></td>
+<td>Asset</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/{...}</code></td>
+<td>Asset</td>
+<td>⚠️ Internal</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/Revisions</code></td>
+<td>Product</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/{...}</code></td>
+<td>Product</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/{...}/BOM</code></td>
+<td>Product</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/Production</code></td>
+<td>Production</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/internal/Mes</code></td>
+<td>Production</td>
+<td>⚠️ Internal</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/internal/Production</code></td>
+<td>Production</td>
+<td>⚠️ Internal</td>
+<td>0x</td>
+<td>-</td>
+<td>Alt: <code>/api/Production</code> <em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Production</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Production</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Production</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/Software</code></td>
+<td>Software</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/internal/Software</code></td>
+<td>Software</td>
+<td>⚠️ Internal</td>
+<td>0x</td>
+<td>-</td>
+<td>Alt: <code>/api/Software</code> <em>Unused</em></td>
+</tr>
+</tbody>
+</table>
+<h2 id="low-priority-endpoints-15-total">LOW Priority Endpoints (15 total) </h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Domain</th>
+<th>Type</th>
+<th>Usage</th>
+<th>Used By (Sample)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/internal/UnitFlow</code></td>
+<td>Analytics</td>
+<td>⚠️ Internal</td>
+<td>3x</td>
+<td>async_repository.expand_unit_flow_operations, async_repository.query_unit_flow (+1 more)</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>SCIM</td>
+<td>✅ Public</td>
+<td>3x</td>
+<td>async_repository.delete_user, async_repository.get_user (+1 more)</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>Asset</td>
+<td>✅ Public</td>
+<td>2x</td>
+<td>async_repository.get_by_id, async_repository.get_by_serial_number</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>{...}/userName={...}</code></td>
+<td>SCIM</td>
+<td>✅ Public</td>
+<td>1x</td>
+<td>async_repository.get_user_by_username</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>/api/Analytics</code></td>
+<td>Analytics</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/internal/App</code></td>
+<td>Analytics</td>
+<td>⚠️ Internal</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/internal/Trigger</code></td>
+<td>Analytics</td>
+<td>⚠️ Internal</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/TestStatistics</code></td>
+<td>Analytics</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/Assets</code></td>
+<td>Asset</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/RootCause</code></td>
+<td>RootCause</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>RootCause</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/Comment</code></td>
+<td>RootCause</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}/Status</code></td>
+<td>RootCause</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>/api/SCIM/v2</code></td>
+<td>SCIM</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+<tr>
+<td><code>{...}/{...}</code></td>
+<td>SCIM</td>
+<td>✅ Public</td>
+<td>0x</td>
+<td>-</td>
+<td><em>Unused</em></td>
+</tr>
+</tbody>
+</table>
+<h2 id="-public-api-gap-analysis">🎯 Public API Gap Analysis </h2>
+<p><strong>2 critical/high-priority internal endpoints need public alternatives</strong></p>
+<h3 id="process-domain-2-gaps">Process Domain (2 gaps) </h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Priority</th>
+<th>Usage</th>
+<th>Migration Effort</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{...}/GetProcess/{...}</code></td>
+<td>CRITICAL</td>
+<td>1x</td>
+<td>Low (&lt;5 usages)</td>
+</tr>
+<tr>
+<td><code>{...}/GetRepairOperation/{...}</code></td>
+<td>CRITICAL</td>
+<td>1x</td>
+<td>Low (&lt;5 usages)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="-migration-recommendations">📋 Migration Recommendations </h2>
+<h3 id="phase-1-critical-path-immediate">Phase 1: Critical Path (Immediate) </h3>
+<h3 id="phase-2-high-priority-next-quarter">Phase 2: High Priority (Next Quarter) </h3>
+<h3 id="migration-strategy">Migration Strategy </h3>
+<ol>
+<li><strong>Create public endpoints</strong> for Phase 1 critical path</li>
+<li><strong>Deprecate internal endpoints</strong> with 6-month sunset period</li>
+<li><strong>Migrate usage</strong> incrementally (domain by domain)</li>
+<li><strong>Remove internal endpoints</strong> after migration complete</li>
+</ol>
+<hr>
+<h2 id="-usage-statistics">📈 Usage Statistics </h2>
+<h3 id="overall">Overall </h3>
+<ul>
+<li><strong>Total Endpoints:</strong> 60</li>
+<li><strong>Used Endpoints:</strong> 26 (43.3%)</li>
+<li><strong>Unused Endpoints:</strong> 34 (56.7%)</li>
+<li><strong>Total Usage Count:</strong> 38</li>
+<li><strong>Average Usage:</strong> 0.6 calls per endpoint</li>
+</ul>
+<h3 id="top-10-most-used-endpoints">Top 10 Most Used Endpoints </h3>
+<ol>
+<li>✅ <code>/api/Asset</code> - <strong>3</strong> usages (MEDIUM)</li>
+<li>✅ <code>{...}/{...}</code> - <strong>3</strong> usages (MEDIUM)</li>
+<li>⚠️ <code>/api/internal/UnitFlow</code> - <strong>3</strong> usages (LOW)</li>
+<li>✅ <code>{...}/{...}</code> - <strong>3</strong> usages (LOW)</li>
+<li>✅ <code>/api/Product</code> - <strong>2</strong> usages (MEDIUM)</li>
+<li>⚠️ <code>/api/internal/Product</code> - <strong>2</strong> usages (MEDIUM)</li>
+<li>✅ <code>{...}/{...}</code> - <strong>2</strong> usages (LOW)</li>
+<li>⚠️ <code>/api/internal/Blob/Asset</code> - <strong>2</strong> usages (MEDIUM)</li>
+<li>✅ <code>{...}/{...}/{...}</code> - <strong>1</strong> usages (MEDIUM)</li>
+<li>✅ <code>{...}/{...}</code> - <strong>1</strong> usages (MEDIUM)</li>
+</ol>
+
+      </div>
+      <div class="md-sidebar-toc">
+<div class="md-toc">
+<details style="padding:0;;padding-left:0px;" open="">
+        <summary class="md-toc-link-wrapper">
+          <a href="#endpoint-risk-assessment-report" class="md-toc-link"><p>Endpoint Risk Assessment Report</p>
+</a>
+          </summary>
+        <div>
+          <details style="padding:0;;padding-left:24px;" open="">
+        <summary class="md-toc-link-wrapper">
+          <a href="#-executive-summary" class="md-toc-link"><p>📊 Executive Summary</p>
+</a>
+          </summary>
+        <div>
+          <div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#priority-breakdown" class="md-toc-link">
+            <p>Priority Breakdown</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#risk-assessment" class="md-toc-link">
+            <p>Risk Assessment</p>
+
+          </a></div>
+        </div>
+      </details>
+    <div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#critical-priority-endpoints-2-total" class="md-toc-link">
+            <p>CRITICAL Priority Endpoints (2 total)</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#high-priority-endpoints-10-total" class="md-toc-link">
+            <p>HIGH Priority Endpoints (10 total)</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#medium-priority-endpoints-33-total" class="md-toc-link">
+            <p>MEDIUM Priority Endpoints (33 total)</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#low-priority-endpoints-15-total" class="md-toc-link">
+            <p>LOW Priority Endpoints (15 total)</p>
+
+          </a></div><details style="padding:0;;padding-left:24px;" open="">
+        <summary class="md-toc-link-wrapper">
+          <a href="#-public-api-gap-analysis" class="md-toc-link"><p>🎯 Public API Gap Analysis</p>
+</a>
+          </summary>
+        <div>
+          <div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#process-domain-2-gaps" class="md-toc-link">
+            <p>Process Domain (2 gaps)</p>
+
+          </a></div>
+        </div>
+      </details>
+    <details style="padding:0;;padding-left:24px;" open="">
+        <summary class="md-toc-link-wrapper">
+          <a href="#-migration-recommendations" class="md-toc-link"><p>📋 Migration Recommendations</p>
+</a>
+          </summary>
+        <div>
+          <div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#phase-1-critical-path-immediate" class="md-toc-link">
+            <p>Phase 1: Critical Path (Immediate)</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#phase-2-high-priority-next-quarter" class="md-toc-link">
+            <p>Phase 2: High Priority (Next Quarter)</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#migration-strategy" class="md-toc-link">
+            <p>Migration Strategy</p>
+
+          </a></div>
+        </div>
+      </details>
+    <details style="padding:0;;padding-left:24px;" open="">
+        <summary class="md-toc-link-wrapper">
+          <a href="#-usage-statistics" class="md-toc-link"><p>📈 Usage Statistics</p>
+</a>
+          </summary>
+        <div>
+          <div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#overall" class="md-toc-link">
+            <p>Overall</p>
+
+          </a></div><div class="md-toc-link-wrapper" style="padding:0;;display:list-item;list-style:square;margin-left:42px">
+          <a href="#top-10-most-used-endpoints" class="md-toc-link">
+            <p>Top 10 Most Used Endpoints</p>
+
+          </a></div>
+        </div>
+      </details>
+    
+        </div>
+      </details>
+    
+</div>
+</div>
+      <a id="sidebar-toc-btn">≡</a>
+    
+    
+    
+    
+    
+    
+<script>
+
+var sidebarTOCBtn = document.getElementById('sidebar-toc-btn')
+sidebarTOCBtn.addEventListener('click', function(event) {
+  event.stopPropagation()
+  if (document.body.hasAttribute('html-show-sidebar-toc')) {
+    document.body.removeAttribute('html-show-sidebar-toc')
+  } else {
+    document.body.setAttribute('html-show-sidebar-toc', true)
+  }
+})
+</script>
+      
+  
+    </body></html>

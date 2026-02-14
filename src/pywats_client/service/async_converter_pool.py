@@ -183,6 +183,13 @@ class AsyncConverterPool:
             "sandbox_enabled": enable_sandbox,
         }
         
+        # Startup scan deduplication (race condition prevention)
+        # Track files queued during startup scan to prevent duplicate processing
+        # when watchdog buffers events from before Observer.start()
+        self._startup_scan_files: Set[Path] = set()
+        self._startup_scan_complete: bool = False
+        self._startup_scan_enabled: bool = True  # Default enabled (safer)
+        
         logger.info(
             f"AsyncConverterPool initialized (max_concurrent={max_concurrent}, "
             f"sandbox={'enabled' if enable_sandbox else 'disabled'})"
@@ -225,6 +232,9 @@ class AsyncConverterPool:
         try:
             # Load converters from config
             await self._load_converters()
+            
+            # Scan for existing files BEFORE starting watchers (prevents data loss)
+            scan_stats = await self._scan_existing_files()
             
             # Start file watchers
             await self._start_watchers()
@@ -424,6 +434,141 @@ class AsyncConverterPool:
         # Start new
         await self._start_watchers()
     
+    async def _scan_existing_files(self) -> Dict[str, int]:
+        """
+        Scan watch directories for existing files on startup.
+        
+        Prevents data loss when files are dropped during system downtime.
+        Files are queued before watchers start to avoid race conditions.
+        
+        Returns:
+            Dict with statistics:
+            - 'scanned': Total files examined
+            - 'queued': Files queued for processing
+            - 'skipped': Files skipped (already queued, wrong extension)
+            - 'errors': Files that caused errors
+        """
+        if not self._startup_scan_enabled:
+            logger.info("Startup scan disabled in configuration")
+            return {'scanned': 0, 'queued': 0, 'skipped': 0, 'errors': 0}
+        
+        logger.info("Starting scan for existing files in watch directories...")
+        
+        stats = {
+            'scanned': 0,
+            'queued': 0,
+            'skipped': 0,
+            'errors': 0
+        }
+        
+        scan_start = datetime.now()
+        
+        try:
+            for converter in self._converters:
+                # Skip if no watch path configured
+                if not converter.watch_path or not converter.watch_path.exists():
+                    logger.debug(f"Skip scan for {converter.name} (no watch path)")
+                    continue
+                
+                # Get all files matching converter's extensions
+                files_to_scan = []
+                for ext in converter.supported_extensions:
+                    pattern = f"*{ext}"
+                    if converter.watch_recursive:
+                        files_to_scan.extend(converter.watch_path.rglob(pattern))
+                    else:
+                        files_to_scan.extend(converter.watch_path.glob(pattern))
+                
+                # Filter to only files (not directories) and sort by mtime (oldest first - FIFO)
+                files_to_scan = sorted(
+                    [f for f in files_to_scan if f.is_file()],
+                    key=lambda p: p.stat().st_mtime
+                )
+                
+                logger.info(
+                    f"Found {len(files_to_scan)} existing files for {converter.name}"
+                )
+                
+                # Queue each file
+                for file_path in files_to_scan:
+                    stats['scanned'] += 1
+                    
+                    try:
+                        # Check if file already marked as queued (.queued marker)
+                        if self._is_file_queued(file_path):
+                            logger.debug(f"Skip {file_path.name} (already queued)")
+                            stats['skipped'] += 1
+                            continue
+                        
+                        # Check if file in startup scan set (shouldn't happen, but safety)
+                        if file_path in self._startup_scan_files:
+                            logger.debug(f"Skip {file_path.name} (duplicate in scan)")
+                            stats['skipped'] += 1
+                            continue
+                        
+                        # Queue the file
+                        priority = getattr(converter, 'priority', 5)
+                        item = AsyncConversionItem(file_path, converter, priority=priority)
+                        
+                        self._queue.put_nowait(
+                            data=item,
+                            priority=priority,
+                            metadata={'file': str(file_path), 'converter': converter.name}
+                        )
+                        
+                        # Track in startup scan set (deduplicate watchdog events)
+                        self._startup_scan_files.add(file_path)
+                        stats['queued'] += 1
+                        
+                        logger.debug(
+                            f"Queued from startup scan: {file_path.name} "
+                            f"(priority={priority}, converter={converter.name})"
+                        )
+                        
+                    except Exception as e:
+                        logger.exception(f"Error queuing {file_path.name}: {e}")
+                        stats['errors'] += 1
+            
+            # Schedule cleanup of deduplication set (after watchdog event buffer clears)
+            asyncio.create_task(self._clear_startup_scan_set())
+            
+        except Exception as e:
+            logger.exception(f"Startup scan failed: {e}")
+            stats['errors'] += 1
+        
+        scan_duration = (datetime.now() - scan_start).total_seconds()
+        
+        logger.info(
+            f"Startup scan complete: {stats['queued']} files queued, "
+            f"{stats['skipped']} skipped, {stats['errors']} errors ({scan_duration:.2f}s)"
+        )
+        
+        return stats
+    
+    def _is_file_queued(self, file_path: Path) -> bool:
+        """
+        Check if file is already queued (has .queued marker).
+        
+        This prevents re-processing files that were queued but not yet converted.
+        """
+        queued_marker = file_path.parent / f"{file_path.name}.queued"
+        return queued_marker.exists()
+    
+    async def _clear_startup_scan_set(self) -> None:
+        """
+        Clear startup scan tracking set after buffer time.
+        
+        Waits 5 seconds for watchdog to process any buffered events,
+        then clears the deduplication set to free memory.
+        """
+        await asyncio.sleep(5.0)  # Buffer time for delayed watchdog events
+        
+        count = len(self._startup_scan_files)
+        self._startup_scan_files.clear()
+        self._startup_scan_complete = True
+        
+        logger.debug(f"Cleared startup scan set ({count} files tracked)")
+    
     def _create_watcher(self, converter: 'Converter') -> Optional[Observer]:
         """Create a file system watcher for a converter"""
         watch_path = converter.watch_path
@@ -451,6 +596,13 @@ class AsyncConverterPool:
         """Handle new file detected (called from watchdog thread - NOT async safe!)"""
         # Validate file matches converter pattern
         if not converter.matches_file(file_path):
+            return
+        
+        # Deduplicate against startup scan
+        if not self._startup_scan_complete and file_path in self._startup_scan_files:
+            logger.debug(
+                f"Skip {file_path.name} (already queued in startup scan)"
+            )
             return
         
         # Get priority from converter (default to 5 if not set)
