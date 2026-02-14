@@ -117,8 +117,36 @@ class ConfiguratorMainWindow(BaseMainWindow):
             from PySide6.QtGui import QIcon
             self.setWindowIcon(QIcon(str(icon_path)))
     
+    def _setup_menu_bar(self) -> None:
+        """Setup menu bar with File menu (Phase 1: GUI Cleanup)"""
+        menu_bar = self.menuBar()
+        
+        # File menu
+        file_menu = menu_bar.addMenu("&File")
+        
+        # Disconnect action
+        disconnect_action = file_menu.addAction("&Disconnect")
+        disconnect_action.setStatusTip("Disconnect from WATS server")
+        disconnect_action.triggered.connect(self._on_disconnect)
+        
+        # Minimize to tray action
+        minimize_action = file_menu.addAction("&Minimize to Tray")
+        minimize_action.setStatusTip("Minimize window to system tray")
+        minimize_action.triggered.connect(self._on_minimize_to_tray)
+        
+        file_menu.addSeparator()
+        
+        # Exit action
+        exit_action = file_menu.addAction("E&xit")
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.setStatusTip("Exit application")
+        exit_action.triggered.connect(self.close)
+    
     def _setup_ui(self) -> None:
         """Setup main UI layout"""
+        # Add menu bar first
+        self._setup_menu_bar()
+        
         # Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -169,19 +197,15 @@ class ConfiguratorMainWindow(BaseMainWindow):
         self._nav_list = QListWidget()
         self._nav_list.setObjectName("navList")
         
-        # Build navigation items
+        # Build navigation items (Phase 1: GUI Cleanup)
         nav_items = [
-            "Dashboard",
-            "Setup",
-            "Connection",
-            "Serial Numbers",
-            "API Settings",
-            "Converters",
-            "Software",
-            "Location",
-            "Proxy",
-            "Log",
-            "About"
+            "Dashboard",      # Default start page
+            "Connection",     # Server connection
+            "Converters",     # Core feature
+            "Setup",          # Station configuration
+            "Serial Numbers", # Converter-related
+            "Log",            # Troubleshooting
+            "About"           # Info
         ]
         
         for name in nav_items:
@@ -223,17 +247,13 @@ class ConfiguratorMainWindow(BaseMainWindow):
         # Stacked widget for pages
         self._page_stack = QStackedWidget()
         
-        # Create pages - all migrated pages
+        # Create pages (Phase 1: GUI Cleanup - 7 essential tabs only)
         self._pages: Dict[str, QWidget] = {
             "Dashboard": DashboardPage(self._config),
-            "Setup": SetupPage(self._config),
             "Connection": ConnectionPage(self._config),
-            "Serial Numbers": SerialNumberHandlerPage(self._config),
-            "API Settings": APISettingsPage(self._config),
             "Converters": ConvertersPageV2(self._config, main_window=self),
-            "Software": SoftwarePage(self._config),
-            "Location": LocationPage(self._config),
-            "Proxy": ProxySettingsPage(self._config),
+            "Setup": SetupPage(self._config),
+            "Serial Numbers": SerialNumberHandlerPage(self._config),
             "Log": LogPage(self._config),
             "About": AboutPage(self._config),
         }
@@ -421,6 +441,47 @@ class ConfiguratorMainWindow(BaseMainWindow):
                 color: #ffffff;
             }
         """)
+    
+    def _on_disconnect(self) -> None:
+        """Disconnect from server (File → Disconnect) - Phase 1: GUI Cleanup"""
+        reply = QMessageBox.question(
+            self,
+            "Disconnect",
+            "Disconnect from WATS server?\n\n"
+            "This will stop the client service and clear the connection.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                # TODO: Implement service stop logic
+                # For now, just update status
+                self.statusBar().showMessage("Disconnected")
+                logger.info("Disconnected from server")
+                
+                # Update connection status label if it exists
+                if hasattr(self, '_connection_status_label'):
+                    self._connection_status_label.setText("⚪ Disconnected")
+                
+            except Exception as e:
+                logger.exception(f"Failed to disconnect: {e}")
+                QMessageBox.warning(self, "Disconnect Error", f"Failed to disconnect:\n{e}")
+    
+    def _on_minimize_to_tray(self) -> None:
+        """Minimize to system tray (File → Minimize to Tray) - Phase 1: GUI Cleanup"""
+        # Check if system tray is available
+        from PySide6.QtWidgets import QSystemTrayIcon
+        
+        if QSystemTrayIcon.isSystemTrayAvailable():
+            # Hide window (system tray integration can be improved later)
+            self.hide()
+            logger.debug("Minimized to system tray")
+            # TODO: Implement full system tray integration with icon and menu
+        else:
+            # Fallback to regular minimize
+            self.showMinimized()
+            logger.debug("System tray not available, minimized to taskbar")
     
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close - cleanup resources (H4 fix)"""

@@ -5,12 +5,14 @@ from .about import AboutPage
 from .log import LogPage
 from .sn_handler import SerialNumberHandlerPage
 from .dashboard import DashboardPage
-from .api_settings import APISettingsPage
 from .setup import SetupPage
-from .software import SoftwarePage
-from .location import LocationPage
-from .proxy_settings import ProxySettingsPage
 from .converters import ConvertersPageV2
+
+# Removed pages (Phase 1: GUI Cleanup):
+# - APISettingsPage (moved to Connection → Advanced)
+# - SoftwarePage (not needed for beta)
+# - LocationPage (GPS toggle moved to Dashboard)
+# - ProxySettingsPage (moved to Connection → Advanced)
 
 __all__ = [
     "ConnectionPage",
@@ -18,10 +20,6 @@ __all__ = [
     "LogPage",
     "SerialNumberHandlerPage",
     "DashboardPage",
-    "APISettingsPage",
     "SetupPage",
-    "SoftwarePage",
-    "LocationPage",
-    "ProxySettingsPage",
     "ConvertersPageV2",
 ]
