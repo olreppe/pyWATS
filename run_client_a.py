@@ -111,6 +111,7 @@ def main():
     
     try:
         from PySide6.QtWidgets import QApplication
+        from PySide6.QtGui import QIcon
         from pywats_client.core.config import ClientConfig, ConverterConfig
         from pywats_ui.apps.configurator.main_window import ConfiguratorMainWindow
         
@@ -118,6 +119,11 @@ def main():
         app = QApplication(sys.argv)
         app.setApplicationName("pyWATS Client A")
         app.setOrganizationName("pyWATS")
+        
+        # Set application icon for taskbar
+        icon_path = Path(__file__).parent / "src" / "pywats_ui" / "apps" / "resources" / "favicon.ico"
+        if icon_path.exists():
+            app.setWindowIcon(QIcon(str(icon_path)))
         
         # Load or create config for instance "default"
         # Use system-wide path: C:\ProgramData\pyWATS\instances\default\

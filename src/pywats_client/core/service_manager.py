@@ -164,7 +164,8 @@ def start_service(instance_id: str, wait: bool = False) -> bool:
         
         # Get python executable and run_service.py path
         python_exe = sys.executable
-        run_service_script = Path(__file__).parent.parent.parent / "run_service.py"
+        # Go up 4 levels: service_manager.py -> core -> pywats_client -> src -> repository root
+        run_service_script = Path(__file__).parent.parent.parent.parent / "run_service.py"
         
         if not run_service_script.exists():
             logger.error(f"run_service.py not found: {run_service_script}")
