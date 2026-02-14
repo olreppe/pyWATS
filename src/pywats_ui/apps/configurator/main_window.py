@@ -29,8 +29,7 @@ from pywats_client.core.config import ClientConfig
 # Import migrated pages
 from .pages import (
     ConnectionPage, AboutPage, LogPage, SerialNumberHandlerPage,
-    DashboardPage, APISettingsPage, SetupPage, SoftwarePage,
-    LocationPage, ProxySettingsPage, ConvertersPageV2
+    DashboardPage, SetupPage, ConvertersPageV2
 )
 
 logger = get_logger(__name__)
