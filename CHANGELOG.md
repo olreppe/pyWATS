@@ -92,6 +92,18 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Examples**: 20+ real-world code examples demonstrating best practices
 
 ### Changed
+- **GUI Cleanup for Beta Release**: Simplified Configurator navigation and improved UX (Feb 14, 2026)
+  - **Tab Reduction**: 11 tabs → 7 essential tabs (Dashboard, Connection, Converters, Setup, Serial Numbers, Log, About)
+    - Removed: Software, Location, API Settings, Proxy pages (non-core for beta)
+  - **File Menu**: Added File menu with Disconnect, Minimize to Tray, Exit (Ctrl+Q)
+  - **Scaling Fixes**: Minimum window size 900x650 → 800x600, sidebar 200px fixed → 180-220px flexible
+  - **Dashboard Enhancements**: Station info now visible on Dashboard (Client Name, Station Name, Location, Purpose)
+    - GPS location toggle integrated (moved from Location page)
+    - "Edit Station Settings" button navigates to Setup page
+  - **Connection Simplification**: Proxy settings integrated into Connection → Advanced section
+    - Proxy enabled checkbox, Proxy URL field with enable/disable logic
+  - **Navigation**: Added `navigate_to_page()` helper for programmatic page navigation
+  - **Impact**: Better UX for converter-focused beta release, improved readability at smaller screen sizes
 - **Logger Standardization**: All modules now use `get_logger()` for consistent logging (Feb 8, 2026)
   - **Coverage**: 100% (297 files: 196 already correct, 101 updated)
   - **Pattern**: Replaced `logging.getLogger(__name__)` with `get_logger(__name__)` across all layers
