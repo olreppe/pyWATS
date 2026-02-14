@@ -407,6 +407,21 @@ class ConfiguratorMainWindow(BaseMainWindow):
                 except Exception as e:
                     logger.exception(f"Failed to load config for {page_name}: {e}")
     
+    def navigate_to_page(self, page_name: str) -> None:
+        """Navigate to specific page by name (Phase 3: GUI Cleanup)
+        
+        Args:
+            page_name: Name of the page to navigate to (e.g., "Setup", "Connection")
+        """
+        for i in range(self._nav_list.count()):
+            item = self._nav_list.item(i)
+            if item and item.data(Qt.ItemDataRole.UserRole) == page_name:
+                self._nav_list.setCurrentRow(i)
+                logger.debug(f"Navigated to page: {page_name}")
+                return
+        
+        logger.warning(f"Page not found: {page_name}")
+    
     def _apply_styles(self) -> None:
         """Apply dark theme styles"""
         self.setStyleSheet("""

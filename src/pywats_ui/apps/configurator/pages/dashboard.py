@@ -122,6 +122,54 @@ class DashboardPage(BasePage):
         
         self._layout.addWidget(service_group)
         
+        # === Station Information Section === (Phase 3: GUI Cleanup)
+        station_group = QGroupBox("Station Information")
+        station_layout = QVBoxLayout(station_group)
+        
+        # Info display (read-only labels)
+        from PySide6.QtWidgets import QFormLayout
+        info_form = QFormLayout()
+        info_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        
+        self._client_name_label = QLabel("--")
+        self._client_name_label.setStyleSheet("color: #dcdcaa; font-weight: bold;")
+        info_form.addRow("Client Name:", self._client_name_label)
+        
+        self._station_name_label = QLabel("--")
+        self._station_name_label.setStyleSheet("color: #dcdcaa; font-weight: bold;")
+        info_form.addRow("Station Name:", self._station_name_label)
+        
+        self._station_location_label = QLabel("--")
+        self._station_location_label.setStyleSheet("color: #dcdcaa;")
+        info_form.addRow("Location:", self._station_location_label)
+        
+        self._station_purpose_label = QLabel("--")
+        self._station_purpose_label.setStyleSheet("color: #dcdcaa;")
+        info_form.addRow("Purpose:", self._station_purpose_label)
+        
+        station_layout.addLayout(info_form)
+        
+        # GPS toggle
+        from PySide6.QtWidgets import QCheckBox
+        self._gps_enabled_cb = QCheckBox("Allow GPS location services")
+        self._gps_enabled_cb.setToolTip(
+            "When enabled, the client includes geographical coordinates with test reports"
+        )
+        self._gps_enabled_cb.stateChanged.connect(self._on_gps_changed)
+        station_layout.addWidget(self._gps_enabled_cb)
+        
+        # Edit button
+        edit_layout = QHBoxLayout()
+        self._edit_station_btn = QPushButton("Edit Station Settings")
+        self._edit_station_btn.setMinimumWidth(150)
+        self._edit_station_btn.setToolTip("Open Setup page to edit station information")
+        self._edit_station_btn.clicked.connect(self._on_edit_station)
+        edit_layout.addWidget(self._edit_station_btn)
+        edit_layout.addStretch()
+        station_layout.addLayout(edit_layout)
+        
+        self._layout.addWidget(station_group)
+        
         # === Statistics Row ===
         stats_layout = QHBoxLayout()
         
@@ -312,12 +360,68 @@ class DashboardPage(BasePage):
             self._conn_label.setText("Error reading status")
     
     def save_config(self) -> None:
-        """No config to save on dashboard (read-only display)"""
-        pass
+        """Save GPS setting (Phase 3: GUI Cleanup)"""
+        try:
+            # Save GPS setting to config
+            self._config["location_services_enabled"] = self._gps_enabled_cb.isChecked()
+            self._config.save()
+            logger.debug("GPS setting saved from Dashboard")
+        except Exception as e:
+            self.handle_error(e, "saving GPS setting")
     
     def load_config(self) -> None:
-        """Load initial dashboard state"""
-        self._refresh_status()
+        """Load initial dashboard state and station information (Phase 3: GUI Cleanup)"""
+        try:
+            # Refresh service/converter status
+            self._refresh_status()
+            
+            # Load station information
+            self._client_name_label.setText(
+                self._config.get("client_name", "Not configured")
+            )
+            self._station_name_label.setText(
+                self._config.get("station_name", "Not configured")
+            )
+            self._station_location_label.setText(
+                self._config.get("location", "Not configured")
+            )
+            self._station_purpose_label.setText(
+                self._config.get("purpose", "Not configured")
+            )
+            self._gps_enabled_cb.setChecked(
+                self._config.get("location_services_enabled", False)
+            )
+            
+            logger.debug("Dashboard configuration loaded")
+            
+        except Exception as e:
+            self.handle_error(e, "loading dashboard configuration")
+    
+    def _on_gps_changed(self, state: int) -> None:
+        """Handle GPS checkbox change (Phase 3: GUI Cleanup)"""
+        try:
+            enabled = state == Qt.CheckState.Checked.value
+            self._config["location_services_enabled"] = enabled
+            self._config.save()
+            logger.info(f"GPS location services: {enabled}")
+        except Exception as e:
+            self.handle_error(e, "saving GPS setting")
+    
+    def _on_edit_station(self) -> None:
+        """Navigate to Setup page for editing station info (Phase 3: GUI Cleanup)"""
+        # Try to navigate via main window
+        main_window = self.window()
+        if hasattr(main_window, 'navigate_to_page'):
+            main_window.navigate_to_page("Setup")
+            logger.debug("Navigated to Setup page from Dashboard")
+        else:
+            # Fallback: Show info message
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self,
+                "Edit Station Settings",
+                "Navigate to the 'Setup' page to edit station information."
+            )
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix)."""
