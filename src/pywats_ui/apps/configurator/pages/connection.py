@@ -183,6 +183,26 @@ class ConnectionPage(BasePage, OfflineCapability):
         sync_layout.addStretch()
         advanced_layout.addLayout(sync_layout)
         
+        # Proxy settings (Phase 4: GUI Cleanup - migrated from Proxy page)
+        advanced_layout.addSpacing(15)
+        proxy_separator = QLabel("─" * 50)
+        proxy_separator.setStyleSheet("color: #3c3c3c;")
+        advanced_layout.addWidget(proxy_separator)
+        
+        self._proxy_enabled_cb = QCheckBox("Use proxy server")
+        self._proxy_enabled_cb.setToolTip("Route all connections through a proxy server")
+        self._proxy_enabled_cb.stateChanged.connect(self._on_proxy_enabled_changed)
+        advanced_layout.addWidget(self._proxy_enabled_cb)
+        
+        proxy_url_layout = QHBoxLayout()
+        proxy_url_layout.addWidget(QLabel("Proxy URL:"))
+        self._proxy_url_edit = QLineEdit()
+        self._proxy_url_edit.setPlaceholderText("http://proxy.company.com:8080")
+        self._proxy_url_edit.setToolTip("Full proxy URL including protocol and port")
+        self._proxy_url_edit.textChanged.connect(self._emit_changed)
+        proxy_url_layout.addWidget(self._proxy_url_edit, 1)
+        advanced_layout.addLayout(proxy_url_layout)
+        
         self._layout.addWidget(self._advanced_group)
         
         # Add stretch to push content to top
@@ -202,6 +222,10 @@ class ConnectionPage(BasePage, OfflineCapability):
             except ValueError as e:
                 self.handle_error(e, "validating sync interval")
                 return
+            
+            # Save proxy settings (Phase 4: GUI Cleanup)
+            self.config["proxy_enabled"] = self._proxy_enabled_cb.isChecked()
+            self.config["proxy_url"] = self._proxy_url_edit.text().strip()
             
             # Save to file
             if hasattr(self.config, '_config_path') and self.config._config_path:
@@ -231,6 +255,11 @@ class ConnectionPage(BasePage, OfflineCapability):
         self._token_edit.setText(self.config.api_token)
         self._sync_interval_edit.setText(str(self.config.sync_interval_seconds))
         self._identifier_label.setText(self.config.formatted_identifier)
+        
+        # Load proxy settings (Phase 4: GUI Cleanup)
+        self._proxy_enabled_cb.setChecked(self.config.get("proxy_enabled", False))
+        self._proxy_url_edit.setText(self.config.get("proxy_url", ""))
+        self._on_proxy_enabled_changed(self._proxy_enabled_cb.checkState())  # Update enabled state
         
         # Status will be updated after auto-test
         self.update_status("Checking...")
@@ -529,6 +558,19 @@ class ConnectionPage(BasePage, OfflineCapability):
         finally:
             self._test_uut_btn.setEnabled(True)
             self._test_uut_btn.setText("Send test report")
+    
+    def _on_proxy_enabled_changed(self, state: int) -> None:
+        """Enable/disable proxy URL field based on checkbox (Phase 4: GUI Cleanup)
+        
+        Args:
+            state: Checkbox state from Qt (Checked/Unchecked)
+        """
+        enabled = state == Qt.CheckState.Checked.value
+        self._proxy_url_edit.setEnabled(enabled)
+        if enabled:
+            self._proxy_url_edit.setStyleSheet("")
+        else:
+            self._proxy_url_edit.setStyleSheet("color: #808080;")
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix)."""
