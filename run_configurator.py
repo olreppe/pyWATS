@@ -68,12 +68,27 @@ def main():
         instance_name = args.instance
         
         if args.select_instance or not instance_name:
-            # Show instance selector (pass a temporary config for reading existing instances)
-            temp_config = ClientConfig()
-            instance_name = show_instance_selector(temp_config)
-            if not instance_name:
-                logger.info("Instance selection cancelled, exiting")
-                return 0
+            # Get list of all available instances
+            from pywats_client.core.config import get_all_instance_configs
+            available_configs = get_all_instance_configs()
+            
+            if not available_configs:
+                # No existing instances - use default
+                instance_name = "default"
+                logger.info("No existing instances found, using default")
+            elif len(available_configs) == 1:
+                # Only one instance - auto-select it
+                config_path = available_configs[0]
+                temp_config = ClientConfig.load(config_path)
+                instance_name = temp_config.instance_name or "default"
+                logger.info(f"Auto-selected only instance: {instance_name}")
+            else:
+                # Multiple instances - show selector
+                temp_config = ClientConfig()
+                instance_name = show_instance_selector(temp_config, available_configs)
+                if not instance_name:
+                    logger.info("Instance selection cancelled, exiting")
+                    return 0
         
         # Load or create config for the selected instance
         instance_id = instance_name if instance_name else "default"

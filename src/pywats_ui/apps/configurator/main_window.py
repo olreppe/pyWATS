@@ -38,21 +38,24 @@ logger = get_logger(__name__)
 class InstanceSelectorDialog(QDialog):
     """Dialog for selecting which client instance to manage."""
     
-    def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, config: ClientConfig, available_configs: list = None, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._config = config
+        self._available_configs = available_configs or []
         self.setWindowTitle("Select Instance")
         self.setModal(True)
-        self.resize(400, 150)
+        self.resize(400, 200)
         self._setup_ui()
     
     def _setup_ui(self) -> None:
         """Setup dialog UI"""
+        from PySide6.QtWidgets import QComboBox
+        
         layout = QVBoxLayout(self)
         
         info_label = QLabel(
             "Multiple instances allow you to manage different stations or configurations.\n"
-            "Select or create an instance:"
+            "Select an existing instance or enter a new name:"
         )
         info_label.setWordWrap(True)
         info_label.setStyleSheet("color: #b0b0b0; padding: 10px 0;")
@@ -60,10 +63,34 @@ class InstanceSelectorDialog(QDialog):
         
         form = QFormLayout()
         
-        self._instance_edit = QLineEdit()
-        self._instance_edit.setText(self._config.get("instance_name", "default"))
-        self._instance_edit.setPlaceholderText("e.g., Production-Line-1")
-        form.addRow("Instance Name:", self._instance_edit)
+        # If available configs, show dropdown
+        if self._available_configs:
+            self._instance_combo = QComboBox()
+            self._instance_combo.setEditable(True)  # Allow custom entry
+            
+            # Load instance names from config files
+            from pywats_client.core.config import ClientConfig
+            for config_path in self._available_configs:
+                try:
+                    cfg = ClientConfig.load(config_path)
+                    instance_name = cfg.instance_name or cfg.instance_id or "default"
+                    self._instance_combo.addItem(instance_name)
+                except Exception:
+                    pass
+            
+            # Set current or default
+            current_instance = self._config.get("instance_name", "default")
+            idx = self._instance_combo.findText(current_instance)
+            if idx >= 0:
+                self._instance_combo.setCurrentIndex(idx)
+            
+            form.addRow("Instance:", self._instance_combo)
+        else:
+            # No existing instances - text input only
+            self._instance_edit = QLineEdit()
+            self._instance_edit.setText(self._config.get("instance_name", "default"))
+            self._instance_edit.setPlaceholderText("e.g., Production-Line-1")
+            form.addRow("Instance Name:", self._instance_edit)
         
         layout.addLayout(form)
         
@@ -76,7 +103,10 @@ class InstanceSelectorDialog(QDialog):
     
     def get_instance_name(self) -> str:
         """Get the selected instance name"""
-        return self._instance_edit.text().strip() or "default"
+        if hasattr(self, '_instance_combo'):
+            return self._instance_combo.currentText().strip() or "default"
+        else:
+            return self._instance_edit.text().strip() or "default"
 
 
 class ConfiguratorMainWindow(BaseMainWindow):
@@ -559,8 +589,12 @@ class ConfiguratorMainWindow(BaseMainWindow):
         super().closeEvent(event)
 
 
-def show_instance_selector(config: ClientConfig) -> Optional[str]:
+def show_instance_selector(config: ClientConfig, available_configs: list = None) -> Optional[str]:
     """Show instance selector dialog and return selected instance name.
+    
+    Args:
+        config: ClientConfig instance for defaults
+        available_configs: List of Path objects to existing config files
     
     Returns:
         Instance name if user confirmed, None if cancelled
@@ -574,7 +608,7 @@ def show_instance_selector(config: ClientConfig) -> Optional[str]:
         import sys
         temp_app = QApplication(sys.argv)
     
-    dialog = InstanceSelectorDialog(config)
+    dialog = InstanceSelectorDialog(config, available_configs)
     if dialog.exec() == QDialog.DialogCode.Accepted:
         instance_name = dialog.get_instance_name()
         if temp_app:
