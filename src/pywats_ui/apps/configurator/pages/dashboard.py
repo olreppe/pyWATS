@@ -5,10 +5,10 @@ Improvements:
 - Better error handling for status queries
 - No automatic refresh (prevents event loop blocking)
 - Manual refresh button added
+- Subprocess-based service management (services survive GUI crashes)
 """
 
 import logging
-import asyncio
 from pywats.core.logging import get_logger
 from typing import Optional, Dict, Any
 from PySide6.QtWidgets import (
@@ -21,7 +21,7 @@ from PySide6.QtGui import QColor, QFont
 
 from pywats_ui.framework import BasePage
 from pywats_client.core.config import ClientConfig
-from pywats_client.service.async_client_service import AsyncClientService
+from pywats_client.core import service_manager
 
 logger = get_logger(__name__)
 
@@ -70,8 +70,6 @@ class DashboardPage(BasePage):
     def __init__(self, config: ClientConfig, parent: Optional[QWidget] = None) -> None:
         super().__init__(config, parent)
         self._refresh_timer: Optional[QTimer] = None
-        self._service: Optional[AsyncClientService] = None  # Running service instance
-        self._service_task: Optional[asyncio.Task] = None  # Background service task
         self._setup_ui()
         self.load_config()
     
@@ -302,13 +300,28 @@ class DashboardPage(BasePage):
             # Update connection status from config
             self._update_connection_status()
             
-            # Update service status (standalone mode)
-            self._service_indicator.set_status("unknown")
-            self._service_status_label.setText("Standalone Mode")
-            self._service_status_label.setStyleSheet("color: #dcdcaa;")
-            self._uptime_label.setText("Service mode not active")
+            # Update service status from lock file (subprocess mode)
+            instance_id = self._config.get("instance_id", "default")
+            service_status = service_manager.get_service_status(instance_id)
             
-            logger.info("Dashboard status refreshed")
+            if service_status.is_running:
+                self._update_service_status("running", "Running")
+                self._start_btn.setEnabled(False)
+                self._stop_btn.setEnabled(True)
+                
+                # Update uptime
+                if service_status.started_at:
+                    uptime = service_manager.get_uptime(service_status.started_at)
+                    self._uptime_label.setText(f"Uptime: {uptime} (PID: {service_status.pid})")
+                else:
+                    self._uptime_label.setText(f"Uptime: Unknown (PID: {service_status.pid})")
+            else:
+                self._update_service_status("stopped", "Stopped")
+                self._start_btn.setEnabled(True)
+                self._stop_btn.setEnabled(False)
+                self._uptime_label.setText("Uptime: --")
+            
+            logger.debug("Dashboard status refreshed")
             
         except Exception as e:
             self.handle_error(e, "refreshing dashboard status")
@@ -447,74 +460,47 @@ class DashboardPage(BasePage):
             )
     
     def _on_start_service(self) -> None:
-        """Start the client service (GUI Cleanup: Service Management)"""
+        """Start the client service as independent process (decoupled from GUI)"""
         try:
-            # Get event loop
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            
-            # Create service instance
             instance_id = self._config.get("instance_id", "default")
-            self._service = AsyncClientService(instance_id)
+            logger.info(f"Starting service '{instance_id}' as subprocess...")
             
-            # Start service in background task
-            async def run_service():
-                try:
-                    logger.info(f"Starting client service [instance: {instance_id}]")
-                    await self._service.start()
-                    logger.info("Client service started successfully")
-                except Exception as e:
-                    logger.error(f"Service error: {e}", exc_info=True)
-                    self._update_service_status("error", f"Error: {str(e)}")
-            
-            self._service_task = loop.create_task(run_service())
-            
-            # Update UI
-            self._update_service_status("running", "Running")
-            self._start_btn.setEnabled(False)
-            self._stop_btn.setEnabled(True)
+            # Launch service as independent process (survives GUI crashes)
+            if service_manager.start_service(instance_id, wait=False):
+                logger.info(f"Service '{instance_id}' started successfully")
+                self._update_service_status("running", "Running")
+                self._start_btn.setEnabled(False)
+                self._stop_btn.setEnabled(True)
+                # Refresh to get PID and uptime
+                self._refresh_status()
+            else:
+                logger.error(f"Failed to start service '{instance_id}'")
+                self._update_service_status("error", "Failed to start")
             
         except Exception as e:
             self.handle_error(e, "starting service")
             self._update_service_status("error", f"Failed to start: {str(e)}")
     
     def _on_stop_service(self) -> None:
-        """Stop the client service (GUI Cleanup: Service Management)"""
+        """Stop the client service (independent process)"""
         try:
-            if not self._service:
-                logger.warning("No service instance to stop")
-                return
+            instance_id = self._config.get("instance_id", "default")
+            logger.info(f"Stopping service '{instance_id}'...")
             
-            # Stop service
-            async def stop_service():
-                try:
-                    logger.info("Stopping client service")
-                    await self._service.stop()
-                    logger.info("Client service stopped")
-                except Exception as e:
-                    logger.error(f"Error stopping service: {e}", exc_info=True)
-            
-            # Get event loop and run stop
-            try:
-                loop = asyncio.get_event_loop()
-                loop.create_task(stop_service())
-            except RuntimeError:
-                pass  # Event loop may not be running
-            
-            # Cancel service task
-            if self._service_task:
-                self._service_task.cancel()
-                self._service_task = None
-            
-            self._service = None
-            
-            # Update UI
-            self._update_service_status("stopped", "Stopped")
-            self._start_btn.setEnabled(True)
-            self._stop_btn.setEnabled(False)
+            # Stop service process (graceful SIGTERM/taskkill)
+            if service_manager.stop_service(instance_id, force=False):
+                logger.info(f"Service '{instance_id}' stopped successfully")
+                self._update_service_status("stopped", "Stopped")
+                self._start_btn.setEnabled(True)
+                self._stop_btn.setEnabled(False)
+                # Refresh to clear PID and uptime
+                self._refresh_status()
+            else:
+                logger.warning(f"Service '{instance_id}' was not running")
+                # Update UI anyway (in case of stale state)
+                self._update_service_status("stopped", "Stopped")
+                self._start_btn.setEnabled(True)
+                self._stop_btn.setEnabled(False)
             
         except Exception as e:
             self.handle_error(e, "stopping service")
@@ -535,12 +521,10 @@ class DashboardPage(BasePage):
     
     def cleanup(self) -> None:
         """Clean up resources (H4 fix)."""
-        # Stop service if running
-        if self._service:
-            logger.info("Stopping service during cleanup")
-            self._on_stop_service()
+        # NOTE: Do NOT stop service on cleanup - service should survive GUI exit
+        # Users can manually stop service via Stop button if needed
         
         if self._refresh_timer:
             self._refresh_timer.stop()
             self._refresh_timer = None
-        logger.debug("Dashboard cleanup complete")
+        logger.debug("Dashboard cleanup complete (service left running)")
