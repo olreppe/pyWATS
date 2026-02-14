@@ -9,21 +9,27 @@
 
 The pyWATS system uses a **decoupled architecture** where the **Service** (background worker) runs independently from the **Client** (configuration and management tools). This separation ensures reliability, scalability, and flexibility in manufacturing test environments.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    pyWATS Ecosystem                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────────┐              ┌──────────────────────┐    │
-│  │  pyWATS Client   │              │  pyWATS Service      │    │
-│  │  (Management)    │◄────────────►│  (Worker)            │    │
-│  │                  │   Controls   │                      │    │
-│  │  - Configurator  │              │  - Report Processing │    │
-│  │  - CLI Tools     │              │  - File Conversion   │    │
-│  │  - Monitoring    │              │  - Queue Management  │    │
-│  └──────────────────┘              │  - WATS Upload       │    │
-│                                     └──────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph ecosystem["pyWATS Ecosystem"]
+        subgraph client["pyWATS Client<br/>(Management)"]
+            C1["Configurator GUI"]
+            C2["CLI Tools"]
+            C3["Monitoring"]
+        end
+        
+        subgraph service["pyWATS Service<br/>(Worker)"]
+            S1["Report Processing"]
+            S2["File Conversion"]
+            S3["Queue Management"]
+            S4["WATS Upload"]
+        end
+        
+        client <--> |"Controls<br/>(subprocess)"| service
+    end
+    
+    style client fill:#2d5f8d,stroke:#1a3a5c,color:#fff
+    style service fill:#4ec9b0,stroke:#2d7a66,color:#fff
 ```
 
 ---
@@ -79,27 +85,26 @@ C:\ProgramData\pyWATS\instances\{instance_id}\
 
 ### Service Lifecycle
 
-```
-1. START
-   ├── Load config from client_config.json
-   ├── Create service.lock (PID, start time)
-   ├── Initialize AsyncClientService
-   ├── Start background tasks (watch, upload, converters)
-   └── Enter event loop (runs forever)
-
-2. RUNNING
-   ├── Watch directories for new files
-   ├── Run converters on detected files
-   ├── Queue reports for upload
-   ├── Upload to WATS server
-   └── Update lock file metadata
-
-3. STOP
-   ├── Receive SIGTERM/SIGINT signal
-   ├── Stop background tasks gracefully
-   ├── Flush upload queue
-   ├── Delete service.lock
-   └── Exit process
+```mermaid
+stateDiagram-v2
+    [*] --> START
+    START --> LoadConfig: 1. Load config from client_config.json
+    LoadConfig --> CreateLock: 2. Create service.lock (PID, start time)
+    CreateLock --> InitService: 3. Initialize AsyncClientService
+    InitService --> StartTasks: 4. Start background tasks
+    StartTasks --> RUNNING: 5. Enter event loop
+    
+    RUNNING --> WatchDirs: Watch directories
+    WatchDirs --> RunConverters: New files detected
+    RunConverters --> QueueReports: Conversion complete
+    QueueReports --> UploadWATS: Reports queued
+    UploadWATS --> RUNNING: Upload successful
+    
+    RUNNING --> STOP: SIGTERM/SIGINT received
+    STOP --> StopTasks: 1. Stop background tasks gracefully
+    StopTasks --> FlushQueue: 2. Flush upload queue
+    FlushQueue --> DeleteLock: 3. Delete service.lock
+    DeleteLock --> [*]: 4. Exit process
 ```
 
 ---
@@ -154,26 +159,35 @@ The **pyWATS Client** provides **management and monitoring tools** for pyWATS se
 
 ### Client Lifecycle
 
-```
-1. LAUNCH
-   ├── Select instance (if multiple configured)
-   ├── Load client_config.json
-   ├── Initialize GUI (PySide6/Qt6)
-   ├── Check service status (read service.lock)
-   └── Display Dashboard
-
-2. INTERACTION
-   ├── User edits configuration
-   ├── User starts/stops service (subprocess control)
-   ├── User monitors service status
-   ├── User performs manual operations
-   └── Changes saved to client_config.json
-
-3. EXIT
-   ├── User closes configurator
-   ├── GUI shutdown (Qt cleanup)
-   ├── Service keeps running (independent process) ✅
-   └── Client exits
+```mermaid
+stateDiagram-v2
+    [*] --> LAUNCH
+    LAUNCH --> SelectInstance: 1. Select instance (if multiple)
+    SelectInstance --> LoadConfig: 2. Load client_config.json
+    LoadConfig --> InitGUI: 3. Initialize GUI (PySide6/Qt6)
+    InitGUI --> CheckStatus: 4. Check service status (read service.lock)
+    CheckStatus --> Dashboard: 5. Display Dashboard
+    
+    Dashboard --> INTERACTION
+    INTERACTION --> EditConfig: User edits configuration
+    INTERACTION --> StartStop: User starts/stops service
+    INTERACTION --> Monitor: User monitors status
+    INTERACTION --> Manual: User performs manual operations
+    EditConfig --> SaveConfig: Changes saved to client_config.json
+    SaveConfig --> INTERACTION
+    StartStop --> INTERACTION
+    Monitor --> INTERACTION
+    Manual --> INTERACTION
+    
+    INTERACTION --> EXIT: User closes configurator
+    EXIT --> QtCleanup: GUI shutdown (Qt cleanup)
+    QtCleanup --> ServiceRuns: Service keeps running ✅
+    ServiceRuns --> [*]: Client exits
+    
+    note right of ServiceRuns
+        Critical: Service process
+        survives client exit!
+    end note
 ```
 
 ---
@@ -182,29 +196,33 @@ The **pyWATS Client** provides **management and monitoring tools** for pyWATS se
 
 ### Ownership Model
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Instance (Logical Unit)                                    │
-│  ├── Configuration (client_config.json) ◄─ OWNED BY BOTH   │
-│  │   - Service reads on startup                             │
-│  │   - Client reads/writes during configuration             │
-│  │                                                           │
-│  ├── Service Process (run_service.py) ◄─ OWNED BY SERVICE  │
-│  │   - Independent background process                       │
-│  │   - Survives client exit                                 │
-│  │   - PID tracked in service.lock                          │
-│  │                                                           │
-│  ├── Client Tools (Configurator) ◄─ OWNED BY CLIENT        │
-│  │   - GUI for management                                   │
-│  │   - Launches/stops service subprocess                    │
-│  │   - Transient (can exit anytime)                         │
-│  │                                                           │
-│  └── Instance Data Directories ◄─ SHARED                    │
-│      ├── queue/ ◄─ Service writes, Client reads            │
-│      ├── logs/ ◄─ Service writes, Client reads             │
-│      ├── reports/ ◄─ Service writes, Client reads          │
-│      └── converters/ ◄─ Client configures, Service executes│
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph instance["Instance (Logical Unit)"]
+        config["📄 Configuration<br/>client_config.json<br/><b>OWNED BY BOTH</b>"]
+        service["⚙️ Service Process<br/>run_service.py<br/><b>OWNED BY SERVICE</b>"]
+        client["🖥️ Client Tools<br/>Configurator<br/><b>OWNED BY CLIENT</b>"]
+        
+        subgraph datadirs["📁 Instance Data Directories (SHARED)"]
+            queue["queue/<br/>Service writes, Client reads"]
+            logs["logs/<br/>Service writes, Client reads"]
+            reports["reports/<br/>Service writes, Client reads"]
+            converters["converters/<br/>Client configures, Service executes"]
+        end
+    end
+    
+    service -->|"reads on startup"| config
+    client -->|"reads/writes"| config
+    
+    service -->|"produces"| datadirs
+    client -->|"consumes"| datadirs
+    
+    client -.->|"launches/stops<br/>(subprocess)"| service
+    
+    style config fill:#dcdcaa,stroke:#9d9d5c,color:#000
+    style service fill:#4ec9b0,stroke:#2d7a66,color:#fff
+    style client fill:#569cd6,stroke:#2d5f8d,color:#fff
+    style datadirs fill:#808080,stroke:#4d4d4d,color:#fff
 ```
 
 ### Key Principles
@@ -236,106 +254,170 @@ The **pyWATS Client** provides **management and monitoring tools** for pyWATS se
 
 ### Scenario 1: Normal Operation (GUI + Service)
 
-```
-1. User launches Configurator
-   → GUI reads client_config.json
-   → GUI displays Dashboard (service stopped)
-
-2. User clicks "Start Service"
-   → Client calls service_manager.start_service()
-   → subprocess.Popen(['python', 'run_service.py', instance_id])
-   → Service process starts (writes service.lock)
-   → GUI displays "Running" (green indicator)
-
-3. Service operates in background
-   → Processes reports, uploads to WATS
-   → Updates lock file with metadata
-   → GUI periodically refreshes status (reads lock file)
-
-4. User clicks "Stop Service"
-   → Client reads PID from service.lock
-   → Client kills process (taskkill/os.kill)
-   → Service cleanup (deletes service.lock)
-   → GUI displays "Stopped" (gray indicator)
-
-5. User closes Configurator
-   → GUI exits
-   → Service keeps running ✅ (independent process)
+```mermaid
+sequenceDiagram
+    participant User
+    participant Configurator as Configurator GUI
+    participant Config as client_config.json
+    participant Lock as service.lock
+    participant Service as Service Process
+    participant WATS as WATS Server
+    
+    User->>Configurator: 1. Launch configurator
+    Configurator->>Config: Read configuration
+    Configurator->>Lock: Check if service running
+    Lock-->>Configurator: Not found (stopped)
+    Configurator->>User: Display Dashboard (stopped)
+    
+    User->>Configurator: 2. Click "Start Service"
+    Configurator->>Service: subprocess.Popen(['run_service.py'])
+    Service->>Config: Load configuration
+    Service->>Lock: Write (PID, start time)
+    Service->>Configurator: Process started ✅
+    Configurator->>User: Display "Running" (green)
+    
+    loop Background Operations
+        Service->>Service: Watch directories
+        Service->>Service: Run converters
+        Service->>Service: Queue reports
+        Service->>WATS: Upload reports
+        Configurator->>Lock: Refresh status
+        Lock-->>Configurator: PID, uptime
+    end
+    
+    User->>Configurator: 4. Click "Stop Service"
+    Configurator->>Lock: Read PID
+    Configurator->>Service: Kill process (SIGTERM)
+    Service->>Lock: Delete lock file
+    Service->>Service: Exit
+    Configurator->>User: Display "Stopped" (gray)
+    
+    User->>Configurator: 5. Close configurator
+    Configurator->>Configurator: Qt cleanup
+    destroy Configurator
+    Note over Service: Service keeps running ✅
 ```
 
 ### Scenario 2: Headless Operation (Service Only)
 
-```
-1. Administrator launches service via command line
-   → python run_service.py default
-   → Service starts (writes service.lock)
-   → No GUI running ✅
-
-2. Service operates 24/7
-   → Processes reports continuously
-   → No user interaction needed
-   → Logs to instance/logs/
-
-3. Administrator checks status
-   → Option A: Launch Configurator (reads lock file, shows status)
-   → Option B: Check lock file manually
-   → Option C: Check logs directory
-
-4. Administrator stops service
-   → Option A: Use Configurator "Stop Service" button
-   → Option B: Kill process via PID (Get-Process, Stop-Process)
-   → Option C: Send SIGTERM (Ctrl+C if in terminal)
+```mermaid
+sequenceDiagram
+    participant Admin as Administrator
+    participant CLI as Command Line
+    participant Service as Service Process
+    participant Lock as service.lock
+    participant Logs as logs/
+    participant WATS as WATS Server
+    
+    Admin->>CLI: 1. python run_service.py default
+    CLI->>Service: Launch process
+    Service->>Lock: Write (PID, start time)
+    Service-->>Admin: Service started ✅ (No GUI)
+    
+    Note over Service,WATS: Service operates 24/7
+    loop Continuous Operation
+        Service->>Service: Process reports
+        Service->>WATS: Upload to WATS
+        Service->>Logs: Write operation logs
+    end
+    
+    Admin->>Lock: 3. Check status (cat service.lock)
+    Lock-->>Admin: {pid: 12345, started_at: ...}
+    
+    alt Option A: GUI Stop
+        Admin->>CLI: Launch configurator
+        CLI->>Lock: Read PID
+        CLI->>Service: Kill process
+    else Option B: CLI Stop
+        Admin->>Lock: Read PID
+        Admin->>Service: Stop-Process -Id 12345
+    else Option C: Terminal Stop
+        Admin->>Service: Ctrl+C (SIGTERM)
+    end
+    
+    Service->>Lock: Delete lock file
+    destroy Service
 ```
 
 ### Scenario 3: GUI Crash Recovery
 
-```
-1. Service is running (PID: 12345)
-   → service.lock exists
-   → Configurator is open (monitoring)
-
-2. Configurator crashes (bug, force close, etc.)
-   → GUI process dies
-   → Service keeps running ✅ (independent process)
-   → service.lock still exists
-
-3. User relaunches Configurator
-   → GUI reads service.lock
-   → GUI detects service is running (PID: 12345)
-   → GUI displays "Running" with correct uptime ✅
-   → Full recovery, no data loss
+```mermaid
+sequenceDiagram
+    participant User
+    participant GUI1 as Configurator (1st)
+    participant Lock as service.lock
+    participant Service as Service Process
+    participant WATS as WATS Server
+    participant GUI2 as Configurator (2nd)
+    
+    Note over Service,Lock: 1. Service running (PID: 12345)
+    Service->>Lock: Lock exists
+    User->>GUI1: Monitoring service
+    GUI1->>Lock: Read status periodically
+    
+    loop Background Work
+        Service->>WATS: Upload reports
+    end
+    
+    Note over GUI1: 2. Configurator crashes! ❌
+    destroy GUI1
+    
+    Note over Service,Lock: Service keeps running ✅
+    Service->>Lock: Lock still exists
+    Service->>WATS: Continue uploading
+    
+    User->>GUI2: 3. Relaunch configurator
+    GUI2->>Lock: Read service.lock
+    Lock-->>GUI2: {pid: 12345, started_at: 2h ago}
+    Note over GUI2: Verify PID 12345 is running
+    GUI2-->>User: Display "Running" (uptime: 2h) ✅
+    
+    Note over GUI2,Service: Full recovery! No data loss ✅
 ```
 
 ### Scenario 4: Multi-Instance Setup
 
+```mermaid
+graph TB
+    subgraph system["System Setup"]
+        subgraph inst1["Instance: default (Master)"]
+            svc1["Service<br/>PID: 12345"]
+            cfg1["client_config.json"]
+            lock1["service.lock"]
+            svc1 --> prod["https://production.wats.com<br/>(ICT Reports)"]
+        end
+        
+        subgraph inst2["Instance: client_b (Secondary)"]
+            svc2["Service<br/>PID: 12346"]
+            cfg2["client_config.json"]
+            lock2["service.lock"]
+            svc2 --> stg["https://staging.wats.com<br/>(FCT Reports)"]
+        end
+    end
+    
+    subgraph configurators["Configurator Instances"]
+        gui1["Configurator A<br/>(managing default)"]
+        gui2["Configurator B<br/>(managing client_b)"]
+    end
+    
+    gui1 -.->|"reads/writes"| cfg1
+    gui1 -.->|"monitors"| lock1
+    gui1 -.->|"controls"| svc1
+    
+    gui2 -.->|"reads/writes"| cfg2
+    gui2 -.->|"monitors"| lock2
+    gui2 -.->|"controls"| svc2
+    
+    style inst1 fill:#2d5f8d,stroke:#1a3a5c,color:#fff
+    style inst2 fill:#4ec9b0,stroke:#2d7a66,color:#fff
+    style svc1 fill:#569cd6,stroke:#2d5f8d,color:#fff
+    style svc2 fill:#569cd6,stroke:#2d5f8d,color:#fff
 ```
-System Setup:
-├── Instance "default" (Master)
-│   ├── Service running on PID 12345
-│   ├── Uploads to https://production.wats.com
-│   └── Processes ICT reports
-│
-└── Instance "client_b" (Secondary)
-    ├── Service running on PID 12346
-    ├── Uploads to https://staging.wats.com
-    └── Processes FCT reports
 
-Configurator Behavior:
-1. Launch run_configurator.py
-   → Scans C:\ProgramData\pyWATS\instances\
-   → Finds: default, client_b
-   → Shows dropdown: "Select Instance"
-   
-2. User selects "default"
-   → Loads C:\ProgramData\pyWATS\instances\default\client_config.json
-   → Reads C:\ProgramData\pyWATS\instances\default\service.lock
-   → Displays default instance dashboard (service running)
-   
-3. User can launch another Configurator
-   → run_configurator.py (select "client_b")
-   → Manages client_b instance independently ✅
-   → Two GUIs managing two services simultaneously
-```
+**Configurator Workflow:**
+1. **Launch** `run_configurator.py` → Scans `C:\ProgramData\pyWATS\instances\` → Finds: `default`, `client_b` → Shows dropdown: "Select Instance"
+2. **User selects "default"** → Loads `default/client_config.json` → Reads `default/service.lock` → Displays dashboard (service running)
+3. **Launch another Configurator** → Select "client_b" → Manages independently ✅ → **Two GUIs managing two services simultaneously**
 
 ---
 
