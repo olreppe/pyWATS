@@ -75,11 +75,16 @@ class InstanceSelectorDialog(QDialog):
             for config_path in self._available_configs:
                 try:
                     cfg = ClientConfig.load(config_path)
-                    instance_name = cfg.instance_name or cfg.instance_id or "default"
+                    # Use instance_name if set, otherwise use instance_id
+                    instance_name = cfg.instance_name if hasattr(cfg, 'instance_name') and cfg.instance_name else cfg.instance_id
+                    if not instance_name:
+                        instance_name = config_path.parent.name  # Use folder name as fallback
+                    
                     # Only add if we haven't seen this name before
                     if instance_name not in seen_names:
                         seen_names.add(instance_name)
                         self._instance_combo.addItem(instance_name)
+                        logger.debug(f"Added instance: {instance_name}")
                 except Exception as e:
                     logger.debug(f"Failed to load config {config_path}: {e}")
             

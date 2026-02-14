@@ -68,9 +68,11 @@ def main():
         instance_name = args.instance
         
         if args.select_instance or not instance_name:
-            # Get list of all available instances
-            from pywats_client.core.config import get_all_instance_configs
-            available_configs = get_all_instance_configs()
+            # Get list of instances from ~/.pywats/instances/ (matches run_client_a/b location)
+            instances_dir = Path.home() / ".pywats" / "instances"
+            available_configs = []
+            if instances_dir.exists():
+                available_configs = list(instances_dir.glob("*/client_config.json"))
             
             if not available_configs:
                 # No existing instances - use default
@@ -80,7 +82,7 @@ def main():
                 # Only one instance - auto-select it
                 config_path = available_configs[0]
                 temp_config = ClientConfig.load(config_path)
-                instance_name = temp_config.instance_name or "default"
+                instance_name = temp_config.instance_name or temp_config.instance_id or "default"
                 logger.info(f"Auto-selected only instance: {instance_name}")
             else:
                 # Multiple instances - show selector
@@ -90,16 +92,30 @@ def main():
                     logger.info("Instance selection cancelled, exiting")
                     return 0
         
-        # Load or create config for the selected instance
-        instance_id = instance_name if instance_name else "default"
-        config = ClientConfig.load_for_instance(instance_id)
+        # Load config from ~/.pywats/instances/{instance_id}/ (matches run_client_a/b)
+        # Map display name to instance_id
+        instance_id_map = {
+            "Client A (Master)": "default",
+            "Client B (Secondary)": "client_b",
+            "Test Instance": "default",
+        }
+        instance_id = instance_id_map.get(instance_name, instance_name.lower().replace(" ", "_"))
         
-        # Ensure instance_name is set in config
-        if instance_name and config.get('instance_name') != instance_name:
-            config["instance_name"] = instance_name
+        config_path = Path.home() / ".pywats" / "instances" / instance_id / "client_config.json"
+        
+        if config_path.exists():
+            config = ClientConfig.load(config_path)
+            logger.info(f"Loaded config from: {config_path}")
+        else:
+            logger.info(f"Creating new instance: {instance_id}")
+            config = ClientConfig(instance_id=instance_id)
+            config.instance_name = instance_name
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            config._config_path = config_path
             config.save()
+            logger.info(f"Config saved to: {config_path}")
         
-        logger.info(f"Starting configurator for instance: {config.get('instance_name', 'default')}")
+        logger.info(f"Starting configurator for instance: {config.instance_name} ({instance_id})")
         
         # Create and show main window
         window = ConfiguratorMainWindow(config)
