@@ -276,7 +276,7 @@ class Product(PyWATSModel):
     product_category_name: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices(
-            "productCategoryName", "product_category_name"
+            "category", "productCategoryName", "product_category_name"
         ),
         serialization_alias="productCategoryName"
     )
