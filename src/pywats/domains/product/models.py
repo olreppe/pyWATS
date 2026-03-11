@@ -229,19 +229,28 @@ class BomItem(PyWATSModel):
 class Product(PyWATSModel):
     """
     Represents a product in WATS.
+    
+    **Field availability by endpoint:**
+    
+    - **List endpoint** (`get_products()`, `get_active_products()`):
+      Returns: part_number, name, product_category_name, non_serial, state
+      Others will be None/empty
+      
+    - **Detail endpoint** (`get_product(part_number)`):
+      Returns all fields with available data
 
     Attributes:
         part_number: Part number (required)
         name: Product name
-        description: Product description
+        description: Product description (detail endpoint only)
         non_serial: Flag indicating if product can have units
         state: Active(1) or Inactive(0)
-        product_id: Unique product identifier
-        xml_data: XML document with custom key-value pairs
-        product_category_id: ID of category this product belongs to
-        product_category_name: Name of product category (read-only)
-        revisions: List of product revisions
-        tags: JSON formatted xmlData (read-only)
+        product_id: Unique product identifier (detail endpoint only)
+        xml_data: XML document with custom key-value pairs (detail endpoint only)
+        product_category_id: ID of category this product belongs to (detail endpoint only)
+        product_category_name: Name of product category (list: via 'category', detail: via 'productCategoryName')
+        revisions: List of product revisions (detail endpoint only)
+        tags: JSON formatted xmlData (detail endpoint only)
     """
     part_number: str = Field(
         ...,

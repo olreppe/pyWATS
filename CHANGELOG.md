@@ -33,6 +33,9 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 - **Result[T] Type Subscriptability**: Fixed `Result` type alias to use `TypeAlias` for proper subscripting in Python 3.12+ (src/pywats/shared/result.py)
 - **RetryConfig Type Annotations**: Corrected `pyWATS.retry_config` property type hints to use imported `CoreRetryConfig` alias (src/pywats/pywats.py)
 - **Product Category Field Mapping**: Fixed Product model to correctly map API's `"category"` field to `product_category_name` attribute (src/pywats/domains/product/models.py)
+
+### Improved  
+- **Product API Documentation**: Clarified that `get_products()` and `get_active_products()` return lightweight list data (part_number, name, category, non_serial, state only). For complete product details including description, revisions, and tags, use `get_product(part_number)` (src/pywats/domains/product/async_service.py, models.py)
 - **Comprehensive Converter Architecture Testing Suite** (79 tests, 5,500+ lines): Complete validation of converter system (Feb 13-14, 2026)
   - **Test File Generators** (`tests/fixtures/test_file_generators.py`, 24 tests): Auto-generate CSV/XML/TXT/JSON test files with realistic data
     - Batch generation: 1000+ files in seconds (550 files/sec)
