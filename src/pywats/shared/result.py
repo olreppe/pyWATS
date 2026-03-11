@@ -30,7 +30,7 @@ Usage:
     else:
         print(f"Error [{result.error_code}]: {result.message}")
 """
-from typing import TypeVar, Generic, Optional, Dict, Any, Union, List
+from typing import TypeVar, Generic, Optional, Dict, Any, Union, List, TypeAlias
 from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -180,9 +180,8 @@ class Success(BaseModel, Generic[T]):
 
 
 # Generic Result type - can be used as Result[T] in type hints
-# Note: Due to Python typing limitations, use Union[Success[T], Failure] directly
-# in function signatures when you need a subscripted Result type.
-Result = Union[Success[T], Failure]
+# TypeAlias makes this properly subscriptable in Python 3.10+
+Result: TypeAlias = Union[Success[T], Failure]
 
 
 def failure_from_exception(exc: Exception, error_code: str = "UNKNOWN_ERROR") -> Failure:

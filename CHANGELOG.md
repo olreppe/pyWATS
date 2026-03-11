@@ -28,6 +28,10 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - Default enabled for safety (configurable via `_startup_scan_enabled`)
   - Tests: 8 new tests covering scan, deduplication, TTL cleanup, stats (100% passing)
   - See `docs/guides/converter-architecture.md` for details
+
+### Fixed
+- **Result[T] Type Subscriptability**: Fixed `Result` type alias to use `TypeAlias` for proper subscripting in Python 3.12+ (src/pywats/shared/result.py)
+- **RetryConfig Type Annotations**: Corrected `pyWATS.retry_config` property type hints to use imported `CoreRetryConfig` alias (src/pywats/pywats.py)
 - **Comprehensive Converter Architecture Testing Suite** (79 tests, 5,500+ lines): Complete validation of converter system (Feb 13-14, 2026)
   - **Test File Generators** (`tests/fixtures/test_file_generators.py`, 24 tests): Auto-generate CSV/XML/TXT/JSON test files with realistic data
     - Batch generation: 1000+ files in seconds (550 files/sec)
@@ -92,7 +96,7 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Examples**: 20+ real-world code examples demonstrating best practices
 
 ### Changed
-- **GUI Cleanup for Beta Release**: Simplified Configurator navigation and improved UX (Feb 14, 2026)
+- **GUI Cleanup for Beta Release**: Simplified Configurator navigation and improved UX (Feb 14-15, 2026)
   - **Tab Reduction**: 11 tabs → 7 essential tabs (Dashboard, Connection, Converters, Setup, Serial Numbers, Log, About)
     - Removed: Software, Location, API Settings, Proxy pages (non-core for beta)
   - **File Menu**: Added File menu with Disconnect, Minimize to Tray, Exit (Ctrl+Q)
@@ -103,7 +107,38 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
   - **Connection Simplification**: Proxy settings integrated into Connection → Advanced section
     - Proxy enabled checkbox, Proxy URL field with enable/disable logic
   - **Navigation**: Added `navigate_to_page()` helper for programmatic page navigation
+  - **Shared Client Launcher** (`src/pywats_client/launcher.py`): Deduplicated run_client_a/b into shared module (Feb 15, 2026)
+    - `launch_client()` - unified entry point with tray icon, config loading, token sharing
+    - `share_token_from_instance()` - token sharing via `get_runtime_credentials()` (env var fallback)
+    - `migrate_old_config()` - automatic config migration from legacy paths
+    - `load_or_create_config()` - unified config discovery with system-wide path support
+    - Code reduction: 191+201 → 40+40 lines in run_client_a/b (312 lines removed)
+  - **Persistent Tray Icon**: Client A runs with system tray icon for minimize-to-tray and restore
+    - `set_tray_icon()` on ConfiguratorMainWindow connects launcher tray icon to window
+    - Minimize-to-tray shows notification balloon, "Show Window" restores
+  - **Autostart Script** (`scripts/setup_client_a_autostart.ps1`): Windows Task Scheduler setup for Client A
+    - Registers "pyWATS Client A" task at user logon, auto-restart on failure (3 retries)
   - **Impact**: Better UX for converter-focused beta release, improved readability at smaller screen sizes
+
+### Fixed
+- **service_tray.py syntax error**: Fixed corrupted `_stop_service()` method (garbled code at line 312) (Feb 15, 2026)
+
+### Improved
+- **Product Box Build Template Architecture**: Eliminated naming confusion by consolidating into single service implementation (Feb 19, 2026)
+  - Moved `AsyncBoxBuildTemplate` class (433 lines) into `src/pywats/domains/product/async_service.py`
+  - Combined file size: 1296 lines (comparable to analytics service at 1124 lines)
+  - Deleted 4 dead code files (1121 lines): `async_box_build.py`, `box_build.py` (referenced nonexistent `ProductServiceInternal`), `sync_box_build.py` (unused wrapper), `src/pywats/sync.py` (duplicate wrapper)
+  - Benefits: Box build template now obviously a service class, no separate imports needed, eliminates recurring AI confusion pattern
+  - Tests: All 32 product domain tests pass (100% pass rate maintained)
+  - No breaking changes: All public APIs unchanged, imports still work from `pywats.domains.product`
+- **GUI Tooltips**: Added tooltips to all interactive widgets in the Configurator (Feb 15, 2026)
+  - 7 sidebar navigation items with descriptive tooltips
+  - 3 File menu actions (Disconnect, Minimize to Tray, Exit)
+  - 5 Connection page widgets (service address, disconnect, test, API token, sync interval)
+  - Status bar connection indicator
+- **Config Persistence Tests**: 4 new tests validating credential save/reload, env var fallback, and proxy roundtrip (Feb 15, 2026)
+- **Startup Order Tests**: 3 new tests enforcing config→window→tray creation order in launcher (Feb 15, 2026)
+- **Getting-Started Guide**: Updated to reflect 7-tab layout, Connection-first setup flow, and live update workflow (Feb 15, 2026)
 - **Logger Standardization**: All modules now use `get_logger()` for consistent logging (Feb 8, 2026)
   - **Coverage**: 100% (297 files: 196 already correct, 101 updated)
   - **Pattern**: Replaced `logging.getLogger(__name__)` with `get_logger(__name__)` across all layers

@@ -130,6 +130,10 @@ class SyncServiceWrapper:
     
     Automatically wraps all async methods of the underlying service
     to run synchronously with optional timeout, retry, and correlation tracking.
+    
+    Also supports:
+    - Context manager protocol (delegates to __aenter__/__aexit__)
+    - Fluent method chaining (returns self when wrapped method returns the async object)
     """
     
     def __init__(
@@ -153,6 +157,9 @@ class SyncServiceWrapper:
         """
         Dynamically wrap async methods as sync methods.
         
+        Also wraps sync callable methods to support fluent method chaining
+        (when the method returns the wrapped async object, returns self instead).
+        
         Args:
             name: Attribute name to access
             
@@ -164,7 +171,7 @@ class SyncServiceWrapper:
         # If it's a coroutine function (async method), wrap it
         if inspect.iscoroutinefunction(attr):
             @wraps(attr)
-            def sync_wrapper(*args, **kwargs):
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
                 # Generate correlation ID if enabled
                 corr_id = None
                 if self._config.correlation_id_enabled:
@@ -176,6 +183,10 @@ class SyncServiceWrapper:
                     timeout=self._config.timeout,
                     correlation_id=corr_id
                 )
+                # Support fluent method chaining: if the async method
+                # returned self (the async object), return self (the wrapper)
+                if result is self._async:
+                    return self
                 return result
             
             # Apply retry if enabled
@@ -185,25 +196,68 @@ class SyncServiceWrapper:
             
             return sync_wrapper
         
-        # Otherwise return as-is (properties, regular methods, etc.)
+        # Wrap sync callable methods for fluent chaining support
+        if callable(attr):
+            @wraps(attr)
+            def method_wrapper(*args: Any, **kwargs: Any) -> Any:
+                result = attr(*args, **kwargs)
+                if result is self._async:
+                    return self
+                return result
+            return method_wrapper
+        
+        # Otherwise return as-is (properties, etc.)
         return attr
+    
+    # =========================================================================
+    # Context Manager Support
+    # =========================================================================
+    
+    def __enter__(self) -> 'SyncServiceWrapper':
+        """Enter context manager — delegates to __aenter__ if available."""
+        if hasattr(self._async, '__aenter__'):
+            _run_sync(self._async.__aenter__())
+        return self
+    
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[object]
+    ) -> Optional[bool]:
+        """Exit context manager — delegates to __aexit__ if available."""
+        if hasattr(self._async, '__aexit__'):
+            return _run_sync(self._async.__aexit__(exc_type, exc_val, exc_tb))
+        return None
+    
+    # =========================================================================
+    # String Representation
+    # =========================================================================
+    
+    def __repr__(self) -> str:
+        return f"Sync({self._async!r})"
+    
+    def __str__(self) -> str:
+        return str(self._async)
 
 
 class SyncProductServiceWrapper(SyncServiceWrapper):
     """
     Specialized sync wrapper for AsyncProductService.
     
-    Handles special cases like BoxBuildTemplate that need additional wrapping.
+    Handles special cases like BoxBuildTemplate that need additional wrapping:
+    when get_box_build_template/get_box_build returns an AsyncBoxBuildTemplate,
+    it is automatically wrapped in a SyncServiceWrapper for seamless sync usage.
     """
     
     def __getattr__(self, name: str) -> Any:
         """Wrap async methods, with special handling for box build."""
         attr = getattr(self._async, name)
         
-        # Special handling for box build methods
+        # Special handling for box build methods that return async objects
         if name in ('get_box_build_template', 'get_box_build'):
             @wraps(attr)
-            def box_build_wrapper(*args, **kwargs):
+            def box_build_wrapper(*args: Any, **kwargs: Any) -> Any:
                 # Generate correlation ID if enabled
                 corr_id = None
                 if self._config.correlation_id_enabled:
@@ -215,9 +269,8 @@ class SyncProductServiceWrapper(SyncServiceWrapper):
                     timeout=self._config.timeout,
                     correlation_id=corr_id
                 )
-                # Wrap result in sync wrapper
-                from .domains.product.sync_box_build import SyncBoxBuildTemplate
-                return SyncBoxBuildTemplate(async_template)
+                # Wrap result in SyncServiceWrapper for transparent sync usage
+                return SyncServiceWrapper(async_template, self._config)
             
             # Apply retry if enabled
             if self._config.retry_enabled:
@@ -783,12 +836,12 @@ class pyWATS:
         return self._error_mode
     
     @property
-    def retry_config(self) -> RetryConfig:
+    def retry_config(self) -> CoreRetryConfig:
         """Get the retry configuration."""
         return self._retry_config
     
     @retry_config.setter
-    def retry_config(self, value: RetryConfig) -> None:
+    def retry_config(self, value: CoreRetryConfig) -> None:
         """Set the retry configuration."""
         self._retry_config = value
         self._http_client.retry_config = value
