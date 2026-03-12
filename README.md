@@ -11,7 +11,7 @@ A Python library for interacting with the [WATS](https://servername.wats.com) te
 
 > **⚠️ Beta Release**: This is a beta version. The API is stabilizing but may have changes before 1.0.
 > 
-> **Please read the [Beta Disclaimer](docs/BETA_DISCLAIMER.md)** to understand the current stability levels of different components.
+> **Please read the [Beta Disclaimer](https://github.com/olreppe/pyWATS/blob/main/docs/BETA_DISCLAIMER.md)** to understand the current stability levels of different components.
 
 ## Requirements
 
@@ -33,7 +33,7 @@ A Python library for interacting with the [WATS](https://servername.wats.com) te
 
 ✅ Full support  ⚠️ Limited  ❌ Not available
 
-See [Platform Compatibility Guide](docs/platforms/platform-compatibility.md) for detailed requirements.
+See [Platform Compatibility Guide](https://github.com/olreppe/pyWATS/blob/main/docs/platforms/platform-compatibility.md) for detailed requirements.
 
 ## Features
 
@@ -106,7 +106,7 @@ Pre-built installers are available on the [Releases](https://github.com/olreppe/
 | Linux | `.deb` / `.rpm` | Ubuntu/Debian and RHEL/Rocky/Alma |
 | Linux | AppImage | Portable, no install required |
 
-See [deployment/README.md](deployment/README.md) for building installers from source.
+See [deployment/README.md](https://github.com/olreppe/pyWATS/blob/main/deployment/README.md) for building installers from source.
 
 ### From Source (Development)
 
@@ -229,7 +229,7 @@ async def main():
 asyncio.run(main())
 ```
 
-See [PERFORMANCE_OPTIMIZATIONS.md](docs/PERFORMANCE_OPTIMIZATIONS.md) for complete guide.
+See [PERFORMANCE_OPTIMIZATIONS.md](https://github.com/olreppe/pyWATS/blob/main/docs/PERFORMANCE_OPTIMIZATIONS.md) for complete guide.
 
 ### Query Reports
 
@@ -262,7 +262,7 @@ logging.getLogger('pywats').setLevel(logging.DEBUG)
 api = pyWATS(base_url="...", token="...")
 ```
 
-See [LOGGING_STRATEGY.md](LOGGING_STRATEGY.md) for comprehensive logging documentation.
+See [LOGGING_STRATEGY.md](https://github.com/olreppe/pyWATS/blob/main/LOGGING_STRATEGY.md) for comprehensive logging documentation.
 
 ## Running the GUI Client
 
@@ -313,9 +313,9 @@ python3 -m pywats_client install-service --user-agent
 ```
 
 See platform-specific guides:
-- [Windows Service Setup](docs/WINDOWS_SERVICE.md) - NSSM/sc.exe installation
-- [Linux Service Setup](docs/LINUX_SERVICE.md) - systemd for Ubuntu/Debian/RHEL
-- [macOS Service Setup](docs/MACOS_SERVICE.md) - launchd daemon/agent
+- [Windows Service Setup](https://github.com/olreppe/pyWATS/blob/main/docs/WINDOWS_SERVICE.md) - NSSM/sc.exe installation
+- [Linux Service Setup](https://github.com/olreppe/pyWATS/blob/main/docs/LINUX_SERVICE.md) - systemd for Ubuntu/Debian/RHEL
+- [macOS Service Setup](https://github.com/olreppe/pyWATS/blob/main/docs/MACOS_SERVICE.md) - launchd daemon/agent
 
 ### GUI Configuration
 
@@ -326,7 +326,7 @@ The GUI supports modular tab configuration and logging control:
 - **Multiple Instances**: Run multiple client instances with separate configurations
 - **Service Discovery**: Automatically discovers and connects to running service instances
 
-See [GUI Configuration Guide](src/pywats_client/GUI_CONFIGURATION.md) for detailed setup instructions.
+See [GUI Configuration Guide](https://github.com/olreppe/pyWATS/blob/main/src/pywats_client/GUI_CONFIGURATION.md) for detailed setup instructions.
 
 ## Running Headless (Raspberry Pi, Servers)
 
@@ -368,7 +368,7 @@ curl http://localhost:8765/config    # Get configuration
 curl -X POST http://localhost:8765/restart  # Restart services
 ```
 
-See [Headless Operation Guide](src/pywats_client/control/HEADLESS_GUIDE.md) for complete documentation.
+See [Headless Operation Guide](https://github.com/olreppe/pyWATS/blob/main/src/pywats_client/control/HEADLESS_GUIDE.md) for complete documentation.
 
 ## Project Structure
 
@@ -407,28 +407,28 @@ pyWATS/
 
 Complete guides shipped with the package:
 
-- **[Documentation Index](docs/INDEX.md)** - Complete documentation overview
+- **[Documentation Index](https://github.com/olreppe/pyWATS/blob/main/docs/INDEX.md)** - Complete documentation overview
 
 #### Domain API Reference
 
-- **[Product Domain](docs/PRODUCT.md)** - Products, revisions, BOMs, box build templates
-- **[Asset Domain](docs/ASSET.md)** - Equipment tracking, calibration, maintenance  
-- **[Production Domain](docs/PRODUCTION.md)** - Unit lifecycle, serial numbers, assembly
-- **[Report Domain](docs/REPORT.md)** - Test reports, measurements, step types
-- **[Analytics Domain](docs/ANALYTICS.md)** - Yield analysis, measurements, Unit Flow
-- **[Software Domain](docs/SOFTWARE.md)** - Package management, versioning, distribution
-- **[RootCause Domain](docs/ROOTCAUSE.md)** - Issue tracking, defect management
-- **[Process Domain](docs/PROCESS.md)** - Operation types, caching
+- **[Product Domain](https://github.com/olreppe/pyWATS/blob/main/docs/PRODUCT.md)** - Products, revisions, BOMs, box build templates
+- **[Asset Domain](https://github.com/olreppe/pyWATS/blob/main/docs/ASSET.md)** - Equipment tracking, calibration, maintenance  
+- **[Production Domain](https://github.com/olreppe/pyWATS/blob/main/docs/PRODUCTION.md)** - Unit lifecycle, serial numbers, assembly
+- **[Report Domain](https://github.com/olreppe/pyWATS/blob/main/docs/REPORT.md)** - Test reports, measurements, step types
+- **[Analytics Domain](https://github.com/olreppe/pyWATS/blob/main/docs/ANALYTICS.md)** - Yield analysis, measurements, Unit Flow
+- **[Software Domain](https://github.com/olreppe/pyWATS/blob/main/docs/SOFTWARE.md)** - Package management, versioning, distribution
+- **[RootCause Domain](https://github.com/olreppe/pyWATS/blob/main/docs/ROOTCAUSE.md)** - Issue tracking, defect management
+- **[Process Domain](https://github.com/olreppe/pyWATS/blob/main/docs/PROCESS.md)** - Operation types, caching
 
 #### Client Documentation
 
-- **[GUI Configuration](src/pywats_client/GUI_CONFIGURATION.md)** - Configure GUI tabs, logging
-- **[Headless Operation](src/pywats_client/control/HEADLESS_GUIDE.md)** - Raspberry Pi, servers, embedded
+- **[GUI Configuration](https://github.com/olreppe/pyWATS/blob/main/src/pywats_client/GUI_CONFIGURATION.md)** - Configure GUI tabs, logging
+- **[Headless Operation](https://github.com/olreppe/pyWATS/blob/main/src/pywats_client/control/HEADLESS_GUIDE.md)** - Raspberry Pi, servers, embedded
 
 ### Additional Resources
 
-- [Changelog](CHANGELOG.md) - Version history and release notes
-- [Error Catalog](docs/ERROR_CATALOG.md) - Comprehensive error reference
+- [Changelog](https://github.com/olreppe/pyWATS/blob/main/CHANGELOG.md) - Version history and release notes
+- [Error Catalog](https://github.com/olreppe/pyWATS/blob/main/docs/ERROR_CATALOG.md) - Comprehensive error reference
 
 ## Testing
 
@@ -452,15 +452,15 @@ This project is maintained by [Virinco AS](https://virinco.com).
 .\scripts\bump.ps1
 ```
 
-See [RELEASE.md](RELEASE.md) for complete details. Never manually edit versions or create tags.
+See [RELEASE.md](https://github.com/olreppe/pyWATS/blob/main/RELEASE.md) for complete details. Never manually edit versions or create tags.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](https://github.com/olreppe/pyWATS/blob/main/LICENSE) for details.
 
 ## Links
 
 - [WATS Website](https://wats.com)
 - [Virinco](https://virinco.com)
 - [GitHub Repository](https://github.com/olreppe/pyWATS)
-- [Changelog](CHANGELOG.md)
+- [Changelog](https://github.com/olreppe/pyWATS/blob/main/CHANGELOG.md)
