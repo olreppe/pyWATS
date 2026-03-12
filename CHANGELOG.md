@@ -19,6 +19,19 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ## [Unreleased]
 
+---
+
+## [0.5.0b4] - 2026-03-12
+
+### Fixed
+- **Runtime Annotation Compatibility (Python 3.10–3.13)**: Added `from __future__ import annotations` to `src/pywats/core/parallel.py`, fixing `TypeError: Union[Success[T], Failure] is not subscriptable` on Python 3.10–3.13. Root cause: `Result[T]` in function return annotations was evaluated eagerly at import time on these versions. Python 3.14 was unaffected due to PEP 649 lazy annotation evaluation. The crash occurred on any `from pywats import pyWATS` statement, before user code ran.
+- **CI Matrix**: Added Python 3.14 to GitHub Actions test matrix (`.github/workflows/test.yml`)
+
+### Added
+- **Annotation Compatibility Regression Tests** (`tests/cross_cutting/test_annotation_compatibility.py`, 13 tests): Guards against future reintroduction of runtime annotation evaluation errors across all supported Python versions (3.10–3.14)
+
+---
+
 ### Added
 - **Converter Startup File Recovery**: AsyncConverterPool now scans watch directories on startup to queue existing files, preventing data loss when files are dropped during system downtime (Feb 14, 2026)
   - Automatic scan of all converter watch directories before starting file watchers

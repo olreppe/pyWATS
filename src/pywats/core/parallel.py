@@ -33,6 +33,8 @@ Key Features:
 - Progress callback support
 - Type-safe Result[T] return type
 """
+from __future__ import annotations
+
 from typing import TypeVar, Callable, List, Optional, Any, Dict, Union, cast
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
