@@ -21,6 +21,13 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ---
 
+## [0.5.0b5] - 2026-03-12
+
+### Fixed
+- **PyPI README Links**: Converted all 23 relative markdown links in `README.md` to absolute `https://github.com/olreppe/pyWATS/blob/main/` URLs. Relative links render correctly on GitHub but resolve to non-existent `pypi.org` paths on the PyPI project page, showing 404s for all documentation references.
+
+---
+
 ## [0.5.0b4] - 2026-03-12
 
 ### Fixed
