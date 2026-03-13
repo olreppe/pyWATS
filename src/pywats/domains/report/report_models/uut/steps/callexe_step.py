@@ -39,5 +39,7 @@ class CallExeStep(Step):
     
     info: Optional[CallExeStepInfo] = Field(
         default=None,
+        validation_alias="callExe",
+        serialization_alias="callExe",
         description="CallExecutable-specific information."
     )

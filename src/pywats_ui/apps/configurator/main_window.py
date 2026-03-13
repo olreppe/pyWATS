@@ -142,17 +142,35 @@ class ConfiguratorMainWindow(BaseMainWindow):
         self._queue_manager: Optional[QueueManager] = None
         self._connection_monitor: Optional[ConnectionMonitor] = None
         self._pending_tasks: list = []
+        self._tray_icon: Optional[QWidget] = None  # SystemTrayIcon (set via set_tray_icon)
+        self._is_quitting: bool = False  # Track if actually quitting vs minimizing
+        
+        # Connection check state (background thread)
+        self._connection_ok: bool = False
+        self._bg_check_running: bool = False
         
         # Setup UI
         self._setup_window()
         self._setup_ui()
         self._setup_reliability()
         self._apply_styles()
+        
+        # Schedule delayed startup refresh (gives service time to auto-start)
+        QTimer.singleShot(3000, self._delayed_startup_refresh)
+    
+    def set_tray_icon(self, tray_icon) -> None:
+        """Set the system tray icon for minimize-to-tray support.
+        
+        Args:
+            tray_icon: A SystemTrayIcon instance (from framework.system_tray)
+        """
+        self._tray_icon = tray_icon
     
     def _setup_window(self) -> None:
         """Configure window properties"""
+        from . import __version__
         instance_name = self._config.get("instance_name", "default")
-        self.setWindowTitle(f"pyWATS Configurator - {instance_name}")
+        self.setWindowTitle(f"pyWATS Client Configurator ({__version__}) - {instance_name}")
         # Phase 2: GUI Cleanup - Reduce minimum size for better scaling
         self.setMinimumSize(800, 600)  # Industry standard minimum
         self.resize(1000, 700)          # Comfortable default
@@ -173,11 +191,19 @@ class ConfiguratorMainWindow(BaseMainWindow):
         # Disconnect action
         disconnect_action = file_menu.addAction("&Disconnect")
         disconnect_action.setStatusTip("Disconnect from WATS server")
+        disconnect_action.setToolTip("Reset connection and clear credentials")
         disconnect_action.triggered.connect(self._on_disconnect)
+        
+        # Restart service action
+        restart_action = file_menu.addAction("&Restart Service")
+        restart_action.setStatusTip("Restart the pyWATS Client service")
+        restart_action.setToolTip("Stop and restart the service (temporarily pauses file monitoring)")
+        restart_action.triggered.connect(self._on_restart_service)
         
         # Minimize to tray action
         minimize_action = file_menu.addAction("&Minimize to Tray")
         minimize_action.setStatusTip("Minimize window to system tray")
+        minimize_action.setToolTip("Hide window to system tray notification area")
         minimize_action.triggered.connect(self._on_minimize_to_tray)
         
         file_menu.addSeparator()
@@ -186,6 +212,7 @@ class ConfiguratorMainWindow(BaseMainWindow):
         exit_action = file_menu.addAction("E&xit")
         exit_action.setShortcut("Ctrl+Q")
         exit_action.setStatusTip("Exit application")
+        exit_action.setToolTip("Close configurator and stop background tasks")
         exit_action.triggered.connect(self.close)
     
     def _setup_ui(self) -> None:
@@ -224,22 +251,7 @@ class ConfiguratorMainWindow(BaseMainWindow):
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
         
-        # Logo/Title area
-        logo_frame = QFrame()
-        logo_layout = QHBoxLayout(logo_frame)
-        logo_layout.setContentsMargins(15, 15, 15, 15)
-        
-        # Logo icon
-        logo_icon = QLabel("🔧")
-        logo_icon.setStyleSheet("font-size: 24px;")
-        logo_layout.addWidget(logo_icon)
-        
-        title_label = QLabel("Configurator")
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #ffffff;")
-        logo_layout.addWidget(title_label)
-        logo_layout.addStretch()
-        
-        sidebar_layout.addWidget(logo_frame)
+        # No logo/title area (removed wrench icon and 'Configurator' label)
         
         # Navigation list
         self._nav_list = QListWidget()
@@ -247,18 +259,19 @@ class ConfiguratorMainWindow(BaseMainWindow):
         
         # Build navigation items (Phase 1: GUI Cleanup)
         nav_items = [
-            "Dashboard",      # Default start page
-            "Connection",     # Server connection
-            "Converters",     # Core feature
-            "Setup",          # Station configuration
-            "Serial Numbers", # Converter-related
-            "Log",            # Troubleshooting
-            "About"           # Info
+            ("Dashboard", "Service status, station info, and health overview"),
+            ("Connection", "Server address, credentials, and connection testing"),
+            ("Converters", "File converter configuration and monitoring"),
+            ("Setup", "Station name, location, and general settings"),
+            ("Serial Numbers", "Serial number handler configuration"),
+            ("Log", "View application and converter logs"),
+            ("About", "Version, system info, and license"),
         ]
         
-        for name in nav_items:
+        for name, tooltip in nav_items:
             item = QListWidgetItem(name)
             item.setData(Qt.ItemDataRole.UserRole, name)
+            item.setToolTip(tooltip)
             item.setSizeHint(QSize(0, 50))
             self._nav_list.addItem(item)
         
@@ -325,6 +338,7 @@ class ConfiguratorMainWindow(BaseMainWindow):
         # Connection status label
         self._connection_status_label = QLabel("⚪ Initializing...")
         self._connection_status_label.setStyleSheet("color: #808080; padding: 5px;")
+        self._connection_status_label.setToolTip("Current connection status to the WATS server")
         status_bar.addPermanentWidget(self._connection_status_label)
         
         status_bar.showMessage("Ready")
@@ -340,6 +354,11 @@ class ConfiguratorMainWindow(BaseMainWindow):
                 retry_interval_ms=30000,
                 max_retries=10
             )
+            
+            # Inject queue manager into ConnectionPage (created before reliability init)
+            connection_page = self._pages.get("Connection")
+            if connection_page and hasattr(connection_page, 'queue_manager'):
+                connection_page.queue_manager = self._queue_manager
             
             # Initialize connection monitor (FIX C3: add required callbacks)
             service_address = self._config.get("service_address", "")
@@ -363,29 +382,39 @@ class ConfiguratorMainWindow(BaseMainWindow):
                 "Some features may not work correctly."
             )
     
-    async def _send_queued_operation(self, operation: dict) -> None:
-        """Send queued operation (callback for QueueManager).
+    async def _send_queued_operation(self, operation_data: dict) -> None:
+        """Send queued operation via HTTP (callback for QueueManager).
         
-        Args:
-            operation: Operation dict with 'type' and 'data' keys
+        The QueueManager calls this with operation.data which contains:
+          - url: Full API endpoint URL
+          - report: The report payload dict
+          - headers: HTTP headers dict
             
         Raises:
-            Exception if send fails (triggers retry)
+            Exception if send fails (triggers retry in QueueManager)
         """
-        operation_type = operation.get("type")
-        data = operation.get("data", {})
+        import httpx
         
-        logger.debug(f"Sending queued operation: {operation_type}")
+        url = operation_data.get("url", "")
+        report = operation_data.get("report")
+        headers = operation_data.get("headers", {})
         
-        # For now, just log - specific send logic will be added later
-        # This prevents QueueManager initialization errors
-        if operation_type == "send_report":
-            logger.info(f"Would send report: {data.get('serial_number', 'unknown')}")
-        else:
-            logger.info(f"Would send operation: {operation_type}")
+        if not url or not report:
+            raise ValueError(f"Invalid queued operation: missing url or report data")
+        
+        logger.info(f"Sending queued report to {url} (SN: {report.get('sn', '?')})")
+        
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            response = await client.post(url, json=report, headers=headers)
+            response.raise_for_status()
+        
+        logger.info(f"Queued report sent successfully: {response.status_code}")
     
     def _on_connection_status_changed(self, status: 'ConnectionStatus') -> None:
         """Handle connection status change from ConnectionMonitor.
+        
+        Propagates status to status bar, Dashboard, and Connection pages
+        so all status labels stay consistent.
         
         Args:
             status: ConnectionStatus enum value (CONNECTED, DISCONNECTED, CONNECTING, RECONNECTING)
@@ -395,24 +424,93 @@ class ConfiguratorMainWindow(BaseMainWindow):
         is_connected = (status == ConnectionStatus.CONNECTED)
         message = f"Connection {status.value}"
         
+        # Update status bar
         if is_connected:
             self._connection_status_label.setText(f"🟢 {message}")
             self._connection_status_label.setStyleSheet("color: #4ec9b0; padding: 5px;")
         else:
             self._connection_status_label.setText(f"🔴 {message}")
             self._connection_status_label.setStyleSheet("color: #f48771; padding: 5px;")
+        
+        # Propagate to Dashboard page (server connection section)
+        dashboard = self._pages.get("Dashboard")
+        if dashboard and hasattr(dashboard, '_conn_indicator'):
+            if is_connected:
+                dashboard._conn_indicator.set_status("running")
+                dashboard._conn_label.setText(f"Connected: {self._config.service_address}")
+                dashboard._conn_label.setStyleSheet("color: #4ec9b0;")
+            elif status == ConnectionStatus.RECONNECTING:
+                dashboard._conn_indicator.set_status("unknown")
+                dashboard._conn_label.setText("Reconnecting...")
+                dashboard._conn_label.setStyleSheet("color: #dcdcaa;")
+            else:
+                dashboard._conn_indicator.set_status("stopped")
+                dashboard._conn_label.setText(f"Disconnected ({self._config.service_address})")
+                dashboard._conn_label.setStyleSheet("color: #808080;")
+        
+        # Propagate to Connection page
+        connection_page = self._pages.get("Connection")
+        if connection_page and hasattr(connection_page, 'update_status'):
+            if is_connected:
+                connection_page.update_status("Online")
+            elif status == ConnectionStatus.RECONNECTING:
+                connection_page.update_status("Connecting")
+            else:
+                connection_page.update_status("Offline")
     
     def _check_connection(self) -> bool:
-        """Check if service connection is available (callback for ConnectionMonitor).
+        """Non-blocking connection check (callback for ConnectionMonitor).
+        
+        Returns cached result instantly. Actual HTTP check runs in a
+        background thread to avoid blocking the Qt event loop.
         
         Returns:
-            True if connected, False otherwise
+            True if last check succeeded, False otherwise
         """
-        # Simple check: if we have server address and token, we consider it "configured"
-        # A more sophisticated check could ping the service
-        has_address = bool(self._config.service_address)
-        has_token = bool(self._config.api_token)
-        return has_address and has_token
+        url = self._config.service_address
+        token = self._config.api_token
+        
+        if not url or not token:
+            self._connection_ok = False
+            return False
+        
+        # Start background HTTP check if not already running
+        if not self._bg_check_running:
+            self._bg_check_running = True
+            import threading
+            threading.Thread(
+                target=self._bg_connection_check,
+                daemon=True,
+                name="ConnectionCheck"
+            ).start()
+        
+        return self._connection_ok
+    
+    def _bg_connection_check(self) -> None:
+        """Background thread: performs actual HTTP check and updates cached result."""
+        try:
+            import httpx
+            url = self._config.service_address
+            token = self._config.api_token
+            test_url = f"{url.rstrip('/')}/api/Report/wats/info"
+            headers = {"Authorization": f"Bearer {token}"}
+            with httpx.Client(timeout=5.0, follow_redirects=True) as client:
+                response = client.get(test_url, headers=headers)
+                self._connection_ok = (response.status_code == 200)
+        except Exception:
+            self._connection_ok = False
+        finally:
+            self._bg_check_running = False
+    
+    def _delayed_startup_refresh(self) -> None:
+        """Refresh Dashboard after startup delay (gives service time to auto-start)."""
+        try:
+            dashboard = self._pages.get("Dashboard")
+            if dashboard and hasattr(dashboard, '_refresh_status'):
+                dashboard._refresh_status()
+                logger.debug("Delayed startup refresh completed")
+        except Exception as e:
+            logger.debug(f"Delayed startup refresh failed: {e}")
     
     async def _connect_to_service(self) -> None:
         """Establish connection to service (callback for ConnectionMonitor).
@@ -531,23 +629,101 @@ class ConfiguratorMainWindow(BaseMainWindow):
                 logger.exception(f"Failed to disconnect: {e}")
                 QMessageBox.warning(self, "Disconnect Error", f"Failed to disconnect:\n{e}")
     
+    def _on_restart_service(self) -> None:
+        """Restart the pyWATS Client service (File → Restart Service)"""
+        reply = QMessageBox.question(
+            self,
+            "Restart Service",
+            "Restart the pyWATS Client service?\n\n"
+            "This will temporarily pause file monitoring and uploads.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # Run async restart in background
+            asyncio.create_task(self._async_restart_service())
+    
+    async def _async_restart_service(self) -> None:
+        """Async restart service using ServiceManager"""
+        from pywats_client.service_manager import ServiceManager
+        
+        try:
+            # Show progress
+            self.statusBar().showMessage("Restarting service...")
+            
+            # Get instance ID from config
+            instance_id = self._config.get("instance_id", "default")
+            
+            # Run restart in thread pool to avoid blocking UI
+            loop = asyncio.get_event_loop()
+            service_manager = ServiceManager(instance_id)
+            success = await loop.run_in_executor(None, service_manager.restart)
+            
+            if success:
+                self.statusBar().showMessage("Service restarted successfully", 5000)
+                QMessageBox.information(
+                    self,
+                    "Service Restarted",
+                    "Service restarted successfully.\n\n"
+                    "File monitoring and uploads will resume shortly."
+                )
+                logger.info("Service restarted successfully")
+                
+                # Give service time to start, then refresh status
+                await asyncio.sleep(2)
+                if hasattr(self, '_delayed_startup_refresh'):
+                    self._delayed_startup_refresh()
+            else:
+                self.statusBar().showMessage("Service restart failed", 5000)
+                QMessageBox.critical(
+                    self,
+                    "Restart Failed",
+                    "Failed to restart service. Check logs for details."
+                )
+                logger.error("Service restart failed")
+                
+        except Exception as e:
+            logger.error(f"Error restarting service: {e}", exc_info=True)
+            self.statusBar().showMessage("Service restart error", 5000)
+            QMessageBox.critical(
+                self,
+                "Restart Error",
+                f"Error restarting service:\n{e}"
+            )
+    
     def _on_minimize_to_tray(self) -> None:
-        """Minimize to system tray (File → Minimize to Tray) - Phase 1: GUI Cleanup"""
-        # Check if system tray is available
+        """Minimize to system tray (File -> Minimize to Tray)"""
         from PySide6.QtWidgets import QSystemTrayIcon
         
-        if QSystemTrayIcon.isSystemTrayAvailable():
-            # Hide window (system tray integration can be improved later)
+        if self._tray_icon is not None and QSystemTrayIcon.isSystemTrayAvailable():
             self.hide()
+            self._tray_icon.showMessage(
+                "pyWATS Client",
+                "Minimized to tray. Click the tray icon to restore.",
+                QSystemTrayIcon.MessageIcon.Information,
+                2000
+            )
             logger.debug("Minimized to system tray")
-            # TODO: Implement full system tray integration with icon and menu
+        elif QSystemTrayIcon.isSystemTrayAvailable():
+            # No tray icon set - just hide (basic mode)
+            self.hide()
+            logger.debug("Minimized to system tray (no tray icon configured)")
         else:
             # Fallback to regular minimize
             self.showMinimized()
             logger.debug("System tray not available, minimized to taskbar")
     
     def closeEvent(self, event: QCloseEvent) -> None:
-        """Handle window close - cleanup resources (H4 fix)"""
+        """Handle window close - minimize to tray unless quitting."""
+        # If not really quitting, minimize to tray instead
+        if not self._is_quitting and self._tray_icon:
+            event.ignore()
+            self.hide()
+            logger.info("Configurator minimized to system tray")
+            return
+        
+        # Really quitting - do full cleanup
         try:
             logger.info("Configurator window closing, cleaning up...")
             
@@ -603,6 +779,11 @@ class ConfiguratorMainWindow(BaseMainWindow):
             logger.exception(f"Error during cleanup: {e}")
         
         super().closeEvent(event)
+    
+    def quit_application(self) -> None:
+        """Quit the application (actually close, not minimize to tray)."""
+        self._is_quitting = True
+        self.close()
 
 
 def show_instance_selector(config: ClientConfig, available_configs: list = None) -> Optional[str]:

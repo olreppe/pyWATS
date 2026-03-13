@@ -1162,14 +1162,26 @@ class ConvertersPageV2(BasePage):
         try:
             self._folder_edit.setText(self.config.converters_folder)
             
-            # Auto-initialize default converters on first run if none exist
+            # Silently initialize default converters on first run if none exist
+            # (No dialog - use "Setup Defaults" button for manual initialization)
             if not self.config.converters:
-                self._initialize_default_converters()
+                self._initialize_default_converters_silent()
             
             self._refresh_list()
         except Exception as e:
             # H1: Handle config loading errors
             self.handle_error(e, "loading converter configuration")
+    
+    def _initialize_default_converters_silent(self) -> None:
+        """Silently initialize default converters on first run (no dialog)"""
+        try:
+            data_path = self.config.data_path
+            default_configs = create_default_converter_configs(data_path)
+            self.config.converters = default_configs
+            self._emit_changed()
+            logger.info(f"Initialized {len(default_configs)} default converter configurations")
+        except Exception as e:
+            logger.error(f"Failed to initialize default converters: {e}")
     
     def _initialize_default_converters(self) -> None:
         """Initialize default standard converters with ProgramData folders (H1: with error handling)"""

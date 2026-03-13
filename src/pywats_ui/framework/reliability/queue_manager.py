@@ -300,7 +300,10 @@ class QueueManager(QObject):
                 
                 for file_path in pending_files:
                     operation_id = file_path.stem
-                    asyncio.create_task(self._send_operation(operation_id))
+                    try:
+                        asyncio.create_task(self._send_operation(operation_id))
+                    except RuntimeError as e:
+                        logger.warning(f"Could not schedule send for {operation_id} (no event loop): {e}")
                     
         except Exception as e:
             logger.exception(f"Error processing queue: {e}")

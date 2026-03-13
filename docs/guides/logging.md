@@ -225,7 +225,7 @@ Configure unified logging for client applications.
 **Returns:** Path to pywats.log file
 
 **Log Location:**
-- Windows: `C:\ProgramData\pyWATS\{instance_id}\pywats.log`
+- Windows: `C:\ProgramData/Virinco/pyWATS\{instance_id}\pywats.log`
 - Linux: `~/.pywats/{instance_id}/pywats.log`
 
 **Example:**
@@ -259,7 +259,7 @@ Get the directory for conversion logs.
 from pywats_client.core.logging import get_conversion_log_dir
 
 log_dir = get_conversion_log_dir("production")
-# Returns: C:\ProgramData\pyWATS\production\logs\conversions
+# Returns: C:\ProgramData/Virinco/pyWATS\production\logs\conversions
 ```
 
 #### `cleanup_old_conversion_logs()`

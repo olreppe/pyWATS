@@ -308,12 +308,9 @@ class ServiceTrayIcon(QObject):
         """Stop the service"""
         from PySide6.QtWidgets import QMessageBox
         
-        if not self._service_cusing ServiceManager"""
-        try:
-            # Run stop in thread pool to avoid blocking
-            loop = asyncio.get_event_loop()
-            success = await loop.run_in_executor(None, self._service_manager.stop)
-            
+        if not self._service_connected:
+            QMessageBox.warning(
+                None,
                 "Service Not Connected",
                 "Cannot stop service: not connected."
             )

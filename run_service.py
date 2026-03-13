@@ -11,7 +11,7 @@ Features:
 - Can be managed via CLI or GUI
 
 Lock File Location:
-- Windows: C:/ProgramData/pyWATS/instances/{instance_id}/service.lock
+- Windows: C:/ProgramData/Virinco/pyWATS/instances/{instance_id}/service.lock
 - Linux: /var/lib/pywats/instances/{instance_id}/service.lock
 
 Usage:
@@ -148,7 +148,7 @@ async def run_service(instance_id: str, config_path: Path, instance_dir: Path) -
         logger.info(f"Service URL: {config.service_address or 'Not configured'}")
         logger.info("=" * 80)
         
-        service = AsyncClientService(instance_id)
+        service = AsyncClientService(instance_id, config=config)
         
         # Setup signal handlers for graceful shutdown
         shutdown_event = asyncio.Event()
@@ -201,7 +201,7 @@ def main():
     
     # Get system-wide instance directory
     if os.name == 'nt':
-        base_path = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS' / 'instances'
+        base_path = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'Virinco' / 'pyWATS' / 'instances'
     else:
         base_path = Path('/var/lib/pywats/instances')
     

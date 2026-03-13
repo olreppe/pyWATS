@@ -45,18 +45,6 @@ from pywats_client.converters.models import (
 from pywats.domains.report.report_models import UUTReport, UURReport
 
 
-# Step type mapping from WSJF to WATS internal format
-STEP_TYPE_MAP = {
-    "SequenceCall": "SEQ",
-    "ET_NLT": "NT",
-    "ET_MNLT": "NT",
-    "ET_PFT": "PF",
-    "ET_SVT": "ST",
-    "ET_A": "GEN",
-    "ET_GEN": "GEN",
-}
-
-
 class WATSStandardJsonConverter(FileConverter):
     """
     Converts WATS Standard JSON Format (WSJF) files to WATS reports.
@@ -65,6 +53,13 @@ class WATSStandardJsonConverter(FileConverter):
     - JSON file with .json extension
     - Contains required WSJF fields: type, pn/partNumber, sn/serialNumber, root
     """
+    
+    def __init__(self):
+        """Initialize converter with default post-process action"""
+        from ..models import PostProcessAction
+        super().__init__()
+        self.post_process_action = PostProcessAction.MOVE
+        self.archive_path = None  # Set by async_converter_pool from config
     
     @property
     def name(self) -> str:
@@ -159,7 +154,11 @@ class WATSStandardJsonConverter(FileConverter):
             return ValidationResult.no_match(f"Error reading file: {e}")
     
     def convert(self, source: ConverterSource, context: ConverterContext) -> ConverterResult:
-        """Convert WSJF file to WATS report"""
+        """
+        Convert WSJF file to WATS report with legacy format tolerance.
+        
+        Sanitizes legacy WSJF data and applies API model defaults for missing fields.
+        """
         if not source.path:
             return ConverterResult.failed_result(error="No file path provided")
         
@@ -167,186 +166,142 @@ class WATSStandardJsonConverter(FileConverter):
             with open(source.path, 'r', encoding='utf-8') as f:
                 wsjf_data = json.load(f)
             
-            return self._convert_wsjf(wsjf_data, source, context)
+            # Sanitize data before validation
+            self._sanitize_wsjf_data(wsjf_data, context)
+            print(f"[DEBUG] Sanitization complete")
+            
+            # Detect report type: UUT (test) or UUR (repair)
+            report_type = wsjf_data.get('type', 'T')
+            is_uur = report_type in ('U', 'UUR', 'R', 'Repair')
+            print(f"[DEBUG] Report type: {report_type}, is_uur: {is_uur}")
+            
+            # Let Pydantic do validation with sanitized data
+            try:
+                if is_uur:
+                    validated_report: Union[UUTReport, UURReport] = UURReport.model_validate(wsjf_data)
+                else:
+                    validated_report = UUTReport.model_validate(wsjf_data)
+                print(f"[DEBUG] Validation successful")
+            except Exception as validation_error:
+                print(f"[DEBUG] Validation failed: {validation_error}")
+                return ConverterResult.failed_result(
+                    error=f"WSJF validation failed: {validation_error}"
+                )
+            
+            print(f"[DEBUG] Returning success result")
+            return ConverterResult.success_result(
+                report=validated_report,
+                post_action=PostProcessAction.MOVE,
+            )
             
         except json.JSONDecodeError as e:
             return ConverterResult.failed_result(error=f"Invalid JSON: {e}")
         except Exception as e:
             return ConverterResult.failed_result(error=f"Conversion error: {e}")
     
-    def _convert_wsjf(
-        self,
-        wsjf_data: Dict[str, Any],
-        source: ConverterSource,
-        context: ConverterContext
-    ) -> ConverterResult:
-        """Convert WSJF data to WATS report format"""
+    def _sanitize_wsjf_data(self, data: Dict[str, Any], context: ConverterContext) -> None:
+        """
+        Sanitize WSJF data for API compatibility.
         
-        default_process_code = context.get_argument("defaultProcessCode", "10")
+        - Removes legacy fields not in current API models
+        - Applies defaults from API models for missing required fields
+        - Uses "" for missing string fields with no API default
+        - Recursively cleans nested structures
+        """
+        print(f"[DEBUG] _sanitize_wsjf_data called for SN: {data.get('sn', 'N/A')}")
         
-        # Build report from WSJF data
-        report: Dict[str, Any] = {}
+        # Legacy fields that don't exist in current API - remove them
+        legacy_fields = ['num', 'passed', 'failed', 'startingIndex', 'endingIndex']
+        for field in legacy_fields:
+            data.pop(field, None)
         
-        # Map type field - WSJF uses 'T' for Test/UUT, 'R' or 'U' for Repair/UUR
-        report_type = wsjf_data.get('type', 'T')
-        if report_type in ('Test', 'UUT', 'T'):
-            report['type'] = 'T'
-        elif report_type in ('Repair', 'UUR', 'R', 'U'):
-            report['type'] = 'R'
-        else:
-            report['type'] = report_type
+        # Apply API model defaults for missing required fields
+        # Report level defaults
+        if 'type' not in data or not data['type']:
+            data['type'] = 'T'
+        if 'result' not in data or not data['result']:
+            data['result'] = 'P'
+        if 'rev' not in data or not data['rev']:
+            data['rev'] = "-"
+        if 'processCode' not in data or data['processCode'] is None:
+            data['processCode'] = int(context.get_argument("defaultProcessCode", "10"))
+        if 'machineName' not in data or not data['machineName']:
+            data['machineName'] = "-"
+        if 'location' not in data or not data['location']:
+            data['location'] = "-"
+        if 'purpose' not in data or not data['purpose']:
+            data['purpose'] = "-"
         
-        # Direct field copies (WSJF field names match UUTReport model)
-        direct_fields = [
-            'id', 'pn', 'sn', 'rev', 'processCode', 'processName',
-            'machineName', 'location', 'purpose', 'start', 'startUTC',
-        ]
-        for field in direct_fields:
-            if field in wsjf_data and wsjf_data[field] is not None:
-                report[field] = wsjf_data[field]
+        # Clean root step if present
+        if 'root' in data and isinstance(data['root'], dict):
+            self._sanitize_step(data['root'])
         
-        # Handle alternate field names (for backwards compatibility)
-        if 'partNumber' in wsjf_data:
-            report['pn'] = wsjf_data['partNumber']
-        if 'serialNumber' in wsjf_data:
-            report['sn'] = wsjf_data['serialNumber']
-        if 'partRevision' in wsjf_data:
-            report['rev'] = wsjf_data['partRevision']
-        
-        # Set default process code if not provided
-        if 'processCode' not in report:
-            report['processCode'] = default_process_code
-        
-        # Map result
-        result = wsjf_data.get('result', 'P')
-        if result in ('P', 'Passed', 'Pass'):
-            report['result'] = 'P'
-        elif result in ('F', 'Failed', 'Fail'):
-            report['result'] = 'F'
-        elif result in ('E', 'Error'):
-            report['result'] = 'E'
-        elif result in ('T', 'Terminated'):
-            report['result'] = 'T'
-        else:
-            report['result'] = result
-        
-        # Handle UUT info fields (nested in 'uut' object)
-        if 'uut' in wsjf_data and wsjf_data['uut']:
-            report['uut'] = wsjf_data['uut']
-        
-        # Handle misc infos
-        if 'miscInfos' in wsjf_data:
-            report['miscInfos'] = wsjf_data['miscInfos']
-        
-        # Handle UUT parts (subunits)
-        if 'uutParts' in wsjf_data:
-            report['uutParts'] = wsjf_data['uutParts']
-        elif 'subUnits' in wsjf_data:
-            report['uutParts'] = wsjf_data['subUnits']
-        
-        # Convert step tree
-        if 'root' in wsjf_data and wsjf_data['root']:
-            report['root'] = self._convert_step(wsjf_data['root'])
-        else:
-            # Create empty root
-            report['root'] = {
-                "stepType": "SequenceCall",
-                "name": "Root",
-                "status": "Done",
-                "steps": []
-            }
-        
-        # Parse dict into proper report model
-        # Check if this is a UUR (repair) report or UUT (test) report
-        report_type = wsjf_data.get('type', 'T')
-        is_uur = report_type in ('U', 'UUR', 'R', 'Repair')
-        
-        try:
-            if is_uur:
-                validated_report: Union[UUTReport, UURReport] = UURReport.model_validate(report)
-            else:
-                validated_report = UUTReport.model_validate(report)
-        except Exception as e:
-            return ConverterResult.failed_result(
-                error=f"Failed to validate report model: {e}"
-            )
-        
-        return ConverterResult.success_result(
-            report=validated_report,
-            post_action=PostProcessAction.MOVE,
-        )
+        # Clean unit/uut if present
+        if 'unit' in data and isinstance(data['unit'], dict):
+            self._sanitize_unit(data['unit'])
+        if 'uut' in data and isinstance(data['uut'], dict):
+            self._sanitize_unit(data['uut'])
     
-    def _convert_step(self, wsjf_step: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert a WSJF step to WATS step format"""
+    def _sanitize_step(self, step: Dict[str, Any]) -> None:
+        """
+        Sanitize a step object recursively.
         
-        step_type = wsjf_step.get('stepType', 'SequenceCall')
+        Removes legacy summary fields from steps but preserves loop summary fields.
+        """
+        # Remove legacy fields from step level ONLY (not from loop objects)
+        # These fields are not in the Step model but may be in legacy WSJF
+        legacy_step_fields = ['num', 'passed', 'failed', 'startingIndex', 'endingIndex']
+        for field in legacy_step_fields:
+            step.pop(field, None)
         
-        step: Dict[str, Any] = {
-            "stepType": step_type,
-            "name": wsjf_step.get('name', 'Step'),
-        }
+        # Apply step defaults
+        if 'name' not in step or not step['name']:
+            step['name'] = "Step"
+        if 'stepType' not in step or not step['stepType']:
+            step['stepType'] = "SequenceCall"
+        if 'status' not in step or not step['status']:
+            step['status'] = "Passed"
+        if 'group' not in step or not step['group']:
+            step['group'] = "M"
         
-        # Copy common fields
-        common_fields = ['id', 'group', 'status', 'errorCode', 'errorMessage', 
-                        'reportText', 'start', 'totTime', 'tsGuid', 
-                        'causedSeqFailure', 'causedUUTFailure']
-        for field in common_fields:
-            if field in wsjf_step and wsjf_step[field] is not None:
-                step[field] = wsjf_step[field]
+        # Preserve loop object if it exists - DO NOT remove loop summary fields!
+        # WSJF legacy files have 'loop' (lowercase) with either:
+        #   - Summary fields (num, passed, failed, endingIndex) for Summary Steps
+        #   - Index fields (idx) for Index Steps
+        # DON'T add defaults - let WATS server validate what's actually there
+        if 'loop' in step and isinstance(step['loop'], dict):
+            loop = step['loop']
+            # Only set defaults for fields that are missing AND that might be expected
+            # Don't force defaults that create "Cannot have X in Index Step" errors
+            pass  # Keep loop as-is from source file
         
-        # Handle step-type-specific data
-        if step_type == 'SequenceCall':
-            step["stepType"] = "SequenceCall"
-            step["steps"] = []
-            if 'steps' in wsjf_step and wsjf_step['steps']:
-                for child_step in wsjf_step['steps']:
-                    converted = self._convert_step(child_step)
-                    step["steps"].append(converted)
+        # Fix numeric measurements - ensure unit field exists
+        if 'numericMeas' in step and isinstance(step['numericMeas'], list):
+            for meas in step['numericMeas']:
+                if isinstance(meas, dict):
+                    if 'unit' not in meas or not meas['unit']:
+                        meas['unit'] = ""
         
-        elif step_type in ('ET_NLT', 'ET_MNLT'):
-            # Numeric limit test - copy numericMeas array
-            if 'numericMeas' in wsjf_step:
-                step["numericMeas"] = wsjf_step['numericMeas']
+        # Fix chart objects - ensure required string fields are non-empty
+        if 'chart' in step and isinstance(step['chart'], dict):
+            chart = step['chart']
+            if 'yLabel' not in chart or not chart['yLabel']:
+                chart['yLabel'] = "-"
+            if 'xLabel' not in chart or not chart['xLabel']:
+                chart['xLabel'] = "-"
+            if 'name' not in chart or not chart['name']:
+                chart['name'] = "-"
         
-        elif step_type == 'ET_PFT':
-            # Pass/fail test - copy booleanMeas array
-            if 'booleanMeas' in wsjf_step:
-                step["booleanMeas"] = wsjf_step['booleanMeas']
-        
-        elif step_type == 'ET_SVT':
-            # String value test - copy stringMeas array
-            if 'stringMeas' in wsjf_step:
-                step["stringMeas"] = wsjf_step['stringMeas']
-        
-        elif step_type in ('ET_A', 'ET_GEN'):
-            # Action/Generic step
-            if 'genStepType' in wsjf_step:
-                step["genStepType"] = wsjf_step['genStepType']
-        
-        # Handle charts
-        if 'chart' in wsjf_step and wsjf_step['chart']:
-            step["chart"] = wsjf_step['chart']
-        
-        # Handle attachments
-        if 'attachments' in wsjf_step and wsjf_step['attachments']:
-            step["attachments"] = wsjf_step['attachments']
-        
-        return step
+        # Recursively clean child steps
+        if 'steps' in step and isinstance(step['steps'], list):
+            for child_step in step['steps']:
+                if isinstance(child_step, dict):
+                    self._sanitize_step(child_step)
     
-    def _map_status(self, status: str) -> str:
-        """Map WSJF status to WATS status"""
-        if status in ('P', 'Passed'):
-            return "Passed"
-        elif status in ('F', 'Failed'):
-            return "Failed"
-        elif status in ('E', 'Error'):
-            return "Error"
-        elif status in ('S', 'Skipped'):
-            return "Skipped"
-        elif status in ('T', 'Terminated'):
-            return "Terminated"
-        else:
-            return "Done"
+    def _sanitize_unit(self, unit: Dict[str, Any]) -> None:
+        """Sanitize unit/uut info object."""
+        # Unit fields typically don't need sanitization but we can add defaults if needed
+        pass
 
 
 # Test code

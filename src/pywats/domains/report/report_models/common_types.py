@@ -39,6 +39,7 @@ from pydantic import (
     model_validator,
     field_validator,
     field_serializer,
+    model_serializer,
     computed_field,
     PrivateAttr,
 )
@@ -511,6 +512,7 @@ __all__ = [
     'model_validator',
     'field_validator',
     'field_serializer',
+    'model_serializer',
     'computed_field',
     'PrivateAttr',
     'core_schema',

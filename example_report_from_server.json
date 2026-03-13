@@ -1,0 +1,3651 @@
+{
+  "id": "2961a76f-5631-49c6-8e93-15fe31635531",
+  "type": "T",
+  "pn": "FATPartNo",
+  "sn": "FATTest-883",
+  "rev": "Rev1",
+  "processCode": 10,
+  "result": "F",
+  "machineName": "OLALAPTOP",
+  "location": "Drammen, Norway",
+  "purpose": "Testing",
+  "start": "2026-01-30T23:35:22.761344+01:00",
+  "uut": {
+    "user": "FATOperator",
+    "comment": "FAT Comment - can be 500 long",
+    "execTime": 123.67,
+    "fixtureId": "FAT FixtureId",
+    "testSocketIndex": 999,
+    "errorCode": 999,
+    "errorMessage": "Error code 999",
+    "batchSN": "BatchSN",
+    "batchFailCount": 10,
+    "stepIdCausedUUTFailure": 5
+  },
+  "subUnits": [
+    {
+      "pn": "SubPartNo1",
+      "rev": "Rev2",
+      "sn": "SubPartSN1",
+      "partType": "PCBA"
+    },
+    {
+      "pn": "SubPartNo2",
+      "rev": "Rev3",
+      "sn": "SubPartSN2",
+      "partType": "MODULE"
+    }
+  ],
+  "miscInfos": [
+    {
+      "description": "MiscInfoNumeric",
+      "text": "100"
+    },
+    {
+      "description": "MiscInfoString",
+      "text": "Hello"
+    },
+    {
+      "description": "InvalidXML",
+      "text": "This is a test with < and >"
+    }
+  ],
+  "assets": [],
+  "assetStats": [],
+  "additionalData": [],
+  "root": {
+    "stepType": "SequenceCall",
+    "name": "MainSequence Callback",
+    "group": "M",
+    "status": "F",
+    "id": 1,
+    "totTime": 0.0,
+    "causedUUTFailure": false,
+    "seqCall": {
+      "path": "Seq1",
+      "name": "MainSequence Callback",
+      "version": "1.0.0"
+    },
+    "steps": [
+      {
+        "stepType": "SequenceCall",
+        "name": "Numeric tests",
+        "group": "M",
+        "status": "F",
+        "id": 2,
+        "totTime": 0.0,
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "Seq1",
+          "name": "Numeric tests",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLog",
+            "group": "M",
+            "status": "P",
+            "id": 3,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 10.0,
+                "unit": "A",
+                "compOp": "LOG"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleEQPass",
+            "group": "M",
+            "status": "P",
+            "id": 4,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "EQ",
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleEQFail",
+            "group": "M",
+            "status": "F",
+            "id": 5,
+            "totTime": 0.0,
+            "causedUUTFailure": true,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "EQ",
+                "lowLimit": 501.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGEPass",
+            "group": "M",
+            "status": "P",
+            "id": 6,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GE",
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGEFail",
+            "group": "M",
+            "status": "F",
+            "id": 7,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GE",
+                "lowLimit": 501.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGELEPass",
+            "group": "M",
+            "status": "P",
+            "id": 8,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GELE",
+                "highLimit": 500.0,
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGELEFail",
+            "group": "M",
+            "status": "F",
+            "id": 9,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GELE",
+                "highLimit": 502.0,
+                "lowLimit": 501.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGELTPass",
+            "group": "M",
+            "status": "P",
+            "id": 10,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GELT",
+                "highLimit": 501.0,
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGELTFail",
+            "group": "M",
+            "status": "F",
+            "id": 11,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GELT",
+                "highLimit": 500.0,
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGTPass",
+            "group": "M",
+            "status": "P",
+            "id": 12,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GT",
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGTFail",
+            "group": "M",
+            "status": "F",
+            "id": 13,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GT",
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGTLEPass",
+            "group": "M",
+            "status": "P",
+            "id": 14,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GTLE",
+                "highLimit": 500.0,
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGTLEFail",
+            "group": "M",
+            "status": "F",
+            "id": 15,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GTLE",
+                "highLimit": 501.0,
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGTLTPass",
+            "group": "M",
+            "status": "P",
+            "id": 16,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GTLT",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleGTLTFail",
+            "group": "M",
+            "status": "F",
+            "id": 17,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GTLT",
+                "highLimit": 500.0,
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLEPass",
+            "group": "M",
+            "status": "P",
+            "id": 18,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LE",
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLEFail",
+            "group": "M",
+            "status": "F",
+            "id": 19,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LE",
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLEGEPass",
+            "group": "M",
+            "status": "P",
+            "id": 20,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LEGE",
+                "highLimit": 500.0,
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLEGEFail",
+            "group": "M",
+            "status": "F",
+            "id": 21,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LEGE",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLEGTPass",
+            "group": "M",
+            "status": "P",
+            "id": 22,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LEGT",
+                "highLimit": 500.0,
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLEGTFail",
+            "group": "M",
+            "status": "F",
+            "id": 23,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LEGT",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLTPass",
+            "group": "M",
+            "status": "P",
+            "id": 24,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LT",
+                "lowLimit": 501.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLTFail",
+            "group": "M",
+            "status": "F",
+            "id": 25,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LT",
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLTGEPass",
+            "group": "M",
+            "status": "P",
+            "id": 26,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 498.0,
+                "unit": "V",
+                "compOp": "LTGE",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLTGEFail",
+            "group": "M",
+            "status": "F",
+            "id": 27,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LTGE",
+                "highLimit": 501.0,
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLTGTPass",
+            "group": "M",
+            "status": "P",
+            "id": 28,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 502.0,
+                "unit": "V",
+                "compOp": "LTGT",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleLTGTFail",
+            "group": "M",
+            "status": "F",
+            "id": 29,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LTGT",
+                "highLimit": 501.0,
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleNEPass",
+            "group": "M",
+            "status": "P",
+            "id": 30,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "NE",
+                "lowLimit": 499.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_NLT",
+            "name": "SingleNEFail",
+            "group": "M",
+            "status": "F",
+            "id": 31,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "F",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "NE",
+                "lowLimit": 500.0
+              }
+            ]
+          },
+          {
+            "stepType": "ET_MNLT",
+            "name": "Multiple Numeric Step",
+            "group": "M",
+            "status": "F",
+            "id": 32,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "status": "P",
+                "name": "MultiLog",
+                "value": 10.0,
+                "unit": "A",
+                "compOp": "LOG"
+              },
+              {
+                "status": "P",
+                "name": "MultiEQPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "EQ",
+                "lowLimit": 500.0
+              },
+              {
+                "status": "F",
+                "name": "MultiEQFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "EQ",
+                "lowLimit": 501.0
+              },
+              {
+                "status": "P",
+                "name": "MultiGEPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GE",
+                "lowLimit": 500.0
+              },
+              {
+                "status": "F",
+                "name": "MultiGEFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GE",
+                "lowLimit": 501.0
+              },
+              {
+                "status": "P",
+                "name": "MultiGELEPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GELE",
+                "highLimit": 500.0,
+                "lowLimit": 500.0
+              },
+              {
+                "status": "F",
+                "name": "MultiGELEFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GELE",
+                "highLimit": 502.0,
+                "lowLimit": 501.0
+              },
+              {
+                "status": "P",
+                "name": "MultiGELTPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GELT",
+                "highLimit": 501.0,
+                "lowLimit": 500.0
+              },
+              {
+                "status": "F",
+                "name": "MultiGELTFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GELT",
+                "highLimit": 500.0,
+                "lowLimit": 499.0
+              },
+              {
+                "status": "P",
+                "name": "MultiGTPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GT",
+                "lowLimit": 499.0
+              },
+              {
+                "status": "F",
+                "name": "MultiGTFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GT",
+                "lowLimit": 500.0
+              },
+              {
+                "status": "P",
+                "name": "MultiGTLEPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GTLE",
+                "highLimit": 500.0,
+                "lowLimit": 499.0
+              },
+              {
+                "status": "F",
+                "name": "MultiGTLEFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GTLE",
+                "highLimit": 501.0,
+                "lowLimit": 500.0
+              },
+              {
+                "status": "P",
+                "name": "MultiGTLTPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GTLT",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              },
+              {
+                "status": "F",
+                "name": "MultiGTLTFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "GTLT",
+                "highLimit": 500.0,
+                "lowLimit": 499.0
+              },
+              {
+                "status": "P",
+                "name": "MultiLEPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LE",
+                "lowLimit": 500.0
+              },
+              {
+                "status": "F",
+                "name": "MultiLEFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LE",
+                "lowLimit": 499.0
+              },
+              {
+                "status": "P",
+                "name": "MultiLEGEPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LEGE",
+                "highLimit": 500.0,
+                "lowLimit": 500.0
+              },
+              {
+                "status": "F",
+                "name": "MultiLEGEFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LEGE",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              },
+              {
+                "status": "P",
+                "name": "MultiLEGTPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LEGT",
+                "highLimit": 500.0,
+                "lowLimit": 500.0
+              },
+              {
+                "status": "F",
+                "name": "MultiLEGTFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LEGT",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              },
+              {
+                "status": "P",
+                "name": "MultiLTPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LT",
+                "lowLimit": 501.0
+              },
+              {
+                "status": "F",
+                "name": "MultiLTFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LT",
+                "lowLimit": 500.0
+              },
+              {
+                "status": "P",
+                "name": "MultiLTGEPass",
+                "value": 498.0,
+                "unit": "V",
+                "compOp": "LTGE",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              },
+              {
+                "status": "F",
+                "name": "MultiLTGEFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LTGE",
+                "highLimit": 501.0,
+                "lowLimit": 500.0
+              },
+              {
+                "status": "P",
+                "name": "MultiLTGTPass",
+                "value": 502.0,
+                "unit": "V",
+                "compOp": "LTGT",
+                "highLimit": 501.0,
+                "lowLimit": 499.0
+              },
+              {
+                "status": "F",
+                "name": "MultiLTGTFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LTGT",
+                "highLimit": 501.0,
+                "lowLimit": 500.0
+              },
+              {
+                "status": "P",
+                "name": "MultiNEPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "NE",
+                "lowLimit": 499.0
+              },
+              {
+                "status": "F",
+                "name": "MultiNEFail",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "NE",
+                "lowLimit": 500.0
+              },
+              {
+                "status": "P",
+                "name": "MultiLOGPass",
+                "value": 500.0,
+                "unit": "V",
+                "compOp": "LOG"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "Pass/Fail tests",
+        "group": "M",
+        "status": "F",
+        "id": 33,
+        "totTime": 0.0,
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "Seq1",
+          "name": "Pass/Fail tests",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "ET_PFT",
+            "name": "SinglePass",
+            "group": "M",
+            "status": "P",
+            "id": 34,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "booleanMeas": [
+              {
+                "status": "P"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_PFT",
+            "name": "SingleFail",
+            "group": "M",
+            "status": "F",
+            "id": 35,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "booleanMeas": [
+              {
+                "status": "F"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_PFT",
+            "name": "SinglePassDone",
+            "group": "M",
+            "status": "D",
+            "id": 36,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "booleanMeas": [
+              {
+                "status": "P"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_MPFT",
+            "name": "Multiple tests",
+            "group": "M",
+            "status": "F",
+            "id": 37,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "booleanMeas": [
+              {
+                "status": "P",
+                "name": "Pass"
+              },
+              {
+                "status": "F",
+                "name": "Fail"
+              },
+              {
+                "status": "P",
+                "name": "PassSkipped"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "StringValue tests",
+        "group": "M",
+        "status": "F",
+        "id": 38,
+        "totTime": 0.0,
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "Seq1",
+          "name": "StringValue tests",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "ET_SVT",
+            "name": "Single",
+            "group": "M",
+            "status": "P",
+            "id": 39,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "stringMeas": [
+              {
+                "status": "P",
+                "value": "No compare",
+                "compOp": "LOG"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_SVT",
+            "name": "SingleCasePass",
+            "group": "M",
+            "status": "P",
+            "id": 40,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "stringMeas": [
+              {
+                "status": "P",
+                "value": "CaseSensitive",
+                "compOp": "CASESENSIT",
+                "limit": "CaseSensitive"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_SVT",
+            "name": "SingleCaseFail",
+            "group": "M",
+            "status": "F",
+            "id": 41,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "stringMeas": [
+              {
+                "status": "F",
+                "value": "caseSensitive",
+                "compOp": "CASESENSIT",
+                "limit": "CaseSensitive"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_SVT",
+            "name": "SingleInsiensPass",
+            "group": "M",
+            "status": "P",
+            "id": 42,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "stringMeas": [
+              {
+                "status": "P",
+                "value": "caseSensitive",
+                "compOp": "IGNORECASE",
+                "limit": "CaseSensitive"
+              }
+            ]
+          },
+          {
+            "stepType": "ET_MSVT",
+            "name": "Multiple tests",
+            "group": "M",
+            "status": "F",
+            "id": 43,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "stringMeas": [
+              {
+                "status": "P",
+                "name": "Multi",
+                "value": "No compare",
+                "compOp": "LOG"
+              },
+              {
+                "status": "P",
+                "name": "MultiCasePass",
+                "value": "CaseSensitive",
+                "compOp": "CASESENSIT",
+                "limit": "CaseSensitive"
+              },
+              {
+                "status": "F",
+                "name": "MultiCaseFail",
+                "value": "caseSensitive",
+                "compOp": "CASESENSIT",
+                "limit": "CaseSensitive"
+              },
+              {
+                "status": "P",
+                "name": "MultiInsiensPass",
+                "value": "caseSensitive",
+                "compOp": "IGNORECASE",
+                "limit": "CaseSensitive"
+              },
+              {
+                "status": "F",
+                "name": "MultiInsiensFail",
+                "value": "caseSensitive",
+                "compOp": "IGNORECASE",
+                "limit": "CaseSensitive2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "stepType": "ET_SVT",
+        "name": "Step with ReportText/ErrorText",
+        "group": "M",
+        "status": "P",
+        "id": 44,
+        "errorCode": 9999,
+        "errorMessage": "Step error message (max 200 long)",
+        "reportText": "The quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog\nThe quick brown fox jumps over the lazy dog",
+        "totTime": 0.0,
+        "causedUUTFailure": false,
+        "stringMeas": [
+          {
+            "status": "P",
+            "value": "StringValueStep should have a ReportText and an Error Text",
+            "compOp": "LOG"
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "Graphs",
+        "group": "M",
+        "status": "F",
+        "id": 45,
+        "totTime": 0.0,
+        "causedUUTFailure": false,
+        "steps": [
+          {
+            "id": 46,
+            "group": "M",
+            "stepType": "WATS_XYGMNLT",
+            "name": "Fibionacci",
+            "status": "P",
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "compOp": "LOG",
+                "name": null,
+                "status": "P",
+                "unit": "Number",
+                "value": 28.9230769230769,
+                "highLimit": null,
+                "lowLimit": null
+              }
+            ],
+            "chart": {
+              "chartType": "Line",
+              "label": "Fibonacci numbers",
+              "xLabel": "X",
+              "xUnit": null,
+              "yLabel": "Y",
+              "yUnit": null,
+              "series": [
+                {
+                  "dataType": "XYG",
+                  "name": "Fibionacci",
+                  "xdata": "0;1;2;3;4;5;6;7;8;9;10;11;12",
+                  "ydata": "0;1;1;2;3;5;8;13;21;34;55;89;144"
+                },
+                {
+                  "dataType": "XYG",
+                  "name": "Mean",
+                  "xdata": "0;12",
+                  "ydata": "28.9230769230769;28.9230769230769"
+                }
+              ]
+            }
+          },
+          {
+            "id": 47,
+            "group": "M",
+            "stepType": "WATS_XYGMNLT",
+            "name": "Current from burn-in test",
+            "status": "F",
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "numericMeas": [
+              {
+                "compOp": "GE",
+                "name": "MinValue",
+                "status": "F",
+                "unit": "A",
+                "value": 0.0,
+                "highLimit": null,
+                "lowLimit": 52.0
+              },
+              {
+                "compOp": "LE",
+                "name": "MaxValue",
+                "status": "P",
+                "unit": "A",
+                "value": 62.6,
+                "highLimit": null,
+                "lowLimit": 72.0
+              },
+              {
+                "compOp": "LOG",
+                "name": "Mean",
+                "status": "P",
+                "unit": "A",
+                "value": 46.3015,
+                "highLimit": null,
+                "lowLimit": null
+              }
+            ],
+            "chart": {
+              "chartType": "Line",
+              "label": "Current",
+              "xLabel": "Minutes",
+              "xUnit": "min",
+              "yLabel": "Current",
+              "yUnit": "A",
+              "series": [
+                {
+                  "dataType": "XYG",
+                  "name": "Current",
+                  "xdata": "0;1;2;3",
+                  "ydata": "60.72;61.886;62.6;0"
+                },
+                {
+                  "dataType": "XYG",
+                  "name": "Mean",
+                  "xdata": "0;3",
+                  "ydata": "46.3015;46.3015"
+                },
+                {
+                  "dataType": "XYG",
+                  "name": "LowLimit",
+                  "xdata": "0;3",
+                  "ydata": "52;52"
+                },
+                {
+                  "dataType": "XYG",
+                  "name": "HighLimit",
+                  "xdata": "0;3",
+                  "ydata": "72;72"
+                }
+              ]
+            }
+          }
+        ],
+        "seqCall": {
+          "path": "Seq1",
+          "name": "Graphs",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "Loops",
+        "group": "M",
+        "status": "F",
+        "id": 48,
+        "totTime": 0.0,
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "Seq1",
+          "name": "Loops",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "SequenceCall",
+            "name": "SequenceCallLoopSequence",
+            "group": "M",
+            "status": "F",
+            "id": 49,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 50,
+                "group": "M",
+                "stepType": "SequenceCall",
+                "loop": {
+                  "idx": null,
+                  "num": 3,
+                  "endingIndex": 3,
+                  "passed": 1,
+                  "failed": 2
+                },
+                "name": "SequenceCallLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "steps": [
+                  {
+                    "id": 51,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep1",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "GE",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 301.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 52,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep2",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "LE",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 301.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 53,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep3",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "EQ",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 300.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 54,
+                    "group": "M",
+                    "stepType": "ET_SVT",
+                    "name": "StringStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "stringMeas": [
+                      {
+                        "compOp": "IGNORECASE",
+                        "name": null,
+                        "status": "P",
+                        "value": "TestValue",
+                        "limit": "testvalue"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 55,
+                    "group": "M",
+                    "stepType": "ET_PFT",
+                    "name": "PassFailStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "booleanMeas": [
+                      {
+                        "name": null,
+                        "status": "P"
+                      }
+                    ]
+                  }
+                ],
+                "seqCall": {
+                  "path": "Seq1",
+                  "name": "SequenceCallLoop",
+                  "version": "1.0.0"
+                }
+              },
+              {
+                "id": 56,
+                "group": "M",
+                "stepType": "SequenceCall",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "SequenceCallLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "steps": [
+                  {
+                    "id": 57,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep1",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "GE",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 301.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 58,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep2",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "LE",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 301.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 59,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep3",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "EQ",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 300.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 60,
+                    "group": "M",
+                    "stepType": "ET_SVT",
+                    "name": "StringStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "stringMeas": [
+                      {
+                        "compOp": "IGNORECASE",
+                        "name": null,
+                        "status": "P",
+                        "value": "TestValue",
+                        "limit": "testvalue"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 61,
+                    "group": "M",
+                    "stepType": "ET_PFT",
+                    "name": "PassFailStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "booleanMeas": [
+                      {
+                        "name": null,
+                        "status": "P"
+                      }
+                    ]
+                  }
+                ],
+                "seqCall": {
+                  "path": "Seq1",
+                  "name": "SequenceCallLoop",
+                  "version": "1.0.0"
+                }
+              },
+              {
+                "id": 62,
+                "group": "M",
+                "stepType": "SequenceCall",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "SequenceCallLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "steps": [
+                  {
+                    "id": 63,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep1",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "GE",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 301.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 64,
+                    "group": "M",
+                    "stepType": "ET_SVT",
+                    "name": "StringStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "stringMeas": [
+                      {
+                        "compOp": "IGNORECASE",
+                        "name": null,
+                        "status": "P",
+                        "value": "TestValue",
+                        "limit": "testvalue"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 65,
+                    "group": "M",
+                    "stepType": "ET_PFT",
+                    "name": "PassFailStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "booleanMeas": [
+                      {
+                        "name": null,
+                        "status": "P"
+                      }
+                    ]
+                  }
+                ],
+                "seqCall": {
+                  "path": "Seq1",
+                  "name": "SequenceCallLoop",
+                  "version": "1.0.0"
+                }
+              },
+              {
+                "id": 66,
+                "group": "M",
+                "stepType": "SequenceCall",
+                "loop": {
+                  "idx": 2,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "SequenceCallLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "steps": [
+                  {
+                    "id": 67,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep2",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "LE",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 301.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 68,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep3",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "EQ",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 300.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 69,
+                    "group": "M",
+                    "stepType": "ET_SVT",
+                    "name": "StringStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "stringMeas": [
+                      {
+                        "compOp": "IGNORECASE",
+                        "name": null,
+                        "status": "P",
+                        "value": "TestValue",
+                        "limit": "testvalue"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 70,
+                    "group": "M",
+                    "stepType": "ET_PFT",
+                    "name": "PassFailStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "booleanMeas": [
+                      {
+                        "name": null,
+                        "status": "P"
+                      }
+                    ]
+                  }
+                ],
+                "seqCall": {
+                  "path": "Seq1",
+                  "name": "SequenceCallLoop",
+                  "version": "1.0.0"
+                }
+              },
+              {
+                "id": 71,
+                "group": "M",
+                "stepType": "SequenceCall",
+                "loop": {
+                  "idx": null,
+                  "num": 3,
+                  "endingIndex": 3,
+                  "passed": 0,
+                  "failed": 3
+                },
+                "name": "SequenceCallLoop2",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "steps": [
+                  {
+                    "id": 72,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep1",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "GE",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 301.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 73,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep2",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "LE",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 301.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 74,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep3",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "EQ",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 300.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 75,
+                    "group": "M",
+                    "stepType": "ET_SVT",
+                    "name": "StringStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "stringMeas": [
+                      {
+                        "compOp": "IGNORECASE",
+                        "name": null,
+                        "status": "P",
+                        "value": "TestValue1",
+                        "limit": "testvalue1"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 76,
+                    "group": "M",
+                    "stepType": "ET_PFT",
+                    "name": "PassFailStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "booleanMeas": [
+                      {
+                        "name": null,
+                        "status": "P"
+                      }
+                    ]
+                  }
+                ],
+                "seqCall": {
+                  "path": "Seq1",
+                  "name": "SequenceCallLoop2",
+                  "version": "1.0.0"
+                }
+              },
+              {
+                "id": 77,
+                "group": "M",
+                "stepType": "SequenceCall",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "SequenceCallLoop2",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "steps": [
+                  {
+                    "id": 78,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep1",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "GE",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 401.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 79,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep2",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "LE",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 401.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 80,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep3",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "EQ",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 400.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 81,
+                    "group": "M",
+                    "stepType": "ET_SVT",
+                    "name": "StringStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "stringMeas": [
+                      {
+                        "compOp": "IGNORECASE",
+                        "name": null,
+                        "status": "P",
+                        "value": "TestValue2",
+                        "limit": "testvalue2"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 82,
+                    "group": "M",
+                    "stepType": "ET_PFT",
+                    "name": "PassFailStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "booleanMeas": [
+                      {
+                        "name": null,
+                        "status": "P"
+                      }
+                    ]
+                  }
+                ],
+                "seqCall": {
+                  "path": "Seq1",
+                  "name": "SequenceCallLoop2",
+                  "version": "1.0.0"
+                }
+              },
+              {
+                "id": 83,
+                "group": "M",
+                "stepType": "SequenceCall",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "SequenceCallLoop2",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "steps": [
+                  {
+                    "id": 84,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep1",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "GE",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 501.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 85,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep2",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "LE",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 501.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 86,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep3",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "EQ",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 500.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 87,
+                    "group": "M",
+                    "stepType": "ET_SVT",
+                    "name": "StringStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "stringMeas": [
+                      {
+                        "compOp": "IGNORECASE",
+                        "name": null,
+                        "status": "P",
+                        "value": "TestValue3",
+                        "limit": "testvalue3"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 88,
+                    "group": "M",
+                    "stepType": "ET_PFT",
+                    "name": "PassFailStep",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "booleanMeas": [
+                      {
+                        "name": null,
+                        "status": "P"
+                      }
+                    ]
+                  }
+                ],
+                "seqCall": {
+                  "path": "Seq1",
+                  "name": "SequenceCallLoop2",
+                  "version": "1.0.0"
+                }
+              },
+              {
+                "id": 89,
+                "group": "M",
+                "stepType": "SequenceCall",
+                "loop": {
+                  "idx": 2,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "SequenceCallLoop2",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "steps": [
+                  {
+                    "id": 90,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep1",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "GE",
+                        "name": null,
+                        "status": "P",
+                        "unit": null,
+                        "value": 601.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 91,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep2",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "LE",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 601.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 92,
+                    "group": "M",
+                    "stepType": "ET_NLT",
+                    "name": "NumericStep3",
+                    "status": "F",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "numericMeas": [
+                      {
+                        "compOp": "EQ",
+                        "name": null,
+                        "status": "F",
+                        "unit": null,
+                        "value": 600.0,
+                        "highLimit": null,
+                        "lowLimit": 300.0
+                      }
+                    ]
+                  },
+                  {
+                    "id": 93,
+                    "group": "M",
+                    "stepType": "ET_SVT",
+                    "name": "StringStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "stringMeas": [
+                      {
+                        "compOp": "IGNORECASE",
+                        "name": null,
+                        "status": "P",
+                        "value": "TestValue4",
+                        "limit": "testvalue4"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 94,
+                    "group": "M",
+                    "stepType": "ET_PFT",
+                    "name": "PassFailStep",
+                    "status": "P",
+                    "totTime": 0.0,
+                    "causedUUTFailure": false,
+                    "booleanMeas": [
+                      {
+                        "name": null,
+                        "status": "P"
+                      }
+                    ]
+                  }
+                ],
+                "seqCall": {
+                  "path": "Seq1",
+                  "name": "SequenceCallLoop2",
+                  "version": "1.0.0"
+                }
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "SequenceCallLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "NumericLimitLoopSequence",
+            "group": "M",
+            "status": "F",
+            "id": 95,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 96,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 1,
+                  "failed": 1
+                },
+                "name": "NumericLimitStepLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "F",
+                    "unit": null,
+                    "value": 301.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 97,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "P",
+                    "unit": null,
+                    "value": 298.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 98,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitStepLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "F",
+                    "unit": null,
+                    "value": 301.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "NumericLimitLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "MultiNumericLimitLoopSequence",
+            "group": "M",
+            "status": "F",
+            "id": 99,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 100,
+                "group": "M",
+                "stepType": "ET_MNLT",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 0,
+                  "failed": 2
+                },
+                "name": "NumericLimitMultiStepLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest1",
+                    "status": "F",
+                    "unit": null,
+                    "value": 301.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest2",
+                    "status": "P",
+                    "unit": null,
+                    "value": 298.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 101,
+                "group": "M",
+                "stepType": "ET_MNLT",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultiStepLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest1",
+                    "status": "F",
+                    "unit": null,
+                    "value": 301.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest2",
+                    "status": "P",
+                    "unit": null,
+                    "value": 298.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 102,
+                "group": "M",
+                "stepType": "ET_MNLT",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultiStepLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest1",
+                    "status": "F",
+                    "unit": null,
+                    "value": 302.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest2",
+                    "status": "P",
+                    "unit": null,
+                    "value": 297.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "MultiNumericLimitLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "MultiAndSingleNumericLimitLoopSequence",
+            "group": "M",
+            "status": "F",
+            "id": 103,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 104,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": null,
+                  "num": 3,
+                  "endingIndex": 3,
+                  "passed": 1,
+                  "failed": 2
+                },
+                "name": "NumericLimitMultiAndSingleStepLoop1",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "id": 105,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultiAndSingleStepLoop1",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "F",
+                    "unit": null,
+                    "value": 302.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 106,
+                "group": "M",
+                "stepType": "ET_MNLT",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultiAndSingleStepLoop1",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest",
+                    "status": "F",
+                    "unit": null,
+                    "value": 301.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest1",
+                    "status": "P",
+                    "unit": null,
+                    "value": 298.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 107,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 2,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultiAndSingleStepLoop1",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "P",
+                    "unit": null,
+                    "value": 299.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 108,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": null,
+                  "num": 3,
+                  "endingIndex": 3,
+                  "passed": 0,
+                  "failed": 3
+                },
+                "name": "NumericLimitMultiAndSingleStepLoop2",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "id": 109,
+                "group": "M",
+                "stepType": "ET_MNLT",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultiAndSingleStepLoop2",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest",
+                    "status": "F",
+                    "unit": null,
+                    "value": 301.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest1",
+                    "status": "P",
+                    "unit": null,
+                    "value": 298.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 110,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultiAndSingleStepLoop2",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "F",
+                    "unit": null,
+                    "value": 302.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 111,
+                "group": "M",
+                "stepType": "ET_MNLT",
+                "loop": {
+                  "idx": 2,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultiAndSingleStepLoop2",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest",
+                    "status": "F",
+                    "unit": null,
+                    "value": 303.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  },
+                  {
+                    "compOp": "LE",
+                    "name": "NumTest1",
+                    "status": "P",
+                    "unit": null,
+                    "value": 297.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "MultiAndSingleNumericLimitLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "StringValueStepLoopSequence",
+            "group": "M",
+            "status": "F",
+            "id": 112,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 113,
+                "group": "M",
+                "stepType": "ET_SVT",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 1,
+                  "failed": 1
+                },
+                "name": "StringValueStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "stringMeas": [
+                  {
+                    "compOp": "IGNORECASE",
+                    "name": null,
+                    "status": "P",
+                    "value": "TestValue1",
+                    "limit": "testvalue1"
+                  }
+                ]
+              },
+              {
+                "id": 114,
+                "group": "M",
+                "stepType": "ET_SVT",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "StringValueStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "stringMeas": [
+                  {
+                    "compOp": "IGNORECASE",
+                    "name": null,
+                    "status": "P",
+                    "value": "TestValue2",
+                    "limit": "testvalue2"
+                  }
+                ]
+              },
+              {
+                "id": 115,
+                "group": "M",
+                "stepType": "ET_SVT",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "StringValueStepLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "stringMeas": [
+                  {
+                    "compOp": "CASESENSIT",
+                    "name": null,
+                    "status": "F",
+                    "value": "TestValue3",
+                    "limit": "testvalue3"
+                  }
+                ]
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "StringValueStepLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "PassFailStepLoopSequence",
+            "group": "M",
+            "status": "F",
+            "id": 116,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 117,
+                "group": "M",
+                "stepType": "ET_PFT",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 1,
+                  "failed": 1
+                },
+                "name": "PassFailLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "booleanMeas": [
+                  {
+                    "name": null,
+                    "status": "F"
+                  }
+                ]
+              },
+              {
+                "id": 118,
+                "group": "M",
+                "stepType": "ET_PFT",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "PassFailLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "booleanMeas": [
+                  {
+                    "name": null,
+                    "status": "P"
+                  }
+                ]
+              },
+              {
+                "id": 119,
+                "group": "M",
+                "stepType": "ET_PFT",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "PassFailLoop",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "booleanMeas": [
+                  {
+                    "name": null,
+                    "status": "F"
+                  }
+                ]
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "PassFailStepLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "GenericStepLoopSequence",
+            "group": "M",
+            "status": "P",
+            "id": 120,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 121,
+                "group": "M",
+                "stepType": "DoWhile",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 2,
+                  "failed": 0
+                },
+                "name": "GenericStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "id": 122,
+                "group": "M",
+                "stepType": "Goto",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "GenericStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "id": 123,
+                "group": "M",
+                "stepType": "NI_IVIScope",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "GenericStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "id": 124,
+                "group": "M",
+                "stepType": "Action",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 2,
+                  "failed": 0
+                },
+                "name": "GenericStepLoop2",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "id": 125,
+                "group": "M",
+                "stepType": "Action",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "GenericStepLoop2",
+                "status": "P",
+                "totTime": 1.0,
+                "causedUUTFailure": false
+              },
+              {
+                "id": 126,
+                "group": "M",
+                "stepType": "Action",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "GenericStepLoop2",
+                "status": "P",
+                "totTime": 2.0,
+                "causedUUTFailure": false
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "GenericStepLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "MessagePopupStepLoopSequence",
+            "group": "M",
+            "status": "P",
+            "id": 127,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 128,
+                "group": "M",
+                "stepType": "MessagePopup",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 2,
+                  "failed": 0
+                },
+                "name": "MessagePopupStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "messagePopup": {
+                  "response": null,
+                  "button": 0
+                }
+              },
+              {
+                "id": 129,
+                "group": "M",
+                "stepType": "MessagePopup",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "MessagePopupStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "messagePopup": {
+                  "response": "Wrong Button :(",
+                  "button": 0
+                }
+              },
+              {
+                "id": 130,
+                "group": "M",
+                "stepType": "MessagePopup",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "MessagePopupStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "messagePopup": {
+                  "response": "Good Job! ;)",
+                  "button": 1
+                }
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "MessagePopupStepLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "CallExeStepLoopSequence",
+            "group": "M",
+            "status": "P",
+            "id": 131,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 132,
+                "group": "M",
+                "stepType": "CallExecutable",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 2,
+                  "failed": 0
+                },
+                "name": "CallExeStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "callExe": {
+                  "exitCode": 0.0
+                }
+              },
+              {
+                "id": 133,
+                "group": "M",
+                "stepType": "CallExecutable",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "CallExeStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "callExe": {
+                  "exitCode": 1.0
+                }
+              },
+              {
+                "id": 134,
+                "group": "M",
+                "stepType": "CallExecutable",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "CallExeStepLoop",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "callExe": {
+                  "exitCode": 2.0
+                }
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "CallExeStepLoopSequence",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "NumericLimitMultipleLoopsSequence",
+            "group": "M",
+            "status": "F",
+            "id": 135,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "steps": [
+              {
+                "id": 136,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 0,
+                  "failed": 2
+                },
+                "name": "NumericLimitMultipleLoops1",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "F",
+                    "unit": null,
+                    "value": 302.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 137,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultipleLoops1",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "F",
+                    "unit": null,
+                    "value": 301.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 138,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultipleLoops1",
+                "status": "F",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "F",
+                    "unit": null,
+                    "value": 302.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 139,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": null,
+                  "num": 2,
+                  "endingIndex": 2,
+                  "passed": 2,
+                  "failed": 0
+                },
+                "name": "NumericLimitMultipleLoops2",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "P",
+                    "unit": null,
+                    "value": 299.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 140,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 0,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultipleLoops2",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "P",
+                    "unit": null,
+                    "value": 298.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              },
+              {
+                "id": 141,
+                "group": "M",
+                "stepType": "ET_NLT",
+                "loop": {
+                  "idx": 1,
+                  "num": null,
+                  "endingIndex": null,
+                  "passed": null,
+                  "failed": null
+                },
+                "name": "NumericLimitMultipleLoops2",
+                "status": "P",
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "numericMeas": [
+                  {
+                    "compOp": "LE",
+                    "name": null,
+                    "status": "P",
+                    "unit": null,
+                    "value": 299.0,
+                    "highLimit": null,
+                    "lowLimit": 300.0
+                  }
+                ]
+              }
+            ],
+            "seqCall": {
+              "path": "Seq1",
+              "name": "NumericLimitMultipleLoopsSequence",
+              "version": "1.0.0"
+            }
+          }
+        ]
+      },
+      {
+        "stepType": "SequenceCall",
+        "name": "Misc Features",
+        "group": "M",
+        "status": "P",
+        "id": 142,
+        "totTime": 0.0,
+        "causedUUTFailure": false,
+        "seqCall": {
+          "path": "Seq1",
+          "name": "Misc Features",
+          "version": "1.0.0"
+        },
+        "steps": [
+          {
+            "stepType": "SequenceCall",
+            "name": "Generic Steps",
+            "group": "M",
+            "status": "P",
+            "id": 143,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "seqCall": {
+              "path": "Seq1",
+              "name": "Generic Steps",
+              "version": "1.0.0"
+            },
+            "steps": [
+              {
+                "stepType": "Label",
+                "name": "Label Step",
+                "group": "M",
+                "status": "P",
+                "id": 144,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "Action",
+                "name": "Action Step",
+                "group": "M",
+                "status": "P",
+                "id": 145,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "Goto",
+                "name": "Goto Step",
+                "group": "M",
+                "status": "P",
+                "id": 146,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_FTPFiles",
+                "name": "FTPFiles Step",
+                "group": "M",
+                "status": "P",
+                "id": 147,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_If",
+                "name": "If Step",
+                "group": "M",
+                "status": "P",
+                "id": 148,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_ElseIf",
+                "name": "ElseIf Step",
+                "group": "M",
+                "status": "P",
+                "id": 149,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_Else",
+                "name": "Else Step",
+                "group": "M",
+                "status": "P",
+                "id": 150,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_End",
+                "name": "End Step",
+                "group": "M",
+                "status": "P",
+                "id": 151,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_For",
+                "name": "For Step",
+                "group": "M",
+                "status": "P",
+                "id": 152,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_ForEach",
+                "name": "ForEach Step",
+                "group": "M",
+                "status": "P",
+                "id": 153,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_Break",
+                "name": "Break Step",
+                "group": "M",
+                "status": "P",
+                "id": 154,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_Continue",
+                "name": "Continue Step",
+                "group": "M",
+                "status": "P",
+                "id": 155,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_DoWhile",
+                "name": "DoWhile Step",
+                "group": "M",
+                "status": "P",
+                "id": 156,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_While",
+                "name": "While Step",
+                "group": "M",
+                "status": "P",
+                "id": 157,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_Select",
+                "name": "Select Step",
+                "group": "M",
+                "status": "P",
+                "id": 158,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Flow_Case",
+                "name": "Case Step",
+                "group": "M",
+                "status": "P",
+                "id": 159,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Lock",
+                "name": "Lock Step",
+                "group": "M",
+                "status": "P",
+                "id": 160,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Rendezvous",
+                "name": "Rendezvous Step",
+                "group": "M",
+                "status": "P",
+                "id": 161,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Queue",
+                "name": "Queue Step",
+                "group": "M",
+                "status": "P",
+                "id": 162,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Notification",
+                "name": "Notification Step",
+                "group": "M",
+                "status": "P",
+                "id": 163,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Wait",
+                "name": "Wait Step",
+                "group": "M",
+                "status": "P",
+                "id": 164,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Batch_Sync",
+                "name": "BatchSyncronization Step",
+                "group": "M",
+                "status": "P",
+                "id": 165,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_AutoSchedule",
+                "name": "AutoSchedule Step",
+                "group": "M",
+                "status": "P",
+                "id": 166,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_UseResource",
+                "name": "UseAutoScheduledResource Step",
+                "group": "M",
+                "status": "P",
+                "id": 167,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_ThreadPriority",
+                "name": "ThreadPriority Step",
+                "group": "M",
+                "status": "P",
+                "id": 168,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Semaphore",
+                "name": "Semaphore Step",
+                "group": "M",
+                "status": "P",
+                "id": 169,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_BatchSpec",
+                "name": "BatchSpecification Step",
+                "group": "M",
+                "status": "P",
+                "id": 170,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_OpenDatabase",
+                "name": "OpenDatabase Step",
+                "group": "M",
+                "status": "P",
+                "id": 171,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_OpenSQLStatement",
+                "name": "OpenSQLStatement Step",
+                "group": "M",
+                "status": "P",
+                "id": 172,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_CloseSQLStatement",
+                "name": "CloseSQLStatement Step",
+                "group": "M",
+                "status": "P",
+                "id": 173,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_CloseDatabase",
+                "name": "CloseDatabase Step",
+                "group": "M",
+                "status": "P",
+                "id": 174,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_DataOperation",
+                "name": "DataOperation Step",
+                "group": "M",
+                "status": "P",
+                "id": 175,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_IVIDmm",
+                "name": "IVIDmm Step",
+                "group": "M",
+                "status": "P",
+                "id": 176,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_IVIScope",
+                "name": "IVIScope Step",
+                "group": "M",
+                "status": "P",
+                "id": 177,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_IVIFgen",
+                "name": "IVIFgen Step",
+                "group": "M",
+                "status": "P",
+                "id": 178,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_IVIPowerSupply",
+                "name": "IVIPowerSupply Step",
+                "group": "M",
+                "status": "P",
+                "id": 179,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_Switch",
+                "name": "Switch Step",
+                "group": "M",
+                "status": "P",
+                "id": 180,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_IVITools",
+                "name": "IVITools Step",
+                "group": "M",
+                "status": "P",
+                "id": 181,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_LV_CheckSystemStatus",
+                "name": "CheckRemoteSystemStatus Step",
+                "group": "M",
+                "status": "P",
+                "id": 182,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              },
+              {
+                "stepType": "NI_LV_RunVIAsynchronously",
+                "name": "RunVIAsynchronously Step",
+                "group": "M",
+                "status": "P",
+                "id": 183,
+                "totTime": 0.0,
+                "causedUUTFailure": false
+              }
+            ]
+          },
+          {
+            "stepType": "SequenceCall",
+            "name": "Misc",
+            "group": "M",
+            "status": "P",
+            "id": 184,
+            "totTime": 0.0,
+            "causedUUTFailure": false,
+            "seqCall": {
+              "path": "Seq1",
+              "name": "Misc",
+              "version": "1.0.0"
+            },
+            "steps": [
+              {
+                "stepType": "MessagePopup",
+                "name": "MessagePopup",
+                "group": "M",
+                "status": "P",
+                "id": 185,
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "messagePopup": {
+                  "response": "Response Message",
+                  "button": 1
+                }
+              },
+              {
+                "stepType": "CallExecutable",
+                "name": "CallExe",
+                "group": "M",
+                "status": "P",
+                "id": 186,
+                "totTime": 0.0,
+                "causedUUTFailure": false,
+                "callExe": {
+                  "exitCode": 17232.0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

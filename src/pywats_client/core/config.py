@@ -1068,14 +1068,14 @@ def get_default_config_path(instance_id: Optional[str] = None) -> Path:
     Get default configuration path for an instance.
     
     Uses system-wide paths (machine-level, not user-level):
-    - Windows: C:/ProgramData/pyWATS/ (all users, persists across logins)
+    - Windows: C:/ProgramData/Virinco/pyWATS/ (all users, persists across logins)
     - Linux/Mac: /var/lib/pywats/ (system-wide service data)
     
     This allows the client to run as a Windows Service shared by all users.
     """
     if os.name == 'nt':
-        # Windows: Use ProgramData (C:\ProgramData\pyWATS\)
-        base = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS'
+        # Windows: Use ProgramData (C:\ProgramData\Virinco\pyWATS\)
+        base = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'Virinco' / 'pyWATS'
     else:
         # Linux/Mac: Use /var/lib for system-wide service data
         base = Path('/var/lib/pywats')
@@ -1088,7 +1088,7 @@ def get_default_config_path(instance_id: Optional[str] = None) -> Path:
 def get_all_instance_configs() -> List[Path]:
     """Get all configuration files for all instances"""
     if os.name == 'nt':
-        base = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS'
+        base = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'Virinco' / 'pyWATS'
     else:
         base = Path('/var/lib/pywats')
     

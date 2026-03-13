@@ -76,15 +76,21 @@ class AsyncClientService:
     PING_INTERVAL = 300.0  # 5 minutes
     REGISTER_INTERVAL = 3600.0  # 1 hour
     
-    def __init__(self, instance_id: str = "default") -> None:
+    def __init__(self, instance_id: str = "default", config: Optional['ClientConfig'] = None) -> None:
         """
         Initialize async service.
         
         Args:
             instance_id: Instance identifier for multi-instance support
+            config: Optional pre-loaded config (if None, loads from instance_id)
         """
         self.instance_id = instance_id
-        self.config = ClientConfig.load_for_instance(instance_id)
+        if config:
+            self.config = config
+            logger.info(f"Using pre-loaded config with {len(config.converters)} converters")
+        else:
+            self.config = ClientConfig.load_for_instance(instance_id)
+            logger.info(f"Loaded config for instance '{instance_id}' with {len(self.config.converters)} converters")
         
         # Service state
         self._status = AsyncServiceStatus.STOPPED
@@ -241,6 +247,7 @@ class AsyncClientService:
             
             # 6. Initialize async converter pool
             from .async_converter_pool import AsyncConverterPool
+            logger.info(f"Creating AsyncConverterPool with {len(self.config.converters)} converters from config")
             self._converter_pool = AsyncConverterPool(
                 config=self.config,
                 api=self.api,
@@ -549,10 +556,7 @@ class AsyncClientService:
             # Initialize metrics collector if enabled
             if self.config.enable_metrics:
                 from pywats.core.metrics import MetricsCollector
-                self._metrics_collector = MetricsCollector(
-                    instance_id=self.instance_id,
-                    enabled=True
-                )
+                self._metrics_collector = MetricsCollector()
                 logger.info("Metrics collection enabled")
             
             # Get runtime credentials
@@ -751,7 +755,14 @@ class AsyncClientService:
     async def _reload_config(self) -> None:
         """Reload configuration from file"""
         try:
-            self.config = ClientConfig.load_for_instance(self.instance_id)
+            # Reload from the same path that was originally loaded
+            if hasattr(self.config, '_config_path') and self.config._config_path:
+                self.config = ClientConfig.load(self.config._config_path)
+                logger.info(f"Reloaded config from {self.config._config_path} with {len(self.config.converters)} converters")
+            else:
+                # Fallback to load_for_instance
+                self.config = ClientConfig.load_for_instance(self.instance_id)
+                logger.info(f"Reloaded config for instance '{self.instance_id}' with {len(self.config.converters)} converters")
             
             # Update components with new config
             if self._converter_pool:

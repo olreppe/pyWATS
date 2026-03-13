@@ -113,7 +113,7 @@ uwfmgr.exe file add-exclusion "C:\pywats"
 uwfmgr.exe file add-exclusion "C:\Python311"
 
 # Exclude configuration directory
-uwfmgr.exe file add-exclusion "C:\ProgramData\pyWATS"
+uwfmgr.exe file add-exclusion "C:\ProgramData/Virinco/pyWATS"
 ```
 
 ### File-Based Write Filter (FBWF) - Legacy
@@ -196,7 +196,7 @@ pip install pywats-api[client-headless]
 
 ```powershell
 # Create configuration directory
-New-Item -ItemType Directory -Force -Path "C:\ProgramData\pyWATS\config"
+New-Item -ItemType Directory -Force -Path "C:\ProgramData/Virinco/pyWATS\config"
 
 # Create configuration file
 @"
@@ -210,7 +210,7 @@ New-Item -ItemType Directory -Force -Path "C:\ProgramData\pyWATS\config"
     "archive_folder": "C:\\TestReports\\archive"
   }
 }
-"@ | Out-File -FilePath "C:\ProgramData\pyWATS\config\config.json" -Encoding UTF8
+"@ | Out-File -FilePath "C:\ProgramData/Virinco/pyWATS\config\config.json" -Encoding UTF8
 ```
 
 ### 3. Install as Windows Service
@@ -296,12 +296,12 @@ sc.exe queryex pyWATS_Service
 ### UWF Blocking File Writes
 
 ```
-Error: Permission denied writing to C:\ProgramData\pyWATS\logs
+Error: Permission denied writing to C:\ProgramData/Virinco/pyWATS\logs
 ```
 
 **Solution:** Add the logs directory to UWF exclusions:
 ```powershell
-uwfmgr.exe file add-exclusion "C:\ProgramData\pyWATS\logs"
+uwfmgr.exe file add-exclusion "C:\ProgramData/Virinco/pyWATS\logs"
 ```
 
 ### Python Not Found After Reboot

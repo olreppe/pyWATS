@@ -520,8 +520,8 @@ graph TB
     
     subgraph LogDestinations["Log Destinations"]
         Console[Console Handler<br/>sys.stdout]
-        ServiceLog[Service File Handler<br/>/ProgramData/pyWATS/pywats.log]
-        ConversionLogs[Conversion Log Directory<br/>/ProgramData/pyWATS/conversion_logs/]
+        ServiceLog[Service File Handler<br/>/ProgramData/Virinco/pyWATS/pywats.log]
+        ConversionLogs[Conversion Log Directory<br/>/ProgramData/Virinco/pyWATS/conversion_logs/]
     end
     
     APIRoot -.->|development| Console

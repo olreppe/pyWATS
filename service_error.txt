@@ -1,0 +1,588 @@
+00:28:15 [INFO] __main__: Loaded config from: C:\ProgramData\Virinco\pyWATS\instances\default\client_config.json
+00:28:15 [INFO] __main__: Lock file created: C:\ProgramData\Virinco\pyWATS\instances\default\service.lock (PID: 23656)
+00:28:15 [INFO] __main__: ================================================================================
+00:28:15 [INFO] __main__: Starting pyWATS Service: default
+00:28:15 [INFO] __main__: Instance Name: WATS Client A
+00:28:15 [INFO] __main__: Service URL: https://python.wats.com
+00:28:15 [INFO] __main__: ================================================================================
+00:28:15 [INFO] pywats_client.service.async_client_service: Using pre-loaded config with 9 converters
+00:28:15 [INFO] pywats_client.service.async_client_service: AsyncClientService initialized [instance: default]
+00:28:15 [INFO] __main__: Service started successfully (Ctrl+C to stop)
+00:28:15 [INFO] __main__: ================================================================================
+00:28:15 [INFO] pywats_client.service.async_client_service: AsyncClientService starting @2026-02-20T00:28:15.882830
+00:28:15 [INFO] pywats_client.service.async_client_service: Service status: Stopped -> StartPending
+00:28:15 [INFO] pywats_client.service.async_client_service: Initializing async API...
+00:28:15 [WARNING] pywats.core.metrics: Metrics disabled - install with: pip install pywats-api[observability]
+00:28:15 [WARNING] pywats.core.metrics: Metrics disabled - install with: pip install pywats-api[observability]
+00:28:15 [INFO] pywats_client.service.async_client_service: Metrics collection enabled
+00:28:16 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:28:16 [INFO] pywats_client.service.async_client_service: Connected to WATS server: 2026.1.5.324
+00:28:16 [INFO] pywats_client.service.async_client_service: Watchdog timer started (60s)
+00:28:16 [INFO] pywats_client.service.async_client_service: Ping timer started (5min)
+00:28:16 [INFO] pywats_client.service.async_client_service: Registration timer started (1hr)
+00:28:16 [INFO] pywats_client.service.async_pending_queue: AsyncPendingQueue initialized (dir=C:\ProgramData\Virinco\pyWATS\instances\default\reports, max_concurrent=5, max_queue_size=10000)
+00:28:16 [INFO] pywats_client.service.async_client_service: AsyncPendingQueue started
+00:28:16 [INFO] pywats_client.service.async_client_service: Creating AsyncConverterPool with 9 converters from config
+00:28:16 [INFO] pywats_client.service.async_converter_pool: AsyncConverterPool initialized (max_concurrent=10, sandbox=enabled)
+00:28:16 [INFO] pywats_client.service.async_client_service: AsyncConverterPool started
+00:28:16 [INFO] pywats_client.service.async_client_service: Config watcher started
+00:28:16 [INFO] pywats_client.service.async_client_service: Task monitor started
+00:28:16 [WARNING] pywats_client.service.async_ipc_server: No IPC secret found for instance 'default' - auth disabled
+00:28:16 [INFO] pywats_client.service.async_pending_queue: AsyncPendingQueue starting...
+00:28:16 [INFO] pywats_client.service.async_converter_pool: AsyncConverterPool starting...
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Found 1 enabled converter configs to load (out of 9 total)
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Attempting to load converter: WATS Standard JSON
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Loaded converter: WATS Standard JSON Format Converter
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Loaded 1 converters
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Starting scan for existing files in watch directories...
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Found 1 existing files for WATS Standard JSON Format Converter
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Startup scan complete: 1 files queued, 0 skipped, 0 errors (0.00s)
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Started watcher for WATS Standard JSON Format Converter
+00:28:16 [INFO] pywats_client.service.async_converter_pool: Processing: SERVER_EXPORT_TEST.json
+00:28:16 [WARNING] pywats_client.service.async_converter_pool: Converter WATS Standard JSON Format Converter has no source_path, falling back to unsandboxed execution
+00:28:16 [INFO] pywats_client.service.async_ipc_server: Async IPC server started: 127.0.0.1:52759
+00:28:16 [INFO] pywats_client.service.async_client_service: Async IPC server started [instance: default]
+00:28:16 [WARNING] pywats_client.service.health_server: Port 8080 already in use, health server not started
+00:28:16 [INFO] pywats_client.service.async_client_service: Health server started on port 8080
+00:28:16 [INFO] pywats_client.service.async_client_service: Service status: StartPending -> Running
+00:28:16 [INFO] pywats_client.service.async_client_service: AsyncClientService started successfully
+00:28:16 [INFO] httpx: HTTP Request: POST https://python.wats.com/api/Report/WSJF "HTTP/1.1 400 Bad Request"
+00:28:16 [ERROR] pywats_client.service.async_converter_pool: Conversion failed: SERVER_EXPORT_TEST.json: Report submission failed (400): root -> step Pass/Fail tests -> step SinglePassDone: Status cannot be different from measurement status.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop -> Index 1: step NumericStep2 in Summary step requires a match.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop -> Index 1: step NumericStep3 in Summary step requires a match.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop -> Index 2: step NumericStep1 in Summary step requires a match.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2: endingIndex is required to be the same as highest index.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2: num is required to be one more than endingIndex.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2 -> Index 0 -> step StringStep -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2 -> Index 1 -> step StringStep -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2 -> Index 2 -> step StringStep -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step SequenceCallLoopSequence -> step SequenceCallLoop2 -> step PassFailStep: Status cannot be different from measurement status.
+root -> step Loops -> step NumericLimitLoopSequence -> loop NumericLimitStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step NumericLimitLoopSequence -> loop NumericLimitStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step MultiNumericLimitLoopSequence -> loop NumericLimitMultiStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step MultiNumericLimitLoopSequence -> loop NumericLimitMultiStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1: endingIndex is required to be the same as highest index.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1: num is required to be one more than endingIndex.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1 -> Index 0: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1 -> Index 1: stepType is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1 -> Index 1: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1 -> Index 2: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2: endingIndex is required to be the same as highest index.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2: num is required to be one more than endingIndex.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 0: stepType is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 0: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 1: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 2: stepType is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 2: numericMeas is required to match Summary step.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop -> Index 0 -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop -> Index 1 -> stringMeas : compOp is required to match Summary step.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop -> Index 1 -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step PassFailStepLoopSequence -> loop PassFailLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step PassFailStepLoopSequence -> loop PassFailLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop -> Index 0: stepType is required to match Summary step.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop -> Index 1: stepType is required to match Summary step.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop2: endingIndex is required to be the same as highest index.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop2: num is required to be one more than endingIndex.
+root -> step Loops -> step MessagePopupStepLoopSequence -> loop MessagePopupStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step MessagePopupStepLoopSequence -> loop MessagePopupStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step CallExeStepLoopSequence -> loop CallExeStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step CallExeStepLoopSequence -> loop CallExeStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step NumericLimitMultipleLoopsSequence -> loop NumericLimitMultipleLoops1: endingIndex is required to be the same as highest index.
+root -> step Loops -> step NumericLimitMultipleLoopsSequence -> loop NumericLimitMultipleLoops1: num is required to be one more than endingIndex.
+root -> step Loops -> step NumericLimitMultipleLoopsSequence -> loop NumericLimitMultipleLoops2: endingIndex is required to be the same as highest index.
+root -> step Loops -> step NumericLimitMultipleLoopsSequence -> loop NumericLimitMultipleLoops2: num is required to be one more than endingIndex.
+Traceback (most recent call last):
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats_client\service\async_converter_pool.py", line 752, in _process_item
+    await self.api.report.submit(report)
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\domains\report\async_service.py", line 920, in submit
+    return await self.submit_report(report)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\domains\report\async_service.py", line 620, in submit_report
+    result = await self._repository.post_wsjf(report)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\domains\report\async_repository.py", line 327, in post_wsjf
+    raise ValueError(f"Report submission failed ({response.status_code}): {error_msg}")
+ValueError: Report submission failed (400): root -> step Pass/Fail tests -> step SinglePassDone: Status cannot be different from measurement status.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop -> Index 1: step NumericStep2 in Summary step requires a match.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop -> Index 1: step NumericStep3 in Summary step requires a match.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop -> Index 2: step NumericStep1 in Summary step requires a match.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2: endingIndex is required to be the same as highest index.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2: num is required to be one more than endingIndex.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2 -> Index 0 -> step StringStep -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2 -> Index 1 -> step StringStep -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step SequenceCallLoopSequence -> loop SequenceCallLoop2 -> Index 2 -> step StringStep -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step SequenceCallLoopSequence -> step SequenceCallLoop2 -> step PassFailStep: Status cannot be different from measurement status.
+root -> step Loops -> step NumericLimitLoopSequence -> loop NumericLimitStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step NumericLimitLoopSequence -> loop NumericLimitStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step MultiNumericLimitLoopSequence -> loop NumericLimitMultiStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step MultiNumericLimitLoopSequence -> loop NumericLimitMultiStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1: endingIndex is required to be the same as highest index.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1: num is required to be one more than endingIndex.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1 -> Index 0: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1 -> Index 1: stepType is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1 -> Index 1: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop1 -> Index 2: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2: endingIndex is required to be the same as highest index.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2: num is required to be one more than endingIndex.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 0: stepType is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 0: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 1: numericMeas is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 2: stepType is required to match Summary step.
+root -> step Loops -> step MultiAndSingleNumericLimitLoopSequence -> loop NumericLimitMultiAndSingleStepLoop2 -> Index 2: numericMeas is required to match Summary step.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop -> Index 0 -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop -> Index 1 -> stringMeas : compOp is required to match Summary step.
+root -> step Loops -> step StringValueStepLoopSequence -> loop StringValueStepLoop -> Index 1 -> stringMeas : limit is required to match Summary step.
+root -> step Loops -> step PassFailStepLoopSequence -> loop PassFailLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step PassFailStepLoopSequence -> loop PassFailLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop -> Index 0: stepType is required to match Summary step.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop -> Index 1: stepType is required to match Summary step.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop2: endingIndex is required to be the same as highest index.
+root -> step Loops -> step GenericStepLoopSequence -> loop GenericStepLoop2: num is required to be one more than endingIndex.
+root -> step Loops -> step MessagePopupStepLoopSequence -> loop MessagePopupStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step MessagePopupStepLoopSequence -> loop MessagePopupStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step CallExeStepLoopSequence -> loop CallExeStepLoop: endingIndex is required to be the same as highest index.
+root -> step Loops -> step CallExeStepLoopSequence -> loop CallExeStepLoop: num is required to be one more than endingIndex.
+root -> step Loops -> step NumericLimitMultipleLoopsSequence -> loop NumericLimitMultipleLoops1: endingIndex is required to be the same as highest index.
+root -> step Loops -> step NumericLimitMultipleLoopsSequence -> loop NumericLimitMultipleLoops1: num is required to be one more than endingIndex.
+root -> step Loops -> step NumericLimitMultipleLoopsSequence -> loop NumericLimitMultipleLoops2: endingIndex is required to be the same as highest index.
+root -> step Loops -> step NumericLimitMultipleLoopsSequence -> loop NumericLimitMultipleLoops2: num is required to be one more than endingIndex.
+00:28:17 [INFO] pywats_client.service.async_converter_pool: Moved to error folder: SERVER_EXPORT_TEST.json
+00:33:16 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:33:16 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:38:17 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:43:17 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:48:18 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:53:18 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+07:23:20 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+07:23:20 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+08:56:46 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.97s (ConnectionError)
+08:56:46 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.79s (ConnectionError)
+08:56:47 [INFO] pywats.core.async_client: Retry 2/3 for GET /api/App/Version after 1.55s (ConnectionError)
+08:56:47 [INFO] pywats.core.async_client: Retry 2/3 for GET /api/App/Version after 1.40s (ConnectionError)
+09:12:08 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:17:09 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:22:09 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:27:11 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:32:12 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:37:12 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:42:13 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:47:13 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:52:13 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+09:57:14 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:04:07 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:04:08 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:09:09 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:14:09 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:19:10 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:24:10 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:29:10 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:34:11 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:39:12 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:44:13 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:51:19 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:51:19 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:56:20 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:01:20 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:06:21 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:16:11 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.20s (TimeoutError)
+11:16:41 [INFO] pywats.core.async_client: Retry 2/3 for GET /api/App/Version after 0.18s (TimeoutError)
+11:17:12 [WARNING] pywats_client.service.async_client_service: Ping failed: Request timed out after 30s:  | Operation: GET /api/App/Version | Details: {'timeout': 30, 'endpoint': '/api/App/Version'}
+Traceback (most recent call last):
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\connection.py", line 103, in handle_async_request
+    return await self._connection.handle_async_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\http11.py", line 136, in handle_async_request
+    raise exc
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\http11.py", line 106, in handle_async_request
+    ) = await self._receive_response_headers(**kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\http11.py", line 177, in _receive_response_headers
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\http11.py", line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.READ_NUM_BYTES, timeout=timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_backends\anyio.py", line 32, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\core\async_client.py", line 425, in _execute_request
+    response = await client.request(**kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats_client\service\async_client_service.py", line 680, in _on_ping_elapsed
+    await self.api.get_version()
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\async_wats.py", line 329, in get_version
+    return await self.analytics.get_version()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\domains\analytics\async_service.py", line 74, in get_version
+    return await self._repository.get_version()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\domains\analytics\async_repository.py", line 131, in get_version
+    response = await self._http_client.get(Routes.App.VERSION)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\core\async_client.py", line 590, in get
+    response = await self._make_request("GET", endpoint, params=params, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\core\async_client.py", line 346, in _make_request
+    response = await self._execute_request(method, endpoint, params, data, headers, retry)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\core\async_client.py", line 518, in _execute_request
+    raise last_exception
+pywats.core.exceptions.TimeoutError: Request timed out after 30s:  | Operation: GET /api/App/Version | Details: {'timeout': 30, 'endpoint': '/api/App/Version'}
+11:21:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:26:36 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:31:39 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:36:40 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:41:40 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:46:41 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:51:41 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:56:42 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:01:42 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:06:43 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:11:43 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:16:44 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:21:44 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:26:45 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:31:45 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:36:46 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:43:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:43:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:48:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:53:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+12:58:32 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:03:32 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:08:32 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:13:33 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:18:33 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:23:33 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:28:34 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:35:57 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:35:58 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:40:58 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:45:58 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:50:59 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+13:55:59 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:00:59 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:06:00 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:11:00 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:16:00 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:21:01 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:26:01 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:31:01 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:36:02 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:41:02 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:46:03 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:51:03 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+14:56:03 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+15:01:04 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+15:06:04 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+15:11:04 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+15:16:05 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+15:21:06 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+15:26:06 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:36:40 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:36:41 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:37:21 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:37:21 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:42:21 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:47:22 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+20:02:57 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+20:02:57 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+11:41:15 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.96s (TimeoutError)
+16:23:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:23:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:36:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:36:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:41:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:46:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:51:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+16:56:32 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:01:32 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:06:33 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:11:33 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:16:33 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:21:34 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:26:34 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+17:54:40 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.05s (ConnectionError)
+17:54:40 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.04s (ConnectionError)
+17:54:40 [INFO] pywats.core.async_client: Retry 2/3 for GET /api/App/Version after 1.58s (ConnectionError)
+17:54:40 [INFO] pywats.core.async_client: Retry 2/3 for GET /api/App/Version after 0.11s (ConnectionError)
+17:54:40 [WARNING] pywats_client.service.async_client_service: Ping failed: Failed to connect to https://python.wats.com: [Errno 11001] getaddrinfo failed | Operation: GET /api/App/Version | Details: {'url': 'https://python.wats.com'}
+Traceback (most recent call last):
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\core\async_client.py", line 425, in _execute_request
+    response = await client.request(**kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\ola.lund.reppe\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 11001] getaddrinfo failed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats_client\service\async_client_service.py", line 680, in _on_ping_elapsed
+    await self.api.get_version()
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\async_wats.py", line 329, in get_version
+    return await self.analytics.get_version()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\domains\analytics\async_service.py", line 74, in get_version
+    return await self._repository.get_version()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\domains\analytics\async_repository.py", line 131, in get_version
+    response = await self._http_client.get(Routes.App.VERSION)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\core\async_client.py", line 590, in get
+    response = await self._make_request("GET", endpoint, params=params, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\core\async_client.py", line 346, in _make_request
+    response = await self._execute_request(method, endpoint, params, data, headers, retry)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ola.lund.reppe\Source\PythonAPI (pyWATS)\pyWATS\src\pywats\core\async_client.py", line 495, in _execute_request
+    raise last_exception
+pywats.core.exceptions.ConnectionError: Failed to connect to https://python.wats.com: [Errno 11001] getaddrinfo failed | Operation: GET /api/App/Version | Details: {'url': 'https://python.wats.com'}
+21:30:22 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+21:35:23 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+21:40:23 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+21:45:23 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+21:50:24 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+21:55:24 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:00:25 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:05:25 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:10:25 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:15:26 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:20:26 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:25:26 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:30:27 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:35:27 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:40:28 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:45:28 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:50:28 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+22:55:29 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:00:29 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:06:11 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:12:28 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:12:28 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:17:29 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:22:29 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:27:29 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:32:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:37:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:42:30 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:47:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:52:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+23:57:31 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:02:32 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:07:32 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:12:32 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:17:33 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:22:33 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:27:34 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:32:34 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:37:34 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:42:35 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:47:35 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:52:36 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+00:57:36 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:02:36 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:07:37 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:12:37 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:17:38 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:22:38 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:27:38 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:32:39 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:37:39 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:42:39 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:47:40 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:52:40 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+01:57:41 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:02:41 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:07:41 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:12:42 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:17:42 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:22:43 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:27:43 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:32:43 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:37:44 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:42:44 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:47:45 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:52:45 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+02:57:45 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:02:46 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:07:46 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:12:47 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:17:47 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:22:47 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:27:48 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:32:48 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:37:48 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:42:49 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:47:49 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:52:50 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+03:57:50 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+04:02:50 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+04:07:51 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+04:12:51 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+04:17:51 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+04:22:52 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+04:27:52 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+04:32:53 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+04:37:53 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+06:34:01 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.55s (ConnectionError)
+06:34:01 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.87s (ConnectionError)
+06:34:02 [INFO] pywats.core.async_client: Retry 2/3 for GET /api/App/Version after 0.72s (ConnectionError)
+06:34:02 [INFO] pywats.core.async_client: Retry 2/3 for GET /api/App/Version after 0.94s (ConnectionError)
+07:52:28 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+07:58:26 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+08:55:17 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+08:55:17 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:02:52 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.21s (ConnectionError)
+10:02:52 [INFO] pywats.core.async_client: Retry 1/3 for GET /api/App/Version after 0.42s (ConnectionError)
+10:03:08 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:08:09 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:13:09 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:18:09 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:23:10 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:28:10 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:33:10 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:38:11 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"
+10:43:14 [INFO] httpx: HTTP Request: GET https://python.wats.com/api/App/Version "HTTP/1.1 200 OK"

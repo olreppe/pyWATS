@@ -839,42 +839,58 @@ Default instance: `~/.pywats/instances/default/client_config.json`
 
 ### Important Notes
 
-- ⚠️ The configurator is for **configuration editing only**
-- ⚠️ It does **not** run or control the client service
-- ⚠️ Use `pywats-client start/stop/status` to manage the service
-- ⚠️ All changes require a service restart to take effect
+- ⚠️ The configurator can **start and stop** the client service from the Dashboard
+- ⚠️ You can also use `pywats-client start/stop/status` from the command line
+- ⚠️ Configuration changes require a service restart to take effect
 
 ### Configuration Pages
 
-The configurator includes these pages:
+The configurator includes 7 pages:
 
-1. **Dashboard** - Quick overview and health status
-2. **Setup** - Server URL, API token, station name
-3. **Connection** - Connection testing and validation
-4. **Serial Numbers** - Serial number handler configuration
-5. **API Settings** - API endpoints and timeouts
-6. **Converters** - File converter priority and settings
-7. **Software** - Software update configuration  
-8. **Location** - Station location metadata
-9. **Proxy** - Network proxy settings
-10. **Logs** - View recent application logs
-11. **About** - Version and system information
+1. **Dashboard** - Service status, station info, converter health, and quick actions (start/stop service)
+2. **Connection** - Server address, credentials, connection testing, and advanced options (proxy, sync interval)
+3. **Converters** - File converter priority, settings, and monitoring
+4. **Setup** - Station name, location, and general settings
+5. **Serial Numbers** - Serial number handler configuration
+6. **Log** - View recent application and converter logs
+7. **About** - Version, system info, and license
 
 ### First-Time Setup
 
 1. Launch the configurator: `pywats-client gui`
-2. Go to **Setup** page
+2. Go to **Connection** page
 3. Configure:
-   - **Server URL**: `https://your-wats-server.com`
-   - **API Token**: Your Base64-encoded token
-   - **Station Name**: `YOUR-STATION-01`
+   - **Service address**: `https://your-wats-server.com`
+   - **API Token** (under Advanced options): Your Base64-encoded token
 4. Click **Save**
-5. Go to **Connection** page and click **Test Connection**
-6. If successful, start the service: `pywats-client start`
+5. Click **Run test** to verify connectivity
+6. Go to **Setup** page and configure your **Station Name**
+7. Return to **Dashboard** and click **Start Service**
 
-**Window Title Status:**
-- Shows `[Connected]` when service is running
-- Shows `[Disconnected]` when service is not reachable
+**Window Title:**
+- Shows the application version and instance name (e.g. `pyWATS Client Configurator (0.5.2) - Client A`)
+
+### Live Update Workflow (Development)
+
+When developing with Client A running as a persistent installation:
+
+1. **Stop the client** — close the GUI or right-click the tray icon → Quit
+2. **Make code changes** in the workspace
+3. **Restart the client**:
+   ```bash
+   python run_client_a.py
+   ```
+4. The client reloads all code from the workspace automatically (editable install)
+
+**Autostart**: To register Client A to start at logon:
+```powershell
+.\scripts\setup_client_a_autostart.ps1
+```
+
+**Tray icon**: Client A runs with a persistent system tray icon. Use:
+- **Minimize to Tray** (File menu or tray) to hide the window
+- **Show Window** (tray right-click) to restore
+- **Quit** (tray right-click) to fully exit
 
 ---
 

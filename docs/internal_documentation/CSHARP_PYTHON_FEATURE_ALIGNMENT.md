@@ -256,10 +256,10 @@ bool RemoveAllChildUnits(CultureCode, ParentSN, ParentPN, out message)
 
 **Location**: **Split across two domains**
 
-1. **Template Definition** (Product Domain) - `src/pywats/domains/product/box_build.py` (503 lines)
+1. **Template Definition** (Product Domain) - `src/pywats/domains/product/async_service.py` → `AsyncBoxBuildTemplate` class (consolidated Feb 2026, formerly in `box_build.py`)
 2. **Assembly Operations** (Production Domain) - `async_service.py`
 
-**BoxBuildTemplate Class** (Fluent Builder Pattern):
+**AsyncBoxBuildTemplate Class** (Fluent Builder Pattern):
 ```python
 class BoxBuildTemplate:
     """

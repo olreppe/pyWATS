@@ -74,7 +74,7 @@ The **pyWATS Service** is a **background worker process** that handles the core 
 
 **Instance Data:**
 ```
-C:\ProgramData\pyWATS\instances\{instance_id}\
+C:\ProgramData/Virinco/pyWATS\instances\{instance_id}\
 ├── client_config.json     # Configuration
 ├── service.lock           # Process tracking (PID, uptime)
 ├── queue/                 # Upload queue
@@ -415,7 +415,7 @@ graph TB
 ```
 
 **Configurator Workflow:**
-1. **Launch** `run_configurator.py` → Scans `C:\ProgramData\pyWATS\instances\` → Finds: `default`, `client_b` → Shows dropdown: "Select Instance"
+1. **Launch** `run_configurator.py` → Scans `C:\ProgramData/Virinco/pyWATS\instances\` → Finds: `default`, `client_b` → Shows dropdown: "Select Instance"
 2. **User selects "default"** → Loads `default/client_config.json` → Reads `default/service.lock` → Displays dashboard (service running)
 3. **Launch another Configurator** → Select "client_b" → Manages independently ✅ → **Two GUIs managing two services simultaneously**
 
@@ -482,7 +482,7 @@ graph TB
 
 ### Lock File Format
 
-**Location:** `C:\ProgramData\pyWATS\instances\{instance_id}\service.lock`
+**Location:** `C:\ProgramData/Virinco/pyWATS\instances\{instance_id}\service.lock`
 
 **Content:**
 ```json
@@ -492,7 +492,7 @@ graph TB
   "instance_name": "Client A (Master)",
   "started_at": "2026-02-14T10:30:00.123456",
   "service_url": "https://python.wats.com",
-  "config_path": "C:/ProgramData/pyWATS/instances/default/client_config.json"
+  "config_path": "C:/ProgramData/Virinco/pyWATS/instances/default/client_config.json"
 }
 ```
 
@@ -549,11 +549,11 @@ for service in service_manager.list_all_services():
 python run_service.py default
 
 # Stop service (via PID from lock file)
-$lock = Get-Content C:\ProgramData\pyWATS\instances\default\service.lock | ConvertFrom-Json
+$lock = Get-Content C:\ProgramData/Virinco/pyWATS\instances\default\service.lock | ConvertFrom-Json
 Stop-Process -Id $lock.pid
 
 # Check status
-Get-Content C:\ProgramData\pyWATS\instances\default\service.lock | ConvertFrom-Json | Format-List
+Get-Content C:\ProgramData/Virinco/pyWATS\instances\default\service.lock | ConvertFrom-Json | Format-List
 ```
 
 ---
@@ -627,18 +627,18 @@ python run_configurator.py  # Select "client_b"
 ### Service Won't Start
 
 **Check:**
-1. Config file exists: `C:\ProgramData\pyWATS\instances\{instance_id}\client_config.json`
+1. Config file exists: `C:\ProgramData/Virinco/pyWATS\instances\{instance_id}\client_config.json`
 2. Required directories exist: `queue/`, `logs/`, `reports/`, `converters/`
 3. No stale lock file (or delete it)
-4. Check logs: `C:\ProgramData\pyWATS\instances\{instance_id}\logs\`
+4. Check logs: `C:\ProgramData/Virinco/pyWATS\instances\{instance_id}\logs\`
 
 **Fix:**
 ```powershell
 # Delete stale lock file
-Remove-Item C:\ProgramData\pyWATS\instances\default\service.lock -ErrorAction SilentlyContinue
+Remove-Item C:\ProgramData/Virinco/pyWATS\instances\default\service.lock -ErrorAction SilentlyContinue
 
 # Recreate directories
-python -c "from pathlib import Path; (Path('C:/ProgramData/pyWATS/instances/default/queue')).mkdir(parents=True, exist_ok=True)"
+python -c "from pathlib import Path; (Path('C:/ProgramData/Virinco/pyWATS/instances/default/queue')).mkdir(parents=True, exist_ok=True)"
 ```
 
 ### Configurator Shows Wrong Status
@@ -685,7 +685,7 @@ Get-Process python | Where-Object {$_.Id -eq $lock.pid}
 ### For Administrators
 
 1. **Install as Windows Service** - For production reliability (auto-start)
-2. **Use System-Wide Paths** - `C:\ProgramData\pyWATS` for multi-user access
+2. **Use System-Wide Paths** - `C:\ProgramData/Virinco/pyWATS` for multi-user access
 3. **Separate Instances for Isolation** - Different test processes = different instances
 4. **Back Up Config Files** - `client_config.json` contains all settings
 5. **Monitor Lock Files** - Detect crashed services (stale locks)

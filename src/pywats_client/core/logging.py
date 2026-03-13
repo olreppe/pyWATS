@@ -39,7 +39,7 @@ def get_client_log_path(instance_id: str = "default") -> Path:
         >>> from pywats_client.core.logging import get_client_log_path
         >>> log_path = get_client_log_path("station_a")
         >>> print(log_path)
-        C:/ProgramData/pyWATS/station_a/pywats.log
+        C:/ProgramData/Virinco/pyWATS/station_a/pywats.log
     """
     from .config import ClientConfig
     
@@ -50,7 +50,7 @@ def get_client_log_path(instance_id: str = "default") -> Path:
     except Exception:
         # Fallback to ProgramData if config unavailable
         if Path("C:/ProgramData").exists():
-            install_dir = Path("C:/ProgramData") / "pyWATS" / instance_id
+            install_dir = Path("C:/ProgramData") / "Virinco" / "pyWATS" / instance_id
         else:
             # Linux/Mac fallback
             install_dir = Path.home() / ".pywats" / instance_id
@@ -78,7 +78,7 @@ def get_conversion_log_dir(instance_id: str = "default") -> Path:
         >>> from pywats_client.core.logging import get_conversion_log_dir
         >>> log_dir = get_conversion_log_dir("station_a")
         >>> print(log_dir)
-        C:/ProgramData/pyWATS/station_a/logs/conversions
+        C:/ProgramData/Virinco/pyWATS/station_a/logs/conversions
     """
     log_path = get_client_log_path(instance_id)
     conversion_dir = log_path.parent / "logs" / "conversions"

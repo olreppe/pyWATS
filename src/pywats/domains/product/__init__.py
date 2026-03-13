@@ -12,11 +12,10 @@ from .models import (
     BomItem,
 )
 from .enums import ProductState
-from .box_build import BoxBuildTemplate
 
 # Async implementations (primary API)
 from .async_repository import AsyncProductRepository
-from .async_service import AsyncProductService
+from .async_service import AsyncProductService, AsyncBoxBuildTemplate, BoxBuildTemplate
 
 __all__ = [
     # Models
@@ -28,6 +27,7 @@ __all__ = [
     "ProductRevisionRelation",
     "BomItem",
     # Box Build
+    "AsyncBoxBuildTemplate",
     "BoxBuildTemplate",
     # Enums
     "ProductState",

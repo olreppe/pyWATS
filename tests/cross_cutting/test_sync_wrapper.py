@@ -7,7 +7,7 @@ import asyncio
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 
-from pywats.sync import _run_sync, SyncServiceWrapper
+from pywats.pywats import _run_sync, SyncServiceWrapper
 
 
 class TestRunSync:

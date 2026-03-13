@@ -17,7 +17,7 @@ Lock File Format:
     "instance_name": "Client A (Master)",
     "started_at": "2026-02-14T10:30:00",
     "service_url": "https://python.wats.com",
-    "config_path": "C:/ProgramData/pyWATS/instances/default/client_config.json"
+    "config_path": "C:/ProgramData/Virinco/pyWATS/instances/default/client_config.json"
 }
 """
 
@@ -61,8 +61,8 @@ class ServiceInfo:
 def get_instances_base_path() -> Path:
     """Get the system-wide instances base directory (cross-platform)."""
     if os.name == 'nt':
-        # Windows: C:\ProgramData\pyWATS\instances
-        base = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS' / 'instances'
+        # Windows: C:\ProgramData\Virinco\pyWATS\instances
+        base = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'Virinco' / 'pyWATS' / 'instances'
     else:
         # Linux/Mac: /var/lib/pywats/instances
         base = Path('/var/lib/pywats/instances')
@@ -95,16 +95,22 @@ def read_lock_file(instance_id: str) -> Optional[Dict[str, Any]]:
 
 
 def is_process_running(pid: int) -> bool:
-    """Check if process with given PID is running (cross-platform)."""
+    """Check if process with given PID is running (cross-platform).
+    
+    Uses ctypes on Windows for instant check (avoids slow tasklist subprocess).
+    """
     try:
         if os.name == 'nt':
-            # Windows: Use tasklist
-            result = subprocess.run(
-                ['tasklist', '/FI', f'PID eq {pid}'],
-                capture_output=True,
-                text=True
+            # Windows: Use kernel32.OpenProcess (instant, no subprocess)
+            import ctypes
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            handle = ctypes.windll.kernel32.OpenProcess(
+                PROCESS_QUERY_LIMITED_INFORMATION, False, pid
             )
-            return str(pid) in result.stdout
+            if handle:
+                ctypes.windll.kernel32.CloseHandle(handle)
+                return True
+            return False
         else:
             # Linux/Mac: Send signal 0 (doesn't kill, just checks)
             os.kill(pid, 0)

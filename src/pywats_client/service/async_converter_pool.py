@@ -365,14 +365,22 @@ class AsyncConverterPool:
             # Get converter configs from config.converters property
             converter_configs = self.config.converters
             
-            for conv_config in converter_configs:
+            # Filter to only enabled converters
+            enabled_configs = [c for c in converter_configs if c.enabled]
+            
+            logger.info(f"Found {len(enabled_configs)} enabled converter configs to load (out of {len(converter_configs)} total)")
+            
+            for conv_config in enabled_configs:
                 try:
+                    logger.info(f"Attempting to load converter: {conv_config.name}")
                     converter = await self._create_converter(conv_config)
                     if converter:
                         self._converters.append(converter)
                         logger.info(f"Loaded converter: {converter.name}")
+                    else:
+                        logger.warning(f"Converter returned None: {conv_config.name}")
                 except Exception as e:
-                    logger.exception(f"Failed to load converter: {e}")
+                    logger.exception(f"Failed to load converter {conv_config.name}: {e}")
             
             logger.info(f"Loaded {len(self._converters)} converters")
             
@@ -381,31 +389,78 @@ class AsyncConverterPool:
     
     async def _create_converter(
         self,
-        config: Dict[str, Any]
+        config: 'ConverterConfig'
     ) -> Optional['Converter']:
         """Create a converter instance from configuration"""
-        # Import converter base
-        from ..converters.base import Converter
-        from ..converters.registry import get_converter_class
+        import importlib
+        from pathlib import Path
         
-        converter_type = config.get("type")
-        if not converter_type:
+        # Get module path (e.g., "pywats_client.converters.standard.wats_standard_json_converter.WATSStandardJsonConverter")
+        module_path = config.module_path
+        if not module_path:
+            logger.warning(f"Converter config missing 'module_path': {config.name}")
             return None
         
-        # Get converter class
-        converter_class = get_converter_class(converter_type)
-        if not converter_class:
-            logger.warning(f"Unknown converter type: {converter_type}")
+        try:
+            # Split module path: "module.path.Class Name" -> ("module.path", "ClassName")
+            parts = module_path.rsplit('.', 1)
+            if len(parts) != 2:
+                logger.error(f"Invalid module_path format: {module_path}")
+                return None
+            
+            module_name, class_name = parts
+            
+            # Import the module and get the class
+            module = importlib.import_module(module_name)
+            converter_class = getattr(module, class_name)
+            
+            # Create instance (no config passed to __init__)
+            converter = converter_class()
+            
+            # Set watch_path from config's watch_folder
+            if config.watch_folder:
+                converter.watch_path = Path(config.watch_folder)
+            else:
+                converter.watch_path = None
+                
+            # Set done/error/pending paths from config
+            converter.done_path = Path(config.done_folder) if config.done_folder else None
+            converter.error_path = Path(config.error_folder) if config.error_folder else None
+            converter.pending_path = Path(config.pending_folder) if config.pending_folder else None
+            
+            # Set archive_path for post-processing MOVE action (defaults to done_path)
+            if config.archive_folder:
+                converter.archive_path = Path(config.archive_folder)
+            else:
+                converter.archive_path = converter.done_path  # Default to done folder
+                
+            # Store config object for later access
+            converter._config = config
+                
+            # Set priority from config (default to 5 if not specified)
+            if hasattr(converter, 'priority'):
+                converter.priority = config.priority if hasattr(config, 'priority') else 5
+            
+            # Set supported_extensions from file_patterns
+            # Convert patterns like "*.json" to extensions like ".json"
+            if hasattr(converter, 'file_patterns'):
+                patterns = converter.file_patterns
+            elif hasattr(config, 'file_patterns') and config.file_patterns:
+                patterns = config.file_patterns
+            else:
+                patterns = ["*.*"]  # Default to all files
+                
+            # Note: supported_extensions is now auto-derived from file_patterns in FileConverter
+            # No need to manually set it here
+            
+            # Set watch_recursive from config (default False)
+            converter.watch_recursive = getattr(config, 'watch_recursive', False)
+            
+            return converter
+            
+        except Exception as e:
+            logger.exception(f"Failed to load converter from {module_path}: {e}")
             return None
-        
-        # Create instance
-        converter = converter_class(config)
-        
-        # Set priority from config (default to 5 if not specified)
-        if hasattr(converter, 'priority'):
-            converter.priority = config.get("priority", 5)
-        
-        return converter
     
     # =========================================================================
     # File Watching
@@ -594,8 +649,8 @@ class AsyncConverterPool:
         converter: 'Converter'
     ) -> None:
         """Handle new file detected (called from watchdog thread - NOT async safe!)"""
-        # Validate file matches converter pattern
-        if not converter.matches_file(file_path):
+        # Validate file matches converter's supported extensions
+        if not self._file_matches_extensions(file_path, converter.supported_extensions):
             return
         
         # Deduplicate against startup scan
@@ -622,6 +677,14 @@ class AsyncConverterPool:
             )
         except Exception as e:
             logger.warning(f"Cannot queue {file_path.name}: {e}", exc_info=True)
+    
+    def _file_matches_extensions(self, file_path: Path, supported_extensions: list) -> bool:
+        """Check if file extension matches any of the supported extensions"""
+        if ".*" in supported_extensions:
+            return True  # Match all files
+        
+        file_ext = file_path.suffix  # e.g., ".json"
+        return file_ext in supported_extensions
     
     # =========================================================================
     # Conversion Processing
@@ -678,7 +741,11 @@ class AsyncConverterPool:
                 logger.warning(f"Converter returned no report: {item.file_path.name}")
                 item.state = AsyncConversionItemState.ERROR
                 item.error = "Converter returned no report"
+                item.process_end = datetime.now()
                 self._stats["errors"] += 1
+                
+                # Move file to error folder
+                await self._handle_error(item, Exception("Converter returned no report"))
                 return
             
             # 3. Submit to WATS (async HTTP)
@@ -799,17 +866,37 @@ class AsyncConverterPool:
         WARNING: Only use for trusted, built-in converters.
         This provides no isolation or security.
         """
-        # Read file content
-        content = await self._read_file(item.file_path)
+        from ..converters.models import ConverterSource
+        from ..converters.context import ConverterContext
         
-        # Run converter in thread pool
-        report = await asyncio.to_thread(
-            item.converter.convert,
-            content,
-            item.file_path
+        # Create ConverterSource from file path
+        source = ConverterSource.from_file(item.file_path)
+        
+        # Create ConverterContext
+        context = ConverterContext(
+            api_client=self.api,
+            drop_folder=item.converter.watch_path,
+            done_folder=item.converter.done_path,
+            error_folder=item.converter.error_path,
+            pending_folder=item.converter.pending_path,
+            alarm_threshold=getattr(item.converter._config, 'alarm_threshold', 0.5),
+            reject_threshold=getattr(item.converter._config, 'reject_threshold', 0.2),
+            arguments=getattr(item.converter._config, 'arguments', {})
         )
         
-        return report
+        # Run converter in thread pool
+        result = await asyncio.to_thread(
+            item.converter.convert,
+            source,
+            context
+        )
+        
+        # Extract report from ConverterResult
+        if hasattr(result, 'report'):
+            return result.report
+        else:
+            # Legacy converters might return dict directly
+            return result
     
     async def _read_file(self, file_path: Path) -> str:
         """Read file content asynchronously"""
@@ -851,15 +938,28 @@ class AsyncConverterPool:
         item: AsyncConversionItem,
         error: Exception
     ) -> None:
-        """Handle conversion error"""
+        """Handle conversion error - move file to error folder"""
         error_path = item.converter.error_path
         if error_path:
             error_path.mkdir(parents=True, exist_ok=True)
             dest = error_path / item.file_path.name
             try:
+                # If destination exists, overwrite it (this is a newer failure)
+                if dest.exists():
+                    logger.info(f"Overwriting existing error file: {dest.name}")
+                    await asyncio.to_thread(dest.unlink)
+                
                 await asyncio.to_thread(item.file_path.rename, dest)
+                logger.info(f"Moved to error folder: {item.file_path.name}")
             except Exception as e:
                 logger.exception(f"Failed to move error file: {e}")
+                # Last resort: delete the file so it doesn't block the watch folder
+                try:
+                    if item.file_path.exists():
+                        await asyncio.to_thread(item.file_path.unlink)
+                        logger.warning(f"Deleted stuck file from watch folder: {item.file_path.name}")
+                except Exception as delete_err:
+                    logger.error(f"Could not delete stuck file: {delete_err}")
     
     async def _process_archive_queues(self) -> None:
         """Process archive queues for all converters (during idle)"""
@@ -897,5 +997,5 @@ class _FileEventHandler(FileSystemEventHandler):
         if not event.is_directory:
             # Check if moved TO our watch directory
             dest_path = Path(event.dest_path)
-            if self.converter.matches_file(dest_path):
+            if self.pool._file_matches_extensions(dest_path, self.converter.supported_extensions):
                 self.pool._on_file_created(dest_path, self.converter)

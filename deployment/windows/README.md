@@ -110,7 +110,7 @@ C:\Program Files\pyWATS\
 ├── resources\             # Icons, images
 └── uninstall.exe          # Uninstaller
 
-C:\ProgramData\pyWATS\
+C:\ProgramData/Virinco/pyWATS\
 ├── config.json            # Configuration (preserved on upgrade)
 ├── logs\                  # Log files
 └── queue\                 # Offline queue data

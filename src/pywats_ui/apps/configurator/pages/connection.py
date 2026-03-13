@@ -68,6 +68,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         
         self._address_edit = QLineEdit()
         self._address_edit.setPlaceholderText("https://your-wats-server.com/")
+        self._address_edit.setToolTip("Full URL to your WATS server (e.g. https://company.wats.com)")
         self._address_edit.textChanged.connect(self._emit_changed)
         address_layout.addWidget(self._address_edit, 1)
         
@@ -76,6 +77,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         # Disconnect button
         self._disconnect_btn = QPushButton("Disconnect")
         self._disconnect_btn.setMinimumWidth(120)  # Phase 2: Scaling fix
+        self._disconnect_btn.setToolTip("Disconnect from the current server and clear credentials")
         self._disconnect_btn.clicked.connect(self._on_disconnect)
         self._layout.addWidget(self._disconnect_btn, alignment=Qt.AlignmentFlag.AlignLeft)
         
@@ -95,6 +97,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         
         self._test_btn = QPushButton("Run test")
         self._test_btn.setMinimumWidth(100)  # Phase 2: Scaling fix
+        self._test_btn.setToolTip("Test connectivity to the configured WATS server")
         self._test_btn.clicked.connect(self._on_test_connection)
         test_layout.addWidget(self._test_btn)
         test_layout.addStretch()
@@ -169,6 +172,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         token_layout.addWidget(QLabel("API Token:"))
         self._token_edit = QLineEdit()
         self._token_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self._token_edit.setToolTip("Base64-encoded API token for server authentication")
         self._token_edit.textChanged.connect(self._emit_changed)
         token_layout.addWidget(self._token_edit, 1)
         advanced_layout.addLayout(token_layout)
@@ -178,6 +182,7 @@ class ConnectionPage(BasePage, OfflineCapability):
         sync_layout.addWidget(QLabel("Sync interval (seconds):"))
         self._sync_interval_edit = QLineEdit()
         self._sync_interval_edit.setMinimumWidth(100)  # Phase 2: Scaling fix
+        self._sync_interval_edit.setToolTip("How often (in seconds) to sync data with the server (minimum 5)")
         self._sync_interval_edit.textChanged.connect(self._emit_changed)
         sync_layout.addWidget(self._sync_interval_edit)
         sync_layout.addStretch()
@@ -286,8 +291,9 @@ class ConnectionPage(BasePage, OfflineCapability):
             self._proxy_url_edit.setText(proxy_url)
         self._on_proxy_enabled_changed(self._proxy_enabled_cb.checkState())  # Update enabled state
         
-        # Status will be updated after auto-test
-        self.update_status("Checking...")
+        # Only set "Checking..." on first load, preserve current status on page switches
+        if self._auto_test_pending:
+            self.update_status("Checking...")
     
     def showEvent(self, event) -> None:
         """Called when page becomes visible"""

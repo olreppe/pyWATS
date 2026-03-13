@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..step import Step
-from ...common_types import WATSBase, Field, model_validator
+from ...common_types import WATSBase, Field
 
 
 class MessagePopupInfo(WATSBase):
@@ -25,13 +25,6 @@ class MessagePopupInfo(WATSBase):
         max_length=100,
         description="Button that was clicked."
     )
-    
-    @model_validator(mode='after')
-    def set_default_response(self) -> "MessagePopupInfo":
-        """Set default response if not provided."""
-        if self.response is None:
-            self.response = "NOT SET"
-        return self
 
 
 class MessagePopUpStep(Step):
@@ -51,5 +44,7 @@ class MessagePopUpStep(Step):
     
     info: Optional[MessagePopupInfo] = Field(
         default=None,
+        validation_alias="messagePopup",
+        serialization_alias="messagePopup",
         description="MessagePopup-specific information."
     )

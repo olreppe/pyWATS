@@ -1,0 +1,58 @@
+Subject: Critical Bug - WATS Server Export/Import Format Incompatibility (Loop Validation)
+
+Dear WATS Support Team,
+
+We've discovered a critical bug in WATS server version 2026.1.5.324 (python.wats.com) where **exported UUT reports cannot be re-imported** due to validation inconsistencies.
+
+## The Problem
+
+Files exported from WATS fail validation when attempting to re-import them. Specifically, loop summary steps have incompatible field requirements between export and import APIs.
+
+## Simple Reproduction
+
+1. Export any UUT report with loop steps (e.g., TestStand For loops) as JSON
+2. Attempt to re-import the same file via POST /api/Report/WSJF
+3. Result: **400 Bad Request** - "num is required to be one more than endingIndex"
+
+## Root Cause
+
+For a loop with 3 iterations (0, 1, 2):
+
+- **Export format:** `{"num": 3, "endingIndex": 3}` 
+- **Import validation requires:** `{"num": 4, "endingIndex": 3}`
+
+The validation rules differ between APIs, making exported data invalid for import.
+
+## Impact
+
+- **Critical severity** - Blocks all data migration, backup/restore, and re-processing workflows
+- **100% failure rate** for reports with loops (77% of our test dataset)
+- Affects reports from actual WATS server exports, not third-party data
+
+## Evidence
+
+We've attached a complete technical report with:
+- Reproduction steps
+- Example exported file (from your server)
+- Exact error messages
+- Impact analysis
+
+Our testing shows this affects Export API, Import API validation, and multiple loop types (SequenceCall, NumericLimit, PassFail, etc.).
+
+## Request
+
+Please prioritize investigating and aligning the validation logic between export and import APIs. The exported format should be valid for re-import.
+
+## Attachments
+
+1. WATS_SERVER_BUG_REPORT.md - Complete technical analysis
+2. uut-wsjf-export (16).json - Example exported file that fails re-import
+
+Thank you for your attention to this critical issue.
+
+Best regards,  
+[Your Name]  
+pyWATS Development Team  
+February 20, 2026
+
+Contact: [Your email/phone]

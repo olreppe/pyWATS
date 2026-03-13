@@ -287,15 +287,24 @@ class LoopInfo(WATSBase):
     Loop iteration information for steps executed in loops.
     
     When a step is part of a loop, this captures which iteration
-    the step result belongs to.
+    the step result belongs to. Also includes loop summary fields
+    required by WATS server validation.
     """
     
-    # Loop index (0-based)
-    index: int = Field(
-        default=0,
+    # Loop index (0-based) - None for Summary Steps, int for Index Steps
+    index: Optional[int] = Field(
+        default=None,
+        validation_alias="idx",
+        serialization_alias="idx",
+        description="Current loop index (0-based). None for Summary Steps, 0+ for Index Steps."
+    )
+    
+    # Total iterations (alias for idx) - EXCLUDED from serialization to prevent duplicate "i" field
+    idx: Optional[int] = Field(
+        default=None,
         validation_alias="i",
-        serialization_alias="i",
-        description="Current loop index (0-based)."
+        exclude=True,  # Never serialize this field - use 'index' instead
+        description="Current loop index (0-based, legacy alias for index). NOT SERIALIZED."
     )
     
     # Total iterations
@@ -311,3 +320,32 @@ class LoopInfo(WATSBase):
         default=None,
         description="Parent loop info for nested loops."
     )
+    
+    # Loop summary fields (required by WATS server for Summary Steps)
+    num: Optional[int] = Field(
+        default=None,
+        description="Total number of iterations in loop."
+    )
+    
+    passed: Optional[int] = Field(
+        default=None,
+        description="Number of passed iterations."
+    )
+    
+    failed: Optional[int] = Field(
+        default=None,
+        description="Number of failed iterations."
+    )
+    
+    startingIndex: Optional[int] = Field(
+        default=None,
+        serialization_alias="startingIndex",
+        description="Starting index of loop."
+    )
+    
+    endingIndex: Optional[int] = Field(
+        default=None,
+        serialization_alias="endingIndex",
+        description="Ending index of loop."
+    )
+

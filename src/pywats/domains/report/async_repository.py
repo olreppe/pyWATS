@@ -145,6 +145,99 @@ class AsyncReportRepository:
     # Report WSJF (JSON Format)
     # =========================================================================
 
+    # =========================================================================
+    # Utility Methods
+    # =========================================================================
+    
+    def _sanitize_nulls(self, data: Any) -> Any:
+        """
+        Recursively replace None/null values with empty strings.
+        
+        WATS server validation requires strings in many fields where reports
+        may contain nulls. This sanitizes the data to pass server validation.
+        
+        Args:
+            data: Dict, list, or scalar value to sanitize
+            
+        Returns:
+            Sanitized data with nulls replaced by empty strings
+        """
+        if data is None:
+            return ""
+        elif isinstance(data, dict):
+            return {key: self._sanitize_nulls(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [self._sanitize_nulls(item) for item in data]
+        else:
+            return data
+    
+    def _sanitize_legacy_null_strings(self, steps: Any) -> Any:
+        """
+        Sanitize None values in specific string fields for legacy data compatibility.
+        
+        This is a surgical fix for legacy files that contain explicit null values
+        in fields where the server expects strings. Only affects known step info fields.
+        
+        Args:
+            steps: Step data (dict, list, or other)
+            
+        Returns:
+            Sanitized step data
+        """
+        if isinstance(steps, dict):
+            # Sanitize messagePopup.response (legacy files may have null)
+            if 'messagePopup' in steps and isinstance(steps['messagePopup'], dict):
+                popup_info = steps['messagePopup']
+                if 'response' in popup_info and popup_info['response'] is None:
+                    popup_info['response'] = " "  # Use space instead of empty string (server requires min_length=1)
+            
+            # Recursively process nested steps
+            if 'steps' in steps and isinstance(steps['steps'], list):
+                steps['steps'] = [self._sanitize_legacy_null_strings(step) for step in steps['steps']]
+                
+        elif isinstance(steps, list):
+            return [self._sanitize_legacy_null_strings(item) for item in steps]
+           
+        return steps
+
+    def _restore_loop_nulls(self, step: Optional[Dict[str, Any]]) -> None:
+        """
+        Restore None values for loop fields that were excluded by exclude_none=True.
+        
+        Summary steps require: idx: null, and may have num/passed/failed/endingIndex
+        Iteration steps require: idx: int, and num/passed/failed/endingIndex must be null
+        """
+        if step is None or not isinstance(step, dict):
+            return
+            
+        # Check if this step has a loop object
+        if 'loop' in step and isinstance(step['loop'], dict):
+            loop = step['loop']
+            
+            # If loop has num/passed/failed, it's a Summary step → idx should be null
+            if 'num' in loop or 'passed' in loop or 'failed' in loop or 'endingIndex' in loop:
+                if 'idx' not in loop:
+                    print(f"[DEBUG] Restoring idx: null for SUMMARY step: {step.get('text', 'unnamed')}, num={loop.get('num')}, ending={loop.get('endingIndex')}")
+                    loop['idx'] = None
+                else:
+                    print(f"[DEBUG] Summary step already has idx={loop.get('idx')}, num={loop.get('num')}, ending={loop.get('endingIndex')}, step: {step.get('text', 'unnamed')}")
+            # Otherwise if it has idx, it's an Iteration step → ensure summary fields are null
+            elif 'idx' in loop:
+                print(f"[DEBUG] Processing ITERATION step idx={loop.get('idx')}, step: {step.get('text', 'unnamed')}")
+                for field in ['num', 'passed', 'failed', 'endingIndex']:
+                    if field not in loop:
+                        print(f"[DEBUG]   Restoring {field}: null")
+                        loop[field] = None
+         
+        # Recursively process child steps
+        if 'steps' in step and isinstance(step['steps'], list):
+            for child_step in step['steps']:
+                self._restore_loop_nulls(child_step)
+
+    # =========================================================================
+    # Create Operations
+    # =========================================================================
+
     async def post_wsjf(
         self, report: Union[UUTReport, UURReport, Dict[str, Any]]
     ) -> Optional[str]:
@@ -156,8 +249,49 @@ class AsyncReportRepository:
         # Check if it's a Pydantic model (V1 or V3) by checking for model_dump
         if hasattr(report, 'model_dump'):
             data = report.model_dump(
-                mode="json", by_alias=True, exclude_none=True
+                mode="json", by_alias=True, exclude_none=True  # Exclude None to avoid server rejecting null values
             )
+            
+            # Restore None values for loop fields where required
+            # Summary steps MUST have idx: null, and iteration steps MUST have num/passed/failed/endingIndex: null
+            print(f"[DEBUG] Before restore_loop_nulls")
+            self._restore_loop_nulls(data.get('root'))
+            print(f"[DEBUG] After restore_loop_nulls")
+            
+            # DEBUG: Print loop structure
+            root = data.get('root')
+            print(f"[DEBUG] Root type: {type(root)}")
+            if root:
+                import json as json_mod
+                if 'steps' in root and root['steps']:
+                    print(f"[DEBUG] Found {len(root['steps'])} first-level steps")
+                    # Find first summary and first iteration
+                    found_summary = False
+                    found_iteration = False
+                    def find_loops(step_list, depth=0):
+                        nonlocal found_summary, found_iteration
+                        if depth > 5 or (found_summary and found_iteration):
+                            return
+                        for s in step_list:
+                            if isinstance(s, dict) and 'loop' in s:
+                                loop = s['loop']
+                                if 'idx' in loop and loop['idx'] is None and not found_summary:
+                                    print(f"[DEBUG] SUMMARY step loop: {json_mod.dumps(loop)}")
+                                    found_summary = True
+                                elif 'idx' in loop and loop['idx'] is not None and not found_iteration:
+                                    print(f"[DEBUG] ITERATION step loop (idx={loop['idx']}): {json_mod.dumps(loop)}")
+                                    found_iteration = True
+                                if found_summary and found_iteration:
+                                    return
+                            if isinstance(s, dict) and 'steps' in s:
+                                find_loops(s['steps'], depth+1)
+                    find_loops(root['steps'])
+            
+            
+            # Sanitize legacy null strings in step tree (surgical fix for edge cases)
+            # Steps are inside the 'root' field (the root step)
+            if 'root' in data and isinstance(data['root'], dict) and 'steps' in data['root']:
+                data['root']['steps'] = self._sanitize_legacy_null_strings(data['root']['steps'])
             
             # Handle UURReport special fields
             if isinstance(report, UURReport) and 'uurInfo' in data:

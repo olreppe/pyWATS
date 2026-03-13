@@ -1,11 +1,38 @@
-# GUI Cleanup - Analysis Document
+
+# GUI/Client-Service Architecture Cleanup - Analysis Document
 
 **Created:** February 14, 2026, 15:45  
-**Last Updated:** February 14, 2026, 15:45
+**Last Updated:** February 14, 2026, 17:15
 
 ---
 
-## Current State Analysis
+
+## Current State Analysis (Merged Scope)
+
+
+### 0. Client/Service Architecture & Test Environment
+
+#### Current State
+- Two client configs (A/B) exist, but test fixtures and startup sequence are not always enforced.
+- Service, client, and UI are decoupled, but not all tests start the full stack.
+- Server URL and tokens are present in configs, but persistence is not always validated.
+- Some legacy tests or scripts may use more than two clients or not clean up directories/services.
+
+#### Issues
+- Test environment sometimes leaves stale directories or services.
+- Not all tests default to client A unless multi-client is required.
+- Service > client > UI startup is not always enforced in tests.
+- Documentation does not fully reflect the two-client model and startup sequence.
+
+#### Requirements (Merged)
+- Only two client fixtures (A/B) used in all tests.
+- Default to client A for all tests unless multi-client features are tested.
+- All directory references and services set up/cleaned for both clients in tests.
+- Service > client > UI startup enforced in all tests and usage.
+- Server URL and tokens remain in all configs.
+- Documentation updated to reflect merged architecture.
+
+---
 
 ### 1. Page Structure (Main Window)
 

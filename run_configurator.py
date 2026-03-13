@@ -69,7 +69,7 @@ def main():
         instance_name = args.instance
         
         if args.select_instance or not instance_name:
-            # Get list of instances from C:\ProgramData\pyWATS\instances\ (system-wide)
+            # Get list of instances from C:\ProgramData/Virinco/pyWATS\instances\ (system-wide)
             if os.name == 'nt':
                 instances_dir = Path(os.environ.get('PROGRAMDATA', 'C:\\ProgramData')) / 'pyWATS' / 'instances'
             else:
@@ -97,7 +97,7 @@ def main():
                     logger.info("Instance selection cancelled, exiting")
                     return 0
         
-        # Load config from C:\ProgramData\pyWATS\instances\{instance_id}\ (system-wide)
+        # Load config from C:\ProgramData/Virinco/pyWATS\instances\{instance_id}\ (system-wide)
         # Map display name to instance_id
         instance_id_map = {
             "Client A (Master)": "default",

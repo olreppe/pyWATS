@@ -118,6 +118,13 @@ class FileConverter(ABC):
         # Sandbox configuration (see ConverterBase for documentation)
         self._source_path: Optional[Path] = None
         self._trusted_mode: bool = False
+        
+        # Runtime paths set by converter pool
+        self.watch_path: Optional[Path] = None
+        self.done_path: Optional[Path] = None
+        self.error_path: Optional[Path] = None
+        self.pending_path: Optional[Path] = None
+        self._config: Optional[Any] = None
     
     # =========================================================================
     # Sandbox Configuration
@@ -206,6 +213,27 @@ class FileConverter(ABC):
         Default: ["*"] (all files)
         """
         return ["*"]
+    
+    @property
+    def supported_extensions(self) -> List[str]:
+        """
+        List of file extensions derived from file_patterns.
+        
+        Used by AsyncConverterPool for startup file scanning.
+        Extracts extensions from patterns like "*.json" → ".json"
+        
+        Returns:
+            List of extensions with leading dot, or ["*"] for all files
+        """
+        extensions = []
+        for pattern in self.file_patterns:
+            if pattern == "*":
+                return ["*"]
+            elif pattern.startswith("*."):
+                # Extract extension from pattern like "*.json" → ".json"
+                extensions.append(pattern[1:])
+        
+        return extensions if extensions else ["*"]
     
     @property
     def arguments_schema(self) -> Dict[str, ArgumentDefinition]:

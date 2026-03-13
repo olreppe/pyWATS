@@ -1,23 +1,54 @@
-# GUI Cleanup - Implementation Plan
+
+# GUI/Client-Service Architecture Cleanup - Implementation Plan
 
 **Created:** February 14, 2026, 16:00  
-**Last Updated:** February 14, 2026, 16:00  
-**Status:** Ready for Implementation
+**Last Updated:** February 14, 2026, 17:15  
+**Status:** Ready for Implementation (Merged Scope)
 
 ---
 
-## Overview
 
-Implement GUI cleanup for beta release with 7-tab structure, improved scaling, and better UX.
+## Overview (Merged Scope)
+
+Implement GUI cleanup for beta release and refactor client/service architecture and test environment for robust two-client (A/B) model, startup sequence, and config persistence.
 
 **User Decisions**:
 - ✅ Option 1: Moderate cleanup (7 tabs)
 - ✅ Station info: Read-only on Dashboard (edit via Setup page)
 - ✅ File menu: Disconnect, Minimize to Tray, Exit
 - ✅ Multi-server: Manual instance selection (current approach)
+- 🚧 Enforce two-client (A/B) model for all tests and fixtures
+- 🚧 Ensure service > client > UI startup for all tests and usage
+- 🚧 Validate server URL/token persistence in all configs
+- 🚧 Update documentation for maintainers
 
-**Estimated Effort**: 8-10 hours  
-**Phases**: 5
+**Estimated Effort**: 12-16 hours  
+**Phases**: 6
+
+---
+
+
+
+## Phase 0: Client/Service/Test Environment Cleanup (2 hours)
+
+### 0.1 Audit and refactor test fixtures to use only client A and B
+### 0.2 Default to client A for all tests unless multi-client features are tested
+### 0.3 Ensure all directory references and services are set up/cleaned for both clients
+### 0.4 Enforce service > client > UI startup in all tests and usage
+### 0.5 Validate server URL/token persistence in all configs
+
+### 0.6 Update documentation to reflect merged architecture
+
+---
+
+## Phase 1: Persistent Client A Installation (1 hour)
+
+### 1.1 Register client A service to autostart on system startup (Windows Service/systemd/launchd)
+### 1.2 Ensure tray icon is always visible when service/client/GUI is running
+### 1.3 Configure service to run from current workspace code (for zero-overhead testing)
+### 1.4 Document and test live update workflow for client A (restart service after code changes)
+
+---
 
 ---
 

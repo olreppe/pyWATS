@@ -342,7 +342,7 @@ mindmap
 ### File Structure
 
 ```
-C:\ProgramData\pyWATS\instances\{instance_id}\queue\
+C:\ProgramData/Virinco/pyWATS\instances\{instance_id}\queue\
 ├── {report_id}.pending.wsjf          # Report data (PENDING)
 ├── {report_id}.pending.meta.json     # Metadata (attempts, errors)
 ├── {report_id}.processing.wsjf       # Report data (PROCESSING)

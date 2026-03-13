@@ -1,43 +1,62 @@
-# GUI Cleanup for Beta Release
+
+# GUI/Client-Service Architecture Cleanup for Beta Release
 
 **Created:** February 14, 2026, 15:45  
-**Last Updated:** February 14, 2026, 16:50  
-**Status:** ✅ Complete - Production Ready (100%)
+**Last Updated:** February 15, 2026, 10:00  
+**Status:** ✅ Complete (100%)
 
 ---
 
 ## Problem Statement
 
-The current Configurator GUI has several usability issues that need to be addressed before the beta release:
+This project merges the GUI cleanup for beta release with a full audit and refactor of the client/service architecture and test environment. The goal is to ensure:
 
-1. **Scaling Issues**: Pages don't scale well, become unreadable at smaller sizes
-2. **Poor Information Architecture**: Too many tabs, repeated information, credentials too prominent
-3. **Wrong Start Page**: Should start with Dashboard, not Connection
-4. **Missing Core Info**: Dashboard lacks client name, station name, location, purpose, GPS toggle
-5. **Disconnect Flow**: No clear way to disconnect and reconnect to different server
-6. **Scope Creep**: Tabs for features not related to converter/connection (rootcause, asset, product, production, software)
+1. The GUI is clean, usable, and production-ready for beta
+2. The client/service architecture supports multi-instance setups (two-client model, A/B)
+3. Test fixtures and environment are isolated, defaulting to client A unless multi-client features are tested
+4. Client A is maintained as a persistent, simulated live installation: service autostarts on system startup, tray icon is always visible, and the running instance uses the latest code
+4. Service > client > UI startup sequence is enforced in all tests and usage
+5. Server URL and tokens remain persistent in all configs
+6. Documentation is updated for maintainers
 
-**User Requirement**: 
+**User Requirements**:
+> "I want to make sure the GUI is cleaned up and working. I have some objections to the whole gui, with the pages and their contents. Also, the client/service/test setup must be robust and easy to maintain."
 > "I want to make sure the GUI is cleaned up and working. I have some objections to the whole gui, with the pages and their contents."
 
 ---
 
-## Objectives
+
+
+## Persistent Client A Installation
+
+**Goal:**
+Maintain client A as a simulated live installation:
+- Service for client A autostarts on system startup (Windows Service, systemd, or launchd)
+- Tray icon is always visible when service/client/GUI is running, even outside development
+- Installation uses the most recent code (auto-updates with project changes)
+- Useful for real-world testing and as a reference for production deployments
 
 ### Primary Goals
-1. ✅ Fix page scaling issues (readable at all window sizes)
-2. ✅ Make Dashboard the default starting page
-3. ✅ Add client metadata to Dashboard (name, station, location, purpose, GPS toggle)
-4. ✅ Add Disconnect button with reconnection flow
-5. ✅ Disable non-essential tabs (rootcause, asset, product, production, software)
-6. ✅ Reduce prominence of credentials/tokens (move to Advanced)
+1. Fix page scaling issues (readable at all window sizes)
+2. Make Dashboard the default starting page
+3. Add client metadata to Dashboard (name, station, location, purpose, GPS toggle)
+4. Add Disconnect button with reconnection flow
+5. Disable non-essential tabs (rootcause, asset, product, production, software)
+6. Reduce prominence of credentials/tokens (move to Advanced)
+7. Enforce two-client (A/B) model for all tests and fixtures
+8. Ensure service > client > UI startup for all tests and usage
+9. Validate server URL/token persistence in all configs
+10. Update documentation for maintainers
+11. Ensure client A is always running as a persistent, autostarting, live installation with tray icon
 
 ### Secondary Goals
-7. ✅ Assess multi-server config support (separate instances per server)
-8. ✅ Clean up redundant information across pages
-9. ✅ Improve overall UX consistency
+11. Assess multi-server config support (separate instances per server)
+12. Clean up redundant information across pages
+13. Improve overall UX consistency
+14. Remove or refactor any inter-client DB coordination logic
 
 ---
+
 
 ## Success Criteria
 
@@ -49,8 +68,15 @@ The current Configurator GUI has several usability issues that need to be addres
 - [ ] Connection credentials moved to Advanced section
 - [ ] Multi-server config assessment complete with recommendation
 - [ ] Zero regressions in existing functionality
+- [ ] Only two client fixtures (A/B) used in all tests
+- [ ] Default to client A for all tests unless multi-client features are tested
+- [ ] All directory references and services set up/cleaned for both clients in tests
+- [ ] Service > client > UI startup enforced in all tests and usage
+- [ ] Server URL and tokens remain in all configs
+- [ ] Documentation updated to reflect merged architecture
 
 ---
+
 
 ## Scope
 
@@ -61,21 +87,26 @@ The current Configurator GUI has several usability issues that need to be addres
 - Scaling/sizing fixes
 - Tab visibility management
 - Multi-server config analysis
+- Client/service architecture audit and refactor
+- Test fixture and environment cleanup (two-client model)
+- Documentation and config audit for client/service/test setup
 
 ### Out of Scope
-- New features unrelated to usability
+- New features unrelated to usability or architecture/test conformance
 - Complete UI redesign
 - Theme changes
 - Performance optimizations (unless blocking)
 
 ---
 
+
 ## Timeline
 
-**Estimated Effort**: 8-12 hours  
-**Target Completion**: February 15, 2026 (tomorrow)
+**Estimated Effort**: 12-16 hours  
+**Target Completion**: February 17, 2026
 
 ---
+
 
 ## Risks
 
@@ -85,20 +116,24 @@ The current Configurator GUI has several usability issues that need to be addres
 | Multi-server config complexity | Medium | Start with analysis, defer if complex |
 | Scaling fixes affect styling | Medium | Test on multiple screen sizes |
 | User workflow disruption | Low | Keep changes incremental |
+| Test fixture refactor breaks CI | Medium | Run all tests after fixture changes |
+| Service/client startup sequence errors | Medium | Add integration tests for startup |
+| Config persistence bugs | Medium | Add config validation tests |
 
 ---
+
 
 ## Next Steps
 
-1. Create detailed analysis document
-2. Create implementation plan
-3. Start with tab management (quick win)
-4. Fix scaling issues
-5. Redesign dashboard
-6. Simplify connection page
-7. Test multi-server config approach
+1. Update analysis and implementation plan to include merged architecture/test requirements
+2. Add/merge TODOs for client/service/test environment cleanup
+3. Mark project as ready to start
+4. Begin with test fixture and startup sequence audit
+5. Proceed with GUI/UX cleanup phases
+6. Update documentation as changes are made
 
 ---
+
 
 **Project Lead**: AI Agent  
 **Stakeholder**: User (ola.lund.reppe)

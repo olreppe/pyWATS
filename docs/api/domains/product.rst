@@ -518,7 +518,7 @@ Main Service
 Box Build Template
 ^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: pywats.domains.product.async_box_build.AsyncBoxBuildTemplate
+.. autoclass:: pywats.domains.product.async_service.AsyncBoxBuildTemplate
    :members:
    :undoc-members:
    :show-inheritance:
@@ -1196,7 +1196,7 @@ Main Service
 Box Build Template
 ^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: pywats.domains.product.async_box_build.AsyncBoxBuildTemplate
+.. autoclass:: pywats.domains.product.async_service.AsyncBoxBuildTemplate
    :members:
    :undoc-members:
    :show-inheritance:

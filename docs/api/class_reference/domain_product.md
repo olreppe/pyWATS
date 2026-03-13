@@ -4,7 +4,7 @@ Auto-generated class reference for `pywats.domains.product`.
 
 ---
 
-## `product.async_box_build`
+## `product.async_service`
 
 ### `AsyncBoxBuildTemplate`
 
@@ -42,34 +42,6 @@ _Async Product business logic._
 
 **Methods:**
 - `is_active(product: Product) -> bool`
-
----
-
-## `product.box_build`
-
-### `BoxBuildTemplate`
-
-_Builder class for managing box build templates (product-level definitions)._
-
-**Properties:**
-- `has_pending_changes`
-- `parent_part_number`
-- `parent_revision`
-- `parent_revision_id`
-- `subunits`
-
-**Methods:**
-- `add_subunit(part_number: str, revision: str, quantity: int, item_number: Optional[...], revision_mask: Optional[...]) -> Any`
-- `clear_all() -> Any`
-- `discard() -> Any`
-- `get_matching_subunits(part_number: str) -> List[...]`
-- `get_required_parts() -> List[...]`
-- `reload() -> Any`
-- `remove_subunit(part_number: str, revision: str) -> Any`
-- `save() -> Any`
-- `set_quantity(part_number: str, revision: str, quantity: int) -> Any`
-- `update_subunit(part_number: str, revision: str, quantity: Optional[...], item_number: Optional[...], revision_mask: Optional[...]) -> Any`
-- `validate_subunit(part_number: str, revision: str) -> bool`
 
 ---
 
@@ -194,33 +166,5 @@ _Simplified product view (used in list views)._
 - `category: Optional[...]`
 - `non_serial: bool`
 - `state: ProductState`
-
----
-
-## `product.sync_box_build`
-
-### `SyncBoxBuildTemplate`
-
-_Synchronous wrapper for AsyncBoxBuildTemplate._
-
-**Properties:**
-- `has_pending_changes`
-- `parent_part_number`
-- `parent_revision`
-- `parent_revision_id`
-- `subunits`
-
-**Methods:**
-- `add_subunit(part_number: str, revision: str, quantity: int, item_number: Optional[...], revision_mask: Optional[...]) -> Any`
-- `clear_all() -> Any`
-- `discard() -> Any`
-- `get_matching_subunits(part_number: str) -> List[...]`
-- `get_required_parts() -> List[...]`
-- `reload() -> Any`
-- `remove_subunit(part_number: str, revision: str) -> Any`
-- `save() -> Any`
-- `set_quantity(part_number: str, revision: str, quantity: int) -> Any`
-- `update_subunit(part_number: str, revision: str, quantity: Optional[...], item_number: Optional[...], revision_mask: Optional[...]) -> Any`
-- `validate_subunit(part_number: str, revision: str) -> bool`
 
 ---
