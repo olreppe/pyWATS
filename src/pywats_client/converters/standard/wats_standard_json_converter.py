@@ -289,7 +289,7 @@ class WATSStandardJsonConverter(FileConverter):
         # Copy common fields
         common_fields = ['id', 'group', 'status', 'errorCode', 'errorMessage', 
                         'reportText', 'start', 'totTime', 'tsGuid', 
-                        'causedSeqFailure', 'causedUUTFailure']
+                        'causedSeqFailure', 'causedUUTFailure', 'loop']
         for field in common_fields:
             if field in wsjf_step and wsjf_step[field] is not None:
                 step[field] = wsjf_step[field]

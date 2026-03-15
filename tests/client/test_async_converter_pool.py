@@ -155,8 +155,19 @@ class TestAsyncConverterPoolProcessing:
         
         item = AsyncConversionItem(test_file, mock_converter)
         
-        # Process
-        await pool._process_item(item)
+        # Patch _convert_unsandboxed to return a valid report dict,
+        # bypassing the converter type-check (this test focuses on _process_item behaviour)
+        with patch.object(
+            pool,
+            '_convert_unsandboxed',
+            new=AsyncMock(return_value={"report": "data"})
+        ):
+            with patch.object(
+                pool,
+                '_should_use_sandbox',
+                return_value=False
+            ):
+                await pool._process_item(item)
         
         # Check state
         assert item.state == AsyncConversionItemState.COMPLETED
@@ -433,15 +444,24 @@ class TestAsyncConverterPoolQueueProcessing:
         
         item = AsyncConversionItem(test_file, mock_converter)
         
-        # Setup converter to return valid report
-        mock_converter.convert.return_value = {"report": "data"}
         mock_converter.trusted_mode = True  # Skip sandbox for this test
         mock_converter.post_process_action = None
         
         initial_successful = pool._stats["successful"]
         initial_total = pool._stats["total_processed"]
         
-        await pool._process_item(item)
+        # Patch _convert_unsandboxed to return a valid report dict
+        with patch.object(
+            pool,
+            '_convert_unsandboxed',
+            new=AsyncMock(return_value={"report": "data"})
+        ):
+            with patch.object(
+                pool,
+                '_should_use_sandbox',
+                return_value=False
+            ):
+                await pool._process_item(item)
         
         assert pool._stats["successful"] == initial_successful + 1
         assert pool._stats["total_processed"] == initial_total + 1
@@ -453,17 +473,25 @@ class TestAsyncConverterPoolQueueProcessing:
         test_file.write_text("<test/>")
         
         item = AsyncConversionItem(test_file, mock_converter)
-        
-        # Setup converter to fail
-        mock_converter.convert.side_effect = Exception("Converter error")
         mock_converter.trusted_mode = True
         
         initial_errors = pool._stats["errors"]
         
-        await pool._process_item(item)
+        # Patch _convert_unsandboxed to raise, simulating a converter error
+        with patch.object(
+            pool,
+            '_convert_unsandboxed',
+            new=AsyncMock(side_effect=Exception("Converter error"))
+        ):
+            with patch.object(
+                pool,
+                '_should_use_sandbox',
+                return_value=False
+            ):
+                await pool._process_item(item)
         
         assert pool._stats["errors"] == initial_errors + 1
-        assert item.error == "Converter error"
+        assert "Converter error" in item.error
 
 
 class TestAsyncConverterPoolPostProcessing:

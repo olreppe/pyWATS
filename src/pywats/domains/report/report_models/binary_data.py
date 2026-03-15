@@ -8,6 +8,8 @@ from __future__ import annotations
 from typing import Optional, List, ClassVar
 import base64
 
+from pydantic import AliasChoices
+
 from .common_types import (
     WATSBase,
     Field,
@@ -288,22 +290,53 @@ class LoopInfo(WATSBase):
     
     When a step is part of a loop, this captures which iteration
     the step result belongs to.
+    
+    Supports two input formats:
+    - WATS internal format: ``i`` (index) and ``n`` (count)
+    - WSJF export format: ``idx`` (index) and ``num`` (count)
+    
+    Always serializes using the internal ``i``/``n`` field names for API
+    compatibility.
     """
     
-    # Loop index (0-based)
-    index: int = Field(
-        default=0,
-        validation_alias="i",
+    # Loop index (0-based).
+    # Accepts 'i' (internal WATS format) or 'idx' (WSJF export format).
+    # None when this is a loop header entry (WSJF export) rather than an iteration.
+    index: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("i", "idx"),
         serialization_alias="i",
-        description="Current loop index (0-based)."
+        description="Current loop index (0-based). None for loop header entries."
     )
     
-    # Total iterations
+    # Total iterations.
+    # Accepts 'n' (internal WATS format) or 'num' (WSJF export format).
     count: Optional[int] = Field(
         default=None,
-        validation_alias="n",
+        validation_alias=AliasChoices("n", "num"),
         serialization_alias="n",
         description="Total number of loop iterations."
+    )
+    
+    # WSJF-specific output-only fields (present in server exports, not sent on submit)
+    ending_index: Optional[int] = Field(
+        default=None,
+        validation_alias="endingIndex",
+        serialization_alias="endingIndex",
+        exclude=True,
+        description="Final loop index when execution ended (WSJF export only, not submitted)."
+    )
+    
+    passed: Optional[int] = Field(
+        default=None,
+        exclude=True,
+        description="Number of passing iterations (WSJF export only, not submitted)."
+    )
+    
+    failed: Optional[int] = Field(
+        default=None,
+        exclude=True,
+        description="Number of failing iterations (WSJF export only, not submitted)."
     )
     
     # Parent loop info (for nested loops)
