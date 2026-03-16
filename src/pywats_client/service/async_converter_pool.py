@@ -22,12 +22,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
-try:
-    import aiofiles
-    HAS_AIOFILES = True
-except ImportError:
-    HAS_AIOFILES = False
-    
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -715,17 +709,30 @@ class AsyncConverterPool:
         """
         Determine if sandbox should be used for this converter.
         
-        Returns True unless converter explicitly opts out (trusted_mode=True).
+        Returns True only when the converter is a user-provided converter loaded
+        from an external source file. Built-in standard converters (FileConverter
+        subclasses without a source_path) always run unsandboxed.
+        
+        Rules:
+        - trusted_mode=True → no sandbox (explicit opt-out)
+        - source_path set → sandbox (user-provided converter from file)
+        - FileConverter without source_path → no sandbox (built-in converter)
+        - Everything else → sandbox (safe default)
         """
-        # Check if converter has trusted_mode attribute (opt-out for built-in converters)
+        # Explicit trusted mode opt-out
         if hasattr(converter, 'trusted_mode') and converter.trusted_mode:
             return False
-        
+
         # Check if converter has a source file (required for sandbox)
         if hasattr(converter, 'source_path') and converter.source_path:
             return True
-        
-        # For dynamically loaded converters, use sandbox
+
+        # Built-in FileConverter subclasses without a source_path run unsandboxed
+        from ..converters.file_converter import FileConverter
+        if isinstance(converter, FileConverter):
+            return False
+
+        # For any other dynamically loaded converter without explicit trust, use sandbox
         return True
     
     async def _ensure_sandbox(self) -> ConverterSandbox:
@@ -794,35 +801,66 @@ class AsyncConverterPool:
     
     async def _convert_unsandboxed(self, item: AsyncConversionItem) -> Optional[Dict[str, Any]]:
         """
-        Execute converter in thread pool (legacy mode).
-        
+        Execute converter in thread pool (trusted built-in converters only).
+
+        Supports converters using the FileConverter API (convert(source, context))
+        as well as the legacy ConverterBase API (convert_file(file_path, args)).
+
         WARNING: Only use for trusted, built-in converters.
         This provides no isolation or security.
         """
-        # Read file content
-        content = await self._read_file(item.file_path)
-        
-        # Run converter in thread pool
-        report = await asyncio.to_thread(
-            item.converter.convert,
-            content,
-            item.file_path
-        )
-        
-        return report
-    
-    async def _read_file(self, file_path: Path) -> str:
-        """Read file content asynchronously"""
-        if HAS_AIOFILES:
-            async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
-                return await f.read()
-        else:
-            # Fallback to thread pool
-            return await asyncio.to_thread(
-                file_path.read_text,
-                encoding='utf-8'
+        from ..converters.file_converter import FileConverter
+        from ..converters.base import ConverterBase, ConverterArguments
+        from ..converters.models import ConverterSource, ConversionStatus
+        from ..converters.context import ConverterContext
+
+        converter = item.converter
+
+        if isinstance(converter, FileConverter):
+            # New FileConverter API: convert(source: ConverterSource, context: ConverterContext)
+            source = ConverterSource.from_file(item.file_path)
+            context = ConverterContext()
+
+            result = await asyncio.to_thread(converter.convert, source, context)
+
+            if result.status == ConversionStatus.SUCCESS:
+                # Return report as dict for submission
+                report = result.report
+                if report is None:
+                    return None
+                # If it's a Pydantic model, dump to dict; otherwise pass through
+                if hasattr(report, 'model_dump'):
+                    return report.model_dump(by_alias=True, exclude_none=True, mode='json')
+                return report
+            else:
+                error_msg = result.error or f"Converter returned status: {result.status.value}"
+                raise RuntimeError(f"Conversion failed: {error_msg}")
+
+        elif isinstance(converter, ConverterBase):
+            # Legacy ConverterBase API: convert_file(file_path, args)
+            from ..converters.models import FileInfo
+            file_info = FileInfo.from_path(item.file_path)
+            args = ConverterArguments(
+                api_client=self.api,
+                file_info=file_info,
+                drop_folder=item.file_path.parent,
+                done_folder=item.file_path.parent,
+                error_folder=item.file_path.parent,
             )
-    
+            result = await asyncio.to_thread(converter.convert_file, item.file_path, args)
+
+            if result.status == ConversionStatus.SUCCESS:
+                return result.report
+            else:
+                error_msg = result.error or f"Converter returned status: {result.status.value}"
+                raise RuntimeError(f"Conversion failed: {error_msg}")
+
+        else:
+            raise TypeError(
+                f"Converter {converter.name!r} does not implement FileConverter or ConverterBase. "
+                f"Got type: {type(converter).__name__}"
+            )
+
     async def _post_process(self, item: AsyncConversionItem) -> None:
         """
         Handle post-conversion processing.
