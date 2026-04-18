@@ -557,6 +557,7 @@ class pyWATS:
         self._rootcause: Optional[SyncServiceWrapper] = None
         self._scim: Optional[SyncServiceWrapper] = None
         self._process: Optional[SyncServiceWrapper] = None
+        self._manual_inspection: Optional[SyncServiceWrapper] = None
     
     @staticmethod
     def _discover_credentials(instance_id: str = "default") -> Optional[dict]:
@@ -809,6 +810,46 @@ class pyWATS:
             async_service = AsyncProcessService(repo)
             self._process = SyncServiceWrapper(async_service, config=self._sync_config)
         return self._process
+    
+    @property
+    def manual_inspection(self) -> SyncServiceWrapper:
+        """
+        Access manual inspection operations.
+        
+        Provides management of test sequence definitions, relations,
+        sequences, and per-unit inspection details via the WATS
+        internal ManualInspection API.
+        
+        Example:
+            # List all MI definitions
+            definitions = api.manual_inspection.list_definitions()
+            
+            # Get details for a specific definition
+            defn = api.manual_inspection.get_definition(defn_id)
+            
+            # Create a definition
+            new_defn = api.manual_inspection.create_definition(
+                name="Board Visual Inspection"
+            )
+        
+        Returns:
+            SyncServiceWrapper around AsyncManualInspectionService
+        """
+        if self._manual_inspection is None:
+            from .domains.manual_inspection import (
+                AsyncManualInspectionRepository,
+                AsyncManualInspectionService,
+            )
+            repo = AsyncManualInspectionRepository(
+                http_client=self._http_client,
+                error_handler=self._error_handler,
+                base_url=self._base_url,
+            )
+            async_service = AsyncManualInspectionService(repo)
+            self._manual_inspection = SyncServiceWrapper(
+                async_service, config=self._sync_config
+            )
+        return self._manual_inspection
     
     # -------------------------------------------------------------------------
     # Configuration

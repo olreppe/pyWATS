@@ -1,6 +1,7 @@
 # Active Work
 
-**Current Focus:** What we're working on RIGHT NOW
+**Current Focus:** What we're working on RIGHT NOW  
+**Last Updated:** April 18, 2026
 
 **Rule:** Maximum 5 items. If you can't finish it this week, move it to `planned/`.
 
@@ -8,94 +9,69 @@
 
 ## Current Active Items
 
-### 1. 📋 Architecture Reliability Fixes (P0 - CRITICAL)
+### 1. ✅ Manual Inspection Domain (Phase 1 Complete)
 
-**Status:** ✅ **COMPLETE**  
-**Progress:** 100% (8 of 8 issues resolved)  
-**Priority:** P0 (CRITICAL - Blocks Async Features)  
-**Duration:** February 5-6, 2026 (2 days)  
-**Location:** [architecture-reliability-fixes.project/](architecture-reliability-fixes.project/)  
-**Updated:** February 6, 2026 16:00
-
-**Objective:** Fix critical and high-priority architecture weaknesses that pose data loss risks, silent failures, and resource leaks.
-
-**CRITICAL Issues (2/2) ✅**
-- ✅ C1: Two-phase shutdown (prevents data loss during shutdown)
-- ✅ C2: Exception handlers & task monitoring (prevents silent failures)
-
-**HIGH Issues (6/6) ✅**
-- ✅ H1: QueueManager save-before-send pattern (pre-implemented)
-- ✅ H2: Resource cleanup in GUI pages (pre-implemented)
-- ✅ H3: Error propagation across async boundaries (verified adequate)
-- ✅ H4: Config validation in dict-like interface (implemented Feb 6)
-- ✅ H5: AsyncPendingQueue queue size limits (pre-implemented)
-- ✅ H6: IPC communication timeouts (implemented Feb 6)
-
-**Achievements:**
-- 🎯 All data loss risks eliminated
-- 🎯 Silent failure prevention in place
-- 🎯 Resource leak prevention verified
-- 🎯 Config corruption prevention added
-- 🎯 Timeout handling prevents hung clients
-
-**Files Modified:**
-- [async_client_service.py](../../../src/pywats_client/service/async_client_service.py) - C1, C2
-- [config.py](../../../src/pywats_client/core/config.py) - H4
-- [async_ipc_server.py](../../../src/pywats_client/service/async_ipc_server.py) - H6
-
-**Ready for:** Async feature development, production deployment
-
----
-
-### 2. 📋 Logging Consolidation (P1 - DEFERRED)
-
-**Status:** Planning Complete, Deferred Until Reliability Fixes Complete  
+**Status:** ✅ **PHASE 1 COMPLETE** — Released as v0.5.0b6  
+**Progress:** 33% (Phase 1 of 3)  
 **Priority:** P1  
-**Timeline:** 2 weeks (12-14 days)  
-**Location:** [logging-consolidation.project/](logging-consolidation.project/)
+**Duration:** March 20 - April 18, 2026  
+**Location:** [manual-inspection-domain.project/](manual-inspection-domain.project/)
 
-**Objective:** Consolidate dispersed logging into unified framework with top-level pywats.log, per-conversion logs, and exception bubbling pipeline.
+**Phase 1 Deliverables (Complete):**
+- ✅ 7 models + 2 enums (DefinitionStatus, RepairOnFailed)
+- ✅ Full async repository + service layer
+- ✅ Sync access via `api.manual_inspection` property
+- ✅ 49 tests (models, repository, service)
+- ✅ Example: `examples/domains/manual_inspection_examples.py`
+- ✅ Sphinx docs: `docs/api/domains/manual_inspection.rst`
+- ✅ 7 lifecycle convenience methods
 
-**Next Step:** Resume after architecture reliability fixes complete
+**Remaining Phases (Future):**
+- Phase 2: pyWATS-OI operator interface app
+- Phase 3: Extended step types (conditional flow, Python steps, etc.)
 
 ---
 
-### 3. 📋 GUI Framework & Multi-App Architecture (P1 - EXPERIMENTAL)
+### 2. 🚧 Production Manager (0% - WIP)
 
-**Status:** ⚠️ EXPERIMENTAL - Not Approved for Production  
-**Progress:** 35% (Foundation complete + Weakness analysis complete)  
+**Status:** 🚧 **IN PROGRESS** — Not Released  
+**Progress:** 0%  
 **Priority:** P1  
-**Timeline:** 4-5 weeks  
-**Location:** [gui-client-separation.project/](gui-client-separation.project/)
+**Location:** [production-manager.project/](production-manager.project/)
 
-**Objective:** Create reusable GUI framework with proven implementation (Configurator refactor), scaffolded template for future apps, and pilot AI-powered analytics application.
-
-**Critical Constraints:**
-- Platform independence: DO NOT alter src/pywats_client/
-- Old GUI must remain functional (DO NOT deprecate)
-- NO user-facing docs until approved
-- NOT in release flow - experimental only
-- Must be revert-ready
-
-**Next Step:** Phase 0 - Complete research and architecture design.
+**Objective:** Rename sequence_designer → production_manager with WATS-matching 4-tab layout:
+1. Sequence overview
+2. Sequence designer (existing)
+3. Relations
+4. Instructions (PDF)
 
 ---
 
-## Recently Completed (v0.4.0b1 Release)
+### 3. 🚧 Qt Theme System (Analysis Complete - WIP)
 
-### ✅ GUI Migration (COMPLETED - February 5, 2026)
+**Status:** 🚧 **ANALYSIS COMPLETE** — Not Released  
+**Progress:** Analysis only  
+**Priority:** HIGH  
+**Location:** [qt-theme-system.project/](qt-theme-system.project/)
 
-**Completed In:** v0.4.0b1  
-**Location:** [docs/internal_documentation/completed/2026-q1/gui-migration/](../../docs/internal_documentation/completed/2026-q1/gui-migration/)
+**Objective:** Replace scattered inline `setStyleSheet()` with centralized token-based theme system.
+- 35+ hardcoded hex colors identified across 40+ files
+- Single theme definition controls all styling
+- Theme swap (dark/light) with one runtime call
 
-**Achievement:** Successfully migrated all 11 configurator pages (~4,580 lines) to new pywats_ui package, removed old GUI (30 files), and established dual instance setup with comprehensive testing infrastructure.
+---
 
-**Highlights:**
-- 100% page migration (11/11)
-- Zero launch errors
-- 67% bug fix rate (12/18)
-- Side-by-side testing functional
-- Old GUI fully removed
+## Recently Completed
+
+### ✅ Manual Inspection Domain - Phase 1 (April 18, 2026)
+**Released:** v0.5.0b6  
+See project folder for full details.
+
+### ✅ Logging, Error & Exception Handling (February 8, 2026)
+**Archived:** [docs/internal_documentation/completed/2026-q1/02080000-logging-error-exception-handling/](../../docs/internal_documentation/completed/2026-q1/02080000-logging-error-exception-handling/)
+
+### ✅ Architecture Reliability Fixes (February 6, 2026)
+All P0 critical and high-priority issues resolved.
 
 ---
 

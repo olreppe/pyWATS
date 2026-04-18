@@ -21,6 +21,26 @@ AGENT INSTRUCTIONS: See CONTRIBUTING.md for changelog management rules.
 
 ---
 
+## [0.5.0b6] - 2026-04-18
+
+### Added
+- **Manual Inspection Domain**: New domain for managing manual inspection sequences, definitions, relations, and per-unit inspection details
+  - Models: `TestSequenceDefinition`, `TestSequenceRelation`, `TestSequenceInstance`, `RelationConflict`, `MiSequence`
+  - Full async repository and service layer using WATS internal API
+  - Sync access via `api.manual_inspection` property
+  - Tests: 49 new tests (models, repository, service)
+  - Example: `examples/domains/manual_inspection_examples.py`
+  - Sphinx documentation: `docs/api/domains/manual_inspection.rst`
+- **Manual Inspection Lifecycle Methods**: Convenience methods for clearer inspection lifecycle management
+  - `create_inspection()`, `get_inspection()`, `copy_inspection()` — aliases with `_inspection` naming
+  - `move_to_pending()` — Draft → Pending (enables operator testing)
+  - `move_to_draft()` — Pending → Draft (for edits)
+  - `release_inspection()` — Pending → Released (production)
+  - `revoke_inspection()` — manually retire an inspection
+  - New examples: lifecycle workflow, modify released inspection, status checking
+
+---
+
 ## [0.5.0b5] - 2026-03-12
 
 ### Fixed

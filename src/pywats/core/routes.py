@@ -519,6 +519,76 @@ class Routes:
             """GET /api/SCIM/v2/Groups/{id}"""
             return f"{Routes.SCIM.GROUPS}/{group_id}"
 
+    # =========================================================================
+    # Manual Inspection Domain
+    # =========================================================================
+
+    class ManualInspection:
+        """Manual Inspection routes (all internal API)."""
+
+        class Internal:
+            """⚠️ Internal Manual Inspection API routes."""
+            BASE = "/api/internal/ManualInspection"
+
+            GET_DEFINITIONS = f"{BASE}/GetTestSequenceDefinitions"
+            GET_DEFINITION = f"{BASE}/GetTestSequenceDefinition"
+            GET_SEQUENCES = f"{BASE}/GetSequences"
+            POST_DEFINITION = f"{BASE}/PostDefinition"
+            PUT_DEFINITION = f"{BASE}/PutDefinitionNew"
+            POST_RELATION = f"{BASE}/PostRelation"
+            PUT_RELATION = f"{BASE}/PutRelation"
+            DELETE_RELATION = f"{BASE}/DeleteRelationNew"
+            VALIDATE_MISC_INFO = f"{BASE}/ValidateMiscInfo"
+            GET_XAML = f"{BASE}/GetTestSequenceDefinitionXaml"
+            PUT_XAML = f"{BASE}/PutTestSequenceDefinitionXaml"
+            PUT_SEQUENCE = f"{BASE}/PutSequence"
+            PUT_STRING_TEST = f"{BASE}/PutStringTest"
+
+            @staticmethod
+            def get_definition_copy(definition_id: str) -> str:
+                """GET /api/internal/ManualInspection/GetDefinitionCopy/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/GetDefinitionCopy/{definition_id}"
+
+            @staticmethod
+            def get_instances_count(definition_id: str) -> str:
+                """GET /api/internal/ManualInspection/GetInstancesCount/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/GetInstancesCount/{definition_id}"
+
+            @staticmethod
+            def get_mi_details(unit_id: str) -> str:
+                """GET /api/internal/ManualInspection/GetMiDetails/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/GetMiDetails/{unit_id}"
+
+            @staticmethod
+            def get_mi_details_new(unit_id: str) -> str:
+                """GET /api/internal/ManualInspection/GetMiDetailsNew/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/GetMiDetailsNew/{unit_id}"
+
+            @staticmethod
+            def get_relations(definition_id: str) -> str:
+                """GET /api/internal/ManualInspection/GetRelations/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/GetRelations/{definition_id}"
+
+            @staticmethod
+            def get_relation_conflicts(definition_id: str) -> str:
+                """GET /api/internal/ManualInspection/GetRelationConflicts/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/GetRelationConflicts/{definition_id}"
+
+            @staticmethod
+            def get_relation_conflicts_new(definition_id: str) -> str:
+                """GET /api/internal/ManualInspection/GetRelationConflictsNew/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/GetRelationConflictsNew/{definition_id}"
+
+            @staticmethod
+            def get_wwf_content(definition_id: str) -> str:
+                """GET /api/internal/ManualInspection/GetWatswwfContent/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/GetWatswwfContent/{definition_id}"
+
+            @staticmethod
+            def delete_sequence(sequence_id: str) -> str:
+                """DELETE /api/internal/ManualInspection/DeleteSequence/{id}"""
+                return f"{Routes.ManualInspection.Internal.BASE}/DeleteSequence/{sequence_id}"
+
 
 # Convenience alias
 API = Routes

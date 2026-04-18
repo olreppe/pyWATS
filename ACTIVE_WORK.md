@@ -1,19 +1,50 @@
 ﻿# Active Work Tracker
 
-**Last Updated:** February 8, 2026  
+**Last Updated:** April 18, 2026  
 **Purpose:** Repository root tracker for crash recovery and context continuity
 
 ---
 
-##  CURRENT ACTIVE PROJECT
+## 🎯 CURRENT ACTIVE PROJECTS
 
-**Project:** NONE - All Projects Complete  
-**Status:** Ready for new work  
-**Last Completion:** Logging, Error & Exception Handling Analysis (February 8, 2026)
+### 1. Manual Inspection Domain (Phase 1 Complete ✅)
+**Project:** [projects/active/manual-inspection-domain.project/](projects/active/manual-inspection-domain.project/)  
+**Status:** ✅ Phase 1 Complete — Releasing as 0.5.0b6  
+**Progress:** 33% (Phase 1 of 3)
+
+**Phase 1 Deliverables (Complete):**
+- ✅ Full domain implementation (`src/pywats/domains/manual_inspection/`)
+- ✅ 49 tests passing (models, repository, service)
+- ✅ Example file (`examples/domains/manual_inspection_examples.py`)
+- ✅ Sphinx documentation (`docs/api/domains/manual_inspection.rst`)
+- ✅ 7 lifecycle convenience methods
+
+**Remaining Phases (Future):**
+- Phase 2: pyWATS-OI operator interface app
+- Phase 3: Extended step types
+
+### 2. Production Manager (WIP - Not Released)
+**Project:** [projects/active/production-manager.project/](projects/active/production-manager.project/)  
+**Status:** 🚧 In Progress — 0%  
+**Notes:** Renaming sequence_designer → production_manager with 4-tab layout
+
+### 3. Qt Theme System (WIP - Not Released)
+**Project:** [projects/active/qt-theme-system.project/](projects/active/qt-theme-system.project/)  
+**Status:** 🚧 Analysis Complete  
+**Notes:** Centralized token-based theme system for all GUI components
 
 ---
 
-##  RECENTLY COMPLETED
+## ✅ RECENTLY COMPLETED
+
+### Manual Inspection Domain - Phase 1 (Completed April 18, 2026)
+**Released:** v0.5.0b6
+
+**Summary:** New domain for managing WATS Manual Inspection sequences
+- 7 models, 2 enums (DefinitionStatus, RepairOnFailed)
+- Full async repository + service layer
+- Sync access via `api.manual_inspection` property
+- 49 tests, comprehensive examples, Sphinx docs
 
 ### Logging, Error & Exception Handling Analysis (Completed Feb 8, 2026)
 **Archived:** [docs/internal_documentation/completed/2026-q1/02080000-logging-error-exception-handling/](docs/internal_documentation/completed/2026-q1/02080000-logging-error-exception-handling/)

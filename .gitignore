@@ -603,3 +603,8 @@ docs/internal_documentation/reference/csharp_code_*/
 *.datasource
 *.xsd
 *.cd
+
+# Debug/exploration files (local only)
+_probe.py
+debug_logs/
+inspect_mi_sequences.py

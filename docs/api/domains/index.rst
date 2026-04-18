@@ -15,6 +15,7 @@ pyWATS is organized into domain-specific services, each handling a different asp
    software
    scim
    process
+   manual_inspection
 
 Overview
 --------
@@ -37,6 +38,7 @@ Each domain service is accessed as a property on the main :class:`~pywats.pywats
    api.software    # Software distribution
    api.scim        # User provisioning (SCIM)
    api.process     # Process/operation types
+   api.manual_inspection  # Manual inspection sequences
 
 Service Pattern
 ---------------

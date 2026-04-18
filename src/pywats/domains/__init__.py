@@ -20,6 +20,7 @@ developer experience - all API calls go to /api/App/*.
 """
 from . import analytics
 from . import asset
+from . import manual_inspection
 from . import process
 from . import product
 from . import production
@@ -31,6 +32,7 @@ from . import software
 __all__ = [
     "analytics",  # Maps to backend /api/App/* endpoints
     "asset",
+    "manual_inspection",  # Maps to backend /api/internal/ManualInspection/* endpoints
     "process",
     "product",
     "production",
