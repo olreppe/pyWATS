@@ -229,7 +229,7 @@ async def main():
 asyncio.run(main())
 ```
 
-See [PERFORMANCE_OPTIMIZATIONS.md](https://github.com/olreppe/pyWATS/blob/main/docs/PERFORMANCE_OPTIMIZATIONS.md) for complete guide.
+See [Performance Guide](https://github.com/olreppe/pyWATS/blob/main/docs/guides/performance.md) for complete guide.
 
 ### Query Reports
 
@@ -313,9 +313,9 @@ python3 -m pywats_client install-service --user-agent
 ```
 
 See platform-specific guides:
-- [Windows Service Setup](https://github.com/olreppe/pyWATS/blob/main/docs/WINDOWS_SERVICE.md) - NSSM/sc.exe installation
-- [Linux Service Setup](https://github.com/olreppe/pyWATS/blob/main/docs/LINUX_SERVICE.md) - systemd for Ubuntu/Debian/RHEL
-- [macOS Service Setup](https://github.com/olreppe/pyWATS/blob/main/docs/MACOS_SERVICE.md) - launchd daemon/agent
+- [Windows Service Setup](https://github.com/olreppe/pyWATS/blob/main/deployment/windows/README.md) - MSI installer, frozen executable
+- [Linux Service Setup](https://github.com/olreppe/pyWATS/blob/main/deployment/debian/pywats-client.service) - systemd for Ubuntu/Debian
+- [macOS Service Setup](https://github.com/olreppe/pyWATS/blob/main/deployment/macos/README.md) - launchd daemon/agent
 
 ### GUI Configuration
 
@@ -407,18 +407,18 @@ pyWATS/
 
 Complete guides shipped with the package:
 
-- **[Documentation Index](https://github.com/olreppe/pyWATS/blob/main/docs/INDEX.md)** - Complete documentation overview
+- **[API Documentation](https://olreppe.github.io/pyWATS/)** - Full Sphinx-generated API reference
 
 #### Domain API Reference
 
-- **[Product Domain](https://github.com/olreppe/pyWATS/blob/main/docs/PRODUCT.md)** - Products, revisions, BOMs, box build templates
-- **[Asset Domain](https://github.com/olreppe/pyWATS/blob/main/docs/ASSET.md)** - Equipment tracking, calibration, maintenance  
-- **[Production Domain](https://github.com/olreppe/pyWATS/blob/main/docs/PRODUCTION.md)** - Unit lifecycle, serial numbers, assembly
-- **[Report Domain](https://github.com/olreppe/pyWATS/blob/main/docs/REPORT.md)** - Test reports, measurements, step types
-- **[Analytics Domain](https://github.com/olreppe/pyWATS/blob/main/docs/ANALYTICS.md)** - Yield analysis, measurements, Unit Flow
-- **[Software Domain](https://github.com/olreppe/pyWATS/blob/main/docs/SOFTWARE.md)** - Package management, versioning, distribution
-- **[RootCause Domain](https://github.com/olreppe/pyWATS/blob/main/docs/ROOTCAUSE.md)** - Issue tracking, defect management
-- **[Process Domain](https://github.com/olreppe/pyWATS/blob/main/docs/PROCESS.md)** - Operation types, caching
+- **[Product Domain](https://olreppe.github.io/pyWATS/domains/product.html)** - Products, revisions, BOMs, box build templates
+- **[Asset Domain](https://olreppe.github.io/pyWATS/domains/asset.html)** - Equipment tracking, calibration, maintenance  
+- **[Production Domain](https://olreppe.github.io/pyWATS/domains/production.html)** - Unit lifecycle, serial numbers, assembly
+- **[Report Domain](https://olreppe.github.io/pyWATS/domains/report.html)** - Test reports, measurements, step types
+- **[Analytics Domain](https://olreppe.github.io/pyWATS/domains/analytics.html)** - Yield analysis, measurements, Unit Flow
+- **[Software Domain](https://olreppe.github.io/pyWATS/domains/software.html)** - Package management, versioning, distribution
+- **[RootCause Domain](https://olreppe.github.io/pyWATS/domains/rootcause.html)** - Issue tracking, defect management
+- **[Process Domain](https://olreppe.github.io/pyWATS/domains/process.html)** - Operation types, caching
 
 #### Client Documentation
 
@@ -428,7 +428,7 @@ Complete guides shipped with the package:
 ### Additional Resources
 
 - [Changelog](https://github.com/olreppe/pyWATS/blob/main/CHANGELOG.md) - Version history and release notes
-- [Error Catalog](https://github.com/olreppe/pyWATS/blob/main/docs/ERROR_CATALOG.md) - Comprehensive error reference
+- [Troubleshooting](https://github.com/olreppe/pyWATS/blob/main/docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Testing
 
