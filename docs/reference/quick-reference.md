@@ -19,7 +19,7 @@ See [Platform Compatibility Guide](../platforms/platform-compatibility.md) for d
 ### ✅ Core Library
 - **Async-First Architecture** - Built on `httpx` with native async support
 - **Sync Compatibility** - Full sync API via thin wrappers
-- **9 Domain Services** - Product, Asset, Report, Production, Analytics, Software, RootCause, Process, SCIM
+- **10 Domain Services** - Product, Asset, Report, Production, Analytics, Software, RootCause, Process, SCIM, Manual Inspection
 - **170+ API Endpoints** - Centralized route management
 - **Structured Logging** - Configurable verbosity with debug support
 

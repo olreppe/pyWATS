@@ -147,7 +147,7 @@ pyright your_script.py
 - Type stubs provide explicit signatures
 
 **Coverage:**
-- 9 domain services (report, product, asset, production, software, analytics, rootcause, scim, process)
+- 10 domain services (report, product, asset, production, software, analytics, rootcause, scim, process, manual_inspection)
 - 256 methods with full type signatures
 - All return types explicitly declared
 

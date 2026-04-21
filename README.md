@@ -40,7 +40,7 @@ See [Platform Compatibility Guide](https://github.com/olreppe/pyWATS/blob/main/d
 - **PyWATS Library** - Core API library for WATS integration
   - **Async-First Architecture** - Built on `httpx` with native async support
   - **Sync Compatibility** - Full sync API via thin wrappers (no code changes needed)
-  - **9 Domain Services**: Product, Asset, Report, Production, Analytics, Software, RootCause, Process, SCIM
+  - **10 Domain Services**: Product, Asset, Report, Production, Analytics, Software, RootCause, Process, SCIM, Manual Inspection
   - **170+ API Endpoints** - Centralized route management
   - Report creation and submission with comprehensive step types
   - OData filtering and pagination support
@@ -419,6 +419,7 @@ Complete guides shipped with the package:
 - **[Software Domain](https://olreppe.github.io/pyWATS/domains/software.html)** - Package management, versioning, distribution
 - **[RootCause Domain](https://olreppe.github.io/pyWATS/domains/rootcause.html)** - Issue tracking, defect management
 - **[Process Domain](https://olreppe.github.io/pyWATS/domains/process.html)** - Operation types, caching
+- **[Manual Inspection Domain](https://olreppe.github.io/pyWATS/domains/manual_inspection.html)** - Inspection sequences, definitions, workflow lifecycle
 
 #### Client Documentation
 
